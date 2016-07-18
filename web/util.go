@@ -89,6 +89,7 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 // Will put a redis client in the context if available
 func RedisMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		//log.Println("redis middleware")
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
 			inner.ServeHTTPC(ctx, w, r)
 			return
@@ -110,8 +111,11 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 // Will put a session cookie in the response if not available and discord session in the context if available
 func SessionMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		//log.Println("Session middleware")
 		var newCtx = ctx
-		defer inner.ServeHTTPC(newCtx, w, r)
+		defer func() {
+			inner.ServeHTTPC(newCtx, w, r)
+		}()
 
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
 			return
@@ -121,7 +125,9 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 		if err != nil {
 			cookie = GenSessionCookie()
 			http.SetCookie(w, cookie)
-
+			if debug {
+				log.Println("No session cookie")
+			}
 			// No OAUTH token can be tied to it because we just generated it so just serve
 			return
 		}
@@ -129,18 +135,28 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 		redisClient := RedisClientFromContext(ctx)
 		if redisClient == nil {
 			// Serve without session
+			if debug {
+				log.Println("redisclient is nil")
+			}
 			return
 		}
 
 		token, err := GetAuthToken(cookie.Value, redisClient)
 		if err != nil {
+			if debug {
+				log.Println("No oauth2 token")
+			}
 			return
 		}
 
 		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
 		if err != nil {
+			if debug {
+				log.Println("Failed to initialize discordgo session")
+			}
 			return
 		}
+		log.Println("Nothing failed all good", session)
 		newCtx = context.WithValue(ctx, ContextKeyDiscordSession, session)
 	}
 	return goji.HandlerFunc(mw)

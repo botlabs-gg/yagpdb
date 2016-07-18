@@ -14,6 +14,7 @@ var (
 	config    *Config
 	templates = template.Must(template.ParseFiles("templates/index.html"))
 	redisPool *pool.Pool
+	debug     = true
 )
 
 func main() {
@@ -46,8 +47,8 @@ func main() {
 func setupRoutes() *goji.Mux {
 	mux := goji.NewMux()
 
-	mux.UseC(SessionMiddleware)
 	mux.UseC(RedisMiddleware)
+	mux.UseC(SessionMiddleware)
 
 	mux.HandleFuncC(pat.Get("/"), index)
 	mux.HandleFuncC(pat.Get("/login"), handleLogin)
