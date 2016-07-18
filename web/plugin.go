@@ -10,7 +10,7 @@ type Plugin interface {
 	// mainMuxer is the root and cpmuxer handles the /cp/ route
 	// the cpmuxer requires a session and to be a admin of the server
 	// being managed, otherwise it will redirect to the homepage
-	Init(mainMuxer, cpMuxer *goji.Mux)
+	InitWeb(mainMuxer, cpMuxer *goji.Mux)
 	Name() string
 }
 

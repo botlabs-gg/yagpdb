@@ -65,8 +65,8 @@ func setupRoutes() *goji.Mux {
 	//mux.HandleC(pat.Get("/dashboard"), RequireSessionMiddleware(goji.HandlerFunc(DashboardIndex)))
 
 	for _, plugin := range plugins {
-		plugin.Init(mux, cpMuxer)
-		log.Println("Initialized", plugin.Name())
+		plugin.InitWeb(mux, cpMuxer)
+		log.Println("Initialized web plugin", plugin.Name())
 	}
 
 	return mux
