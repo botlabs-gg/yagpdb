@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"encoding/base64"
@@ -95,7 +95,7 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		client, err := redisPool.Get()
+		client, err := RedisPool.Get()
 		if err != nil {
 			log.Println("Failed retrieving redis client from pool", err)
 			// Redis is unavailable, just server without then
@@ -103,7 +103,7 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 		inner.ServeHTTPC(context.WithValue(ctx, ContextKeyRedis, client), w, r)
-		redisPool.Put(client)
+		RedisPool.Put(client)
 	}
 	return goji.HandlerFunc(mw)
 }
@@ -125,7 +125,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 		if err != nil {
 			cookie = GenSessionCookie()
 			http.SetCookie(w, cookie)
-			if debug {
+			if Debug {
 				log.Println("No session cookie")
 			}
 			// No OAUTH token can be tied to it because we just generated it so just serve
@@ -135,7 +135,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 		redisClient := RedisClientFromContext(ctx)
 		if redisClient == nil {
 			// Serve without session
-			if debug {
+			if Debug {
 				log.Println("redisclient is nil")
 			}
 			return
@@ -143,7 +143,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 
 		token, err := GetAuthToken(cookie.Value, redisClient)
 		if err != nil {
-			if debug {
+			if Debug {
 				log.Println("No oauth2 token")
 			}
 			return
@@ -151,7 +151,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 
 		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
 		if err != nil {
-			if debug {
+			if Debug {
 				log.Println("Failed to initialize discordgo session")
 			}
 			return
@@ -171,7 +171,7 @@ func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 			urlStr := values.Encode()
 			http.Redirect(w, r, "/?"+urlStr, http.StatusTemporaryRedirect)
-			if debug {
+			if Debug {
 				log.Println("Booted off request with invalid session on path that requires a session")
 			}
 			return

@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"github.com/nhooyr/color/log"
@@ -21,7 +21,7 @@ func IndexHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := templates.ExecuteTemplate(w, "index", templateData)
+	err := Templates.ExecuteTemplate(w, "index", templateData)
 	if err != nil {
 		log.Println("Failed executing templae", err)
 	}
@@ -44,7 +44,7 @@ func RequestLoggerMiddleware(inner goji.Handler) goji.Handler {
 			durColor = "%h[fgBrightRed]"
 		}
 
-		log.Printf(durColor+"%s: Handled request [%5dms]: %s\n", started.Format(time.Stamp), int(duration.Seconds()*1000), r.RequestURI)
+		log.Printf(durColor+"%s: Handled request [%5dms]: %s%r\n", started.Format(time.Stamp), int(duration.Seconds()*1000), r.RequestURI)
 	}
 	return goji.HandlerFunc(mw)
 }

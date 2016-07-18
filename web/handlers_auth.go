@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"fmt"
@@ -17,10 +17,10 @@ var (
 
 func InitOauth() {
 	oauthConf = &oauth2.Config{
-		ClientID:     config.ClientID,
-		ClientSecret: config.ClientSecret,
+		ClientID:     Config.ClientID,
+		ClientSecret: Config.ClientSecret,
 		Scopes:       []string{"identify", "guilds"},
-		RedirectURL:  config.RedirectURL,
+		RedirectURL:  Config.RedirectURL,
 		Endpoint: oauth2.Endpoint{
 			TokenURL: "https://discordapp.com/api/oauth2/token",
 			AuthURL:  "https://discordapp.com/api/oauth2/authorize",

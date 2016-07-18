@@ -1,2 +1,4 @@
-// We don't want filthy pre-configured config files here ! >:O
+cmd/yagpdb/static/
+
+#We don't want filthy pre-configured config files here ! >:O
 *.json
