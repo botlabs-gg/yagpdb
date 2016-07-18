@@ -1,0 +1,2 @@
+// We don't want filthy pre-configured config files here ! >:O
+*.json
