@@ -12,7 +12,7 @@ import (
 
 var (
 	config    *Config
-	templates = template.Must(template.ParseFiles("templates/index.html"))
+	templates = template.Must(template.ParseFiles("templates/index.html", "templates/dashboard_index.html"))
 	redisPool *pool.Pool
 	debug     = true
 )
@@ -47,12 +47,22 @@ func main() {
 func setupRoutes() *goji.Mux {
 	mux := goji.NewMux()
 
+	mux.UseC(RequestLoggerMiddleware)
 	mux.UseC(RedisMiddleware)
 	mux.UseC(SessionMiddleware)
 
-	mux.HandleFuncC(pat.Get("/"), index)
-	mux.HandleFuncC(pat.Get("/login"), handleLogin)
-	mux.HandleFuncC(pat.Get("/confirm_login"), handleConfirmLogin)
+	mux.HandleFuncC(pat.Get("/"), IndexHandler)
+	mux.HandleFuncC(pat.Get("/login"), HandleLogin)
+	mux.HandleFuncC(pat.Get("/confirm_login"), HandleConfirmLogin)
+
+	dashboardMuxer := goji.NewMux()
+	dashboardMuxer.UseC(RequireSessionMiddleware)
+	dashboardMuxer.HandleFuncC(pat.Get("/dashboard"), DashboardIndex)
+
+	mux.Handle(pat.Get("/dashboard/*"), dashboardMuxer)
+	mux.Handle(pat.Get("/dashboard"), dashboardMuxer)
+
+	//mux.HandleC(pat.Get("/dashboard"), RequireSessionMiddleware(goji.HandlerFunc(DashboardIndex)))
 
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 

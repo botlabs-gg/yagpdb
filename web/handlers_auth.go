@@ -29,12 +29,12 @@ func InitOauth() {
 
 }
 
-func handleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	url := oauthConf.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func handleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("error parsing form", err)

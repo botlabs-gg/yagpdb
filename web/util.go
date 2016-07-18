@@ -156,7 +156,6 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 			return
 		}
-		log.Println("Nothing failed all good", session)
 		newCtx = context.WithValue(ctx, ContextKeyDiscordSession, session)
 	}
 	return goji.HandlerFunc(mw)
@@ -172,6 +171,9 @@ func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 			urlStr := values.Encode()
 			http.Redirect(w, r, "/?"+urlStr, http.StatusTemporaryRedirect)
+			if debug {
+				log.Println("Booted off request with invalid session on path that requires a session")
+			}
 			return
 		}
 		inner.ServeHTTPC(ctx, w, r)
