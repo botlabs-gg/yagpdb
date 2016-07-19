@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"github.com/fzzy/radix/redis"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"log"
@@ -41,12 +42,6 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// reqBody, err := ioutil.ReadAll(r.Body)
-	// if err != nil {
-	// 	log.Println("Failed reading requestbody", err)
-	// 	return
-	// }
-
 	for k, v := range r.Header {
 		log.Printf("[%s]: %s\n", k, v)
 	}
@@ -66,38 +61,7 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// session, err := discordgo.New(token.Type() + " " + token.AccessToken)
-	// if err != nil {
-	// 	log.Println("Error creating session", err)
-	// 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	// 	return
-	// }
-
-	//client := oauthConf.Client(ctx, token)
-	//discordgo.EndpointUserGuilds("@me")
-	// resp, err := session.UserGuilds()
-	// if err != nil {
-	// 	log.Println("Error querying discord", err)
-	// 	return
-	// }
-
-	// body, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	log.Println("Error reading respone", err)
-	// 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	// 	return
-	// }
-
-	// log.Println(resp)
-
-	//fmt.Printf("Logged in as discord user: %s\n", *user.Login)
-
-	redisClient := RedisClientFromContext(ctx)
-	if redisClient == nil {
-		log.Println("ERROR CONTACTING REDIS MON")
-		http.Redirect(w, r, "/?error=redis", http.StatusTemporaryRedirect)
-		return
-	}
+	redisClient := ctx.Value(ContextKeyRedis).(*redis.Client)
 
 	// Create a new session cookie cause we can
 	sessionCookie := GenSessionCookie()
@@ -106,9 +70,32 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	err = SetAuthToken(token, sessionCookie.Value, redisClient)
 	if err != nil {
 		log.Println("Failed setting token")
-		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/?err=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}
 
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+}
+
+func HandleLogout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+
+	sessionCookie, err := r.Cookie("yagpdb-session")
+	if err != nil {
+		return
+	}
+	session := sessionCookie.Value
+
+	redisClient := ctx.Value(ContextKeyRedis).(*redis.Client)
+
+	redisClient.Append("SELECT", 1)
+	redisClient.Append("DEL", "token:"+session)
+	redisClient.Append("SELECT", 0) // Put the fucker back
+
+	for i := 0; i < 3; i++ {
+		reply := redisClient.GetReply()
+		if reply.Err != nil {
+			log.Println("Redis error logging out", reply.Err)
+		}
+	}
 }

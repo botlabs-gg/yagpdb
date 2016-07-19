@@ -59,6 +59,7 @@ func setupRoutes() *goji.Mux {
 	mux.HandleFuncC(pat.Get("/"), IndexHandler)
 	mux.HandleFuncC(pat.Get("/login"), HandleLogin)
 	mux.HandleFuncC(pat.Get("/confirm_login"), HandleConfirmLogin)
+	mux.HandleFuncC(pat.Get("/logout"), HandleLogout)
 
 	// Control panel muxer, requires a session
 	cpMuxer := goji.NewMux()
