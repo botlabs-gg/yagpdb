@@ -26,11 +26,6 @@ func Run() {
 	log.Println("Starting yagpdb web server")
 
 	var err error
-	RedisPool, err = pool.NewPool("tcp", Config.Redis, 10)
-	if err != nil {
-		log.Println("Failed initializing redis pool")
-		return
-	}
 
 	InitOauth()
 	mux := setupRoutes()

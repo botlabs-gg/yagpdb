@@ -38,7 +38,8 @@ func RequestLoggerMiddleware(inner goji.Handler) goji.Handler {
 			durColor = "%h[fgBrightRed]"
 		}
 
-		log.Printf(durColor+"%s: Handled request [%5dms]: %s%r\n", started.Format(time.Stamp), int(duration.Seconds()*1000), r.RequestURI)
+		address := r.RemoteAddr
+		log.Printf(durColor+"%s: Handled request [%4dms] %s: %s%r\n", started.Format(time.Stamp), int(duration.Seconds()*1000), address, r.RequestURI)
 	}
 	return goji.HandlerFunc(mw)
 }

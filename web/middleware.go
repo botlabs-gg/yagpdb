@@ -36,7 +36,6 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 // Will put a session cookie in the response if not available and discord session in the context if available
 func SessionMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		log.Println("Session middleware")
 		//log.Println("Session middleware")
 		var newCtx = ctx
 		defer func() {
@@ -147,17 +146,25 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			LogIgnoreErr(common.SetCacheDataJsonSimple(redisClient, session.Token+":guilds", guilds))
 		}
 
-		managedServers := make([]*discordgo.Guild, 0)
-		for _, g := range guilds {
+		wrapped, err := common.GetWrapped(guilds, redisClient)
+		if err != nil {
+			log.Println("Failed wrapping guilds", err)
+			http.Redirect(w, r, "/?err=rediserr", http.StatusTemporaryRedirect)
+			return
+		}
+
+		managedGuilds := make([]*common.WrappedGuild, 0)
+		for _, g := range wrapped {
 			if g.Owner || g.Permissions&discordgo.PermissionManageServer != 0 {
-				managedServers = append(managedServers, g)
+				managedGuilds = append(managedGuilds, g)
 			}
 		}
 
 		templateData := map[string]interface{}{
 			"user":           user,
-			"guilds":         guilds,
-			"managed_guilds": managedServers,
+			"guilds":         wrapped,
+			"managed_guilds": managedGuilds,
+			"clientid":       Config.ClientID,
 		}
 
 		newCtx := context.WithValue(SetContextTemplateData(ctx, templateData), ContextKeyUser, user)

@@ -42,10 +42,6 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	for k, v := range r.Header {
-		log.Printf("[%s]: %s\n", k, v)
-	}
-
 	state := r.FormValue("state")
 	if state != oauthStateString {
 		fmt.Printf("invalid oauth state, expected '%s', got '%s'\n", oauthStateString, state)
