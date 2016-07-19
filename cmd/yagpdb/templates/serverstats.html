@@ -1,11 +1,11 @@
-{{define "dashboard_index"}}
+{{define "cp_serverstats"}}
 
-{{template "dashboard_head"}}
+{{template "cp_head" .}}
 
 
     <div id="wrapper">
 
-        {{template "dashboard_nav" .}}
+        {{template "cp_nav" .}}
 
         <div id="page-wrapper">
             <div class="row">
@@ -553,6 +553,6 @@
     </div>
     <!-- /#wrapper -->
 
-{{template "dashboard_footer"}}
+{{template "cp_footer"}}
 
 {{end}}

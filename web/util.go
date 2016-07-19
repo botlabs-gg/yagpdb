@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"log"
@@ -33,13 +34,15 @@ func GetAuthToken(session string, redisClient *redis.Client) (t *oauth2.Token, e
 	redisClient.Append("GET", "token:"+session)
 	redisClient.Append("SELECT", 0) // Put the fucker back
 
-	reply := redisClient.GetReply()
-	if reply.Err != nil {
-		return nil, reply.Err
+	replies := common.GetRedisReplies(redisClient, 3)
+
+	for _, r := range replies {
+		if r.Err != nil {
+			return nil, r.Err
+		}
 	}
 
-	reply = redisClient.GetReply()
-	raw, err := reply.Bytes()
+	raw, err := replies[1].Bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -47,12 +50,6 @@ func GetAuthToken(session string, redisClient *redis.Client) (t *oauth2.Token, e
 	err = json.Unmarshal(raw, &t)
 	if err != nil {
 		return nil, err
-	}
-
-	reply = redisClient.GetReply() // last select
-	if reply.Err != nil {
-		return nil, reply.Err
-
 	}
 
 	if !t.Valid() {
@@ -70,20 +67,33 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 		return err
 	}
 
-	// We keep oauth tokens in db 1
-	redisClient.Append("SELECT", 1)
-	redisClient.Append("SET", "token:"+session, serialized)
-	redisClient.Append("EXPIRE", "token:"+session, 86400)
-	redisClient.Append("SELECT", 0) // Put the fucker back
-
-	for i := 0; i < 4; i++ {
-		reply := redisClient.GetReply()
-		if reply.Err != nil {
-			return err
-		}
+	cmds := []*common.RedisCmd{
+		&common.RedisCmd{Name: "SELECT", Args: []interface{}{1}},
+		&common.RedisCmd{Name: "SET", Args: []interface{}{"token:" + session, serialized}},
+		&common.RedisCmd{Name: "EXPIRE", Args: []interface{}{"token:" + session, 86400}},
+		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
 	}
 
+	_, err = common.SafeRedisCommands(redisClient, cmds)
+	if err != nil {
+		return err
+	}
 	return nil
+
+	// // We keep oauth tokens in db 1
+	// redisClient.Append("SELECT", 1)
+	// redisClient.Append("SET", "token:"+session, serialized)
+	// redisClient.Append("EXPIRE", "token:"+session, 86400)
+	// redisClient.Append("SELECT", 0) // Put the fucker back
+
+	// for i := 0; i < 4; i++ {
+	// 	reply := redisClient.GetReply()
+	// 	if reply.Err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	// return nil
 }
 
 func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
@@ -140,7 +150,7 @@ func GenSessionCookie() *http.Cookie {
 }
 
 func LogIgnoreErr(err error) {
-	if err == nil {
+	if err != nil {
 		log.Println("Error:", err)
 	}
 }

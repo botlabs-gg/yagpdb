@@ -10,15 +10,9 @@ import (
 
 func IndexHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	templateData := make(map[string]interface{})
-	session := DiscordSessionFromContext(ctx)
-	if session != nil {
-		user, err := session.User("@me")
-		if err != nil {
-			log.Println("Error fetching user data", err)
-		} else {
-			templateData["logged_in"] = true
-			templateData["user"] = user
-		}
+
+	if val := ctx.Value(ContextKeyTemplateData); val != nil {
+		templateData = val.(map[string]interface{})
 	}
 
 	err := Templates.ExecuteTemplate(w, "index", templateData)
@@ -50,4 +44,21 @@ func RequestLoggerMiddleware(inner goji.Handler) goji.Handler {
 }
 
 func HandleSelectServer(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	templateData := ctx.Value(ContextKeyTemplateData).(map[string]interface{})
+
+	// session := DiscordSessionFromContext(ctx)
+	// if session != nil {
+	// 	user, err := session.User("@me")
+	// 	if err != nil {
+	// 		log.Println("Error fetching user data", err)
+	// 	} else {
+	// 		templateData["logged_in"] = true
+	// 		templateData["user"] = user
+	// 	}
+	// }
+
+	err := Templates.ExecuteTemplate(w, "cp_selectserver", templateData)
+	if err != nil {
+		log.Println("Failed executing templae", err)
+	}
 }

@@ -70,7 +70,7 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	err = SetAuthToken(token, sessionCookie.Value, redisClient)
 	if err != nil {
 		log.Println("Failed setting token")
-		http.Redirect(w, r, "/?err=loginfailed", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}
 

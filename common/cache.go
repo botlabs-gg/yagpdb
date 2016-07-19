@@ -2,55 +2,62 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/fzzy/radix/redis"
+)
+
+var (
+	ErrNotFound = errors.New("Not found")
 )
 
 // Items in the cache expire after 1 min
 func GetCacheData(client *redis.Client, key string) ([]byte, error) {
 	client.Append("SELECT", "2")
 	client.Append("GET", key)
-	client.Append("SELECT", "0")
+	client.Append("SELECT", 0)
 
-	// Select reply
-	if reply := client.GetReply(); reply.Err != nil {
-		return nil, reply.Err
+	replies := GetRedisReplies(client, 3)
+	for _, r := range replies {
+		if r.Err != nil {
+			return nil, r.Err
+		}
 	}
 
-	// GET reply
-	reply := client.GetReply()
-	data, err := reply.Bytes()
-	if err != nil {
-		return nil, err
+	data, err := replies[1].Bytes()
+
+	return data, err
+}
+
+// Stores an entry in the cache and sets it to expire after expire
+func SetCacheData(client *redis.Client, key string, expire int, data []byte) error {
+	cmds := []*RedisCmd{
+		&RedisCmd{Name: "SELECT", Args: []interface{}{2}},
+		&RedisCmd{Name: "SET", Args: []interface{}{key, data}},
+		&RedisCmd{Name: "EXPIRE", Args: []interface{}{key, expire}},
+		&RedisCmd{Name: "SELECT", Args: []interface{}{0}},
 	}
 
-	selectReply := client.GetReply()
-	return data, selectReply.Err
+	_, err := SafeRedisCommands(client, cmds)
+	return err
 }
 
 // Stores an entry in the cache and sets it to expire after a minute
-func SetCacheData(client *redis.Client, key string, data []byte) error {
-	client.Append("SELECT", "2")
-	client.Append("SET", key, data)
-	client.Append("EXPIRE", key, 60)
-	client.Append("SELECT", 0)
-
-	for i := 0; i < 4; i++ {
-		reply := client.GetReply()
-		if reply.Err != nil {
-			return reply.Err
-		}
-	}
-	return nil
+func SetCacheDataSimple(client *redis.Client, key string, data []byte) error {
+	return SetCacheData(client, key, 60, data)
 }
 
 // Helper methods
-func SetCacheDataJson(client *redis.Client, key string, data interface{}) error {
+func SetCacheDataJson(client *redis.Client, key string, expire int, data interface{}) error {
 	encoded, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	return SetCacheData(client, key, encoded)
+	return SetCacheData(client, key, expire, encoded)
+}
+
+func SetCacheDataJsonSimple(client *redis.Client, key string, data interface{}) error {
+	return SetCacheDataJson(client, key, 60, data)
 }
 
 func GetCacheDataJson(client *redis.Client, key string, dest interface{}) error {

@@ -60,7 +60,7 @@
                         <a class="page-scroll" href="#download">Smell</a>
                     </li>
                     <li>
-                        {{if .logged_in}}<a href="/dashboard">Dashboard - {{.user.Username}}</a>{{else}}<a href="/login">Login using Discord</a>{{end}}
+                        {{if .user}}<a href="/cp">Control panel - {{.user.Username}}</a>{{else}}<a href="/login">Login using Discord</a>{{end}}
                     </li>
                 </ul>
             </div>

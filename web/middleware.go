@@ -36,6 +36,7 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 // Will put a session cookie in the response if not available and discord session in the context if available
 func SessionMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		log.Println("Session middleware")
 		//log.Println("Session middleware")
 		var newCtx = ctx
 		defer func() {
@@ -69,7 +70,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 		token, err := GetAuthToken(cookie.Value, redisClient)
 		if err != nil {
 			if Debug {
-				log.Println("No oauth2 token")
+				log.Println("No oauth2 token", err)
 			}
 			return
 		}
@@ -130,7 +131,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			}
 
 			// Give the little rascal to the cache
-			LogIgnoreErr(common.SetCacheDataJson(redisClient, session.Token+":user", user))
+			LogIgnoreErr(common.SetCacheDataJson(redisClient, session.Token+":user", 3600, user))
 		}
 
 		var guilds []*discordgo.Guild
@@ -143,7 +144,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 				return
 			}
 
-			LogIgnoreErr(common.SetCacheDataJson(redisClient, session.Token+":guilds", guilds))
+			LogIgnoreErr(common.SetCacheDataJsonSimple(redisClient, session.Token+":guilds", guilds))
 		}
 
 		managedServers := make([]*discordgo.Guild, 0)
@@ -175,20 +176,21 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 		user := ctx.Value(ContextKeyUser).(*discordgo.User)
 		guildID := pat.Param(ctx, "server")
 
-		found := false
+		var guild *discordgo.Guild
 		for _, g := range guilds {
 			if g.ID == guildID && (g.Owner || g.Permissions&discordgo.PermissionManageServer != 0) {
-				found = true
+				guild = g
 				break
 			}
 		}
 
-		if !found {
+		if guild == nil {
 			log.Println("User tried managing server it dosen't have admin access to", user.ID, user.Username, guildID)
 			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
 			return
 		}
-		inner.ServeHTTPC(ctx, w, r)
+
+		inner.ServeHTTPC(SetContextTemplateData(ctx, map[string]interface{}{"current_guild": guild}), w, r)
 	}
 	return goji.HandlerFunc(mw)
 }

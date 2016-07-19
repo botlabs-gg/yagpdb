@@ -3,12 +3,11 @@ package web
 import (
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jonas747/yagpdb/common"
+	"goji.io"
+	"goji.io/pat"
 	"html/template"
 	"log"
 	"net/http"
-
-	"goji.io"
-	"goji.io/pat"
 )
 
 var (
@@ -18,7 +17,7 @@ var (
 	RedisPool *pool.Pool
 
 	// Core template files
-	Templates = template.Must(template.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html"))
+	Templates = template.Must(template.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html"))
 
 	Debug = true // Turns on debug mode
 )
@@ -54,6 +53,7 @@ func setupRoutes() *goji.Mux {
 	mux.UseC(RequestLoggerMiddleware)
 	mux.UseC(RedisMiddleware)
 	mux.UseC(SessionMiddleware)
+	mux.UseC(UserInfoMiddleware)
 
 	// General handlers
 	mux.HandleFuncC(pat.Get("/"), IndexHandler)
@@ -66,7 +66,6 @@ func setupRoutes() *goji.Mux {
 	mux.HandleC(pat.Get("/cp/*"), cpMuxer)
 	mux.HandleC(pat.Get("/cp"), cpMuxer)
 	cpMuxer.UseC(RequireSessionMiddleware)
-	cpMuxer.UseC(UserInfoMiddleware)
 
 	// Server selection has it's own handler
 	cpMuxer.HandleFuncC(pat.Get("/cp"), HandleSelectServer)
