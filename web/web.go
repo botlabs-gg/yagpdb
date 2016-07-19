@@ -47,25 +47,38 @@ func Run() {
 func setupRoutes() *goji.Mux {
 	mux := goji.NewMux()
 
+	// Setup fileserver
+	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
+
+	// General middleware
 	mux.UseC(RequestLoggerMiddleware)
 	mux.UseC(RedisMiddleware)
 	mux.UseC(SessionMiddleware)
 
+	// General handlers
 	mux.HandleFuncC(pat.Get("/"), IndexHandler)
 	mux.HandleFuncC(pat.Get("/login"), HandleLogin)
 	mux.HandleFuncC(pat.Get("/confirm_login"), HandleConfirmLogin)
 
+	// Control panel muxer, requires a session
 	cpMuxer := goji.NewMux()
+	mux.HandleC(pat.Get("/cp/*"), cpMuxer)
+	mux.HandleC(pat.Get("/cp"), cpMuxer)
 	cpMuxer.UseC(RequireSessionMiddleware)
+	cpMuxer.UseC(UserInfoMiddleware)
 
-	mux.Handle(pat.Get("/cp/*"), cpMuxer)
-	mux.Handle(pat.Get("/cp"), cpMuxer)
+	// Server selection has it's own handler
+	cpMuxer.HandleFuncC(pat.Get("/cp"), HandleSelectServer)
+	cpMuxer.HandleFuncC(pat.Get("/cp/"), HandleSelectServer)
 
-	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
-	//mux.HandleC(pat.Get("/dashboard"), RequireSessionMiddleware(goji.HandlerFunc(DashboardIndex)))
+	// Server control panel, requires you to be an admin for the server (owner or have server management role)
+	serverCpMuxer := goji.NewMux()
+	cpMuxer.HandleC(pat.Get("/cp/:server"), serverCpMuxer)
+	cpMuxer.HandleC(pat.Get("/cp/:server/*"), serverCpMuxer)
+	serverCpMuxer.UseC(RequireServerAdminMiddleware)
 
 	for _, plugin := range plugins {
-		plugin.InitWeb(mux, cpMuxer)
+		plugin.InitWeb(mux, serverCpMuxer)
 		log.Println("Initialized web plugin", plugin.Name())
 	}
 

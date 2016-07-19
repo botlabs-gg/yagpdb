@@ -6,6 +6,7 @@ import (
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -25,4 +26,6 @@ func (p *WebPlugin) InitWeb(rootMux, cpMux *goji.Mux) {
 	cpMux.HandleFuncC(pat.Get("/cp/:server/"), HandleStats)
 }
 
-func HandleStats(ctx context.Context, w http.ResponseWriter, r *http.Request) {}
+func HandleStats(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	log.Println("dudud handling control panel")
+}

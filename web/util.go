@@ -6,13 +6,11 @@ import (
 	"errors"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
-	"goji.io"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"log"
 	"math/rand"
 	"net/http"
-	"net/url"
 )
 
 type ContextKey int
@@ -21,6 +19,8 @@ const (
 	ContextKeyRedis ContextKey = iota
 	ContextKeyDiscordSession
 	ContextKeyTemplateData
+	ContextKeyUser
+	ContextKeyGuilds
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
@@ -86,99 +86,16 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 	return nil
 }
 
-// Will put a redis client in the context if available
-func RedisMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		//log.Println("redis middleware")
-		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			inner.ServeHTTPC(ctx, w, r)
-			return
+func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
+	if val := ctx.Value(ContextKeyTemplateData); val != nil {
+		cast := val.(map[string]interface{})
+		for k, v := range data {
+			cast[k] = v
 		}
-
-		client, err := RedisPool.Get()
-		if err != nil {
-			log.Println("Failed retrieving redis client from pool", err)
-			// Redis is unavailable, just server without then
-			inner.ServeHTTPC(ctx, w, r)
-			return
-		}
-		inner.ServeHTTPC(context.WithValue(ctx, ContextKeyRedis, client), w, r)
-		RedisPool.Put(client)
+		return ctx
 	}
-	return goji.HandlerFunc(mw)
-}
 
-// Will put a session cookie in the response if not available and discord session in the context if available
-func SessionMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		//log.Println("Session middleware")
-		var newCtx = ctx
-		defer func() {
-			inner.ServeHTTPC(newCtx, w, r)
-		}()
-
-		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			return
-		}
-
-		cookie, err := r.Cookie("yagpdb-session")
-		if err != nil {
-			cookie = GenSessionCookie()
-			http.SetCookie(w, cookie)
-			if Debug {
-				log.Println("No session cookie")
-			}
-			// No OAUTH token can be tied to it because we just generated it so just serve
-			return
-		}
-
-		redisClient := RedisClientFromContext(ctx)
-		if redisClient == nil {
-			// Serve without session
-			if Debug {
-				log.Println("redisclient is nil")
-			}
-			return
-		}
-
-		token, err := GetAuthToken(cookie.Value, redisClient)
-		if err != nil {
-			if Debug {
-				log.Println("No oauth2 token")
-			}
-			return
-		}
-
-		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
-		if err != nil {
-			if Debug {
-				log.Println("Failed to initialize discordgo session")
-			}
-			return
-		}
-		newCtx = context.WithValue(ctx, ContextKeyDiscordSession, session)
-	}
-	return goji.HandlerFunc(mw)
-}
-
-// Will not serve pages unless a session is available
-func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		session := DiscordSessionFromContext(ctx)
-		if session == nil {
-			values := url.Values{
-				"error": []string{"No session"},
-			}
-			urlStr := values.Encode()
-			http.Redirect(w, r, "/?"+urlStr, http.StatusTemporaryRedirect)
-			if Debug {
-				log.Println("Booted off request with invalid session on path that requires a session")
-			}
-			return
-		}
-		inner.ServeHTTPC(ctx, w, r)
-	}
-	return goji.HandlerFunc(mw)
+	return context.WithValue(ctx, ContextKeyTemplateData, data)
 }
 
 func DiscordSessionFromContext(ctx context.Context) *discordgo.Session {
@@ -220,4 +137,10 @@ func GenSessionCookie() *http.Cookie {
 		MaxAge: 86400,
 	}
 	return cookie
+}
+
+func LogIgnoreErr(err error) {
+	if err == nil {
+		log.Println("Error:", err)
+	}
 }

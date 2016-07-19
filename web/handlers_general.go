@@ -49,11 +49,5 @@ func RequestLoggerMiddleware(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(mw)
 }
 
-// Will make sure a server is selected and that the user has admin access to the server
-// Will serve a select server page if a server has not been selected
-func ControlpanelMiddleware(inner goji.Handler) goji.Handler {
-	return nil
-}
-
 func HandleSelectServer(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 }
