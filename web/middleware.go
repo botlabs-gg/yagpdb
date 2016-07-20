@@ -124,7 +124,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			user, err = session.User("@me")
 			if err != nil {
 				log.Println("Failed getting user info, logging out..")
-				http.Redirect(w, r, "/logout", http.StatusTemporaryRedirect)
+				HandleLogout(ctx, w, r)
 				return
 			}
 
@@ -138,7 +138,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			guilds, err = session.UserGuilds()
 			if err != nil {
 				log.Println("Failed getting user guilds, logging out..")
-				http.Redirect(w, r, "/logout", http.StatusTemporaryRedirect)
+				HandleLogout(ctx, w, r)
 				return
 			}
 
