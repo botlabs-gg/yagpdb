@@ -58,9 +58,12 @@ func setupRoutes() *goji.Mux {
 
 	// Control panel muxer, requires a session
 	cpMuxer := goji.NewMux()
+	cpMuxer.UseC(RequireSessionMiddleware)
+
 	mux.HandleC(pat.Get("/cp/*"), cpMuxer)
 	mux.HandleC(pat.Get("/cp"), cpMuxer)
-	cpMuxer.UseC(RequireSessionMiddleware)
+	mux.HandleC(pat.Post("/cp/*"), cpMuxer)
+	mux.HandleC(pat.Post("/cp"), cpMuxer)
 
 	// Server selection has it's own handler
 	cpMuxer.HandleFuncC(pat.Get("/cp"), HandleSelectServer)
@@ -68,9 +71,12 @@ func setupRoutes() *goji.Mux {
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	serverCpMuxer := goji.NewMux()
+	serverCpMuxer.UseC(RequireServerAdminMiddleware)
+
 	cpMuxer.HandleC(pat.Get("/cp/:server"), serverCpMuxer)
 	cpMuxer.HandleC(pat.Get("/cp/:server/*"), serverCpMuxer)
-	serverCpMuxer.UseC(RequireServerAdminMiddleware)
+	cpMuxer.HandleC(pat.Post("/cp/:server"), serverCpMuxer)
+	cpMuxer.HandleC(pat.Post("/cp/:server/*"), serverCpMuxer)
 
 	for _, plugin := range plugins {
 		plugin.InitWeb(mux, serverCpMuxer)

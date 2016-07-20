@@ -24,6 +24,9 @@ func Run() {
 	Session.AddHandler(HandleGuildCreate)
 	Session.AddHandler(HandleGuildDelete)
 
+	// Session.Debug = true
+	// Session.LogLevel = discordgo.LogDebug
+
 	err := Session.Open()
 	if err != nil {
 		log.Println("Failed opening bot connection", err)

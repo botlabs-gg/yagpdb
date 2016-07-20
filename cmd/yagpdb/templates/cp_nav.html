@@ -24,7 +24,7 @@
             {{if $element.Connected}}
             <a href="/cp/{{$element.ID}}"><i class="fa fa-magic fa-fw"></i>{{$element.Name}}</a>
             {{else}}
-            <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=536079383&guild_id={{$element.ID}}&response_type=code&redirect_uri=http://yagpdb.xyz/cp/"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
+            <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri=http://yagpdb.xyz/cp/"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
             {{end}}
             </li>
             
@@ -74,7 +74,7 @@
                 <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications<span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a href="#" {{if eq .current_page "notifications/general"}} class="active"{{end}}>General</a>
+                        <a href="/cp/{{.current_guild.ID}}/notifications/general" {{if eq .current_page "notifications/general"}} class="active"{{end}}>General</a>
                     </li>
                     <li>
                         <a href="#">-TODO- (reddit, github, twitch etc)</a>

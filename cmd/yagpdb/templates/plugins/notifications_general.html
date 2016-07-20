@@ -1,0 +1,150 @@
+{{define "cp_notifications_general"}}
+
+{{template "cp_head" .}}
+
+
+    <div id="wrapper">
+
+    {{template "cp_nav" .}}
+
+        <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">General notifications</h1>
+                    <p>For info on available template data see <a href="https://godoc.org/github.com/bwmarrin/discordgo">discordgo GoDoc</a> (e.g for user data <a href="https://godoc.org/github.com/bwmarrin/discordgo#User">See here</a>)
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <form role="form" action="" method="post">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="join_server_enabled" {{if .current_config.JoinServerEnabled}} checked{{end}}>Join message in server channel
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="form-group">
+                                                <label>Channel</label>
+                                                <input class="form-control" name="join_server_channel" value="{{.current_config.JoinServerChannel}}">
+                                                <p class="help-block">The channel to send the message in, either the id or name (if you have conflicting names use id, leave empty for default channel)</p>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Message</label>
+                                                <textarea class="form-control" rows="3" name="join_server_msg">{{.current_config.JoinServerMsg}}</textarea>
+                                                <p class="help-block">The message itself, available template data is {{"{{"}}.user{{"}}"}} and {{"{{"}}.guild{{"}}"}} {{"{{"}}.user.Username{{"}}"}} is the user's name and {{"{{"}}.guild.Name{{"}}"}} is the server name)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <div class="checkbox">
+                                                <div class="checkbox">
+                                                    <label>
+                                                        <input type="checkbox" name="join_dm_enabled" {{if .current_config.JoinDMEnabled}} checked {{end}}>Join message in direct message
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="form-group">
+                                                <label>Message</label>
+                                                <textarea class="form-control" rows="3" name="join_dm_msg">{{.current_config.JoinDMMsg}}</textarea>
+                                                <p class="help-block">Available template data is {{"{{"}}.user{{"}}"}} and {{"{{"}}.guild{{"}}"}}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /.col-lg-6 (nested) -->
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="leave_enabled" {{if .current_config.LeaveEnabled}} checked {{end}}>User Leave Message
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="form-group">
+                                                <label>Channel</label>
+                                                <input class="form-control" name="leave_channel" value="{{.current_config.LeaveChannel}}">
+                                                <p class="help-block">The channel to send the message in, either the id or name (if you have conflicting names use id, leave empty for default channel)</p>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Message</label>
+                                                <textarea class="form-control" rows="3" name="leave_msg">{{.current_config.LeaveMsg}}</textarea>
+                                                <p class="help-block">Available template data is {{"{{"}}.user{{"}}"}}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="pin_enabled" {{if .current_config.PinEnabled}} checked{{end}}>Message pinned
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="form-group">
+                                                <label>Channel</label>
+                                                <input class="form-control" name="pin_channel" value="{{.current_config.PinChannel}}">
+                                                <p class="help-block">The channel to send the message in, either the id or name (if you have conflicting names use id, leave empty for default channel)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /.col-lg-6 (nested) -->
+                            </div>
+                             <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="topic_enabled" {{if .current_config.TopicEnabled}} checked {{end}}>Topic change message
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="form-group">
+                                                <label>Channel</label>
+                                                <input class="form-control" name="topic_channel" value="{{.current_config.TopicChannel}}">
+                                                <p class="help-block">The channel to send the message in, either the id or name (if you have conflicting names use id, leave empty for default channel)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /.col-lg-6 (nested) -->
+                            </div>
+                            <!-- /.row (nested) -->
+                        <!-- /.panel-body -->
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->            
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+{{template "cp_footer" .}}
+
+{{end}}

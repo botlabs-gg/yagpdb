@@ -22,6 +22,7 @@ const (
 	ContextKeyTemplateData
 	ContextKeyUser
 	ContextKeyGuilds
+	ContextKeyCurrentGuild
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
@@ -79,21 +80,6 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 		return err
 	}
 	return nil
-
-	// // We keep oauth tokens in db 1
-	// redisClient.Append("SELECT", 1)
-	// redisClient.Append("SET", "token:"+session, serialized)
-	// redisClient.Append("EXPIRE", "token:"+session, 86400)
-	// redisClient.Append("SELECT", 0) // Put the fucker back
-
-	// for i := 0; i < 4; i++ {
-	// 	reply := redisClient.GetReply()
-	// 	if reply.Err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// return nil
 }
 
 func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
@@ -145,6 +131,7 @@ func GenSessionCookie() *http.Cookie {
 		Name:   "yagpdb-session",
 		Value:  encoded,
 		MaxAge: 86400,
+		Path:   "/",
 	}
 	return cookie
 }

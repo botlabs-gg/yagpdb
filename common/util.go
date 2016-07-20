@@ -1,9 +1,45 @@
 package common
 
 import (
+	"encoding/json"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 )
+
+func GetRedisJson(client *redis.Client, db int, key string, out interface{}) error {
+	client.Append("SELECT", db)
+	client.Append("GET", key)
+
+	replies := GetRedisReplies(client, 2)
+	for _, reply := range replies {
+		if reply.Err != nil {
+			return reply.Err
+		}
+	}
+
+	raw, err := replies[1].Bytes()
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(raw, out)
+	return err
+}
+
+func SetRedisJson(client *redis.Client, db int, key string, value interface{}) error {
+	serialized, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	cmds := []*RedisCmd{
+		&RedisCmd{Name: "SELECT", Args: []interface{}{db}},
+		&RedisCmd{Name: "SET", Args: []interface{}{key, serialized}},
+	}
+
+	_, err = SafeRedisCommands(client, cmds)
+	return err
+}
 
 func GetRedisReplies(client *redis.Client, n int) []*redis.Reply {
 	out := make([]*redis.Reply, n)

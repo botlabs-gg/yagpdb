@@ -21,7 +21,7 @@ func (p *WebPlugin) Name() string {
 }
 
 func (p *WebPlugin) InitWeb(rootMux, cpMux *goji.Mux) {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/serverstats.html"))
+	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/serverstats.html"))
 	cpMux.HandleFuncC(pat.Get("/cp/:server"), HandleStats)
 	cpMux.HandleFuncC(pat.Get("/cp/:server/"), HandleStats)
 }
@@ -30,5 +30,6 @@ func HandleStats(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	log.Println("dudud handling control panel")
 	templateData := ctx.Value(web.ContextKeyTemplateData).(map[string]interface{})
 	templateData["current_page"] = "serverstats"
+
 	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_serverstats", templateData))
 }

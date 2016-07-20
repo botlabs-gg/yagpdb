@@ -65,7 +65,6 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 			return
 		}
-
 		token, err := GetAuthToken(cookie.Value, redisClient)
 		if err != nil {
 			if Debug {
@@ -197,7 +196,10 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		inner.ServeHTTPC(SetContextTemplateData(ctx, map[string]interface{}{"current_guild": guild}), w, r)
+		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
+		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild})
+
+		inner.ServeHTTPC(newCtx, w, r)
 	}
 	return goji.HandlerFunc(mw)
 }
