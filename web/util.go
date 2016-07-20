@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
@@ -83,15 +84,17 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 }
 
 func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
+	// Check for existing data
 	if val := ctx.Value(ContextKeyTemplateData); val != nil {
-		cast := val.(map[string]interface{})
+		cast := val.(TemplateData)
 		for k, v := range data {
 			cast[k] = v
 		}
 		return ctx
 	}
 
-	return context.WithValue(ctx, ContextKeyTemplateData, data)
+	// Fallback
+	return context.WithValue(ctx, ContextKeyTemplateData, TemplateData(data))
 }
 
 func DiscordSessionFromContext(ctx context.Context) *discordgo.Session {
@@ -139,5 +142,41 @@ func GenSessionCookie() *http.Cookie {
 func LogIgnoreErr(err error) {
 	if err != nil {
 		log.Println("Error:", err)
+	}
+}
+
+type TemplateData map[string]interface{}
+
+func (t TemplateData) AddAlerts(alerts ...*Alert) {
+	if t["alerts"] == nil {
+		t["alerts"] = make([]*Alert, 0)
+	}
+
+	t["alerts"] = append(t["alerts"].([]*Alert), alerts...)
+}
+
+type Alert struct {
+	Style   string
+	Message string
+}
+
+const (
+	AlertDanger  = "danger"
+	AlertSuccess = "success"
+	AlertInfo    = "info"
+	AlertWarning = "warning"
+)
+
+func ErrorAlert(args ...interface{}) *Alert {
+	return &Alert{
+		Style:   AlertDanger,
+		Message: fmt.Sprint(args),
+	}
+}
+
+func SucessAlert(args ...interface{}) *Alert {
+	return &Alert{
+		Style:   AlertSuccess,
+		Message: fmt.Sprint(args),
 	}
 }

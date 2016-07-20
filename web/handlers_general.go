@@ -9,10 +9,10 @@ import (
 )
 
 func IndexHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := make(map[string]interface{})
+	templateData := TemplateData(make(map[string]interface{}))
 
 	if val := ctx.Value(ContextKeyTemplateData); val != nil {
-		templateData = val.(map[string]interface{})
+		templateData = val.(TemplateData)
 	}
 
 	err := Templates.ExecuteTemplate(w, "index", templateData)
@@ -45,7 +45,7 @@ func RequestLoggerMiddleware(inner goji.Handler) goji.Handler {
 }
 
 func HandleSelectServer(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(ContextKeyTemplateData).(map[string]interface{})
+	templateData := ctx.Value(ContextKeyTemplateData).(TemplateData)
 
 	err := Templates.ExecuteTemplate(w, "cp_selectserver", templateData)
 	if err != nil {
