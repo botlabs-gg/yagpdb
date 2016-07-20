@@ -50,10 +50,6 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 		PinEnabled: r.FormValue("pin_enabled") == "on",
 		PinChannel: r.FormValue("pin_channel"),
 	}
-	log.Println(newConfig)
-	for k, v := range r.Form {
-		log.Printf("[%s]: %v", k, v)
-	}
 
 	err := common.SetRedisJson(client, 0, "notifications/general:"+activeGuild.ID, newConfig)
 	if err != nil {
