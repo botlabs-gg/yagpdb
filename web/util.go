@@ -177,6 +177,6 @@ func ErrorAlert(args ...interface{}) *Alert {
 func SucessAlert(args ...interface{}) *Alert {
 	return &Alert{
 		Style:   AlertSuccess,
-		Message: fmt.Sprint(args),
+		Message: fmt.Sprint(args...),
 	}
 }
