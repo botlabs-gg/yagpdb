@@ -39,22 +39,22 @@ func (p *Plugin) InitWeb(mainMuxer, cpMuxer *goji.Mux) {
 }
 
 type Config struct {
-	JoinServerEnabled bool
-	JoinServerChannel string
-	JoinServerMsg     string
+	JoinServerEnabled bool   `json:"join_server_enabled`
+	JoinServerChannel string `json:"join_server_channel"`
+	JoinServerMsg     string `json:"join_server_msg"`
 
-	JoinDMEnabled bool
-	JoinDMMsg     string
+	JoinDMEnabled bool   `json:"join_dm_enabled"`
+	JoinDMMsg     string `json:"join_dm_msg"`
 
-	LeaveEnabled bool
-	LeaveChannel string
-	LeaveMsg     string
+	LeaveEnabled bool   `json:"leave_enabled"`
+	LeaveChannel string `json:"leave_channel"`
+	LeaveMsg     string `json:"leave_msg"`
 
-	PinEnabled bool
-	PinChannel string
+	PinEnabled bool   `json:"pin_enabled"`
+	PinChannel string `json:"pin_channel"`
 
-	TopicEnabled bool
-	TopicChannel string
+	TopicEnabled bool   `json:"topic_enabled"`
+	TopicChannel string `json:"topic_channel"`
 }
 
 var DefaultConfig = &Config{}

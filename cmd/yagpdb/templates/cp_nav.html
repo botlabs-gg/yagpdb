@@ -34,7 +34,7 @@
     </li>
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-user fa-fw"></i> You! <i class="fa fa-caret-down"></i>
+            <i class="fa fa-user fa-fw"></i> {{.user.Username}} <-- smells bad! <i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">
             <li><a href=""><i class="fa fa-user fa-fw"></i> Admire yourself</a>
@@ -58,6 +58,18 @@
         <ul class="nav" id="side-menu">
             <li>
                 <a href="/cp/{{.current_guild.ID}}" {{if eq .current_page "serverstats"}} class="active"{{end}}><i class="fa fa-dashboard fa-fw"></i> Stats</a>
+            </li>
+            <li>
+                <a href="#"><i class="fa fa-trophy fa-fw"></i> Commands<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    <li>
+                        <a href="/cp/{{.current_guild.ID}}/commands">Command settings</a>
+                    </li>
+                    <li>
+                        <a href="/cp/{{.current_guild.ID}}/customcommands">Custom Commands</a>
+                    </li>
+                </ul>
+                <!-- /.nav-second-level -->
             </li>
             <li>
                 <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications<span class="fa arrow"></span></a>

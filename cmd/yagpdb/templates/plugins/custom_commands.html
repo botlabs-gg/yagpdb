@@ -1,0 +1,98 @@
+{{define "cp_custom_commands"}}
+
+{{template "cp_head" .}}
+
+
+    <div id="wrapper">
+
+    {{template "cp_nav" .}}
+
+        <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Custom Commands</h1>
+                    <p>For info on available template data see <a href="https://godoc.org/github.com/bwmarrin/discordgo">discordgo GoDoc</a> (e.g for user data <a href="https://godoc.org/github.com/bwmarrin/discordgo#User">See here</a>, the template engine used is go's html/template)</p>
+                    <p>Some quick exeamples: {{"{{"}}.user.Username{{"}}"}} - will be replaced by username, {{"{{"}}.guild.Name{{"}}"}} - Will be replaced by guild (server) name</p>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            {{template "cp_alerts" .}}
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Add new
+                        </div>
+                        <div class="panel-body">
+                            <form class="form-inline" method="post" action="/cp/{{.current_guild.ID}}/customcommands">
+                                <div class="form-group">
+                                    <label for="trigger_type">Trigger type</label>
+                                    <select id="trigger_type" class="form-control" name="type">
+                                        <option value="cmd">Command (starts with command prefix and trigger)</option>
+                                        <option value="prefix">Starts with</option>
+                                        <option value="contains">Contains</option>
+                                        <option value="regex">Regex</option>
+                                        <option value="exact">Exact match</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="trigger">Trigger</label>
+                                    <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun">
+                                </div>
+                                <div class="form-group">
+                                    <label for="response">Response</label>
+                                    <textarea class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-default">Add</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Existing commands
+                        </div>
+                        <div class="panel-body">
+                            {{$guild := .current_guild.ID}}
+                            {{range .commands}}
+                            <form class="form-inline" method="post" action="/cp/{{$guild}}/customcommands/{{.ID}}/update">
+                                <div class="form-group">
+                                    <label for="trigger_type">Trigger type</label>
+                                    <select id="trigger_type" class="form-control" name="type">
+                                        <option value="cmd" {{if eq .TriggerType 0}} selected{{end}}>Command (starts with command prefix and trigger)</option>
+                                        <option value="prefix" {{if eq .TriggerType 1}} selected{{end}}>Starts with</option>
+                                        <option value="contains" {{if eq .TriggerType 2}} selected{{end}}>Contains</option>
+                                        <option value="regex" {{if eq .TriggerType 3}} selected{{end}}>Regex</option>
+                                        <option value="exact"{{if eq .TriggerType 4}} selected{{end}}>Exact match</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="trigger">Trigger</label>
+                                    <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.Trigger}}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="response">Response</label>
+                                    <textarea class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
+                                </div>
+                                <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
+                                <button type="submit" class="btn btn-default" formaction="/cp/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
+                                <button type="submit" class="btn btn-default" formaction="/cp/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
+                            </form>
+                            {{end}}
+                        </div>
+                    </div>
+
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->            
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+{{template "cp_footer" .}}
+
+{{end}}

@@ -5,7 +5,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/web"
@@ -65,6 +67,8 @@ func main() {
 	// Setup plugins
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()
+	commands.RegisterPlugin()
+	customcommands.RegisterPlugin()
 
 	// RUN FOREST RUN
 	if flagMode == "web" || flagMode == "both" {
