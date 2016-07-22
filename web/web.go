@@ -17,7 +17,7 @@ var (
 	RedisPool *pool.Pool
 
 	// Core template files
-	Templates = template.Must(template.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html"))
+	Templates = template.Must(template.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
 
 	Debug = true // Turns on debug mode
 )
@@ -77,6 +77,9 @@ func setupRoutes() *goji.Mux {
 	cpMuxer.HandleC(pat.Get("/cp/:server/*"), serverCpMuxer)
 	cpMuxer.HandleC(pat.Post("/cp/:server"), serverCpMuxer)
 	cpMuxer.HandleC(pat.Post("/cp/:server/*"), serverCpMuxer)
+
+	serverCpMuxer.HandleFuncC(pat.Get("/cp/:server/cplogs"), HandleCPLogs)
+	serverCpMuxer.HandleFuncC(pat.Get("/cp/:server/cplogs/"), HandleCPLogs)
 
 	for _, plugin := range plugins {
 		plugin.InitWeb(mux, serverCpMuxer)

@@ -1,6 +1,8 @@
 package notifications
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -94,7 +96,16 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 
 	r.ParseForm()
 
-	err := common.SetRedisJson(client, 0, "notifications/general:"+activeGuild.ID, newConfig)
+	serialized, err := json.Marshal(newConfig)
+	if err == nil {
+		user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+		logMsg := fmt.Sprintf("%s(%s) updated notifications settings to %s", user.Username, user.ID, string(serialized))
+		common.AddCPLogEntry(client, activeGuild.ID, logMsg)
+	} else {
+		log.Println("Failed serializing config", err)
+	}
+
+	err = common.SetRedisJson(client, 0, "notifications/general:"+activeGuild.ID, newConfig)
 	if err != nil {
 		log.Println("Error setting config", err)
 	}

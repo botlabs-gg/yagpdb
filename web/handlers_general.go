@@ -1,6 +1,8 @@
 package web
 
 import (
+	"github.com/bwmarrin/discordgo"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/nhooyr/color/log"
 	"goji.io"
 	"golang.org/x/net/context"
@@ -51,4 +53,20 @@ func HandleSelectServer(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		log.Println("Failed executing templae", err)
 	}
+}
+
+func HandleCPLogs(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	activeGuild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+	client := RedisClientFromContext(ctx)
+
+	templateData := ctx.Value(ContextKeyTemplateData).(TemplateData)
+	templateData["current_page"] = "cp_logs"
+
+	logs, err := common.GetCPLogEntries(client, activeGuild.ID)
+	if err != nil {
+		templateData.AddAlerts(ErrorAlert("Failed retrieving logs", err))
+	} else {
+		templateData["entries"] = logs
+	}
+	LogIgnoreErr(Templates.ExecuteTemplate(w, "cp_action_logs", templateData))
 }

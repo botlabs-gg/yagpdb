@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
@@ -65,8 +66,10 @@ func HandlePostCommands(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	templateData["current_config"] = newConfig
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_commands", templateData))
+	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated commands settings", user.Username, user.ID))
 
+	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_commands", templateData))
 }
 
 type CommandsConfig struct {

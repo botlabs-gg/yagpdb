@@ -2,6 +2,7 @@ package customcommands
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -138,6 +139,9 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 		templateData["commands"] = commands
 	}
 
+	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated command #%s", user.Username, user.ID, cmdIndex))
+
 	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
 }
 
@@ -166,6 +170,9 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	} else {
 		templateData["commands"] = commands
 	}
+
+	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Deleted command #%s", user.Username, user.ID, cmdIndex))
 
 	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
 
