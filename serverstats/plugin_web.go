@@ -6,7 +6,6 @@ import (
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -27,7 +26,6 @@ func (p *WebPlugin) InitWeb(rootMux, cpMux *goji.Mux) {
 }
 
 func HandleStats(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	log.Println("dudud handling control panel")
 	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
 	templateData["current_page"] = "serverstats"
 
