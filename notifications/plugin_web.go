@@ -12,23 +12,18 @@ import (
 )
 
 func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+
 	templateData["current_page"] = "notifications/general"
-
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
-
 	templateData["current_config"] = GetConfig(client, activeGuild.ID)
 
 	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_notifications_general", templateData))
 }
 
 func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
-	templateData["current_page"] = "notifications/general"
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
+	templateData["current_page"] = "notifications/general"
 
 	previousConfig := GetConfig(client, activeGuild.ID)
 

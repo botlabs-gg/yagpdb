@@ -14,11 +14,8 @@ import (
 )
 
 func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "custom_commands"
-
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
 	if err != nil {
@@ -31,10 +28,8 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 }
 
 func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "custom_commands"
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 	r.ParseForm()
 
@@ -90,10 +85,8 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	cmdIndex := pat.Param(ctx, "cmd")
 
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "custom_commands"
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 	triggerType := TriggerTypeFromForm(r.FormValue("type"))
 	id, _ := strconv.ParseInt(cmdIndex, 10, 32)
@@ -146,11 +139,8 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 }
 
 func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "custom_commands"
-
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 	cmdIndex := pat.Param(ctx, "cmd")
 

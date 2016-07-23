@@ -180,3 +180,12 @@ func SucessAlert(args ...interface{}) *Alert {
 		Message: fmt.Sprint(args...),
 	}
 }
+
+// Returns base context data for control panel plugins
+func GetBaseCPContextData(ctx context.Context) (*redis.Client, *discordgo.Guild, TemplateData) {
+	client := RedisClientFromContext(ctx)
+	guild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+	templateData := ctx.Value(ContextKeyTemplateData).(TemplateData)
+
+	return client, guild, templateData
+}

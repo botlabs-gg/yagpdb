@@ -23,6 +23,10 @@ var (
 )
 
 func Run() {
+
+	Config = common.Conf
+	RedisPool = common.RedisPool
+
 	log.Println("Starting yagpdb web server")
 
 	var err error

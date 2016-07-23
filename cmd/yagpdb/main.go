@@ -15,22 +15,33 @@ import (
 )
 
 var (
-	flagMode   string
+	flagRunBot    bool
+	flagRunWeb    bool
+	flagRunReddit bool
+
 	flagAction string
+
+	flagRunEverything bool
 
 	BotSession *discordgo.Session
 	RedisPool  *pool.Pool
 )
 
 func init() {
-	flag.StringVar(&flagMode, "m", "both", "The mode to run yagpdb (web, bot, both)")
+	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot")
+	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
+	flag.BoolVar(&flagRunReddit, "reddit", false, "Set to run reddit bot")
+
+	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
+
 	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected")
 	flag.Parse()
 }
 
 func main() {
-	if flagMode != "bot" && flagMode != "web" && flagMode != "both" {
-		log.Println("mode (-m) has to be one of bot, web and both")
+
+	if !flagRunBot && !flagRunWeb && !flagRunReddit && !flagRunEverything && flagAction == "" {
+		log.Println("Didnt specify what to run, see -h for more info")
 		return
 	}
 
@@ -40,15 +51,12 @@ func main() {
 		log.Println("Failed loading config", err)
 		return
 	}
-	web.Config = config
-	bot.Config = config
 
 	BotSession, err = discordgo.New(config.BotToken)
 	if err != nil {
 		log.Println("Error intializing bot session:", err)
 		return
 	}
-	bot.Session = BotSession
 
 	RedisPool, err = pool.NewPool("tcp", config.Redis, 10)
 	if err != nil {
@@ -56,13 +64,14 @@ func main() {
 		return
 	}
 
-	web.RedisPool = RedisPool
-	bot.RedisPool = RedisPool
-
 	if flagAction != "" {
 		runAction(flagAction)
 		return
 	}
+
+	common.RedisPool = RedisPool
+	common.Conf = config
+	common.BotSession = BotSession
 
 	// Setup plugins
 	serverstats.RegisterPlugin()
@@ -70,12 +79,12 @@ func main() {
 	commands.RegisterPlugin()
 	customcommands.RegisterPlugin()
 
-	// RUN FOREST RUN
-	if flagMode == "web" || flagMode == "both" {
+	// RUN FORREST RUN
+	if flagRunWeb || flagRunEverything {
 		go web.Run()
 	}
 
-	if flagMode == "bot" || flagMode == "both" {
+	if flagRunBot || flagRunEverything {
 		go bot.Run()
 	}
 	select {}

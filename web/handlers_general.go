@@ -1,7 +1,6 @@
 package web
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/nhooyr/color/log"
 	"goji.io"
@@ -56,10 +55,7 @@ func HandleSelectServer(ctx context.Context, w http.ResponseWriter, r *http.Requ
 }
 
 func HandleCPLogs(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	activeGuild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
-	client := RedisClientFromContext(ctx)
-
-	templateData := ctx.Value(ContextKeyTemplateData).(TemplateData)
+	client, activeGuild, templateData := GetBaseCPContextData(ctx)
 	templateData["current_page"] = "cp_logs"
 
 	logs, err := common.GetCPLogEntries(client, activeGuild.ID)

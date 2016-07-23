@@ -14,10 +14,15 @@ var (
 )
 
 func Run() {
+
+	Config = common.Conf
+	Session = common.BotSession
+	RedisPool = common.RedisPool
+
 	log.Println("Running bot...")
 	for _, plugin := range plugins {
 		plugin.InitBot()
-		log.Println("Initialised bot plugin", plugin.Name())
+		log.Println("Initialized bot plugin", plugin.Name())
 	}
 
 	Session.AddHandler(HandleReady)

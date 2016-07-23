@@ -176,6 +176,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 }
 
 // Makes sure the user has admin priviledges on the server
+// Also sets active guild
 func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		guilds := ctx.Value(ContextKeyGuilds).([]*discordgo.Guild)
