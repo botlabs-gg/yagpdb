@@ -57,11 +57,13 @@
                         <a class="page-scroll" href="#about">About</a>
                     </li>
                     <li>
-                        <a class="page-scroll" href="#download">Smell</a>
-                    </li>
-                    <li>
                         {{if .user}}<a href="/cp">Control panel - {{.user.Username}}</a>{{else}}<a href="/login">Login using Discord</a>{{end}}
                     </li>
+                    {{if .user}}
+                    <li>
+                        <a href="/logout">Logout</a>
+                    </li>
+                    {{end}}
                 </ul>
             </div>
             <!-- /.navbar-collapse -->
@@ -75,8 +77,8 @@
             <div class="container">
                 <div class="row">
                     <div class="col-md-8 col-md-offset-2">
-                        <h1 class="brand-heading">YAGPDB - THE BEST FUCKING DISCORD BOT OUT THERE HAVE YOU NOT HEARD</h1>
-                        <p class="intro-text">Yet another general purpose discord bot. Because why not.</p>
+                        <h1 class="brand-heading"><br/>YAGPDB - THE BEST FREAKING DISCORD BOT OUT THERE HAVE YOU NOT HEARD!?</h1>
+                        <p class="intro-text">Yet another general purpose discord bot. Because 1000 wasn't enough</p>
                         <a href="#about" class="btn btn-circle page-scroll">
                             <i class="fa fa-angle-double-down animated"></i>
                         </a>
@@ -91,7 +93,7 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2">
                 <h2>About YAGPDB</h2>
-                <p>This bot was made because i wanted to.</p>
+                <p>Not much to say, it does some neat stuff and has a neat interface and works, pretty boring.</p>
             </div>
         </div>
     </section>

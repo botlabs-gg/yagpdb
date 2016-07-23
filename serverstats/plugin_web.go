@@ -22,8 +22,8 @@ func (p *WebPlugin) Name() string {
 
 func (p *WebPlugin) InitWeb(rootMux, cpMux *goji.Mux) {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/serverstats.html"))
-	cpMux.HandleFuncC(pat.Get("/cp/:server"), HandleStats)
-	cpMux.HandleFuncC(pat.Get("/cp/:server/"), HandleStats)
+	cpMux.HandleFuncC(pat.Get("/cp/:server/stats"), HandleStats)
+	cpMux.HandleFuncC(pat.Get("/cp/:server/stats/"), HandleStats)
 }
 
 func HandleStats(ctx context.Context, w http.ResponseWriter, r *http.Request) {

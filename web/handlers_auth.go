@@ -56,7 +56,6 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		http.Redirect(w, r, "/?error=oauth2failure", http.StatusTemporaryRedirect)
 		return
 	}
-
 	redisClient := ctx.Value(ContextKeyRedis).(*redis.Client)
 
 	// Create a new session cookie cause we can

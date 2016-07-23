@@ -6,7 +6,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    <a class="navbar-brand" href="/cp/{{.current_guild.ID}}">YAGPDB - {{if .current_guild}}{{.current_guild.Name}}{{else}}Control panel{{end}}. <b>Very early version, don't use it! (not many features and bugs)</b></a>
+    <a class="navbar-brand" {{if .current_guild}} href="/cp/{{.current_guild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small> - Control Panel{{if .current_guild}}: <b>{{.current_guild.Name}}</b>{{end}}.</a>
 </div>
 <!-- /.navbar-header -->
 
@@ -14,7 +14,7 @@
     <!-- /.dropdown -->
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-folder-open  fa-lg fa-fw"></i> Select server <i class="fa fa-caret-down"></i>
+            <i class="fa fa-folder-open  fa-lg fa-fw"></i> {{if .current_guild}}{{.current_guild.Name}}{{else}}Select a server{{end}} <i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">    
             {{$clientid := .clientid}}
@@ -22,7 +22,7 @@
             
             <li>
             {{if $element.Connected}}
-            <a href="/cp/{{$element.ID}}"><i class="fa fa-magic fa-fw"></i>{{$element.Name}}</a>
+            <a href="/cp/{{$element.ID}}/stats"><i class="fa fa-magic fa-fw"></i>{{$element.Name}}</a>
             {{else}}
             <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri=http://yagpdb.xyz/cp/"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
             {{end}}
@@ -57,13 +57,13 @@
     <div class="sidebar-nav navbar-collapse">
         <ul class="nav" id="side-menu">
             <li>
-                <a href="/cp/{{.current_guild.ID}}" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
+                <a href="/cp/{{.current_guild.ID}}/stats" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
             </li>
             <li>
                 <a href="/cp/{{.current_guild.ID}}/cplogs" ><i class="fa fa-tree fa-fw"></i> Controlpanel Logs</a>
             </li>
             <li>
-                <a href="#"><i class="fa fa-commenting fa-fw"></i> Commands<span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-bullseye fa-fw"></i> Commands<span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
                         <a href="/cp/{{.current_guild.ID}}/commands">Command settings</a>
