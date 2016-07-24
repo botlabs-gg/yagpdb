@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/lunixbochs/vtclean"
+	"image"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -163,6 +164,34 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			clientId := bot.Config.ClientID
 			link := fmt.Sprintf("https://discordapp.com/oauth2/authorize?client_id=%s&scope=bot&permissions=535948311&response_type=code&redirect_uri=http://yagpdb.xyz/cp/", clientId)
 			_, err := bot.Session.ChannelMessageSend(m.ChannelID, "You manage this bot through the control panel interface but heres an invite link incase you just want that\n"+link)
+			return err
+		},
+	},
+	&commandsystem.SimpleCommand{
+		Name:         "Ascii",
+		Aliases:      []string{"asci"},
+		Description:  "Converts an image to ascii",
+		RunInDm:      true,
+		RequiredArgs: 1,
+		Arguments: []*commandsystem.ArgumentDef{
+			&commandsystem.ArgumentDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentTypeString},
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+
+			resp, err := http.Get(cmd.Args[0].Str())
+			if err != nil {
+				return err
+			}
+
+			img, _, err := image.Decode(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				return err
+			}
+
+			out := Convert2Ascii(ScaleImage(img, 50))
+			log.Println(len(string(out)))
+			_, err = bot.Session.ChannelMessageSend(m.ChannelID, "```\n"+string(out)+"\n```")
 			return err
 		},
 	},
