@@ -22,6 +22,8 @@ var (
 	flagAction string
 
 	flagRunEverything bool
+	flagAddr          string
+	flagConfig        string
 
 	BotSession *discordgo.Session
 	RedisPool  *pool.Pool
@@ -34,6 +36,8 @@ func init() {
 
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 
+	flag.StringVar(&flagAddr, "addr", ":5000", "Address for webserver to listen on")
+	flag.StringVar(&flagConfig, "conf", "config.json", "Path to config file")
 	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected")
 	flag.Parse()
 }
@@ -46,7 +50,7 @@ func main() {
 	}
 
 	log.Println("YAGPDB is initializing...")
-	config, err := common.LoadConfig("config.json")
+	config, err := common.LoadConfig(flagConfig)
 	if err != nil {
 		log.Println("Failed loading config", err)
 		return
@@ -83,6 +87,7 @@ func main() {
 
 	// RUN FORREST RUN
 	if flagRunWeb || flagRunEverything {
+		web.ListenAddress = flagAddr
 		go web.Run()
 	}
 

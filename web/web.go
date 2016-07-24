@@ -19,7 +19,8 @@ var (
 	// Core template files
 	Templates = template.Must(template.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
 
-	Debug = true // Turns on debug mode
+	Debug         = true // Turns on debug mode
+	ListenAddress = ":5000"
 )
 
 func Run() {
@@ -36,7 +37,7 @@ func Run() {
 
 	log.Println("Running webserver!")
 
-	err = http.ListenAndServe(":5000", mux)
+	err = http.ListenAndServe(ListenAddress, mux)
 	if err != nil {
 		log.Println("Error running webserver", err)
 	}
