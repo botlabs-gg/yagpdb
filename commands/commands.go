@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -18,6 +19,7 @@ type Plugin struct{}
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
+	bot.RegisterPlugin(plugin)
 }
 
 func (p *Plugin) InitWeb(rootMux, cpMux *goji.Mux) {
