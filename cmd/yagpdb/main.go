@@ -58,7 +58,7 @@ func main() {
 		return
 	}
 	BotSession.MaxRestRetries = 3
-	BotSession.LogLevel = discordgo.LogInformational
+	//BotSession.LogLevel = discordgo.LogInformational
 
 	RedisPool, err = pool.NewPool("tcp", config.Redis, 10)
 	if err != nil {

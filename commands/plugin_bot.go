@@ -154,4 +154,16 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return err
 		},
 	},
+	&commandsystem.SimpleCommand{
+		Name:        "Invite",
+		Aliases:     []string{"inv", "i"},
+		Description: "Responds with bto invite link",
+		RunInDm:     true,
+		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+			clientId := bot.Config.ClientID
+			link := fmt.Sprintf("https://discordapp.com/oauth2/authorize?client_id=%s&scope=bot&permissions=535948311&response_type=code&redirect_uri=http://yagpdb.xyz/cp/", clientId)
+			_, err := bot.Session.ChannelMessageSend(m.ChannelID, "You manage this bot through the control panel interface but heres an invite link incase you just want that\n"+link)
+			return err
+		},
+	},
 }
