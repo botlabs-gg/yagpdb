@@ -142,7 +142,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			split := strings.Split(string(unescaped), "\n")
 
 			out := "```\n"
-			for i := 0; i < 16; i++ {
+			for i := 0; i < 7; i++ {
 				if i >= len(split) {
 					break
 				}
