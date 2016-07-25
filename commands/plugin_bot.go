@@ -190,7 +190,6 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 
 			out := Convert2Ascii(ScaleImage(img, 50))
-			log.Println(len(string(out)))
 			_, err = bot.Session.ChannelMessageSend(m.ChannelID, "```\n"+string(out)+"\n```")
 			return err
 		},

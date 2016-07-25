@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/notifications"
+	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/web"
 	"log"
@@ -84,6 +85,7 @@ func main() {
 	notifications.RegisterPlugin()
 	commands.RegisterPlugin()
 	customcommands.RegisterPlugin()
+	reddit.RegisterPlugin()
 
 	// RUN FORREST RUN
 	if flagRunWeb || flagRunEverything {
@@ -94,6 +96,11 @@ func main() {
 	if flagRunBot || flagRunEverything {
 		go bot.Run()
 	}
+
+	if flagRunReddit || flagRunEverything {
+		go reddit.RunReddit()
+	}
+
 	select {}
 }
 
