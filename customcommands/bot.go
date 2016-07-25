@@ -61,14 +61,21 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {
 	// set to globalprefix+" "+localprefix for command, and just local prefix for startwith
 	startsWith := ""
 
+	trigger := cmd.Trigger
+
+	if !cmd.CaseSensitive && cmd.TriggerType != CommandTriggerRegex {
+		msg = strings.ToLower(msg)
+		trigger = strings.ToLower(cmd.Trigger)
+	}
+
 	switch cmd.TriggerType {
 	case CommandTriggerStartsWith:
-		startsWith = cmd.Trigger
+		startsWith = trigger
 	case CommandTriggerCommand:
-		startsWith = globalPrefix + " " + cmd.Trigger
+		startsWith = globalPrefix + " " + trigger
 		// Special triggertypes
 	case CommandTriggerContains:
-		return strings.Contains(msg, cmd.Trigger)
+		return strings.Contains(msg, trigger)
 	case CommandTriggerRegex:
 		ok, err := regexp.Match(cmd.Trigger, []byte(msg))
 		if err != nil {
@@ -76,7 +83,7 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {
 		}
 		return ok
 	case CommandTriggerExact:
-		return msg == cmd.Trigger
+		return msg == trigger
 	}
 
 	return strings.Index(msg, startsWith+"") == 0

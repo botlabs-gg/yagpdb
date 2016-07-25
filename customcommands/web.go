@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
-	"log"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
@@ -44,8 +43,6 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 	templateData["commands"] = currentCommands
 
-	log.Println(r.FormValue("case_sensitive"))
-
 	trigger := r.FormValue("trigger")
 	response := r.FormValue("response")
 	if !CheckLimits(trigger, response) {
@@ -55,10 +52,11 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 
 	cmd := &CustomCommand{
-		TriggerType: triggerType,
-		Trigger:     trigger,
-		Response:    response,
-		ID:          highest + 1,
+		TriggerType:   triggerType,
+		Trigger:       trigger,
+		Response:      response,
+		ID:            highest + 1,
+		CaseSensitive: r.FormValue("case_sensitive") == "on",
 	}
 	serialized, err := json.Marshal(cmd)
 	if err != nil {
@@ -103,10 +101,11 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	cmd := &CustomCommand{
-		TriggerType: triggerType,
-		Trigger:     trigger,
-		Response:    response,
-		ID:          int(id),
+		TriggerType:   triggerType,
+		Trigger:       trigger,
+		Response:      response,
+		CaseSensitive: r.FormValue("case_sensitive") == "on",
+		ID:            int(id),
 	}
 
 	serialized, err := json.Marshal(cmd)
