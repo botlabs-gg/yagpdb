@@ -75,13 +75,16 @@
                 <!-- /.nav-second-level -->
             </li>
             <li>
-                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications<span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications and Feeds<span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
                         <a href="/cp/{{.current_guild.ID}}/notifications/general" {{if eq .current_page "notifications/general"}} class="active"{{end}}>General</a>
                     </li>
                     <li>
-                        <a href="/todo">-TODO- (reddit, github, twitch etc)</a>
+                        <a href="/cp/{{.current_guild.ID}}/reddit">Reddit</a>
+                    </li>
+                    <li>
+                        <a href="/todo">-TODO- (rss, github, twitch etc)</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->

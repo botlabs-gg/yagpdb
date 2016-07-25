@@ -1,4 +1,4 @@
-{{define "cp_custom_commands"}}
+{{define "cp_reddit"}}
 
 {{template "cp_head" .}}
 
@@ -32,7 +32,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="channel">Server Channel (id, name or empty)</label>
-                                    <textarea class="form-control" id="channel" name="channel" placeholder=""></textarea>
+                                    <input type="text" class="form-control" id="channel" name="channel" placeholder=""></input>
                                 </div>
                                 <button type="submit" class="btn btn-default">Add</button>
                             </form>
@@ -44,29 +44,19 @@
                         </div>
                         <div class="panel-body">
                             {{$guild := .current_guild.ID}}
-                            {{range .commands}}
-                            <form class="form-inline" method="post" action="/cp/{{$guild}}/customcommands/{{.ID}}/update">
+                            {{range .current_config}}
+                            <form class="form-inline" method="post" action="/cp/{{$guild}}/reddit/{{.ID}}/update">
                                 <div class="form-group">
-                                    <label for="trigger_type">Trigger type</label>
-                                    <select id="trigger_type" class="form-control" name="type">
-                                        <option value="cmd" {{if eq .TriggerType 0}} selected{{end}}>Command (starts with command prefix and trigger)</option>
-                                        <option value="prefix" {{if eq .TriggerType 1}} selected{{end}}>Starts with</option>
-                                        <option value="contains" {{if eq .TriggerType 2}} selected{{end}}>Contains</option>
-                                        <option value="regex" {{if eq .TriggerType 3}} selected{{end}}>Regex</option>
-                                        <option value="exact"{{if eq .TriggerType 4}} selected{{end}}>Exact match</option>
-                                    </select>
+                                    <label for="subreddit">Subreddit</label>
+                                    <input type="text" class="form-control" id="subreddit" name="subreddit" placeholder="" value="{{.Sub}}">
                                 </div>
                                 <div class="form-group">
-                                    <label for="trigger">Trigger</label>
-                                    <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.Trigger}}">
-                                </div>
-                                <div class="form-group">
-                                    <label for="response">Response</label>
-                                    <textarea class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
+                                    <label for="channel">Channel</label>
+                                    <input type="text" class="form-control" id="channel" name="channel" placeholder="" value="{{.Channel}}"></input>
                                 </div>
                                 <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
-                                <button type="submit" class="btn btn-default" formaction="/cp/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
-                                <button type="submit" class="btn btn-default" formaction="/cp/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
+                                <button type="submit" class="btn btn-default" formaction="/cp/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                                <button type="submit" class="btn btn-default" formaction="/cp/{{$guild}}/reddit/{{.ID}}/update">Save</button>
                             </form>
                             {{end}}
                         </div>

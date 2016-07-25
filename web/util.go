@@ -13,6 +13,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 )
 
 type ContextKey int
@@ -188,4 +189,27 @@ func GetBaseCPContextData(ctx context.Context) (*redis.Client, *discordgo.Guild,
 	templateData := ctx.Value(ContextKeyTemplateData).(TemplateData)
 
 	return client, guild, templateData
+}
+
+// Returns a channel id from name, or if id is provided makes sure it's a channel isnide the guild
+// Throws a api request to guild/channels
+func GetChannelId(name string, guildId string) (string, error) {
+	channels, err := common.BotSession.GuildChannels(guildId)
+	if err != nil {
+		return "", err
+	}
+
+	var channel *discordgo.Channel
+	for _, c := range channels {
+		if c.ID == name || strings.EqualFold(name, c.Name) {
+			channel = c
+			break
+		}
+	}
+
+	if channel == nil {
+		return guildId, nil
+	}
+
+	return channel.ID, nil
 }

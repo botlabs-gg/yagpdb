@@ -40,6 +40,11 @@
                                     <label for="trigger">Trigger</label>
                                     <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun">
                                 </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="case_sensitive"> Case sensitive
+                                    </label>
+                                </div>
                                 <div class="form-group">
                                     <label for="response">Response</label>
                                     <textarea class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
@@ -69,6 +74,11 @@
                                 <div class="form-group">
                                     <label for="trigger">Trigger</label>
                                     <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.Trigger}}">
+                                </div>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="case_sensitive" {{if .CaseSensitive}} checked{{end}}> Case sensitive
+                                    </label>
                                 </div>
                                 <div class="form-group">
                                     <label for="response">Response</label>

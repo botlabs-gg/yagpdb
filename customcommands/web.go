@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
+	"log"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
@@ -42,6 +43,8 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return
 	}
 	templateData["commands"] = currentCommands
+
+	log.Println(r.FormValue("case_sensitive"))
 
 	trigger := r.FormValue("trigger")
 	response := r.FormValue("response")
