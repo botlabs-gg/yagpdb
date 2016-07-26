@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/web"
 	"log"
+	"os"
 )
 
 var (
@@ -54,20 +55,22 @@ func main() {
 	config, err := common.LoadConfig(flagConfig)
 	if err != nil {
 		log.Println("Failed loading config", err)
-		return
+		os.Exit(1)
 	}
 
 	BotSession, err = discordgo.New(config.BotToken)
 	if err != nil {
 		log.Println("Error intializing bot session:", err)
-		return
+		os.Exit(1)
 	}
+
 	BotSession.MaxRestRetries = 3
 	//BotSession.LogLevel = discordgo.LogInformational
 
 	RedisPool, err = pool.NewPool("tcp", config.Redis, 10)
 	if err != nil {
-		log.Println("Failed initializing redis pool")
+		log.Println("Failed initializing redis pool", err)
+		os.Exit(1)
 		return
 	}
 

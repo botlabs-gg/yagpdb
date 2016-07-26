@@ -25,9 +25,9 @@ func (r *RedditBot) SetUp() error {
 
 // Called when a post is made
 func (r *RedditBot) Post(post *redditproto.Link) {
-	posted := post.GetCreatedUtc()
-	date := time.Unix(int64(posted), 0)
-	log.Println("[RedditBot] new post", date.Format(time.Stamp), ":", post.GetTitle(), "by", post.GetAuthor())
+	// posted := post.GetCreatedUtc()
+	//date := time.Unix(int64(posted), 0)
+	//log.Println("[RedditBot] new post", date.Format(time.Stamp), ":", post.GetTitle(), "by", post.GetAuthor())
 
 	client, err := common.RedisPool.Get()
 	if err != nil {

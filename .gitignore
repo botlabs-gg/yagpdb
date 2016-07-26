@@ -4,3 +4,4 @@ cmd/yagpdb/static/
 *.json
 # THe graw agent file
 *.agent
+*.sh
