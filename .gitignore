@@ -1,4 +1,7 @@
-cmd/yagpdb/static/
+# Just some shit
+cmd/yagpdb/static/bower_components
+cmd/yagpdb/static/pages
+cmd/yagpdb/static/index.html
 
 # We don't want filthy pre-configured config files here ! >:O
 *.json
