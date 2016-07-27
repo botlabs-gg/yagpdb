@@ -80,6 +80,9 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	templateData["commands"] = append(currentCommands, cmd)
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added command"))
 
+	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Added a new custom command", user.Username, user.ID))
+
 	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
 }
 

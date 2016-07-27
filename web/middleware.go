@@ -33,6 +33,23 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(mw)
 }
 
+func BaseTemplateDataMiddleware(inner goji.Handler) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
+			inner.ServeHTTPC(ctx, w, r)
+			return
+		}
+
+		baseData := map[string]interface{}{
+			"clientid":        Config.ClientID,
+			"login_redir":     Config.RedirectURL,
+			"add_guild_redir": Config.AddGuildRedir,
+		}
+		inner.ServeHTTPC(SetContextTemplateData(ctx, baseData), w, r)
+	}
+	return goji.HandlerFunc(mw)
+}
+
 // Will put a session cookie in the response if not available and discord session in the context if available
 func SessionMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -163,9 +180,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			"user":           user,
 			"guilds":         wrapped,
 			"managed_guilds": managedGuilds,
-			"clientid":       Config.ClientID,
 		}
-
 		newCtx := context.WithValue(SetContextTemplateData(ctx, templateData), ContextKeyUser, user)
 		newCtx = context.WithValue(newCtx, ContextKeyGuilds, guilds)
 

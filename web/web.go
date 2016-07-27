@@ -52,6 +52,7 @@ func setupRoutes() *goji.Mux {
 	// General middleware
 	mux.UseC(RequestLoggerMiddleware)
 	mux.UseC(RedisMiddleware)
+	mux.UseC(BaseTemplateDataMiddleware)
 	mux.UseC(SessionMiddleware)
 	mux.UseC(UserInfoMiddleware)
 

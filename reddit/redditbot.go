@@ -20,6 +20,7 @@ type RedditBot struct {
 func (r *RedditBot) SetUp() error {
 	r.eng = graw.GetEngine(r)
 	log.Println("Reddit Bot is set up!")
+
 	return nil
 }
 
@@ -83,6 +84,11 @@ OUTER:
 			log.Println("Error posting message", err)
 		}
 	}
+}
+
+func (b *RedditBot) Fail(err error) bool {
+	log.Println("Graw encountered an error", err)
+	return false
 }
 
 func RunReddit() {
