@@ -25,33 +25,22 @@ func AddCPLogEntry(client *redis.Client, guild string, action string) {
 	serialized, err := json.Marshal(entry)
 	if err != nil {
 		log.Println("Failed serializing log entry", err)
-		serialized = []byte(fmt.Sprintf("{\"ts\": %d, \"action\":\"Unknown (Failed loggging!)\" }", now.Unix()))
+		serialized = []byte(fmt.Sprintf("{\"ts\": %d, \"action\":\"Unknown (Failed serializing!)\" }", now.Unix()))
 	}
 
-	commands := []*RedisCmd{
-		&RedisCmd{Name: "SELECT", Args: []interface{}{0}},
-		&RedisCmd{Name: "LPUSH", Args: []interface{}{"cp_logs:" + guild, serialized}},
-		&RedisCmd{Name: "LTRIM", Args: []interface{}{"cp_logs:" + guild, 0, 500}},
-	}
+	client.Append("LPUSH", "cp_logs:"+guild, serialized)
+	client.Append("LTRIM", "cp_logs:"+guild, 0, 100)
 
-	_, err = SafeRedisCommands(client, commands)
-	if err != nil {
-		log.Println("Failed saving log entry", err)
+	replies := GetRedisReplies(client, 2)
+	for _, r := range replies {
+		if r.Err != nil {
+			log.Println("Failed saving log entry", err)
+		}
 	}
 }
 
 func GetCPLogEntries(client *redis.Client, guild string) ([]*CPLogEntry, error) {
-	commands := []*RedisCmd{
-		&RedisCmd{Name: "SELECT", Args: []interface{}{0}},
-		&RedisCmd{Name: "LRANGE", Args: []interface{}{"cp_logs:" + guild, 0, -1}},
-	}
-
-	replies, err := SafeRedisCommands(client, commands)
-	if err != nil {
-		return nil, err
-	}
-
-	entriesRaw, err := replies[1].ListBytes()
+	entriesRaw, err := client.Cmd("LRANGE", "cp_logs:"+guild, 0, -1).ListBytes()
 	if err != nil {
 		return nil, err
 	}

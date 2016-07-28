@@ -1,6 +1,7 @@
 package web
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -11,7 +12,6 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"log"
-	"math/rand"
 	"net/http"
 	"strings"
 )
@@ -32,20 +32,7 @@ var ErrTokenExpired = errors.New("OAUTH2 Token expired")
 // Retrives an oauth2 token for the session
 // Returns an error if expired
 func GetAuthToken(session string, redisClient *redis.Client) (t *oauth2.Token, err error) {
-	// We keep oauth tokens in db 1
-	redisClient.Append("SELECT", 1)
-	redisClient.Append("GET", "token:"+session)
-	redisClient.Append("SELECT", 0) // Put the fucker back
-
-	replies := common.GetRedisReplies(redisClient, 3)
-
-	for _, r := range replies {
-		if r.Err != nil {
-			return nil, r.Err
-		}
-	}
-
-	raw, err := replies[1].Bytes()
+	raw, err := redisClient.Cmd("GET", "discord_token:"+session).Bytes()
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +43,7 @@ func GetAuthToken(session string, redisClient *redis.Client) (t *oauth2.Token, e
 	}
 
 	if !t.Valid() {
-		redisClient.Cmd("DEL", "token:"+session)
+		redisClient.Cmd("DEL", "discord_token:"+session)
 		err = ErrTokenExpired
 	}
 	return
@@ -70,17 +57,17 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 		return err
 	}
 
-	cmds := []*common.RedisCmd{
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{1}},
-		&common.RedisCmd{Name: "SET", Args: []interface{}{"token:" + session, serialized}},
-		&common.RedisCmd{Name: "EXPIRE", Args: []interface{}{"token:" + session, 86400}},
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
+	redisClient.Append("SET", "discord_token:"+session, serialized)
+	redisClient.Append("EXPIRE", "discord_token:"+session, 86400) // Expire after 24h
+
+	replies := common.GetRedisReplies(redisClient, 2)
+
+	for _, r := range replies {
+		if r.Err != nil {
+			return r.Err
+		}
 	}
 
-	_, err = common.SafeRedisCommands(redisClient, cmds)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -117,23 +104,22 @@ func RedisClientFromContext(ctx context.Context) *redis.Client {
 	return nil
 }
 
-func GenSessionCookie() *http.Cookie {
-	b := make([]byte, 32)
+func RandBase64(size int) string {
+	b := make([]byte, size)
 
-	n, err := rand.Read(b)
-	if n < len(b)-1 || err != nil {
-		if err != nil {
-			panic(err)
-		} else {
-			panic("n < len(b)")
-		}
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
 	}
 
-	encoded := base64.URLEncoding.EncodeToString(b)
+	return base64.URLEncoding.EncodeToString(b)
+}
 
+func GenSessionCookie() *http.Cookie {
+	data := RandBase64(32)
 	cookie := &http.Cookie{
 		Name:   "yagpdb-session",
-		Value:  encoded,
+		Value:  data,
 		MaxAge: 86400,
 		Path:   "/",
 	}

@@ -100,7 +100,7 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 		log.Println("Failed serializing config", err)
 	}
 
-	err = common.SetRedisJson(client, 0, "notifications/general:"+activeGuild.ID, newConfig)
+	err = common.SetRedisJson(client, "notifications/general:"+activeGuild.ID, newConfig)
 	if err != nil {
 		log.Println("Error setting config", err)
 	}

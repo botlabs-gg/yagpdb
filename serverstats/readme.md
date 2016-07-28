@@ -18,3 +18,5 @@ Records and shows stats for individual servers
  - avg users online day to day
  - messages day to day per channel
 
+
+Redis layout

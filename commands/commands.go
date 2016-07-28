@@ -57,7 +57,7 @@ func HandlePostCommands(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
 	templateData["current_page"] = "commands"
 
-	err := common.SetRedisJson(client, 0, "commands:"+activeGuild.ID, newConfig)
+	err := common.SetRedisJson(client, "commands:"+activeGuild.ID, newConfig)
 
 	if err != nil {
 		newConfig = GetConfig(client, activeGuild.ID)
@@ -80,7 +80,7 @@ type CommandsConfig struct {
 
 func GetConfig(client *redis.Client, guild string) *CommandsConfig {
 	var config *CommandsConfig
-	err := common.GetRedisJson(client, 0, "commands:"+guild, &config)
+	err := common.GetRedisJson(client, "commands:"+guild, &config)
 	if err != nil {
 		return &CommandsConfig{}
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	// This is just a workaround, should probably find a better way to do this
+	// The current topics
 	Topics     map[string]string = make(map[string]string)
 	TopicsLock sync.Mutex
 )

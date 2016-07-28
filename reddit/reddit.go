@@ -61,7 +61,6 @@ func (item *SubredditWatchItem) Set(client *redis.Client) error {
 	guild := item.Guild
 
 	cmds := []*common.RedisCmd{
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
 		&common.RedisCmd{Name: "HSET", Args: []interface{}{"guild_subreddit_watch:" + guild, item.ID, serialized}},
 		&common.RedisCmd{Name: "HSET", Args: []interface{}{"global_subreddit_watch:" + item.Sub, fmt.Sprintf("%s:%d", guild, item.ID), serialized}},
 	}
@@ -73,7 +72,6 @@ func (item *SubredditWatchItem) Set(client *redis.Client) error {
 func (item *SubredditWatchItem) Remove(client *redis.Client) error {
 	guild := item.Guild
 	cmds := []*common.RedisCmd{
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
 		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"guild_subreddit_watch:" + guild, item.ID}},
 		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"global_subreddit_watch:" + item.Sub, fmt.Sprintf("%s:%d", guild, item.ID)}},
 	}
@@ -82,18 +80,7 @@ func (item *SubredditWatchItem) Remove(client *redis.Client) error {
 }
 
 func GetConfig(client *redis.Client, key string) ([]*SubredditWatchItem, error) {
-	cmds := []*common.RedisCmd{
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
-		//&common.RedisCmd{Name: "HGETALL", Args: []interface{}{"guild_subreddit_watch:" + guild}},
-		&common.RedisCmd{Name: "HGETALL", Args: []interface{}{key}},
-	}
-
-	replies, err := common.SafeRedisCommands(client, cmds)
-	if err != nil {
-		return nil, err
-	}
-
-	rawItems, err := replies[1].Hash()
+	rawItems, err := client.Cmd("HGETALL", key).Hash()
 	if err != nil {
 		return nil, err
 	}

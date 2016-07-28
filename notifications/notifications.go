@@ -61,8 +61,10 @@ var DefaultConfig = &Config{}
 
 func GetConfig(client *redis.Client, server string) *Config {
 	var config *Config
-	if err := common.GetRedisJson(client, 0, "notifications/general:"+server, &config); err != nil {
-		log.Println("Failed retrieving config", err)
+	if err := common.GetRedisJson(client, "notifications/general:"+server, &config); err != nil {
+		if _, ok := err.(*redis.CmdError); ok {
+			log.Println("Failed retrieving config", err)
+		}
 		return DefaultConfig
 	}
 	return config

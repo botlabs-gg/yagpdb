@@ -6,18 +6,8 @@ import (
 	"github.com/fzzy/radix/redis"
 )
 
-func GetRedisJson(client *redis.Client, db int, key string, out interface{}) error {
-	client.Append("SELECT", db)
-	client.Append("GET", key)
-
-	replies := GetRedisReplies(client, 2)
-	for _, reply := range replies {
-		if reply.Err != nil {
-			return reply.Err
-		}
-	}
-
-	raw, err := replies[1].Bytes()
+func GetRedisJson(client *redis.Client, key string, out interface{}) error {
+	raw, err := client.Cmd("GET", key).Bytes()
 	if err != nil {
 		return err
 	}
@@ -26,18 +16,13 @@ func GetRedisJson(client *redis.Client, db int, key string, out interface{}) err
 	return err
 }
 
-func SetRedisJson(client *redis.Client, db int, key string, value interface{}) error {
+func SetRedisJson(client *redis.Client, key string, value interface{}) error {
 	serialized, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
 
-	cmds := []*RedisCmd{
-		&RedisCmd{Name: "SELECT", Args: []interface{}{db}},
-		&RedisCmd{Name: "SET", Args: []interface{}{key, serialized}},
-	}
-
-	_, err = SafeRedisCommands(client, cmds)
+	err = client.Cmd("SET", key, serialized).Err
 	return err
 }
 

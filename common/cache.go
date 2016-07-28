@@ -7,38 +7,31 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("Not found")
+	ErrNotFound    = errors.New("Not found")
+	CacheKeyPrefix = "cache_"
 )
 
 // Items in the cache expire after 1 min
 func GetCacheData(client *redis.Client, key string) ([]byte, error) {
-	client.Append("SELECT", "2")
-	client.Append("GET", key)
-	client.Append("SELECT", 0)
-
-	replies := GetRedisReplies(client, 3)
-	for _, r := range replies {
-		if r.Err != nil {
-			return nil, r.Err
-		}
-	}
-
-	data, err := replies[1].Bytes()
-
+	data, err := client.Cmd("GET", CacheKeyPrefix+key).Bytes()
 	return data, err
 }
 
 // Stores an entry in the cache and sets it to expire after expire
 func SetCacheData(client *redis.Client, key string, expire int, data []byte) error {
-	cmds := []*RedisCmd{
-		&RedisCmd{Name: "SELECT", Args: []interface{}{2}},
-		&RedisCmd{Name: "SET", Args: []interface{}{key, data}},
-		&RedisCmd{Name: "EXPIRE", Args: []interface{}{key, expire}},
-		&RedisCmd{Name: "SELECT", Args: []interface{}{0}},
+
+	client.Append("SET", CacheKeyPrefix+key, data)
+	client.Append("EXPIRE", CacheKeyPrefix+key, data)
+
+	replies := GetRedisReplies(client, 2)
+
+	for _, r := range replies {
+		if r.Err != nil {
+			return r.Err
+		}
 	}
 
-	_, err := SafeRedisCommands(client, cmds)
-	return err
+	return nil
 }
 
 // Stores an entry in the cache and sets it to expire after a minute

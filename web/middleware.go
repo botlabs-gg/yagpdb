@@ -33,6 +33,7 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(mw)
 }
 
+// Fills the template data in the context with basic data such as clientid and redirects
 func BaseTemplateDataMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
