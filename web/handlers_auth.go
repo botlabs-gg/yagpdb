@@ -12,9 +12,6 @@ import (
 
 var (
 	oauthConf *oauth2.Config
-
-	// random string for oauth2 API calls to protect against CSRF
-	oauthStateString = "ismellgud"
 )
 
 func InitOauth() {
