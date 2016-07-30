@@ -1,5 +1,7 @@
 package bot
 
+//go:generate go run ../cmd/gen/bot_wrappers.go -o wrappers.go
+
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/extra/pool"
