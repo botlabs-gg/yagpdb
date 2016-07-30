@@ -24,10 +24,10 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) InitBot() {
-	bot.Session.AddHandler(HandleGuildCreate)
-	bot.Session.AddHandler(HandleGuildMemberAdd)
-	bot.Session.AddHandler(HandleGuildMemberRemove)
-	bot.Session.AddHandler(HandleChannelUpdate)
+	bot.Session.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
+	bot.Session.AddHandler(bot.CustomGuildMemberAdd(HandleGuildMemberAdd))
+	bot.Session.AddHandler(bot.CustomGuildMemberRemove(HandleGuildMemberRemove))
+	bot.Session.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
 }
 
 func (p *Plugin) InitWeb(mainMuxer, cpMuxer *goji.Mux) {

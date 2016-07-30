@@ -33,7 +33,7 @@ func (p *Plugin) InitWeb(rootMux, cpMux *goji.Mux) {
 }
 
 func (p *Plugin) InitBot() {
-	bot.Session.AddHandler(HandleMessageCreate)
+	bot.Session.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
 }
 
 func (p *Plugin) Name() string {

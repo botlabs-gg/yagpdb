@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"log"
 	"sync"
@@ -16,7 +17,7 @@ var (
 	TopicsLock sync.Mutex
 )
 
-func HandleGuildCreate(s *discordgo.Session, evt *discordgo.GuildCreate) {
+func HandleGuildCreate(s *discordgo.Session, evt *discordgo.GuildCreate, client *redis.Client) {
 	TopicsLock.Lock()
 	for _, channel := range evt.Channels {
 		Topics[channel.ID] = channel.Topic
@@ -24,14 +25,7 @@ func HandleGuildCreate(s *discordgo.Session, evt *discordgo.GuildCreate) {
 	TopicsLock.Unlock()
 }
 
-func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd) {
-	client, redisErr := bot.RedisPool.Get()
-	if redisErr != nil {
-		log.Println("Failed to get redis connection")
-		return
-	}
-	defer bot.RedisPool.CarefullyPut(client, &redisErr)
-
+func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, client *redis.Client) {
 	guild, err := s.State.Guild(evt.GuildID)
 	if err != nil {
 		log.Println("!Guild not found in state!", evt.GuildID, err)
@@ -77,13 +71,7 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd) {
 	}
 }
 
-func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRemove) {
-	client, redisErr := bot.RedisPool.Get()
-	if redisErr != nil {
-		log.Println("Failed to get redis connection")
-		return
-	}
-	defer bot.RedisPool.CarefullyPut(client, &redisErr)
+func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRemove, client *redis.Client) {
 
 	guild, err := s.State.Guild(evt.GuildID)
 	if err != nil {
@@ -114,7 +102,7 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 	}
 }
 
-func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate) {
+func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, client *redis.Client) {
 	TopicsLock.Lock()
 	curTopic := Topics[evt.ID]
 	Topics[evt.ID] = evt.Topic
@@ -123,13 +111,6 @@ func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate) {
 	if curTopic == evt.Topic {
 		return
 	}
-
-	client, redisErr := bot.RedisPool.Get()
-	if redisErr != nil {
-		log.Println("Failed to get redis connection")
-		return
-	}
-	defer bot.RedisPool.CarefullyPut(client, &redisErr)
 
 	config := GetConfig(client, evt.GuildID)
 	if config.TopicEnabled {
