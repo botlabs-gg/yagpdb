@@ -10,7 +10,7 @@ import (
 	"text/template"
 )
 
-const templateSource = `// GENERATED using yagpdb/cmd/gen/wrappers_go.go
+const templateSource = `// GENERATED using yagpdb/cmd/gen/bot_wrappers.go
 
 // Custom event handlers that adds a redis connection to the handler
 // They will also recover from panics
@@ -34,9 +34,9 @@ func Custom{{.}}(inner func(s *discordgo.Session, evt *discordgo.{{.}}, r *redis
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in {{.}}:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in {{.}}:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()

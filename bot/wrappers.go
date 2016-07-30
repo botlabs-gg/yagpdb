@@ -12,7 +12,6 @@ import (
 	"runtime/debug"
 )
 
-
 func CustomChannelCreate(inner func(s *discordgo.Session, evt *discordgo.ChannelCreate, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.ChannelCreate) {
 	return func(s *discordgo.Session, evt *discordgo.ChannelCreate) {
 		r, err := RedisPool.Get()
@@ -22,9 +21,9 @@ func CustomChannelCreate(inner func(s *discordgo.Session, evt *discordgo.Channel
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in ChannelCreate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in ChannelCreate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -42,9 +41,9 @@ func CustomChannelUpdate(inner func(s *discordgo.Session, evt *discordgo.Channel
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in ChannelUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in ChannelUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -62,9 +61,9 @@ func CustomChannelDelete(inner func(s *discordgo.Session, evt *discordgo.Channel
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in ChannelDelete:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in ChannelDelete:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -82,9 +81,9 @@ func CustomGuildCreate(inner func(s *discordgo.Session, evt *discordgo.GuildCrea
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildCreate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildCreate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -102,9 +101,9 @@ func CustomGuildUpdate(inner func(s *discordgo.Session, evt *discordgo.GuildUpda
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -122,9 +121,9 @@ func CustomGuildDelete(inner func(s *discordgo.Session, evt *discordgo.GuildDele
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildDelete:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildDelete:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -142,9 +141,9 @@ func CustomGuildBanAdd(inner func(s *discordgo.Session, evt *discordgo.GuildBanA
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildBanAdd:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildBanAdd:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -162,9 +161,9 @@ func CustomGuildBanRemove(inner func(s *discordgo.Session, evt *discordgo.GuildB
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildBanRemove:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildBanRemove:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -182,9 +181,9 @@ func CustomGuildMemberAdd(inner func(s *discordgo.Session, evt *discordgo.GuildM
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildMemberAdd:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildMemberAdd:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -202,9 +201,9 @@ func CustomGuildMemberUpdate(inner func(s *discordgo.Session, evt *discordgo.Gui
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildMemberUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildMemberUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -222,9 +221,9 @@ func CustomGuildMemberRemove(inner func(s *discordgo.Session, evt *discordgo.Gui
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildMemberRemove:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildMemberRemove:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -242,9 +241,9 @@ func CustomGuildRoleCreate(inner func(s *discordgo.Session, evt *discordgo.Guild
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildRoleCreate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildRoleCreate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -262,9 +261,9 @@ func CustomGuildRoleUpdate(inner func(s *discordgo.Session, evt *discordgo.Guild
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildRoleUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildRoleUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -282,9 +281,9 @@ func CustomGuildRoleDelete(inner func(s *discordgo.Session, evt *discordgo.Guild
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildRoleDelete:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildRoleDelete:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -302,9 +301,9 @@ func CustomGuildIntegrationsUpdate(inner func(s *discordgo.Session, evt *discord
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildIntegrationsUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildIntegrationsUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -322,9 +321,9 @@ func CustomGuildEmojisUpdate(inner func(s *discordgo.Session, evt *discordgo.Gui
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildEmojisUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in GuildEmojisUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -342,9 +341,9 @@ func CustomMessageAck(inner func(s *discordgo.Session, evt *discordgo.MessageAck
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageAck:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in MessageAck:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -362,9 +361,9 @@ func CustomMessageCreate(inner func(s *discordgo.Session, evt *discordgo.Message
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageCreate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in MessageCreate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -382,9 +381,9 @@ func CustomMessageUpdate(inner func(s *discordgo.Session, evt *discordgo.Message
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in MessageUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -402,9 +401,9 @@ func CustomMessageDelete(inner func(s *discordgo.Session, evt *discordgo.Message
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageDelete:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in MessageDelete:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -422,9 +421,9 @@ func CustomPresenceUpdate(inner func(s *discordgo.Session, evt *discordgo.Presen
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in PresenceUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in PresenceUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -442,9 +441,9 @@ func CustomPresencesReplace(inner func(s *discordgo.Session, evt *discordgo.Pres
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in PresencesReplace:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in PresencesReplace:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -462,9 +461,9 @@ func CustomReady(inner func(s *discordgo.Session, evt *discordgo.Ready, r *redis
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in Ready:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in Ready:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -482,9 +481,9 @@ func CustomUserUpdate(inner func(s *discordgo.Session, evt *discordgo.UserUpdate
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in UserUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in UserUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -502,9 +501,9 @@ func CustomUserSettingsUpdate(inner func(s *discordgo.Session, evt *discordgo.Us
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in UserSettingsUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in UserSettingsUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -522,9 +521,9 @@ func CustomUserGuildSettingsUpdate(inner func(s *discordgo.Session, evt *discord
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in UserGuildSettingsUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in UserGuildSettingsUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -542,9 +541,9 @@ func CustomTypingStart(inner func(s *discordgo.Session, evt *discordgo.TypingSta
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in TypingStart:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in TypingStart:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -562,9 +561,9 @@ func CustomVoiceServerUpdate(inner func(s *discordgo.Session, evt *discordgo.Voi
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in VoiceServerUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in VoiceServerUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -582,9 +581,9 @@ func CustomVoiceStateUpdate(inner func(s *discordgo.Session, evt *discordgo.Voic
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in VoiceStateUpdate:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in VoiceStateUpdate:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -602,9 +601,9 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 		}
 
 		defer func() {
-			if r := recover(); r != nil {
+			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in Resumed:", r, "\n", evt, "\n", stack)
+				log.Println("Recovered from panic in Resumed:", err, "\n", evt, "\n", stack)
 			}
 			RedisPool.Put(r)
 		}()
@@ -612,4 +611,3 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 		inner(s, evt, r)
 	}
 }
-
