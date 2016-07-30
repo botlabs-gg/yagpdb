@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"fmt"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/turnage/graw"
 	"github.com/turnage/redditproto"
@@ -69,7 +70,7 @@ OUTER:
 		typeStr = "self post"
 	}
 
-	body := fmt.Sprintf("/u/%s Posted a new %s in **/r/%s**:\n*%s*\n\n**%s**\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
+	body := fmt.Sprintf("/u/%s Posted a new %s in **/r/%s**:\n<%s>\n\n**%s**\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
 
 	if post.GetIsSelf() {
 		body += fmt.Sprintf("%s", post.GetSelftext()) + "\n"
@@ -79,7 +80,7 @@ OUTER:
 
 	log.Println("Posting a new reddit message from", sub)
 	for _, channel := range channels {
-		_, err := common.BotSession.ChannelMessageSend(channel, body)
+		_, err := dutil.SplitSendMessage(common.BotSession, channel, body)
 		if err != nil {
 			log.Println("Error posting message", err)
 		}
