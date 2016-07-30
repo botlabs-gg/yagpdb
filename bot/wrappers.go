@@ -1,4 +1,4 @@
-// GENERATED using yagpdb/cmd/gen/wrappers_go.go
+// GENERATED using yagpdb/cmd/gen/bot_wrappers.go
 
 // Custom event handlers that adds a redis connection to the handler
 // They will also recover from panics
