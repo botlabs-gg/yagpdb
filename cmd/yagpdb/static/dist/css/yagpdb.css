@@ -5,3 +5,7 @@
 textarea {
 	resize: vertical;
 }
+
+#public-wrapper{
+	margin: 0 20px 0 20px;
+}

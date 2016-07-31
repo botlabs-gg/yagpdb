@@ -142,3 +142,20 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 
 	return
 }
+
+// This was bad on large servers...
+
+// func GetGuildMembers(client *redis.Client, guildID string) (members []*discordgo.Member, err error) {
+// 	err = GetCacheDataJson(client, "guild_members:"+guildID, &members)
+// 	if err == nil {
+// 		return
+// 	}
+
+// 	members, err = dutil.GetAllGuildMembers(BotSession, guildID)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	SetCacheDataJsonSimple(client, "guild_members:"+guildID, members)
+// 	return
+// }

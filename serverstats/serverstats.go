@@ -92,8 +92,9 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 	client.Append("ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, unixYesterday, "+inf")
 	client.Append("ZCOUNT", "guild_stats_members_joined_day:"+guildID, unixYesterday, "+inf")
 	client.Append("ZCOUNT", "guild_stats_members_left_day:"+guildID, unixYesterday, "+inf")
+	client.Append("SCARD", "guild_stats_online:"+guildID)
 
-	replies := common.GetRedisReplies(client, 3)
+	replies := common.GetRedisReplies(client, 4)
 	for _, r := range replies {
 		if r.Err != nil {
 			return nil, r.Err
@@ -105,13 +106,57 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 		return nil, err
 	}
 
+	channelResult, err := GetChannelMessageStats(client, messageStatsRaw, guildID)
+	if err != nil {
+		return nil, err
+	}
+
+	joined, err := replies[1].Int()
+	if err != nil {
+		return nil, err
+	}
+
+	left, err := replies[2].Int()
+	if err != nil {
+		return nil, err
+	}
+
+	online, err := replies[3].Int()
+	if err != nil {
+		return nil, err
+	}
+
+	// members, err := common.GetGuildMembers(client, guildID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	members, err := client.Cmd("GET", "guild_stats_num_members:"+guildID).Int()
+	if err != nil {
+		if _, ok := err.(*redis.CmdError); !ok {
+			return nil, err
+		}
+	}
+
+	stats := &FullStats{
+		ChannelsHour: channelResult,
+		JoinedDay:    joined,
+		LeftDay:      left,
+		Online:       online,
+		TotalMembers: members,
+	}
+
+	return stats, nil
+}
+
+func GetChannelMessageStats(client *redis.Client, raw []string, guildID string) (map[string]*ChannelStats, error) {
 	channels, err := common.GetGuildChannels(client, guildID)
 	if err != nil {
-		log.Println("Failed retrieving channels", err)
+		return nil, err
 	}
 
 	channelResult := make(map[string]*ChannelStats)
-	for _, result := range messageStatsRaw {
+	for _, result := range raw {
 		split := strings.Split(result, ":")
 		if len(split) < 2 {
 			log.Println("Invalid message stats", guildID, result)
@@ -138,22 +183,5 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 			}
 		}
 	}
-
-	joined, err := replies[1].Int()
-	if err != nil {
-		return nil, err
-	}
-
-	left, err := replies[2].Int()
-	if err != nil {
-		return nil, err
-	}
-
-	stats := &FullStats{
-		ChannelsHour: channelResult,
-		JoinedDay:    joined,
-		LeftDay:      left,
-	}
-
-	return stats, nil
+	return channelResult, nil
 }

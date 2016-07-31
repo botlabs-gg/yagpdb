@@ -24,7 +24,7 @@ func GetCacheData(client *redis.Client, key string) ([]byte, error) {
 func SetCacheData(client *redis.Client, key string, expire int, data []byte) error {
 
 	client.Append("SET", CacheKeyPrefix+key, data)
-	client.Append("EXPIRE", CacheKeyPrefix+key, data)
+	client.Append("EXPIRE", CacheKeyPrefix+key, expire)
 
 	replies := GetRedisReplies(client, 2)
 
