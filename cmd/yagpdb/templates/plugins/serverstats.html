@@ -3,24 +3,159 @@
 {{template "cp_head" .}}
 
 
-    <div id="wrapper">
-        
-        {{template "cp_nav" .}}
+<div id="wrapper">
+    
+    {{template "cp_nav" .}}
 
-          <div id="page-wrapper">
-                <div class="row">
-                    <div class="col-lg-12">
-                        <h1 class="page-header">Nothing here yet <b>:'[</b></h1>
-                        <p> Stay tuned for more stuff! </p>
-                    </div>
-                    <!-- /.col-lg-12 -->
+      <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Server stats</h1>
                 </div>
-                <!-- /.row -->
+                <!-- /.col-lg-12 -->
             </div>
-        <!-- /#page-wrapper -->
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <i class="fa fa-comments fa-5x"></i>
+                                </div>
+                                <div class="col-xs-9 text-right">
+                                    <div class="huge" id="messages-24h">...</div>
+                                    <div>New messages last 24h!</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-green">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <i class="fa fa-users fa-5x"></i>
+                                </div>
+                                <div class="col-xs-9 text-right">
+                                    <div class="huge" id="members-changed-24h">...</div>
+                                    <div>Members joined/left last 24h!</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-yellow">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <i class="fa fa-shopping-cart fa-5x"></i>
+                                </div>
+                                <div class="col-xs-9 text-right">
+                                    <div class="huge" id="online-members">...</div>
+                                    <div>Online members</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-yellow">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <i class="fa fa-shopping-cart fa-5x"></i>
+                                </div>
+                                <div class="col-xs-9 text-right">
+                                    <div class="huge" id="total-members">...</div>
+                                    <div>Total members</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+             <!-- /.col-lg-6 -->
+                <div class="col-lg-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Channels over 24 hours
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div id="channels-chart-24h"></div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+            </div>
+            <!-- /.row -->
+        </div>
+    <!-- /#page-wrapper -->
+</div>
+<script type="text/javascript">
+    window.JQuery = $;
+    $(function(){
+        function createRequest(method, path, data, cb){
+            var oReq = new XMLHttpRequest();
+            oReq.addEventListener("load", cb);
+            oReq.open(method, path);
+            
+            if (data) {
+                oReq.setRequestHeader("content-type", "application/json");
+                oReq.send(JSON.stringify(data));
+            }else{
+                oReq.send();
+            }
+        }   
+        var chart = null;
+        function statsCB(){
+            var parsedStats = JSON.parse(this.responseText);
 
-    </div>
-    <!-- /#wrapper -->
+            var channelMessages = parsedStats.channels_hour
+
+            var chartData = [];
+            var total = 0;
+            for (var key in channelMessages) {
+                total += channelMessages[key].count;
+                chartData.push({
+                    x: channelMessages[key].name,
+                    y: channelMessages[key].count,
+                })
+            }
+            if(chart){
+                chart.setData(chartData);
+            }else{
+                chart  = Morris.Bar({
+                    element: 'channels-chart-24h',
+                    data: chartData,
+                    xkey: 'x',
+                    ykeys: ['y'],
+                    labels: ['Messages'],
+                    hideHover: 'auto',
+                    resize: true
+                });
+            }
+
+            $("#messages-24h").text(total);
+            $("#members-changed-24h").text("+" + parsedStats.joined_day + " -" + parsedStats.left_day);
+            console.log(parsedStats);
+        }
+
+        function fetchStats(){
+            console.log("Fetching stats...");
+            createRequest("GET", "/cp/{{.current_guild.ID}}/stats/full", null, statsCB);
+        }
+        setInterval(fetchStats, 10000);
+        fetchStats(); // Fetch the initial stats
+    })
+</script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
+<!-- /#wrapper -->
 
 {{template "cp_footer"}}
 

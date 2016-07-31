@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	VERSION = "0.3 ALPHA"
+	VERSION = "0.4 ALPHA"
 )
 
 var (
@@ -40,8 +40,8 @@ func Run() {
 	}
 
 	Session.AddHandler(HandleReady)
-	Session.AddHandler(HandleGuildCreate)
-	Session.AddHandler(HandleGuildDelete)
+	Session.AddHandler(CustomGuildCreate(HandleGuildCreate))
+	Session.AddHandler(CustomGuildDelete(HandleGuildDelete))
 
 	// Session.Debug = true
 	// Session.LogLevel = discordgo.LogDebug

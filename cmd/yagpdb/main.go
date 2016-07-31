@@ -20,6 +20,7 @@ var (
 	flagRunBot    bool
 	flagRunWeb    bool
 	flagRunReddit bool
+	flagRunStats  bool
 
 	flagAction string
 
@@ -35,6 +36,7 @@ func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
 	flag.BoolVar(&flagRunReddit, "reddit", false, "Set to run reddit bot")
+	flag.BoolVar(&flagRunStats, "stats", false, "Set to update stats")
 
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 
@@ -102,6 +104,10 @@ func main() {
 
 	if flagRunReddit || flagRunEverything {
 		go reddit.RunReddit()
+	}
+
+	if flagRunStats || flagRunEverything {
+		go serverstats.UpdateStatsLoop()
 	}
 
 	select {}

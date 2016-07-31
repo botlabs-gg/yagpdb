@@ -1,3 +1,6 @@
+// Cache utilities
+// TODO: Also use a local application cache to save redis rountrips
+
 package common
 
 import (

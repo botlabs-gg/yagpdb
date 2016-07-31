@@ -8,3 +8,4 @@ cmd/yagpdb/static/index.html
 # THe graw agent file
 *.agent
 *.sh
+*.exe

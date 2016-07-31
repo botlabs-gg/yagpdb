@@ -2,7 +2,7 @@ package bot
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/fzzy/radix/redis"
 	"log"
 )
 
@@ -10,45 +10,21 @@ func HandleReady(s *discordgo.Session, r *discordgo.Ready) {
 	log.Println("Ready received! Connected to", len(s.State.Guilds), "Guilds")
 }
 
-func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
+func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
 	log.Println("Joined guild", g.Name, " Connected to", len(s.State.Guilds), "Guilds")
-	client, redisErr := RedisPool.Get()
-	if redisErr != nil {
-		log.Println("Failed to get redis connection")
-		return
-	}
-	defer RedisPool.CarefullyPut(client, &redisErr)
 
-	client.Append("SELECT", 0)
-	client.Append("SADD", "connected_guilds", g.ID)
-
-	replies := common.GetRedisReplies(client, 2)
-	for _, reply := range replies {
-		if reply.Err != nil {
-			redisErr = reply.Err
-			log.Println("Redis error", redisErr)
-		}
+	err := client.Cmd("SADD", "connected_guilds", g.ID).Err
+	if err != nil {
+		log.Println("Redis error", err)
 	}
 }
 
-func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete) {
+func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *redis.Client) {
 	log.Println("Left guild", g.Name, " Connected to", len(s.State.Guilds))
 
-	client, redisErr := RedisPool.Get()
-	if redisErr != nil {
-		log.Println("Failed to get redis connection")
-		return
-	}
-	defer RedisPool.CarefullyPut(client, &redisErr)
+	err := client.Cmd("SREM", "connected_guilds", g.ID).Err
 
-	client.Append("SELECT", 0)
-	client.Append("SREM", "connected_guilds", g.ID)
-
-	replies := common.GetRedisReplies(client, 2)
-	for _, reply := range replies {
-		if reply.Err != nil {
-			redisErr = reply.Err
-			log.Println("Redis error", redisErr)
-		}
+	if err != nil {
+		log.Println("Redis error", err)
 	}
 }

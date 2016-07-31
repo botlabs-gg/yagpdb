@@ -115,3 +115,16 @@ func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, e
 	}
 	return out, nil
 }
+
+func GetGuildChannels(client *redis.Client, guildID string) (channels []*discordgo.Channel, err error) {
+	// Check cache first
+	err = GetCacheDataJson(client, "channels:"+guildID, &channels)
+	if err != nil {
+		channels, err = BotSession.GuildChannels(guildID)
+		if err == nil {
+			SetCacheDataJsonSimple(client, "channels:"+guildID, channels)
+		}
+	}
+
+	return
+}
