@@ -116,6 +116,7 @@ func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, e
 	return out, nil
 }
 
+// Helper methods that also checks the cache
 func GetGuildChannels(client *redis.Client, guildID string) (channels []*discordgo.Channel, err error) {
 	// Check cache first
 	err = GetCacheDataJson(client, "channels:"+guildID, &channels)
@@ -123,6 +124,19 @@ func GetGuildChannels(client *redis.Client, guildID string) (channels []*discord
 		channels, err = BotSession.GuildChannels(guildID)
 		if err == nil {
 			SetCacheDataJsonSimple(client, "channels:"+guildID, channels)
+		}
+	}
+
+	return
+}
+
+func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err error) {
+	// Check cache first
+	err = GetCacheDataJson(client, "guild:"+guildID, &guild)
+	if err != nil {
+		guild, err = BotSession.Guild(guildID)
+		if err == nil {
+			SetCacheDataJsonSimple(client, "guild:"+guildID, guild)
 		}
 	}
 
