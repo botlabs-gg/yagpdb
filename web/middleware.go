@@ -213,8 +213,14 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
+		channels, err := common.GetGuildChannels(RedisClientFromContext(ctx), guild.ID)
+		if err != nil {
+			log.Println("Failed retrieving channels", err)
+			http.Redirect(w, r, "/?err=retrievingchannels", http.StatusTemporaryRedirect)
+		}
+
 		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
-		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild})
+		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild, "current_guild_channels": channels})
 
 		inner.ServeHTTPC(newCtx, w, r)
 	}
