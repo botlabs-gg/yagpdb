@@ -86,3 +86,7 @@
 </div>
 {{end}}
 {{end}}
+
+{{define "channel_options"}}
+    {{range .}}{{if eq .Type "text"}}<option value="{{.ID}}">#{{.Name}}</option>{{end}}{{end}}
+{{end}}

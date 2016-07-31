@@ -126,11 +126,6 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 		return nil, err
 	}
 
-	// members, err := common.GetGuildMembers(client, guildID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	members, err := client.Cmd("GET", "guild_stats_num_members:"+guildID).Int()
 	if err != nil {
 		if _, ok := err.(*redis.CmdError); !ok {

@@ -217,6 +217,7 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 		if err != nil {
 			log.Println("Failed retrieving channels", err)
 			http.Redirect(w, r, "/?err=retrievingchannels", http.StatusTemporaryRedirect)
+			return
 		}
 
 		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
