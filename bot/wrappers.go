@@ -12,11 +12,12 @@ import (
 	"runtime/debug"
 )
 
+
 func CustomChannelCreate(inner func(s *discordgo.Session, evt *discordgo.ChannelCreate, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.ChannelCreate) {
 	return func(s *discordgo.Session, evt *discordgo.ChannelCreate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event ChannelCreate")
+			log.Println("Failed retrieving redis client, cant handle event ChannelCreate:", err)
 			return
 		}
 
@@ -36,7 +37,7 @@ func CustomChannelUpdate(inner func(s *discordgo.Session, evt *discordgo.Channel
 	return func(s *discordgo.Session, evt *discordgo.ChannelUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event ChannelUpdate")
+			log.Println("Failed retrieving redis client, cant handle event ChannelUpdate:", err)
 			return
 		}
 
@@ -56,7 +57,7 @@ func CustomChannelDelete(inner func(s *discordgo.Session, evt *discordgo.Channel
 	return func(s *discordgo.Session, evt *discordgo.ChannelDelete) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event ChannelDelete")
+			log.Println("Failed retrieving redis client, cant handle event ChannelDelete:", err)
 			return
 		}
 
@@ -76,7 +77,7 @@ func CustomGuildCreate(inner func(s *discordgo.Session, evt *discordgo.GuildCrea
 	return func(s *discordgo.Session, evt *discordgo.GuildCreate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildCreate")
+			log.Println("Failed retrieving redis client, cant handle event GuildCreate:", err)
 			return
 		}
 
@@ -96,7 +97,7 @@ func CustomGuildUpdate(inner func(s *discordgo.Session, evt *discordgo.GuildUpda
 	return func(s *discordgo.Session, evt *discordgo.GuildUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildUpdate")
+			log.Println("Failed retrieving redis client, cant handle event GuildUpdate:", err)
 			return
 		}
 
@@ -116,7 +117,7 @@ func CustomGuildDelete(inner func(s *discordgo.Session, evt *discordgo.GuildDele
 	return func(s *discordgo.Session, evt *discordgo.GuildDelete) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildDelete")
+			log.Println("Failed retrieving redis client, cant handle event GuildDelete:", err)
 			return
 		}
 
@@ -136,7 +137,7 @@ func CustomGuildBanAdd(inner func(s *discordgo.Session, evt *discordgo.GuildBanA
 	return func(s *discordgo.Session, evt *discordgo.GuildBanAdd) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildBanAdd")
+			log.Println("Failed retrieving redis client, cant handle event GuildBanAdd:", err)
 			return
 		}
 
@@ -156,7 +157,7 @@ func CustomGuildBanRemove(inner func(s *discordgo.Session, evt *discordgo.GuildB
 	return func(s *discordgo.Session, evt *discordgo.GuildBanRemove) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildBanRemove")
+			log.Println("Failed retrieving redis client, cant handle event GuildBanRemove:", err)
 			return
 		}
 
@@ -176,7 +177,7 @@ func CustomGuildMemberAdd(inner func(s *discordgo.Session, evt *discordgo.GuildM
 	return func(s *discordgo.Session, evt *discordgo.GuildMemberAdd) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildMemberAdd")
+			log.Println("Failed retrieving redis client, cant handle event GuildMemberAdd:", err)
 			return
 		}
 
@@ -196,7 +197,7 @@ func CustomGuildMemberUpdate(inner func(s *discordgo.Session, evt *discordgo.Gui
 	return func(s *discordgo.Session, evt *discordgo.GuildMemberUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildMemberUpdate")
+			log.Println("Failed retrieving redis client, cant handle event GuildMemberUpdate:", err)
 			return
 		}
 
@@ -216,7 +217,7 @@ func CustomGuildMemberRemove(inner func(s *discordgo.Session, evt *discordgo.Gui
 	return func(s *discordgo.Session, evt *discordgo.GuildMemberRemove) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildMemberRemove")
+			log.Println("Failed retrieving redis client, cant handle event GuildMemberRemove:", err)
 			return
 		}
 
@@ -236,7 +237,7 @@ func CustomGuildRoleCreate(inner func(s *discordgo.Session, evt *discordgo.Guild
 	return func(s *discordgo.Session, evt *discordgo.GuildRoleCreate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildRoleCreate")
+			log.Println("Failed retrieving redis client, cant handle event GuildRoleCreate:", err)
 			return
 		}
 
@@ -256,7 +257,7 @@ func CustomGuildRoleUpdate(inner func(s *discordgo.Session, evt *discordgo.Guild
 	return func(s *discordgo.Session, evt *discordgo.GuildRoleUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildRoleUpdate")
+			log.Println("Failed retrieving redis client, cant handle event GuildRoleUpdate:", err)
 			return
 		}
 
@@ -276,7 +277,7 @@ func CustomGuildRoleDelete(inner func(s *discordgo.Session, evt *discordgo.Guild
 	return func(s *discordgo.Session, evt *discordgo.GuildRoleDelete) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildRoleDelete")
+			log.Println("Failed retrieving redis client, cant handle event GuildRoleDelete:", err)
 			return
 		}
 
@@ -296,7 +297,7 @@ func CustomGuildIntegrationsUpdate(inner func(s *discordgo.Session, evt *discord
 	return func(s *discordgo.Session, evt *discordgo.GuildIntegrationsUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildIntegrationsUpdate")
+			log.Println("Failed retrieving redis client, cant handle event GuildIntegrationsUpdate:", err)
 			return
 		}
 
@@ -316,7 +317,7 @@ func CustomGuildEmojisUpdate(inner func(s *discordgo.Session, evt *discordgo.Gui
 	return func(s *discordgo.Session, evt *discordgo.GuildEmojisUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildEmojisUpdate")
+			log.Println("Failed retrieving redis client, cant handle event GuildEmojisUpdate:", err)
 			return
 		}
 
@@ -336,7 +337,7 @@ func CustomMessageAck(inner func(s *discordgo.Session, evt *discordgo.MessageAck
 	return func(s *discordgo.Session, evt *discordgo.MessageAck) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageAck")
+			log.Println("Failed retrieving redis client, cant handle event MessageAck:", err)
 			return
 		}
 
@@ -356,7 +357,7 @@ func CustomMessageCreate(inner func(s *discordgo.Session, evt *discordgo.Message
 	return func(s *discordgo.Session, evt *discordgo.MessageCreate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageCreate")
+			log.Println("Failed retrieving redis client, cant handle event MessageCreate:", err)
 			return
 		}
 
@@ -376,7 +377,7 @@ func CustomMessageUpdate(inner func(s *discordgo.Session, evt *discordgo.Message
 	return func(s *discordgo.Session, evt *discordgo.MessageUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageUpdate")
+			log.Println("Failed retrieving redis client, cant handle event MessageUpdate:", err)
 			return
 		}
 
@@ -396,7 +397,7 @@ func CustomMessageDelete(inner func(s *discordgo.Session, evt *discordgo.Message
 	return func(s *discordgo.Session, evt *discordgo.MessageDelete) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageDelete")
+			log.Println("Failed retrieving redis client, cant handle event MessageDelete:", err)
 			return
 		}
 
@@ -416,7 +417,7 @@ func CustomPresenceUpdate(inner func(s *discordgo.Session, evt *discordgo.Presen
 	return func(s *discordgo.Session, evt *discordgo.PresenceUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event PresenceUpdate")
+			log.Println("Failed retrieving redis client, cant handle event PresenceUpdate:", err)
 			return
 		}
 
@@ -436,7 +437,7 @@ func CustomPresencesReplace(inner func(s *discordgo.Session, evt *discordgo.Pres
 	return func(s *discordgo.Session, evt *discordgo.PresencesReplace) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event PresencesReplace")
+			log.Println("Failed retrieving redis client, cant handle event PresencesReplace:", err)
 			return
 		}
 
@@ -456,7 +457,7 @@ func CustomReady(inner func(s *discordgo.Session, evt *discordgo.Ready, r *redis
 	return func(s *discordgo.Session, evt *discordgo.Ready) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event Ready")
+			log.Println("Failed retrieving redis client, cant handle event Ready:", err)
 			return
 		}
 
@@ -476,7 +477,7 @@ func CustomUserUpdate(inner func(s *discordgo.Session, evt *discordgo.UserUpdate
 	return func(s *discordgo.Session, evt *discordgo.UserUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event UserUpdate")
+			log.Println("Failed retrieving redis client, cant handle event UserUpdate:", err)
 			return
 		}
 
@@ -496,7 +497,7 @@ func CustomUserSettingsUpdate(inner func(s *discordgo.Session, evt *discordgo.Us
 	return func(s *discordgo.Session, evt *discordgo.UserSettingsUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event UserSettingsUpdate")
+			log.Println("Failed retrieving redis client, cant handle event UserSettingsUpdate:", err)
 			return
 		}
 
@@ -516,7 +517,7 @@ func CustomUserGuildSettingsUpdate(inner func(s *discordgo.Session, evt *discord
 	return func(s *discordgo.Session, evt *discordgo.UserGuildSettingsUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event UserGuildSettingsUpdate")
+			log.Println("Failed retrieving redis client, cant handle event UserGuildSettingsUpdate:", err)
 			return
 		}
 
@@ -536,7 +537,7 @@ func CustomTypingStart(inner func(s *discordgo.Session, evt *discordgo.TypingSta
 	return func(s *discordgo.Session, evt *discordgo.TypingStart) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event TypingStart")
+			log.Println("Failed retrieving redis client, cant handle event TypingStart:", err)
 			return
 		}
 
@@ -556,7 +557,7 @@ func CustomVoiceServerUpdate(inner func(s *discordgo.Session, evt *discordgo.Voi
 	return func(s *discordgo.Session, evt *discordgo.VoiceServerUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event VoiceServerUpdate")
+			log.Println("Failed retrieving redis client, cant handle event VoiceServerUpdate:", err)
 			return
 		}
 
@@ -576,7 +577,7 @@ func CustomVoiceStateUpdate(inner func(s *discordgo.Session, evt *discordgo.Voic
 	return func(s *discordgo.Session, evt *discordgo.VoiceStateUpdate) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event VoiceStateUpdate")
+			log.Println("Failed retrieving redis client, cant handle event VoiceStateUpdate:", err)
 			return
 		}
 
@@ -596,7 +597,7 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 	return func(s *discordgo.Session, evt *discordgo.Resumed) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event Resumed")
+			log.Println("Failed retrieving redis client, cant handle event Resumed:", err)
 			return
 		}
 
@@ -611,3 +612,4 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 		inner(s, evt, r)
 	}
 }
+
