@@ -1,0 +1,91 @@
+{{define "cp_moderation_commands"}}
+
+{{template "cp_head" .}}
+
+
+    <div id="wrapper">
+
+    {{template "cp_nav" .}}
+
+        <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Global Command settings</h1>
+                    <p>Settings such as blacklists and whatnot affect all YAGPDB commands</p>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            {{template "cp_alerts" .}}
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Moderation command settings
+                        </div>
+                        <div class="panel-body">
+                            <form role="form" method="post" action="">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Channel to announce bans and kicks through the bot in</label>
+                                            <select class="form-control" name="action_channel">
+                                            {{$selected := .current_config.ActionChannel}}
+                                            {{range .current_guild_channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                            </select>
+                                        </div>
+                                        <div class="checkbox">
+                                          <label>
+                                            <input type="checkbox" name="ban_enabled" {{if .current_config.BanEnabled}} checked{{end}}>
+                                            Ban command enabled "(mention or prefix>) ban @user some reason". Only users with ban permission can use this.
+                                          </label>
+                                        </div>
+                                        <div class="checkbox">
+                                          <label>
+                                            <input type="checkbox" name="kick_enabled" {{if .current_config.KickEnabled}} checked{{end}}>
+                                            Kick command enabled "(mention or prefix>) kick @user some reason". Only users with kick permission can use this.
+                                          </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Channel to announce reports in</label>
+                                            <select class="form-control" name="report_channel">
+                                            {{$selected := .current_config.ReportChannel}}
+                                            {{range .current_guild_channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                            </select>
+                                        </div>
+                                        <div class="checkbox">
+                                          <label>
+                                            <input type="checkbox" name="report_enabled" {{if .current_config.ReportEnabled}} checked{{end}}>
+                                            Report command enabled, "(mention or prefix>) report @user some reason". Everyone can use this.
+                                          </label>
+                                        </div>
+                                        <div class="checkbox">
+                                          <label>
+                                            <input type="checkbox" name="clean_enabled" {{if .current_config.CleanEnabled}} checked{{end}}>
+                                            Report command enabled, "(mention or prefix>) clean NUM {@user}". Manage Messages permissions is required for this command.
+                                          </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->            
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+{{template "cp_footer" .}}
+
+{{end}}

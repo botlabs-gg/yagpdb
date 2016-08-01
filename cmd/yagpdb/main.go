@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/customcommands"
+	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/serverstats"
@@ -91,6 +92,7 @@ func main() {
 	commands.RegisterPlugin()
 	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
+	moderation.RegisterPlugin()
 
 	// RUN FORREST RUN
 	if flagRunWeb || flagRunEverything {

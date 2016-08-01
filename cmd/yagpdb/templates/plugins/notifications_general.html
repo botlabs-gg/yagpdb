@@ -36,6 +36,7 @@
                                             <label>Channel</label>
                                             <select class="form-control" name="join_server_channel">
                                                 {{$selected := .current_config.JoinServerChannel}}
+                                                <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
                                                 {{range .current_guild_channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
                                             </select>
                                         </div>
@@ -61,6 +62,7 @@
                                             <label>Channel</label>
                                             <select class="form-control" name="leave_channel">
                                                 {{$selected := .current_config.LeaveChannel}}
+                                                <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
                                                 {{range .current_guild_channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
                                             </select>
                                         </div>

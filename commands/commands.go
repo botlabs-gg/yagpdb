@@ -25,10 +25,10 @@ func RegisterPlugin() {
 func (p *Plugin) InitWeb(rootMux, cpMux *goji.Mux) {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/commands.html"))
 
-	cpMux.HandleFuncC(pat.Get("/cp/:server/commands"), HandleCommands)
-	cpMux.HandleFuncC(pat.Get("/cp/:server/commands/"), HandleCommands)
-	cpMux.HandleFuncC(pat.Post("/cp/:server/commands"), HandlePostCommands)
-	cpMux.HandleFuncC(pat.Post("/cp/:server/commands/"), HandlePostCommands)
+	cpMux.HandleFuncC(pat.Get("/cp/:server/commands/settings"), HandleCommands)
+	cpMux.HandleFuncC(pat.Get("/cp/:server/commands/settings/"), HandleCommands)
+	cpMux.HandleFuncC(pat.Post("/cp/:server/commands/settings"), HandlePostCommands)
+	cpMux.HandleFuncC(pat.Post("/cp/:server/commands/settings/"), HandlePostCommands)
 }
 
 func (p *Plugin) Name() string {
@@ -36,11 +36,8 @@ func (p *Plugin) Name() string {
 }
 
 func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "commands"
-
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 	templateData["current_config"] = GetConfig(client, activeGuild.ID)
 
@@ -48,14 +45,12 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 }
 
 func HandlePostCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["current_page"] = "commands"
+
 	newConfig := &CommandsConfig{
 		Prefix: r.FormValue("prefix"),
 	}
-	client := web.RedisClientFromContext(ctx)
-	activeGuild := ctx.Value(web.ContextKeyCurrentGuild).(*discordgo.Guild)
-
-	templateData := ctx.Value(web.ContextKeyTemplateData).(web.TemplateData)
-	templateData["current_page"] = "commands"
 
 	err := common.SetRedisJson(client, "commands:"+activeGuild.ID, newConfig)
 

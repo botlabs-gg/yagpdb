@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	VERSION = "0.4 ALPHA"
+	VERSION = "0.5 Tastefull ALPHA"
 )
 
 var (
@@ -30,6 +30,8 @@ func Run() {
 	Config = common.Conf
 	Session = common.BotSession
 	RedisPool = common.RedisPool
+
+	Session.State.MaxMessageCount = 100
 
 	CommandSystem = commandsystem.NewSystem(Session, "")
 
