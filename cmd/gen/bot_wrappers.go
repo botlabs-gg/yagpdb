@@ -29,7 +29,7 @@ func Custom{{.}}(inner func(s *discordgo.Session, evt *discordgo.{{.}}, r *redis
 	return func(s *discordgo.Session, evt *discordgo.{{.}}) {
 		r, err := RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event {{.}}")
+			log.Println("Failed retrieving redis client, cant handle event {{.}}:", err)
 			return
 		}
 
