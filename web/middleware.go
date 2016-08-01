@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // Will put a redis client in the context if available
@@ -118,6 +119,15 @@ func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 			return
 		}
+
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			if !strings.EqualFold(Config.Host, origin) {
+				http.Redirect(w, r, "/?err=bad_origin", http.StatusTemporaryRedirect)
+				return
+			}
+		}
+
 		inner.ServeHTTPC(ctx, w, r)
 	}
 	return goji.HandlerFunc(mw)

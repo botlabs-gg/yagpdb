@@ -12,6 +12,7 @@ type Config struct {
 	AddGuildRedir string `json:"add_guild_redirect"`
 	BotToken      string `json:"bot_token"`
 	Redis         string `json:"redis"`
+	Host          string `json:"host"`
 }
 
 func LoadConfig(path string) (c *Config, err error) {
