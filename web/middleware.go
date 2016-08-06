@@ -43,9 +43,8 @@ func BaseTemplateDataMiddleware(inner goji.Handler) goji.Handler {
 		}
 
 		baseData := map[string]interface{}{
-			"clientid":        Config.ClientID,
-			"login_redir":     Config.RedirectURL,
-			"add_guild_redir": Config.AddGuildRedir,
+			"clientid": Config.ClientID,
+			"host":     Config.Host,
 		}
 		inner.ServeHTTPC(SetContextTemplateData(ctx, baseData), w, r)
 	}
@@ -67,11 +66,11 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 
 		cookie, err := r.Cookie("yagpdb-session")
 		if err != nil {
-			cookie = GenSessionCookie()
-			http.SetCookie(w, cookie)
-			if Debug {
-				log.Println("No session cookie")
-			}
+			// cookie = GenSessionCookie()
+			// http.SetCookie(w, cookie)
+			// if Debug {
+			// 	log.Println("No session cookie")
+			// }
 			// No OAUTH token can be tied to it because we just generated it so just serve
 			return
 		}
@@ -80,7 +79,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 		if redisClient == nil {
 			// Serve without session
 			if Debug {
-				log.Println("redisclient is nil")
+				log.Println("redisClient is nil(!)")
 			}
 			return
 		}

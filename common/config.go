@@ -6,13 +6,15 @@ import (
 )
 
 type Config struct {
-	ClientID      string `json:"client_id"`
-	ClientSecret  string `json:"client_secret"`
-	RedirectURL   string `json:"redirect_url"`
-	AddGuildRedir string `json:"add_guild_redirect"`
-	BotToken      string `json:"bot_token"`
-	Redis         string `json:"redis"`
-	Host          string `json:"host"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	BotToken     string `json:"bot_token"`
+	Host         string `json:"host"`
+
+	Redis string `json:"redis"`
+
+	// Third party api's other than discord
+	PastebinDevKey string `json:"pastebin_dev_key"`
 }
 
 func LoadConfig(path string) (c *Config, err error) {

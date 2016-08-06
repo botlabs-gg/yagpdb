@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pastebin"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
@@ -85,6 +86,7 @@ func main() {
 	common.RedisPool = RedisPool
 	common.Conf = config
 	common.BotSession = BotSession
+	common.Pastebin = &pastebin.Pastebin{DevKey: config.PastebinDevKey}
 
 	// Setup plugins
 	serverstats.RegisterPlugin()

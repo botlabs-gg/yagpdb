@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"log"
+	"time"
 )
 
 func (p *Plugin) InitBot() {
@@ -152,19 +153,26 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					return err
 				}
 
-				channelID, err := client.Cmd("GET", "moderation_report_channel:"+channel.GuildID).Str()
+				// Send typing event to indicate the bot is working
+				common.BotSession.ChannelTyping(m.ChannelID)
+
+				logId, err := CreatePastebinLog(m.ChannelID)
 				if err != nil {
-					channelID = channel.GuildID
+					return errors.New("Failed uploading to pastebin: " + err.Error())
 				}
 
-				reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str())
+				channelID, err := client.Cmd("GET", "moderation_report_channel:"+channel.GuildID).Str()
+				if err != nil || channelID == "" {
+					channelID = channel.GuildID
+				}
+				reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: http://pastebin.com/%s", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logId)
 
 				_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
 				if err != nil {
 					return err
 				}
 
-				common.BotSession.ChannelMessageSend(m.ChannelID, "User reported to the proper authoratives")
+				common.BotSession.ChannelMessageSend(m.ChannelID, "User reported to the proper authorities")
 
 				return nil
 			},
@@ -209,13 +217,14 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				ids := make([]string, 0)
 				for i := len(channel.Messages) - 1; i >= 0; i-- {
-					if filter == "" || channel.Messages[i].Author.ID == filter {
+					if (filter == "" || channel.Messages[i].Author.ID == filter) && channel.Messages[i].ID != m.ID {
 						ids = append(ids, channel.Messages[i].ID)
 						if len(ids) >= max {
 							break
 						}
 					}
 				}
+				ids = append(ids, m.ID)
 
 				if len(ids) < 1 {
 					common.BotSession.ChannelMessageSend(m.ChannelID, "Deleted nothing... Sorry :'(")
@@ -228,10 +237,43 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					err = common.BotSession.ChannelMessagesBulkDelete(m.ChannelID, ids)
 				}
 				if err == nil {
-					common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Deleted %d messages! :')", len(ids)))
+					var msg *discordgo.Message
+					msg, err = common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Deleted %d messages! :')", len(ids)))
+					// Self destruct in 3...
+					if err == nil {
+						go common.DelayedMessageDelete(common.BotSession, time.Second*3, msg.ChannelID, msg.ID)
+					}
 				}
 				return err
 			},
 		},
 	},
+}
+
+// Creates a pastebin log form the last 100 messages in a channel
+func CreatePastebinLog(cID string) (string, error) {
+	state := common.BotSession.State
+
+	channel, err := state.Channel(cID)
+	if err != nil {
+		return "", err
+	}
+
+	paste := ""
+
+	state.RLock()
+	defer state.RUnlock()
+	for _, m := range channel.Messages {
+
+		body := m.ContentWithMentionsReplaced()
+
+		for _, attachment := range m.Attachments {
+			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
+		}
+
+		paste += fmt.Sprintf("[%s] #%s, %s (%s): %s\n", m.Timestamp, channel.Name, m.Author.Username, m.Author.ID, body)
+	}
+
+	id, err := common.Pastebin.Put(paste, "#"+channel.Name+" Logs")
+	return id, err
 }

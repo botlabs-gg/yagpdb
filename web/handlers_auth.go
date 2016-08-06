@@ -19,13 +19,12 @@ func InitOauth() {
 		ClientID:     Config.ClientID,
 		ClientSecret: Config.ClientSecret,
 		Scopes:       []string{"identify", "guilds"},
-		RedirectURL:  Config.RedirectURL,
+		RedirectURL:  Config.Host + "/confirm_login",
 		Endpoint: oauth2.Endpoint{
 			TokenURL: "https://discordapp.com/api/oauth2/token",
 			AuthURL:  "https://discordapp.com/api/oauth2/authorize",
 		},
 	}
-
 }
 
 func HandleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {

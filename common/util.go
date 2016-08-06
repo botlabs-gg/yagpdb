@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"log"
+	"time"
 )
 
 func GetRedisJson(client *redis.Client, key string, out interface{}) error {
@@ -114,6 +116,14 @@ func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, e
 		}
 	}
 	return out, nil
+}
+
+func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, mID string) {
+	time.Sleep(delay)
+	err := session.ChannelMessageDelete(cID, mID)
+	if err != nil {
+		log.Println("Failed deleting message:", err)
+	}
 }
 
 // Helper methods that also checks the cache

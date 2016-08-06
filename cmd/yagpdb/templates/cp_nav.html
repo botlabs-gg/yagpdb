@@ -18,14 +18,14 @@
         </a>
         <ul class="dropdown-menu dropdown-user">    
             {{$clientid := .clientid}}
-            {{$add_redir := .add_guild_redir}}
+            {{$host := .host}}
             {{range $index, $element := .managed_guilds}}
             
             <li>
                 {{if $element.Connected}}
                 <a href="/cp/{{$element.ID}}/stats"><i class="fa fa-magic fa-fw"></i>{{$element.Name}}</a>
                 {{else}}
-                <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{$add_redir}}"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
+                <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{urlquery $host}}{{urlquery "/cp"}}"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
                 {{end}}
             </li>
             
