@@ -165,7 +165,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				if err != nil || channelID == "" {
 					channelID = channel.GuildID
 				}
-				reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: http://pastebin.com/%s", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logId)
+				reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: <http://pastebin.com/%s>", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logId)
 
 				_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
 				if err != nil {
