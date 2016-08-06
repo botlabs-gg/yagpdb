@@ -1,9 +1,11 @@
 package serverstats
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil"
+	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"log"
@@ -18,6 +20,52 @@ func (p *Plugin) InitBot() {
 	bot.Session.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
 	bot.Session.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
 	bot.Session.AddHandler(bot.CustomReady(HandleReady))
+
+	bot.CommandSystem.RegisterCommands(&bot.CustomCommand{
+		Key: "stats_settings_public:",
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "stats",
+			Description: "Shows server stats",
+			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+				channel, err := bot.Session.State.Channel(m.ChannelID)
+				if err != nil {
+					return err
+				}
+
+				guild, err := bot.Session.State.Guild(channel.GuildID)
+				if err != nil {
+					return err
+				}
+
+				client, err := common.RedisPool.Get()
+				if err != nil {
+					return err
+				}
+				defer common.RedisPool.Put(client)
+
+				stats, err := RetrieveFullStats(client, guild.ID)
+				if err != nil {
+					return err
+				}
+
+				total := 0
+				for _, c := range stats.ChannelsHour {
+					total += c.Count
+				}
+
+				header := fmt.Sprintf("Server stats for **%s** *(Also viewable at %s/public/%s/stats)* ", guild.Name, common.Conf.Host, guild.ID)
+				body := fmt.Sprintf("Members joined last 24h: **%d**\n", stats.JoinedDay)
+				body += fmt.Sprintf("Members Left last 24h: **%d**\n", stats.LeftDay)
+				body += fmt.Sprintf("Members online: **%d**\n", stats.Online)
+				body += fmt.Sprintf("Total Members: **%d**\n", stats.TotalMembers)
+				body += fmt.Sprintf("Messages last 24h: **%d**\n", total)
+
+				bot.Session.ChannelMessageSend(m.ChannelID, header+"\n\n"+body)
+				return nil
+			},
+		},
+	})
+
 }
 
 func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client) {
