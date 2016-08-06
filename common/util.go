@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"log"
@@ -151,6 +152,34 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 	}
 
 	return
+}
+
+// Creates a pastebin log form the last 100 messages in a channel
+func CreatePastebinLog(cID string) (string, error) {
+	state := BotSession.State
+
+	channel, err := state.Channel(cID)
+	if err != nil {
+		return "", err
+	}
+
+	paste := ""
+
+	state.RLock()
+	defer state.RUnlock()
+	for _, m := range channel.Messages {
+
+		body := m.ContentWithMentionsReplaced()
+
+		for _, attachment := range m.Attachments {
+			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
+		}
+
+		paste += fmt.Sprintf("[%s] #%s, %s (%s): %s\n", m.Timestamp, channel.Name, m.Author.Username, m.Author.ID, body)
+	}
+
+	id, err := Pastebin.Put(paste, "#"+channel.Name+" Logs")
+	return id, err
 }
 
 // This was bad on large servers...

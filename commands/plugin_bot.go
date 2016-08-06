@@ -2,9 +2,11 @@ package commands
 
 import (
 	"fmt"
+	"github.com/alfredxing/calc/compute"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/lunixbochs/vtclean"
 	"image"
 	"io/ioutil"
@@ -192,6 +194,38 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			out := Convert2Ascii(ScaleImage(img, 50))
 			_, err = bot.Session.ChannelMessageSend(m.ChannelID, "```\n"+string(out)+"\n```")
 			return err
+		},
+	},
+	&commandsystem.SimpleCommand{
+		Name:         "Calc",
+		Aliases:      []string{"c", "calculate"},
+		Description:  "Converts an image to ascii",
+		RunInDm:      true,
+		RequiredArgs: 1,
+		Arguments: []*commandsystem.ArgumentDef{
+			&commandsystem.ArgumentDef{Name: "What", Description: "What to calculate", Type: commandsystem.ArgumentTypeString},
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+			result, err := compute.Evaluate(cmd.Args[0].Str())
+			if err != nil {
+				return err
+			}
+
+			bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Result: `%f`", result))
+			return nil
+		},
+	},
+	&commandsystem.SimpleCommand{
+		Name:        "Pastebin",
+		Aliases:     []string{"ps", "paste"},
+		Description: "Creates a pastebin of the channels last 100 messages",
+		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+			id, err := common.CreatePastebinLog(m.ChannelID)
+			if err != nil {
+				return err
+			}
+			common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<http://pastebin.com/%s>", id))
+			return nil
 		},
 	},
 }

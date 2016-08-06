@@ -156,7 +156,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				// Send typing event to indicate the bot is working
 				common.BotSession.ChannelTyping(m.ChannelID)
 
-				logId, err := CreatePastebinLog(m.ChannelID)
+				logId, err := common.CreatePastebinLog(m.ChannelID)
 				if err != nil {
 					return errors.New("Failed uploading to pastebin: " + err.Error())
 				}
@@ -248,32 +248,4 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			},
 		},
 	},
-}
-
-// Creates a pastebin log form the last 100 messages in a channel
-func CreatePastebinLog(cID string) (string, error) {
-	state := common.BotSession.State
-
-	channel, err := state.Channel(cID)
-	if err != nil {
-		return "", err
-	}
-
-	paste := ""
-
-	state.RLock()
-	defer state.RUnlock()
-	for _, m := range channel.Messages {
-
-		body := m.ContentWithMentionsReplaced()
-
-		for _, attachment := range m.Attachments {
-			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
-		}
-
-		paste += fmt.Sprintf("[%s] #%s, %s (%s): %s\n", m.Timestamp, channel.Name, m.Author.Username, m.Author.ID, body)
-	}
-
-	id, err := common.Pastebin.Put(paste, "#"+channel.Name+" Logs")
-	return id, err
 }
