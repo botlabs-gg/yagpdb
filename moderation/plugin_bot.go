@@ -31,7 +31,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&bot.CustomCommand{
 		Key: "moderation_ban_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "ban",
+			Name:         "Ban",
 			Description:  "Bans a member",
 			RequiredArgs: 2,
 			Arguments: []*commandsystem.ArgumentDef{
@@ -82,7 +82,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&bot.CustomCommand{
 		Key: "moderation_kick_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "kick",
+			Name:         "Kick",
 			Description:  "Kicks a member",
 			RequiredArgs: 2,
 			Arguments: []*commandsystem.ArgumentDef{
@@ -133,7 +133,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&bot.CustomCommand{
 		Key: "moderation_report_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "report",
+			Name:         "Report",
 			Description:  "Reports a member",
 			RequiredArgs: 2,
 			Arguments: []*commandsystem.ArgumentDef{
@@ -181,7 +181,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&bot.CustomCommand{
 		Key: "moderation_clean_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "clean",
+			Name:         "Clean",
 			Description:  "Cleans the chat",
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgumentDef{

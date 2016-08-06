@@ -89,9 +89,9 @@ func main() {
 	common.Pastebin = &pastebin.Pastebin{DevKey: config.PastebinDevKey}
 
 	// Setup plugins
+	commands.RegisterPlugin()
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()
-	commands.RegisterPlugin()
 	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()

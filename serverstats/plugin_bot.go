@@ -24,7 +24,7 @@ func (p *Plugin) InitBot() {
 	bot.CommandSystem.RegisterCommands(&bot.CustomCommand{
 		Key: "stats_settings_public:",
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "stats",
+			Name:        "Stats",
 			Description: "Shows server stats",
 			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
 				channel, err := bot.Session.State.Channel(m.ChannelID)
