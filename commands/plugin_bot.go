@@ -57,8 +57,27 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			if parsed.Args[0] != nil {
 				target = parsed.Args[0].Str()
 			}
+
+			client, err := common.RedisPool.Get()
+			if err != nil {
+				return err
+			}
+			defer common.RedisPool.Put(client)
+
+			channel, err := common.BotSession.State.Channel(m.ChannelID)
+			if err != nil {
+				return err
+			}
+
+			config := GetConfig(client, channel.GuildID)
+
+			prefixStr := "**No command prefix set, you can still use commands through mentioning the bot\n**"
+			if config.Prefix != "" {
+				prefixStr = fmt.Sprintf("**Command prefix: %s**\n", config.Prefix)
+			}
+
 			help := bot.CommandSystem.GenerateHelp(target, 0)
-			bot.Session.ChannelMessageSend(m.ChannelID, help)
+			bot.Session.ChannelMessageSend(m.ChannelID, prefixStr+help)
 			return nil
 		},
 	},
