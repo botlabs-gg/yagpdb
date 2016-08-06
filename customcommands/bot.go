@@ -62,11 +62,13 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {
 	}
 
 	switch cmd.TriggerType {
+	// Simpler triggers
 	case CommandTriggerStartsWith:
 		startsWith = trigger
 	case CommandTriggerCommand:
-		startsWith = globalPrefix + " " + trigger
-		// Special triggertypes
+		startsWith = globalPrefix + trigger
+
+	// Special trigger types
 	case CommandTriggerContains:
 		return strings.Contains(msg, trigger)
 	case CommandTriggerRegex:
