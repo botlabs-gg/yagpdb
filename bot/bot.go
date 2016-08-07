@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	VERSION = "0.6 Smelly ALPHA"
+	VERSION = "0.7 __Interesting__ ALPHA"
 )
 
 var (
