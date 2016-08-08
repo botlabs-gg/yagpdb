@@ -77,7 +77,13 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 
 			help := bot.CommandSystem.GenerateHelp(target, 0)
-			bot.Session.ChannelMessageSend(m.ChannelID, prefixStr+help)
+
+			privateChannel, err := bot.GetCreatePrivateChannel(common.BotSession, m.Author.ID)
+			if err != nil {
+				return err
+			}
+
+			bot.Session.ChannelMessageSend(privateChannel.ID, prefixStr+help)
 			return nil
 		},
 	},
