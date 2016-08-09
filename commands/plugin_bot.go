@@ -106,7 +106,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			numGoroutines := runtime.NumGoroutine()
 
 			status := fmt.Sprintf("**YAGPDB STATUS** *bot version: %s*\n - Connected Servers: %d\n - Uptime: %s\n - Allocated: %.2fMB\n - Total Allocated: %.2fMB\n - Number of Goroutines: %d\n",
-				bot.VERSION, servers, uptime.String(), allocated, totalAllocated, numGoroutines)
+				common.VERSION, servers, uptime.String(), allocated, totalAllocated, numGoroutines)
 
 			bot.Session.ChannelMessageSend(m.ChannelID, status)
 

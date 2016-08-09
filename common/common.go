@@ -6,6 +6,10 @@ import (
 	"github.com/jonas747/yagpdb/common/pastebin"
 )
 
+const (
+	VERSION = "0.8 Reeking ALPHA"
+)
+
 var (
 	RedisPool  *pool.Pool
 	BotSession *discordgo.Session

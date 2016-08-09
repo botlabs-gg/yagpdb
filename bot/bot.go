@@ -12,10 +12,6 @@ import (
 	"time"
 )
 
-const (
-	VERSION = "0.7 __Interesting__ ALPHA"
-)
-
 var (
 	Config        *common.Config
 	Session       *discordgo.Session

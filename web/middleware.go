@@ -45,6 +45,7 @@ func BaseTemplateDataMiddleware(inner goji.Handler) goji.Handler {
 		baseData := map[string]interface{}{
 			"clientid": Config.ClientID,
 			"host":     Config.Host,
+			"Version":  common.VERSION,
 		}
 		inner.ServeHTTPC(SetContextTemplateData(ctx, baseData), w, r)
 	}
