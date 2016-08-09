@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 type Plugin struct{}
@@ -49,7 +50,7 @@ func HandlePostCommands(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	templateData["current_page"] = "commands"
 
 	newConfig := &CommandsConfig{
-		Prefix: r.FormValue("prefix"),
+		Prefix: strings.TrimSpace(r.FormValue("prefix")),
 	}
 
 	err := common.SetRedisJson(client, "commands:"+activeGuild.ID, newConfig)

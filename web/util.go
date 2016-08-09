@@ -199,3 +199,15 @@ func GetChannelId(name string, guildId string) (string, error) {
 
 	return channel.ID, nil
 }
+
+// Checks and error and logs it aswell as adding it to the alerts
+// returns true if an error occured
+func CheckErr(t TemplateData, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	t.AddAlerts(ErrorAlert("An Error occured: ", err))
+	log.Println("[Web]: An error occured:", err.Error())
+	return true
+}

@@ -1,0 +1,62 @@
+{{define "cp_reputation"}}
+
+{{template "cp_head" .}}
+
+
+    <div id="wrapper">
+
+    {{template "cp_nav" .}}
+
+        <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Reputation Settings</h1>
+                    <p>Settings for the reputation system</p>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            {{template "cp_alerts" .}}
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <form role="form" method="post" action="">
+                        <div class="panel {{if .Settings.Enabled}}panel-green{{else}}panel-default{{end}}">
+                            <div class="panel-heading">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="enabled" {{if .Settings.Enabled}} checked{{end}}>Reputation Enabled
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label for="cooldown">Rep cooldown in seconds</label>
+                                                <input type="number" class="form-control" id="cooldown" name="cooldown" value="{{.Settings.Cooldown}}">
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <p> More coming soon... </p>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+                                    </div>
+                            </div>
+                        </div>
+                    </form>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->            
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+{{template "cp_footer" .}}
+
+{{end}}
