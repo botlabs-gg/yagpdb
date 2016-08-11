@@ -24,7 +24,14 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 	}
 
 	state.RLock()
-	n := copy(msgBuf, channel.Messages)
+	n := 0
+	for i := len(channel.Messages) - 1; i >= 0; i-- {
+		msgBuf[n] = channel.Messages[i]
+		n++
+		if n >= len(msgBuf) {
+			break
+		}
+	}
 	state.RUnlock()
 
 	// Check if the state was full
@@ -35,7 +42,7 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 	// Initialize the before id
 	before := ""
 	if msgBuf[0] != nil {
-		before = msgBuf[0].ID
+		before = msgBuf[len(channel.Messages)-1].ID
 	}
 
 	// Start fetching from the api

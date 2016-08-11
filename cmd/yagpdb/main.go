@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/extra/pool"
+	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -104,6 +105,7 @@ func main() {
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()
 	reputation.RegisterPlugin()
+	aylien.RegisterPlugin()
 
 	// RUN FORREST RUN
 	if flagRunWeb || flagRunEverything {

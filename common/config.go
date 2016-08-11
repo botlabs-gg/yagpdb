@@ -15,6 +15,9 @@ type Config struct {
 
 	// Third party api's other than discord
 	PastebinDevKey string `json:"pastebin_dev_key"`
+	// for the Alyien text analysys plugin api access
+	AylienAppID  string `json:"aylien_app_id"`
+	AylienAppKey string `json:"aylien_app_key"`
 }
 
 func LoadConfig(path string) (c *Config, err error) {

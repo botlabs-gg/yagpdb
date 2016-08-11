@@ -228,8 +228,10 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				ids := make([]string, 0)
 				for i := len(msgs) - 1; i >= 0; i-- {
+					//log.Println(msgs[i].ID, msgs[i].ContentWithMentionsReplaced())
 					if (filter == "" || msgs[i].Author.ID == filter) && msgs[i].ID != m.ID {
 						ids = append(ids, msgs[i].ID)
+						//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
 						if len(ids) >= num {
 							break
 						}
