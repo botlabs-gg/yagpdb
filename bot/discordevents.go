@@ -20,7 +20,7 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 }
 
 func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *redis.Client) {
-	log.Println("Left guild", g.Name, " Connected to", len(s.State.Guilds))
+	log.Println("Left guild", g.Name, " Connected to", len(s.State.Guilds), "Guilds")
 
 	err := client.Cmd("SREM", "connected_guilds", g.ID).Err
 
