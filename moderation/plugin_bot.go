@@ -186,7 +186,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "Num", Type: commandsystem.ArgumentTypeNumber},
-				&commandsystem.ArgumentDef{Name: "User", Description: "Optionally specify a user, Deletions may be less then num if set", Type: commandsystem.ArgumentTypeUser},
+				&commandsystem.ArgumentDef{Name: "User", Description: "Optionally specify a user, Deletions may be less than `num` if set", Type: commandsystem.ArgumentTypeUser},
 			},
 			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
 				perms, err := common.BotSession.State.UserChannelPermissions(m.Author.ID, m.ChannelID)
