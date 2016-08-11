@@ -3,11 +3,13 @@ package bot
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/yagpdb/common"
 	"log"
 )
 
 func HandleReady(s *discordgo.Session, r *discordgo.Ready) {
 	log.Println("Ready received! Connected to", len(s.State.Guilds), "Guilds")
+	s.UpdateStatus(0, "v"+common.VERSION+" :)")
 }
 
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
