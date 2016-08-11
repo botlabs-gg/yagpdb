@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
@@ -155,20 +156,25 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 }
 
 // Creates a pastebin log form the last 100 messages in a channel
+// Returns the id of the paste
 func CreatePastebinLog(cID string) (string, error) {
-	state := BotSession.State
-
-	channel, err := state.Channel(cID)
+	channel, err := BotSession.State.Channel(cID)
 	if err != nil {
 		return "", err
 	}
 
+	msgs, err := GetMessages(cID, 100)
+	if err != nil {
+		return "", err
+	}
+
+	if len(msgs) < 1 {
+		return "", errors.New("No messages in channel")
+	}
+
 	paste := ""
 
-	state.RLock()
-	defer state.RUnlock()
-	for _, m := range channel.Messages {
-
+	for _, m := range msgs {
 		body := m.ContentWithMentionsReplaced()
 
 		for _, attachment := range m.Attachments {

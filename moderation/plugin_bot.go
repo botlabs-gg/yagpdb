@@ -45,7 +45,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				if !AdminOrPerm(perms, discordgo.PermissionBanMembers) {
-					return errors.New("Neither admin or has ban permission")
+					return errors.New("User has no admin or ban permissions")
 				}
 
 				client, err := common.RedisPool.Get()
@@ -96,7 +96,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				if !AdminOrPerm(perms, discordgo.PermissionKickMembers) {
-					return errors.New("Neither admin or has kick permission")
+					return errors.New("User has no admin or kick permissions")
 				}
 
 				client, err := common.RedisPool.Get()
@@ -186,7 +186,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "Num", Type: commandsystem.ArgumentTypeNumber},
-				&commandsystem.ArgumentDef{Name: "User", Description: "Optionally specify a user", Type: commandsystem.ArgumentTypeUser},
+				&commandsystem.ArgumentDef{Name: "User", Description: "Optionally specify a user, Deletions may be less then num if set", Type: commandsystem.ArgumentTypeUser},
 			},
 			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
 				perms, err := common.BotSession.State.UserChannelPermissions(m.Author.ID, m.ChannelID)
@@ -195,55 +195,64 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				if !AdminOrPerm(perms, discordgo.PermissionManageMessages) {
-					return errors.New("Neither admin or has manage messages permission")
+					return errors.New("User has no admin or manage messages permissions")
 				}
-
-				log.Println("Should clean ", parsed.Args[0].Int(), "msgs")
-
-				channel, err := common.BotSession.State.Channel(m.ChannelID)
-				if err != nil {
-					return err
-				}
-
-				max := parsed.Args[0].Int()
 
 				filter := ""
 				if parsed.Args[1] != nil {
 					filter = parsed.Args[1].DiscordUser().ID
 				}
 
-				bot.Session.State.RLock()
-				defer bot.Session.State.RUnlock()
+				num := parsed.Args[0].Int()
+				if num > 100 {
+					num = 100
+				}
+
+				if num < 1 {
+					if num < 0 {
+						return errors.New("Bot is having a stroke <https://www.youtube.com/watch?v=dQw4w9WgXcQ>")
+					}
+					return errors.New("Can't delete nothing")
+				}
+
+				limitFetch := num
+				if filter != "" {
+					limitFetch = num * 50 // Maybe just change to full fetch?
+				}
+
+				if limitFetch > 1000 {
+					limitFetch = 1000
+				}
+
+				msgs, err := common.GetMessages(m.ChannelID, limitFetch)
 
 				ids := make([]string, 0)
-				for i := len(channel.Messages) - 1; i >= 0; i-- {
-					if (filter == "" || channel.Messages[i].Author.ID == filter) && channel.Messages[i].ID != m.ID {
-						ids = append(ids, channel.Messages[i].ID)
-						if len(ids) >= max {
+				for i := len(msgs) - 1; i >= 0; i-- {
+					if (filter == "" || msgs[i].Author.ID == filter) && msgs[i].ID != m.ID {
+						ids = append(ids, msgs[i].ID)
+						if len(ids) >= num {
 							break
 						}
 					}
 				}
 				ids = append(ids, m.ID)
 
-				if len(ids) < 1 {
+				if len(ids) < 2 {
 					common.BotSession.ChannelMessageSend(m.ChannelID, "Deleted nothing... Sorry :'(")
 					return nil
 				}
 
-				if len(ids) == 1 {
-					err = common.BotSession.ChannelMessageDelete(m.ChannelID, ids[0])
-				} else {
-					err = common.BotSession.ChannelMessagesBulkDelete(m.ChannelID, ids)
-				}
+				var delMsg *discordgo.Message
+				delMsg, err = common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Deleting %d messages! :')", len(ids)))
+				// Self destruct in 3...
 				if err == nil {
-					var msg *discordgo.Message
-					msg, err = common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Deleted %d messages! :')", len(ids)))
-					// Self destruct in 3...
-					if err == nil {
-						go common.DelayedMessageDelete(common.BotSession, time.Second*3, msg.ChannelID, msg.ID)
-					}
+					go common.DelayedMessageDelete(common.BotSession, time.Second*5, delMsg.ChannelID, delMsg.ID)
 				}
+
+				// Wait a second so the client dosen't gltich out
+				time.Sleep(time.Second)
+				err = common.BotSession.ChannelMessagesBulkDelete(m.ChannelID, ids)
+
 				return err
 			},
 		},

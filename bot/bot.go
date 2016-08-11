@@ -28,7 +28,7 @@ func Run() {
 	Session = common.BotSession
 	RedisPool = common.RedisPool
 
-	Session.State.MaxMessageCount = 100
+	Session.State.MaxMessageCount = 1000
 
 	CommandSystem = commandsystem.NewSystem(Session, "")
 	CommandSystem.SendError = true
