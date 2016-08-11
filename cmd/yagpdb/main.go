@@ -55,6 +55,7 @@ func main() {
 		log.SetFlags(log.Lshortfile)
 	} else {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
+		web.LogRequestTimestamps = true
 	}
 
 	if !flagRunBot && !flagRunWeb && !flagRunReddit && !flagRunEverything && flagAction == "" {

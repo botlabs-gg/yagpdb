@@ -21,6 +21,8 @@ var (
 
 	Debug         = true // Turns on debug mode
 	ListenAddress = ":5000"
+
+	LogRequestTimestamps bool
 )
 
 func Run() {
