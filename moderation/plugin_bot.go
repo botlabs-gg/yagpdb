@@ -68,7 +68,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 			err = common.BotSession.GuildBanCreate(parsed.Guild.ID, target.ID, 1)
 			if err != nil {
-				return "API Refused to ban...", err
+				return "API Refused to ban... (Bot probably dosen't have enough permissions)", err
 			}
 
 			log.Println("Banned ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
@@ -109,7 +109,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 			err = common.BotSession.GuildMemberDelete(parsed.Guild.ID, target.ID)
 			if err != nil {
-				return "API Refused to kick... :/", err
+				return "API Refused to kick... :/ (Bot probably dosen't have enough permissions)", err
 			}
 
 			log.Println("Kicked ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())

@@ -63,7 +63,8 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 
 	parsed, err := cs.ParseCommand(raw, m, s)
 	if err != nil {
-		return err
+		s.ChannelMessageSend(m.ChannelID, "Failed parsing command: "+CensorError(err))
+		return nil
 	}
 
 	parsed.Source = source
