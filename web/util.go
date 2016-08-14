@@ -134,12 +134,13 @@ func LogIgnoreErr(err error) {
 
 type TemplateData map[string]interface{}
 
-func (t TemplateData) AddAlerts(alerts ...*Alert) {
+func (t TemplateData) AddAlerts(alerts ...*Alert) TemplateData {
 	if t["alerts"] == nil {
 		t["alerts"] = make([]*Alert, 0)
 	}
 
 	t["alerts"] = append(t["alerts"].([]*Alert), alerts...)
+	return t
 }
 
 type Alert struct {

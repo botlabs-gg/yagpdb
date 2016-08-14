@@ -5,7 +5,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
@@ -13,16 +12,16 @@ import (
 	"net/http"
 )
 
-func (p *Plugin) InitWeb(rootMux, cpMux *goji.Mux) {
+func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/moderation_commands.html"))
 
-	cpMux.HandleFuncC(pat.Get("/cp/:server/commands/moderation"), HandleModeration)
-	cpMux.HandleFuncC(pat.Get("/cp/:server/commands/moderation/"), HandleModeration)
-	cpMux.HandleFuncC(pat.Post("/cp/:server/commands/moderation"), HandlePostModeration)
+	web.CPMux.HandleC(pat.Get("/cp/:server/commands/moderation"), web.RenderHandler(HandleModeration, "cp_moderation_commands"))
+	web.CPMux.HandleC(pat.Get("/cp/:server/commands/moderation/"), web.RenderHandler(HandleModeration, "cp_moderation_commands"))
+	web.CPMux.HandleC(pat.Post("/cp/:server/commands/moderation"), web.RenderHandler(HandlePostModeration, "cp_moderation_commands"))
 }
 
 // The moderation page itself
-func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "moderation"
 	config, err := GetConfig(client, activeGuild.ID)
@@ -34,15 +33,13 @@ func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Reques
 
 	templateData["current_config"] = config
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_moderation_commands", templateData))
+	return templateData
 }
 
 // Update the settings
-func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "moderation"
-
-	r.ParseForm()
 
 	newConfig := &Config{
 		BanEnabled:    r.FormValue("ban_enabled") == "on",
@@ -80,5 +77,5 @@ func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Re
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated moderation settings", user.Username, user.ID))
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_moderation_commands", templateData))
+	return templateData
 }

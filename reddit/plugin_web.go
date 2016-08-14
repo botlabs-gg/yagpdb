@@ -8,6 +8,7 @@ import (
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -19,6 +20,18 @@ type CtxKey int
 const (
 	CurrentConfig CtxKey = iota
 )
+
+func (p *Plugin) InitWeb() {
+	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reddit.html"))
+
+	web.CPMux.HandleC(pat.Get("/cp/:server/reddit"), baseData(web.RenderHandler(HandleReddit, "cp_reddit")))
+	web.CPMux.HandleC(pat.Get("/cp/:server/reddit/"), baseData(web.RenderHandler(HandleReddit, "cp_reddit")))
+
+	// If only html allowed patch and delete.. if only
+	web.CPMux.HandleC(pat.Post("/cp/:server/reddit"), baseData(web.RenderHandler(HandleNew, "cp_reddit")))
+	web.CPMux.HandleC(pat.Post("/cp/:server/reddit/:item/update"), baseData(web.RenderHandler(HandleModify, "cp_reddit")))
+	web.CPMux.HandleC(pat.Post("/cp/:server/reddit/:item/delete"), baseData(web.RenderHandler(HandleRemove, "cp_reddit")))
+}
 
 // Adds the current config to the context
 func baseData(inner goji.Handler) goji.Handler {
@@ -40,22 +53,17 @@ func baseData(inner goji.Handler) goji.Handler {
 
 }
 
-func HandleReddit(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleReddit(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	_, _, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["current_config"] = currentConfig
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
-
+	return templateData
 }
 
-func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-	defer func() {
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
-	}()
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["current_config"] = currentConfig
@@ -68,19 +76,12 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(currentConfig) > 10 {
-		templateData.AddAlerts(web.ErrorAlert("Max 10 items allowed"))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Max 10 items allowed"))
 	}
-	err := r.ParseForm()
-	if err != nil {
-		log.Println("Failed parsing form")
-		templateData.AddAlerts(web.ErrorAlert("Failed parsing form", err))
-		return
-	}
+
 	channelId, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData)
 	if !ok {
-		templateData.AddAlerts(web.ErrorAlert("Unknown channel"))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Unknown channel"))
 	}
 
 	watchItem := &SubredditWatchItem{
@@ -90,25 +91,23 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		ID:      highest + 1,
 	}
 
-	err = watchItem.Set(client)
-	if err != nil {
-		log.Println("Failed adding item", err)
-		templateData.AddAlerts(web.ErrorAlert("Error adding item", err))
-		return
+	err := watchItem.Set(client)
+	if web.CheckErr(templateData, err) {
+		return templateData
 	}
+
 	currentConfig = append(currentConfig, watchItem)
 	templateData["current_config"] = currentConfig
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Sub))
+
+	// Log
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Added feed from /r/%s", user.Username, user.ID, r.FormValue("subreddit")))
+	return templateData
 }
 
-func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-	defer func() {
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
-	}()
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["current_config"] = currentConfig
@@ -116,20 +115,18 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	id := pat.Param(ctx, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))
 	}
 
 	item := FindWatchItem(currentConfig, int(idInt))
 	if item == nil {
-		templateData.AddAlerts(web.ErrorAlert("Unknown id"))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
 
 	r.ParseForm()
 	channel, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData)
 	if !ok {
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Failed retrieving channel"))
 	}
 
 	newSub := r.FormValue("subreddit") == item.Sub
@@ -147,21 +144,19 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed updating item", err))
-		log.Println("Failed updating reddit item", activeGuild.ID, idInt, err)
-	} else {
-		templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
+	if web.CheckErr(templateData, err) {
+		return templateData
 	}
+
+	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
+
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Modified a feed to /r/%s", user.Username, user.ID, r.FormValue("subreddit")))
+	return templateData
 }
 
-func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	defer func() {
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
-	}()
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["current_config"] = currentConfig
@@ -169,25 +164,22 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	id := pat.Param(ctx, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))
 	}
 
 	// Get tha actual watch item from the config
 	item := FindWatchItem(currentConfig, int(idInt))
 
 	if item == nil {
-		templateData.AddAlerts(web.ErrorAlert("Unknown id"))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
 
 	err = item.Remove(client)
-	if err != nil {
-		log.Println("Failed deleting reddit item", activeGuild.ID, id, err)
-		templateData.AddAlerts(web.ErrorAlert("Failed Deleting", err))
-		return
+	if web.CheckErr(templateData, err) {
+		return templateData
 	}
-	templateData.AddAlerts(web.SucessAlert("Sucessfully removed subreddit feed for /r/", item.Sub))
+
+	templateData.AddAlerts(web.SucessAlert("Sucessfully removed subreddit feed for /r/ :')", item.Sub))
 
 	// Remove it form the displayed list
 	for k, c := range currentConfig {
@@ -195,9 +187,12 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			currentConfig = append(currentConfig[:k], currentConfig[k+1:]...)
 		}
 	}
+
 	templateData["current_config"] = currentConfig
+
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Removed feed from /r/%s", user.Username, user.ID, r.FormValue("subreddit")))
+	return templateData
 }
 
 // Validates a channel name or id, adds an error message if not found

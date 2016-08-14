@@ -5,9 +5,6 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/web"
-	"goji.io"
-	"goji.io/pat"
-	"html/template"
 	"log"
 	"sort"
 )
@@ -18,18 +15,6 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
 	bot.RegisterPlugin(plugin)
-}
-
-func (p *Plugin) InitWeb(rootMux, cpMux *goji.Mux) {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/custom_commands.html"))
-
-	cpMux.HandleFuncC(pat.Get("/cp/:server/customcommands"), HandleCommands)
-	cpMux.HandleFuncC(pat.Get("/cp/:server/customcommands/"), HandleCommands)
-
-	// If only html allowed patch and delete.. if only
-	cpMux.HandleFuncC(pat.Post("/cp/:server/customcommands"), HandleNewCommand)
-	cpMux.HandleFuncC(pat.Post("/cp/:server/customcommands/:cmd/update"), HandleUpdateCommand)
-	cpMux.HandleFuncC(pat.Post("/cp/:server/customcommands/:cmd/delete"), HandleDeleteCommand)
 }
 
 func (p *Plugin) InitBot() {

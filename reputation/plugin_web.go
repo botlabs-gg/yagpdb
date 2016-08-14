@@ -2,7 +2,6 @@ package reputation
 
 import (
 	"github.com/jonas747/yagpdb/web"
-	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
@@ -10,47 +9,38 @@ import (
 	"strconv"
 )
 
-func (p *Plugin) InitWeb(root *goji.Mux, cp *goji.Mux) {
+func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reputation.html"))
 
-	cp.HandleFuncC(pat.Get("/cp/:server/reputation"), HandleGetReputation)
-	cp.HandleFuncC(pat.Get("/cp/:server/reputation/"), HandleGetReputation)
-	cp.HandleFuncC(pat.Post("/cp/:server/reputation"), HandlePostReputation)
-	cp.HandleFuncC(pat.Post("/cp/:server/reputation/"), HandlePostReputation)
+	web.CPMux.HandleC(pat.Get("/cp/:server/reputation"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
+	web.CPMux.HandleC(pat.Get("/cp/:server/reputation/"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
+	web.CPMux.HandleC(pat.Post("/cp/:server/reputation"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
+	web.CPMux.HandleC(pat.Post("/cp/:server/reputation/"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
 }
 
-func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-	defer func() {
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reputation", templateData))
-	}()
 
 	settings, err := GetFullSettings(client, activeGuild.ID)
-	if web.CheckErr(templateData, err) {
-		return
+	if !web.CheckErr(templateData, err) {
+		templateData["settings"] = settings
 	}
-
-	templateData["Settings"] = settings
+	return templateData
 }
 
-func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-	defer func() {
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reputation", templateData))
-	}()
 
 	currentSettings, err := GetFullSettings(client, activeGuild.ID)
 	if web.CheckErr(templateData, err) {
-		return
+		return templateData
 	}
 
 	templateData["Settings"] = currentSettings
 
 	parsed, err := strconv.ParseInt(r.FormValue("cooldown"), 10, 32)
 	if web.CheckErr(templateData, err) {
-		return
+		return templateData
 	}
 
 	newSettings := &Settings{
@@ -60,8 +50,9 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	err = newSettings.Save(client, activeGuild.ID)
 	if web.CheckErr(templateData, err) {
-		return
+		return templateData
 	}
 
 	templateData["Settings"] = newSettings
+	return templateData
 }

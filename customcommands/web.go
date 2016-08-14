@@ -8,47 +8,53 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
+	"html/template"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
 )
 
-func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (p *Plugin) InitWeb() {
+	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/custom_commands.html"))
+
+	web.CPMux.HandleC(pat.Get("/cp/:server/customcommands"), web.RenderHandler(HandleCommands, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Get("/cp/:server/customcommands/"), web.RenderHandler(HandleCommands, "cp_custom_commands"))
+
+	// If only html allowed patch and delete.. if only
+	web.CPMux.HandleC(pat.Post("/cp/:server/customcommands"), web.RenderHandler(HandleNewCommand, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Post("/cp/:server/customcommands/:cmd/update"), web.RenderHandler(HandleUpdateCommand, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Post("/cp/:server/customcommands/:cmd/delete"), web.RenderHandler(HandleDeleteCommand, "cp_custom_commands"))
+}
+
+func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["current_page"] = "custom_commands"
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed retrieving commands", err))
-	} else {
+	if !web.CheckErr(templateData, err) {
 		templateData["commands"] = commands
 	}
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
+	return templateData
 }
 
-func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["current_page"] = "custom_commands"
 
 	r.ParseForm()
 
 	triggerType := TriggerTypeFromForm(r.FormValue("type"))
 
 	currentCommands, highest, err := GetCommands(client, activeGuild.ID)
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-		return
+	if web.CheckErr(templateData, err) {
+		return templateData
 	}
+
 	templateData["commands"] = currentCommands
 
 	trigger := r.FormValue("trigger")
 	response := r.FormValue("response")
 	if !CheckLimits(trigger, response) {
-		templateData.AddAlerts(web.ErrorAlert("TOOOOO Big boi"))
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("TOOOOO Big boi"))
 	}
 
 	cmd := &CustomCommand{
@@ -60,9 +66,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 	serialized, err := json.Marshal(cmd)
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
 	}
 
 	redisCommands := []*common.RedisCmd{
@@ -72,9 +76,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 
 	_, err = common.SafeRedisCommands(client, redisCommands)
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
 	}
 
 	templateData["commands"] = append(currentCommands, cmd)
@@ -83,14 +85,13 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Added a new custom command", user.Username, user.ID))
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
+	return templateData
 }
 
-func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	cmdIndex := pat.Param(ctx, "cmd")
 
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["current_page"] = "custom_commands"
 
 	triggerType := TriggerTypeFromForm(r.FormValue("type"))
 	id, _ := strconv.ParseInt(cmdIndex, 10, 32)
@@ -98,9 +99,7 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	trigger := r.FormValue("trigger")
 	response := r.FormValue("response")
 	if !CheckLimits(trigger, response) {
-		templateData.AddAlerts(web.ErrorAlert("TOOOOO Big boi"))
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("TOOOOO Big boi"))
 	}
 
 	cmd := &CustomCommand{
@@ -113,9 +112,7 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	serialized, err := json.Marshal(cmd)
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
 	}
 
 	redisCommands := []*common.RedisCmd{
@@ -125,9 +122,7 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	_, err = common.SafeRedisCommands(client, redisCommands)
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
-		web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-		return
+		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
 	}
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
@@ -140,10 +135,10 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated command #%s", user.Username, user.ID, cmdIndex))
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
+	return templateData
 }
 
-func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "custom_commands"
 
@@ -169,8 +164,7 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Deleted command #%s", user.Username, user.ID, cmdIndex))
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_custom_commands", templateData))
-
+	return templateData
 }
 
 func TriggerTypeFromForm(str string) CommandTriggerType {

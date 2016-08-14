@@ -6,9 +6,6 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"goji.io"
-	"goji.io/pat"
-	"html/template"
 	"log"
 	"strconv"
 )
@@ -17,18 +14,6 @@ type Plugin struct{}
 
 func (p *Plugin) Name() string {
 	return "Reddit"
-}
-
-func (p *Plugin) InitWeb(rootMux *goji.Mux, cpMux *goji.Mux) {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reddit.html"))
-
-	cpMux.HandleC(pat.Get("/cp/:server/reddit"), baseData(goji.HandlerFunc(HandleReddit)))
-	cpMux.HandleC(pat.Get("/cp/:server/reddit/"), baseData(goji.HandlerFunc(HandleReddit)))
-
-	// If only html allowed patch and delete.. if only
-	cpMux.HandleC(pat.Post("/cp/:server/reddit"), baseData(goji.HandlerFunc(HandleNew)))
-	cpMux.HandleC(pat.Post("/cp/:server/reddit/:item/update"), baseData(goji.HandlerFunc(HandleModify)))
-	cpMux.HandleC(pat.Post("/cp/:server/reddit/:item/delete"), baseData(goji.HandlerFunc(HandleRemove)))
 }
 
 func RegisterPlugin() {

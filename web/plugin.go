@@ -1,8 +1,6 @@
 package web
 
-import (
-	"goji.io"
-)
+import ()
 
 // Plugin represents a web plugin
 type Plugin interface {
@@ -10,7 +8,7 @@ type Plugin interface {
 	// mainMuxer is the root and cpmuxer handles the /cp/ route
 	// the cpmuxer requires a session and to be a admin of the server
 	// being managed, otherwise it will redirect to the homepage
-	InitWeb(mainMuxer, cpMuxer *goji.Mux)
+	InitWeb()
 	Name() string
 }
 

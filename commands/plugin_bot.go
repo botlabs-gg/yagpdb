@@ -18,10 +18,6 @@ import (
 	"time"
 )
 
-// var (
-// 	EscapeSquenceRegex = regexp.MustCompile(`(\x1b\[|\x9b)[^@-_]*[@-_]|\x1b[@-_]`)
-// )
-
 func (p *Plugin) InitBot() {
 	bot.CommandSystem.Prefix = p
 	bot.CommandSystem.RegisterCommands(GlobalCommands...)

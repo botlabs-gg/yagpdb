@@ -1,10 +1,8 @@
 package serverstats
 
 import (
-	"encoding/json"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
@@ -12,68 +10,65 @@ import (
 	"net/http"
 )
 
-func (p *Plugin) InitWeb(rootMux, cpMux *goji.Mux) {
+func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/serverstats.html"))
-	cpMux.HandleC(pat.Get("/cp/:server/stats"), publicHandler(HandleStatsHtml, false))
-	cpMux.HandleC(pat.Get("/cp/:server/stats/"), publicHandler(HandleStatsHtml, false))
-	cpMux.HandleFuncC(pat.Post("/cp/:server/stats/settings"), HandleStatsSettings)
-	cpMux.HandleC(pat.Get("/cp/:server/stats/full"), publicHandler(HandleStatsJson, false))
+	web.CPMux.HandleC(pat.Get("/cp/:server/stats"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
+	web.CPMux.HandleC(pat.Get("/cp/:server/stats/"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
+
+	web.CPMux.HandleC(pat.Post("/cp/:server/stats/settings"), web.RenderHandler(HandleStatsSettings, "cp_serverstats"))
+	web.CPMux.HandleC(pat.Get("/cp/:server/stats/full"), web.APIHandler(publicHandler(HandleStatsJson, false)))
 
 	// Public
-	rootMux.HandleC(pat.Get("/public/:server/stats"), publicHandler(HandleStatsHtml, true))
-	rootMux.HandleC(pat.Get("/public/:server/stats/full"), publicHandler(HandleStatsJson, true))
+	web.RootMux.HandleC(pat.Get("/public/:server/stats"), web.RenderHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats"))
+	web.RootMux.HandleC(pat.Get("/public/:server/stats/full"), web.APIHandler(publicHandler(HandleStatsJson, true)))
 }
 
-func publicHandler(inner func(ctx context.Context, w http.ResponseWriter, r *http.Request, publicAccess bool), public bool) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		inner(ctx, w, r, public)
+type publicHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, publicAccess bool) interface{}
+
+func publicHandler(inner publicHandlerFunc, public bool) web.CustomHandlerFunc {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+		return inner(ctx, w, r, public)
 	}
 
-	return goji.HandlerFunc(mw)
+	return mw
 }
 
 // Somewhat dirty - should clean up this mess sometime
-func HandleStatsHtml(ctx context.Context, w http.ResponseWriter, r *http.Request, isPublicAccess bool) {
+func HandleStatsHtml(ctx context.Context, w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
 	client := web.RedisClientFromContext(ctx)
 
 	var guildID string
 	var guildName string
 	templateData := make(map[string]interface{})
 
+	publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+guildID).Bool()
+
 	if !isPublicAccess {
 		_, activeGuild, t := web.GetBaseCPContextData(ctx)
 		templateData = t
-		guildID = activeGuild.ID
 		guildName = activeGuild.Name
 	} else {
-		guildID = pat.Param(ctx, "server")
-		public, _ := client.Cmd("GET", "stats_settings_public:"+guildID).Bool()
-		if !public {
-			return
+		if !publicEnabled {
+			return templateData
 		}
 
 		guild, err := common.GetGuild(client, guildID)
-		if err != nil {
-			log.Println("Failed retrieving guildname")
-			return
+		if web.CheckErr(templateData, err) {
+			return templateData
 		}
+
 		guildName = guild.Name
 
 		templateData["public_guild_id"] = guildID
 	}
 
+	templateData["public"] = publicEnabled
 	templateData["guild_name"] = guildName
-	templateData["current_page"] = "serverstats"
 
-	if !isPublicAccess {
-		public, _ := client.Cmd("GET", "stats_settings_public:"+guildID).Bool()
-		templateData["public"] = public
-	}
-
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_serverstats", templateData))
+	return templateData
 }
 
-func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["current_page"] = "serverstats"
 
@@ -89,10 +84,10 @@ func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Req
 		templateData["public"] = public
 	}
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_serverstats", templateData))
+	return templateData
 }
 
-func HandleStatsJson(ctx context.Context, w http.ResponseWriter, r *http.Request, isPublicAccess bool) {
+func HandleStatsJson(ctx context.Context, w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
 	client := web.RedisClientFromContext(ctx)
 
 	var guildID string
@@ -104,7 +99,8 @@ func HandleStatsJson(ctx context.Context, w http.ResponseWriter, r *http.Request
 		guildID = pat.Param(ctx, "server")
 		public, _ := client.Cmd("GET", "stats_settings_public:"+guildID).Bool()
 		if !public {
-			return
+			w.WriteHeader(http.StatusUnauthorized)
+			return nil
 		}
 	}
 
@@ -112,15 +108,8 @@ func HandleStatsJson(ctx context.Context, w http.ResponseWriter, r *http.Request
 	if err != nil {
 		log.Println("Failed retrieving stats", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil
 	}
 
-	out, err := json.Marshal(stats)
-	if err != nil {
-		log.Println("Failed Encoding stats", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(out)
+	return stats
 }

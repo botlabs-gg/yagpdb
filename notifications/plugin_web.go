@@ -6,21 +6,31 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"goji.io/pat"
 	"golang.org/x/net/context"
+	"html/template"
 	"log"
 	"net/http"
 )
 
-func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+func (p *Plugin) InitWeb() {
+	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/notifications_general.html"))
 
-	templateData["current_page"] = "notifications/general"
-	templateData["current_config"] = GetConfig(client, activeGuild.ID)
-
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_notifications_general", templateData))
+	web.CPMux.HandleC(pat.Get("/cp/:server/notifications/general"), web.RenderHandler(HandleNotificationsGet, "cp_notifications_general"))
+	web.CPMux.HandleC(pat.Get("/cp/:server/notifications/general/"), web.RenderHandler(HandleNotificationsGet, "cp_notifications_general"))
+	web.CPMux.HandleC(pat.Post("/cp/:server/notifications/general"), web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"))
+	web.CPMux.HandleC(pat.Post("/cp/:server/notifications/general/"), web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"))
 }
 
-func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+
+	templateData["current_config"] = GetConfig(client, activeGuild.ID)
+
+	return templateData
+}
+
+func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	templateData["current_page"] = "notifications/general"
@@ -105,5 +115,5 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 		log.Println("Error setting config", err)
 	}
 
-	web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_notifications_general", templateData))
+	return templateData
 }

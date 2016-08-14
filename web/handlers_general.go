@@ -9,17 +9,14 @@ import (
 	"time"
 )
 
-func IndexHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func IndexHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+
 	templateData := TemplateData(make(map[string]interface{}))
 
 	if val := ctx.Value(ContextKeyTemplateData); val != nil {
 		templateData = val.(TemplateData)
 	}
-
-	err := Templates.ExecuteTemplate(w, "index", templateData)
-	if err != nil {
-		log.Println("Failed executing templae", err)
-	}
+	return templateData
 }
 
 // Will not serve pages unless a session is available

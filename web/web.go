@@ -23,6 +23,9 @@ var (
 	ListenAddress = ":5000"
 
 	LogRequestTimestamps bool
+
+	RootMux *goji.Mux
+	CPMux   *goji.Mux
 )
 
 func Run() {
@@ -47,7 +50,7 @@ func Run() {
 
 func setupRoutes() *goji.Mux {
 	mux := goji.NewMux()
-
+	RootMux = mux
 	// Setup fileserver
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 
@@ -59,7 +62,7 @@ func setupRoutes() *goji.Mux {
 	mux.UseC(UserInfoMiddleware)
 
 	// General handlers
-	mux.HandleFuncC(pat.Get("/"), IndexHandler)
+	mux.HandleC(pat.Get("/"), RenderHandler(IndexHandler, "index"))
 	mux.HandleFuncC(pat.Get("/login"), HandleLogin)
 	mux.HandleFuncC(pat.Get("/confirm_login"), HandleConfirmLogin)
 	mux.HandleFuncC(pat.Get("/logout"), HandleLogout)
@@ -74,8 +77,8 @@ func setupRoutes() *goji.Mux {
 	mux.HandleC(pat.Post("/cp"), cpMuxer)
 
 	// Server selection has it's own handler
-	cpMuxer.HandleFuncC(pat.Get("/cp"), HandleSelectServer)
-	cpMuxer.HandleFuncC(pat.Get("/cp/"), HandleSelectServer)
+	cpMuxer.HandleC(pat.Get("/cp"), RenderHandler(nil, "cp_selectserver"))
+	cpMuxer.HandleC(pat.Get("/cp/"), RenderHandler(nil, "cp_selectserver"))
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	serverCpMuxer := goji.NewMux()
@@ -88,9 +91,10 @@ func setupRoutes() *goji.Mux {
 
 	serverCpMuxer.HandleFuncC(pat.Get("/cp/:server/cplogs"), HandleCPLogs)
 	serverCpMuxer.HandleFuncC(pat.Get("/cp/:server/cplogs/"), HandleCPLogs)
+	CPMux = serverCpMuxer
 
 	for _, plugin := range plugins {
-		plugin.InitWeb(mux, serverCpMuxer)
+		plugin.InitWeb()
 		log.Println("Initialized web plugin", plugin.Name())
 	}
 

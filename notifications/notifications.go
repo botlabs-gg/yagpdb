@@ -5,9 +5,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"goji.io"
-	"goji.io/pat"
-	"html/template"
 	"log"
 )
 
@@ -28,14 +25,6 @@ func (p *Plugin) InitBot() {
 	bot.Session.AddHandler(bot.CustomGuildMemberAdd(HandleGuildMemberAdd))
 	bot.Session.AddHandler(bot.CustomGuildMemberRemove(HandleGuildMemberRemove))
 	bot.Session.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
-}
-
-func (p *Plugin) InitWeb(mainMuxer, cpMuxer *goji.Mux) {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/notifications_general.html"))
-	cpMuxer.HandleFuncC(pat.Get("/cp/:server/notifications/general"), HandleNotificationsGet)
-	cpMuxer.HandleFuncC(pat.Get("/cp/:server/notifications/general/"), HandleNotificationsGet)
-	cpMuxer.HandleFuncC(pat.Post("/cp/:server/notifications/general"), HandleNotificationsPost)
-	cpMuxer.HandleFuncC(pat.Post("/cp/:server/notifications/general/"), HandleNotificationsPost)
 }
 
 type Config struct {

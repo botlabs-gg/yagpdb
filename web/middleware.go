@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"goji.io"
@@ -234,6 +235,38 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild, "current_guild_channels": channels})
 
 		inner.ServeHTTPC(newCtx, w, r)
+	}
+	return goji.HandlerFunc(mw)
+}
+
+type CustomHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{}
+
+// A helper wrapper that renders a template
+func RenderHandler(inner CustomHandlerFunc, tmpl string) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		var out interface{}
+		if inner != nil {
+			out = inner(ctx, w, r)
+		}
+
+		if out == nil {
+			if d, ok := ctx.Value(ContextKeyTemplateData).(TemplateData); ok {
+				out = d
+			}
+		}
+
+		LogIgnoreErr(Templates.ExecuteTemplate(w, tmpl, out))
+	}
+	return goji.HandlerFunc(mw)
+}
+
+// A helper wrapper that json encodes the returned value
+func APIHandler(inner CustomHandlerFunc) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		out := inner(ctx, w, r)
+		if out != nil {
+			LogIgnoreErr(json.NewEncoder(w).Encode(out))
+		}
 	}
 	return goji.HandlerFunc(mw)
 }
