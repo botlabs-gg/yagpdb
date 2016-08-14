@@ -31,7 +31,7 @@ func Run() {
 	Session.State.MaxMessageCount = 1000
 
 	CommandSystem = commandsystem.NewSystem(Session, "")
-	CommandSystem.SendError = true
+	CommandSystem.SendError = false
 	CommandSystem.CensorError = CensorError
 
 	log.Println("Running bot...")

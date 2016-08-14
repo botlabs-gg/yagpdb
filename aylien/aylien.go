@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"github.com/AYLIEN/aylien_textapi_go"
 	"github.com/bwmarrin/discordgo"
-	"github.com/jonas747/dutil"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"log"
 	"strings"
+)
+
+var (
+	ErrNoMessages = errors.New("Failed finding any messages to analyze")
 )
 
 type Plugin struct {
@@ -40,14 +44,16 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) InitBot() {
-	bot.CommandSystem.RegisterCommands(&commandsystem.SimpleCommand{
-		Name:        "sentiment",
-		Aliases:     []string{"sent"},
-		Description: "Does sentiment analysys on a message or your last 5 messages longer than 3 words",
-		Arguments: []*commandsystem.ArgumentDef{
-			&commandsystem.ArgumentDef{Name: "what", Description: "Specify something to analyze, by default it takes your last 5 messages", Type: commandsystem.ArgumentTypeString},
+	bot.CommandSystem.RegisterCommands(&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "sentiment",
+			Aliases:     []string{"sent"},
+			Description: "Does sentiment analysys on a message or your last 5 messages longer than 3 words",
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "what", Description: "Specify something to analyze, by default it takes your last 5 messages", Type: commandsystem.ArgumentTypeString},
+			},
 		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			// Were working hard!
 			common.BotSession.ChannelTyping(m.ChannelID)
 
@@ -57,7 +63,7 @@ func (p *Plugin) InitBot() {
 					Text: parsed.Args[0].Str(),
 				})
 				if err != nil {
-					return err
+					return "Error querying aylien api", err
 				}
 				responses = []*textapi.SentimentResponse{resp}
 			} else {
@@ -65,11 +71,11 @@ func (p *Plugin) InitBot() {
 				// Get the message to analyze
 				msgs, err := common.GetMessages(m.ChannelID, 100)
 				if err != nil {
-					return err
+					return "Error retrieving messages", err
 				}
 
 				if len(msgs) < 1 {
-					return errors.New("Failed finding any messages to analyze?")
+					return ErrNoMessages, ErrNoMessages
 				}
 
 				// filter out our own and longer than 3 words
@@ -88,13 +94,13 @@ func (p *Plugin) InitBot() {
 				}
 
 				if len(toAnalyze) < 1 {
-					return errors.New("Found no messages from you longer than 3 words")
+					return ErrNoMessages, ErrNoMessages
 				}
 
 				for _, msg := range toAnalyze {
 					resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: msg.ContentWithMentionsReplaced()})
 					if err != nil {
-						return err
+						return "Error querying aylien api", err
 					}
 
 					responses = append(responses, resp)
@@ -105,8 +111,7 @@ func (p *Plugin) InitBot() {
 			for _, resp := range responses {
 				out += fmt.Sprintf("*%s*\nPolarity: **%s** *(Confidence: %.2f%%)* Subjectivity: **%s** *(Confidence: %.2f%%)*\n\n", resp.Text, resp.Polarity, resp.PolarityConfidence*100, resp.Subjectivity, resp.SubjectivityConfidence*100)
 			}
-			_, err := dutil.SplitSendMessage(common.BotSession, m.ChannelID, out)
-			return err
+			return out, nil
 		},
 	})
 }

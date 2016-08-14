@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alfredxing/calc/compute"
 	"github.com/bwmarrin/discordgo"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -45,31 +46,22 @@ func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) str
 }
 
 var GlobalCommands = []commandsystem.CommandHandler{
-	&commandsystem.SimpleCommand{
-		Name:        "Help",
-		Description: "Shows help abut all or one specific command",
-		RunInDm:     true,
-		Arguments: []*commandsystem.ArgumentDef{
-			&commandsystem.ArgumentDef{Name: "command", Type: commandsystem.ArgumentTypeString},
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Help",
+			Description: "Shows help abut all or one specific command",
+			RunInDm:     true,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "command", Type: commandsystem.ArgumentTypeString},
+			},
 		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			target := ""
 			if parsed.Args[0] != nil {
 				target = parsed.Args[0].Str()
 			}
 
-			client, err := common.RedisPool.Get()
-			if err != nil {
-				return err
-			}
-			defer common.RedisPool.Put(client)
-
-			channel, err := common.BotSession.State.Channel(m.ChannelID)
-			if err != nil {
-				return err
-			}
-
-			config := GetConfig(client, channel.GuildID)
+			config := GetConfig(client, parsed.Guild.ID)
 
 			prefixStr := "**No command prefix set, you can still use commands through mentioning the bot\n**"
 			if config.Prefix != "" {
@@ -80,19 +72,21 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 			privateChannel, err := bot.GetCreatePrivateChannel(common.BotSession, m.Author.ID)
 			if err != nil {
-				return err
+				return "", err
 			}
 
 			bot.Session.ChannelMessageSend(privateChannel.ID, prefixStr+help)
-			return nil
+			return "", nil
 		},
 	},
 	// Status command shows the bot's status, stuff like version, conntected servers, uptime, memory used etc..
-	&commandsystem.SimpleCommand{
-		Name:        "Status",
-		Description: "Shows yagpdb status",
-		RunInDm:     true,
-		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Status",
+			Description: "Shows yagpdb status",
+			RunInDm:     true,
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			var memStats runtime.MemStats
 			runtime.ReadMemStats(&memStats)
 			servers := len(bot.Session.State.Guilds)
@@ -108,60 +102,60 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			status := fmt.Sprintf("**YAGPDB STATUS** *bot version: %s*\n - Connected Servers: %d\n - Uptime: %s\n - Allocated: %.2fMB\n - Total Allocated: %.2fMB\n - Number of Goroutines: %d\n",
 				common.VERSION, servers, uptime.String(), allocated, totalAllocated, numGoroutines)
 
-			bot.Session.ChannelMessageSend(m.ChannelID, status)
-
-			return nil
+			return status, nil
 		},
 	},
 	// Some fun commands because why not
-	&commandsystem.SimpleCommand{
-		Name:         "Reverse",
-		Aliases:      []string{"r", "rev"},
-		Description:  "Flips stuff",
-		RunInDm:      true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgumentDef{
-			&commandsystem.ArgumentDef{Name: "What", Description: "To flip", Type: commandsystem.ArgumentTypeString},
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "Reverse",
+			Aliases:      []string{"r", "rev"},
+			Description:  "Flips stuff",
+			RunInDm:      true,
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "What", Description: "To flip", Type: commandsystem.ArgumentTypeString},
+			},
 		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			toFlip := cmd.Args[0].Str()
 
 			out := ""
 			for _, r := range toFlip {
 				out = string(r) + out
 			}
-			bot.Session.ChannelMessageSend(m.ChannelID, "Flippa: "+out)
-
-			return nil
+			return out, nil
 		},
 	},
-	&commandsystem.SimpleCommand{
-		Name:         "Weather",
-		Aliases:      []string{"w"},
-		Description:  "Shows the weather somewhere",
-		RunInDm:      true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgumentDef{
-			&commandsystem.ArgumentDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentTypeString},
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "Weather",
+			Aliases:      []string{"w"},
+			Description:  "Shows the weather somewhere",
+			RunInDm:      true,
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentTypeString},
+			},
 		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			where := cmd.Args[0].Str()
 
 			req, err := http.NewRequest("GET", "http://wttr.in/"+where, nil)
 			if err != nil {
-				return err
+				return err, err
 			}
 
 			req.Header.Set("User-Agent", "curl/7.49.1")
 
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
-				return err
+				return err, err
 			}
 
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return err
+				return err, err
 			}
 
 			// remove escape sequences
@@ -178,79 +172,82 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 			out += "\n```"
 
-			_, err = bot.Session.ChannelMessageSend(m.ChannelID, out)
-			return err
+			return out, nil
 		},
 	},
-	&commandsystem.SimpleCommand{
-		Name:        "Invite",
-		Aliases:     []string{"inv", "i"},
-		Description: "Responds with bto invite link",
-		RunInDm:     true,
-		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Invite",
+			Aliases:     []string{"inv", "i"},
+			Description: "Responds with bto invite link",
+			RunInDm:     true,
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			clientId := bot.Config.ClientID
 			link := fmt.Sprintf("https://discordapp.com/oauth2/authorize?client_id=%s&scope=bot&permissions=535948311&response_type=code&redirect_uri=http://yagpdb.xyz/cp/", clientId)
-			_, err := bot.Session.ChannelMessageSend(m.ChannelID, "You manage this bot through the control panel interface but heres an invite link incase you just want that\n"+link)
-			return err
+			return "You manage this bot through the control panel interface but heres an invite link incase you just want that\n" + link, nil
 		},
 	},
-	&commandsystem.SimpleCommand{
-		Name:         "Ascii",
-		Aliases:      []string{"asci"},
-		Description:  "Converts an image to ascii",
-		RunInDm:      true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgumentDef{
-			&commandsystem.ArgumentDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentTypeString},
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "Ascii",
+			Aliases:      []string{"asci"},
+			Description:  "Converts an image to ascii",
+			RunInDm:      true,
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentTypeString},
+			},
 		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 
 			resp, err := http.Get(cmd.Args[0].Str())
 			if err != nil {
-				return err
+				return err, err
 			}
 
 			img, _, err := image.Decode(resp.Body)
 			resp.Body.Close()
 			if err != nil {
-				return err
+				return err, err
 			}
 
 			out := Convert2Ascii(ScaleImage(img, 50))
-			_, err = bot.Session.ChannelMessageSend(m.ChannelID, "```\n"+string(out)+"\n```")
-			return err
+			return "```\n" + string(out) + "\n```", nil
 		},
 	},
-	&commandsystem.SimpleCommand{
-		Name:         "Calc",
-		Aliases:      []string{"c", "calculate"},
-		Description:  "Converts an image to ascii",
-		RunInDm:      true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgumentDef{
-			&commandsystem.ArgumentDef{Name: "What", Description: "What to calculate", Type: commandsystem.ArgumentTypeString},
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "Calc",
+			Aliases:      []string{"c", "calculate"},
+			Description:  "Calculator 2+2=5",
+			RunInDm:      true,
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "What", Description: "What to calculate", Type: commandsystem.ArgumentTypeString},
+			},
 		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			result, err := compute.Evaluate(cmd.Args[0].Str())
 			if err != nil {
-				return err
+				return err, err
 			}
 
-			bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Result: `%f`", result))
-			return nil
+			return fmt.Sprintf("Result: `%.20f`", result), nil
 		},
 	},
-	&commandsystem.SimpleCommand{
-		Name:        "Pastebin",
-		Aliases:     []string{"ps", "paste"},
-		Description: "Creates a pastebin of the channels last 100 messages",
-		RunFunc: func(cmd *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+	&bot.CustomCommand{
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Pastebin",
+			Aliases:     []string{"ps", "paste"},
+			Description: "Creates a pastebin of the channels last 100 messages",
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			id, err := common.CreatePastebinLog(m.ChannelID)
 			if err != nil {
-				return err
+				return "Failed uploading to pastebin", err
 			}
-			common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<http://pastebin.com/%s>", id))
-			return nil
+			return fmt.Sprintf("<http://pastebin.com/%s>", id), nil
 		},
 	},
 }

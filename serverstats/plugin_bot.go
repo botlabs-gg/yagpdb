@@ -26,43 +26,26 @@ func (p *Plugin) InitBot() {
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Stats",
 			Description: "Shows server stats",
-			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
-				channel, err := bot.Session.State.Channel(m.ChannelID)
-				if err != nil {
-					return err
-				}
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			stats, err := RetrieveFullStats(client, parsed.Guild.ID)
+			if err != nil {
+				return "Error retrieving stats", err
+			}
 
-				guild, err := bot.Session.State.Guild(channel.GuildID)
-				if err != nil {
-					return err
-				}
+			total := 0
+			for _, c := range stats.ChannelsHour {
+				total += c.Count
+			}
 
-				client, err := common.RedisPool.Get()
-				if err != nil {
-					return err
-				}
-				defer common.RedisPool.Put(client)
+			header := fmt.Sprintf("Server stats for **%s** *(Also viewable at %s/public/%s/stats)* ", parsed.Guild.Name, common.Conf.Host, parsed.Guild.ID)
+			body := fmt.Sprintf("Members joined last 24h: **%d**\n", stats.JoinedDay)
+			body += fmt.Sprintf("Members Left last 24h: **%d**\n", stats.LeftDay)
+			body += fmt.Sprintf("Members online: **%d**\n", stats.Online)
+			body += fmt.Sprintf("Total Members: **%d**\n", stats.TotalMembers)
+			body += fmt.Sprintf("Messages last 24h: **%d**\n", total)
 
-				stats, err := RetrieveFullStats(client, guild.ID)
-				if err != nil {
-					return err
-				}
-
-				total := 0
-				for _, c := range stats.ChannelsHour {
-					total += c.Count
-				}
-
-				header := fmt.Sprintf("Server stats for **%s** *(Also viewable at %s/public/%s/stats)* ", guild.Name, common.Conf.Host, guild.ID)
-				body := fmt.Sprintf("Members joined last 24h: **%d**\n", stats.JoinedDay)
-				body += fmt.Sprintf("Members Left last 24h: **%d**\n", stats.LeftDay)
-				body += fmt.Sprintf("Members online: **%d**\n", stats.Online)
-				body += fmt.Sprintf("Total Members: **%d**\n", stats.TotalMembers)
-				body += fmt.Sprintf("Messages last 24h: **%d**\n", total)
-
-				bot.Session.ChannelMessageSend(m.ChannelID, header+"\n\n"+body)
-				return nil
-			},
+			return header + "\n\n" + body, nil
 		},
 	})
 

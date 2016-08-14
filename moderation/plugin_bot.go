@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -11,20 +12,29 @@ import (
 	"time"
 )
 
+var (
+	ErrFailedPerms = errors.New("Failed retrieving perms")
+)
+
 func (p *Plugin) InitBot() {
 	bot.CommandSystem.RegisterCommands(ModerationCommands...)
 }
 
-func AdminOrPerm(in int, perm int) bool {
-	if in&perm != 0 {
-		return true
+func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
+	perms, err := common.BotSession.State.UserChannelPermissions(userID, channelID)
+	if err != nil {
+		return false, err
 	}
 
-	if in&discordgo.PermissionManageServer != 0 {
-		return true
+	if perms&needed != 0 {
+		return true, nil
 	}
 
-	return false
+	if perms&discordgo.PermissionManageServer != 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 var ModerationCommands = []commandsystem.CommandHandler{
@@ -38,45 +48,35 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
 			},
-			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
-				perms, err := common.BotSession.State.UserChannelPermissions(m.Author.ID, m.ChannelID)
-				if err != nil {
-					return err
-				}
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 
-				if !AdminOrPerm(perms, discordgo.PermissionBanMembers) {
-					return errors.New("User has no admin or ban permissions")
-				}
+			ok, err := AdminOrPerm(discordgo.PermissionBanMembers, m.Author.ID, m.ChannelID)
+			if err != nil {
+				return ErrFailedPerms, err
+			}
+			if !ok {
+				return "You have no admin or ban permissions >:(", nil
+			}
 
-				client, err := common.RedisPool.Get()
-				if err != nil {
-					return err
-				}
-				defer common.RedisPool.Put(client)
+			channelID, err := client.Cmd("GET", "moderation_action_channel:"+parsed.Guild.ID).Str()
+			if err != nil {
+				channelID = m.ChannelID
+			}
 
-				channel, err := common.BotSession.State.Channel(m.ChannelID)
-				if err != nil {
-					return err
-				}
+			target := parsed.Args[0].DiscordUser()
 
-				channelID, err := client.Cmd("GET", "moderation_action_channel:"+channel.GuildID).Str()
-				if err != nil {
-					channelID = m.ChannelID
-				}
+			err = common.BotSession.GuildBanCreate(parsed.Guild.ID, target.ID, 1)
+			if err != nil {
+				return "API Refused to ban...", err
+			}
 
-				target := parsed.Args[0].DiscordUser()
-
-				err = common.BotSession.GuildBanCreate(channel.GuildID, target.ID, 1)
-				if err != nil {
-					return err
-				}
-
-				common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Banned **%s** *(%s)*\n%s", m.Author.ID, target.Username, target.ID, parsed.Args[1].Str()))
-
-				log.Println("Banned ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
-
-				return nil
-			},
+			log.Println("Banned ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
+			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Banned **%s** *(%s)*\n**Reason:** %s", m.Author.ID, target.Username, target.ID, parsed.Args[1].Str()))
+			if err != nil {
+				return "Failed sending report log", err
+			}
+			return "", nil
 		},
 	},
 	&bot.CustomCommand{
@@ -89,45 +89,35 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
 			},
-			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
-				perms, err := common.BotSession.State.UserChannelPermissions(m.Author.ID, m.ChannelID)
-				if err != nil {
-					return err
-				}
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 
-				if !AdminOrPerm(perms, discordgo.PermissionKickMembers) {
-					return errors.New("User has no admin or kick permissions")
-				}
+			ok, err := AdminOrPerm(discordgo.PermissionKickMembers, m.Author.ID, m.ChannelID)
+			if err != nil {
+				return ErrFailedPerms, err
+			}
+			if !ok {
+				return "You have no admin or kick permissions >:(", nil
+			}
 
-				client, err := common.RedisPool.Get()
-				if err != nil {
-					return err
-				}
-				defer common.RedisPool.Put(client)
+			channelID, err := client.Cmd("GET", "moderation_action_channel:"+parsed.Guild.ID).Str()
+			if err != nil {
+				channelID = m.ChannelID
+			}
 
-				channel, err := common.BotSession.State.Channel(m.ChannelID)
-				if err != nil {
-					return err
-				}
+			target := parsed.Args[0].DiscordUser()
 
-				channelID, err := client.Cmd("GET", "moderation_action_channel:"+channel.GuildID).Str()
-				if err != nil {
-					channelID = m.ChannelID
-				}
+			err = common.BotSession.GuildMemberDelete(parsed.Guild.ID, target.ID)
+			if err != nil {
+				return "API Refused to kick... :/", err
+			}
 
-				target := parsed.Args[0].DiscordUser()
-
-				err = common.BotSession.GuildMemberDelete(channel.GuildID, target.ID)
-				if err != nil {
-					return err
-				}
-
-				common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Kicked **%s** *(%s)*\n%s", m.Author.ID, target.Username, target.ID, parsed.Args[1].Str()))
-
-				log.Println("Kicked ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
-
-				return nil
-			},
+			log.Println("Kicked ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
+			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Kicked **%s** *(%s)*\n**Reason:** %s", m.Author.ID, target.Username, target.ID, parsed.Args[1].Str()))
+			if err != nil {
+				return "Failed sending kick repor in action channel", err
+			}
+			return "", nil
 		},
 	},
 	&bot.CustomCommand{
@@ -140,123 +130,114 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
 			},
-			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 
-				client, err := common.RedisPool.Get()
-				if err != nil {
-					return err
-				}
-				defer common.RedisPool.Put(client)
+			// Send typing event to indicate the bot is working
+			common.BotSession.ChannelTyping(m.ChannelID)
 
-				channel, err := common.BotSession.State.Channel(m.ChannelID)
-				if err != nil {
-					return err
-				}
+			logId, err := common.CreatePastebinLog(m.ChannelID)
+			if err != nil {
+				return "Failed pastebin upload", err
+			}
 
-				// Send typing event to indicate the bot is working
-				common.BotSession.ChannelTyping(m.ChannelID)
+			channelID, err := client.Cmd("GET", "moderation_report_channel:"+parsed.Guild.ID).Str()
+			if err != nil || channelID == "" {
+				channelID = parsed.Guild.ID
+			}
+			reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: <http://pastebin.com/%s>", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logId)
 
-				logId, err := common.CreatePastebinLog(m.ChannelID)
-				if err != nil {
-					return errors.New("Failed uploading to pastebin: " + err.Error())
-				}
+			_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
+			if err != nil {
+				return "Failed sending report", err
+			}
 
-				channelID, err := client.Cmd("GET", "moderation_report_channel:"+channel.GuildID).Str()
-				if err != nil || channelID == "" {
-					channelID = channel.GuildID
-				}
-				reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: <http://pastebin.com/%s>", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logId)
-
-				_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
-				if err != nil {
-					return err
-				}
-
-				common.BotSession.ChannelMessageSend(m.ChannelID, "User reported to the proper authorities")
-
-				return nil
-			},
+			// don't bother sending confirmation if it's in the same channel
+			if channelID != m.ChannelID {
+				return "User reported to the proper authorities", nil
+			}
+			return "", nil
 		},
 	},
 	&bot.CustomCommand{
 		Key: "moderation_clean_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "Clean",
-			Description:  "Cleans the chat",
-			RequiredArgs: 1,
+			Name:                  "Clean",
+			Description:           "Cleans the chat",
+			RequiredArgs:          1,
+			UserArgRequireMention: true,
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "Num", Type: commandsystem.ArgumentTypeNumber},
 				&commandsystem.ArgumentDef{Name: "User", Description: "Optionally specify a user, Deletions may be less than `num` if set", Type: commandsystem.ArgumentTypeUser},
 			},
-			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
-				perms, err := common.BotSession.State.UserChannelPermissions(m.Author.ID, m.ChannelID)
-				if err != nil {
-					return err
-				}
+			ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			ok, err := AdminOrPerm(discordgo.PermissionManageMessages, m.Author.ID, m.ChannelID)
+			if err != nil {
+				return ErrFailedPerms, err
+			}
+			if !ok {
+				return "You have no admin or manage messages permissions >:(", nil
+			}
 
-				if !AdminOrPerm(perms, discordgo.PermissionManageMessages) {
-					return errors.New("User has no admin or manage messages permissions")
-				}
+			filter := ""
+			if parsed.Args[1] != nil {
+				filter = parsed.Args[1].DiscordUser().ID
+			}
 
-				filter := ""
-				if parsed.Args[1] != nil {
-					filter = parsed.Args[1].DiscordUser().ID
-				}
+			num := parsed.Args[0].Int()
+			if num > 100 {
+				num = 100
+			}
 
-				num := parsed.Args[0].Int()
-				if num > 100 {
-					num = 100
+			if num < 1 {
+				if num < 0 {
+					return errors.New("Bot is having a stroke <https://www.youtube.com/watch?v=dQw4w9WgXcQ>"), nil
 				}
+				return errors.New("Can't delete nothing"), nil
+			}
 
-				if num < 1 {
-					if num < 0 {
-						return errors.New("Bot is having a stroke <https://www.youtube.com/watch?v=dQw4w9WgXcQ>")
+			limitFetch := num
+			if filter != "" {
+				limitFetch = num * 50 // Maybe just change to full fetch?
+			}
+
+			if limitFetch > 1000 {
+				limitFetch = 1000
+			}
+
+			msgs, err := common.GetMessages(m.ChannelID, limitFetch)
+
+			ids := make([]string, 0)
+			for i := len(msgs) - 1; i >= 0; i-- {
+				//log.Println(msgs[i].ID, msgs[i].ContentWithMentionsReplaced())
+				if (filter == "" || msgs[i].Author.ID == filter) && msgs[i].ID != m.ID {
+					ids = append(ids, msgs[i].ID)
+					//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
+					if len(ids) >= num {
+						break
 					}
-					return errors.New("Can't delete nothing")
 				}
+			}
+			ids = append(ids, m.ID)
 
-				limitFetch := num
-				if filter != "" {
-					limitFetch = num * 50 // Maybe just change to full fetch?
-				}
+			if len(ids) < 2 {
+				return "Deleted nothing... sorry :(", nil
+			}
 
-				if limitFetch > 1000 {
-					limitFetch = 1000
-				}
+			var delMsg *discordgo.Message
+			delMsg, err = common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Deleting %d messages! :')", len(ids)))
+			// Self destruct in 3...
+			if err == nil {
+				go common.DelayedMessageDelete(common.BotSession, time.Second*5, delMsg.ChannelID, delMsg.ID)
+			}
 
-				msgs, err := common.GetMessages(m.ChannelID, limitFetch)
+			// Wait a second so the client dosen't gltich out
+			time.Sleep(time.Second)
+			err = common.BotSession.ChannelMessagesBulkDelete(m.ChannelID, ids)
 
-				ids := make([]string, 0)
-				for i := len(msgs) - 1; i >= 0; i-- {
-					//log.Println(msgs[i].ID, msgs[i].ContentWithMentionsReplaced())
-					if (filter == "" || msgs[i].Author.ID == filter) && msgs[i].ID != m.ID {
-						ids = append(ids, msgs[i].ID)
-						//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
-						if len(ids) >= num {
-							break
-						}
-					}
-				}
-				ids = append(ids, m.ID)
-
-				if len(ids) < 2 {
-					common.BotSession.ChannelMessageSend(m.ChannelID, "Deleted nothing... Sorry :'(")
-					return nil
-				}
-
-				var delMsg *discordgo.Message
-				delMsg, err = common.BotSession.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Deleting %d messages! :')", len(ids)))
-				// Self destruct in 3...
-				if err == nil {
-					go common.DelayedMessageDelete(common.BotSession, time.Second*5, delMsg.ChannelID, delMsg.ID)
-				}
-
-				// Wait a second so the client dosen't gltich out
-				time.Sleep(time.Second)
-				err = common.BotSession.ChannelMessagesBulkDelete(m.ChannelID, ids)
-
-				return err
-			},
+			return "", err
 		},
 	},
 }

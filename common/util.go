@@ -128,6 +128,15 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	}
 }
 
+func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, msg string) {
+	m, err := BotSession.ChannelMessageSend(cID, msg)
+	if err != nil {
+		return
+	}
+
+	DelayedMessageDelete(session, duration, cID, m.ID)
+}
+
 // Helper methods that also checks the cache
 func GetGuildChannels(client *redis.Client, guildID string) (channels []*discordgo.Channel, err error) {
 	// Check cache first

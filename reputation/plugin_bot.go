@@ -1,12 +1,11 @@
 package reputation
 
 import (
-	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
 	"log"
 	"strconv"
 	"time"
@@ -27,69 +26,57 @@ var commands = []commandsystem.CommandHandler{
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 			},
-			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
-				target := parsed.Args[0].DiscordUser()
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			target := parsed.Args[0].DiscordUser()
 
-				if target.ID == m.Author.ID {
-					return errors.New("Can't give rep to yourself... **silly**")
-				}
+			if target.ID == m.Author.ID {
+				return "Can't give rep to yourself... **silly**", nil
+			}
 
-				channel, err := bot.Session.State.Channel(m.ChannelID)
-				if err != nil {
-					return err
-				}
+			channel := parsed.Channel
 
-				client, err := common.RedisPool.Get()
-				if err != nil {
-					return err
-				}
-				defer common.RedisPool.Put(client)
+			// Check for cooldown
+			lastUsed, err := client.Cmd("GET", "reputation_cd:"+channel.GuildID+":"+m.Author.ID).Int64()
+			if err != nil {
+				lastUsed = 0
+			}
 
-				// Check for cooldown
-				lastUsed, err := client.Cmd("GET", "reputation_cd:"+channel.GuildID+":"+m.Author.ID).Int64()
-				if err != nil {
-					lastUsed = 0
-				}
+			settings, err := GetFullSettings(client, channel.GuildID)
+			if err != nil {
+				return "Error retrieving reputation settings", err
+			}
 
-				settings, err := GetFullSettings(client, channel.GuildID)
-				if err != nil {
-					log.Println("Failed retrieving settings", err)
-					return err
-				}
+			timeSinceLast := time.Since(time.Unix(lastUsed, 0))
+			timeLeft := settings.Cooldown - int(timeSinceLast.Seconds())
 
-				timeSinceLast := time.Since(time.Unix(lastUsed, 0))
-				timeLeft := settings.Cooldown - int(timeSinceLast.Seconds())
+			if timeLeft > 0 && lastUsed > 0 {
+				return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
+			}
 
-				if timeLeft > 0 && lastUsed > 0 {
-					return fmt.Errorf("Still %d seconds left on cooldown", timeLeft)
-				}
+			// Increase score
+			newScoref, err := client.Cmd("ZINCRBY", "reputation_users:"+channel.GuildID, 1, target.ID).Float64()
+			if err != nil {
+				log.Println("Failed setting new score", err)
+				return "Failed setting new reputation score", err
+			}
 
-				// Increase score
-				newScoref, err := client.Cmd("ZINCRBY", "reputation_users:"+channel.GuildID, 1, target.ID).Float64()
-				if err != nil {
-					log.Println("Failed setting new score", err)
-					return err
-				}
+			newScore := int64(newScoref)
 
-				newScore := int64(newScoref)
+			// Set cooldown
+			err = client.Cmd("SET", "reputation_cd:"+channel.GuildID+":"+m.Author.ID, time.Now().Unix()).Err
+			if err != nil {
+				return "Failed setting new cooldown", err
+			}
 
-				// Set cooldown
-				err = client.Cmd("SET", "reputation_cd:"+channel.GuildID+":"+m.Author.ID, time.Now().Unix()).Err
-				if err != nil {
-					log.Println("Failed setting new cooldown", err)
-					return err
-				}
+			// We don't care if an error occurs here
+			err = client.Cmd("EXPIRE", "reputation_cd:"+channel.GuildID+":"+m.Author.ID, settings.Cooldown).Err
+			if err != nil {
+				log.Println("EPIRE err", err)
+			}
 
-				// We don't care if an error occurs here
-				err = client.Cmd("EXPIRE", "reputation_cd:"+channel.GuildID+":"+m.Author.ID, settings.Cooldown).Err
-				if err != nil {
-					log.Println("EPIRE err", err)
-				}
-
-				msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", target.Username, newScore)
-				common.BotSession.ChannelMessageSend(m.ChannelID, msg)
-				return nil
-			},
+			msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", target.Username, newScore)
+			return msg, nil
 		},
 	},
 	&bot.CustomCommand{
@@ -100,42 +87,31 @@ var commands = []commandsystem.CommandHandler{
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 			},
-			RunFunc: func(parsed *commandsystem.ParsedCommand, source commandsystem.CommandSource, m *discordgo.MessageCreate) error {
-				target := m.Author
-				if parsed.Args[0] != nil {
-					target = parsed.Args[0].DiscordUser()
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			target := m.Author
+			if parsed.Args[0] != nil {
+				target = parsed.Args[0].DiscordUser()
+			}
+
+			channel := parsed.Channel
+
+			score, rank, err := GetUserStats(client, channel.GuildID, target.ID)
+
+			if err != nil {
+				if err == ErrUserNotFound {
+					rank = -1
+				} else {
+					return "Error retrieving stats", err
 				}
+			}
 
-				channel, err := bot.Session.State.Channel(m.ChannelID)
-				if err != nil {
-					return err
-				}
+			rankStr := "∞"
+			if rank != -1 {
+				rankStr = strconv.FormatInt(int64(rank)+1, 10)
+			}
 
-				client, err := common.RedisPool.Get()
-				if err != nil {
-					return err
-				}
-				defer common.RedisPool.Put(client)
-
-				score, rank, err := GetUserStats(client, channel.GuildID, target.ID)
-
-				if err != nil {
-					if err == ErrUserNotFound {
-						rank = -1
-					} else {
-						return err
-					}
-				}
-
-				rankStr := "∞"
-				if rank != -1 {
-					rankStr = strconv.FormatInt(int64(rank)+1, 10)
-				}
-
-				msg := fmt.Sprintf("**%s**: **%d** Rep (#**%s**)", target.Username, score, rankStr)
-				common.BotSession.ChannelMessageSend(m.ChannelID, msg)
-				return nil
-			},
+			return fmt.Sprintf("**%s**: **%d** Rep (#**%s**)", target.Username, score, rankStr), nil
 		},
 	},
 }
