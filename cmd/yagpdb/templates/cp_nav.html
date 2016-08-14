@@ -6,7 +6,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    <a class="navbar-brand" {{if .current_guild}} href="/cp/{{.current_guild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small> - Control Panel{{if .current_guild}}: <b>{{.current_guild.Name}}</b>{{end}}.</a>
+    <a class="navbar-brand" {{if .current_guild}} href="/cp/{{.current_guild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small> - Control Panel{{if .current_guild}}: <b>{{.current_guild.Name}}</b>{{end}}</a>
 
 </div>
 <!-- /.navbar-header -->
@@ -14,7 +14,10 @@
 <ul class="nav navbar-top-links navbar-right">
     <!-- /.dropdown -->
     <li>
-        <a href="/cp"><i class="fa fa-newspaper-o fa-fw"></i> News - v{{.Version}}</a>
+        <a href="https://discord.gg/0vYlUK2XBKldPSMY"><i class="fa fa-info-circle fa-fw"></i> YAGPDB Server</a>
+    </li>
+    <li>
+        <a href="/cp"><i class="fa fa-newspaper-o fa-fw"></i> v{{.Version}}</a>
     </li>
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
