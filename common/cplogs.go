@@ -31,11 +31,9 @@ func AddCPLogEntry(client *redis.Client, guild string, action string) {
 	client.Append("LPUSH", "cp_logs:"+guild, serialized)
 	client.Append("LTRIM", "cp_logs:"+guild, 0, 100)
 
-	replies := GetRedisReplies(client, 2)
-	for _, r := range replies {
-		if r.Err != nil {
-			log.Println("Failed saving log entry", err)
-		}
+	_, err = GetRedisReplies(client, 2)
+	if err != nil {
+		log.Println("Failed saving log entry", err)
 	}
 }
 

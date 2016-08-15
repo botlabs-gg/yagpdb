@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// GetRedisJson executes a get redis command and unmarshals the value into out
 func GetRedisJson(client *redis.Client, key string, out interface{}) error {
 	raw, err := client.Cmd("GET", key).Bytes()
 	if err != nil {
@@ -20,6 +21,7 @@ func GetRedisJson(client *redis.Client, key string, out interface{}) error {
 	return err
 }
 
+// SetRedisJson marshals the vlue and runs a set redis command for key
 func SetRedisJson(client *redis.Client, key string, value interface{}) error {
 	serialized, err := json.Marshal(value)
 	if err != nil {
@@ -30,12 +32,19 @@ func SetRedisJson(client *redis.Client, key string, value interface{}) error {
 	return err
 }
 
-func GetRedisReplies(client *redis.Client, n int) []*redis.Reply {
+// GetRedisReplies is a helper func when using redis pipelines
+// It retrieves n amount of replies and returns the first error it finds (but still continues to retrieve replies after that)
+func GetRedisReplies(client *redis.Client, n int) ([]*redis.Reply, error) {
+	var err error
 	out := make([]*redis.Reply, n)
 	for i := 0; i < n; i++ {
-		out[i] = client.GetReply()
+		reply := client.GetReply()
+		out[i] = reply
+		if reply.Err != nil && err == nil {
+			err = reply.Err
+		}
 	}
-	return out
+	return out, err
 }
 
 type RedisCmd struct {
@@ -43,7 +52,7 @@ type RedisCmd struct {
 	Args []interface{}
 }
 
-// Will do the following commands and stop if an error occurs
+// SafeRedisCommands Will do the following commands and stop if an error occurs
 func SafeRedisCommands(client *redis.Client, cmds []*RedisCmd) ([]*redis.Reply, error) {
 	out := make([]*redis.Reply, 0)
 	for _, cmd := range cmds {
@@ -56,7 +65,7 @@ func SafeRedisCommands(client *redis.Client, cmds []*RedisCmd) ([]*redis.Reply, 
 	return out, nil
 }
 
-// Will delete the connected_guilds set and fill it up again
+// RefreshConnectedGuilds deletes the connected_guilds set and fill it up again
 // This is incase servers are removed/bot left servers while it was offline
 func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) error {
 	guilds, err := session.UserGuilds()
@@ -70,22 +79,16 @@ func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) er
 	}
 	args[0] = "connected_guilds"
 
-	client.Append("SELECT", 0)
 	client.Append("DEL", "connected_guilds")
-	count := 2
+	count := 1
 
 	if len(guilds) > 0 {
 		client.Append("SADD", args...)
 		count = 3
 	}
 
-	replies := GetRedisReplies(client, count)
-	for _, v := range replies {
-		if v.Err != nil {
-			return v.Err
-		}
-	}
-	return nil
+	_, err = GetRedisReplies(client, count)
+	return err
 }
 
 type WrappedGuild struct {
@@ -93,17 +96,19 @@ type WrappedGuild struct {
 	Connected bool
 }
 
-// Returns a wrapped guild with connected set
+// GetWrapped Returns a wrapped guild with connected set
 func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, error) {
-	client.Append("SELECT", 0)
+	if len(in) < 1 {
+		return []*WrappedGuild{}, nil
+	}
+
 	for _, g := range in {
 		client.Append("SISMEMBER", "connected_guilds", g.ID)
 	}
 
-	replies := GetRedisReplies(client, len(in)+1)
-
-	if replies[0].Err != nil {
-		return nil, replies[0].Err
+	replies, err := GetRedisReplies(client, len(in))
+	if err != nil {
+		return nil, err
 	}
 
 	out := make([]*WrappedGuild, len(in))
@@ -112,6 +117,7 @@ func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, e
 		if err != nil {
 			return nil, err
 		}
+
 		out[k] = &WrappedGuild{
 			Guild:     g,
 			Connected: isConnected,
@@ -120,6 +126,7 @@ func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, e
 	return out, nil
 }
 
+// DelayedMessageDelete Deletes a message after delay
 func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, mID string) {
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
@@ -128,6 +135,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	}
 }
 
+// SendTempMessage sends a message that gets deleted after duration
 func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, msg string) {
 	m, err := BotSession.ChannelMessageSend(cID, msg)
 	if err != nil {
@@ -137,7 +145,7 @@ func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, ms
 	DelayedMessageDelete(session, duration, cID, m.ID)
 }
 
-// Helper methods that also checks the cache
+// GetGuildChannels returns the guilds channels either from cache or api
 func GetGuildChannels(client *redis.Client, guildID string) (channels []*discordgo.Channel, err error) {
 	// Check cache first
 	err = GetCacheDataJson(client, "channels:"+guildID, &channels)
@@ -151,6 +159,7 @@ func GetGuildChannels(client *redis.Client, guildID string) (channels []*discord
 	return
 }
 
+// GetGuild returns the guild from guildid either from cache or api
 func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err error) {
 	// Check cache first
 	err = GetCacheDataJson(client, "guild:"+guildID, &guild)

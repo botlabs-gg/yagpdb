@@ -105,15 +105,8 @@ func CreateCSRFToken(client *redis.Client) (string, error) {
 	client.Append("LPUSH", "csrf", str)
 	client.Append("LTRIM", "csrf", 0, 99) // Store only 100 crsf tokens, might need to be increased later
 
-	replies := common.GetRedisReplies(client, 2)
-
-	for _, r := range replies {
-		if r.Err != nil {
-			return "", r.Err
-		}
-	}
-
-	return str, nil
+	_, err := common.GetRedisReplies(client, 2)
+	return str, err
 }
 
 // Returns true if it matched and false if not, an error if something bad happened

@@ -26,15 +26,8 @@ func SetCacheData(client *redis.Client, key string, expire int, data []byte) err
 	client.Append("SET", CacheKeyPrefix+key, data)
 	client.Append("EXPIRE", CacheKeyPrefix+key, expire)
 
-	replies := GetRedisReplies(client, 2)
-
-	for _, r := range replies {
-		if r.Err != nil {
-			return r.Err
-		}
-	}
-
-	return nil
+	_, err := GetRedisReplies(client, 2)
+	return err
 }
 
 // Stores an entry in the cache and sets it to expire after a minute

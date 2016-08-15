@@ -60,15 +60,9 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 	redisClient.Append("SET", "discord_token:"+session, serialized)
 	redisClient.Append("EXPIRE", "discord_token:"+session, 86400) // Expire after 24h
 
-	replies := common.GetRedisReplies(redisClient, 2)
+	_, err = common.GetRedisReplies(redisClient, 2)
 
-	for _, r := range replies {
-		if r.Err != nil {
-			return r.Err
-		}
-	}
-
-	return nil
+	return err
 }
 
 func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
