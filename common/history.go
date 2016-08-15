@@ -42,8 +42,10 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 
 	// Initialize the before id
 	before := ""
-	if msgBuf[0] != nil {
-		before = msgBuf[0].ID
+	if n+1 < len(msgBuf) {
+		if msgBuf[n+1] != nil {
+			before = msgBuf[n+1].ID
+		}
 	}
 
 	// Start fetching from the api
