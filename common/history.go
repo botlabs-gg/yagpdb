@@ -127,8 +127,8 @@ func (d DiscordMessages) Len() int { return len(d) }
 func (d DiscordMessages) Less(i, j int) bool {
 	tsiRaw := d[i].Timestamp
 	tsjRaw := d[j].Timestamp
-	tsi, err := time.Parse("2006-01-02T15:04:05.000000-07:00", tsiRaw)
-	tsj, err2 := time.Parse("2006-01-02T15:04:05.000000-07:00", tsjRaw)
+	tsi, err := time.Parse("2006-01-02T15:04:05-07:00", tsiRaw)
+	tsj, err2 := time.Parse("2006-01-02T15:04:05-07:00", tsjRaw)
 	if err != nil {
 		panic(err)
 	}
