@@ -234,16 +234,16 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	&bot.CustomCommand{
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "Pastebin",
-			Aliases:     []string{"ps", "paste"},
-			Description: "Creates a pastebin of the channels last 100 messages",
+			Name:        "Hastebin",
+			Aliases:     []string{"ps", "paste", "pastebin"},
+			Description: "Creates a hastebin of the channels last 100 messages",
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			id, err := common.CreatePastebinLog(m.ChannelID)
+			id, err := common.CreateHastebinLog(m.ChannelID)
 			if err != nil {
-				return "Failed uploading to pastebin", err
+				return "Failed uploading to hastebin", err
 			}
-			return fmt.Sprintf("<http://pastebin.com/%s>", id), nil
+			return fmt.Sprintf("Link: <%s>", id), nil
 		},
 	},
 }

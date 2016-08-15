@@ -24,11 +24,12 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 	}
 
 	state.RLock()
-	n := 0
+
+	n := len(msgBuf) - 1
 	for i := len(channel.Messages) - 1; i >= 0; i-- {
 		msgBuf[n] = channel.Messages[i]
-		n++
-		if n >= len(msgBuf) {
+		n--
+		if n < 0 {
 			break
 		}
 	}
@@ -42,12 +43,12 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 	// Initialize the before id
 	before := ""
 	if msgBuf[0] != nil {
-		before = msgBuf[len(channel.Messages)-1].ID
+		before = msgBuf[0].ID
 	}
 
 	// Start fetching from the api
-	for n < limit {
-		toFetch := limit - n
+	for n >= 0 {
+		toFetch := n + 1
 		if toFetch > 100 {
 			toFetch = 100
 		}
@@ -56,21 +57,28 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 			return nil, err
 		}
 		log.Println("API history req finihsed", len(msgs))
-		if len(msgs) < 1 {
+		if len(msgs) < 1 { // Nothing more
 			break
 		}
 
+		// Copy over to buffer
 		for k, m := range msgs {
-			msgBuf[n+k] = m
+			msgBuf[n-k] = m
 		}
 
 		// Oldest message is last
 		before = msgs[len(msgs)-1].ID
-		n += len(msgs)
+		n -= len(msgs)
+
+		if len(msgs) < toFetch {
+			break
+		}
 	}
 
-	// Remove nil elements incase history wasn't big enough
-	msgBuf = msgBuf[:n]
+	// remove nil entries if it wasn't big enough
+	if n+1 > 0 {
+		msgBuf = msgBuf[n+1:]
+	}
 
 	// merge the current state with this new one and sort
 	state.Lock()
@@ -117,8 +125,14 @@ func (d DiscordMessages) Len() int { return len(d) }
 func (d DiscordMessages) Less(i, j int) bool {
 	tsiRaw := d[i].Timestamp
 	tsjRaw := d[j].Timestamp
-	tsi, _ := time.Parse("2006-01-02T15:04:05.000000-07:00", tsiRaw)
-	tsj, _ := time.Parse("2006-01-02T15:04:05.000000-07:00", tsjRaw)
+	tsi, err := time.Parse("2006-01-02T15:04:05.000000-07:00", tsiRaw)
+	tsj, err2 := time.Parse("2006-01-02T15:04:05.000000-07:00", tsjRaw)
+	if err != nil {
+		panic(err)
+	}
+	if err2 != nil {
+		panic(err2)
+	}
 	return tsi.Before(tsj)
 }
 

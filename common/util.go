@@ -166,7 +166,7 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 
 // Creates a pastebin log form the last 100 messages in a channel
 // Returns the id of the paste
-func CreatePastebinLog(cID string) (string, error) {
+func CreateHastebinLog(cID string) (string, error) {
 	channel, err := BotSession.State.Channel(cID)
 	if err != nil {
 		return "", err
@@ -186,15 +186,21 @@ func CreatePastebinLog(cID string) (string, error) {
 	for _, m := range msgs {
 		body := m.ContentWithMentionsReplaced()
 
+		parsedTs, _ := time.Parse("2006-01-02T15:04:05.000000-07:00", m.Timestamp)
+
 		for _, attachment := range m.Attachments {
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
 		}
 
-		paste += fmt.Sprintf("[%s] #%s, %s (%s): %s\n", m.Timestamp, channel.Name, m.Author.Username, m.Author.ID, body)
+		paste += fmt.Sprintf("[%s] #%s, %s (%s): %s\n", parsedTs.Format("2006 "+time.Stamp), channel.Name, m.Author.Username, m.Author.ID, body)
 	}
 
-	id, err := Pastebin.Put(paste, "#"+channel.Name+" Logs")
-	return id, err
+	resp, err := Hastebin.UploadString("Logs of #" + channel.Name + "\n by YAGPDB" + paste)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.GetLink(Hastebin), nil
 }
 
 // This was bad on large servers...

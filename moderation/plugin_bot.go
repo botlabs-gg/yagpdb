@@ -136,7 +136,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			// Send typing event to indicate the bot is working
 			common.BotSession.ChannelTyping(m.ChannelID)
 
-			logId, err := common.CreatePastebinLog(m.ChannelID)
+			logLink, err := common.CreateHastebinLog(m.ChannelID)
 			if err != nil {
 				return "Failed pastebin upload", err
 			}
@@ -145,7 +145,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			if err != nil || channelID == "" {
 				channelID = parsed.Guild.ID
 			}
-			reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: <http://pastebin.com/%s>", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logId)
+			reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: <%s>", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logLink)
 
 			_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
 			if err != nil {
