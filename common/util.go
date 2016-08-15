@@ -192,7 +192,7 @@ func CreateHastebinLog(cID string) (string, error) {
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
 		}
 
-		paste += fmt.Sprintf("[%s] %s (%s): %s\n", parsedTs.Format("2006 "+time.Stamp), m.Author.Username, m.Author.ID, body)
+		paste += fmt.Sprintf("[%s] (%19s) %s: %s\n", parsedTs.Format("2006 "+time.Stamp), m.Author.ID, m.Author.Username, body)
 	}
 
 	resp, err := Hastebin.UploadString("Logs of #" + channel.Name + " by YAGPDB :')\n" + paste)
