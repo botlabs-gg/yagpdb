@@ -121,6 +121,9 @@
         function createRequest(method, path, data, cb){
             var oReq = new XMLHttpRequest();
             oReq.addEventListener("load", cb);
+            oReq.addEventListener("error", function(){
+                window.location.href = '/';
+            });
             oReq.open(method, path);
             
             if (data) {

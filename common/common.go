@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	VERSION = "0.9 Judgemental ALPHA"
+	VERSION = "0.10 Freezing ALPHA"
 )
 
 var (
