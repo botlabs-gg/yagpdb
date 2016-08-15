@@ -36,13 +36,8 @@ func (c *Config) Save(client *redis.Client, guildID string) error {
 	client.Append("SET", "moderation_action_channel:"+guildID, c.ActionChannel)
 	client.Append("SET", "moderation_report_channel:"+guildID, c.ReportChannel)
 
-	replies := common.GetRedisReplies(client, 6)
-	for _, r := range replies {
-		if r.Err != nil {
-			return r.Err
-		}
-	}
-	return nil
+	_, err := common.GetRedisReplies(client, 6)
+	return err
 }
 
 func GetConfig(client *redis.Client, guildID string) (config *Config, err error) {
@@ -53,18 +48,12 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 	client.Append("GET", "moderation_action_channel:"+guildID)
 	client.Append("GET", "moderation_report_channel:"+guildID)
 
-	replies := common.GetRedisReplies(client, 6)
-
-	for _, r := range replies {
-		if r.Err != nil {
-			// Check if the error ws caused by the key not existing
-			if _, ok := r.Err.(*redis.CmdError); !ok {
-				return nil, r.Err
-			}
-		}
+	replies, err := common.GetRedisReplies(client, 6)
+	if err != nil {
+		return nil, err
 	}
 
-	// We already checked errors above, althoug if someone were to fuck shit up manually
+	// We already checked errors above, altthough if someone were to fuck shit up manually
 	// Then yeah, these would be default values
 	banEnabled, _ := replies[0].Bool()
 	kickEnabled, _ := replies[1].Bool()

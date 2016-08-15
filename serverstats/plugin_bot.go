@@ -142,15 +142,8 @@ func ApplyPresences(client *redis.Client, guildID string, presences []*discordgo
 		client.Append("SADD", "guild_stats_online:"+guildID, p.User.ID)
 	}
 
-	replies := common.GetRedisReplies(client, count)
-
-	for _, r := range replies {
-		if r.Err != nil {
-			return r.Err
-		}
-	}
-
-	return nil
+	_, err := common.GetRedisReplies(client, count)
+	return err
 }
 
 func LoadGuildMembers(client *redis.Client, guildID string) error {

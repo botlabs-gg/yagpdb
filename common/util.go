@@ -84,7 +84,7 @@ func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) er
 
 	if len(guilds) > 0 {
 		client.Append("SADD", args...)
-		count = 3
+		count = 2
 	}
 
 	_, err = GetRedisReplies(client, count)
@@ -113,7 +113,7 @@ func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, e
 
 	out := make([]*WrappedGuild, len(in))
 	for k, g := range in {
-		isConnected, err := replies[k+1].Bool()
+		isConnected, err := replies[k].Bool()
 		if err != nil {
 			return nil, err
 		}

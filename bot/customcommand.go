@@ -2,6 +2,7 @@ package bot
 
 import (
 	"errors"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil"
@@ -11,13 +12,18 @@ import (
 	"time"
 )
 
+var (
+	RKeyCommandCooldown = func(uID, cmd string) string { return "cmd_cd:" + uID + ":" + cmd }
+)
+
 // Slight extension to the simplecommand, it will check if the command is enabled in the HandleCommand func
 // And invoke a custom handlerfunc with provided redis client
 type CustomCommand struct {
 	*commandsystem.SimpleCommand
-	Key     string // GuildId is appended to the key, e.g if key is "test:", it will check for "test:<guildid>"
-	Default bool   // The default state of this command
-	RunFunc func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error)
+	Key      string // GuildId is appended to the key, e.g if key is "test:", it will check for "test:<guildid>"
+	Default  bool   // The default state of this command
+	Cooldown int    // Cooldown in seconds before user can use it again
+	RunFunc  func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error)
 }
 
 func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandSource, m *discordgo.MessageCreate, s *discordgo.Session) error {
@@ -42,23 +48,27 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 		return err
 	}
 
-	if cs.Key != "" {
+	// Check wether it's enabled or not
+	enabled, err := cs.Enabled(client, channel.GuildID)
+	if err != nil {
+		s.ChannelMessageSend(channel.ID, "Bot is having issues... contact the junas D:")
+		return err
+	}
 
-		enabled, err := client.Cmd("GET", cs.Key+channel.GuildID).Bool()
-		if err != nil {
-			log.Println("Failed checking command enabled in redis", err)
-			return errors.New("Bot is having issues... contact the junas (Failed checking redis for enabled command)")
-		}
+	if !enabled {
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server. Server admins of the server can enabled it through the control panel <%s>.", cs.Name, common.Conf.Host))
+		return nil
+	}
 
-		if cs.Default {
-			enabled = !enabled
-		}
+	cdLeft, err := cs.CooldownLeft(client, m.Author.ID)
+	if err != nil {
+		// Just pretend the cooldown is off...
+		log.Println("Failed checking command cooldown", err)
+	}
 
-		if !enabled {
-			go common.SendTempMessage(common.BotSession, time.Second*10, m.ChannelID, "This command is disabled, an admin of the discord server can enable it in the control panel")
-			return nil
-		}
-
+	if cdLeft > 0 {
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", m.Author.Username, cdLeft, cs.Name))
+		return nil
 	}
 
 	parsed, err := cs.ParseCommand(raw, m, s)
@@ -86,8 +96,66 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 				dutil.SplitSendMessage(s, m.ChannelID, out)
 			}
 		}
+		if err == nil {
+			err = cs.SetCooldown(client, m.Author.ID)
+			if err != nil {
+				log.Println("Failed setting cooldown", err)
+			}
+		}
 		return err
 	}
 
 	return nil
+}
+
+// Enabled returns wether the command is enabled or not
+func (cs *CustomCommand) Enabled(client *redis.Client, guildID string) (bool, error) {
+	// No special key so it's automatically enabled
+	if cs.Key == "" {
+		return true, nil
+	}
+
+	// Check redis for settings
+	reply := client.Cmd("GET", cs.Key+guildID)
+	if reply.Err != nil {
+		return false, reply.Err
+	}
+
+	enabled, _ := reply.Bool()
+
+	if cs.Default {
+		enabled = !enabled
+	}
+
+	if !enabled {
+		return false, nil
+	}
+
+	return enabled, nil
+}
+
+// CooldownLeft returns the number of seconds before a command can be used again
+func (cs *CustomCommand) CooldownLeft(client *redis.Client, userID string) (int, error) {
+	if cs.Cooldown < 1 {
+		return 0, nil
+	}
+
+	ttl, err := client.Cmd("TTL", RKeyCommandCooldown(userID, cs.Name)).Int64()
+	if ttl < 1 {
+		return 0, nil
+	}
+
+	return int(ttl), err
+}
+
+// SetCooldown sets the cooldown of the command as it's defined in the struct
+func (cs *CustomCommand) SetCooldown(client *redis.Client, userID string) error {
+	if cs.Cooldown < 1 {
+		return nil
+	}
+	now := time.Now().Unix()
+	client.Append("SET", RKeyCommandCooldown(userID, cs.Name), now)
+	client.Append("EXPIRE", RKeyCommandCooldown(userID, cs.Name), cs.Cooldown)
+	_, err := common.GetRedisReplies(client, 2)
+	return err
 }

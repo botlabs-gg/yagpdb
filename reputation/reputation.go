@@ -29,20 +29,15 @@ func (s *Settings) Save(client *redis.Client, guildID string) error {
 	client.Append("SET", "reputation_enabled:"+guildID, s.Enabled)
 	client.Append("SET", "reputation_cooldown:"+guildID, s.Cooldown)
 
-	replies := common.GetRedisReplies(client, 2)
-	for _, r := range replies {
-		if r.Err != nil {
-			return r.Err
-		}
-	}
-	return nil
+	_, err := common.GetRedisReplies(client, 2)
+	return err
 }
 
 func GetFullSettings(client *redis.Client, guildID string) (setings *Settings, err error) {
 	client.Append("GET", "reputation_enabled:"+guildID)
 	client.Append("GET", "reputation_cooldown:"+guildID)
 
-	replies := common.GetRedisReplies(client, 2)
+	replies, _ := common.GetRedisReplies(client, 2)
 
 	for _, r := range replies {
 		if r.Err != nil {

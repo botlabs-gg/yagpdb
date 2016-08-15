@@ -49,6 +49,7 @@ func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) str
 
 var GlobalCommands = []commandsystem.CommandHandler{
 	&bot.CustomCommand{
+		Cooldown: 10,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Help",
 			Description: "Shows help abut all or one specific command",
@@ -83,6 +84,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	// Status command shows the bot's status, stuff like version, conntected servers, uptime, memory used etc..
 	&bot.CustomCommand{
+		Cooldown: 2,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Status",
 			Description: "Shows yagpdb status",
@@ -191,6 +193,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&bot.CustomCommand{
+		Cooldown: 20,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Ascii",
 			Aliases:      []string{"asci"},
@@ -241,6 +244,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&bot.CustomCommand{
+		Cooldown: 30,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Hastebin",
 			Aliases:     []string{"ps", "paste", "pastebin"},

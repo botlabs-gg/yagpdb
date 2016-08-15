@@ -62,13 +62,8 @@ func UpdateStats(client *redis.Client, guildID string) error {
 	client.Append("ZREMRANGEBYSCORE", "guild_stats_members_joined_day:"+guildID, "-inf", unixYesterday)
 	client.Append("ZREMRANGEBYSCORE", "guild_stats_members_left_day:"+guildID, "-inf", unixYesterday)
 
-	replies := common.GetRedisReplies(client, 3)
-	for _, r := range replies {
-		if r.Err != nil {
-			return r.Err
-		}
-	}
-	return nil
+	_, err := common.GetRedisReplies(client, 3)
+	return err
 }
 
 type ChannelStats struct {
@@ -94,11 +89,9 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 	client.Append("ZCOUNT", "guild_stats_members_left_day:"+guildID, unixYesterday, "+inf")
 	client.Append("SCARD", "guild_stats_online:"+guildID)
 
-	replies := common.GetRedisReplies(client, 4)
-	for _, r := range replies {
-		if r.Err != nil {
-			return nil, r.Err
-		}
+	replies, err := common.GetRedisReplies(client, 4)
+	if err != nil {
+		return nil, err
 	}
 
 	messageStatsRaw, err := replies[0].List()
