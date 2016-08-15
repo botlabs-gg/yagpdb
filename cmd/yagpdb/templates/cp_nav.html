@@ -6,7 +6,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    <a class="navbar-brand" {{if .current_guild}} href="/cp/{{.current_guild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small> - Control Panel{{if .current_guild}}: <b>{{.current_guild.Name}}</b>{{end}}</a>
+    <a class="navbar-brand" {{if .current_guild}} href="/cp/{{.current_guild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small>{{if .current_guild}}<b>{{.current_guild.Name}}</b>{{end}}</a>
 
 </div>
 <!-- /.navbar-header -->
