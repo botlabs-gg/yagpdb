@@ -37,10 +37,10 @@ func publicHandler(inner publicHandlerFunc, public bool) web.CustomHandlerFunc {
 func HandleStatsHtml(ctx context.Context, w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
 	client := web.RedisClientFromContext(ctx)
 
-	var guildID string
 	var guildName string
 	templateData := make(map[string]interface{})
 
+	guildID := pat.Param(ctx, "server")
 	publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+guildID).Bool()
 
 	if !isPublicAccess {

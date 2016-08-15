@@ -15,7 +15,13 @@ import (
 	"net/http"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
+)
+
+var (
+	// calc/compute isnt threadsage :'(
+	computeLock sync.Mutex
 )
 
 func (p *Plugin) InitBot() {
@@ -224,12 +230,14 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			},
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			computeLock.Lock()
+			defer computeLock.Unlock()
 			result, err := compute.Evaluate(cmd.Args[0].Str())
 			if err != nil {
 				return err, err
 			}
 
-			return fmt.Sprintf("Result: `%.20f`", result), nil
+			return fmt.Sprintf("Result: `%G`", result), nil
 		},
 	},
 	&bot.CustomCommand{
