@@ -22,7 +22,8 @@ func (p *Plugin) InitBot() {
 	bot.Session.AddHandler(bot.CustomReady(HandleReady))
 
 	bot.CommandSystem.RegisterCommands(&bot.CustomCommand{
-		Key: "stats_settings_public:",
+		Key:      "stats_settings_public:",
+		Cooldown: 10,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Stats",
 			Description: "Shows server stats",

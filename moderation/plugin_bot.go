@@ -121,7 +121,8 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&bot.CustomCommand{
-		Key: "moderation_report_enabled:",
+		Key:      "moderation_report_enabled:",
+		Cooldown: 5,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Report",
 			Description:  "Reports a member",
@@ -160,7 +161,8 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&bot.CustomCommand{
-		Key: "moderation_clean_enabled:",
+		Key:      "moderation_clean_enabled:",
+		Cooldown: 5,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:                  "Clean",
 			Description:           "Cleans the chat",
