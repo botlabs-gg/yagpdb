@@ -135,7 +135,11 @@
         }   
         var chart = null;
         function statsCB(){
-            var parsedStats = JSON.parse(this.responseText);
+            try{
+                var parsedStats = JSON.parse(this.responseText);
+            }catch(e){
+                window.location.href = '/';
+            }
 
             var channelMessages = parsedStats.channels_hour
 

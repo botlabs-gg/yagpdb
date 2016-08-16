@@ -130,10 +130,10 @@ func (d DiscordMessages) Less(i, j int) bool {
 	tsi, err := time.Parse("2006-01-02T15:04:05-07:00", tsiRaw)
 	tsj, err2 := time.Parse("2006-01-02T15:04:05-07:00", tsjRaw)
 	if err != nil {
-		panic(err)
+		panic(d[i].ID + ":" + err.Error())
 	}
 	if err2 != nil {
-		panic(err2)
+		panic(d[j].ID + ":" + err2.Error())
 	}
 	return tsi.Before(tsj)
 }
