@@ -20,6 +20,7 @@ var (
 
 	// When the bot was started
 	Started = time.Now()
+	Running bool
 )
 
 func Run() {
@@ -51,6 +52,8 @@ func Run() {
 	if err != nil {
 		log.Println("Failed opening bot connection", err)
 	}
+
+	Running = true
 }
 
 // Keys and other sensitive information shouldnt be sent in error messages, but just in case it is

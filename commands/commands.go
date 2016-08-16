@@ -1,17 +1,12 @@
 package commands
 
 import (
-	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"goji.io/pat"
-	"golang.org/x/net/context"
-	"html/template"
-	"net/http"
-	"strings"
 )
 
 type Plugin struct{}
@@ -22,58 +17,110 @@ func RegisterPlugin() {
 	bot.RegisterPlugin(plugin)
 }
 
-func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/commands.html"))
-
-	web.CPMux.HandleC(pat.Get("/cp/:server/commands/settings"), web.RenderHandler(HandleCommands, "cp_commands"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/commands/settings/"), web.RenderHandler(HandleCommands, "cp_commands"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/commands/settings"), web.RenderHandler(HandlePostCommands, "cp_commands"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/commands/settings/"), web.RenderHandler(HandlePostCommands, "cp_commands"))
-}
-
 func (p *Plugin) Name() string {
 	return "Commands"
 }
 
-func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["current_config"] = GetConfig(client, activeGuild.ID)
-	return templateData
+type ChannelCommandSetting struct {
+	Cmd            string `json:"cmd"`
+	CommandEnabled bool   `json:"enabled"`
+	AutoDelete     bool   `json:"autodelete"`
 }
 
-func HandlePostCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-	newConfig := &CommandsConfig{
-		Prefix: strings.TrimSpace(r.FormValue("prefix")),
-	}
-
-	err := common.SetRedisJson(client, "commands:"+activeGuild.ID, newConfig)
-
-	if err != nil {
-		newConfig = GetConfig(client, activeGuild.ID)
-		templateData.AddAlerts(web.ErrorAlert("Failed saving config", err))
-	} else {
-		templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :o"))
-	}
-
-	templateData["current_config"] = newConfig
-
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated commands settings", user.Username, user.ID))
-
-	return templateData
+type ChannelOverride struct {
+	Settings        []*ChannelCommandSetting `json:"settings"`
+	OverrideEnabled bool                     `json:"enabled"`
+	Channel         string                   `json:"channel"`
+	ChannelName     string                   `json:"-"` // Used for the template rendering
 }
 
 type CommandsConfig struct {
-	Prefix string `json:"prefix"`
+	Prefix string `json:"-"` // Stored in a seperate key for speed
+
+	Global           []*ChannelCommandSetting `json:"gloabl"`
+	ChannelOverrides []*ChannelOverride       `json:"overrides"`
 }
 
-func GetConfig(client *redis.Client, guild string) *CommandsConfig {
+// Fills in the defaults for missing data, for when users create channels or commands are added
+func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
+	commands := bot.CommandSystem.Commands
+
+	if conf.Global == nil {
+		conf.Global = []*ChannelCommandSetting{}
+	}
+
+	if conf.ChannelOverrides == nil {
+		conf.ChannelOverrides = []*ChannelOverride{}
+	}
+
+ROOT:
+	for _, channel := range channels {
+		// Look for an existing override
+		for _, override := range conf.ChannelOverrides {
+			// Found an existing override, check if it has all the commands
+			if channel.ID == override.Channel {
+				override.Settings = checkCommandSettings(override.Settings, commands, false)
+				override.ChannelName = channel.Name // Update name if changed
+				continue ROOT
+			}
+		}
+
+		// Not found, create a default override
+		override := &ChannelOverride{
+			Settings:        []*ChannelCommandSetting{},
+			OverrideEnabled: false,
+			Channel:         channel.ID,
+			ChannelName:     channel.Name,
+		}
+
+		// Fill in default command settings
+		override.Settings = checkCommandSettings(override.Settings, commands, false)
+		conf.ChannelOverrides = append(conf.ChannelOverrides, override)
+	}
+
+	// Check the global settings
+	conf.Global = checkCommandSettings(conf.Global, commands, true)
+}
+
+// Checks a single list of ChannelCommandSettings and applies defaults if not found
+func checkCommandSettings(settings []*ChannelCommandSetting, commands []commandsystem.CommandHandler, defaultEnabled bool) []*ChannelCommandSetting {
+
+ROOT:
+	for _, cmdDef := range commands {
+		cast, ok := cmdDef.(*bot.CustomCommand)
+		if !ok {
+			continue
+		}
+
+		for _, settingsCmd := range settings {
+			if cast.Name == settingsCmd.Cmd {
+				// Bingo
+				continue ROOT
+			}
+		}
+
+		// Not found, add it to the list of overrides
+		settingsCmd := &ChannelCommandSetting{
+			Cmd:            cast.Name,
+			CommandEnabled: defaultEnabled,
+			AutoDelete:     false,
+		}
+		settings = append(settings, settingsCmd)
+	}
+	return settings
+}
+
+func GetConfig(client *redis.Client, guild string, channels []*discordgo.Channel) *CommandsConfig {
 	var config *CommandsConfig
 	err := common.GetRedisJson(client, "commands:"+guild, &config)
 	if err != nil {
-		return &CommandsConfig{}
+		config = &CommandsConfig{}
 	}
+
+	prefix := client.Cmd("GET", "command_prefix:")
+
+	// Fill in defaults
+	CheckChannelsConfig(config, channels)
+
 	return config
 }
