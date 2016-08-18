@@ -70,7 +70,7 @@
                                         <tr>
                                             <th>Command</th>
                                             <th>Enabled</th>
-                                            <th>Auto selfdestruct(10s)</th>
+                                            <th>Auto delete response (if any) after 10 seconds</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -78,9 +78,13 @@
                                         <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
                                             <td>{{.Cmd}}</td>
                                             <td>
+                                                {{if .Info.Key}}
+                                                This command can be toggled on/off on it's own page.
+                                                {{else}}
                                                 <label class="checkbox-inline">
                                                     <input type="checkbox" class="global-enabled" name="global_enabled_{{.Cmd}}" {{if .CommandEnabled}} checked {{end}}> Enabled
                                                 </label>
+                                                {{end}}
                                             </td>
                                             <td>
                                                 <label class="checkbox-inline">
@@ -123,7 +127,7 @@
                                         <tr>
                                             <th>Command</th>
                                             <th>Enabled</th>
-                                            <th>Auto selfdestruct(10s)</th>
+                                            <th>Auto delete response (if any) after 10 seconds</th>
                                         </tr>
                                     </thead>
                                     <tbody>

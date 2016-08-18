@@ -84,7 +84,10 @@ func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	// Update the global settings
 	for _, cmd := range config.Global {
-		cmd.CommandEnabled = r.FormValue("global_enabled_"+cmd.Cmd) == "on"
+		// Check for custom switch
+		if cmd.Info.Key == "" {
+			cmd.CommandEnabled = r.FormValue("global_enabled_"+cmd.Cmd) == "on"
+		}
 		cmd.AutoDelete = r.FormValue("global_autodelete_"+cmd.Cmd) == "on"
 	}
 

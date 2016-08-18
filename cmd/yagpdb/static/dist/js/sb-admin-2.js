@@ -1,7 +1,7 @@
 $(function() {
-    console.log("ASSBURGERS");
+    console.log("Lemonade tasts good");
     $('#side-menu').metisMenu();
-
+    $('[data-toggle="tooltip"]').tooltip()
 });
 
 //Loads the correct sidebar on window load,

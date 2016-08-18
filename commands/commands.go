@@ -23,9 +23,10 @@ func (p *Plugin) Name() string {
 }
 
 type ChannelCommandSetting struct {
-	Cmd            string `json:"cmd"`
-	CommandEnabled bool   `json:"enabled"`
-	AutoDelete     bool   `json:"autodelete"`
+	Info           *CustomCommand `json:"-"` // Used for template info
+	Cmd            string         `json:"cmd"`
+	CommandEnabled bool           `json:"enabled"`
+	AutoDelete     bool           `json:"autodelete"`
 }
 
 type ChannelOverride struct {
@@ -56,11 +57,15 @@ func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
 
 ROOT:
 	for _, channel := range channels {
+		if channel.Type != "text" {
+			continue
+		}
+
 		// Look for an existing override
 		for _, override := range conf.ChannelOverrides {
 			// Found an existing override, check if it has all the commands
 			if channel.ID == override.Channel {
-				override.Settings = checkCommandSettings(override.Settings, commands, false, false)
+				override.Settings = checkCommandSettings(override.Settings, commands, false)
 				override.ChannelName = channel.Name // Update name if changed
 				continue ROOT
 			}
@@ -75,16 +80,33 @@ ROOT:
 		}
 
 		// Fill in default command settings
-		override.Settings = checkCommandSettings(override.Settings, commands, false, false)
+		override.Settings = checkCommandSettings(override.Settings, commands, false)
 		conf.ChannelOverrides = append(conf.ChannelOverrides, override)
 	}
 
+	newOverrides := make([]*ChannelOverride, 0, len(conf.ChannelOverrides))
+
+	// Check for removed channels
+	for _, override := range conf.ChannelOverrides {
+		for _, channel := range channels {
+			if channel.Type != "text" {
+				continue
+			}
+
+			if channel.ID == override.Channel {
+				newOverrides = append(newOverrides, override)
+				break
+			}
+		}
+	}
+	conf.ChannelOverrides = newOverrides
+
 	// Check the global settings
-	conf.Global = checkCommandSettings(conf.Global, commands, true, false)
+	conf.Global = checkCommandSettings(conf.Global, commands, true)
 }
 
 // Checks a single list of ChannelCommandSettings and applies defaults if not found
-func checkCommandSettings(settings []*ChannelCommandSetting, commands []commandsystem.CommandHandler, defaultEnabled bool, ignoreCustom bool) []*ChannelCommandSetting {
+func checkCommandSettings(settings []*ChannelCommandSetting, commands []commandsystem.CommandHandler, defaultEnabled bool) []*ChannelCommandSetting {
 
 ROOT:
 	for _, cmdDef := range commands {
@@ -93,14 +115,10 @@ ROOT:
 			continue
 		}
 
-		// Ignore custom enabled checks if specified
-		if cast.Key != "" && ignoreCustom {
-			continue
-		}
-
 		for _, settingsCmd := range settings {
 			if cast.Name == settingsCmd.Cmd {
 				// Bingo
+				settingsCmd.Info = cast
 				continue ROOT
 			}
 		}
@@ -110,10 +128,29 @@ ROOT:
 			Cmd:            cast.Name,
 			CommandEnabled: defaultEnabled,
 			AutoDelete:     false,
+			Info:           cast,
 		}
 		settings = append(settings, settingsCmd)
 	}
-	return settings
+
+	newSettings := make([]*ChannelCommandSetting, 0, len(settings))
+
+	// Check for commands that have been removed (e.g the config contains commands from an older version)
+	for _, settingsCmd := range settings {
+		for _, cmdDef := range commands {
+			cast, ok := cmdDef.(*CustomCommand)
+			if !ok {
+				continue
+			}
+
+			if cast.Name == settingsCmd.Cmd {
+				newSettings = append(newSettings, settingsCmd)
+				break
+			}
+		}
+	}
+
+	return newSettings
 }
 
 func GetConfig(client *redis.Client, guild string, channels []*discordgo.Channel) *CommandsConfig {
