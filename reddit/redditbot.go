@@ -70,12 +70,12 @@ OUTER:
 		typeStr = "self post"
 	}
 
-	body := fmt.Sprintf("/u/%s Posted a new %s in **/r/%s**:\n<%s>\n\n**%s**\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
+	body := fmt.Sprintf("**/u/%s Posted a new %s in /r/%s**:\n<%s>\n\n__%s__\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
 
 	if post.GetIsSelf() {
-		body += fmt.Sprintf("%s", post.GetSelftext()) + "\n"
+		body += fmt.Sprintf("%s", post.GetSelftext()) + "\n\n"
 	} else {
-		body += post.GetUrl() + "\n"
+		body += post.GetUrl() + "\n\n"
 	}
 
 	log.Println("Posting a new reddit message from", sub)
@@ -88,8 +88,19 @@ OUTER:
 }
 
 func (b *RedditBot) Fail(err error) bool {
-	log.Println("Graw encountered an error", err)
+	errStr := err.Error()
+
+	if strings.Index(errStr, "bad response") == 0 {
+		log.Println("Bad response encountered", err)
+	} else {
+		log.Println("Graw encountered an unknown error", err)
+	}
+
 	return false
+}
+
+func (b *RedditBot) BlockTime() time.Duration {
+	return time.Second * 10
 }
 
 func RunReddit() {
