@@ -232,6 +232,7 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 		}
 
 		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
+		newCtx = context.WithValue(newCtx, ContextKeyGuildChannels, channels)
 		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild, "current_guild_channels": channels})
 
 		inner.ServeHTTPC(newCtx, w, r)

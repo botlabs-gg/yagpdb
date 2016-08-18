@@ -25,6 +25,7 @@ const (
 	ContextKeyUser
 	ContextKeyGuilds
 	ContextKeyCurrentGuild
+	ContextKeyGuildChannels
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")

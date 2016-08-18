@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"log"
 )
 
 type Plugin struct{}
@@ -43,7 +44,7 @@ type CommandsConfig struct {
 
 // Fills in the defaults for missing data, for when users create channels or commands are added
 func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
-	commands := bot.CommandSystem.Commands
+	commands := CommandSystem.Commands
 
 	if conf.Global == nil {
 		conf.Global = []*ChannelCommandSetting{}
@@ -59,7 +60,7 @@ ROOT:
 		for _, override := range conf.ChannelOverrides {
 			// Found an existing override, check if it has all the commands
 			if channel.ID == override.Channel {
-				override.Settings = checkCommandSettings(override.Settings, commands, false)
+				override.Settings = checkCommandSettings(override.Settings, commands, false, false)
 				override.ChannelName = channel.Name // Update name if changed
 				continue ROOT
 			}
@@ -74,21 +75,26 @@ ROOT:
 		}
 
 		// Fill in default command settings
-		override.Settings = checkCommandSettings(override.Settings, commands, false)
+		override.Settings = checkCommandSettings(override.Settings, commands, false, false)
 		conf.ChannelOverrides = append(conf.ChannelOverrides, override)
 	}
 
 	// Check the global settings
-	conf.Global = checkCommandSettings(conf.Global, commands, true)
+	conf.Global = checkCommandSettings(conf.Global, commands, true, false)
 }
 
 // Checks a single list of ChannelCommandSettings and applies defaults if not found
-func checkCommandSettings(settings []*ChannelCommandSetting, commands []commandsystem.CommandHandler, defaultEnabled bool) []*ChannelCommandSetting {
+func checkCommandSettings(settings []*ChannelCommandSetting, commands []commandsystem.CommandHandler, defaultEnabled bool, ignoreCustom bool) []*ChannelCommandSetting {
 
 ROOT:
 	for _, cmdDef := range commands {
-		cast, ok := cmdDef.(*bot.CustomCommand)
+		cast, ok := cmdDef.(*CustomCommand)
 		if !ok {
+			continue
+		}
+
+		// Ignore custom enabled checks if specified
+		if cast.Key != "" && ignoreCustom {
 			continue
 		}
 
@@ -112,15 +118,33 @@ ROOT:
 
 func GetConfig(client *redis.Client, guild string, channels []*discordgo.Channel) *CommandsConfig {
 	var config *CommandsConfig
-	err := common.GetRedisJson(client, "commands:"+guild, &config)
+	err := common.GetRedisJson(client, "commands_settings:"+guild, &config)
 	if err != nil {
 		config = &CommandsConfig{}
 	}
 
-	prefix := client.Cmd("GET", "command_prefix:")
+	prefix, err := GetCommandPrefix(client, guild)
+	if err != nil {
+		// Continue as normal with defaults
+		log.Println("Error fetching command prefix:", err)
+	}
+
+	config.Prefix = prefix
 
 	// Fill in defaults
 	CheckChannelsConfig(config, channels)
 
 	return config
+}
+
+func GetCommandPrefix(client *redis.Client, guild string) (string, error) {
+	reply := client.Cmd("GET", "command_prefix:"+guild)
+	if reply.Err != nil {
+		return "", reply.Err
+	}
+	if reply.Type == redis.NilReply {
+		return "", nil
+	}
+
+	return reply.Str()
 }

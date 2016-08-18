@@ -21,12 +21,18 @@ import (
 
 var (
 	// calc/compute isnt threadsage :'(
-	computeLock sync.Mutex
+	computeLock   sync.Mutex
+	CommandSystem *commandsystem.System
 )
 
 func (p *Plugin) InitBot() {
-	bot.CommandSystem.Prefix = p
-	bot.CommandSystem.RegisterCommands(GlobalCommands...)
+
+	CommandSystem = commandsystem.NewSystem(common.BotSession, "")
+	CommandSystem.SendError = false
+	CommandSystem.CensorError = CensorError
+
+	CommandSystem.Prefix = p
+	CommandSystem.RegisterCommands(GlobalCommands...)
 }
 
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
@@ -42,13 +48,15 @@ func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) str
 		log.Println("Failed retrieving channel from state", err)
 		return ""
 	}
-
-	config := GetConfig(client, channel.GuildID)
-	return config.Prefix
+	prefix, err := GetCommandPrefix(client, channel.GuildID)
+	if err != nil {
+		log.Println("Failed retrieving prefix", err)
+	}
+	return prefix
 }
 
 var GlobalCommands = []commandsystem.CommandHandler{
-	&bot.CustomCommand{
+	&CustomCommand{
 		Cooldown: 10,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Help",
@@ -63,15 +71,19 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			if parsed.Args[0] != nil {
 				target = parsed.Args[0].Str()
 			}
-
-			config := GetConfig(client, parsed.Guild.ID)
-
-			prefixStr := "**No command prefix set, you can still use commands through mentioning the bot\n**"
-			if config.Prefix != "" {
-				prefixStr = fmt.Sprintf("**Command prefix: %s**\n", config.Prefix)
+			prefix, err := GetCommandPrefix(client, parsed.Guild.ID)
+			if err != nil {
+				return "Error communicating with redis", err
 			}
 
-			help := bot.CommandSystem.GenerateHelp(target, 0)
+			// config := GetConfig(client, parsed.Guild.ID)
+
+			prefixStr := "**No command prefix set, you can still use commands through mentioning the bot\n**"
+			if prefix != "" {
+				prefixStr = fmt.Sprintf("**Command prefix: %s**\n", prefix)
+			}
+
+			help := CommandSystem.GenerateHelp(target, 0)
 
 			privateChannel, err := bot.GetCreatePrivateChannel(common.BotSession, m.Author.ID)
 			if err != nil {
@@ -83,7 +95,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	// Status command shows the bot's status, stuff like version, conntected servers, uptime, memory used etc..
-	&bot.CustomCommand{
+	&CustomCommand{
 		Cooldown: 2,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Status",
@@ -110,7 +122,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	// Some fun commands because why not
-	&bot.CustomCommand{
+	&CustomCommand{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Reverse",
 			Aliases:      []string{"r", "rev"},
@@ -131,7 +143,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return out, nil
 		},
 	},
-	&bot.CustomCommand{
+	&CustomCommand{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Weather",
 			Aliases:      []string{"w"},
@@ -179,7 +191,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return out, nil
 		},
 	},
-	&bot.CustomCommand{
+	&CustomCommand{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Invite",
 			Aliases:     []string{"inv", "i"},
@@ -192,7 +204,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return "You manage this bot through the control panel interface but heres an invite link incase you just want that\n" + link, nil
 		},
 	},
-	&bot.CustomCommand{
+	&CustomCommand{
 		Cooldown: 20,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Ascii",
@@ -221,7 +233,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return "```\n" + string(out) + "\n```", nil
 		},
 	},
-	&bot.CustomCommand{
+	&CustomCommand{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Calc",
 			Aliases:      []string{"c", "calculate"},
@@ -243,7 +255,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return fmt.Sprintf("Result: `%G`", result), nil
 		},
 	},
-	&bot.CustomCommand{
+	&CustomCommand{
 		Cooldown: 30,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Hastebin",

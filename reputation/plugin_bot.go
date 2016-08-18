@@ -5,22 +5,22 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"log"
 	"strconv"
 	"time"
 )
 
 func (p *Plugin) InitBot() {
-	bot.CommandSystem.RegisterCommands(commands...)
+	commands.CommandSystem.RegisterCommands(cmds...)
 }
 
-var commands = []commandsystem.CommandHandler{
-	&bot.CustomCommand{
+var cmds = []commandsystem.CommandHandler{
+	&commands.CustomCommand{
 		Key: "reputation_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "+",
-			Aliases:      []string{"giverep", "+rep"},
+			Name:         "GiveRep",
+			Aliases:      []string{"+", "+rep"},
 			Description:  "Gives +1 rep to someone",
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgumentDef{
@@ -79,7 +79,7 @@ var commands = []commandsystem.CommandHandler{
 			return msg, nil
 		},
 	},
-	&bot.CustomCommand{
+	&commands.CustomCommand{
 		Key: "reputation_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "rep",

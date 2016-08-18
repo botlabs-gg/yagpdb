@@ -6,7 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"log"
 	"time"
@@ -17,7 +17,7 @@ var (
 )
 
 func (p *Plugin) InitBot() {
-	bot.CommandSystem.RegisterCommands(ModerationCommands...)
+	commands.CommandSystem.RegisterCommands(ModerationCommands...)
 }
 
 func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
@@ -38,7 +38,7 @@ func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
 }
 
 var ModerationCommands = []commandsystem.CommandHandler{
-	&bot.CustomCommand{
+	&commands.CustomCommand{
 		Key: "moderation_ban_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Ban",
@@ -79,7 +79,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			return "", nil
 		},
 	},
-	&bot.CustomCommand{
+	&commands.CustomCommand{
 		Key: "moderation_kick_enabled:",
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Kick",
@@ -120,7 +120,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			return "", nil
 		},
 	},
-	&bot.CustomCommand{
+	&commands.CustomCommand{
 		Key:      "moderation_report_enabled:",
 		Cooldown: 5,
 		SimpleCommand: &commandsystem.SimpleCommand{
@@ -160,7 +160,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			return "", nil
 		},
 	},
-	&bot.CustomCommand{
+	&commands.CustomCommand{
 		Key:      "moderation_clean_enabled:",
 		Cooldown: 5,
 		SimpleCommand: &commandsystem.SimpleCommand{

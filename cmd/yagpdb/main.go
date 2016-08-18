@@ -106,6 +106,9 @@ func main() {
 	reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
 
+	// Setup plugins for bot, but run later if enabled
+	bot.Setup()
+
 	// RUN FORREST RUN
 	if flagRunWeb || flagRunEverything {
 		web.ListenAddress = flagAddr

@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"log"
 	"time"
@@ -21,7 +22,7 @@ func (p *Plugin) InitBot() {
 	bot.Session.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
 	bot.Session.AddHandler(bot.CustomReady(HandleReady))
 
-	bot.CommandSystem.RegisterCommands(&bot.CustomCommand{
+	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		Key:      "stats_settings_public:",
 		Cooldown: 10,
 		SimpleCommand: &commandsystem.SimpleCommand{

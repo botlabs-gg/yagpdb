@@ -30,11 +30,15 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
-	cmdConfig := commands.GetConfig(client, channel.GuildID)
+	prefix, err := commands.GetCommandPrefix(client, channel.GuildID)
+	if err != nil {
+		log.Println("Failed retrieving prefix", err)
+		return
+	}
 
 	var matched *CustomCommand
 	for _, cmd := range cmds {
-		if CheckMatch(cmdConfig.Prefix, cmd, evt.Content) {
+		if CheckMatch(prefix, cmd, evt.Content) {
 			matched = cmd
 			break
 		}

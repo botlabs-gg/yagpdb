@@ -8,6 +8,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"log"
 	"strings"
@@ -44,7 +45,7 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) InitBot() {
-	bot.CommandSystem.RegisterCommands(&bot.CustomCommand{
+	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "sentiment",
 			Aliases:     []string{"sent"},
