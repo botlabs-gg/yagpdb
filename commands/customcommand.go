@@ -28,6 +28,12 @@ type CustomCommand struct {
 }
 
 func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandSource, m *discordgo.MessageCreate, s *discordgo.Session) error {
+	// Track how long execution of a command took
+	started := time.Now()
+	defer func() {
+		cs.logExecutionTime(time.Since(started), raw, m.Author.Username)
+	}()
+
 	if source == commandsystem.CommandSourceDM {
 		return errors.New("Cannot run this command in direct messages")
 	}
@@ -111,6 +117,10 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 	}
 
 	return nil
+}
+
+func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
+	log.Printf("Handled Command [%4dms] %s: %s\n", int(dur.Seconds()*1000), sender, raw)
 }
 
 func (cs *CustomCommand) deleteResponse(msgs []*discordgo.Message) {
