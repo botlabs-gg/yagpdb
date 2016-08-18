@@ -40,6 +40,11 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
+	enabled, _ := client.Cmd("GET", "reputation_enabled:"+channel.GuildID).Bool()
+	if !enabled {
+		return
+	}
+
 	cooldown, err := CheckCooldown(client, channel.GuildID, evt.Author.ID)
 	if err != nil {
 		log.Println("Failed checking cooldown", err)
