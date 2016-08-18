@@ -53,6 +53,6 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return templateData
 	}
 
-	templateData["Settings"] = newSettings
+	templateData["settings"] = newSettings
 	return templateData
 }

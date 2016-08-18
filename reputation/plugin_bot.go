@@ -5,14 +5,98 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(cmds...)
+	common.BotSession.AddHandler(bot.CustomMessageCreate(handleMessageCreate))
+}
+
+func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
+	lower := strings.ToLower(evt.Content)
+	if strings.Index(lower, "thanks") != 0 {
+		return
+	}
+
+	if len(evt.Mentions) < 1 {
+		return
+	}
+
+	who := evt.Mentions[0]
+
+	if who.ID == evt.Author.ID {
+		return
+	}
+
+	channel, err := s.State.Channel(evt.ChannelID)
+	if err != nil {
+		return
+	}
+
+	cooldown, err := CheckCooldown(client, channel.GuildID, evt.Author.ID)
+	if err != nil {
+		log.Println("Failed checking cooldown", err)
+		return
+	}
+
+	if cooldown > 0 {
+		return
+	}
+
+	newScore, err := GiveRep(client, evt.Author, who, channel.GuildID)
+	if err != nil {
+		log.Println("Failed giving rep", err)
+		return
+	}
+
+	msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", who.Username, newScore)
+	s.ChannelMessageSend(evt.ChannelID, msg)
+}
+
+func GiveRep(client *redis.Client, sender, target *discordgo.User, guildID string) (int, error) {
+	settings, err := GetFullSettings(client, guildID)
+	if err != nil {
+		return 0, err
+	}
+
+	// Increase score
+	newScoref, err := client.Cmd("ZINCRBY", "reputation_users:"+guildID, 1, target.ID).Float64()
+	if err != nil {
+		log.Println("Failed setting new score", err)
+		return 0, err
+	}
+
+	newScore := int(newScoref)
+
+	// Set cooldown
+	err = client.Cmd("SET", "reputation_cd:"+guildID+":"+sender.ID, time.Now().Unix()).Err
+	if err != nil {
+		return 0, err
+	}
+
+	// We don't care if an error occurs here
+	err = client.Cmd("EXPIRE", "reputation_cd:"+guildID+":"+sender.ID, settings.Cooldown).Err
+	if err != nil {
+		log.Println("EPIRE err", err)
+	}
+
+	return newScore, nil
+}
+
+func CheckCooldown(client *redis.Client, guildID, userID string) (int, error) {
+	// Check for cooldown
+	ttl, err := client.Cmd("TTL", "reputation_cd:"+guildID+":"+userID).Int()
+	if err != nil {
+		return 0, err
+	}
+	return ttl, nil
 }
 
 var cmds = []commandsystem.CommandHandler{
@@ -36,43 +120,18 @@ var cmds = []commandsystem.CommandHandler{
 
 			channel := parsed.Channel
 
-			// Check for cooldown
-			lastUsed, err := client.Cmd("GET", "reputation_cd:"+channel.GuildID+":"+m.Author.ID).Int64()
+			timeLeft, err := CheckCooldown(client, channel.GuildID, m.Author.ID)
 			if err != nil {
-				lastUsed = 0
+				return "Failed checking cooldown", err
 			}
 
-			settings, err := GetFullSettings(client, channel.GuildID)
-			if err != nil {
-				return "Error retrieving reputation settings", err
-			}
-
-			timeSinceLast := time.Since(time.Unix(lastUsed, 0))
-			timeLeft := settings.Cooldown - int(timeSinceLast.Seconds())
-
-			if timeLeft > 0 && lastUsed > 0 {
+			if timeLeft > 0 {
 				return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
 			}
 
-			// Increase score
-			newScoref, err := client.Cmd("ZINCRBY", "reputation_users:"+channel.GuildID, 1, target.ID).Float64()
+			newScore, err := GiveRep(client, m.Author, target, channel.GuildID)
 			if err != nil {
-				log.Println("Failed setting new score", err)
-				return "Failed setting new reputation score", err
-			}
-
-			newScore := int64(newScoref)
-
-			// Set cooldown
-			err = client.Cmd("SET", "reputation_cd:"+channel.GuildID+":"+m.Author.ID, time.Now().Unix()).Err
-			if err != nil {
-				return "Failed setting new cooldown", err
-			}
-
-			// We don't care if an error occurs here
-			err = client.Cmd("EXPIRE", "reputation_cd:"+channel.GuildID+":"+m.Author.ID, settings.Cooldown).Err
-			if err != nil {
-				log.Println("EPIRE err", err)
+				return "Failed giving rep >:I", err
 			}
 
 			msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", target.Username, newScore)
