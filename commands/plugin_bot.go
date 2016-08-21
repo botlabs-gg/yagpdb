@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/alfredxing/calc/compute"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
@@ -268,6 +269,22 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				return "Failed uploading to hastebin", err
 			}
 			return fmt.Sprintf("Link: <%s>", id), nil
+		},
+	},
+	&CustomCommand{
+		Cooldown: 5,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Topic",
+			Description: "Generates a chat topic",
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
+			if err != nil {
+				return err, err
+			}
+
+			topic := doc.Find("#random").Text()
+			return topic, nil
 		},
 	},
 }
