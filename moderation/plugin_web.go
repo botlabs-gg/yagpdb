@@ -10,6 +10,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"unicode/utf8"
 )
 
 func (p *Plugin) InitWeb() {
@@ -46,6 +47,35 @@ func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Re
 		KickEnabled:   r.FormValue("kick_enabled") == "on",
 		ReportEnabled: r.FormValue("report_enabled") == "on",
 		CleanEnabled:  r.FormValue("clean_enabled") == "on",
+		KickMessage:   r.FormValue("kick_message"),
+		BanMessage:    r.FormValue("ban_message"),
+	}
+
+	// Validate the messages
+	if newConfig.KickMessage != "" {
+		_, err := common.ParseExecuteTemplate(newConfig.KickMessage, nil)
+		if err != nil {
+			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for kick message:", err))
+			newConfig.KickMessage = ""
+		}
+
+		if utf8.RuneCountInString(newConfig.KickMessage) > 2000 {
+			templateData.AddAlerts(web.ErrorAlert("Kick message is too large (max 2k)"))
+			newConfig.KickMessage = ""
+		}
+	}
+
+	if newConfig.BanMessage != "" {
+		_, err := common.ParseExecuteTemplate(newConfig.BanMessage, nil)
+		if err != nil {
+			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for ban message:", err))
+			newConfig.BanMessage = ""
+		}
+
+		if utf8.RuneCountInString(newConfig.BanMessage) > 2000 {
+			templateData.AddAlerts(web.ErrorAlert("ban message is too large (max 2k)"))
+			newConfig.BanMessage = ""
+		}
 	}
 
 	channels, err := common.GetGuildChannels(client, activeGuild.ID)

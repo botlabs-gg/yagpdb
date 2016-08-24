@@ -26,6 +26,8 @@ type Config struct {
 	ReportEnabled bool
 	ActionChannel string
 	ReportChannel string
+	BanMessage    string
+	KickMessage   string
 }
 
 func (c *Config) Save(client *redis.Client, guildID string) error {
@@ -35,8 +37,10 @@ func (c *Config) Save(client *redis.Client, guildID string) error {
 	client.Append("SET", "moderation_report_enabled:"+guildID, c.ReportEnabled)
 	client.Append("SET", "moderation_action_channel:"+guildID, c.ActionChannel)
 	client.Append("SET", "moderation_report_channel:"+guildID, c.ReportChannel)
+	client.Append("SET", "moderation_ban_message:"+guildID, c.BanMessage)
+	client.Append("SET", "moderation_kick_message:"+guildID, c.KickMessage)
 
-	_, err := common.GetRedisReplies(client, 6)
+	_, err := common.GetRedisReplies(client, 8)
 	return err
 }
 
@@ -47,8 +51,10 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 	client.Append("GET", "moderation_report_enabled:"+guildID)
 	client.Append("GET", "moderation_action_channel:"+guildID)
 	client.Append("GET", "moderation_report_channel:"+guildID)
+	client.Append("GET", "moderation_ban_message:"+guildID)
+	client.Append("GET", "moderation_kick_message:"+guildID)
 
-	replies, err := common.GetRedisReplies(client, 6)
+	replies, err := common.GetRedisReplies(client, 8)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +69,9 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 	actionChannel, _ := replies[4].Str()
 	reportChannel, _ := replies[5].Str()
 
+	banMsg, _ := replies[6].Str()
+	kickMsg, _ := replies[7].Str()
+
 	return &Config{
 		BanEnabled:    banEnabled,
 		KickEnabled:   kickEnabled,
@@ -70,5 +79,7 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 		ReportEnabled: reportEnabled,
 		ActionChannel: actionChannel,
 		ReportChannel: reportChannel,
+		BanMessage:    banMsg,
+		KickMessage:   kickMsg,
 	}, nil
 }

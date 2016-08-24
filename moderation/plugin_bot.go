@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"log"
@@ -60,11 +62,30 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			}
 
 			channelID, err := client.Cmd("GET", "moderation_action_channel:"+parsed.Guild.ID).Str()
-			if err != nil {
+			if err != nil || channelID == "" {
 				channelID = m.ChannelID
 			}
 
 			target := parsed.Args[0].DiscordUser()
+
+			banMessage, err := client.Cmd("GET", "moderation_ban_message:"+parsed.Guild.ID).Str()
+			if err == nil && banMessage != "" {
+				dmChannel, err := bot.GetCreatePrivateChannel(common.BotSession, target.ID)
+				if err != nil {
+					return "Failed sending ban message", err
+				}
+
+				executed, err := common.ParseExecuteTemplate(banMessage, map[string]interface{}{
+					"User":   target,
+					"Reason": parsed.Args[1].Str(),
+				})
+
+				if err != nil {
+					return "Failed parsing/executing ban template: " + err.Error(), err
+				}
+
+				dutil.SplitSendMessage(common.BotSession, dmChannel.ID, executed)
+			}
 
 			err = common.BotSession.GuildBanCreate(parsed.Guild.ID, target.ID, 1)
 			if err != nil {
@@ -76,6 +97,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			if err != nil {
 				return "Failed sending report log", err
 			}
+
 			return "", nil
 		},
 	},
@@ -101,11 +123,30 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			}
 
 			channelID, err := client.Cmd("GET", "moderation_action_channel:"+parsed.Guild.ID).Str()
-			if err != nil {
+			if err != nil || channelID == "" {
 				channelID = m.ChannelID
 			}
 
 			target := parsed.Args[0].DiscordUser()
+
+			kickMessage, err := client.Cmd("GET", "moderation_kick_message:"+parsed.Guild.ID).Str()
+			if err == nil && kickMessage != "" {
+				dmChannel, err := bot.GetCreatePrivateChannel(common.BotSession, target.ID)
+				if err != nil {
+					return "Failed sending kick message", err
+				}
+
+				executed, err := common.ParseExecuteTemplate(kickMessage, map[string]interface{}{
+					"User":   target,
+					"Reason": parsed.Args[1].Str(),
+				})
+
+				if err != nil {
+					return "Failed parsing/executing kick template: " + err.Error(), err
+				}
+
+				dutil.SplitSendMessage(common.BotSession, dmChannel.ID, executed)
+			}
 
 			err = common.BotSession.GuildMemberDelete(parsed.Guild.ID, target.ID)
 			if err != nil {
@@ -115,8 +156,9 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			log.Println("Kicked ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
 			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Kicked **%s** *(%s)*\n**Reason:** %s", m.Author.ID, target.Username, target.ID, parsed.Args[1].Str()))
 			if err != nil {
-				return "Failed sending kick repor in action channel", err
+				return "Failed sending kick report in action channel", err
 			}
+
 			return "", nil
 		},
 	},

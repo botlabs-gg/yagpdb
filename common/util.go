@@ -1,12 +1,14 @@
 package common
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"log"
+	"text/template"
 	"time"
 )
 
@@ -210,6 +212,17 @@ func CreateHastebinLog(cID string) (string, error) {
 	}
 
 	return resp.GetLink(Hastebin), nil
+}
+
+func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {
+	parsed, err := template.New("").Parse(tmplSource)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	err = parsed.Execute(&buf, data)
+	return buf.String(), err
 }
 
 // This was bad on large servers...

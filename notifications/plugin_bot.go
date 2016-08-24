@@ -1,14 +1,13 @@
 package notifications
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
 	"log"
 	"sync"
-	"text/template"
 )
 
 var (
@@ -41,7 +40,7 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 	// Beware of the spaghetti
 	if config.JoinDMEnabled {
 
-		msg, err := ParseExecuteTemplate(config.JoinDMMsg, templateData)
+		msg, err := common.ParseExecuteTemplate(config.JoinDMMsg, templateData)
 		if err != nil {
 			log.Println("Failed parsing/executing dm template", guild.ID, err)
 		} else {
@@ -59,7 +58,7 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 
 	if config.JoinServerEnabled {
 		channel := GetChannel(guild, config.JoinServerChannel)
-		msg, err := ParseExecuteTemplate(config.JoinServerMsg, templateData)
+		msg, err := common.ParseExecuteTemplate(config.JoinServerMsg, templateData)
 		if err != nil {
 			log.Println("Failed parsing/executing dm template", guild.ID, err)
 		} else {
@@ -90,7 +89,7 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 	}
 
 	channel := GetChannel(guild, config.LeaveChannel)
-	msg, err := ParseExecuteTemplate(config.LeaveMsg, templateData)
+	msg, err := common.ParseExecuteTemplate(config.LeaveMsg, templateData)
 	if err != nil {
 		log.Println("Failed parsing/executing leave template", guild.ID, err)
 		return
@@ -144,15 +143,4 @@ func GetChannel(guild *discordgo.Guild, channel string) string {
 
 	// Default channel then
 	return guild.ID
-}
-
-func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {
-	parsed, err := template.New("").Parse(tmplSource)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	err = parsed.Execute(&buf, data)
-	return buf.String(), err
 }

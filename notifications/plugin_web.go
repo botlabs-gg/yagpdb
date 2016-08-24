@@ -69,7 +69,7 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 
 	// Do some validation to make sure the user knows about faulty templates
 	if joinServer != "" {
-		_, err := ParseExecuteTemplate(joinServer, nil)
+		_, err := common.ParseExecuteTemplate(joinServer, nil)
 		if err != nil {
 			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for server/channel join:", err))
 			newConfig.JoinServerMsg = previousConfig.JoinServerMsg
@@ -78,7 +78,7 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 	}
 
 	if joinDM != "" {
-		_, err := ParseExecuteTemplate(joinDM, nil)
+		_, err := common.ParseExecuteTemplate(joinDM, nil)
 		if err != nil {
 			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for server/channel join:", err))
 			newConfig.JoinDMMsg = previousConfig.JoinDMMsg
@@ -87,7 +87,7 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 	}
 
 	if leaveMsg != "" {
-		_, err := ParseExecuteTemplate(leaveMsg, nil)
+		_, err := common.ParseExecuteTemplate(leaveMsg, nil)
 		if err != nil {
 			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for server/channel join:", err))
 			newConfig.LeaveMsg = previousConfig.LeaveMsg

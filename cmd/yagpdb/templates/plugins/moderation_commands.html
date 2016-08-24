@@ -84,6 +84,22 @@
                                     </div>
                                 </div>
                                 <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Kick DM (Leave emty to disable)</label>
+                                            <textarea class="form-control" rows="3" name="kick_message">{{.current_config.KickMessage}}</textarea>
+                                            <p class="help-block">Available template data is <code>{{"{{"}}.User{{"}}"}}</code> and <code>{{"{{"}}.Reason{{"}}"}}</code></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Ban DM (Leave emty to disable)</label>
+                                            <textarea class="form-control" rows="3" name="ban_message">{{.current_config.BanMessage}}</textarea>
+                                            <p class="help-block">Available template data is <code>{{"{{"}}.User{{"}}"}}</code> and <code>{{"{{"}}.Reason{{"}}"}}</code></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
                                     <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
                                 </div>
                             </form>
