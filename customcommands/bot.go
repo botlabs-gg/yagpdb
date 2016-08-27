@@ -14,6 +14,10 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return // ignore ourselves
 	}
 
+	if evt.Author.Bot {
+		return // ignore bots
+	}
+
 	channel, err := s.State.Channel(evt.ChannelID)
 	if err != nil {
 		log.Println("Failed getting channel from state", err)
