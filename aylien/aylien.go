@@ -114,5 +114,48 @@ func (p *Plugin) InitBot() {
 			}
 			return out, nil
 		},
-	})
+	},
+		// This is a fun little always positive 8ball
+		&commands.CustomCommand{
+			Cooldown: 5,
+			SimpleCommand: &commandsystem.SimpleCommand{
+				Name:        "8Ball",
+				Description: "Wisdom",
+				Arguments: []*commandsystem.ArgumentDef{
+					&commandsystem.ArgumentDef{Name: "What to ask", Type: commandsystem.ArgumentTypeString},
+				},
+				RequiredArgs: 1,
+			},
+			RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+				resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: cmd.Args[0].Str()})
+				if err != nil {
+					resp = &textapi.SentimentResponse{
+						Polarity:               "neutral",
+						PolarityConfidence:     1,
+						Subjectivity:           "subjective",
+						SubjectivityConfidence: 1,
+					}
+				}
+
+				switch resp.Polarity {
+				case "neutral":
+					return "Maybe", nil
+				case "positive":
+					switch {
+					case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
+						return "Most likely", nil
+					case resp.PolarityConfidence >= 0.5:
+						return "Without a doubt", nil
+					}
+				case "negative":
+					switch {
+					case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
+						return "Not likely", nil
+					case resp.PolarityConfidence >= 0.5:
+						return "Definetively not", nil
+					}
+				}
+				return "Dunno", nil
+			},
+		})
 }
