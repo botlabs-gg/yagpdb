@@ -87,13 +87,19 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				dutil.SplitSendMessage(common.BotSession, dmChannel.ID, executed)
 			}
 
+			hastebin, err := common.CreateHastebinLog(m.ChannelID)
+			if err != nil {
+				hastebin = "Hastebin upload failed"
+				log.Println("Error uploading hastebin log", err)
+			}
+
 			err = common.BotSession.GuildBanCreate(parsed.Guild.ID, target.ID, 1)
 			if err != nil {
 				return "API Refused to ban... (Bot probably dosen't have enough permissions)", err
 			}
 
 			log.Println("Banned ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
-			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Banned **%s** *(%s)*\n**Reason:** %s", m.Author.ID, target.Username, target.ID, parsed.Args[1].Str()))
+			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Banned **%s**#%s *(%s)*\n**Reason:** %s\n**Hastebin:** <%s>", m.Author.ID, target.Username, target.Discriminator, target.ID, parsed.Args[1].Str(), hastebin))
 			if err != nil {
 				return "Failed sending report log", err
 			}
@@ -148,13 +154,19 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				dutil.SplitSendMessage(common.BotSession, dmChannel.ID, executed)
 			}
 
+			hastebin, err := common.CreateHastebinLog(m.ChannelID)
+			if err != nil {
+				hastebin = "Hastebin upload failed"
+				log.Println("Error uploading hastebin log", err)
+			}
+
 			err = common.BotSession.GuildMemberDelete(parsed.Guild.ID, target.ID)
 			if err != nil {
 				return "API Refused to kick... :/ (Bot probably dosen't have enough permissions)", err
 			}
 
 			log.Println("Kicked ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
-			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Kicked **%s** *(%s)*\n**Reason:** %s", m.Author.ID, target.Username, target.ID, parsed.Args[1].Str()))
+			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Kicked **%s**#%s *(%s)*\n**Reason:** %s\n**Hastebin:** <%s>", m.Author.ID, target.Username, target.Discriminator, target.ID, parsed.Args[1].Str(), hastebin))
 			if err != nil {
 				return "Failed sending kick report in action channel", err
 			}
