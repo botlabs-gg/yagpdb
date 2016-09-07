@@ -129,7 +129,7 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 		return templateData.AddAlerts(web.ErrorAlert("Failed retrieving channel"))
 	}
 
-	newSub := r.FormValue("subreddit") == item.Sub
+	newSub := r.FormValue("subreddit") != item.Sub
 
 	item.Channel = channel
 

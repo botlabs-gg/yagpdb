@@ -180,7 +180,7 @@ func GetBaseCPContextData(ctx context.Context) (*redis.Client, *discordgo.Guild,
 	return client, guild, templateData
 }
 
-// Returns a channel id from name, or if id is provided makes sure it's a channel isnide the guild
+// Returns a channel id from name, or if id is provided makes sure it's a channel inside the guild
 // Throws a api request to guild/channels
 func GetChannelId(name string, guildId string) (string, error) {
 	channels, err := common.BotSession.GuildChannels(guildId)
