@@ -34,7 +34,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 		cs.logExecutionTime(time.Since(started), raw, m.Author.Username)
 	}()
 
-	if source == commandsystem.CommandSourceDM {
+	if source == commandsystem.CommandSourceDM && !cs.RunInDm {
 		return errors.New("Cannot run this command in direct messages")
 	}
 
@@ -50,21 +50,27 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 		return err
 	}
 
-	guild, err := s.State.Guild(channel.GuildID)
-	if err != nil {
-		return err
-	}
+	var guild *discordgo.Guild
+	var autodel bool
 
-	// Check wether it's enabled or not
-	enabled, autodel, err := cs.Enabled(client, channel.ID, guild)
-	if err != nil {
-		s.ChannelMessageSend(channel.ID, "Bot is having issues... contact the junas D:")
-		return err
-	}
+	if source != commandsystem.CommandSourceDM {
+		guild, err := s.State.Guild(channel.GuildID)
+		if err != nil {
+			return err
+		}
 
-	if !enabled {
-		go common.SendTempMessage(common.BotSession, time.Second*10, m.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <%s>)*", cs.Name, common.Conf.Host))
-		return nil
+		var enabled bool
+		// Check wether it's enabled or not
+		enabled, autodel, err = cs.Enabled(client, channel.ID, guild)
+		if err != nil {
+			s.ChannelMessageSend(channel.ID, "Bot is having issues... contact the junas D:")
+			return err
+		}
+
+		if !enabled {
+			go common.SendTempMessage(common.BotSession, time.Second*10, m.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <%s>)*", cs.Name, common.Conf.Host))
+			return nil
+		}
 	}
 
 	cdLeft, err := cs.CooldownLeft(client, m.Author.ID)
