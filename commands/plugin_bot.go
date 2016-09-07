@@ -34,6 +34,8 @@ func (p *Plugin) InitBot() {
 
 	CommandSystem.Prefix = p
 	CommandSystem.RegisterCommands(GlobalCommands...)
+
+	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
 }
 
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
@@ -72,16 +74,19 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			if parsed.Args[0] != nil {
 				target = parsed.Args[0].Str()
 			}
-			prefix, err := GetCommandPrefix(client, parsed.Guild.ID)
-			if err != nil {
-				return "Error communicating with redis", err
-			}
 
-			// config := GetConfig(client, parsed.Guild.ID)
+			// Fetch the prefix if ther command was not run in a dm
+			prefixStr := ""
+			if parsed.Source != commandsystem.CommandSourceDM {
+				prefix, err := GetCommandPrefix(client, parsed.Guild.ID)
+				if err != nil {
+					return "Error communicating with redis", err
+				}
 
-			prefixStr := "**No command prefix set, you can still use commands through mentioning the bot\n**"
-			if prefix != "" {
-				prefixStr = fmt.Sprintf("**Command prefix: %s**\n", prefix)
+				prefixStr = "**No command prefix set, you can still use commands through mentioning the bot\n**"
+				if prefix != "" {
+					prefixStr = fmt.Sprintf("**Command prefix: %q**\n", prefix)
+				}
 			}
 
 			help := CommandSystem.GenerateHelp(target, 0)
@@ -287,4 +292,17 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return topic, nil
 		},
 	},
+}
+
+func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
+	prefixExists, err := client.Cmd("EXISTS", "command_prefix:"+g.ID).Bool()
+	if err != nil {
+		log.Println("Failed checkign if prefix exists")
+		return
+	}
+
+	if !prefixExists {
+		client.Cmd("SET", "command_prefix:"+g.ID, "-")
+		log.Println("Set command prefix to default of -")
+	}
 }

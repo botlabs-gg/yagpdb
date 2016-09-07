@@ -54,7 +54,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 	var autodel bool
 
 	if source != commandsystem.CommandSourceDM {
-		guild, err := s.State.Guild(channel.GuildID)
+		guild, err = s.State.Guild(channel.GuildID)
 		if err != nil {
 			return err
 		}
