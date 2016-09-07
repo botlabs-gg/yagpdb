@@ -51,7 +51,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	if matched == nil || matched.Response == "" {
 		return
 	}
-
+	log.Printf("Custom command triggered in %s/#%s, Trigger: %s (%d)", channel.GuildID, channel.Name, matched.Trigger, matched.TriggerType)
 	_, err = s.ChannelMessageSend(evt.ChannelID, matched.Response)
 	if err != nil {
 		log.Println("Failed sending message", err)
