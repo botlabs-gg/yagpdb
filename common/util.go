@@ -211,7 +211,7 @@ func CreateHastebinLog(cID string) (string, error) {
 		return "", err
 	}
 
-	return resp.GetLink(Hastebin), nil
+	return resp.GetLink(Hastebin) + ".txt", nil
 }
 
 func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {
