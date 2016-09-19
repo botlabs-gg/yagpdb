@@ -15,10 +15,10 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/commands.html"))
 
-	web.CPMux.HandleC(pat.Get("/cp/:server/commands/settings"), web.RenderHandler(HandleCommands, "cp_commands"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/commands/settings/"), web.RenderHandler(HandleCommands, "cp_commands"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/commands/settings/general"), web.RenderHandler(HandlePostGeneral, "cp_commands"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/commands/settings/channels"), web.RenderHandler(HandlePostChannels, "cp_commands"))
+	web.CPMux.HandleC(pat.Get("/commands/settings"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
+	web.CPMux.HandleC(pat.Get("/commands/settings/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
+	web.CPMux.HandleC(pat.Post("/commands/settings/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostGeneral, "cp_commands")))
+	web.CPMux.HandleC(pat.Post("/commands/settings/channels"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostChannels, "cp_commands")))
 }
 
 // Servers the command page with current config

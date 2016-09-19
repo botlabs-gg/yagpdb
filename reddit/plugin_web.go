@@ -24,13 +24,21 @@ const (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reddit.html"))
 
-	web.CPMux.HandleC(pat.Get("/cp/:server/reddit"), baseData(web.RenderHandler(HandleReddit, "cp_reddit")))
-	web.CPMux.HandleC(pat.Get("/cp/:server/reddit/"), baseData(web.RenderHandler(HandleReddit, "cp_reddit")))
+	redditMux := goji.SubMux()
+	web.CPMux.HandleC(pat.New("/reddit/*"), redditMux)
+	web.CPMux.HandleC(pat.New("/reddit"), redditMux)
 
-	// If only html allowed patch and delete.. if only
-	web.CPMux.HandleC(pat.Post("/cp/:server/reddit"), baseData(web.RenderHandler(HandleNew, "cp_reddit")))
-	web.CPMux.HandleC(pat.Post("/cp/:server/reddit/:item/update"), baseData(web.RenderHandler(HandleModify, "cp_reddit")))
-	web.CPMux.HandleC(pat.Post("/cp/:server/reddit/:item/delete"), baseData(web.RenderHandler(HandleRemove, "cp_reddit")))
+	// Alll handlers here require guild channels present
+	redditMux.UseC(web.RequireGuildChannelsMiddleware)
+	redditMux.UseC(baseData)
+
+	redditMux.HandleC(pat.Get("/"), web.RenderHandler(HandleReddit, "cp_reddit"))
+	redditMux.HandleC(pat.Get(""), web.RenderHandler(HandleReddit, "cp_reddit"))
+
+	// If only html forms allowed patch and delete.. if only
+	redditMux.HandleC(pat.Post(""), web.RenderHandler(HandleNew, "cp_reddit"))
+	redditMux.HandleC(pat.Post("/:item/update"), web.RenderHandler(HandleModify, "cp_reddit"))
+	redditMux.HandleC(pat.Post("/:item/delete"), web.RenderHandler(HandleRemove, "cp_reddit"))
 }
 
 // Adds the current config to the context
@@ -79,7 +87,7 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 		return templateData.AddAlerts(web.ErrorAlert("Max 10 items allowed"))
 	}
 
-	channelId, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData)
+	channelId, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData, ctx)
 	if !ok {
 		return templateData.AddAlerts(web.ErrorAlert("Unknown channel"))
 	}
@@ -124,7 +132,7 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	}
 
 	r.ParseForm()
-	channel, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData)
+	channel, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData, ctx)
 	if !ok {
 		return templateData.AddAlerts(web.ErrorAlert("Failed retrieving channel"))
 	}
@@ -197,16 +205,18 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 
 // Validates a channel name or id, adds an error message if not found
 // Returns true if everythign went okay
-func GetChannel(name, guild string, templateData web.TemplateData) (string, bool) {
+func GetChannel(name, guild string, templateData web.TemplateData, ctx context.Context) (string, bool) {
 	if name == "" {
 		return guild, true
 	}
 
-	channelId, err := web.GetChannelId(name, guild)
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed getting channel", err))
-		log.Println("Failed getting channel", guild, err)
-		return "", false
+	for _, v := range ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel) {
+		if v.ID == name {
+			return v.ID, true
+		}
 	}
-	return channelId, true
+
+	templateData.AddAlerts(web.ErrorAlert("Failed finding channel"))
+	log.Println("Failed finding channel", guild)
+	return "", false
 }

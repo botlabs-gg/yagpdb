@@ -16,10 +16,10 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/notifications_general.html"))
 
-	web.CPMux.HandleC(pat.Get("/cp/:server/notifications/general"), web.RenderHandler(HandleNotificationsGet, "cp_notifications_general"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/notifications/general/"), web.RenderHandler(HandleNotificationsGet, "cp_notifications_general"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/notifications/general"), web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/notifications/general/"), web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"))
+	web.CPMux.HandleC(pat.Get("/notifications/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")))
+	web.CPMux.HandleC(pat.Get("/notifications/general/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")))
+	web.CPMux.HandleC(pat.Post("/notifications/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general")))
+	web.CPMux.HandleC(pat.Post("/notifications/general/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general")))
 }
 
 func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {

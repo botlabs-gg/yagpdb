@@ -12,11 +12,11 @@ import (
 
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/serverstats.html"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/stats"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/stats/"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
+	web.CPMux.HandleC(pat.Get("/stats"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
+	web.CPMux.HandleC(pat.Get("/stats/"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
 
-	web.CPMux.HandleC(pat.Post("/cp/:server/stats/settings"), web.RenderHandler(HandleStatsSettings, "cp_serverstats"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/stats/full"), web.APIHandler(publicHandler(HandleStatsJson, false)))
+	web.CPMux.HandleC(pat.Post("/stats/settings"), web.RenderHandler(HandleStatsSettings, "cp_serverstats"))
+	web.CPMux.HandleC(pat.Get("/stats/full"), web.APIHandler(publicHandler(HandleStatsJson, false)))
 
 	// Public
 	web.RootMux.HandleC(pat.Get("/public/:server/stats"), web.RenderHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats"))

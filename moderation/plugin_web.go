@@ -16,9 +16,9 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/moderation_commands.html"))
 
-	web.CPMux.HandleC(pat.Get("/cp/:server/commands/moderation"), web.RenderHandler(HandleModeration, "cp_moderation_commands"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/commands/moderation/"), web.RenderHandler(HandleModeration, "cp_moderation_commands"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/commands/moderation"), web.RenderHandler(HandlePostModeration, "cp_moderation_commands"))
+	web.CPMux.HandleC(pat.Get("/commands/moderation"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation_commands")))
+	web.CPMux.HandleC(pat.Get("/commands/moderation/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation_commands")))
+	web.CPMux.HandleC(pat.Post("/commands/moderation"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostModeration, "cp_moderation_commands")))
 }
 
 // The moderation page itself

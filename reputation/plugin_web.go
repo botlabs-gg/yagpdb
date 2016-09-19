@@ -12,10 +12,10 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reputation.html"))
 
-	web.CPMux.HandleC(pat.Get("/cp/:server/reputation"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/reputation/"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/reputation"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/reputation/"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
+	web.CPMux.HandleC(pat.Get("/reputation"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
+	web.CPMux.HandleC(pat.Get("/reputation/"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
+	web.CPMux.HandleC(pat.Post("/reputation"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
+	web.CPMux.HandleC(pat.Post("/reputation/"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
 }
 
 func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {

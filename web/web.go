@@ -81,16 +81,14 @@ func setupRoutes() *goji.Mux {
 	cpMuxer.HandleC(pat.Get("/cp/"), RenderHandler(nil, "cp_selectserver"))
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
-	serverCpMuxer := goji.NewMux()
+	serverCpMuxer := goji.SubMux()
 	serverCpMuxer.UseC(RequireServerAdminMiddleware)
 
-	cpMuxer.HandleC(pat.Get("/cp/:server"), serverCpMuxer)
-	cpMuxer.HandleC(pat.Get("/cp/:server/*"), serverCpMuxer)
-	cpMuxer.HandleC(pat.Post("/cp/:server"), serverCpMuxer)
-	cpMuxer.HandleC(pat.Post("/cp/:server/*"), serverCpMuxer)
+	cpMuxer.HandleC(pat.New("/cp/:server"), serverCpMuxer)
+	cpMuxer.HandleC(pat.New("/cp/:server/*"), serverCpMuxer)
 
-	serverCpMuxer.HandleFuncC(pat.Get("/cp/:server/cplogs"), HandleCPLogs)
-	serverCpMuxer.HandleFuncC(pat.Get("/cp/:server/cplogs/"), HandleCPLogs)
+	serverCpMuxer.HandleFuncC(pat.Get("/cplogs"), HandleCPLogs)
+	serverCpMuxer.HandleFuncC(pat.Get("/cplogs/"), HandleCPLogs)
 	CPMux = serverCpMuxer
 
 	for _, plugin := range plugins {

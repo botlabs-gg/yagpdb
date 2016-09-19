@@ -224,6 +224,18 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
+		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
+		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild})
+
+		inner.ServeHTTPC(newCtx, w, r)
+	}
+	return goji.HandlerFunc(mw)
+}
+
+func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		guild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+
 		channels, err := common.GetGuildChannels(RedisClientFromContext(ctx), guild.ID)
 		if err != nil {
 			log.Println("Failed retrieving channels", err)
@@ -231,9 +243,8 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
-		newCtx = context.WithValue(newCtx, ContextKeyGuildChannels, channels)
-		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild, "current_guild_channels": channels})
+		newCtx := context.WithValue(ctx, ContextKeyGuildChannels, channels)
+		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild_channels": channels})
 
 		inner.ServeHTTPC(newCtx, w, r)
 	}

@@ -17,13 +17,13 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/custom_commands.html"))
 
-	web.CPMux.HandleC(pat.Get("/cp/:server/customcommands"), web.RenderHandler(HandleCommands, "cp_custom_commands"))
-	web.CPMux.HandleC(pat.Get("/cp/:server/customcommands/"), web.RenderHandler(HandleCommands, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Get("/customcommands"), web.RenderHandler(HandleCommands, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Get("/customcommands/"), web.RenderHandler(HandleCommands, "cp_custom_commands"))
 
 	// If only html allowed patch and delete.. if only
-	web.CPMux.HandleC(pat.Post("/cp/:server/customcommands"), web.RenderHandler(HandleNewCommand, "cp_custom_commands"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/customcommands/:cmd/update"), web.RenderHandler(HandleUpdateCommand, "cp_custom_commands"))
-	web.CPMux.HandleC(pat.Post("/cp/:server/customcommands/:cmd/delete"), web.RenderHandler(HandleDeleteCommand, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Post("/customcommands"), web.RenderHandler(HandleNewCommand, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Post("/customcommands/:cmd/update"), web.RenderHandler(HandleUpdateCommand, "cp_custom_commands"))
+	web.CPMux.HandleC(pat.Post("/customcommands/:cmd/delete"), web.RenderHandler(HandleDeleteCommand, "cp_custom_commands"))
 }
 
 func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
