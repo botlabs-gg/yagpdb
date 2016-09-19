@@ -8,7 +8,16 @@ import (
 	"github.com/turnage/redditproto"
 	"log"
 	"strings"
+	"sync"
 	"time"
+)
+
+var (
+	lastPostProcessed     time.Time
+	lastPostProcessedLock sync.Mutex
+
+	redditBot     *RedditBot
+	redditBotLock sync.Mutex
 )
 
 type RedditBot struct {
@@ -22,7 +31,18 @@ func (r *RedditBot) SetUp() error {
 	r.eng = graw.GetEngine(r)
 	log.Println("Reddit Bot is set up!")
 
+	redditBotLock.Lock()
+	redditBot = r
+	redditBotLock.Unlock()
 	return nil
+}
+
+func (r *RedditBot) TearDown() {
+	redditBotLock.Lock()
+	if redditBot == r {
+		redditBot = nil
+	}
+	redditBotLock.Unlock()
 }
 
 // Called when a post is made
@@ -30,6 +50,10 @@ func (r *RedditBot) Post(post *redditproto.Link) {
 	// posted := post.GetCreatedUtc()
 	//date := time.Unix(int64(posted), 0)
 	//log.Println("[RedditBot] new post", date.Format(time.Stamp), ":", post.GetTitle(), "by", post.GetAuthor())
+
+	lastPostProcessedLock.Lock()
+	lastPostProcessed = time.Now()
+	lastPostProcessedLock.Unlock()
 
 	client, err := common.RedisPool.Get()
 	if err != nil {
@@ -104,17 +128,53 @@ func (b *RedditBot) BlockTime() time.Duration {
 }
 
 func RunReddit() {
-	bot := &RedditBot{}
+	go runBot()
+	monitorBot()
+}
+
+func runBot() {
+	redditBotLock.Lock()
+	redditBot = &RedditBot{}
+	redditBotLock.Unlock()
+
+	lastPostProcessedLock.Lock()
+	lastPostProcessed = time.Now()
+	lastPostProcessedLock.Unlock()
 
 	agentFile := "reddit.agent"
 
 	for {
-		err := graw.Run(agentFile, bot, "all")
+		err := graw.Run(agentFile, redditBot, "all")
 		if err == nil {
 			break
 		} else {
 			log.Println("Error running graw:", err, "Retrying in a second")
 			time.Sleep(time.Second)
 		}
+	}
+
+}
+
+func monitorBot() {
+	ticker := time.NewTicker(time.Minute)
+	for {
+		<-ticker.C
+
+		lastPostProcessedLock.Lock()
+		needRestart := time.Since(lastPostProcessed) > time.Minute*5
+		lastPostProcessedLock.Unlock()
+		// Restart the bot if it has fallen asleep
+		log.Println(time.Since(lastPostProcessed))
+		if needRestart {
+			log.Println("RESTARTING REDDIT BOT")
+
+			redditBotLock.Lock()
+			redditBot.eng.Stop()
+			redditBotLock.Unlock()
+
+			go runBot()
+			log.Println("Done restarting")
+		}
+
 	}
 }
