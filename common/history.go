@@ -4,6 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -129,12 +130,23 @@ func (d DiscordMessages) Less(i, j int) bool {
 	tsjRaw := d[j].Timestamp
 	tsi, err := time.Parse("2006-01-02T15:04:05-07:00", tsiRaw)
 	tsj, err2 := time.Parse("2006-01-02T15:04:05-07:00", tsjRaw)
-	if err != nil {
-		panic(d[i].ID + ":" + err.Error())
+
+	// Currently on some rare occesions messages will not have timestmap, so this is a workaround until i fix this
+	if err != nil || err2 != nil {
+		var errMsg *discordgo.Message
+		if err != nil {
+			errMsg = d[i]
+		} else {
+			errMsg = d[j]
+		}
+		log.Printf("INCORRECT TIMESTAMP: %#v", errMsg)
+
+		// fall back to comparing the snowflake id's which may not be 100% but better than nothing
+		idIParsed, _ := strconv.ParseInt(d[i].ID, 10, 64)
+		idJParsed, _ := strconv.ParseInt(d[j].ID, 10, 64)
+		return idIParsed < idJParsed
 	}
-	if err2 != nil {
-		panic(d[j].ID + ":" + err2.Error())
-	}
+
 	return tsi.Before(tsj)
 }
 
