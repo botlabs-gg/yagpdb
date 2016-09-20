@@ -103,3 +103,12 @@
 {{define "channel_options"}}
     {{range .}}{{if eq .Type "text"}}<option value="{{.ID}}">#{{.Name}}</option>{{end}}{{end}}
 {{end}}
+
+{{define "template_help"}}
+<p>To include the user or server in the message you can use the template data included, the templating engine used is go's text/template<br/>
+Some quick exeamples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - Will be replaced by server name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - The users id and so on..<br/>
+To mention the user for example you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code></p>
+{{end}}
+
+{{define "template_helper_user"}}<code>{{"{{"}}.User.(ID/Username/Discriminator/Bot{{"}}"}}</code>{{end}}
+{{define "template_helper_guild"}}<code>{{"{{"}}.Server.(ID/Name/Icon/Owner/Permissions){{"}}"}}</code>{{end}}

@@ -30,14 +30,14 @@
                                         <div class="form-group">
                                             <label>Channel to announce bans and kicks through the bot in</label>
                                             <select class="form-control" name="action_channel">
-                                            {{$selected := .current_config.ActionChannel}}
+                                            {{$selected := .ModConfig.ActionChannel}}
                                             <option value="" {{if eq $selected ""}} selected{{end}}>Same as command was sent in</option>
-                                            {{range .current_guild_channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                            {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
                                             </select>
                                         </div>
                                         <div class="checkbox">
                                           <label>
-                                            <input type="checkbox" name="ban_enabled" {{if .current_config.BanEnabled}} checked{{end}}>
+                                            <input type="checkbox" name="ban_enabled" {{if .ModConfig.BanEnabled}} checked{{end}}>
                                             Ban command enabled<br/>
                                             <code>(mention or prefix) ban @user some reason</code><br/>
                                             Only users with ban permission can use this.<br/>
@@ -46,7 +46,7 @@
                                         </div>
                                         <div class="checkbox">
                                           <label>
-                                            <input type="checkbox" name="kick_enabled" {{if .current_config.KickEnabled}} checked{{end}}>
+                                            <input type="checkbox" name="kick_enabled" {{if .ModConfig.KickEnabled}} checked{{end}}>
                                             Kick command enabled<br/>
                                             <code>(mention or prefix) kick @user some reason</code><br/>
                                             Only users with kick permission can use this.<br/>
@@ -58,14 +58,14 @@
                                         <div class="form-group">
                                             <label>Channel to announce reports in</label>
                                             <select class="form-control" name="report_channel">
-                                            {{$selected := .current_config.ReportChannel}}
+                                            {{$selected := .ModConfig.ReportChannel}}
                                             <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                            {{range .current_guild_channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                            {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
                                             </select>
                                         </div>
                                         <div class="checkbox">
                                           <label>
-                                            <input type="checkbox" name="report_enabled" {{if .current_config.ReportEnabled}} checked{{end}}>
+                                            <input type="checkbox" name="report_enabled" {{if .ModConfig.ReportEnabled}} checked{{end}}>
                                             Report command enabled<br/>
                                             <code>(mention or prefix) report @user some reason</code><br/>
                                             Everyone can use this.<br/>
@@ -74,7 +74,7 @@
                                         </div>
                                         <div class="checkbox">
                                           <label>
-                                            <input type="checkbox" name="clean_enabled" {{if .current_config.CleanEnabled}} checked{{end}}>
+                                            <input type="checkbox" name="clean_enabled" {{if .ModConfig.CleanEnabled}} checked{{end}}>
                                             Clean command enabled<br/>
                                             <code>(mention or prefix) clean NUM {@user <- optional}</code><br/>
                                             Manage Messages permissions is required for this command.<br/>
@@ -87,20 +87,27 @@
                                     <div class="col-lg-6">
                                         <div class="form-group">
                                             <label>Kick DM (Leave emty to disable)</label>
-                                            <textarea class="form-control" rows="3" name="kick_message">{{.current_config.KickMessage}}</textarea>
-                                            <p class="help-block">Available template data is <code>{{"{{"}}.User{{"}}"}}</code> and <code>{{"{{"}}.Reason{{"}}"}}</code></p>
+                                            <textarea class="form-control" rows="3" name="kick_message">{{.ModConfig.KickMessage}}</textarea>
+                                            <p class="help-block">Available template data is {{template "template_helper_user"}} and <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick</p>
                                         </div>
                                     </div>
                                     <div class="col-lg-6">
                                         <div class="form-group">
                                             <label>Ban DM (Leave emty to disable)</label>
-                                            <textarea class="form-control" rows="3" name="ban_message">{{.current_config.BanMessage}}</textarea>
-                                            <p class="help-block">Available template data is <code>{{"{{"}}.User{{"}}"}}</code> and <code>{{"{{"}}.Reason{{"}}"}}</code></p>
+                                            <textarea class="form-control" rows="3" name="ban_message">{{.ModConfig.BanMessage}}</textarea>
+                                            <p class="help-block">Available template data is {{template "template_helper_user"}} and <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+                                    <div class="col-lg-12">
+                                        {{template "template_help"}}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+                                    </div>
                                 </div>
                             </form>
                         </div>

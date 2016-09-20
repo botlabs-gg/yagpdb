@@ -59,18 +59,17 @@ func HandleStatsHtml(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 		guildName = guild.Name
 
-		templateData["public_guild_id"] = guildID
+		templateData["PublicGuildID"] = guildID
 	}
 
-	templateData["public"] = publicEnabled
-	templateData["guild_name"] = guildName
+	templateData["Public"] = publicEnabled
+	templateData["GuildName"] = guildName
 
 	return templateData
 }
 
 func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["current_page"] = "serverstats"
 
 	public := r.FormValue("public") == "on"
 
@@ -79,10 +78,12 @@ func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	if err != nil {
 		log.Println("Error saving stats setting", err)
-		templateData["public"] = current
+		templateData["Public"] = current
 	} else {
-		templateData["public"] = public
+		templateData["Public"] = public
 	}
+
+	templateData["GuildName"] = activeGuild.Name
 
 	return templateData
 }

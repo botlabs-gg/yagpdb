@@ -24,12 +24,12 @@
                             General settings
                         </div>
                         <div class="panel-body">
-                            <form role="form" method="post" action="/cp/{{.current_guild.ID}}/commands/settings/general">
+                            <form role="form" method="post" action="/cp/{{.ActiveGuild.ID}}/commands/settings/general">
                                 <div class="row">
                                     <div class="col-lg-6">
                                         <div class="form-group">
                                             <label for="prefix">Prefix</label>
-                                            <input type="text" class="form-control" id="prefix" name="prefix" value="{{.current_config.Prefix}}">
+                                            <input type="text" class="form-control" id="prefix" name="prefix" value="{{.CommandConfig.Prefix}}">
                                         </div>
                                     </div>
                                     <div class="col-lg-6">
@@ -37,7 +37,9 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+                                    <div class="col-lg-12">
+                                        <button type="submit" class="btn btn-primary btn-lg btn-block">Save General Settings</button>   
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -47,7 +49,7 @@
                 <!-- /.col-lg-12 -->
             </div>
             <div class="row">
-                <form class="form-horizontal" method="post" action="/cp/{{.current_guild.ID}}/commands/settings/channels">
+                <form class="form-horizontal" method="post" action="/cp/{{.ActiveGuild.ID}}/commands/settings/channels">
                     <!-- The global command settings -->
                     <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
                         <div class="panel panel-default">
@@ -70,11 +72,11 @@
                                         <tr>
                                             <th>Command</th>
                                             <th>Enabled</th>
-                                            <th>Auto delete response (if any) after 10 seconds</th>
+                                            <th>Auto delete response and trigger (if any) after 10 seconds</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {{range .current_config.Global}}
+                                        {{range .CommandConfig.Global}}
                                         <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
                                             <td>{{.Cmd}}</td>
                                             <td>
@@ -88,7 +90,7 @@
                                             </td>
                                             <td>
                                                 <label class="checkbox-inline">
-                                                    <input type="checkbox" class="global-autodelete" name="global_autodelete_{{.Cmd}}" {{if .AutoDelete}} checked {{end}}> Auto delete response
+                                                    <input type="checkbox" class="global-autodelete" name="global_autodelete_{{.Cmd}}" {{if .AutoDelete}} checked {{end}}> Auto delete response and trigger
                                                 </label>
                                             </td>
                                         </tr>
@@ -99,9 +101,9 @@
                         </div>
                     </div>  <!-- /panel-group -->
 
-                    {{$guild := .current_guild.ID}}
+                    {{$guild := .ActiveGuild.ID}}
                     <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-                        {{range .current_config.ChannelOverrides}}
+                        {{range .CommandConfig.ChannelOverrides}}
                         <div class="panel panel-{{if .OverrideEnabled}}success{{else}}default{{end}}">
                             <div class="panel-heading clearfix" role="tab" id=".Channel">
                                 <div class="pull-right">
@@ -127,7 +129,7 @@
                                         <tr>
                                             <th>Command</th>
                                             <th>Enabled</th>
-                                            <th>Auto delete response (if any) after 10 seconds</th>
+                                            <th>Auto delete response and trigger (if any) after 10 seconds</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -142,7 +144,7 @@
                                             </td>
                                             <td>
                                                 <label class="checkbox-inline">
-                                                    <input type="checkbox" class="{{$Channel}}-autodelete" name="{{$Channel}}_autodelete_{{.Cmd}}" {{if .AutoDelete}} checked {{end}}> Auto delete response
+                                                    <input type="checkbox" class="{{$Channel}}-autodelete" name="{{$Channel}}_autodelete_{{.Cmd}}" {{if .AutoDelete}} checked {{end}}> Auto delete response and trigger
                                                 </label>
                                             </td>
                                         </tr>
@@ -154,7 +156,9 @@
                         {{end}}
                     </div>
                     <div class="row">
-                        <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+                        <div class="col-lg-12">
+                            <button type="submit" class="btn btn-primary btn-lg btn-block">Save advanced command settings</button>   
+                        </div>
                     </div>
                 </form>
             </div>

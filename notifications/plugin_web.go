@@ -25,15 +25,13 @@ func (p *Plugin) InitWeb() {
 func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	templateData["current_config"] = GetConfig(client, activeGuild.ID)
+	templateData["NotifyConfig"] = GetConfig(client, activeGuild.ID)
 
 	return templateData
 }
 
 func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-	templateData["current_page"] = "notifications/general"
 
 	previousConfig := GetConfig(client, activeGuild.ID)
 
@@ -56,14 +54,11 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 
 		TopicEnabled: r.FormValue("topic_enabled") == "on",
 		TopicChannel: r.FormValue("topic_channel"),
-
-		PinEnabled: r.FormValue("pin_enabled") == "on",
-		PinChannel: r.FormValue("pin_channel"),
 	}
 
 	// The sent one differs a little, we will send back invalid data but not store it
 	sentConfig := *newConfig
-	templateData["current_config"] = sentConfig
+	templateData["NotifyConfig"] = sentConfig
 
 	foundErrors := false
 

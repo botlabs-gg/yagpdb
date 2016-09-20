@@ -11,8 +11,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <h1 class="page-header">Custom Commands</h1>
-                    <p>For info on available template data see <a href="https://godoc.org/github.com/bwmarrin/discordgo">discordgo GoDoc</a> (e.g for user data <a href="https://godoc.org/github.com/bwmarrin/discordgo#User">See here</a>, the template engine used is go's text/template)</p>
-                    <p>Some quick exeamples: {{"{{"}}.user.Username{{"}}"}} - will be replaced by username, {{"{{"}}.guild.Name{{"}}"}} - Will be replaced by guild (server) name</p>
+                    <p>Add automatic responses, custom commands, memes and so on...</p>
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
@@ -26,7 +25,7 @@
                         </div>
                         <div class="panel-body">
                             <div class="col-lg-12">
-                                <form class="form-horizontal" method="post" action="/cp/{{.current_guild.ID}}/customcommands">
+                                <form class="form-horizontal" method="post" action="/cp/{{.ActiveGuild.ID}}/customcommands">
                                     <div class="form-group">
                                         <label for="trigger_type">Trigger type</label>
                                         <select id="trigger_type" class="form-control" name="type">
@@ -58,8 +57,8 @@
                         </div>
                     </div>
                     <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-                        {{$guild := .current_guild.ID}}
-                        {{range .commands}}
+                        {{$guild := .ActiveGuild.ID}}
+                        {{range .CustomCommands}}
                         <form class="form-horizontal" method="post" action="/cp/{{$guild}}/customcommands/{{.ID}}/update">
                             <div class="panel panel-default">
                                 <div class="panel-heading clearfix" role="tab" id="headingOne">

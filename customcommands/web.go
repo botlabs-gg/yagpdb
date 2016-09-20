@@ -31,7 +31,7 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
 	if !web.CheckErr(templateData, err) {
-		templateData["commands"] = commands
+		templateData["CustomCommands"] = commands
 	}
 
 	return templateData
@@ -49,7 +49,11 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return templateData
 	}
 
-	templateData["commands"] = currentCommands
+	templateData["CustomCommands"] = currentCommands
+
+	if len(currentCommands) > 49 {
+		return templateData.AddAlerts(web.ErrorAlert("Max 50 custom commands allowed"))
+	}
 
 	trigger := r.FormValue("trigger")
 	response := r.FormValue("response")
@@ -79,7 +83,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
 	}
 
-	templateData["commands"] = append(currentCommands, cmd)
+	templateData["CustomCommands"] = append(currentCommands, cmd)
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added command"))
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
@@ -129,7 +133,7 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		templateData.AddAlerts(web.ErrorAlert("Failed retrieving commands", err))
 	} else {
-		templateData["commands"] = commands
+		templateData["CustomCommands"] = commands
 	}
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
@@ -158,7 +162,7 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		templateData.AddAlerts(web.ErrorAlert("Failed retrieving commands", err))
 	} else {
-		templateData["commands"] = commands
+		templateData["CustomCommands"] = commands
 	}
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)

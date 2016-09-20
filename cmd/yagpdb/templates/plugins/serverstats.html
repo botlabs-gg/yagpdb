@@ -4,7 +4,7 @@
 
 
 <div id="wrapper">
-    {{if .current_guild}}
+    {{if .ActiveGuild}}
     {{template "cp_nav" .}}
     <div id="page-wrapper">
     {{else}}
@@ -13,21 +13,19 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="page-header">
-                    <h1>Server stats - {{.guild_name}} {{if not .current_guild}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
-                    {{if .current_guild}}
-                    <!-- <div class="pull-right"> -->
-                        <form class="form-inline" method="post" action="/cp/{{.current_guild.ID}}/stats/settings">
-                            <div class="form-group">
-                                <p class="form-control-static"><a href="/public/{{.current_guild.ID}}/stats">Public link</a></p>
-                            </div>
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox" name="public" {{if .public}} checked{{end}}> Publicly accessible?
-                                </label>
-                            </div>
-                            <button type="submit" class="btn btn-success">Save</button>
-                        </form>
-                    <!-- </div> -->
+                    <h1>Server stats - {{.GuildName}} {{if not .ActiveGuild}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
+                    {{if .ActiveGuild}}
+                    <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="public" {{if .Public}} checked{{end}}> Publicly accessible
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-success">Save</button>
+                        <div class="form-group">
+                            <p class="form-control-static"><a href="/public/{{.ActiveGuild.ID}}/stats">Public link</a></p>
+                        </div>
+                    </form>
                     {{end}}
                 </div>
             </div>
@@ -116,7 +114,6 @@
     <!-- /#page-wrapper -->
 </div>
 <script type="text/javascript">
-    window.JQuery = $;
     $(function(){
         function createRequest(method, path, data, cb){
             var oReq = new XMLHttpRequest();
@@ -174,10 +171,10 @@
 
         function fetchStats(){
             console.log("Fetching stats...");
-            {{if .current_guild}}
-            createRequest("GET", "/cp/{{.current_guild.ID}}/stats/full", null, statsCB);
+            {{if .ActiveGuild}}
+            createRequest("GET", "/cp/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
             {{else}}
-            createRequest("GET", "/public/{{.public_guild_id}}/stats/full", null, statsCB);
+            createRequest("GET", "/public/{{.PublicGuildID}}/stats/full", null, statsCB);
             {{end}}
         }
         setInterval(fetchStats, 10000);

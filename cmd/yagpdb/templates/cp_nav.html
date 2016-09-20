@@ -6,7 +6,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    <a class="navbar-brand" {{if .current_guild}} href="/cp/{{.current_guild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small>{{if .current_guild}}<b> {{.current_guild.Name}}</b>{{end}}</a>
+    <a class="navbar-brand" {{if .ActiveGuild}} href="/cp/{{.ActiveGuild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small>{{if .ActiveGuild}}<b> {{.ActiveGuild.Name}}</b>{{end}}</a>
 
 </div>
 <!-- /.navbar-header -->
@@ -21,12 +21,12 @@
     </li>
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-folder-open  fa-lg fa-fw"></i> {{if .current_guild}}{{.current_guild.Name}}{{else}}Select a server{{end}} <i class="fa fa-caret-down"></i>
+            <i class="fa fa-folder-open  fa-lg fa-fw"></i> {{if .ActiveGuild}}{{.ActiveGuild.Name}}{{else}}Select a server{{end}} <i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">    
-            {{$clientid := .clientid}}
-            {{$host := .host}}
-            {{range $index, $element := .managed_guilds}}
+            {{$clientid := .ClientID}}
+            {{$host := .Host}}
+            {{range $index, $element := .ManagedGuilds}}
             
             <li>
                 {{if $element.Connected}}
@@ -42,7 +42,7 @@
     </li>
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-user fa-fw"></i> {{.user.Username}} <-- smells bad! <i class="fa fa-caret-down"></i>
+            <i class="fa fa-user fa-fw"></i> {{.User.Username}} <-- smells bad! <i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">
             <li><a href=""><i class="fa fa-user fa-fw"></i> Admire yourself</a>
@@ -65,22 +65,22 @@
     <div class="sidebar-nav navbar-collapse">
         <ul class="nav" id="side-menu">
             <li>
-                <a href="/cp/{{.current_guild.ID}}/stats" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
+                <a href="/cp/{{.ActiveGuild.ID}}/stats" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
             </li>
             <li>
-                <a href="/cp/{{.current_guild.ID}}/cplogs" ><i class="fa fa-tree fa-fw"></i> Controlpanel Logs</a>
+                <a href="/cp/{{.ActiveGuild.ID}}/cplogs" ><i class="fa fa-tree fa-fw"></i> Controlpanel Logs</a>
             </li>
             <li>
                 <a href="#"><i class="fa fa-bullseye fa-fw"></i> Commands <span class="label label-success">Updated!</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a href="/cp/{{.current_guild.ID}}/commands/settings">Command settings</a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/commands/settings">Command settings</a>
                     </li>
                     <li>
-                        <a href="/cp/{{.current_guild.ID}}/commands/moderation">Moderation Commands <span class="label label-success">Updated!</span></a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/commands/moderation">Moderation Commands <span class="label label-success">Updated!</span></a>
                     </li>
                     <li>
-                        <a href="/cp/{{.current_guild.ID}}/customcommands">Custom Commands</a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/customcommands">Custom Commands</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->
@@ -89,10 +89,10 @@
                 <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications and Feeds<span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a href="/cp/{{.current_guild.ID}}/notifications/general">General</a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/notifications/general">General</a>
                     </li>
                     <li>
-                        <a href="/cp/{{.current_guild.ID}}/reddit">Reddit</a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/reddit">Reddit</a>
                     </li>
                     <li>
                         <a href="/todo">More later... (rss, github, twitch etc)</a>
@@ -104,7 +104,7 @@
                 <a href="#"><i class="fa fa-trophy fa-fw"></i> Fun &amp; Utilities <span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a href="/cp/{{.current_guild.ID}}/reputation">Reputation</a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/reputation">Reputation</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->

@@ -57,15 +57,15 @@ func baseData(inner goji.Handler) goji.Handler {
 		inner.ServeHTTPC(context.WithValue(ctx, CurrentConfig, currentConfig), w, r)
 
 	}
-	return goji.HandlerFunc(mw)
 
+	return goji.HandlerFunc(mw)
 }
 
 func HandleReddit(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	_, _, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
-	templateData["current_config"] = currentConfig
+	templateData["RedditConfig"] = currentConfig
 
 	return templateData
 }
@@ -74,7 +74,7 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
-	templateData["current_config"] = currentConfig
+	templateData["RedditConfig"] = currentConfig
 
 	highest := 0
 	for _, v := range currentConfig {
@@ -83,8 +83,8 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 		}
 	}
 
-	if len(currentConfig) > 10 {
-		return templateData.AddAlerts(web.ErrorAlert("Max 10 items allowed"))
+	if len(currentConfig) > 24 {
+		return templateData.AddAlerts(web.ErrorAlert("Max 25 items allowed"))
 	}
 
 	channelId, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData, ctx)
@@ -105,7 +105,7 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 	}
 
 	currentConfig = append(currentConfig, watchItem)
-	templateData["current_config"] = currentConfig
+	templateData["RedditConfig"] = currentConfig
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Sub))
 
 	// Log
@@ -118,7 +118,7 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
-	templateData["current_config"] = currentConfig
+	templateData["RedditConfig"] = currentConfig
 
 	id := pat.Param(ctx, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
@@ -167,7 +167,7 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
-	templateData["current_config"] = currentConfig
+	templateData["RedditConfig"] = currentConfig
 
 	id := pat.Param(ctx, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
@@ -196,7 +196,7 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 		}
 	}
 
-	templateData["current_config"] = currentConfig
+	templateData["RedditConfig"] = currentConfig
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Removed feed from /r/%s", user.Username, user.ID, r.FormValue("subreddit")))

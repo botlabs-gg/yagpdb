@@ -44,8 +44,8 @@ func BaseTemplateDataMiddleware(inner goji.Handler) goji.Handler {
 		}
 
 		baseData := map[string]interface{}{
-			"clientid": Config.ClientID,
-			"host":     Config.Host,
+			"ClientID": Config.ClientID,
+			"Host":     Config.Host,
 			"Version":  common.VERSION,
 		}
 		inner.ServeHTTPC(SetContextTemplateData(ctx, baseData), w, r)
@@ -68,12 +68,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 
 		cookie, err := r.Cookie("yagpdb-session")
 		if err != nil {
-			// cookie = GenSessionCookie()
-			// http.SetCookie(w, cookie)
-			// if Debug {
-			// 	log.Println("No session cookie")
-			// }
-			// No OAUTH token can be tied to it because we just generated it so just serve
+			// Cookie not present, skip retrieving session
 			return
 		}
 
@@ -85,6 +80,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 			return
 		}
+
 		token, err := GetAuthToken(cookie.Value, redisClient)
 		if err != nil {
 			if Debug {
@@ -106,6 +102,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 }
 
 // Will not serve pages unless a session is available
+// Also validates the origin header if present
 func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		session := DiscordSessionFromContext(ctx)
@@ -189,9 +186,9 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 		}
 
 		templateData := map[string]interface{}{
-			"user":           user,
-			"guilds":         wrapped,
-			"managed_guilds": managedGuilds,
+			"User":          user,
+			"Guilds":        wrapped,
+			"ManagedGuilds": managedGuilds,
 		}
 		newCtx := context.WithValue(SetContextTemplateData(ctx, templateData), ContextKeyUser, user)
 		newCtx = context.WithValue(newCtx, ContextKeyGuilds, guilds)
@@ -225,7 +222,7 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 		}
 
 		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
-		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild": guild})
+		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"ActiveGuild": guild})
 
 		inner.ServeHTTPC(newCtx, w, r)
 	}
@@ -243,8 +240,10 @@ func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
+		guild.Channels = channels
+
 		newCtx := context.WithValue(ctx, ContextKeyGuildChannels, channels)
-		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild_channels": channels})
+		// newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"current_guild_channels": channels})
 
 		inner.ServeHTTPC(newCtx, w, r)
 	}

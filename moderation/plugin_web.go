@@ -24,7 +24,6 @@ func (p *Plugin) InitWeb() {
 // The moderation page itself
 func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["current_page"] = "moderation"
 	config, err := GetConfig(client, activeGuild.ID)
 
 	if err != nil {
@@ -32,7 +31,7 @@ func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		log.Println("Failed retrieving config", err)
 	}
 
-	templateData["current_config"] = config
+	templateData["ModConfig"] = config
 
 	return templateData
 }
@@ -40,7 +39,6 @@ func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Reques
 // Update the settings
 func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["current_page"] = "moderation"
 
 	newConfig := &Config{
 		BanEnabled:    r.FormValue("ban_enabled") == "on",
@@ -102,7 +100,7 @@ func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Re
 		templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :o"))
 	}
 
-	templateData["current_config"] = newConfig
+	templateData["ModConfig"] = newConfig
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated moderation settings", user.Username, user.ID))

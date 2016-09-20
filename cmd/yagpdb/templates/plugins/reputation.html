@@ -20,11 +20,11 @@
             <div class="row">
                 <div class="col-lg-12">
                     <form role="form" method="post" action="">
-                        <div class="panel {{if .settings.Enabled}}panel-green{{else}}panel-default{{end}}">
+                        <div class="panel {{if .RepSettings.Enabled}}panel-green{{else}}panel-default{{end}}">
                             <div class="panel-heading">
                                 <div class="checkbox">
                                     <label>
-                                        <input type="checkbox" name="enabled" {{if .settings.Enabled}} checked{{end}}>Reputation Enabled
+                                        <input type="checkbox" name="enabled" {{if .RepSettings.Enabled}} checked{{end}}>Reputation Enabled
                                     </label>
                                 </div>
                             </div>
@@ -33,7 +33,7 @@
                                         <div class="col-lg-6">
                                             <div class="form-group">
                                                 <label for="cooldown">Rep cooldown in seconds</label>
-                                                <input type="number" class="form-control" id="cooldown" name="cooldown" value="{{.settings.Cooldown}}">
+                                                <input type="number" class="form-control" id="cooldown" name="cooldown" value="{{.RepSettings.Cooldown}}">
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
@@ -45,8 +45,9 @@
                                     </div>
                             </div>
                         </div>
+                        <!-- /.panel -->
                     </form>
-                    <!-- /.panel -->
+                    <!-- /form -->
                 </div>
                 <!-- /.col-lg-12 -->
             </div>

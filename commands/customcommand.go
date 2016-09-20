@@ -109,7 +109,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 				msgs, err := dutil.SplitSendMessage(s, m.ChannelID, out)
 				// Autodelete response if enabled
 				if autodel && err == nil {
-					go cs.deleteResponse(msgs)
+					go cs.deleteResponse(append(msgs, m.Message))
 				}
 			}
 		}

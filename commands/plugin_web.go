@@ -25,7 +25,7 @@ func (p *Plugin) InitWeb() {
 func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	channels := ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel)
-	templateData["current_config"] = GetConfig(client, activeGuild.ID, channels)
+	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)
 	return templateData
 }
 
@@ -42,7 +42,7 @@ func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	}
 
 	config := GetConfig(client, activeGuild.ID, channels)
-	templateData["current_config"] = config
+	templateData["CommandConfig"] = config
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated commands general settings", user.Username, user.ID))
@@ -99,7 +99,7 @@ func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated commands channel/global settings", user.Username, user.ID))
 
-	templateData["current_config"] = GetConfig(client, activeGuild.ID, channels)
+	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)
 
 	return templateData
 }

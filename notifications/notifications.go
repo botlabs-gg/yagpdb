@@ -39,11 +39,13 @@ type Config struct {
 	LeaveChannel string `json:"leave_channel"`
 	LeaveMsg     string `json:"leave_msg"`
 
-	PinEnabled bool   `json:"pin_enabled"`
-	PinChannel string `json:"pin_channel"`
-
 	TopicEnabled bool   `json:"topic_enabled"`
 	TopicChannel string `json:"topic_channel"`
+
+	// Deprecated
+	// Need to safely remove these fields
+	PinEnabled bool   `json:"pin_enabled,omitempty"`
+	PinChannel string `json:"pin_channel,omitempty"`
 }
 
 var DefaultConfig = &Config{}

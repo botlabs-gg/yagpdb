@@ -32,9 +32,13 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 	}
 
 	templateData := map[string]interface{}{
-		"user":  evt.User,
-		"guild": guild,
+		"user":   evt.User, // Deprecated
+		"User":   evt.User,
+		"guild":  guild, // Deprecated
+		"Guild":  guild,
+		"Server": guild,
 	}
+
 	config := GetConfig(client, evt.GuildID)
 
 	// Beware of the spaghetti
@@ -79,8 +83,11 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 	}
 
 	templateData := map[string]interface{}{
-		"user":  evt.User,
-		"guild": guild,
+		"user":   evt.User, // Deprecated
+		"User":   evt.User,
+		"guild":  guild, // Deprecated
+		"Guild":  guild,
+		"Server": guild,
 	}
 	config := GetConfig(client, evt.GuildID)
 

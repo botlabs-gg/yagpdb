@@ -23,7 +23,7 @@ func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	settings, err := GetFullSettings(client, activeGuild.ID)
 	if !web.CheckErr(templateData, err) {
-		templateData["settings"] = settings
+		templateData["RepSettings"] = settings
 	}
 	return templateData
 }
@@ -36,7 +36,7 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return templateData
 	}
 
-	templateData["Settings"] = currentSettings
+	templateData["RepSettings"] = currentSettings
 
 	parsed, err := strconv.ParseInt(r.FormValue("cooldown"), 10, 32)
 	if web.CheckErr(templateData, err) {
@@ -53,6 +53,6 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return templateData
 	}
 
-	templateData["settings"] = newSettings
+	templateData["RepSettings"] = newSettings
 	return templateData
 }

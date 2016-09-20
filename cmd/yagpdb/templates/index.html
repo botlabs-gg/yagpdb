@@ -71,9 +71,9 @@
                         <a class="page-scroll" href="#about">About</a>
                     </li>
                     <li>
-                        {{if .user}}<a href="/cp">Control panel - {{.user.Username}}</a>{{else}}<a href="/login">Login using Discord</a>{{end}}
+                        {{if .User}}<a href="/cp">Control panel - {{.User.Username}}</a>{{else}}<a href="/login">Login using Discord</a>{{end}}
                     </li>
-                    {{if .user}}
+                    {{if .User}}
                     <li>
                         <a href="/logout">Logout</a>
                     </li>
