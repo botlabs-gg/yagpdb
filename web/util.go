@@ -130,11 +130,11 @@ func LogIgnoreErr(err error) {
 type TemplateData map[string]interface{}
 
 func (t TemplateData) AddAlerts(alerts ...*Alert) TemplateData {
-	if t["alerts"] == nil {
-		t["alerts"] = make([]*Alert, 0)
+	if t["Alerts"] == nil {
+		t["Alerts"] = make([]*Alert, 0)
 	}
 
-	t["alerts"] = append(t["alerts"].([]*Alert), alerts...)
+	t["Alerts"] = append(t["Alerts"].([]*Alert), alerts...)
 	return t
 }
 
