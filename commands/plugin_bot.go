@@ -298,7 +298,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Cooldown: 5,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "CatFact",
-			Aliases:     []string{"cf", "cat"},
+			Aliases:     []string{"cf", "cat", "catfacts"},
 			Description: "Cat Facts",
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
