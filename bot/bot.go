@@ -3,8 +3,8 @@ package bot
 //go:generate go run ../cmd/gen/bot_wrappers.go -o wrappers.go
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/extra/pool"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"log"
 	"time"

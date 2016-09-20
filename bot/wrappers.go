@@ -6,12 +6,11 @@
 package bot
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/discordgo"
 	"log"
 	"runtime/debug"
 )
-
 
 func CustomChannelCreate(inner func(s *discordgo.Session, evt *discordgo.ChannelCreate, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.ChannelCreate) {
 	return func(s *discordgo.Session, evt *discordgo.ChannelCreate) {
@@ -612,4 +611,3 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 		inner(s, evt, r)
 	}
 }
-

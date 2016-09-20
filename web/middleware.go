@@ -2,7 +2,7 @@ package web
 
 import (
 	"encoding/json"
-	"github.com/bwmarrin/discordgo"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"goji.io"
 	"goji.io/pat"

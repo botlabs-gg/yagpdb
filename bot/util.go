@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/jonas747/discordgo"
 )
 
 func GetCreatePrivateChannel(s *discordgo.Session, user string) (*discordgo.Channel, error) {

@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/extra/pool"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"

@@ -18,7 +18,7 @@ const templateSource = `// GENERATED using yagpdb/cmd/gen/bot_wrappers.go
 package bot
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/jonas747/discordgo"
 	"github.com/fzzy/radix/redis"
 	"log"
 	"runtime/debug"

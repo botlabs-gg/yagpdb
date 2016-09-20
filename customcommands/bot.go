@@ -1,8 +1,8 @@
 package customcommands
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
 	"log"
 	"regexp"

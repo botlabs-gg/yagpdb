@@ -3,8 +3,8 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/common"

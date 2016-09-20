@@ -3,7 +3,7 @@ package customcommands
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"

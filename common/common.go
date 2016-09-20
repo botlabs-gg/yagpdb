@@ -2,8 +2,8 @@ package common
 
 import (
 	"github.com/Syfaro/haste-client"
-	"github.com/bwmarrin/discordgo"
 	"github.com/fzzy/radix/extra/pool"
+	"github.com/jonas747/discordgo"
 )
 
 const (

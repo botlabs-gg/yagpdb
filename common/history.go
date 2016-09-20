@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/jonas747/discordgo"
 	"log"
 	"sort"
 	"strconv"
