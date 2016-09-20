@@ -10,6 +10,20 @@ YAGPDB is very much work in progress so i'm not actively advertising it. Althoug
  - [YAGPDB.xyz](http://yagpdb.xyz)
  - [For updates and support join my discord server](https://discord.gg/Cj6kCba)
 
+### Running YAGPDB yourself
+
+Currently i do not provide precompiled binaries so you will have to compile it yourself, if you do not understnad the following steps then i advice you not to run it.
+
+1. `go get github.com/jonas747/yagpdb/cmd/yagpdb`
+2. go into `$GOPATH/src/github.com/jonas747/discordgo` and change the git branch to `yagpdb`
+2. go into `$GOPATH/src/github.com/jonas747/dutil` and change the git branch to `dgofork`
+
+You can now build it and run `$GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb`
+
+For configuration create a config.json file in the same dir as the built binary, for what you should include see [config.go](https://github.com/jonas747/yagpdb/blob/master/common/config.go#L8) 
+
+The reddit bot requires a seperate file called `reddit.agent` [it looks like this](https://github.com/turnage/graw/blob/master/useragent.protobuf.template)
+
 ### Plugins
 
 **Standard plugins:**
