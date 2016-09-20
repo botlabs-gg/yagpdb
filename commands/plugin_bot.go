@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"runtime"
 	"strings"
 	"sync"
@@ -325,6 +326,72 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return fact, nil
 		},
 	},
+	&CustomCommand{
+		Cooldown: 5,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Advice",
+			Description: "Get a advice",
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "What", Description: "What to get advice on", Type: commandsystem.ArgumentTypeString},
+			},
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			random := true
+			addr := "http://api.adviceslip.com/advice"
+			if cmd.Args[0] != nil {
+				random = false
+				addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(cmd.Args[0].Str())
+			}
+
+			resp, err := http.Get(addr)
+			if err != nil {
+				return err, err
+			}
+
+			var decoded interface{}
+
+			if random {
+				decoded = &RandomAdviceResp{}
+			} else {
+				decoded = &SearchAdviceResp{}
+			}
+
+			err = json.NewDecoder(resp.Body).Decode(&decoded)
+			if err != nil {
+				return err, err
+			}
+
+			advice := "No advice found :'("
+
+			if random {
+				slip := decoded.(*RandomAdviceResp).Slip
+				if slip != nil {
+					advice = slip.Advice
+				}
+			} else {
+				cast := decoded.(*SearchAdviceResp)
+				if len(cast.Slips) > 0 {
+					advice = cast.Slips[0].Advice
+				}
+			}
+
+			return advice, nil
+		},
+	},
+}
+
+type AdviceSlip struct {
+	Advice string `json:"advice"`
+	ID     string `json:"slip_id"`
+}
+
+type RandomAdviceResp struct {
+	Slip *AdviceSlip `json:"slip"`
+}
+
+type SearchAdviceResp struct {
+	TotalResults json.Number   `json:"total_results"`
+	Slips        []*AdviceSlip `json:"slips"`
 }
 
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
