@@ -21,10 +21,10 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) InitBot() {
-	bot.Session.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
-	bot.Session.AddHandler(bot.CustomGuildMemberAdd(HandleGuildMemberAdd))
-	bot.Session.AddHandler(bot.CustomGuildMemberRemove(HandleGuildMemberRemove))
-	bot.Session.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
+	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
+	common.BotSession.AddHandler(bot.CustomGuildMemberAdd(HandleGuildMemberAdd))
+	common.BotSession.AddHandler(bot.CustomGuildMemberRemove(HandleGuildMemberRemove))
+	common.BotSession.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
 }
 
 type Config struct {

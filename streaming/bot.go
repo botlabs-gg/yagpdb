@@ -9,8 +9,8 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	bot.Session.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
-	bot.Session.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
+	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
+	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
 }
 
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {

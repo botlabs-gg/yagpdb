@@ -22,7 +22,7 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		client, err := RedisPool.Get()
+		client, err := common.RedisPool.Get()
 		if err != nil {
 			log.Println("Failed retrieving redis client from pool", err)
 			// Redis is unavailable, just server without then
@@ -30,7 +30,7 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 		inner.ServeHTTPC(context.WithValue(ctx, ContextKeyRedis, client), w, r)
-		RedisPool.Put(client)
+		common.RedisPool.Put(client)
 	}
 	return goji.HandlerFunc(mw)
 }
@@ -44,8 +44,8 @@ func BaseTemplateDataMiddleware(inner goji.Handler) goji.Handler {
 		}
 
 		baseData := map[string]interface{}{
-			"ClientID": Config.ClientID,
-			"Host":     Config.Host,
+			"ClientID": common.Conf.ClientID,
+			"Host":     common.Conf.Host,
 			"Version":  common.VERSION,
 		}
 		inner.ServeHTTPC(SetContextTemplateData(ctx, baseData), w, r)
@@ -120,7 +120,7 @@ func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 
 		origin := r.Header.Get("Origin")
 		if origin != "" {
-			if !strings.EqualFold(Config.Host, origin) {
+			if !strings.EqualFold(common.Conf.Host, origin) {
 				http.Redirect(w, r, "/?err=bad_origin", http.StatusTemporaryRedirect)
 				return
 			}

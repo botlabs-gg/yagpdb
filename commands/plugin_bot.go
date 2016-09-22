@@ -41,12 +41,12 @@ func (p *Plugin) InitBot() {
 }
 
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
-	client, err := bot.RedisPool.Get()
+	client, err := common.RedisPool.Get()
 	if err != nil {
 		log.Println("Failed redis connection from pool", err)
 		return ""
 	}
-	defer bot.RedisPool.Put(client)
+	defer common.RedisPool.Put(client)
 
 	channel, err := s.State.Channel(m.ChannelID)
 	if err != nil {
@@ -98,7 +98,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				return "", err
 			}
 
-			bot.Session.ChannelMessageSend(privateChannel.ID, prefixStr+help)
+			common.BotSession.ChannelMessageSend(privateChannel.ID, prefixStr+help)
 			return "", nil
 		},
 	},
@@ -113,7 +113,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			var memStats runtime.MemStats
 			runtime.ReadMemStats(&memStats)
-			servers := len(bot.Session.State.Guilds)
+			servers := len(common.BotSession.State.Guilds)
 
 			uptime := time.Since(bot.Started)
 
@@ -207,7 +207,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			RunInDm:     true,
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			clientId := bot.Config.ClientID
+			clientId := common.Conf.ClientID
 			link := fmt.Sprintf("https://discordapp.com/oauth2/authorize?client_id=%s&scope=bot&permissions=535948311&response_type=code&redirect_uri=http://yagpdb.xyz/cp/", clientId)
 			return "You manage this bot through the control panel interface but heres an invite link incase you just want that\n" + link, nil
 		},

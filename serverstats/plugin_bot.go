@@ -14,13 +14,13 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	bot.Session.AddHandler(bot.CustomGuildMemberAdd(HandleMemberAdd))
-	bot.Session.AddHandler(bot.CustomGuildMemberRemove(HandleMemberRemove))
-	bot.Session.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
+	common.BotSession.AddHandler(bot.CustomGuildMemberAdd(HandleMemberAdd))
+	common.BotSession.AddHandler(bot.CustomGuildMemberRemove(HandleMemberRemove))
+	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
 
-	bot.Session.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
-	bot.Session.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
-	bot.Session.AddHandler(bot.CustomReady(HandleReady))
+	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
+	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
+	common.BotSession.AddHandler(bot.CustomReady(HandleReady))
 
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		Key:      "stats_settings_public:",

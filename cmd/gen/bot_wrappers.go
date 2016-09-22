@@ -19,6 +19,7 @@ package bot
 
 import (
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/fzzy/radix/redis"
 	"log"
 	"runtime/debug"
@@ -27,7 +28,7 @@ import (
 {{range .}}
 func Custom{{.}}(inner func(s *discordgo.Session, evt *discordgo.{{.}}, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.{{.}}) {
 	return func(s *discordgo.Session, evt *discordgo.{{.}}) {
-		r, err := RedisPool.Get()
+		r, err := common.RedisPool.Get()
 		if err != nil {
 			log.Println("Failed retrieving redis client, cant handle event {{.}}:", err)
 			return
@@ -38,7 +39,7 @@ func Custom{{.}}(inner func(s *discordgo.Session, evt *discordgo.{{.}}, r *redis
 				stack := string(debug.Stack())
 				log.Println("Recovered from panic in {{.}}:", err, "\n", evt, "\n", stack)
 			}
-			RedisPool.Put(r)
+			common.RedisPool.Put(r)
 		}()
 
 		inner(s, evt, r)

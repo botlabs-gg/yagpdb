@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"log"
 	"sort"
@@ -18,7 +19,7 @@ func RegisterPlugin() {
 }
 
 func (p *Plugin) InitBot() {
-	bot.Session.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
+	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
 }
 
 func (p *Plugin) Name() string {

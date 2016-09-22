@@ -1,8 +1,6 @@
 package web
 
 import (
-	"github.com/fzzy/radix/extra/pool"
-	"github.com/jonas747/yagpdb/common"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -11,11 +9,6 @@ import (
 )
 
 var (
-	// General configuration
-	Config *common.Config
-
-	RedisPool *pool.Pool
-
 	// Core template files
 	Templates = template.Must(template.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
 
@@ -29,9 +22,6 @@ var (
 )
 
 func Run() {
-
-	Config = common.Conf
-	RedisPool = common.RedisPool
 
 	log.Println("Starting yagpdb web server")
 
