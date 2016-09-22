@@ -2,7 +2,6 @@ package web
 
 import (
 	"github.com/jonas747/yagpdb/common"
-	"github.com/nhooyr/color/log"
 	"golang.org/x/net/context"
 	"net/http"
 )
@@ -17,18 +16,8 @@ func IndexHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	return templateData
 }
 
-func HandleSelectServer(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	templateData := ctx.Value(ContextKeyTemplateData).(TemplateData)
-
-	err := Templates.ExecuteTemplate(w, "cp_selectserver", templateData)
-	if err != nil {
-		log.Println("Failed executing templae", err)
-	}
-}
-
-func HandleCPLogs(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleCPLogs(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := GetBaseCPContextData(ctx)
-	templateData["current_page"] = "cp_logs"
 
 	logs, err := common.GetCPLogEntries(client, activeGuild.ID)
 	if err != nil {
@@ -36,5 +25,5 @@ func HandleCPLogs(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	} else {
 		templateData["entries"] = logs
 	}
-	LogIgnoreErr(Templates.ExecuteTemplate(w, "cp_action_logs", templateData))
+	return templateData
 }

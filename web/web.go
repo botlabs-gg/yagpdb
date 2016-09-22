@@ -87,8 +87,8 @@ func setupRoutes() *goji.Mux {
 	cpMuxer.HandleC(pat.New("/cp/:server"), serverCpMuxer)
 	cpMuxer.HandleC(pat.New("/cp/:server/*"), serverCpMuxer)
 
-	serverCpMuxer.HandleFuncC(pat.Get("/cplogs"), HandleCPLogs)
-	serverCpMuxer.HandleFuncC(pat.Get("/cplogs/"), HandleCPLogs)
+	serverCpMuxer.HandleC(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
+	serverCpMuxer.HandleC(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	CPMux = serverCpMuxer
 
 	for _, plugin := range plugins {
