@@ -161,6 +161,15 @@ func LoadGuildMembers(client *redis.Client, guildID string) error {
 		return err
 	}
 
+	// Load all members in memory, this might cause issues in the future, who knows /shrug
+	for _, v := range members {
+		v.GuildID = guildID
+		err = common.BotSession.State.MemberAdd(v)
+		if err != nil {
+			log.Println("Error", err)
+		}
+	}
+
 	err = client.Cmd("INCRBY", "guild_stats_num_members:"+guildID, len(members)).Err
 	log.Println("Finished loading", len(members), "guild members in", time.Since(started))
 	return err

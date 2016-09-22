@@ -98,15 +98,15 @@ func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, cli
 		return
 	}
 
-	member, err := s.State.Member(p.GuildID, p.User.ID)
-	if err != nil {
-		log.Println("Failed retrieving member from state", err)
-		return
-	}
-
 	guild, err := s.State.Guild(p.GuildID)
 	if err != nil {
 		log.Println("Failed retrieving guild from state", err)
+	}
+
+	member, err := s.State.Member(p.GuildID, p.User.ID)
+	if err != nil {
+		log.Println("Failed retrieving member from state", len(guild.Members), p.User.ID, err)
+		return
 	}
 
 	err = CheckPresence(client, &p.Presence, config, guild, member)

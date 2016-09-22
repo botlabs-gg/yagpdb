@@ -164,7 +164,6 @@ func monitorBot() {
 		needRestart := time.Since(lastPostProcessed) > time.Minute*5
 		lastPostProcessedLock.Unlock()
 		// Restart the bot if it has fallen asleep
-		log.Println(time.Since(lastPostProcessed))
 		if needRestart {
 			log.Println("RESTARTING REDDIT BOT")
 
