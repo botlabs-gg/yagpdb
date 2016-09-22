@@ -92,7 +92,7 @@ func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	err := common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(") {
 		return templateData
 	}
 

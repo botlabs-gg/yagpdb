@@ -53,7 +53,6 @@ func baseData(inner goji.Handler) goji.Handler {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 			return
 		}
-		templateData["current_page"] = "reddit"
 		inner.ServeHTTPC(context.WithValue(ctx, CurrentConfig, currentConfig), w, r)
 
 	}
@@ -100,7 +99,7 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 	}
 
 	err := watchItem.Set(client)
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(") {
 		return templateData
 	}
 
@@ -152,7 +151,7 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 		}
 	}
 
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(") {
 		return templateData
 	}
 
@@ -183,7 +182,7 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	}
 
 	err = item.Remove(client)
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "Failed removing item :'(") {
 		return templateData
 	}
 

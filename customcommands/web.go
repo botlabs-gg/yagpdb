@@ -30,7 +30,7 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
-	if !web.CheckErr(templateData, err) {
+	if !web.CheckErr(templateData, err, "Failed retrieving commands") {
 		templateData["CustomCommands"] = commands
 	}
 
@@ -45,7 +45,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	triggerType := TriggerTypeFromForm(r.FormValue("type"))
 
 	currentCommands, highest, err := GetCommands(client, activeGuild.ID)
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "Failed retrieving commands") {
 		return templateData
 	}
 

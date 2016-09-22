@@ -86,7 +86,7 @@
                 <!-- /.nav-second-level -->
             </li>
             <li>
-                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications and Feeds<span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications and Feeds <span class="label label-success">New!</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
                         <a href="/cp/{{.ActiveGuild.ID}}/notifications/general">General</a>
@@ -95,7 +95,10 @@
                         <a href="/cp/{{.ActiveGuild.ID}}/reddit">Reddit</a>
                     </li>
                     <li>
-                        <a href="/todo">More later... (rss, github, twitch etc)</a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/streaming">Streaming <span class="label label-success">Beta!</span></a>
+                    </li>
+                    <li>
+                        <a href="/todo">More later... (rss, github etc)</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->

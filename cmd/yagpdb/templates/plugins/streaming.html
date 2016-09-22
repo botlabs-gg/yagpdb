@@ -1,0 +1,115 @@
+{{define "cp_streaming"}}
+
+{{template "cp_head" .}}
+
+
+    <div id="wrapper">
+
+    {{template "cp_nav" .}}
+
+        <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Streaming</h1>
+                    <p>This plugin extends the built in streaming status of discord</p>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+
+            {{template "cp_alerts" .}}
+            
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <form role="form" action="" method="post">
+                        <div class="panel {{if .StreamingConfig.Enabled}}panel-green{{else}}panel-default{{end}}">
+                            <div class="panel-heading">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="enabled" {{if .StreamingConfig.Enabled}} checked{{end}}>Enabled
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Announce Channel</label>
+                                            <select class="form-control" name="announce_channel">
+                                                {{$selected := .StreamingConfig.AnnounceChannel}}
+                                                <option value="" {{if eq $selected ""}} selected{{end}}>None (Disable announcements)</option>
+                                                {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Announce Message</label>
+                                            <textarea class="form-control" rows="3" name="announce_message">{{.StreamingConfig.AnnounceMessage}}</textarea>
+                                            <p class="help-block">Available template data is {{template "template_helper_user"}} and <code>{{"{{"}}.URL {{"}}"}}</code> (The stream link)</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="form-group">
+                                            <label>Currently Streaming Role</label>
+                                            <select class="form-control" name="give_role">
+                                                {{$selected := .StreamingConfig.GiveRole}}
+                                                <option value="" {{if eq $selected ""}} selected{{end}}>None (Disable Give Role)</option>
+                                                {{range .ActiveGuild.Roles}}
+                                                <option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>
+                                                {{end}}
+                                            </select>
+                                            <p class="help-block">Assign a role to people currently streaming, so you can for example hoist it up where people can see</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Whitelist role</label>
+                                            <select class="form-control" name="require_role">
+                                                {{$selected := .StreamingConfig.RequireRole}}
+                                                <option value="" {{if eq $selected ""}} selected{{end}}>None</option>
+                                                {{range .ActiveGuild.Roles}}
+                                                <option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>
+                                                {{end}}
+                                            </select>
+                                            <p class="help-block">Only care about the people with this role</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Ignore role</label>
+                                            <select class="form-control" name="ignore_role">
+                                                {{$selected := .StreamingConfig.IgnoreRole}}
+                                                <option value="" {{if eq $selected ""}} selected{{end}}>None</option>
+                                                {{range .ActiveGuild.Roles}}
+                                                <option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>
+                                                {{end}}
+                                            </select>
+                                            <p class="help-block">Ignore people with this role</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        {{template "template_help"}}
+                                    </div>
+                                </div>
+                                <!-- /.row -->
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <button type="submit" class="btn btn-primary btn-lg btn-block">Save Streaming Settings</button>
+                                    </div>
+                                </div>
+                                <!-- /.row -->
+                            </div>
+                            <!-- /.panel-body -->
+                        </div>
+                        <!-- /.panel -->
+                    </form>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /#page-wrapper -->
+    </div>
+    <!-- /#wrapper -->
+
+{{template "cp_footer" .}}
+
+{{end}}

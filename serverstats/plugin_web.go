@@ -53,7 +53,7 @@ func HandleStatsHtml(ctx context.Context, w http.ResponseWriter, r *http.Request
 		}
 
 		guild, err := common.GetGuild(client, guildID)
-		if web.CheckErr(templateData, err) {
+		if web.CheckErr(templateData, err, "Failed retrieving guild :'(") {
 			return templateData
 		}
 

@@ -22,7 +22,7 @@ func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Req
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	settings, err := GetFullSettings(client, activeGuild.ID)
-	if !web.CheckErr(templateData, err) {
+	if !web.CheckErr(templateData, err, "Failed retrieving settings") {
 		templateData["RepSettings"] = settings
 	}
 	return templateData
@@ -32,14 +32,14 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentSettings, err := GetFullSettings(client, activeGuild.ID)
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "Failed retrieving settings") {
 		return templateData
 	}
 
 	templateData["RepSettings"] = currentSettings
 
 	parsed, err := strconv.ParseInt(r.FormValue("cooldown"), 10, 32)
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "") {
 		return templateData
 	}
 
@@ -49,7 +49,7 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 	}
 
 	err = newSettings.Save(client, activeGuild.ID)
-	if web.CheckErr(templateData, err) {
+	if web.CheckErr(templateData, err, "Failed saving settings") {
 		return templateData
 	}
 

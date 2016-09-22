@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/serverstats"
+	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
 	"log"
 	"os"
@@ -105,6 +106,7 @@ func main() {
 	moderation.RegisterPlugin()
 	reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
+	streaming.RegisterPlugin()
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()
