@@ -7,6 +7,7 @@ import (
 	"github.com/alfredxing/calc/compute"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -98,7 +99,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				return "", err
 			}
 
-			common.BotSession.ChannelMessageSend(privateChannel.ID, prefixStr+help)
+			dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
 			return "", nil
 		},
 	},
