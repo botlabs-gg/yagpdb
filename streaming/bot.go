@@ -68,38 +68,41 @@ func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, cli
 }
 
 func CheckPresence(client *redis.Client, p *discordgo.Presence, config *Config, guild *discordgo.Guild, member *discordgo.Member) error {
-	if !config.Enabled {
-		return nil
-	}
-
-	if config.RequireRole != "" {
-		found := false
-		for _, role := range member.Roles {
-			if role == config.RequireRole {
-				found = true
-				break
-			}
-		}
-
-		// Dosen't the required role
-		if !found {
-			return nil
-		}
-	}
-
-	if config.IgnoreRole != "" {
-		for _, role := range member.Roles {
-			// We ignore people with this role.. :')
-			if role == config.IgnoreRole {
-				return nil
-			}
-		}
-	}
 
 	// Now the real fun starts
 	// Either add or remove the stream
 	if p.Game != nil && p.Game.URL != "" {
 		// Streaming
+
+		// Only do these checks here to ensure we cleanup the user from the streaming set
+		// even if the plugin was disabled or the user ended up on the ignored roles
+		if !config.Enabled {
+			return nil
+		}
+
+		if config.RequireRole != "" {
+			found := false
+			for _, role := range member.Roles {
+				if role == config.RequireRole {
+					found = true
+					break
+				}
+			}
+
+			// Dosen't the required role
+			if !found {
+				return nil
+			}
+		}
+
+		if config.IgnoreRole != "" {
+			for _, role := range member.Roles {
+				// We ignore people with this role.. :')
+				if role == config.IgnoreRole {
+					return nil
+				}
+			}
+		}
 
 		// Was already marked as streaming before if we added 0 elements
 		if num, _ := client.Cmd("SADD", "currenly_streaming:"+guild.ID, member.User.ID).Int(); num == 0 {
