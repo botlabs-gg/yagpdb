@@ -1,9 +1,12 @@
 package streaming
 
 import (
+	"fmt"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"log"
 )
@@ -11,6 +14,51 @@ import (
 func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
 	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
+
+	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
+		Cooldown: 10,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "refreshstreaming",
+			Aliases:     []string{"rfs", "updatestreaming"},
+			Description: "Rechecks the streaming status of all the online people on the server, usefull if you added somone to the role",
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			config, err := GetConfig(client, parsed.Guild.ID)
+			if err != nil {
+				return "Failed retrieving config", err
+			}
+			errs := 0
+			for _, presence := range parsed.Guild.Presences {
+
+				var member *discordgo.Member
+
+				for _, m := range parsed.Guild.Members {
+					if m.User.ID == presence.User.ID {
+						member = m
+						break
+					}
+				}
+
+				if member == nil {
+					log.Println("Member not found in guild", presence.User.ID)
+					errs++
+					continue
+				}
+
+				err = CheckPresence(client, presence, config, parsed.Guild, member)
+				if err != nil {
+					log.Println("Error checking presence", err)
+					errs++
+					continue
+				}
+			}
+			out := "👌"
+			if errs > 0 {
+				out = fmt.Sprintf("%d errors occured, contact the jonus", errs)
+			}
+			return out, nil
+		},
+	})
 }
 
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
@@ -71,12 +119,13 @@ func CheckPresence(client *redis.Client, p *discordgo.Presence, config *Config, 
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if p.Game != nil && p.Game.URL != "" {
+	if p.Status != "offline" && p.Game != nil && p.Game.URL != "" {
 		// Streaming
 
 		// Only do these checks here to ensure we cleanup the user from the streaming set
 		// even if the plugin was disabled or the user ended up on the ignored roles
 		if !config.Enabled {
+			RemoveStreaming(client, config, guild, member)
 			return nil
 		}
 
@@ -91,6 +140,7 @@ func CheckPresence(client *redis.Client, p *discordgo.Presence, config *Config, 
 
 			// Dosen't the required role
 			if !found {
+				RemoveStreaming(client, config, guild, member)
 				return nil
 			}
 		}
@@ -99,6 +149,7 @@ func CheckPresence(client *redis.Client, p *discordgo.Presence, config *Config, 
 			for _, role := range member.Roles {
 				// We ignore people with this role.. :')
 				if role == config.IgnoreRole {
+					RemoveStreaming(client, config, guild, member)
 					return nil
 				}
 			}
@@ -120,16 +171,19 @@ func CheckPresence(client *redis.Client, p *discordgo.Presence, config *Config, 
 
 	} else {
 		// Not streaming
-
-		// Was not streaming before if we removed 0 elements
-		if num, _ := client.Cmd("SREM", "currenly_streaming:"+guild.ID, member.User.ID).Int(); num == 0 {
-			return nil
-		}
-
-		RemoveStreamingRole(member, config.GiveRole, guild)
+		RemoveStreaming(client, config, guild, member)
 	}
 
 	return nil
+}
+
+func RemoveStreaming(client *redis.Client, config *Config, guild *discordgo.Guild, member *discordgo.Member) {
+	// Was not streaming before if we removed 0 elements
+	if num, _ := client.Cmd("SREM", "currenly_streaming:"+guild.ID, member.User.ID).Int(); num == 0 {
+		return
+	}
+
+	RemoveStreamingRole(member, config.GiveRole, guild)
 }
 
 func SendStreamingAnnouncement(config *Config, guild *discordgo.Guild, member *discordgo.Member, p *discordgo.Presence) {
