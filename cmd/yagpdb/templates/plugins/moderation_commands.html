@@ -53,6 +53,12 @@
                                             Same as ban command but kicks instead
                                           </label>
                                         </div>
+                                        <div class="checkbox">
+                                          <label>
+                                            <input type="checkbox" name="kick_delete_messages" {{if .ModConfig.DeleteMessagesOnKick}} checked{{end}}>
+                                            Delete the users last 100 messages on kick<br/>
+                                          </label>
+                                        </div>
                                     </div>
                                     <div class="col-lg-6">
                                         <div class="form-group">

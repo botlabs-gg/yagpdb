@@ -41,12 +41,13 @@ func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Re
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	newConfig := &Config{
-		BanEnabled:    r.FormValue("ban_enabled") == "on",
-		KickEnabled:   r.FormValue("kick_enabled") == "on",
-		ReportEnabled: r.FormValue("report_enabled") == "on",
-		CleanEnabled:  r.FormValue("clean_enabled") == "on",
-		KickMessage:   r.FormValue("kick_message"),
-		BanMessage:    r.FormValue("ban_message"),
+		BanEnabled:           r.FormValue("ban_enabled") == "on",
+		KickEnabled:          r.FormValue("kick_enabled") == "on",
+		ReportEnabled:        r.FormValue("report_enabled") == "on",
+		CleanEnabled:         r.FormValue("clean_enabled") == "on",
+		DeleteMessagesOnKick: r.FormValue("kick_delete_messages") == "on",
+		KickMessage:          r.FormValue("kick_message"),
+		BanMessage:           r.FormValue("ban_message"),
 	}
 
 	// Validate the messages

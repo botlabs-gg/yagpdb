@@ -92,7 +92,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				hastebin = "Hastebin upload failed"
 				log.Println("Error uploading hastebin log", err)
 			}
-
 			err = common.BotSession.GuildBanCreate(parsed.Guild.ID, target.ID, 1)
 			if err != nil {
 				return "API Refused to ban... (Bot probably dosen't have enough permissions)", err
@@ -169,6 +168,31 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Kicked **%s**#%s *(%s)*\n**Reason:** %s\n**Hastebin:** <%s>", m.Author.ID, target.Username, target.Discriminator, target.ID, parsed.Args[1].Str(), hastebin))
 			if err != nil {
 				return "Failed sending kick report in action channel", err
+			}
+
+			// Delete messages if enabled
+			if shouldDelete, _ := client.Cmd("GET", "moderation_kick_delete_messages:"+parsed.Guild.ID).Bool(); shouldDelete {
+				lastMsgs, err := common.GetMessages(parsed.Channel.ID, 100)
+				if err != nil {
+					return "Failed deleting recent messages by kicked user :'(", err
+				}
+				toDelete := make([]string, 0)
+
+				for _, v := range lastMsgs {
+					if v.Author.ID == target.ID {
+						toDelete = append(toDelete, v.ID)
+					}
+				}
+
+				if len(toDelete) < 1 {
+					return "", nil
+				}
+
+				if len(toDelete) == 1 {
+					common.BotSession.ChannelMessageDelete(parsed.Channel.ID, toDelete[0])
+				} else {
+					common.BotSession.ChannelMessagesBulkDelete(parsed.Channel.ID, toDelete)
+				}
 			}
 
 			return "", nil
