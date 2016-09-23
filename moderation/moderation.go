@@ -42,7 +42,7 @@ func (c *Config) Save(client *redis.Client, guildID string) error {
 	client.Append("SET", "moderation_kick_message:"+guildID, c.KickMessage)
 	client.Append("SET", "moderation_kick_delete_messages:"+guildID, c.DeleteMessagesOnKick)
 
-	_, err := common.GetRedisReplies(client, 8)
+	_, err := common.GetRedisReplies(client, 9)
 	return err
 }
 
