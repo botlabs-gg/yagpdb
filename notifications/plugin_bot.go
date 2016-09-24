@@ -66,10 +66,7 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 		if err != nil {
 			log.Println("Failed parsing/executing dm template", guild.ID, err)
 		} else {
-			_, err = s.ChannelMessageSend(channel, msg)
-			if err != nil {
-				log.Println("Failed sending join message to server channel", guild.ID, err)
-			}
+			bot.QueueMergedMessage(channel, msg)
 		}
 	}
 }
@@ -102,10 +99,7 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 		return
 	}
 
-	_, err = s.ChannelMessageSend(channel, msg)
-	if err != nil {
-		log.Println("Failed sending leave message", guild.ID, err)
-	}
+	bot.QueueMergedMessage(channel, msg)
 }
 
 func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, client *redis.Client) {
