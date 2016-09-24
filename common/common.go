@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	VERSION = "0.14 Dillweed ALPHA"
+	VERSION = "0.15-git Eternal ALPHA"
 )
 
 var (
