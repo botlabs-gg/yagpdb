@@ -80,11 +80,9 @@ func main() {
 	BotSession.MaxRestRetries = 3
 	//BotSession.LogLevel = discordgo.LogInformational
 
-	RedisPool, err = pool.NewPool("tcp", config.Redis, 10)
+	RedisPool, err = pool.NewCustomPool("tcp", config.Redis, 100, common.RedisDialFunc)
 	if err != nil {
-		log.Println("Failed initializing redis pool", err)
-		os.Exit(1)
-		return
+		log.Fatal("Failed initializing redis pool", err)
 	}
 
 	if flagAction != "" {
