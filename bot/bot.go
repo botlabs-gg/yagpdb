@@ -39,4 +39,6 @@ func Run() {
 	}
 
 	Running = true
+
+	go mergedMessageSender()
 }
