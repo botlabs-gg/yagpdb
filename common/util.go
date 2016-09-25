@@ -197,13 +197,17 @@ func CreateHastebinLog(cID string) (string, error) {
 	for _, m := range msgs {
 		body := m.ContentWithMentionsReplaced()
 
-		parsedTs, _ := time.Parse("2006-01-02T15:04:05-07:00", m.Timestamp)
+		tsStr := "[TS_PARSING_FAILED]"
+		parsedTs, err := time.Parse("2006-01-02T15:04:05-07:00", m.Timestamp)
+		if err == nil {
+			tsStr = parsedTs.Format("2006 " + time.Stamp)
+		}
 
 		for _, attachment := range m.Attachments {
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
 		}
 
-		paste += fmt.Sprintf("[%s] (%19s) %20s: %s\n", parsedTs.Format("2006 "+time.Stamp), m.Author.ID, m.Author.Username, body)
+		paste += fmt.Sprintf("[%s] (%19s) %20s: %s\n", tsStr, m.Author.ID, m.Author.Username, body)
 	}
 
 	resp, err := Hastebin.UploadString("Logs of #" + channel.Name + " by YAGPDB :')\n" + paste)
