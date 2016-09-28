@@ -55,7 +55,7 @@ func (p *Plugin) InitBot() {
 
 func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client) {
 	for _, guild := range r.Guilds {
-		if guild.Unavailable != nil && *guild.Unavailable {
+		if guild.Unavailable {
 			continue
 		}
 

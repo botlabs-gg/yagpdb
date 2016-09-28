@@ -94,12 +94,12 @@ func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) er
 }
 
 type WrappedGuild struct {
-	*discordgo.Guild
+	*discordgo.UserGuild
 	Connected bool
 }
 
 // GetWrapped Returns a wrapped guild with connected set
-func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, error) {
+func GetWrapped(in []*discordgo.UserGuild, client *redis.Client) ([]*WrappedGuild, error) {
 	if len(in) < 1 {
 		return []*WrappedGuild{}, nil
 	}
@@ -121,7 +121,7 @@ func GetWrapped(in []*discordgo.Guild, client *redis.Client) ([]*WrappedGuild, e
 		}
 
 		out[k] = &WrappedGuild{
-			Guild:     g,
+			UserGuild: g,
 			Connected: isConnected,
 		}
 	}
@@ -198,7 +198,7 @@ func CreateHastebinLog(cID string) (string, error) {
 		body := m.ContentWithMentionsReplaced()
 
 		tsStr := "[TS_PARSING_FAILED]"
-		parsedTs, err := time.Parse("2006-01-02T15:04:05-07:00", m.Timestamp)
+		parsedTs, err := m.Timestamp.Parse()
 		if err == nil {
 			tsStr = parsedTs.Format("2006 " + time.Stamp)
 		}

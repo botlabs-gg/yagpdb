@@ -5,7 +5,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"sort"
 	"strconv"
-	"time"
 )
 
 // Gets mesasges from state if possible, if not then it retrieves from the discord api
@@ -130,8 +129,8 @@ func (d DiscordMessages) Len() int { return len(d) }
 func (d DiscordMessages) Less(i, j int) bool {
 	tsiRaw := d[i].Timestamp
 	tsjRaw := d[j].Timestamp
-	tsi, err := time.Parse("2006-01-02T15:04:05-07:00", tsiRaw)
-	tsj, err2 := time.Parse("2006-01-02T15:04:05-07:00", tsjRaw)
+	tsi, err := tsiRaw.Parse()
+	tsj, err2 := tsjRaw.Parse()
 
 	// Currently on some rare occesions messages will not have timestmap, so this is a workaround until i fix this
 	if err != nil || err2 != nil {

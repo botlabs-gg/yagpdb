@@ -151,7 +151,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			LogIgnoreErr(common.SetCacheDataJson(redisClient, session.Token+":user", 3600, user))
 		}
 
-		var guilds []*discordgo.Guild
+		var guilds []*discordgo.UserGuild
 		err = common.GetCacheDataJson(redisClient, session.Token+":guilds", &guilds)
 		if err != nil {
 			guilds, err = session.UserGuilds()
