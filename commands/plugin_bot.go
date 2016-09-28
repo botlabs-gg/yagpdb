@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	log "github.com/Sirupsen/logrus"
 	"github.com/alfredxing/calc/compute"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
@@ -14,7 +15,6 @@ import (
 	"github.com/lunixbochs/vtclean"
 	"image"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -44,19 +44,19 @@ func (p *Plugin) InitBot() {
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
 	client, err := common.RedisPool.Get()
 	if err != nil {
-		log.Println("Failed redis connection from pool", err)
+		log.WithError(err).Error("Failed retrieving redis connection from pool")
 		return ""
 	}
 	defer common.RedisPool.Put(client)
 
 	channel, err := s.State.Channel(m.ChannelID)
 	if err != nil {
-		log.Println("Failed retrieving channel from state", err)
+		log.WithError(err).Error("Failed retrieving channels from state")
 		return ""
 	}
 	prefix, err := GetCommandPrefix(client, channel.GuildID)
 	if err != nil {
-		log.Println("Failed retrieving prefix", err)
+		log.WithError(err).Error("Failed retrieving commands prefix")
 	}
 	return prefix
 }
@@ -398,12 +398,12 @@ type SearchAdviceResp struct {
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
 	prefixExists, err := client.Cmd("EXISTS", "command_prefix:"+g.ID).Bool()
 	if err != nil {
-		log.Println("Failed checkign if prefix exists")
+		log.WithError(err).Error("Failed checking if prefix exists")
 		return
 	}
 
 	if !prefixExists {
 		client.Cmd("SET", "command_prefix:"+g.ID, "-")
-		log.Println("Set command prefix to default of -")
+		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (-)")
 	}
 }

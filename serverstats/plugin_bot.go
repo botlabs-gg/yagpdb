@@ -2,6 +2,7 @@ package serverstats
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
@@ -9,7 +10,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"time"
 )
 
@@ -58,13 +58,15 @@ func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client)
 		if guild.Unavailable != nil && *guild.Unavailable {
 			continue
 		}
+
 		err := ApplyPresences(client, guild.ID, guild.Presences)
 		if err != nil {
-			log.Println("Failed applying presences:", err)
+			log.WithError(err).Error("Failed applying presences")
 		}
+
 		err = LoadGuildMembers(client, guild.ID)
 		if err != nil {
-			log.Println("Failed loading guild members:", err)
+			log.WithError(err).Error("Failed loading guild members")
 		}
 	}
 }
@@ -72,23 +74,23 @@ func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client)
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
 	err := ApplyPresences(client, g.ID, g.Presences)
 	if err != nil {
-		log.Println("Failed applying presences:", err)
+		log.WithError(err).Error("Failed applying presences")
 	}
 	err = LoadGuildMembers(client, g.ID)
 	if err != nil {
-		log.Println("Failed loading guild members:", err)
+		log.WithError(err).Error("Failed loading guild members")
 	}
 }
 
 func HandleMemberAdd(s *discordgo.Session, g *discordgo.GuildMemberAdd, client *redis.Client) {
 	err := client.Cmd("ZADD", "guild_stats_members_joined_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
 	if err != nil {
-		log.Println("Failed adding member to stats", err)
+		log.WithError(err).Error("Failed adding member to stats")
 	}
 
 	err = client.Cmd("INCR", "guild_stats_num_members:"+g.GuildID).Err
 	if err != nil {
-		log.Println("Failed Increasing members", err)
+		log.WithError(err).Error("Failed Increasing members")
 	}
 }
 
@@ -105,31 +107,31 @@ func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, cli
 	}
 
 	if err != nil {
-		log.Println("Failed updating a presence", err)
+		log.WithError(err).Error("Failed updating a presence")
 	}
 }
 
 func HandleMemberRemove(s *discordgo.Session, g *discordgo.GuildMemberRemove, client *redis.Client) {
 	err := client.Cmd("ZADD", "guild_stats_members_left_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
 	if err != nil {
-		log.Println("Failed adding member to stats", err)
+		log.WithError(err).Error("Failed adding member to stats")
 	}
 
 	err = client.Cmd("DECR", "guild_stats_num_members:"+g.GuildID).Err
 	if err != nil {
-		log.Println("Failed decreasing members", err)
+		log.WithError(err).Error("Failed decreasing members")
 	}
 }
 
 func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, client *redis.Client) {
 	channel, err := s.State.Channel(m.ChannelID)
 	if err != nil {
-		log.Println("Error retrieving channel from state", err)
+		log.WithError(err).Error("Error retrieving channel from state")
 		return
 	}
 	err = client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.GuildID, time.Now().Unix(), channel.ID+":"+m.ID+":"+m.Author.ID).Err
 	if err != nil {
-		log.Println("Failed adding member to stats", err)
+		log.WithError(err).Error("Failed adding member to stats")
 	}
 }
 
@@ -149,7 +151,6 @@ func ApplyPresences(client *redis.Client, guildID string, presences []*discordgo
 }
 
 func LoadGuildMembers(client *redis.Client, guildID string) error {
-	started := time.Now()
 	err := client.Cmd("SET", "guild_stats_num_members:"+guildID, 0).Err
 
 	if err != nil {
@@ -166,11 +167,16 @@ func LoadGuildMembers(client *redis.Client, guildID string) error {
 		v.GuildID = guildID
 		err = common.BotSession.State.MemberAdd(v)
 		if err != nil {
-			log.Println("Error", err)
+			log.WithError(err).Error("Failed adding member to state")
 		}
 	}
 
 	err = client.Cmd("INCRBY", "guild_stats_num_members:"+guildID, len(members)).Err
-	log.Println("Finished loading", len(members), "guild members in", time.Since(started))
+
+	log.WithFields(log.Fields{
+		"guild":       guildID,
+		"num_members": len(members),
+	}).Info("Finished loading guild members")
+
 	return err
 }

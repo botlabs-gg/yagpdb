@@ -1,6 +1,7 @@
 package reputation
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
@@ -22,7 +23,7 @@ func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Req
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	settings, err := GetFullSettings(client, activeGuild.ID)
-	if !web.CheckErr(templateData, err, "Failed retrieving settings") {
+	if !web.CheckErr(templateData, err, "Failed retrieving settings", logrus.Error) {
 		templateData["RepSettings"] = settings
 	}
 	return templateData
@@ -32,14 +33,14 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentSettings, err := GetFullSettings(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed retrieving settings") {
+	if web.CheckErr(templateData, err, "Failed retrieving settings", logrus.Error) {
 		return templateData
 	}
 
 	templateData["RepSettings"] = currentSettings
 
 	parsed, err := strconv.ParseInt(r.FormValue("cooldown"), 10, 32)
-	if web.CheckErr(templateData, err, "") {
+	if web.CheckErr(templateData, err, "", nil) {
 		return templateData
 	}
 
@@ -49,7 +50,7 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 	}
 
 	err = newSettings.Save(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed saving settings") {
+	if web.CheckErr(templateData, err, "Failed saving settings", logrus.Error) {
 		return templateData
 	}
 

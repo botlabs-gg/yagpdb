@@ -2,13 +2,13 @@ package streaming
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 )
 
 func (p *Plugin) InitBot() {
@@ -40,18 +40,19 @@ func (p *Plugin) InitBot() {
 				}
 
 				if member == nil {
-					log.Println("Member not found in guild", presence.User.ID)
+					log.Error("Member not found in guild", presence.User.ID)
 					errs++
 					continue
 				}
 
 				err = CheckPresence(client, presence, config, parsed.Guild, member)
 				if err != nil {
-					log.Println("Error checking presence", err)
+					log.WithError(err).Error("Error checking presence")
 					errs++
 					continue
 				}
 			}
+
 			out := "👌"
 			if errs > 0 {
 				out = fmt.Sprintf("%d errors occured, contact the jonus", errs)
@@ -64,7 +65,7 @@ func (p *Plugin) InitBot() {
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
 	config, err := GetConfig(client, g.ID)
 	if err != nil {
-		log.Println("Failed retrieving config", err)
+		log.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
 
@@ -79,14 +80,14 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 		}
 
 		if member == nil {
-			log.Println("No member found :'(")
+			log.Error("No member found")
 			continue
 		}
 
 		err = CheckPresence(client, p, config, g.Guild, member)
 
 		if err != nil {
-			log.Println("Failed checking presence", err)
+			log.WithError(err).Error("Failed checking presence")
 		}
 	}
 }
@@ -94,24 +95,25 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, client *redis.Client) {
 	config, err := GetConfig(client, p.GuildID)
 	if err != nil {
-		log.Println("Failed retrieving config", err)
+		log.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
 
 	guild, err := s.State.Guild(p.GuildID)
 	if err != nil {
-		log.Println("Failed retrieving guild from state", err)
+		log.WithError(err).Error("Failed retrieving guild from state")
+		return
 	}
 
 	member, err := bot.GetGuildMember(s, p.GuildID, p.User.ID)
 	if err != nil {
-		log.Println("Failed retrieving member from state", len(guild.Members), p.User.ID, err)
+		log.WithError(err).Error("Failed retrieving member")
 		return
 	}
 
-	err = CheckPresence(client, &p.Presence, config, guild, member)
+	err = CheckPresence(client, p.Presence, config, guild, member)
 	if err != nil {
-		log.Println("Failed checking presence", err)
+		log.WithError(err).Error("Failed checking presence")
 	}
 }
 
@@ -209,7 +211,7 @@ func SendStreamingAnnouncement(config *Config, guild *discordgo.Guild, member *d
 
 	out, err := common.ParseExecuteTemplate(config.AnnounceMessage, templateData)
 	if err != nil {
-		log.Println("Failed executing template", err)
+		log.WithError(err).Error("Failed executing template")
 		return
 	}
 
@@ -239,7 +241,7 @@ func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.G
 	member.Roles = append(member.Roles, role)
 	err := common.BotSession.GuildMemberEdit(guild.ID, member.User.ID, member.Roles)
 	if err != nil {
-		log.Println("Error updating sreaming role", err)
+		log.WithError(err).Error("Error adding streaming role")
 	}
 }
 
@@ -260,6 +262,6 @@ func RemoveStreamingRole(member *discordgo.Member, role string, guild *discordgo
 	member.Roles = append(member.Roles[:index], member.Roles[index+1:]...)
 	err := common.BotSession.GuildMemberEdit(guild.ID, member.User.ID, member.Roles)
 	if err != nil {
-		log.Println("Error updating streaming role")
+		log.WithError(err).Error("Error removing streaming role")
 	}
 }

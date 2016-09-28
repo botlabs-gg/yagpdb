@@ -1,15 +1,13 @@
 package notifications
 
 import (
-	"encoding/json"
-	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -94,20 +92,12 @@ func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http
 		templateData.AddAlerts(web.SucessAlert("Sucessfully saved everything! :')"))
 	}
 
-	r.ParseForm()
+	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	go common.AddCPLogEntry(user, activeGuild.ID, "Updated general notification settings")
 
-	serialized, err := json.Marshal(newConfig)
-	if err == nil {
-		user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-		logMsg := fmt.Sprintf("%s(%s) updated notifications settings to %s", user.Username, user.ID, string(serialized))
-		common.AddCPLogEntry(client, activeGuild.ID, logMsg)
-	} else {
-		log.Println("Failed serializing config", err)
-	}
-
-	err = common.SetRedisJson(client, "notifications/general:"+activeGuild.ID, newConfig)
+	err := common.SetRedisJson(client, "notifications/general:"+activeGuild.ID, newConfig)
 	if err != nil {
-		log.Println("Error setting config", err)
+		log.WithError(err).Error("Failed saving notifications config")
 	}
 
 	return templateData

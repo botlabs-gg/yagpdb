@@ -3,8 +3,9 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
-	"log"
+	"github.com/jonas747/discordgo"
 	"time"
 )
 
@@ -15,7 +16,16 @@ type CPLogEntry struct {
 	TimestampString string `json:"-"`
 }
 
-func AddCPLogEntry(client *redis.Client, guild string, action string) {
+func AddCPLogEntry(user *discordgo.User, guild string, args ...interface{}) {
+	client, err := RedisPool.Get()
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving redis connection")
+		return
+	}
+	defer RedisPool.Put(client)
+
+	action := fmt.Sprintf("(UserID: %s) %s#%s: %s", user.ID, user.Username, user.Discriminator, fmt.Sprint(args...))
+
 	now := time.Now()
 	entry := &CPLogEntry{
 		Timestamp: now.Unix(),
@@ -24,8 +34,8 @@ func AddCPLogEntry(client *redis.Client, guild string, action string) {
 
 	serialized, err := json.Marshal(entry)
 	if err != nil {
-		log.Println("Failed serializing log entry", err)
-		serialized = []byte(fmt.Sprintf("{\"ts\": %d, \"action\":\"Unknown (Failed serializing!)\" }", now.Unix()))
+		log.WithError(err).Error("Failed marshalling cp log entry")
+		return
 	}
 
 	client.Append("LPUSH", "cp_logs:"+guild, serialized)
@@ -33,8 +43,9 @@ func AddCPLogEntry(client *redis.Client, guild string, action string) {
 
 	_, err = GetRedisReplies(client, 2)
 	if err != nil {
-		log.Println("Failed saving log entry", err)
+		log.WithError(err).WithField("guild", guild).Error("Failed updating cp log")
 	}
+
 }
 
 func GetCPLogEntries(client *redis.Client, guild string) ([]*CPLogEntry, error) {
@@ -50,7 +61,7 @@ func GetCPLogEntries(client *redis.Client, guild string) ([]*CPLogEntry, error) 
 		err = json.Unmarshal(entryRaw, &decoded)
 		if err != nil {
 			result[k] = &CPLogEntry{Action: "Failed decoding"}
-			log.Println("Failed decoding cp log entry", guild, err)
+			log.WithError(err).WithField("guild", guild).WithField("cp_log_enry", k).Error("Failed decoding cp log entry")
 		} else {
 			decoded.TimestampString = time.Unix(decoded.Timestamp, 0).Format(time.Stamp)
 			result[k] = decoded

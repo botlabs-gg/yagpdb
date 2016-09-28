@@ -2,11 +2,11 @@ package customcommands
 
 import (
 	"encoding/json"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"log"
 	"sort"
 )
 
@@ -65,7 +65,7 @@ func GetCommands(client *redis.Client, guild string) ([]*CustomCommand, int, err
 		var decoded *CustomCommand
 		err = json.Unmarshal([]byte(raw), &decoded)
 		if err != nil {
-			log.Println("Failed decoding custom command", k, guild, err)
+			log.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
 			result[i] = &CustomCommand{}
 		} else {
 			result[i] = decoded

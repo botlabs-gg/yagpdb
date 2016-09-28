@@ -2,13 +2,13 @@ package reputation
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -47,7 +47,7 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 
 	cooldown, err := CheckCooldown(client, channel.GuildID, evt.Author.ID)
 	if err != nil {
-		log.Println("Failed checking cooldown", err)
+		log.WithError(err).Error("Failed checking cooldown for reputation")
 		return
 	}
 
@@ -57,7 +57,7 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 
 	newScore, err := GiveRep(client, evt.Author, who, channel.GuildID)
 	if err != nil {
-		log.Println("Failed giving rep", err)
+		log.WithError(err).Error("Failed giving rep")
 		return
 	}
 
@@ -74,7 +74,6 @@ func GiveRep(client *redis.Client, sender, target *discordgo.User, guildID strin
 	// Increase score
 	newScoref, err := client.Cmd("ZINCRBY", "reputation_users:"+guildID, 1, target.ID).Float64()
 	if err != nil {
-		log.Println("Failed setting new score", err)
 		return 0, err
 	}
 
@@ -89,7 +88,7 @@ func GiveRep(client *redis.Client, sender, target *discordgo.User, guildID strin
 	// We don't care if an error occurs here
 	err = client.Cmd("EXPIRE", "reputation_cd:"+guildID+":"+sender.ID, settings.Cooldown).Err
 	if err != nil {
-		log.Println("EPIRE err", err)
+		log.WithError(err).Error("EXPIRE error")
 	}
 
 	return newScore, nil

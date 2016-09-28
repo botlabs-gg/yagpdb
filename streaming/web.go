@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -28,8 +29,9 @@ func (p *Plugin) InitWeb() {
 	streamingMux.UseC(web.RequireFullGuildMW)
 	streamingMux.UseC(baseData)
 
-	streamingMux.HandleC(pat.Get(""), web.RenderHandler(HandleGetStreaming, "cp_streaming"))
-	streamingMux.HandleC(pat.Get("/"), web.RenderHandler(HandleGetStreaming, "cp_streaming"))
+	// Get just renders the template, so let the renderhandler do all the work
+	streamingMux.HandleC(pat.Get(""), web.RenderHandler(nil, "cp_streaming"))
+	streamingMux.HandleC(pat.Get("/"), web.RenderHandler(nil, "cp_streaming"))
 
 	streamingMux.HandleC(pat.Post(""), web.RenderHandler(HandlePostStreaming, "cp_streaming"))
 	streamingMux.HandleC(pat.Post("/"), web.RenderHandler(HandlePostStreaming, "cp_streaming"))
@@ -40,7 +42,7 @@ func baseData(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		client, guild, tmpl := web.GetBaseCPContextData(ctx)
 		config, err := GetConfig(client, guild.ID)
-		if web.CheckErr(tmpl, err, "Failed retrieving streaming config :'(") {
+		if web.CheckErr(tmpl, err, "Failed retrieving streaming config :'(", logrus.Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_streaming", tmpl))
 			return
 		}
@@ -49,11 +51,6 @@ func baseData(inner goji.Handler) goji.Handler {
 	}
 
 	return goji.HandlerFunc(mw)
-}
-
-func HandleGetStreaming(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	_, _, tmpl := web.GetBaseCPContextData(ctx)
-	return tmpl
 }
 
 func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
@@ -77,13 +74,13 @@ func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Req
 	// Validate the message
 	if newConf.AnnounceMessage != "" {
 		_, err := common.ParseExecuteTemplate(newConf.AnnounceMessage, nil)
-		if web.CheckErr(tmpl, err, "") {
+		if web.CheckErr(tmpl, err, "", nil) {
 			newConf.AnnounceMessage = oldConf.AnnounceMessage
 			return tmpl
 		}
 	}
 
 	err := newConf.Save(client, guild.ID)
-	web.CheckErr(tmpl, err, "Failed saving config :'(")
+	web.CheckErr(tmpl, err, "Failed saving config :'(", logrus.Error)
 	return tmpl
 }

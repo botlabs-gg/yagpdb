@@ -1,11 +1,11 @@
 package serverstats
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"log"
 	"strings"
 	"time"
 )
@@ -24,30 +24,50 @@ func RegisterPlugin() {
 
 // Removes expired stats on a interval
 func UpdateStatsLoop() {
+	client, _ := common.RedisPool.Get()
 	for {
+		if client == nil {
+			var err error
+			client, err = common.RedisPool.Get()
+			if err != nil {
+				log.WithError(err).Error("Failed retrieving redis connection")
+				time.Sleep(time.Second)
+				continue
+			}
+		}
+
 		started := time.Now()
 		client, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retreiving redis conn")
+			log.WithError(err).Error("Failed retrieving redis connection")
 			time.Sleep(time.Second)
+			client = nil
 			continue
 		}
 
 		guilds, err := client.Cmd("SMEMBERS", "connected_guilds").List()
 		if err != nil {
-			log.Println("Failed retrieving connected guilds", err)
+			log.WithError(err).Error("Failed retrieving connected guilds")
 			time.Sleep(time.Second)
+			client = nil
 			continue
 		}
 
 		for _, g := range guilds {
 			err = UpdateStats(client, g)
 			if err != nil {
-				log.Println("Failed updating stats for ", g, err)
+				log.WithFields(log.Fields{
+					"guild":      g,
+					log.ErrorKey: err,
+				}).Error("Failed updating stats")
 			}
 		}
-		common.RedisPool.CarefullyPut(client, &err)
-		log.Println("Took", time.Since(started), "To update stats for", len(guilds), "servers")
+
+		log.WithFields(log.Fields{
+			"duration":    time.Since(started),
+			"num_servers": len(guilds),
+		}).Info("Updated stats")
+
 		time.Sleep(time.Minute)
 	}
 }
@@ -147,7 +167,12 @@ func GetChannelMessageStats(client *redis.Client, raw []string, guildID string) 
 	for _, result := range raw {
 		split := strings.Split(result, ":")
 		if len(split) < 2 {
-			log.Println("Invalid message stats", guildID, result)
+
+			log.WithFields(log.Fields{
+				"guild":  guildID,
+				"result": result,
+			}).Error("Invalid message stats")
+
 			continue
 		}
 		channelID := split[0]

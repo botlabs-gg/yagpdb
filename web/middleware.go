@@ -2,12 +2,12 @@ package web
 
 import (
 	"encoding/json"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -24,11 +24,12 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 
 		client, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client from pool", err)
+			log.WithError(err).Error("Failed retrieving client from redis pool")
 			// Redis is unavailable, just server without then
 			inner.ServeHTTPC(ctx, w, r)
 			return
 		}
+
 		inner.ServeHTTPC(context.WithValue(ctx, ContextKeyRedis, client), w, r)
 		common.RedisPool.Put(client)
 	}
@@ -75,27 +76,22 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 		redisClient := RedisClientFromContext(ctx)
 		if redisClient == nil {
 			// Serve without session
-			if Debug {
-				log.Println("redisClient is nil(!)")
-			}
 			return
 		}
 
 		token, err := GetAuthToken(cookie.Value, redisClient)
 		if err != nil {
-			if Debug {
-				log.Println("No oauth2 token", err)
-			}
+			// No valid session
+			// TODO: Should i check for json error?
 			return
 		}
 
 		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
 		if err != nil {
-			if Debug {
-				log.Println("Failed to initialize discordgo session")
-			}
+			log.WithError(err).Error("Failed initializing discord session")
 			return
 		}
+
 		newCtx = context.WithValue(ctx, ContextKeyDiscordSession, session)
 	}
 	return goji.HandlerFunc(mw)
@@ -112,9 +108,6 @@ func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 			urlStr := values.Encode()
 			http.Redirect(w, r, "/?"+urlStr, http.StatusTemporaryRedirect)
-			if Debug {
-				log.Println("Booted off request with invalid session on path that requires a session")
-			}
 			return
 		}
 
@@ -149,7 +142,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			// nothing in cache...
 			user, err = session.User("@me")
 			if err != nil {
-				log.Println("Failed getting user info, logging out..")
+				log.WithError(err).Error("Failed getting user info from discord")
 				HandleLogout(ctx, w, r)
 				return
 			}
@@ -163,7 +156,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 		if err != nil {
 			guilds, err = session.UserGuilds()
 			if err != nil {
-				log.Println("Failed getting user guilds, logging out..")
+				log.WithError(err).Error("Failed getting user guilds")
 				HandleLogout(ctx, w, r)
 				return
 			}
@@ -173,7 +166,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 
 		wrapped, err := common.GetWrapped(guilds, redisClient)
 		if err != nil {
-			log.Println("Failed wrapping guilds", err)
+			log.WithError(err).Error("Failed wrapping guilds")
 			http.Redirect(w, r, "/?err=rediserr", http.StatusTemporaryRedirect)
 			return
 		}
@@ -216,7 +209,7 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 		}
 
 		if guild == nil {
-			log.Println("User tried managing server it dosen't have admin access to", user.ID, user.Username, guildID)
+			log.Info("User tried managing server it dosen't have admin access to", user.ID, user.Username, guildID)
 			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
 			return
 		}
@@ -235,7 +228,7 @@ func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
 
 		channels, err := common.GetGuildChannels(RedisClientFromContext(ctx), guild.ID)
 		if err != nil {
-			log.Println("Failed retrieving channels", err)
+			log.WithError(err).Error("Failed retrieving channels")
 			http.Redirect(w, r, "/?err=retrievingchannels", http.StatusTemporaryRedirect)
 			return
 		}
@@ -255,7 +248,7 @@ func RequireFullGuildMW(inner goji.Handler) goji.Handler {
 
 		fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guild.ID)
 		if err != nil {
-			log.Println("Failed retrieving guild", err)
+			log.WithError(err).Error("Failed retrieving guild")
 			http.Redirect(w, r, "/?err=errretrievingguild", http.StatusTemporaryRedirect)
 			return
 		}

@@ -3,10 +3,10 @@ package reddit
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"log"
 	"strconv"
 )
 
@@ -87,7 +87,7 @@ func GetConfig(client *redis.Client, key string) ([]*SubredditWatchItem, error) 
 				Channel: "ERROR DECODING",
 				ID:      int(id),
 			}
-			log.Println("[Reddit]: Error decoding watch item", key, k, err)
+			log.WithError(err).Error("Failed decoding reddit watch item")
 		} else {
 			out[i] = decoded
 		}

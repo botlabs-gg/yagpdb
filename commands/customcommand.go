@@ -3,12 +3,12 @@ package commands
 import (
 	"errors"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"strings"
 	"time"
 )
@@ -40,7 +40,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 
 	client, err := common.RedisPool.Get()
 	if err != nil {
-		log.Println("Failed retrieving redis client:", err)
+		log.WithError(err).Error("Failed retrieving redis client")
 		return errors.New("Failed retrieving redis client")
 	}
 	defer common.RedisPool.Put(client)
@@ -76,7 +76,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 	cdLeft, err := cs.CooldownLeft(client, m.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
-		log.Println("Failed checking command cooldown", err)
+		log.WithError(err).Error("Failed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
@@ -116,7 +116,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 		if err == nil {
 			err = cs.SetCooldown(client, m.Author.ID)
 			if err != nil {
-				log.Println("Failed setting cooldown", err)
+				log.WithError(err).Error("Failed setting cooldown")
 			}
 		}
 		return err
@@ -126,7 +126,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 }
 
 func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
-	log.Printf("Handled Command [%4dms] %s: %s\n", int(dur.Seconds()*1000), sender, raw)
+	log.Infof("Handled Command [%4dms] %s: %s\n", int(dur.Seconds()*1000), sender, raw)
 }
 
 func (cs *CustomCommand) deleteResponse(msgs []*discordgo.Message) {

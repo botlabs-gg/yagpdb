@@ -18,26 +18,25 @@ const templateSource = `// GENERATED using yagpdb/cmd/gen/bot_wrappers.go
 package bot
 
 import (
+	log "github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/fzzy/radix/redis"
-	"log"
 	"runtime/debug"
 )
-
 {{range .}}
 func Custom{{.}}(inner func(s *discordgo.Session, evt *discordgo.{{.}}, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.{{.}}) {
 	return func(s *discordgo.Session, evt *discordgo.{{.}}) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event {{.}}:", err)
+			log.WithError(err).WithField("evt", "{{.}}").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in {{.}}:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "{{.}}").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()

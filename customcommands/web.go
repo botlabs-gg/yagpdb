@@ -2,7 +2,7 @@ package customcommands
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -30,7 +30,7 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
-	if !web.CheckErr(templateData, err, "Failed retrieving commands") {
+	if !web.CheckErr(templateData, err, "Failed retrieving commands", logrus.Error) {
 		templateData["CustomCommands"] = commands
 	}
 
@@ -45,7 +45,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	triggerType := TriggerTypeFromForm(r.FormValue("type"))
 
 	currentCommands, highest, err := GetCommands(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed retrieving commands") {
+	if web.CheckErr(templateData, err, "Failed retrieving commands", logrus.Error) {
 		return templateData
 	}
 
@@ -58,7 +58,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	trigger := r.FormValue("trigger")
 	response := r.FormValue("response")
 	if !CheckLimits(trigger, response) {
-		return templateData.AddAlerts(web.ErrorAlert("TOOOOO Big boi"))
+		return templateData.AddAlerts(web.ErrorAlert("Too big response or trigger"))
 	}
 
 	cmd := &CustomCommand{
@@ -68,26 +68,24 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		ID:            highest + 1,
 		CaseSensitive: r.FormValue("case_sensitive") == "on",
 	}
+
 	serialized, err := json.Marshal(cmd)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
+		logrus.WithError(err).Error("Failed marshaling custom command")
+		return templateData.AddAlerts(web.ErrorAlert("Failed adding command"))
 	}
 
-	redisCommands := []*common.RedisCmd{
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
-		&common.RedisCmd{Name: "HSET", Args: []interface{}{"custom_commands:" + activeGuild.ID, cmd.ID, serialized}},
-	}
-
-	_, err = common.SafeRedisCommands(client, redisCommands)
+	err = client.Cmd("HSET", "custom_commands:"+activeGuild.ID, cmd.ID, serialized).Err
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
+		logrus.WithError(err).WithField("guild", activeGuild.ID).Error("Failed adding custom command")
+		return templateData.AddAlerts(web.ErrorAlert("Failed adding command"))
 	}
 
 	templateData["CustomCommands"] = append(currentCommands, cmd)
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added command"))
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Added a new custom command", user.Username, user.ID))
+	common.AddCPLogEntry(user, activeGuild.ID, "Added new cusom command #", cmd.ID)
 
 	return templateData
 }
@@ -103,7 +101,7 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	trigger := r.FormValue("trigger")
 	response := r.FormValue("response")
 	if !CheckLimits(trigger, response) {
-		return templateData.AddAlerts(web.ErrorAlert("TOOOOO Big boi"))
+		return templateData.AddAlerts(web.ErrorAlert("Too big response or trigger"))
 	}
 
 	cmd := &CustomCommand{
@@ -116,28 +114,26 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	serialized, err := json.Marshal(cmd)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
+		logrus.WithError(err).Error("Failed marshaling custom command")
+		return templateData.AddAlerts(web.ErrorAlert("Failed updating command"))
 	}
 
-	redisCommands := []*common.RedisCmd{
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
-		&common.RedisCmd{Name: "HSET", Args: []interface{}{"custom_commands:" + activeGuild.ID, cmdIndex, serialized}},
-	}
-
-	_, err = common.SafeRedisCommands(client, redisCommands)
+	err = client.Cmd("HSET", "custom_commands:"+activeGuild.ID, cmdIndex, serialized).Err
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed adding command", err))
+		logrus.WithError(err).WithField("guild", activeGuild.ID).Error("Failed updating custom command")
+		return templateData.AddAlerts(web.ErrorAlert("Failed adding command"))
 	}
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed retrieving commands", err))
+		logrus.WithError(err).WithField("guild", activeGuild.ID).Error("Failed retrieving custom commands")
+		templateData.AddAlerts(web.ErrorAlert("Failed retrieving commands"))
 	} else {
 		templateData["CustomCommands"] = commands
 	}
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated command #%s", user.Username, user.ID, cmdIndex))
+	common.AddCPLogEntry(user, activeGuild.ID, "Updated command #"+cmdIndex)
 
 	return templateData
 }
@@ -148,14 +144,10 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 	cmdIndex := pat.Param(ctx, "cmd")
 
-	cmds := []*common.RedisCmd{
-		&common.RedisCmd{Name: "SELECT", Args: []interface{}{0}},
-		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"custom_commands:" + activeGuild.ID, cmdIndex}},
-	}
-
-	_, err := common.SafeRedisCommands(client, cmds)
+	err := client.Cmd("HDEL", "custom_commands:"+activeGuild.ID, cmdIndex).Err
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed deleting command", err))
+		logrus.WithError(err).WithField("guild", activeGuild.ID).Error("Failed deleting custom command")
+		templateData.AddAlerts(web.ErrorAlert("Failed deleting command"))
 	}
 
 	commands, _, err := GetCommands(client, activeGuild.ID)
@@ -166,7 +158,7 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Deleted command #%s", user.Username, user.ID, cmdIndex))
+	common.AddCPLogEntry(user, activeGuild.ID, "Deleted command #"+cmdIndex)
 
 	return templateData
 }

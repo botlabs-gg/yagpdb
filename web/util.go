@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -124,7 +124,7 @@ func GenSessionCookie() *http.Cookie {
 
 func LogIgnoreErr(err error) {
 	if err != nil {
-		log.Println("Error:", err)
+		log.Error("Error:", err)
 	}
 }
 
@@ -206,7 +206,7 @@ func GetChannelId(name string, guildId string) (string, error) {
 
 // Checks and error and logs it aswell as adding it to the alerts
 // returns true if an error occured
-func CheckErr(t TemplateData, err error, errMsg string) bool {
+func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface{})) bool {
 	if err == nil {
 		return false
 	}
@@ -216,6 +216,10 @@ func CheckErr(t TemplateData, err error, errMsg string) bool {
 	}
 
 	t.AddAlerts(ErrorAlert("An Error occured: ", errMsg))
-	log.Println("[Web]: An error occured:", err.Error())
+
+	if logger != nil {
+		logger("An error occured:", err)
+	}
+
 	return true
 }

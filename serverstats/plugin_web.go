@@ -1,12 +1,12 @@
 package serverstats
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -53,7 +53,7 @@ func HandleStatsHtml(ctx context.Context, w http.ResponseWriter, r *http.Request
 		}
 
 		guild, err := common.GetGuild(client, guildID)
-		if web.CheckErr(templateData, err, "Failed retrieving guild :'(") {
+		if web.CheckErr(templateData, err, "Failed retrieving guild :'(", log.Error) {
 			return templateData
 		}
 
@@ -77,7 +77,8 @@ func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Req
 	err := client.Cmd("SET", "stats_settings_public:"+activeGuild.ID, public).Err
 
 	if err != nil {
-		log.Println("Error saving stats setting", err)
+		log.WithError(err).Error("Failed saving stats settings to redis")
+		templateData.AddAlerts(web.ErrorAlert("Failed saving setting..."))
 		templateData["Public"] = current
 	} else {
 		templateData["Public"] = public
@@ -107,7 +108,7 @@ func HandleStatsJson(ctx context.Context, w http.ResponseWriter, r *http.Request
 
 	stats, err := RetrieveFullStats(client, guildID)
 	if err != nil {
-		log.Println("Failed retrieving stats", err)
+		log.WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}

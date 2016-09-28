@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
-	"log"
 	"text/template"
 	"time"
 )
@@ -133,7 +133,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
 	if err != nil {
-		log.Println("Failed deleting message:", err)
+		log.WithError(err).Error("Failed deleing message")
 	}
 }
 

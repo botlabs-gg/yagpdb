@@ -3,8 +3,8 @@ package bot
 //go:generate go run ../cmd/gen/bot_wrappers.go -o wrappers.go
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"time"
 )
 
@@ -17,10 +17,10 @@ var (
 func Setup() {
 	common.BotSession.State.MaxMessageCount = 1000
 
-	log.Println("Initializing bot plugins...")
+	log.Info("Initializing bot plugins")
 	for _, plugin := range plugins {
 		plugin.InitBot()
-		log.Println("Initialized bot plugin", plugin.Name())
+		log.WithField("plugin", plugin.Name()).Info("Initialized plugin")
 	}
 }
 
@@ -35,7 +35,7 @@ func Run() {
 
 	err := common.BotSession.Open()
 	if err != nil {
-		log.Println("Failed opening bot connection", err)
+		log.WithError(err).Error("Failed opening bot connection")
 	}
 
 	Running = true

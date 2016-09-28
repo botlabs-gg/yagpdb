@@ -1,13 +1,13 @@
 package commands
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"log"
 )
 
 type Plugin struct{}
@@ -163,7 +163,7 @@ func GetConfig(client *redis.Client, guild string, channels []*discordgo.Channel
 	prefix, err := GetCommandPrefix(client, guild)
 	if err != nil {
 		// Continue as normal with defaults
-		log.Println("Error fetching command prefix:", err)
+		log.WithError(err).Error("Error fetching command prefix")
 	}
 
 	config.Prefix = prefix

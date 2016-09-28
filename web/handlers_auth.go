@@ -1,12 +1,11 @@
 package web
 
 import (
-	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"log"
 	"net/http"
 )
 
@@ -32,7 +31,7 @@ func HandleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 
 	csrfToken, err := CreateCSRFToken(client)
 	if err != nil {
-		log.Println("Failed generating csrf token!", err)
+		log.WithError(err).Error("Failed generating csrf token")
 		return
 	}
 
@@ -41,19 +40,14 @@ func HandleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		log.Println("error parsing form", err)
-		return
-	}
 	redisClient := ctx.Value(ContextKeyRedis).(*redis.Client)
 
 	state := r.FormValue("state")
 	if ok, err := CheckCSRFToken(redisClient, state); !ok {
 		if err != nil {
-			log.Println("Failed validating CSRF token", err)
+			log.WithError(err).Error("Failed validating CSRF token")
 		} else {
-			fmt.Printf("invalid oauth state %q", state)
+			log.Info("Invalid oauth state", state)
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -62,7 +56,7 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	code := r.FormValue("code")
 	token, err := oauthConf.Exchange(ctx, code)
 	if err != nil {
-		fmt.Printf("oauthConf.Exchange() failed with '%s'\n", err)
+		log.WithError(err).Error("oauthConf.Exchange() failed")
 		http.Redirect(w, r, "/?error=oauth2failure", http.StatusTemporaryRedirect)
 		return
 	}
@@ -73,7 +67,7 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	err = SetAuthToken(token, sessionCookie.Value, redisClient)
 	if err != nil {
-		log.Println("Failed setting token")
+		log.WithError(err).Error("Failed setting auth token")
 		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}
@@ -94,7 +88,7 @@ func HandleLogout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 
 	err = redisClient.Cmd("DEL", "discord_token:"+session).Err
 	if err != nil {
-		log.Println("Redis error logging out", err)
+		log.WithError(err).Error("Failed logging out")
 	}
 }
 

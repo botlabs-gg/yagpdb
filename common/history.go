@@ -1,8 +1,8 @@
 package common
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"log"
 	"sort"
 	"strconv"
 	"time"
@@ -59,7 +59,9 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Println("API history req finihsed", len(msgs))
+
+		log.WithField("num_msgs", len(msgs)).Error("API history req finished")
+
 		if len(msgs) < 1 { // Nothing more
 			break
 		}
@@ -139,7 +141,12 @@ func (d DiscordMessages) Less(i, j int) bool {
 		} else {
 			errMsg = d[j]
 		}
-		log.Printf("INCORRECT TIMESTAMP: %#v", errMsg)
+
+		log.WithFields(log.Fields{
+			"msg_id":     errMsg.ID,
+			"msg_conent": errMsg.Content,
+			"msg_ts":     errMsg.Timestamp,
+		}).Error("Incorrect timestamp")
 
 		// fall back to comparing the snowflake id's which may not be 100% but better than nothing
 		idIParsed, _ := strconv.ParseInt(d[i].ID, 10, 64)

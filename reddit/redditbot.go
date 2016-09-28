@@ -2,11 +2,11 @@ package reddit
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/turnage/graw"
 	"github.com/turnage/redditproto"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -29,7 +29,8 @@ type RedditBot struct {
 // error, the bot will stop.
 func (r *RedditBot) SetUp() error {
 	r.eng = graw.GetEngine(r)
-	log.Println("Reddit Bot is set up!")
+
+	log.Info("Reddit bot is setting up!")
 
 	redditBotLock.Lock()
 	redditBot = r
@@ -47,9 +48,6 @@ func (r *RedditBot) TearDown() {
 
 // Called when a post is made
 func (r *RedditBot) Post(post *redditproto.Link) {
-	// posted := post.GetCreatedUtc()
-	//date := time.Unix(int64(posted), 0)
-	//log.Println("[RedditBot] new post", date.Format(time.Stamp), ":", post.GetTitle(), "by", post.GetAuthor())
 
 	lastPostProcessedLock.Lock()
 	lastPostProcessed = time.Now()
@@ -57,14 +55,14 @@ func (r *RedditBot) Post(post *redditproto.Link) {
 
 	client, err := common.RedisPool.Get()
 	if err != nil {
-		log.Println("Failed getting connection from redis pool", err)
+		log.WithError(err).Error("Failed getting connection from redis pool")
 		return
 	}
 	defer common.RedisPool.Put(client)
 
 	config, err := GetConfig(client, "global_subreddit_watch:"+strings.ToLower(post.GetSubreddit()))
 	if err != nil {
-		log.Println("Failed getting config from redis", err)
+		log.WithError(err).Error("Failed getting config from redis")
 		return
 	}
 
@@ -84,7 +82,10 @@ OUTER:
 		return
 	}
 
-	log.Println("Found post subscribed to by", len(channels), "Channels")
+	log.WithFields(log.Fields{
+		"num_channels": len(channels),
+		"subreddit":    post.GetSubreddit(),
+	}).Info("Found matched reddit post")
 
 	author := post.GetAuthor()
 	sub := post.GetSubreddit()
@@ -102,11 +103,10 @@ OUTER:
 		body += post.GetUrl() + "\n\n"
 	}
 
-	log.Println("Posting a new reddit message from", sub)
 	for _, channel := range channels {
 		_, err := dutil.SplitSendMessage(common.BotSession, channel, body)
 		if err != nil {
-			log.Println("Error posting message", err)
+			log.WithError(err).Error("Error posting message")
 		}
 	}
 }
@@ -115,9 +115,9 @@ func (b *RedditBot) Fail(err error) bool {
 	errStr := err.Error()
 
 	if strings.Index(errStr, "bad response") == 0 {
-		log.Println("Bad response encountered", err)
+		log.Error("Bad response encountered by redditt bot")
 	} else {
-		log.Println("Graw encountered an unknown error", err)
+		log.WithError(err).Error("Graw encountered an unknown error")
 	}
 
 	return false
@@ -148,7 +148,7 @@ func runBot() {
 		if err == nil {
 			break
 		} else {
-			log.Println("Error running graw:", err, "Retrying in a second")
+			log.WithError(err).Error("Error running graw")
 			time.Sleep(time.Second)
 		}
 	}
@@ -163,16 +163,19 @@ func monitorBot() {
 		lastPostProcessedLock.Lock()
 		needRestart := time.Since(lastPostProcessed) > time.Minute*5
 		lastPostProcessedLock.Unlock()
+
 		// Restart the bot if it has fallen asleep
+		// this happens after some days of running...
+		// Need to figure out the root cause
 		if needRestart {
-			log.Println("RESTARTING REDDIT BOT")
+			log.Info("Restarting reddit bot!")
 
 			redditBotLock.Lock()
 			redditBot.eng.Stop()
 			redditBotLock.Unlock()
 
 			go runBot()
-			log.Println("Done restarting")
+			log.Info("Done Restarting!")
 		}
 
 	}

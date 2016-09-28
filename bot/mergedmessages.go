@@ -5,9 +5,9 @@
 package bot
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"sync"
 	"time"
 )
@@ -54,6 +54,6 @@ func sendMergedBatch(channelID string, messages []string) {
 
 	_, err := dutil.SplitSendMessage(common.BotSession, channelID, out)
 	if err != nil {
-		log.Println("Error sending messages:", err)
+		log.WithError(err).Error("Error sending messages")
 	}
 }

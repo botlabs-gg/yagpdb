@@ -1,10 +1,12 @@
 package web
 
 import (
+	log "github.com/Sirupsen/logrus"
+	"github.com/lestrrat/go-apache-logformat"
+	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -22,19 +24,21 @@ var (
 )
 
 func Run() {
-
-	log.Println("Starting yagpdb web server")
-
+	log.Info("Starting yagpdb web server")
 	var err error
 
 	InitOauth()
 	mux := setupRoutes()
 
-	log.Println("Running webserver!")
+	requestLogger := &lumberjack.Logger{
+		Filename: "access_log",
+		MaxSize:  10,
+	}
 
-	err = http.ListenAndServe(ListenAddress, mux)
+	log.Info("Running webserver")
+	err = http.ListenAndServe(ListenAddress, apachelog.CombinedLog.Wrap(mux, requestLogger))
 	if err != nil {
-		log.Println("Error running webserver", err)
+		log.Error("Failed ListenAndServe:", err)
 	}
 }
 
@@ -45,7 +49,6 @@ func setupRoutes() *goji.Mux {
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 
 	// General middleware
-	mux.UseC(RequestLoggerMiddleware)
 	mux.UseC(RedisMiddleware)
 	mux.UseC(BaseTemplateDataMiddleware)
 	mux.UseC(SessionMiddleware)
@@ -83,7 +86,7 @@ func setupRoutes() *goji.Mux {
 
 	for _, plugin := range plugins {
 		plugin.InitWeb()
-		log.Println("Initialized web plugin", plugin.Name())
+		log.Info("Initialized web plugin:", plugin.Name())
 	}
 
 	return mux

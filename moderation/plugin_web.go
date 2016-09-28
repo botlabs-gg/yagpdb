@@ -1,14 +1,13 @@
 package moderation
 
 import (
-	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
-	"log"
 	"net/http"
 	"unicode/utf8"
 )
@@ -28,7 +27,7 @@ func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Reques
 
 	if err != nil {
 		templateData.AddAlerts(web.ErrorAlert("Failed retrieving config", err))
-		log.Println("Failed retrieving config", err)
+		log.WithError(err).WithField("guild", activeGuild.ID).Error("Failed retrieving config")
 	}
 
 	templateData["ModConfig"] = config
@@ -77,34 +76,30 @@ func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	channels, err := common.GetGuildChannels(client, activeGuild.ID)
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed updating channels", err))
-		log.Println("Failed updating channels", err)
-	} else {
-		// Make sure the channel is on the desired guild
-		for _, c := range channels {
-			if c.ID == r.FormValue("report_channel") {
-				newConfig.ReportChannel = c.ID
-			}
-			if c.ID == r.FormValue("action_channel") {
-				newConfig.ActionChannel = c.ID
-			}
+	channels := ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel)
+	// Make sure the channel is on the desired guild
+	for _, c := range channels {
+		if c.ID == r.FormValue("report_channel") {
+			newConfig.ReportChannel = c.ID
+		}
+		if c.ID == r.FormValue("action_channel") {
+			newConfig.ActionChannel = c.ID
 		}
 	}
 
-	err = newConfig.Save(client, activeGuild.ID)
+	err := newConfig.Save(client, activeGuild.ID)
 
 	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed saving config", err))
+		templateData.AddAlerts(web.ErrorAlert("Failed saving config"))
+		log.WithError(err).WithField("guild", activeGuild.ID).Error("Failed saving moderation config")
 	} else {
-		templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :o"))
+		templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :')"))
 	}
 
 	templateData["ModConfig"] = newConfig
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated moderation settings", user.Username, user.ID))
+	go common.AddCPLogEntry(user, activeGuild.ID, "Updated moderation settings")
 
 	return templateData
 }

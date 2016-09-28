@@ -2,11 +2,11 @@ package notifications
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"sync"
 )
 
@@ -27,8 +27,8 @@ func HandleGuildCreate(s *discordgo.Session, evt *discordgo.GuildCreate, client 
 func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, client *redis.Client) {
 	guild, err := s.State.Guild(evt.GuildID)
 	if err != nil {
-		log.Println("!Guild not found in state!", evt.GuildID, err)
-		return // We can't process this then
+		log.WithError(err).WithField("guild", guild.ID).Error("Guild not found in state")
+		return
 	}
 
 	templateData := map[string]interface{}{
@@ -46,15 +46,15 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 
 		msg, err := common.ParseExecuteTemplate(config.JoinDMMsg, templateData)
 		if err != nil {
-			log.Println("Failed parsing/executing dm template", guild.ID, err)
+			log.WithError(err).WithField("guild", guild.ID).Error("Failed parsing/executing dm template")
 		} else {
 			privateChannel, err := bot.GetCreatePrivateChannel(s, evt.User.ID)
 			if err != nil {
-				log.Println("Failed retrieving private channel", evt.GuildID, evt.User.ID, err)
+				log.WithError(err).WithField("guild", guild.ID).Error("Failed retrieving private channel")
 			} else {
 				_, err := s.ChannelMessageSend(privateChannel.ID, msg)
 				if err != nil {
-					log.Println("Failed sending join msg", evt.GuildID, err)
+					log.WithError(err).WithField("guild", guild.ID).Error("Failed sending join message")
 				}
 			}
 		}
@@ -64,7 +64,7 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 		channel := GetChannel(guild, config.JoinServerChannel)
 		msg, err := common.ParseExecuteTemplate(config.JoinServerMsg, templateData)
 		if err != nil {
-			log.Println("Failed parsing/executing dm template", guild.ID, err)
+			log.WithError(err).WithField("guild", guild.ID).Error("Failed parsing/executing join template")
 		} else {
 			bot.QueueMergedMessage(channel, msg)
 		}
@@ -75,7 +75,7 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 
 	guild, err := s.State.Guild(evt.GuildID)
 	if err != nil {
-		log.Println("!Guild not found in state!", evt.GuildID, err)
+		log.WithError(err).WithField("guild", guild.ID).Error("Guild not found in state")
 		return // We can't process this then
 	}
 
@@ -95,7 +95,7 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 	channel := GetChannel(guild, config.LeaveChannel)
 	msg, err := common.ParseExecuteTemplate(config.LeaveMsg, templateData)
 	if err != nil {
-		log.Println("Failed parsing/executing leave template", guild.ID, err)
+		log.WithError(err).WithField("guild", guild.ID).Error("Failed parsing/executing leave template")
 		return
 	}
 
@@ -116,7 +116,7 @@ func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, cli
 	if config.TopicEnabled {
 		guild, err := s.State.Guild(evt.GuildID)
 		if err != nil {
-			log.Println("Failed getting guild from state", err)
+			log.WithError(err).WithField("guild", guild.ID).Error("Failed getting guild from state")
 			return
 		}
 

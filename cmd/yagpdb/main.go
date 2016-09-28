@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/aylien"
@@ -16,8 +17,6 @@ import (
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
-	"log"
-	"os"
 )
 
 var (
@@ -52,29 +51,24 @@ func init() {
 }
 
 func main() {
-	if !flagLogTimestamp {
-		log.SetFlags(log.Lshortfile)
-	} else {
-		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	if flagLogTimestamp {
 		web.LogRequestTimestamps = true
 	}
 
 	if !flagRunBot && !flagRunWeb && !flagRunReddit && !flagRunEverything && flagAction == "" {
-		log.Println("Didnt specify what to run, see -h for more info")
+		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
 
-	log.Println("YAGPDB is initializing...")
+	log.Info("YAGPDB is initializing...")
 	config, err := common.LoadConfig(flagConfig)
 	if err != nil {
-		log.Println("Failed loading config", err)
-		os.Exit(1)
+		log.WithError(err).Fatal("Failed loading config")
 	}
 
 	BotSession, err = discordgo.New(config.BotToken)
 	if err != nil {
-		log.Println("Error intializing bot session:", err)
-		os.Exit(1)
+		log.WithError(err).Fatal("Failed initilizing bot session")
 	}
 
 	BotSession.MaxRestRetries = 3
@@ -82,7 +76,7 @@ func main() {
 
 	RedisPool, err = pool.NewCustomPool("tcp", config.Redis, 100, common.RedisDialFunc)
 	if err != nil {
-		log.Fatal("Failed initializing redis pool", err)
+		log.WithError(err).Fatal("Failed initilizing redis pool")
 	}
 
 	if flagAction != "" {
@@ -131,10 +125,10 @@ func main() {
 }
 
 func runAction(str string) {
-	log.Println("Running action", str)
+	log.Info("Running action", str)
 	client, err := RedisPool.Get()
 	if err != nil {
-		log.Println("Failed to get redis connection")
+		log.WithError(err).Error("Failed to get redis connection")
 		return
 	}
 	defer RedisPool.CarefullyPut(client, &err)
@@ -143,13 +137,13 @@ func runAction(str string) {
 	case "connected":
 		err = common.RefreshConnectedGuilds(BotSession, client)
 	default:
-		log.Println("Unknown action")
+		log.Error("Unknown action")
 		return
 	}
 
 	if err != nil {
-		log.Println("Error:", err)
+		log.WithError(err).Error("Error running action")
 	} else {
-		log.Println("Sucessfully ran action", str)
+		log.Info("Sucessfully ran action", str)
 	}
 }

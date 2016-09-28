@@ -1,11 +1,11 @@
 package notifications
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"log"
 )
 
 type Plugin struct{}
@@ -54,7 +54,7 @@ func GetConfig(client *redis.Client, server string) *Config {
 	var config *Config
 	if err := common.GetRedisJson(client, "notifications/general:"+server, &config); err != nil {
 		if _, ok := err.(*redis.CmdError); ok {
-			log.Println("Failed retrieving config", err)
+			log.WithError(err).WithField("guild", server).Error("Failed retrieving noifications config")
 		}
 		return DefaultConfig
 	}

@@ -1,7 +1,7 @@
 package reddit
 
 import (
-	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -9,7 +9,6 @@ import (
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -47,12 +46,10 @@ func baseData(inner goji.Handler) goji.Handler {
 		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+activeGuild.ID)
-		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Failed retrieving current config, conact support", err))
-			log.Println("Failed retrieving config", activeGuild.ID, err)
+		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", log.Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
-			return
 		}
+
 		inner.ServeHTTPC(context.WithValue(ctx, CurrentConfig, currentConfig), w, r)
 
 	}
@@ -91,15 +88,20 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 		return templateData.AddAlerts(web.ErrorAlert("Unknown channel"))
 	}
 
+	sub := strings.ToLower(r.FormValue("subreddit"))
+	if sub == "" {
+		return templateData.AddAlerts(web.ErrorAlert("Subreddit can't be empty >:O"))
+	}
+
 	watchItem := &SubredditWatchItem{
-		Sub:     strings.ToLower(r.FormValue("subreddit")),
+		Sub:     sub,
 		Channel: channelId,
 		Guild:   activeGuild.ID,
 		ID:      highest + 1,
 	}
 
 	err := watchItem.Set(client)
-	if web.CheckErr(templateData, err, "Failed saving item :'(") {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", log.Error) {
 		return templateData
 	}
 
@@ -109,7 +111,7 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 
 	// Log
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Added feed from /r/%s", user.Username, user.ID, r.FormValue("subreddit")))
+	go common.AddCPLogEntry(user, activeGuild.ID, "Added reddit feed from /r/"+sub)
 	return templateData
 }
 
@@ -136,6 +138,10 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 		return templateData.AddAlerts(web.ErrorAlert("Failed retrieving channel"))
 	}
 
+	if r.FormValue("subreddit") == "" {
+		return templateData.AddAlerts(web.ErrorAlert("Subreddit can't be empty"))
+	}
+
 	newSub := r.FormValue("subreddit") != item.Sub
 
 	item.Channel = channel
@@ -151,14 +157,14 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 		}
 	}
 
-	if web.CheckErr(templateData, err, "Failed saving item :'(") {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", log.Error) {
 		return templateData
 	}
 
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Modified a feed to /r/%s", user.Username, user.ID, r.FormValue("subreddit")))
+	common.AddCPLogEntry(user, activeGuild.ID, "Modified a feed to /r/"+r.FormValue("subreddit"))
 	return templateData
 }
 
@@ -182,7 +188,7 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	}
 
 	err = item.Remove(client)
-	if web.CheckErr(templateData, err, "Failed removing item :'(") {
+	if web.CheckErr(templateData, err, "Failed removing item :'(", log.Error) {
 		return templateData
 	}
 
@@ -198,7 +204,7 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	templateData["RedditConfig"] = currentConfig
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Removed feed from /r/%s", user.Username, user.ID, r.FormValue("subreddit")))
+	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+r.FormValue("subreddit"))
 	return templateData
 }
 
@@ -216,6 +222,6 @@ func GetChannel(name, guild string, templateData web.TemplateData, ctx context.C
 	}
 
 	templateData.AddAlerts(web.ErrorAlert("Failed finding channel"))
-	log.Println("Failed finding channel", guild)
+	log.WithField("guild", guild).Error("Failed finding channel")
 	return "", false
 }

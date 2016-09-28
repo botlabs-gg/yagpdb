@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"fmt"
+	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -45,7 +45,7 @@ func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	templateData["CommandConfig"] = config
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated commands general settings", user.Username, user.ID))
+	go common.AddCPLogEntry(user, activeGuild.ID, "Updated general command settings")
 
 	return templateData
 }
@@ -92,12 +92,12 @@ func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	err := common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
-	if web.CheckErr(templateData, err, "Failed saving item :'(") {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", logrus.Error) {
 		return templateData
 	}
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(client, activeGuild.ID, fmt.Sprintf("%s(%s) Updated commands channel/global settings", user.Username, user.ID))
+	go common.AddCPLogEntry(user, activeGuild.ID, "Updated advanced command settings")
 
 	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)
 

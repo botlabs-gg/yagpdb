@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AYLIEN/aylien_textapi_go"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"strings"
 )
 
@@ -24,13 +24,13 @@ type Plugin struct {
 
 func RegisterPlugin() {
 	if common.Conf.AylienAppID == "" || common.Conf.AylienAppKey == "" {
-		log.Println("Missing AYLIEN appid and/or key, not loading plugin")
+		log.Warn("Missing AYLIEN appid and/or key, not loading plugin")
 		return
 	}
 
 	client, err := textapi.NewClient(textapi.Auth{ApplicationID: common.Conf.AylienAppID, ApplicationKey: common.Conf.AylienAppKey}, true)
 	if err != nil {
-		log.Println("Failed initiazing aylien client, not enabling plugin", err)
+		log.WithError(err).Error("Failed initializing aylien client")
 		return
 	}
 

@@ -1,10 +1,10 @@
 package customcommands
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -20,13 +20,13 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 
 	channel, err := s.State.Channel(evt.ChannelID)
 	if err != nil {
-		log.Println("Failed getting channel from state", err)
+		log.WithError(err).Error("Failed retrieving channel from state")
 		return
 	}
 
 	cmds, _, err := GetCommands(client, channel.GuildID)
 	if err != nil {
-		log.Println("Failed getting commands", err)
+		log.WithError(err).Error("Failed getting comamnds")
 		return
 	}
 
@@ -36,7 +36,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 
 	prefix, err := commands.GetCommandPrefix(client, channel.GuildID)
 	if err != nil {
-		log.Println("Failed retrieving prefix", err)
+		log.WithError(err).Error("Failed getting prefix")
 		return
 	}
 
@@ -51,10 +51,17 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	if matched == nil || matched.Response == "" {
 		return
 	}
-	log.Printf("Custom command triggered in %s/#%s, Trigger: %s (%d)", channel.GuildID, channel.Name, matched.Trigger, matched.TriggerType)
+
+	log.WithFields(log.Fields{
+		"trigger":      matched.Trigger,
+		"trigger_type": matched.TriggerType,
+		"guild":        channel.GuildID,
+		"channel_name": channel.Name,
+	}).Info("Custom command triggered")
+
 	_, err = s.ChannelMessageSend(evt.ChannelID, matched.Response)
 	if err != nil {
-		log.Println("Failed sending message", err)
+		log.WithError(err).Error("Failed sending message")
 	}
 }
 
@@ -82,8 +89,9 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {
 	case CommandTriggerRegex:
 		ok, err := regexp.Match(cmd.Trigger, []byte(msg))
 		if err != nil {
-			log.Println("Failed compiling regex", err)
+			log.WithError(err).Error("Failed compiling regex")
 		}
+
 		return ok
 	case CommandTriggerExact:
 		return msg == trigger

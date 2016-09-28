@@ -3,6 +3,7 @@ package moderation
 import (
 	"errors"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
@@ -10,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"time"
 )
 
@@ -90,8 +90,9 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			hastebin, err := common.CreateHastebinLog(m.ChannelID)
 			if err != nil {
 				hastebin = "Hastebin upload failed"
-				log.Println("Error uploading hastebin log", err)
+				log.WithError(err).Error("Hastebin upload failed")
 			}
+
 			err = common.BotSession.GuildBanCreate(parsed.Guild.ID, target.ID, 1)
 			if err != nil {
 				return "API Refused to ban... (Bot probably dosen't have enough permissions)", err
@@ -156,7 +157,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			hastebin, err := common.CreateHastebinLog(m.ChannelID)
 			if err != nil {
 				hastebin = "Hastebin upload failed"
-				log.Println("Error uploading hastebin log", err)
+				log.WithError(err).Error("Hastebin upload failed")
 			}
 
 			err = common.BotSession.GuildMemberDelete(parsed.Guild.ID, target.ID)
@@ -217,7 +218,8 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 			logLink, err := common.CreateHastebinLog(m.ChannelID)
 			if err != nil {
-				return "Failed pastebin upload", err
+				log.WithError(err).Error("Hastebin upload failed")
+				logLink = "Hastebin upload failed"
 			}
 
 			channelID, err := client.Cmd("GET", "moderation_report_channel:"+parsed.Guild.ID).Str()
@@ -295,7 +297,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				if (filter == "" || msgs[i].Author.ID == filter) && msgs[i].ID != m.ID {
 					ids = append(ids, msgs[i].ID)
 					//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
-					if len(ids) >= num {
+					if len(ids) > num {
 						break
 					}
 				}

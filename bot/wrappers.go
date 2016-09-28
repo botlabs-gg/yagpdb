@@ -6,10 +6,10 @@
 package bot
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"runtime/debug"
 )
 
@@ -17,14 +17,14 @@ func CustomChannelCreate(inner func(s *discordgo.Session, evt *discordgo.Channel
 	return func(s *discordgo.Session, evt *discordgo.ChannelCreate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event ChannelCreate:", err)
+			log.WithError(err).WithField("evt", "ChannelCreate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in ChannelCreate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "ChannelCreate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -37,14 +37,14 @@ func CustomChannelUpdate(inner func(s *discordgo.Session, evt *discordgo.Channel
 	return func(s *discordgo.Session, evt *discordgo.ChannelUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event ChannelUpdate:", err)
+			log.WithError(err).WithField("evt", "ChannelUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in ChannelUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "ChannelUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -57,14 +57,14 @@ func CustomChannelDelete(inner func(s *discordgo.Session, evt *discordgo.Channel
 	return func(s *discordgo.Session, evt *discordgo.ChannelDelete) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event ChannelDelete:", err)
+			log.WithError(err).WithField("evt", "ChannelDelete").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in ChannelDelete:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "ChannelDelete").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -77,14 +77,14 @@ func CustomGuildCreate(inner func(s *discordgo.Session, evt *discordgo.GuildCrea
 	return func(s *discordgo.Session, evt *discordgo.GuildCreate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildCreate:", err)
+			log.WithError(err).WithField("evt", "GuildCreate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildCreate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildCreate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -97,14 +97,14 @@ func CustomGuildUpdate(inner func(s *discordgo.Session, evt *discordgo.GuildUpda
 	return func(s *discordgo.Session, evt *discordgo.GuildUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildUpdate:", err)
+			log.WithError(err).WithField("evt", "GuildUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -117,14 +117,14 @@ func CustomGuildDelete(inner func(s *discordgo.Session, evt *discordgo.GuildDele
 	return func(s *discordgo.Session, evt *discordgo.GuildDelete) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildDelete:", err)
+			log.WithError(err).WithField("evt", "GuildDelete").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildDelete:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildDelete").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -137,14 +137,14 @@ func CustomGuildBanAdd(inner func(s *discordgo.Session, evt *discordgo.GuildBanA
 	return func(s *discordgo.Session, evt *discordgo.GuildBanAdd) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildBanAdd:", err)
+			log.WithError(err).WithField("evt", "GuildBanAdd").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildBanAdd:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildBanAdd").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -157,14 +157,14 @@ func CustomGuildBanRemove(inner func(s *discordgo.Session, evt *discordgo.GuildB
 	return func(s *discordgo.Session, evt *discordgo.GuildBanRemove) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildBanRemove:", err)
+			log.WithError(err).WithField("evt", "GuildBanRemove").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildBanRemove:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildBanRemove").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -177,14 +177,14 @@ func CustomGuildMemberAdd(inner func(s *discordgo.Session, evt *discordgo.GuildM
 	return func(s *discordgo.Session, evt *discordgo.GuildMemberAdd) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildMemberAdd:", err)
+			log.WithError(err).WithField("evt", "GuildMemberAdd").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildMemberAdd:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildMemberAdd").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -197,14 +197,14 @@ func CustomGuildMemberUpdate(inner func(s *discordgo.Session, evt *discordgo.Gui
 	return func(s *discordgo.Session, evt *discordgo.GuildMemberUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildMemberUpdate:", err)
+			log.WithError(err).WithField("evt", "GuildMemberUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildMemberUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildMemberUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -217,14 +217,14 @@ func CustomGuildMemberRemove(inner func(s *discordgo.Session, evt *discordgo.Gui
 	return func(s *discordgo.Session, evt *discordgo.GuildMemberRemove) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildMemberRemove:", err)
+			log.WithError(err).WithField("evt", "GuildMemberRemove").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildMemberRemove:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildMemberRemove").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -237,14 +237,14 @@ func CustomGuildRoleCreate(inner func(s *discordgo.Session, evt *discordgo.Guild
 	return func(s *discordgo.Session, evt *discordgo.GuildRoleCreate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildRoleCreate:", err)
+			log.WithError(err).WithField("evt", "GuildRoleCreate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildRoleCreate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildRoleCreate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -257,14 +257,14 @@ func CustomGuildRoleUpdate(inner func(s *discordgo.Session, evt *discordgo.Guild
 	return func(s *discordgo.Session, evt *discordgo.GuildRoleUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildRoleUpdate:", err)
+			log.WithError(err).WithField("evt", "GuildRoleUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildRoleUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildRoleUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -277,14 +277,14 @@ func CustomGuildRoleDelete(inner func(s *discordgo.Session, evt *discordgo.Guild
 	return func(s *discordgo.Session, evt *discordgo.GuildRoleDelete) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildRoleDelete:", err)
+			log.WithError(err).WithField("evt", "GuildRoleDelete").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildRoleDelete:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildRoleDelete").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -297,14 +297,14 @@ func CustomGuildIntegrationsUpdate(inner func(s *discordgo.Session, evt *discord
 	return func(s *discordgo.Session, evt *discordgo.GuildIntegrationsUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildIntegrationsUpdate:", err)
+			log.WithError(err).WithField("evt", "GuildIntegrationsUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildIntegrationsUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildIntegrationsUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -317,14 +317,14 @@ func CustomGuildEmojisUpdate(inner func(s *discordgo.Session, evt *discordgo.Gui
 	return func(s *discordgo.Session, evt *discordgo.GuildEmojisUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event GuildEmojisUpdate:", err)
+			log.WithError(err).WithField("evt", "GuildEmojisUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in GuildEmojisUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildEmojisUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -337,14 +337,14 @@ func CustomMessageAck(inner func(s *discordgo.Session, evt *discordgo.MessageAck
 	return func(s *discordgo.Session, evt *discordgo.MessageAck) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageAck:", err)
+			log.WithError(err).WithField("evt", "MessageAck").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageAck:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "MessageAck").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -357,14 +357,14 @@ func CustomMessageCreate(inner func(s *discordgo.Session, evt *discordgo.Message
 	return func(s *discordgo.Session, evt *discordgo.MessageCreate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageCreate:", err)
+			log.WithError(err).WithField("evt", "MessageCreate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageCreate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "MessageCreate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -377,14 +377,14 @@ func CustomMessageUpdate(inner func(s *discordgo.Session, evt *discordgo.Message
 	return func(s *discordgo.Session, evt *discordgo.MessageUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageUpdate:", err)
+			log.WithError(err).WithField("evt", "MessageUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "MessageUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -397,14 +397,14 @@ func CustomMessageDelete(inner func(s *discordgo.Session, evt *discordgo.Message
 	return func(s *discordgo.Session, evt *discordgo.MessageDelete) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event MessageDelete:", err)
+			log.WithError(err).WithField("evt", "MessageDelete").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in MessageDelete:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "MessageDelete").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -417,14 +417,14 @@ func CustomPresenceUpdate(inner func(s *discordgo.Session, evt *discordgo.Presen
 	return func(s *discordgo.Session, evt *discordgo.PresenceUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event PresenceUpdate:", err)
+			log.WithError(err).WithField("evt", "PresenceUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in PresenceUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "PresenceUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -437,14 +437,14 @@ func CustomPresencesReplace(inner func(s *discordgo.Session, evt *discordgo.Pres
 	return func(s *discordgo.Session, evt *discordgo.PresencesReplace) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event PresencesReplace:", err)
+			log.WithError(err).WithField("evt", "PresencesReplace").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in PresencesReplace:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "PresencesReplace").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -457,14 +457,14 @@ func CustomReady(inner func(s *discordgo.Session, evt *discordgo.Ready, r *redis
 	return func(s *discordgo.Session, evt *discordgo.Ready) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event Ready:", err)
+			log.WithError(err).WithField("evt", "Ready").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in Ready:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "Ready").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -477,14 +477,14 @@ func CustomUserUpdate(inner func(s *discordgo.Session, evt *discordgo.UserUpdate
 	return func(s *discordgo.Session, evt *discordgo.UserUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event UserUpdate:", err)
+			log.WithError(err).WithField("evt", "UserUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in UserUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "UserUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -497,14 +497,14 @@ func CustomUserSettingsUpdate(inner func(s *discordgo.Session, evt *discordgo.Us
 	return func(s *discordgo.Session, evt *discordgo.UserSettingsUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event UserSettingsUpdate:", err)
+			log.WithError(err).WithField("evt", "UserSettingsUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in UserSettingsUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "UserSettingsUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -517,14 +517,14 @@ func CustomUserGuildSettingsUpdate(inner func(s *discordgo.Session, evt *discord
 	return func(s *discordgo.Session, evt *discordgo.UserGuildSettingsUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event UserGuildSettingsUpdate:", err)
+			log.WithError(err).WithField("evt", "UserGuildSettingsUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in UserGuildSettingsUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "UserGuildSettingsUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -537,14 +537,14 @@ func CustomTypingStart(inner func(s *discordgo.Session, evt *discordgo.TypingSta
 	return func(s *discordgo.Session, evt *discordgo.TypingStart) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event TypingStart:", err)
+			log.WithError(err).WithField("evt", "TypingStart").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in TypingStart:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "TypingStart").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -557,14 +557,14 @@ func CustomVoiceServerUpdate(inner func(s *discordgo.Session, evt *discordgo.Voi
 	return func(s *discordgo.Session, evt *discordgo.VoiceServerUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event VoiceServerUpdate:", err)
+			log.WithError(err).WithField("evt", "VoiceServerUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in VoiceServerUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "VoiceServerUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -577,14 +577,14 @@ func CustomVoiceStateUpdate(inner func(s *discordgo.Session, evt *discordgo.Voic
 	return func(s *discordgo.Session, evt *discordgo.VoiceStateUpdate) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event VoiceStateUpdate:", err)
+			log.WithError(err).WithField("evt", "VoiceStateUpdate").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in VoiceStateUpdate:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "VoiceStateUpdate").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -597,14 +597,14 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 	return func(s *discordgo.Session, evt *discordgo.Resumed) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			log.Println("Failed retrieving redis client, cant handle event Resumed:", err)
+			log.WithError(err).WithField("evt", "Resumed").Error("Failed retrieving redis client")
 			return
 		}
 
 		defer func() {
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
-				log.Println("Recovered from panic in Resumed:", err, "\n", evt, "\n", stack)
+				log.WithField(log.ErrorKey, err).WithField("evt", "Resumed").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
