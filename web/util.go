@@ -25,6 +25,7 @@ const (
 	ContextKeyUser
 	ContextKeyGuilds
 	ContextKeyCurrentGuild
+	ContextKeyCurrentUserGuild
 	ContextKeyGuildChannels
 	ContextKeyGuildRoles
 )

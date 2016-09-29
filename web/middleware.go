@@ -2,15 +2,19 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/miolini/datacounter"
 	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // Will put a redis client in the context if available
@@ -298,4 +302,41 @@ func APIHandler(inner CustomHandlerFunc) goji.Handler {
 		}
 	}
 	return goji.HandlerFunc(mw)
+}
+
+// Writes the request log into logger, returns a new middleware
+func RequestLogger(logger io.Writer) func(goji.Handler) goji.Handler {
+
+	handler := func(inner goji.Handler) goji.Handler {
+
+		mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			started := time.Now()
+			counter := datacounter.NewResponseWriterCounter(w)
+
+			defer func() {
+				elapsed := time.Since(started)
+				dataSent := counter.Count()
+
+				addr := strings.SplitN(r.RemoteAddr, ":", 2)[0]
+
+				reqLine := fmt.Sprintf("%s %s %s", r.Method, r.RequestURI, r.Proto)
+
+				out := fmt.Sprintf("%s %f - [%s] %q 200 %d %q %q\n",
+					addr, elapsed.Seconds(), started.Format("02/Jan/2006:15:04:05 -0700"), reqLine, dataSent, r.UserAgent(), r.Referer())
+
+				// GoAccess Format:
+				// log-format %h %T %^[%d:%t %^] "%r" %s %b "%u" "%R"
+				// date-format %d/%b/%Y
+				// time-format %H:%M:%S
+
+				logger.Write([]byte(out))
+			}()
+
+			inner.ServeHTTPC(ctx, counter, r)
+
+		}
+		return goji.HandlerFunc(mw)
+	}
+
+	return handler
 }

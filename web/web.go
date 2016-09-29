@@ -2,7 +2,6 @@ package web
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/lestrrat/go-apache-logformat"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
@@ -30,21 +29,23 @@ func Run() {
 	InitOauth()
 	mux := setupRoutes()
 
-	requestLogger := &lumberjack.Logger{
-		Filename: "access_log",
-		MaxSize:  10,
-	}
-
 	log.Info("Running webserver")
-	err = http.ListenAndServe(ListenAddress, apachelog.CombinedLog.Wrap(mux, requestLogger))
+	err = http.ListenAndServe(ListenAddress, mux)
 	if err != nil {
 		log.Error("Failed ListenAndServe:", err)
 	}
 }
 
 func setupRoutes() *goji.Mux {
+	requestLogger := &lumberjack.Logger{
+		Filename: "access_log",
+		MaxSize:  10,
+	}
+
 	mux := goji.NewMux()
 	RootMux = mux
+	mux.UseC(RequestLogger(requestLogger))
+
 	// Setup fileserver
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 

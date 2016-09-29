@@ -51,6 +51,9 @@ func init() {
 }
 
 func main() {
+
+	log.AddHook(common.ContextHook{})
+
 	if flagLogTimestamp {
 		web.LogRequestTimestamps = true
 	}
