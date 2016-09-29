@@ -64,7 +64,7 @@ func UpdateStatsLoop() {
 		}
 
 		log.WithFields(log.Fields{
-			"duration":    time.Since(started),
+			"duration":    time.Since(started).Seconds(),
 			"num_servers": len(guilds),
 		}).Info("Updated stats")
 
