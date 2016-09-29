@@ -35,7 +35,7 @@ func Run() {
 
 	err := common.BotSession.Open()
 	if err != nil {
-		log.WithError(err).Error("Failed opening bot connection")
+		panic(err)
 	}
 
 	Running = true
