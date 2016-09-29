@@ -196,11 +196,11 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 // Also sets active guild
 func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		guilds := ctx.Value(ContextKeyGuilds).([]*discordgo.Guild)
+		guilds := ctx.Value(ContextKeyGuilds).([]*discordgo.UserGuild)
 		user := ctx.Value(ContextKeyUser).(*discordgo.User)
 		guildID := pat.Param(ctx, "server")
 
-		var guild *discordgo.Guild
+		var guild *discordgo.UserGuild
 		for _, g := range guilds {
 			if g.ID == guildID && (g.Owner || g.Permissions&discordgo.PermissionManageServer != 0) {
 				guild = g
@@ -214,8 +214,14 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		newCtx := context.WithValue(ctx, ContextKeyCurrentGuild, guild)
-		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"ActiveGuild": guild})
+		fullGuild := &discordgo.Guild{
+			ID:   guild.ID,
+			Name: guild.Name,
+		}
+
+		newCtx := context.WithValue(ctx, ContextKeyCurrentUserGuild, guild)
+		newCtx = context.WithValue(ctx, ContextKeyCurrentGuild, fullGuild)
+		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"ActiveGuild": fullGuild})
 
 		inner.ServeHTTPC(newCtx, w, r)
 	}
