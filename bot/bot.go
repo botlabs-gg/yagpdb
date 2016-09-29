@@ -29,6 +29,7 @@ func Run() {
 	common.BotSession.AddHandler(HandleReady)
 	common.BotSession.AddHandler(CustomGuildCreate(HandleGuildCreate))
 	common.BotSession.AddHandler(CustomGuildDelete(HandleGuildDelete))
+	common.BotSession.AddHandler(CustomGuildMembersChunk(HandleGuildMembersChunk))
 
 	// common.BotSession.Debug = true
 	// common.BotSession.LogLevel = discordgo.LogDebug
@@ -41,4 +42,5 @@ func Run() {
 	Running = true
 
 	go mergedMessageSender()
+	go guildMembersRequester()
 }

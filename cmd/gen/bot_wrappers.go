@@ -51,7 +51,7 @@ var Events = []string{
 	"ChannelCreate",
 	"ChannelUpdate",
 	"ChannelDelete",
-	// "ChannelPinsUpdate", Waiting for pr to be merged
+	"ChannelPinsUpdate",
 	"GuildCreate",
 	"GuildUpdate",
 	"GuildDelete",
@@ -60,6 +60,7 @@ var Events = []string{
 	"GuildMemberAdd",
 	"GuildMemberUpdate",
 	"GuildMemberRemove",
+	"GuildMembersChunk",
 	"GuildRoleCreate",
 	"GuildRoleUpdate",
 	"GuildRoleDelete",

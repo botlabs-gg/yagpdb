@@ -22,6 +22,15 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	if err != nil {
 		log.WithError(err).Error("Redis error")
 	}
+
+	// Reset this stat
+	err = client.Cmd("SET", "guild_stats_num_members:"+g.ID, 0).Err
+	if err != nil {
+		log.WithError(err).Error("Failed resetting guild members stat")
+	}
+
+	LoadGuildMembersQueue <- g.ID
+
 }
 
 func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *redis.Client) {
@@ -33,5 +42,26 @@ func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *r
 	err := client.Cmd("SREM", "connected_guilds", g.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Redis error")
+	}
+}
+
+func HandleGuildMembersChunk(s *discordgo.Session, g *discordgo.GuildMembersChunk, client *redis.Client) {
+	log.WithFields(log.Fields{
+		"num_members": len(g.Members),
+		"guild":       g.GuildID,
+	}).Info("Received guild members")
+
+	// Load all members in memory, this might cause issues in the future, who knows /shrug
+	for _, v := range g.Members {
+		v.GuildID = g.GuildID
+		err := common.BotSession.State.MemberAdd(v)
+		if err != nil {
+			log.WithError(err).Error("Failed adding member to state")
+		}
+	}
+
+	err := client.Cmd("INCRBY", "guild_stats_num_members:"+g.GuildID, len(g.Members)).Err
+	if err != nil {
+		log.WithError(err).Error("Failed increasing guild members stat")
 	}
 }

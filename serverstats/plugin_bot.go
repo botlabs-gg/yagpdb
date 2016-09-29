@@ -5,7 +5,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -63,11 +62,6 @@ func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client)
 		if err != nil {
 			log.WithError(err).Error("Failed applying presences")
 		}
-
-		err = LoadGuildMembers(client, guild.ID)
-		if err != nil {
-			log.WithError(err).Error("Failed loading guild members")
-		}
 	}
 }
 
@@ -75,10 +69,6 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	err := ApplyPresences(client, g.ID, g.Presences)
 	if err != nil {
 		log.WithError(err).Error("Failed applying presences")
-	}
-	err = LoadGuildMembers(client, g.ID)
-	if err != nil {
-		log.WithError(err).Error("Failed loading guild members")
 	}
 }
 
@@ -147,36 +137,5 @@ func ApplyPresences(client *redis.Client, guildID string, presences []*discordgo
 	}
 
 	_, err := common.GetRedisReplies(client, count)
-	return err
-}
-
-func LoadGuildMembers(client *redis.Client, guildID string) error {
-	err := client.Cmd("SET", "guild_stats_num_members:"+guildID, 0).Err
-
-	if err != nil {
-		return err
-	}
-
-	members, err := dutil.GetAllGuildMembers(common.BotSession, guildID)
-	if err != nil {
-		return err
-	}
-
-	// Load all members in memory, this might cause issues in the future, who knows /shrug
-	for _, v := range members {
-		v.GuildID = guildID
-		err = common.BotSession.State.MemberAdd(v)
-		if err != nil {
-			log.WithError(err).Error("Failed adding member to state")
-		}
-	}
-
-	err = client.Cmd("INCRBY", "guild_stats_num_members:"+guildID, len(members)).Err
-
-	log.WithFields(log.Fields{
-		"guild":       guildID,
-		"num_members": len(members),
-	}).Info("Finished loading guild members")
-
 	return err
 }

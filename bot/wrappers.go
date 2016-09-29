@@ -73,6 +73,26 @@ func CustomChannelDelete(inner func(s *discordgo.Session, evt *discordgo.Channel
 	}
 }
 
+func CustomChannelPinsUpdate(inner func(s *discordgo.Session, evt *discordgo.ChannelPinsUpdate, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.ChannelPinsUpdate) {
+	return func(s *discordgo.Session, evt *discordgo.ChannelPinsUpdate) {
+		r, err := common.RedisPool.Get()
+		if err != nil {
+			log.WithError(err).WithField("evt", "ChannelPinsUpdate").Error("Failed retrieving redis client")
+			return
+		}
+
+		defer func() {
+			if err := recover(); err != nil {
+				stack := string(debug.Stack())
+				log.WithField(log.ErrorKey, err).WithField("evt", "ChannelPinsUpdate").Error("Recovered from panic\n" + stack)
+			}
+			common.RedisPool.Put(r)
+		}()
+
+		inner(s, evt, r)
+	}
+}
+
 func CustomGuildCreate(inner func(s *discordgo.Session, evt *discordgo.GuildCreate, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.GuildCreate) {
 	return func(s *discordgo.Session, evt *discordgo.GuildCreate) {
 		r, err := common.RedisPool.Get()
@@ -225,6 +245,26 @@ func CustomGuildMemberRemove(inner func(s *discordgo.Session, evt *discordgo.Gui
 			if err := recover(); err != nil {
 				stack := string(debug.Stack())
 				log.WithField(log.ErrorKey, err).WithField("evt", "GuildMemberRemove").Error("Recovered from panic\n" + stack)
+			}
+			common.RedisPool.Put(r)
+		}()
+
+		inner(s, evt, r)
+	}
+}
+
+func CustomGuildMembersChunk(inner func(s *discordgo.Session, evt *discordgo.GuildMembersChunk, r *redis.Client)) func(s *discordgo.Session, evt *discordgo.GuildMembersChunk) {
+	return func(s *discordgo.Session, evt *discordgo.GuildMembersChunk) {
+		r, err := common.RedisPool.Get()
+		if err != nil {
+			log.WithError(err).WithField("evt", "GuildMembersChunk").Error("Failed retrieving redis client")
+			return
+		}
+
+		defer func() {
+			if err := recover(); err != nil {
+				stack := string(debug.Stack())
+				log.WithField(log.ErrorKey, err).WithField("evt", "GuildMembersChunk").Error("Recovered from panic\n" + stack)
 			}
 			common.RedisPool.Put(r)
 		}()
@@ -612,3 +652,4 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 		inner(s, evt, r)
 	}
 }
+

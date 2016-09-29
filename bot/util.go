@@ -2,7 +2,9 @@ package bot
 
 import (
 	"errors"
+	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 	"time"
 )
 
@@ -43,4 +45,25 @@ func GetGuildMember(s *discordgo.Session, gID string, uID string) (*discordgo.Me
 		s.State.MemberAdd(member)
 	}
 	return member, err
+}
+
+var (
+	LoadGuildMembersQueue = make(chan string)
+)
+
+func guildMembersRequester() {
+	for {
+		g := <-LoadGuildMembersQueue
+
+		err := common.BotSession.RequestGuildMembers(g, "", 0)
+		if err != nil {
+			// Put it back into the queue if an error occured
+			logrus.WithError(err).WithField("guild", g).Error("Failed requesting guild members")
+			go func() {
+				LoadGuildMembersQueue <- g
+			}()
+		}
+
+		time.Sleep(time.Second)
+	}
 }
