@@ -1,0 +1,144 @@
+// The event system is used to propegate events from different yagpdb instances
+// For example when you change the streamer settings, and event gets fired
+// Telling the streamer plugin to recheck everyones streaming status
+
+package bot
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/extra/pubsub"
+	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/yagpdb/common"
+	"reflect"
+	"strings"
+)
+
+type Event struct {
+	TargetGuild string // The guild this event was meant for, or * for all
+	EventName   string
+	Data        interface{}
+}
+
+type eventHandler struct {
+	evt     string
+	handler func(*Event)
+}
+
+var (
+	eventHandlers = make([]*eventHandler, 0)
+	eventTypes    = make(map[string]reflect.Type)
+)
+
+// AddEventHandler adds a event handler
+// For the specified event
+func AddEventHandler(evt string, cb func(*Event), t interface{}) {
+	handler := &eventHandler{
+		evt:     evt,
+		handler: cb,
+	}
+
+	if t != nil {
+		eventTypes[evt] = reflect.TypeOf(t)
+	}
+
+	eventHandlers = append(eventHandlers, handler)
+	logrus.WithField("evt", evt).Info("Added event handler")
+}
+
+// PublishEvent publishes the specified event
+func PublishEvent(client *redis.Client, evt string, target string, data interface{}) error {
+	dataStr := ""
+	if data != nil {
+		encoded, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		dataStr = string(encoded)
+	}
+
+	value := fmt.Sprintf("%s,%s,%s", target, evt, dataStr)
+	return client.Cmd("PUBLISH", "events", value).Err
+}
+
+func pollEvents() {
+	client, err := common.RedisPool.Get()
+	if err != nil {
+		panic(err)
+
+	}
+
+	subClient := pubsub.NewSubClient(client)
+	err = subClient.Subscribe("events").Err
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		reply := subClient.Receive()
+		if reply.Err != nil {
+			logrus.WithError(err).Error("PubSub Error")
+			continue
+		}
+
+		if reply.Message != "" {
+			logrus.WithField("evt", reply.Message).Info("Handling PubSub event")
+			handleEvent(reply.Message)
+		}
+	}
+}
+
+func handleEvent(evt string) {
+	split := strings.SplitN(evt, ",", 3)
+
+	if len(split) < 3 {
+		logrus.WithField("evt", evt).Error("Invalid event")
+		return
+	}
+
+	target := split[0]
+	name := split[1]
+	data := split[2]
+
+	if target != "*" {
+		_, err := common.BotSession.State.Guild(target)
+		if err != nil {
+			return // This event wasnt meant for this shard
+		}
+	}
+
+	t, ok := eventTypes[name]
+	if !ok && data != "" {
+		// No handler for this event
+		logrus.WithField("evt", name).Info("No handler for pubsub event")
+		return
+	}
+
+	var decoded interface{}
+	if data != "" && t != nil {
+		decoded = reflect.New(t).Interface()
+		err := json.Unmarshal([]byte(data), decoded)
+		if err != nil {
+			logrus.WithError(err).Error("Failed unmarshaling event")
+			return
+		}
+	} else if t != nil {
+		logrus.Error("No data provided for event that requires data")
+		return
+	}
+
+	event := &Event{
+		TargetGuild: target,
+		EventName:   name,
+		Data:        decoded,
+	}
+
+	for _, handler := range eventHandlers {
+		if handler.evt != name {
+			continue
+		}
+
+		handler.handler(event)
+	}
+}

@@ -43,4 +43,5 @@ func Run() {
 
 	go mergedMessageSender()
 	go guildMembersRequester()
+	go pollEvents()
 }
