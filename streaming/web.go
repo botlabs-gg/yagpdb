@@ -3,7 +3,6 @@ package streaming
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -57,28 +56,34 @@ func baseData(inner goji.Handler) goji.Handler {
 func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, guild, tmpl := web.GetBaseCPContextData(ctx)
 
+	announceChannel := r.FormValue("announce_channel")
+	announceMessage := r.FormValue("announce_message")
+	giveRole := r.FormValue("give_role")
+	requireRole := r.FormValue("require_role")
+	ignoreRole := r.FormValue("ignore_role")
+
 	newConf := &Config{
 		Enabled: r.FormValue("enabled") == "on",
 
-		AnnounceChannel: r.FormValue("announce_channel"),
-		AnnounceMessage: r.FormValue("announce_message"),
+		AnnounceChannel: announceChannel,
+		AnnounceMessage: announceMessage,
 
-		GiveRole:    r.FormValue("give_role"),
-		RequireRole: r.FormValue("require_role"),
-		IgnoreRole:  r.FormValue("ignore_role"),
+		GiveRole:    giveRole,
+		RequireRole: requireRole,
+		IgnoreRole:  ignoreRole,
 	}
+	tmpl["StreamingConfig"] = newConf
 
-	oldConf := ctx.Value(ConextKeyConfig).(*Config)
-	sendConf := *newConf
-	tmpl["StreamingConfig"] = sendConf
+	ok := web.ValidateForm(guild, tmpl, []*web.FormField{
+		&web.FormField{Value: announceChannel, Type: web.FormTypeChannel, Name: "Announce channel"},
+		&web.FormField{Value: announceMessage, Type: web.FormTypeMessageTemplate, Name: "Announce message"},
+		&web.FormField{Value: giveRole, Type: web.FormTypeRole, Name: "Give role"},
+		&web.FormField{Value: requireRole, Type: web.FormTypeRole, Name: "Whitelist role"},
+		&web.FormField{Value: ignoreRole, Type: web.FormTypeRole, Name: "Ignore role"},
+	})
 
-	// Validate the message
-	if newConf.AnnounceMessage != "" {
-		_, err := common.ParseExecuteTemplate(newConf.AnnounceMessage, nil)
-		if web.CheckErr(tmpl, err, "", nil) {
-			newConf.AnnounceMessage = oldConf.AnnounceMessage
-			return tmpl
-		}
+	if !ok {
+		return tmpl
 	}
 
 	err := newConf.Save(client, guild.ID)
