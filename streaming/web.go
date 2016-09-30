@@ -2,6 +2,7 @@ package streaming
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -81,6 +82,13 @@ func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	err := newConf.Save(client, guild.ID)
-	web.CheckErr(tmpl, err, "Failed saving config :'(", logrus.Error)
-	return tmpl
+	if web.CheckErr(tmpl, err, "Failed saving config :'(", logrus.Error) {
+		return tmpl
+	}
+
+	err = bot.PublishEvent(client, "update_streaming", guild.ID, nil)
+	if err != nil {
+		logrus.WithError(err).Error("Failed sending update streaming event")
+	}
+	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))
 }

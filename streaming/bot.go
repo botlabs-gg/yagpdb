@@ -1,13 +1,10 @@
 package streaming
 
 import (
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 )
 
@@ -15,51 +12,54 @@ func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
 	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
 
-	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
-		Cooldown: 10,
-		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "refreshstreaming",
-			Aliases:     []string{"rfs", "updatestreaming"},
-			Description: "Rechecks the streaming status of all the online people on the server, usefull if you added somone to the role",
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			config, err := GetConfig(client, parsed.Guild.ID)
-			if err != nil {
-				return "Failed retrieving config", err
+	bot.AddEventHandler("update_streaming", HandleUpdateStreaming, nil)
+}
+
+// YAGPDB event
+func HandleUpdateStreaming(event *bot.Event) {
+	log.Info("Received the streaming event boi", event.TargetGuild)
+
+	client, err := common.RedisPool.Get()
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving redis connection from pool")
+		return
+	}
+
+	guild, err := common.BotSession.State.Guild(event.TargetGuild)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving guild from state")
+		return
+	}
+
+	config, err := GetConfig(client, guild.ID)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving streaming config")
+	}
+	errs := 0
+	for _, presence := range guild.Presences {
+
+		var member *discordgo.Member
+
+		for _, m := range guild.Members {
+			if m.User.ID == presence.User.ID {
+				member = m
+				break
 			}
-			errs := 0
-			for _, presence := range parsed.Guild.Presences {
+		}
 
-				var member *discordgo.Member
+		if member == nil {
+			log.Error("Member not found in guild", presence.User.ID)
+			errs++
+			continue
+		}
 
-				for _, m := range parsed.Guild.Members {
-					if m.User.ID == presence.User.ID {
-						member = m
-						break
-					}
-				}
-
-				if member == nil {
-					log.Error("Member not found in guild", presence.User.ID)
-					errs++
-					continue
-				}
-
-				err = CheckPresence(client, presence, config, parsed.Guild, member)
-				if err != nil {
-					log.WithError(err).Error("Error checking presence")
-					errs++
-					continue
-				}
-			}
-
-			out := "👌"
-			if errs > 0 {
-				out = fmt.Sprintf("%d errors occured, contact the jonus", errs)
-			}
-			return out, nil
-		},
-	})
+		err = CheckPresence(client, presence, config, guild, member)
+		if err != nil {
+			log.WithError(err).Error("Error checking presence")
+			errs++
+			continue
+		}
+	}
 }
 
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
