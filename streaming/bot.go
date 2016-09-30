@@ -11,6 +11,7 @@ import (
 func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
 	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
+	common.BotSession.AddHandler(bot.CustomGuildMemberUpdate(HandleGuildMemberUpdate))
 
 	bot.AddEventHandler("update_streaming", HandleUpdateStreaming, nil)
 }
@@ -59,6 +60,31 @@ func HandleUpdateStreaming(event *bot.Event) {
 			errs++
 			continue
 		}
+	}
+}
+
+func HandleGuildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate, client *redis.Client) {
+	config, err := GetConfig(client, m.GuildID)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving streaming config")
+		return
+	}
+
+	presence, err := s.State.Presence(m.GuildID, m.User.ID)
+	if err != nil {
+		log.WithError(err).Error("Presence not, found. Most likely offline?")
+		return
+	}
+
+	guild, err := s.State.Guild(m.GuildID)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving guild from state")
+		return
+	}
+
+	err = CheckPresence(client, presence, config, guild, m.Member)
+	if err != nil {
+		log.WithError(err).Error("Failed checking presence")
 	}
 }
 
