@@ -4,9 +4,11 @@ package web
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"regexp"
+	"strconv"
 	"unicode/utf8"
 )
 
@@ -18,6 +20,8 @@ const (
 	FormTypeChannel
 	FormTypeRole
 	FormTypeRegex
+	FormTypeInt
+	FormTypeFloat
 )
 
 var (
@@ -32,6 +36,10 @@ type FormField struct {
 	Value string
 	Name  string
 	Max   int
+	Min   int
+
+	MaxF float64
+	MinF float64
 }
 
 // Returns true if somethign was wrong
@@ -53,6 +61,10 @@ func (f *FormField) Validate(guild *discordgo.Guild, tmpl TemplateData) bool {
 		err = ValidateRegexForm(f.Value)
 	case FormTypeRole:
 		err = ValidateRoleForm(f.Value, guild.Roles)
+	case FormTypeInt:
+		err = ValidateIntForm(f.Value, f.Min, f.Max)
+	case FormTypeFloat:
+		err = ValidateFloatForm(f.Value, f.MinF, f.MaxF)
 	}
 
 	if err == nil {
@@ -77,6 +89,33 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, fields []*FormField
 	}
 	return ok
 }
+
+func ValidateIntForm(s string, min, max int) error {
+	parsed, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+
+	if min != max && (parsed < min || parsed > max) {
+		return fmt.Errorf("Out of range (%d - %d", min, max)
+	}
+
+	return nil
+}
+
+func ValidateFloatForm(s string, min, max float64) error {
+	parsed, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return err
+	}
+
+	if min != max && (parsed < min || parsed > max) {
+		return fmt.Errorf("Out of range (%d - %d", min, max)
+	}
+
+	return nil
+}
+
 func ValidateRegexForm(s string) error {
 	_, err := regexp.Compile(s)
 	return err
