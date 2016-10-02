@@ -14,22 +14,15 @@
             <div class="col-lg-12">
                 <h1 class="page-header">Welcome to YAGPDB.xyz! Select a server above to get started!</h1>
                 
-
-                <h3>Version 0.14 <small>22th Sept 2016</small></h3>
-                <p>This update brings forward a lot of general bugfixes and improvements, about time to move it into beta soon!</p>
+                <h3>Version 0.15 <small>?th Oct 2016</small></h3>
+                <p>This update is mostly providing backend changes, and some bugfixes to prepare for going out of alpha soon!</p>
                 <ul>
-                    <li><b>Added streaming notifications plugin!</b> This plugin will allow you to give people currently streaming a role, and also send a announcement message in a channel</li>
-                    <li>Large cleanups in backend</li>
-                    <li>General improvements and fixes to the overall control panel site</li>
-                    <li>Increased the max subreddit limit to 25</li>
-                    <li>Set Max custom commands to 50</li>
-                    <li>Auto deleting response now also auto deleted the trigger (Will need manage messages perms for this)</li>
-                    <li>Reddit feed should be more reliable <small>(Still needs some work before i would consider it 100% but it is getting there)</small></li>
-                    <li>Added Catfacts command</li>
-                    <li>Added advice command</li>
-                    <li>Add workaround for panics occuring when doing stuff related with message timestamps after the bot has been running for a while <small>(Added a workaround but need to add a proper fix...)</small></li>
-                    <li>Send a panic message when a command triggers a panic<small>(Something went terribly wrong)</small></li>
-                    <li>Added option for the kick command to delete up to the 100 last messages of a user when kicked</li>
+                    <li>Web: Improved form validation most places</li>
+                    <li>Bot: Squashed the persistent no message timestamp bug once and for all... <small>i hope.</small></li>
+                    <li>Bot: Join/Leave messages sent in the same second will now be merged togheter (to handle things like purges of thousands of members better)</li>
+                    <li>Bot: Removed the refreshstreaming command since it's no longer needed as everything will auto update</li>
+                    <li>Bot: Improve member loading on startup (now uses a gateway request instead of rest request)</li>
+                    <li>Backend: Redid all logging</li>
                 </ul>
 
                 Dunno what will be there for next version ¯\_(ツ)_/¯
@@ -37,7 +30,7 @@
                 <h3>Information</h3>
 
                 <p>YAGPDB Is still in a very early alpha version. The feature list is very small at the moment but that will change with time!</p>
-                <p>If you have any bugs or suggestions to report please join my <a href="https://discord.gg/0vYlUK2XBKldPSMY">discord server here</a> and report them to me (jonas747#3124)</p>
+                <p>If you have any bugs or suggestions to report please join my <a href="https://discord.gg/0vYlUK2XBKldPSMY">discord server here</a> and report them to me <b>(jonas747#3124)</b></p>
                 <br/>
                 <p><b>About the permissons</b>: If you don't feel like trusting the bot you can just untick the permissions you don't want to give it. You will not be able to use the moderation features of the bot though unless you give it the permissions it needs of course</p>
                 <br/>
@@ -55,6 +48,23 @@
                 </ul>
 
                 <h2>Older changelogs</h2>
+
+                <h3>Version 0.14 <small>22th Sept 2016</small></h3>
+                <p>This update brings forward a lot of general bugfixes and improvements, about time to move it into beta soon!</p>
+                <ul>
+                    <li><b>Added streaming notifications plugin!</b> This plugin will allow you to give people currently streaming a role, and also send a announcement message in a channel</li>
+                    <li>Large cleanups in backend</li>
+                    <li>General improvements and fixes to the overall control panel site</li>
+                    <li>Increased the max subreddit limit to 25</li>
+                    <li>Set Max custom commands to 50</li>
+                    <li>Auto deleting response now also auto deleted the trigger (Will need manage messages perms for this)</li>
+                    <li>Reddit feed should be more reliable <small>(Still needs some work before i would consider it 100% but it is getting there)</small></li>
+                    <li>Added Catfacts command</li>
+                    <li>Added advice command</li>
+                    <li>Add workaround for panics occuring when doing stuff related with message timestamps after the bot has been running for a while <small>(Added a workaround but need to add a proper fix...)</small></li>
+                    <li>Send a panic message when a command triggers a panic<small>(Something went terribly wrong)</small></li>
+                    <li>Added option for the kick command to delete up to the 100 last messages of a user when kicked</li>
+                </ul>
 
                 <h3>Version 0.13 <small>7th Sept 2016</small></h3>
                 Small update with mosly bugfixes
