@@ -33,8 +33,8 @@ func (p *Plugin) InitWeb() {
 	streamingMux.HandleC(pat.Get(""), web.RenderHandler(nil, "cp_streaming"))
 	streamingMux.HandleC(pat.Get("/"), web.RenderHandler(nil, "cp_streaming"))
 
-	streamingMux.HandleC(pat.Post(""), web.RenderHandler(HandlePostStreaming, "cp_streaming"))
-	streamingMux.HandleC(pat.Post("/"), web.RenderHandler(HandlePostStreaming, "cp_streaming"))
+	streamingMux.HandleC(pat.Post(""), web.FormParserMW(web.RenderHandler(HandlePostStreaming, "cp_streaming"), Config{}))
+	streamingMux.HandleC(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandlePostStreaming, "cp_streaming"), Config{}))
 }
 
 // Adds the current config to the context
@@ -56,31 +56,10 @@ func baseData(inner goji.Handler) goji.Handler {
 func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, guild, tmpl := web.GetBaseCPContextData(ctx)
 
-	announceChannel := r.FormValue("announce_channel")
-	announceMessage := r.FormValue("announce_message")
-	giveRole := r.FormValue("give_role")
-	requireRole := r.FormValue("require_role")
-	ignoreRole := r.FormValue("ignore_role")
+	ok := ctx.Value(web.ContextKeyFormOk).(bool)
+	newConf := ctx.Value(web.ContextKeyParsedForm).(*Config)
 
-	newConf := &Config{
-		Enabled: r.FormValue("enabled") == "on",
-
-		AnnounceChannel: announceChannel,
-		AnnounceMessage: announceMessage,
-
-		GiveRole:    giveRole,
-		RequireRole: requireRole,
-		IgnoreRole:  ignoreRole,
-	}
 	tmpl["StreamingConfig"] = newConf
-
-	ok := web.ValidateForm(guild, tmpl, []*web.FormField{
-		&web.FormField{Value: announceChannel, Type: web.FormTypeChannel, Name: "Announce channel"},
-		&web.FormField{Value: announceMessage, Type: web.FormTypeMessageTemplate, Name: "Announce message"},
-		&web.FormField{Value: giveRole, Type: web.FormTypeRole, Name: "Give role"},
-		&web.FormField{Value: requireRole, Type: web.FormTypeRole, Name: "Whitelist role"},
-		&web.FormField{Value: ignoreRole, Type: web.FormTypeRole, Name: "Ignore role"},
-	})
 
 	if !ok {
 		return tmpl

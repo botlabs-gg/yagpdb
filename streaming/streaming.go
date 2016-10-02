@@ -20,15 +20,19 @@ func RegisterPlugin() {
 }
 
 type Config struct {
-	Enabled bool `json:"enabled"` // Wether streaming notifications is enabled or not
+	Enabled bool `json:"enabled" schema:"enabled"` // Wether streaming notifications is enabled or not
 
-	GiveRole string `json:"give_role"` // Give a role to people streaming
+	// Give a role to people streaming
+	GiveRole string `json:"give_role" schema:"give_role" valid:"role,true"`
+	// Ignores people with this role, requirerole is ignored if this is set
+	IgnoreRole string `json:"ban_role" schema:"ignore_role" valid:"role,true"`
+	// Requires people to have this role
+	RequireRole string `json:"require_role" schema:"require_role" valid:"role,true"`
 
-	IgnoreRole  string `json:"ban_role"`     // Ignores people with this role, requirerole is ignored if this is set
-	RequireRole string `json:"require_role"` // Requires people to have this role
-
-	AnnounceChannel string `json:"announce_channel"` // Channel to send streaming announcements in
-	AnnounceMessage string `json:"announce_message"` // The message
+	// Channel to send streaming announcements in
+	AnnounceChannel string `json:"announce_channel" schema:"announce_channel" valid:"channel,true"`
+	// The message
+	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:",2000"`
 }
 
 func (c *Config) Save(client *redis.Client, guildID string) error {
