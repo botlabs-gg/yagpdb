@@ -28,6 +28,8 @@ const (
 	ContextKeyCurrentUserGuild
 	ContextKeyGuildChannels
 	ContextKeyGuildRoles
+	ContextKeyParsedForm
+	ContextKeyFormOk
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
@@ -155,14 +157,14 @@ const (
 func ErrorAlert(args ...interface{}) *Alert {
 	return &Alert{
 		Style:   AlertDanger,
-		Message: fmt.Sprint(args),
+		Message: fmt.Sprint(args...),
 	}
 }
 
 func WarningAlert(args ...interface{}) *Alert {
 	return &Alert{
 		Style:   AlertWarning,
-		Message: fmt.Sprint(args),
+		Message: fmt.Sprint(args...),
 	}
 }
 

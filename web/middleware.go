@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/miolini/datacounter"
@@ -13,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -339,4 +341,38 @@ func RequestLogger(logger io.Writer) func(goji.Handler) goji.Handler {
 	}
 
 	return handler
+}
+
+// Parses a form
+func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			panic(err)
+		}
+		_, guild, tmpl := GetBaseCPContextData(ctx)
+
+		typ := reflect.TypeOf(dst)
+
+		// Decode the form into the destination struct
+		decoded := reflect.New(typ).Interface()
+		decoder := schema.NewDecoder()
+		err = decoder.Decode(decoded, r.Form)
+
+		ok := true
+		if err != nil {
+			log.WithError(err).Error("Failed decoding form")
+			tmpl.AddAlerts(ErrorAlert("Failed parsing form"))
+			ok = false
+		} else {
+			// Perform validation
+			ok = ValidateForm(guild, tmpl, decoded)
+		}
+
+		newCtx := context.WithValue(ctx, ContextKeyParsedForm, decoded)
+		newCtx = context.WithValue(newCtx, ContextKeyFormOk, ok)
+		inner.ServeHTTPC(newCtx, w, r)
+	}
+	return goji.HandlerFunc(mw)
+
 }
