@@ -44,6 +44,10 @@ func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Re
 		return templateData
 	}
 
+	if parsed < 0 {
+		return templateData.AddAlerts(web.ErrorAlert("Cooldown can't be negative"))
+	}
+
 	newSettings := &Settings{
 		Enabled:  r.FormValue("enabled") == "on",
 		Cooldown: int(parsed),

@@ -16,8 +16,8 @@ func (p *Plugin) InitWeb() {
 
 	web.CPMux.HandleC(pat.Get("/notifications/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")))
 	web.CPMux.HandleC(pat.Get("/notifications/general/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")))
-	web.CPMux.HandleC(pat.Post("/notifications/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general")))
-	web.CPMux.HandleC(pat.Post("/notifications/general/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general")))
+	web.CPMux.HandleC(pat.Post("/notifications/general"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"), Config{})))
+	web.CPMux.HandleC(pat.Post("/notifications/general/"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"), Config{})))
 }
 
 func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
@@ -31,74 +31,23 @@ func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.
 func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	previousConfig := GetConfig(client, activeGuild.ID)
+	newConfig := ctx.Value(web.ContextKeyParsedForm).(*Config)
+	ok := ctx.Value(web.ContextKeyFormOk).(bool)
 
-	joinServer := r.FormValue("join_server_msg")
-	joinDM := r.FormValue("join_dm_msg")
-	leaveMsg := r.PostFormValue("leave_msg")
-
-	// The new configuration
-	newConfig := &Config{
-		JoinServerEnabled: r.FormValue("join_server_enabled") == "on",
-		JoinServerChannel: r.FormValue("join_server_channel"),
-		JoinServerMsg:     joinServer,
-
-		JoinDMEnabled: r.FormValue("join_dm_enabled") == "on",
-		JoinDMMsg:     joinDM,
-
-		LeaveEnabled: r.FormValue("leave_enabled") == "on",
-		LeaveChannel: r.FormValue("leave_channel"),
-		LeaveMsg:     leaveMsg,
-
-		TopicEnabled: r.FormValue("topic_enabled") == "on",
-		TopicChannel: r.FormValue("topic_channel"),
+	templateData["NotifyConfig"] = newConfig
+	if !ok {
+		return templateData
 	}
 
-	// The sent one differs a little, we will send back invalid data but not store it
-	sentConfig := *newConfig
-	templateData["NotifyConfig"] = sentConfig
-
-	foundErrors := false
-
-	// Do some validation to make sure the user knows about faulty templates
-	if joinServer != "" {
-		_, err := common.ParseExecuteTemplate(joinServer, nil)
-		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for server/channel join:", err))
-			newConfig.JoinServerMsg = previousConfig.JoinServerMsg
-			foundErrors = true
-		}
+	err := common.SetRedisJson(client, "notifications/general:"+activeGuild.ID, newConfig)
+	if web.CheckErr(templateData, err, "Failed saving :(", log.Error) {
+		return templateData
 	}
 
-	if joinDM != "" {
-		_, err := common.ParseExecuteTemplate(joinDM, nil)
-		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for server/channel join:", err))
-			newConfig.JoinDMMsg = previousConfig.JoinDMMsg
-			foundErrors = true
-		}
-	}
-
-	if leaveMsg != "" {
-		_, err := common.ParseExecuteTemplate(leaveMsg, nil)
-		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Failed parsing/executing template for server/channel join:", err))
-			newConfig.LeaveMsg = previousConfig.LeaveMsg
-			foundErrors = true
-		}
-	}
-
-	if !foundErrors {
-		templateData.AddAlerts(web.SucessAlert("Sucessfully saved everything! :')"))
-	}
+	templateData.AddAlerts(web.SucessAlert("Sucessfully saved everything! :')"))
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Updated general notification settings")
-
-	err := common.SetRedisJson(client, "notifications/general:"+activeGuild.ID, newConfig)
-	if err != nil {
-		log.WithError(err).Error("Failed saving notifications config")
-	}
 
 	return templateData
 }

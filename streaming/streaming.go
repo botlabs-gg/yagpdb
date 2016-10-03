@@ -32,7 +32,7 @@ type Config struct {
 	// Channel to send streaming announcements in
 	AnnounceChannel string `json:"announce_channel" schema:"announce_channel" valid:"channel,true"`
 	// The message
-	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:",2000"`
+	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:"template,2000"`
 }
 
 func (c *Config) Save(client *redis.Client, guildID string) error {

@@ -20,6 +20,11 @@ const (
 	CurrentConfig CtxKey = iota
 )
 
+type Form struct {
+	Subreddit string `schema:"subreddit" valid:",1,100"`
+	Channel   string `schema:"channel" valid:"channel,false`
+}
+
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reddit.html"))
 
@@ -35,9 +40,10 @@ func (p *Plugin) InitWeb() {
 	redditMux.HandleC(pat.Get(""), web.RenderHandler(HandleReddit, "cp_reddit"))
 
 	// If only html forms allowed patch and delete.. if only
-	redditMux.HandleC(pat.Post(""), web.RenderHandler(HandleNew, "cp_reddit"))
-	redditMux.HandleC(pat.Post("/:item/update"), web.RenderHandler(HandleModify, "cp_reddit"))
-	redditMux.HandleC(pat.Post("/:item/delete"), web.RenderHandler(HandleRemove, "cp_reddit"))
+	redditMux.HandleC(pat.Post(""), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
+	redditMux.HandleC(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
+	redditMux.HandleC(pat.Post("/:item/update"), web.FormParserMW(web.RenderHandler(HandleModify, "cp_reddit"), Form{}))
+	redditMux.HandleC(pat.Post("/:item/delete"), web.FormParserMW(web.RenderHandler(HandleRemove, "cp_reddit"), Form{}))
 }
 
 // Adds the current config to the context
@@ -70,8 +76,16 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
+
 	templateData["RedditConfig"] = currentConfig
 
+	newElem := ctx.Value(web.ContextKeyParsedForm).(*Form)
+	ok := ctx.Value(web.ContextKeyFormOk).(bool)
+	if !ok {
+		return templateData
+	}
+
+	// get an id the ez (and not safe if 2 people create at same time) way
 	highest := 0
 	for _, v := range currentConfig {
 		if v.ID > highest {
@@ -83,19 +97,9 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 		return templateData.AddAlerts(web.ErrorAlert("Max 25 items allowed"))
 	}
 
-	channelId, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData, ctx)
-	if !ok {
-		return templateData.AddAlerts(web.ErrorAlert("Unknown channel"))
-	}
-
-	sub := strings.ToLower(r.FormValue("subreddit"))
-	if sub == "" {
-		return templateData.AddAlerts(web.ErrorAlert("Subreddit can't be empty >:O"))
-	}
-
 	watchItem := &SubredditWatchItem{
-		Sub:     sub,
-		Channel: channelId,
+		Sub:     strings.TrimSpace(newElem.Subreddit),
+		Channel: newElem.Channel,
 		Guild:   activeGuild.ID,
 		ID:      highest + 1,
 	}
@@ -111,7 +115,7 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 
 	// Log
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Added reddit feed from /r/"+sub)
+	go common.AddCPLogEntry(user, activeGuild.ID, "Added reddit feed from /r/"+newElem.Subreddit)
 	return templateData
 }
 
@@ -127,26 +131,22 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 		return templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))
 	}
 
+	updated := ctx.Value(web.ContextKeyParsedForm).(*Form)
+	ok := ctx.Value(web.ContextKeyFormOk).(bool)
+	if !ok {
+		return templateData
+	}
+	updated.Subreddit = strings.TrimSpace(updated.Subreddit)
+
 	item := FindWatchItem(currentConfig, int(idInt))
 	if item == nil {
 		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
 
-	r.ParseForm()
-	channel, ok := GetChannel(r.FormValue("channel"), activeGuild.ID, templateData, ctx)
-	if !ok {
-		return templateData.AddAlerts(web.ErrorAlert("Failed retrieving channel"))
-	}
+	subIsNew := !strings.EqualFold(updated.Subreddit, item.Sub)
+	item.Channel = updated.Channel
 
-	if r.FormValue("subreddit") == "" {
-		return templateData.AddAlerts(web.ErrorAlert("Subreddit can't be empty"))
-	}
-
-	newSub := r.FormValue("subreddit") != item.Sub
-
-	item.Channel = channel
-
-	if !newSub {
+	if !subIsNew {
 		// Pretty simple then
 		err = item.Set(client)
 	} else {
@@ -204,24 +204,6 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	templateData["RedditConfig"] = currentConfig
 
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+r.FormValue("subreddit"))
+	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+item.Sub)
 	return templateData
-}
-
-// Validates a channel name or id, adds an error message if not found
-// Returns true if everythign went okay
-func GetChannel(name, guild string, templateData web.TemplateData, ctx context.Context) (string, bool) {
-	if name == "" {
-		return guild, true
-	}
-
-	for _, v := range ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel) {
-		if v.ID == name {
-			return v.ID, true
-		}
-	}
-
-	templateData.AddAlerts(web.ErrorAlert("Failed finding channel"))
-	log.WithField("guild", guild).Error("Failed finding channel")
-	return "", false
 }

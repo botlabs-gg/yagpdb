@@ -6,10 +6,10 @@ package web
 //
 // float/int: `valid:"{min],{max}"`
 //    - Makes sure the float/int is whitin min and max
-// normal string: `valid:",{maxLen}"`
-//    - Makes sure the string is shorter than maxLen)
+// normal string: `valid:",{minLen},{maxLen}"` or `valid:",{maxLen}"`
+//    - Makes sure the string is shorter than maxLen and bigger than minLen
 // regex string: `valid:"regex,{maxLen}"`
-//    - Makes sure the string is shorter than maxLen)
+//    - Makes sure the string is shorter than maxLen
 //    - Makes sure the regex compiles without errors
 // template string: `valid:"tmpl,{maxLen}"`
 //    - Makes sure the string is shorter than maxLen)
@@ -34,7 +34,6 @@ import (
 )
 
 var (
-	ErrTooLong         = errors.New("Too Long")
 	ErrChannelNotFound = errors.New("Channel not found")
 	ErrRoleNotFound    = errors.New("Role not found")
 )
@@ -79,7 +78,7 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			maxLen := 2000
 
 			// Retrieve max len from tag is needed
-			if len(validationSplit) > 1 && (validationSplit[0] == "tmpl" || validationSplit[0] == "regex" || validationSplit[0] == "") {
+			if len(validationSplit) > 1 && (validationSplit[0] == "template" || validationSplit[0] == "regex" || validationSplit[0] == "") {
 				newMaxLen, err := strconv.ParseInt(validationSplit[1], 10, 32)
 				if err != nil {
 					logrus.WithError(err).Error("Failed parsing int")
@@ -97,7 +96,7 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			}
 
 			switch validationSplit[0] {
-			case "tmpl":
+			case "template":
 				err = ValidateTemplateField(cv, maxLen)
 			case "regex":
 				err = ValidateRegexField(cv, maxLen)
@@ -106,7 +105,18 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			case "channel":
 				err = ValidateChannelField(cv, guild.Channels, allowEmpty)
 			default:
-				err = ValidateStringField(cv, maxLen)
+				min := -1
+				if len(validationSplit) > 2 {
+					min = maxLen
+
+					newMaxLen, err := strconv.ParseInt(validationSplit[2], 10, 32)
+					if err != nil {
+						logrus.WithError(err).Error("Failed parsing max len")
+					} else {
+						maxLen = int(newMaxLen)
+					}
+				}
+				err = ValidateStringField(cv, min, maxLen)
 			}
 		}
 
@@ -171,7 +181,7 @@ func ValidateFloatField(f float64, min, max float64) error {
 
 func ValidateRegexField(s string, max int) error {
 	if utf8.RuneCountInString(s) > max {
-		return ErrTooLong
+		return fmt.Errorf("Too long (max %d)", max)
 	}
 
 	_, err := regexp.Compile(s)
@@ -181,16 +191,22 @@ func ValidateRegexField(s string, max int) error {
 	return nil
 }
 
-func ValidateStringField(s string, max int) error {
-	if utf8.RuneCountInString(s) > max {
-		return ErrTooLong
+func ValidateStringField(s string, min, max int) error {
+	rCount := utf8.RuneCountInString(s)
+	if rCount > max {
+		return fmt.Errorf("Too long (max %d)", max)
 	}
+
+	if rCount < min {
+		return fmt.Errorf("Too short (min %d)", min)
+	}
+
 	return nil
 }
 
 func ValidateTemplateField(s string, max int) error {
 	if utf8.RuneCountInString(s) > max {
-		return ErrTooLong
+		return fmt.Errorf("Too long (max %d)", max)
 	}
 
 	_, err := common.ParseExecuteTemplate(s, nil)

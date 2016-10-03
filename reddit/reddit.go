@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"strconv"
+	"strings"
 )
 
 type Plugin struct{}
@@ -47,7 +48,7 @@ func (item *SubredditWatchItem) Set(client *redis.Client) error {
 
 	cmds := []*common.RedisCmd{
 		&common.RedisCmd{Name: "HSET", Args: []interface{}{"guild_subreddit_watch:" + guild, item.ID, serialized}},
-		&common.RedisCmd{Name: "HSET", Args: []interface{}{"global_subreddit_watch:" + item.Sub, fmt.Sprintf("%s:%d", guild, item.ID), serialized}},
+		&common.RedisCmd{Name: "HSET", Args: []interface{}{"global_subreddit_watch:" + strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID), serialized}},
 	}
 
 	_, err = common.SafeRedisCommands(client, cmds)
@@ -58,7 +59,7 @@ func (item *SubredditWatchItem) Remove(client *redis.Client) error {
 	guild := item.Guild
 	cmds := []*common.RedisCmd{
 		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"guild_subreddit_watch:" + guild, item.ID}},
-		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"global_subreddit_watch:" + item.Sub, fmt.Sprintf("%s:%d", guild, item.ID)}},
+		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"global_subreddit_watch:" + strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID)}},
 	}
 	_, err := common.SafeRedisCommands(client, cmds)
 	return err

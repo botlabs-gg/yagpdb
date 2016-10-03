@@ -19,16 +19,26 @@ func RegisterPlugin() {
 	bot.RegisterPlugin(plugin)
 }
 
+/*
+	BanEnabled:           r.FormValue("ban_enabled") == "on",
+	KickEnabled:          r.FormValue("kick_enabled") == "on",
+	ReportEnabled:        r.FormValue("report_enabled") == "on",
+	CleanEnabled:         r.FormValue("clean_enabled") == "on",
+	DeleteMessagesOnKick: r.FormValue("kick_delete_messages") == "on",
+	KickMessage:          r.FormValue("kick_message"),
+	BanMessage:           r.FormValue("ban_message"),
+*/
+
 type Config struct {
-	BanEnabled           bool
-	KickEnabled          bool
-	CleanEnabled         bool
-	ReportEnabled        bool
-	DeleteMessagesOnKick bool
-	ActionChannel        string
-	ReportChannel        string
-	BanMessage           string
-	KickMessage          string
+	BanEnabled           bool   `schema:"ban_enabled"`
+	KickEnabled          bool   `schema:"kick_enabled"`
+	CleanEnabled         bool   `schema:"clean_enabled"`
+	ReportEnabled        bool   `schema:"report_enabled"`
+	DeleteMessagesOnKick bool   `schema:"kick_delete_messages"`
+	ActionChannel        string `schema:"action_channel" valid:"channel,true"`
+	ReportChannel        string `schema:"report_channel" valid:"channel,true"`
+	BanMessage           string `schema:"kick_message" valid:"template,2000"`
+	KickMessage          string `schema:"ban_message" valid:"template,2000"`
 }
 
 func (c *Config) Save(client *redis.Client, guildID string) error {

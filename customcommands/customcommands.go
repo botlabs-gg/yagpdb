@@ -37,11 +37,12 @@ const (
 )
 
 type CustomCommand struct {
-	TriggerType   CommandTriggerType `json:"trigger_type"`
-	Trigger       string             `json:"trigger"`
-	Response      string             `json:"response"`
-	CaseSensitive bool               `json:"case_sensitive"`
-	ID            int                `json:"id"`
+	TriggerType     CommandTriggerType `json:"trigger_type"`
+	TriggerTypeForm string             `json:"-" schema:"type"`
+	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,2000"`
+	Response        string             `json:"response" schema:"response" valid:"template,2000"`
+	CaseSensitive   bool               `json:"case_sensitive" schema:"case_sensitive"`
+	ID              int                `json:"id"`
 }
 
 func GetCommands(client *redis.Client, guild string) ([]*CustomCommand, int, error) {

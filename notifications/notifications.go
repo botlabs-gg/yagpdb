@@ -28,22 +28,22 @@ func (p *Plugin) InitBot() {
 }
 
 type Config struct {
-	JoinServerEnabled bool   `json:"join_server_enabled`
-	JoinServerChannel string `json:"join_server_channel"`
-	JoinServerMsg     string `json:"join_server_msg"`
+	JoinServerEnabled bool   `json:"join_server_enabled" schema:"join_server_enabled"`
+	JoinServerChannel string `json:"join_server_channel" schema:"join_server_channel" valid:"channel,true"`
+	JoinServerMsg     string `json:"join_server_msg" schema:"join_server_msg" valid:"template,2000"`
 
-	JoinDMEnabled bool   `json:"join_dm_enabled"`
-	JoinDMMsg     string `json:"join_dm_msg"`
+	JoinDMEnabled bool   `json:"join_dm_enabled" schema:"join_dm_enabled"`
+	JoinDMMsg     string `json:"join_dm_msg" schema:"join_dm_msg" valid:"template,2000"`
 
-	LeaveEnabled bool   `json:"leave_enabled"`
-	LeaveChannel string `json:"leave_channel"`
-	LeaveMsg     string `json:"leave_msg"`
+	LeaveEnabled bool   `json:"leave_enabled" schema:"leave_enabled"`
+	LeaveChannel string `json:"leave_channel" schema:"leave_channel" valid:"channel,true"`
+	LeaveMsg     string `json:"leave_msg" schema:"leave_msg" valid:"template,500"`
 
-	TopicEnabled bool   `json:"topic_enabled"`
-	TopicChannel string `json:"topic_channel"`
+	TopicEnabled bool   `json:"topic_enabled" schema:"topic_enabled"`
+	TopicChannel string `json:"topic_channel" schema:"topic_channel" valid:"channel,true"`
 
 	// Deprecated
-	// Need to safely remove these fields
+	// Need to safely remove these fields from redis with a script
 	PinEnabled bool   `json:"pin_enabled,omitempty"`
 	PinChannel string `json:"pin_channel,omitempty"`
 }

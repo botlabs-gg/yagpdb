@@ -69,12 +69,14 @@ func (r *RedditBot) Post(post *redditproto.Link) {
 	channels := make([]string, 0)
 OUTER:
 	for _, c := range config {
+		if c.Channel == "" {
+			c.Channel = c.Guild
+		}
 		for _, currentChannel := range channels {
 			if currentChannel == c.Channel {
 				continue OUTER
 			}
 		}
-
 		channels = append(channels, c.Channel)
 	}
 
