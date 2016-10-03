@@ -18,9 +18,13 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 		"g_name":     g.Name,
 	}).Info("Joined guild")
 
-	err := client.Cmd("SADD", "connected_guilds", g.ID).Err
+	n, err := client.Cmd("SADD", "connected_guilds", g.ID).Int()
 	if err != nil {
 		log.WithError(err).Error("Redis error")
+	}
+
+	if n > 0 {
+		log.WithField("g_name", g.Name).Info("Joined new guild!")
 	}
 
 	// Reset this stat
