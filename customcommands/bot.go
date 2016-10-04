@@ -5,8 +5,10 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
@@ -59,7 +61,22 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	_, err = s.ChannelMessageSend(evt.ChannelID, matched.Response)
+	data := map[string]interface{}{
+		"User":    evt.Author,
+		"user":    evt.Author,
+		"Channel": channel,
+	}
+
+	out, err := common.ParseExecuteTemplate(matched.Response, data)
+	if err != nil {
+		out = "Error executing custom command:" + err.Error() + " (Contact support on the yagpdb support server)"
+	}
+
+	if utf8.RuneCountInString(out) > 2000 {
+		out = "Custom command response was longer than 2k (contact an admin on the server...)"
+	}
+
+	_, err = s.ChannelMessageSend(evt.ChannelID, out)
 	if err != nil {
 		log.WithError(err).Error("Failed sending message")
 	}

@@ -34,7 +34,6 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	}
 
 	LoadGuildMembersQueue <- g.ID
-
 }
 
 func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *redis.Client) {
