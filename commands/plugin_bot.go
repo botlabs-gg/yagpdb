@@ -91,6 +91,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					prefixStr = fmt.Sprintf("**Command prefix: %q**\n", prefix)
 				}
 			}
+			prefixStr += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n\n"
 
 			help := CommandSystem.GenerateHelp(target, 0)
 
