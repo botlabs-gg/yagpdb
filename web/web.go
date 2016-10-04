@@ -68,7 +68,7 @@ func runServers(mainMuxer *goji.Mux) {
 
 func setupRoutes() *goji.Mux {
 	requestLogger := &lumberjack.Logger{
-		Filename: "access_log",
+		Filename: "access.log",
 		MaxSize:  10,
 	}
 
