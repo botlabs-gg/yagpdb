@@ -1,7 +1,10 @@
 package web
 
 import (
+	"crypto/tls"
 	log "github.com/Sirupsen/logrus"
+	"github.com/golang/crypto/acme/autocert"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
@@ -24,15 +27,39 @@ var (
 
 func Run() {
 	log.Info("Starting yagpdb web server")
-	var err error
 
 	InitOauth()
 	mux := setupRoutes()
 
-	log.Info("Running webserver")
-	err = http.ListenAndServe(ListenAddress, mux)
+	log.Info("Running webservers")
+	runServers(mux)
+}
+
+func runServers(mainMuxer *goji.Mux) {
+	// launch the redir server
+	go func() {
+		err := http.ListenAndServe(":5000", http.HandlerFunc(httpsRedirHandler))
+		if err != nil {
+			log.Error("Failed http ListenAndServe:", err)
+		}
+	}()
+
+	certManager := autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist(common.Conf.Host),
+	}
+
+	tlsServer := &http.Server{
+		Addr:    ":5001",
+		Handler: mainMuxer,
+		TLSConfig: &tls.Config{
+			GetCertificate: certManager.GetCertificate,
+		},
+	}
+
+	err := tlsServer.ListenAndServeTLS("", "")
 	if err != nil {
-		log.Error("Failed ListenAndServe:", err)
+		log.Error("Failed https ListenAndServeTLS:", err)
 	}
 }
 
@@ -50,6 +77,7 @@ func setupRoutes() *goji.Mux {
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 
 	// General middleware
+	mux.UseC(MiscMiddleware)
 	mux.UseC(RedisMiddleware)
 	mux.UseC(BaseTemplateDataMiddleware)
 	mux.UseC(SessionMiddleware)
@@ -91,4 +119,8 @@ func setupRoutes() *goji.Mux {
 	}
 
 	return mux
+}
+
+func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
 }

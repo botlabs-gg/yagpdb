@@ -39,7 +39,7 @@ func (p *Plugin) InitBot() {
 				total += c.Count
 			}
 
-			header := fmt.Sprintf("Server stats for **%s** *(Also viewable at %s/public/%s/stats)* ", parsed.Guild.Name, common.Conf.Host, parsed.Guild.ID)
+			header := fmt.Sprintf("Server stats for **%s** *(Also viewable at https://%s/public/%s/stats)* ", parsed.Guild.Name, common.Conf.Host, parsed.Guild.ID)
 			body := fmt.Sprintf("Members joined last 24h: **%d**\n", stats.JoinedDay)
 			body += fmt.Sprintf("Members Left last 24h: **%d**\n", stats.LeftDay)
 			body += fmt.Sprintf("Members online: **%d**\n", stats.Online)

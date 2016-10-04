@@ -68,7 +68,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 		}
 
 		if !enabled {
-			go common.SendTempMessage(common.BotSession, time.Second*10, m.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <%s>)*", cs.Name, common.Conf.Host))
+			go common.SendTempMessage(common.BotSession, time.Second*10, m.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host))
 			return nil
 		}
 	}

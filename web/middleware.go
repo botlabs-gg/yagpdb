@@ -19,6 +19,17 @@ import (
 	"time"
 )
 
+// Misc mw that adds some headers, (Strict-Transport-Security)
+func MiscMiddleware(inner goji.Handler) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		// force https for a year
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
+		inner.ServeHTTPC(ctx, w, r)
+	}
+
+	return goji.HandlerFunc(mw)
+}
+
 // Will put a redis client in the context if available
 func RedisMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -119,7 +130,7 @@ func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 
 		origin := r.Header.Get("Origin")
 		if origin != "" {
-			if !strings.EqualFold(common.Conf.Host, origin) {
+			if !strings.EqualFold("https://"+common.Conf.Host, origin) {
 				http.Redirect(w, r, "/?err=bad_origin", http.StatusTemporaryRedirect)
 				return
 			}
