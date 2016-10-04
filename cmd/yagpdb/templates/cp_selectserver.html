@@ -14,16 +14,11 @@
             <div class="col-lg-12">
                 <h1 class="page-header">Welcome to YAGPDB.xyz! Select a server above to get started!</h1>
                 
-                <h3>Version 0.15 <small>04th Oct 2016</small></h3>
-                <p>This update is mostly providing backend changes, and some bugfixes to prepare for going out of alpha soon!</p>
+                <h3>Version 0.16 <small>?? Oct 2016</small></h3>
+                <p>Snails!</p>
                 <ul>
-                    <li>Custom Commands: Added user as template data</li>
-                    <li>Web: Improved form validation most places</li>
-                    <li>Bot: Squashed the persistent no message timestamp bug once and for all... <small>i hope.</small></li>
-                    <li>Bot: Join/Leave messages sent in the same second will now be merged togheter (to handle things like purges of thousands of members better)</li>
-                    <li>Bot: Removed the refreshstreaming command since it's no longer needed as everything will auto update</li>
-                    <li>Bot: Improve member loading on startup (now uses a gateway request instead of rest request)</li>
-                    <li>Backend: Redid all logging</li>
+                    <li>Added https via lets encrypt!</li>
+                    <li>Fixed a bug where streamer plugin would fail to remove streaming status when the status has them not playing any game</li>
                 </ul>
 
                 Probably gonna focus on more moderation tools and moving to self hosted message logs soon.
@@ -50,61 +45,168 @@
 
                 <h2>Older changelogs</h2>
 
-                <h3>Version 0.14 <small>22th Sept 2016</small></h3>
-                <p>This update brings forward a lot of general bugfixes and improvements, about time to move it into beta soon!</p>
-                <ul>
-                    <li><b>Added streaming notifications plugin!</b> This plugin will allow you to give people currently streaming a role, and also send a announcement message in a channel</li>
-                    <li>Large cleanups in backend</li>
-                    <li>General improvements and fixes to the overall control panel site</li>
-                    <li>Increased the max subreddit limit to 25</li>
-                    <li>Set Max custom commands to 50</li>
-                    <li>Auto deleting response now also auto deleted the trigger (Will need manage messages perms for this)</li>
-                    <li>Reddit feed should be more reliable <small>(Still needs some work before i would consider it 100% but it is getting there)</small></li>
-                    <li>Added Catfacts command</li>
-                    <li>Added advice command</li>
-                    <li>Add workaround for panics occuring when doing stuff related with message timestamps after the bot has been running for a while <small>(Added a workaround but need to add a proper fix...)</small></li>
-                    <li>Send a panic message when a command triggers a panic<small>(Something went terribly wrong)</small></li>
-                    <li>Added option for the kick command to delete up to the 100 last messages of a user when kicked</li>
-                </ul>
 
-                <h3>Version 0.13 <small>7th Sept 2016</small></h3>
-                Small update with mosly bugfixes
-                <ul>
-                    <li>Kick and ban commands now to hastebin upload</li>
-                    <li>Fixed not being able to update subreddit in reddit feeds</li>
-                    <li>Fixed commands not running in dm</li>
-                    <li>Set default command prefix to "-"</li>
-                </ul> 
-                
-                <h3>Version 0.12 <small>24th Aug 2016</small></h3>
-                <ul>
-                    <li><b>Topic</b> command that just gives you a conversation topic</li>
-                    <li>You can now specify a direct message that gets sent to people that gets kicked and banned through the bot</li>
-                </ul>
-                
-                <h3>Version 0.11 <small>18th Aug 2016</small></h3>
-                <ul>
-                    <li>Per channel command settings</li>
-                    <li>Reputation plugin now listens for <code>thanks @someone</code></li>
-                </ul>
+                <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading8">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse8" aria-expanded=false aria-controls="collapse8">
+                                    Version 0.15 <small>04th Oct 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse8" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading8">
+                            <div class="panel-body">
+                                <h3>Version 0.15 <small>04th Oct 2016</small></h3>
+                                <p>This update is mostly providing backend changes, and some bugfixes to prepare for going out of alpha soon!</p>
+                                <ul>
+                                    <li>Custom Commands: Added user as template data</li>
+                                    <li>Web: Improved form validation most places</li>
+                                    <li>Bot: Squashed the persistent no message timestamp bug once and for all... <small>i hope.</small></li>
+                                    <li>Bot: Join/Leave messages sent in the same second will now be merged togheter (to handle things like purges of thousands of members better)</li>
+                                    <li>Bot: Removed the refreshstreaming command since it's no longer needed as everything will auto update</li>
+                                    <li>Bot: Improve member loading on startup (now uses a gateway request instead of rest request)</li>
+                                    <li>Backend: Redid all logging</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
-                <h3>Version 0.10 <small>15th Aug 2016</small></h3>
-                <ul>
-                    <li>Fixed everything that depended on message history (clean, pastebin uploads etc...)</li>
-                    <li>Changed to hastebin from pastebin, because i went above the limit</li>
-                    <li>Rewrote the command system</li>
-                    <li>Cleanups behind the scenes</li>
-                </ul>
-                <p>Next version will have per channel command settings hopefully!</p>
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading7">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse7" aria-expanded=false aria-controls="collapse7">
+                                    Version 0.14 <small>22th Sept 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse7" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading7">
+                            <div class="panel-body">
+                                <p>This update brings forward a lot of general bugfixes and improvements, about time to move it into beta soon!</p>
+                                <ul>
+                                    <li><b>Added streaming notifications plugin!</b> This plugin will allow you to give people currently streaming a role, and also send a announcement message in a channel</li>
+                                    <li>Large cleanups in backend</li>
+                                    <li>General improvements and fixes to the overall control panel site</li>
+                                    <li>Increased the max subreddit limit to 25</li>
+                                    <li>Set Max custom commands to 50</li>
+                                    <li>Auto deleting response now also auto deleted the trigger (Will need manage messages perms for this)</li>
+                                    <li>Reddit feed should be more reliable <small>(Still needs some work before i would consider it 100% but it is getting there)</small></li>
+                                    <li>Added Catfacts command</li>
+                                    <li>Added advice command</li>
+                                    <li>Add workaround for panics occuring when doing stuff related with message timestamps after the bot has been running for a while <small>(Added a workaround but need to add a proper fix...)</small></li>
+                                    <li>Send a panic message when a command triggers a panic<small>(Something went terribly wrong)</small></li>
+                                    <li>Added option for the kick command to delete up to the 100 last messages of a user when kicked</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
-                <h3>Version 0.9 <small>11th Aug 2016</small></h3>
-                <ul>
-                    <li>Improved all commands that relied on the message history (pastebin, clean, report) to not be limited by message cache</li>
-                    <li>Added aylien plugin, currently the only command for it is the sentiment command, see help for more info</li>
-                </ul>
-
-                <h3>Version 0.8 <small>9th Aug 2016</small></h3>
-                <p>Version 0.8 is released today with some improved backend changes and the reputation system! The reputation system basically lets you give a person 1 rep every now and then if they were helpfull or something like that. You can find it in the control panel under "Fun"</p>
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading6">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse6" aria-expanded=false aria-controls="collapse6">
+                                    Version 0.13 <small>7th Sept 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse6" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading6">
+                            <div class="panel-body">
+                                Small update with mosly bugfixes
+                                <ul>
+                                    <li>Kick and ban commands now to hastebin upload</li>
+                                    <li>Fixed not being able to update subreddit in reddit feeds</li>
+                                    <li>Fixed commands not running in dm</li>
+                                    <li>Set default command prefix to "-"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading5">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse5" aria-expanded=false aria-controls="collapse5">
+                                    Version 0.12 <small>24th Aug 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse5" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading5">
+                            <div class="panel-body">
+                                <ul>
+                                    <li><b>Topic</b> command that just gives you a conversation topic</li>
+                                    <li>You can now specify a direct message that gets sent to people that gets kicked and banned through the bot</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading4">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse4" aria-expanded=false aria-controls="collapse4">
+                                    Version 0.11 <small>18th Aug 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse4" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading4">
+                            <div class="panel-body">
+                                <ul>
+                                    <li>Per channel command settings</li>
+                                    <li>Reputation plugin now listens for <code>thanks @someone</code></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading3">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse3" aria-expanded=false aria-controls="collapse3">
+                                    Version 0.10 <small>15th Aug 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse3" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading3">
+                            <div class="panel-body">
+                                <ul>
+                                    <li>Fixed everything that depended on message history (clean, pastebin uploads etc...)</li>
+                                    <li>Changed to hastebin from pastebin, because i went above the limit</li>
+                                    <li>Rewrote the command system</li>
+                                    <li>Cleanups behind the scenes</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading2">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse2" aria-expanded=false aria-controls="collapse2">
+                                    Version 0.9 <small>11th Aug 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse2" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading2">
+                            <div class="panel-body">
+                                <ul>
+                                    <li>Improved all commands that relied on the message history (pastebin, clean, report) to not be limited by message cache</li>
+                                    <li>Added aylien plugin, currently the only command for it is the sentiment command, see help for more info</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading1">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse1" aria-expanded=false aria-controls="collapse1">
+                                    Version 0.8 <small>9th Aug 2016</small>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapse1" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading1">
+                            <div class="panel-body">
+                                <p>Version 0.8 is released today with some improved backend changes and the reputation system! The reputation system basically lets you give a person 1 rep every now and then if they were helpfull or something like that. You can find it in the control panel under "Fun"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- /.col-lg-12 -->
         </div>
@@ -118,3 +220,4 @@
 {{template "cp_footer" .}}
 
 {{end}}
+
