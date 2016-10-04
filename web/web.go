@@ -44,9 +44,12 @@ func runServers(mainMuxer *goji.Mux) {
 		}
 	}()
 
+	cache := autocert.DirCache("cert")
+
 	certManager := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist(common.Conf.Host),
+		Cache:      cache,
 	}
 
 	tlsServer := &http.Server{
