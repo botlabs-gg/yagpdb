@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +40,7 @@ func (p *Plugin) InitBot() {
 	CommandSystem.RegisterCommands(GlobalCommands...)
 
 	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
+	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
 }
 
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
@@ -380,6 +382,16 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return advice, nil
 		},
 	},
+	&CustomCommand{
+		Cooldown: 5,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "ping",
+			Description: "Ahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
+		},
+	},
 }
 
 type AdviceSlip struct {
@@ -407,4 +419,19 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 		client.Cmd("SET", "command_prefix:"+g.ID, "-")
 		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (-)")
 	}
+}
+
+func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, client *redis.Client) {
+	split := strings.Split(m.Content, ";")
+	if split[0] != ":PONG" || len(split) < 2 {
+		return
+	}
+
+	parsed, err := strconv.ParseInt(split[1], 10, 64)
+	if err != nil {
+		return
+	}
+
+	taken := time.Duration(time.Now().UnixNano() - parsed)
+	s.ChannelMessageEdit(m.ChannelID, m.ID, "Received pong, took: "+taken.String())
 }
