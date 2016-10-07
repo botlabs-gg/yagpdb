@@ -23,6 +23,7 @@ const (
 type Form struct {
 	Subreddit string `schema:"subreddit" valid:",1,100"`
 	Channel   string `schema:"channel" valid:"channel,false`
+	ID        int    `schema:"id"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -125,12 +126,6 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
 
-	id := pat.Param(ctx, "item")
-	idInt, err := strconv.ParseInt(id, 10, 32)
-	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))
-	}
-
 	updated := ctx.Value(web.ContextKeyParsedForm).(*Form)
 	ok := ctx.Value(web.ContextKeyFormOk).(bool)
 	if !ok {
@@ -138,7 +133,7 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	}
 	updated.Subreddit = strings.TrimSpace(updated.Subreddit)
 
-	item := FindWatchItem(currentConfig, int(idInt))
+	item := FindWatchItem(currentConfig, updated.ID)
 	if item == nil {
 		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
@@ -146,6 +141,7 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	subIsNew := !strings.EqualFold(updated.Subreddit, item.Sub)
 	item.Channel = updated.Channel
 
+	var err error
 	if !subIsNew {
 		// Pretty simple then
 		err = item.Set(client)

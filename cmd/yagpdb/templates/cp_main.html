@@ -81,23 +81,28 @@
     <!-- Custom Theme JavaScript -->
     <script src="/static/dist/js/sb-admin-2.js"></script>
 
+    <!-- ;)))) -->
+    <script src="/static/dist/js/spongebob.js"></script>
+
 </body>
 
 </html>
 {{end}}
 
 {{define "cp_alerts"}}
-{{if .Alerts}}
-<div class="row">
-    <div class="col-lg-12">
-        {{range .Alerts}}
-        <div class="alert alert-{{.Style}}">
-            {{.Message}}
+<div id="alerts">
+    {{if .Alerts}}
+    <div class="row">
+        <div class="col-lg-12">
+            {{range .Alerts}}
+            <div class="alert alert-{{.Style}}">
+                {{.Message}}
+            </div>
+            {{end}}   
         </div>
-        {{end}}   
     </div>
+    {{end}}
 </div>
-{{end}}
 {{end}}
 
 {{define "channel_options"}}

@@ -48,6 +48,7 @@
                             {{$channels := .ActiveGuild.Channels}}
                             {{range .RedditConfig}}
                             <form class="form-inline" method="post" action="/cp/{{$guild}}/reddit/{{.ID}}/update">
+                                <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
                                 <div class="form-group">
                                     <label for="subreddit">Subreddit</label>
                                     <input type="text" class="form-control" id="subreddit" name="subreddit" placeholder="" value="{{.Sub}}">

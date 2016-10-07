@@ -10,7 +10,6 @@ import (
 	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
-	"strconv"
 	"unicode/utf8"
 )
 
@@ -86,16 +85,12 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	cmdIndex := pat.Param(ctx, "cmd")
-	id, _ := strconv.ParseInt(cmdIndex, 10, 32)
-
 	newCmd := ctx.Value(web.ContextKeyParsedForm).(*CustomCommand)
 	ok := ctx.Value(web.ContextKeyFormOk).(bool)
 	if !ok {
 		return templateData
 	}
 
-	newCmd.ID = int(id)
 	newCmd.TriggerType = TriggerTypeFromForm(newCmd.TriggerTypeForm)
 
 	serialized, err := json.Marshal(newCmd)
@@ -103,22 +98,15 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return templateData
 	}
 
-	err = client.Cmd("HSET", "custom_commands:"+activeGuild.ID, cmdIndex, serialized).Err
+	err = client.Cmd("HSET", "custom_commands:"+activeGuild.ID, newCmd.ID, serialized).Err
 	if web.CheckErr(templateData, err, "Failed saving command", logrus.Error) {
 		return templateData
 	}
 
-	commands, _, err := GetCommands(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed retrieving commands", logrus.Error) {
-		return templateData
-	}
-
-	templateData["CustomCommands"] = commands
-
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, activeGuild.ID, "Updated command #"+cmdIndex)
+	common.AddCPLogEntry(user, activeGuild.ID, "Updated command #", newCmd.ID)
 
-	return templateData
+	return HandleCommands(ctx, w, r)
 }
 
 func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
@@ -131,17 +119,10 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return templateData
 	}
 
-	commands, _, err := GetCommands(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed retrieving commands", logrus.Error) {
-		return templateData
-	}
-
-	templateData["CustomCommands"] = commands
-
 	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, activeGuild.ID, "Deleted command #"+cmdIndex)
 
-	return templateData
+	return HandleCommands(ctx, w, r)
 }
 
 func TriggerTypeFromForm(str string) CommandTriggerType {
