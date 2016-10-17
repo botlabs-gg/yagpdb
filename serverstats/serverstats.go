@@ -139,11 +139,15 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 		return nil, err
 	}
 
-	members, err := client.Cmd("GET", "guild_stats_num_members:"+guildID).Int()
-	if err != nil {
-		if _, ok := err.(*redis.CmdError); !ok {
+	members := 0
+	reply := client.Cmd("GET", "guild_stats_num_members:"+guildID)
+	if reply.Type != redis.NilReply {
+		var err error
+		members, err = reply.Int()
+		if err != nil {
 			return nil, err
 		}
+
 	}
 
 	stats := &FullStats{
