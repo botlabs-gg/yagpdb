@@ -13,6 +13,15 @@ import (
 	"time"
 )
 
+type CommandCategory string
+
+const (
+	CategoryGeneral    CommandCategory = "General"
+	CategoryTool       CommandCategory = "Tools"
+	CategoryModeration CommandCategory = "Moderation"
+	CategoryFun        CommandCategory = "Misc/Fun"
+)
+
 var (
 	RKeyCommandCooldown = func(uID, cmd string) string { return "cmd_cd:" + uID + ":" + cmd }
 )
@@ -24,6 +33,7 @@ type CustomCommand struct {
 	Key      string // GuildId is appended to the key, e.g if key is "test:", it will check for "test:<guildid>"
 	Default  bool   // The default state of this command
 	Cooldown int    // Cooldown in seconds before user can use it again
+	Category CommandCategory
 	RunFunc  func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error)
 }
 
@@ -126,7 +136,7 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 }
 
 func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
-	log.Infof("Handled Command [%4dms] %s: %s\n", int(dur.Seconds()*1000), sender, raw)
+	log.Infof("Handled Command [%4dms] %s: %s", int(dur.Seconds()*1000), sender, raw)
 }
 
 func (cs *CustomCommand) deleteResponse(msgs []*discordgo.Message) {

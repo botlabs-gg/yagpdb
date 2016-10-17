@@ -89,6 +89,7 @@
 </html>
 {{end}}
 
+{{/*Displays alerts*/}}
 {{define "cp_alerts"}}
 <div id="alerts">
     {{if .Alerts}}
@@ -105,15 +106,33 @@
 </div>
 {{end}}
 
+{{/*
+Argumens
+Channels - list of channels
+Selected - id of the selected channel
+*/}}
 {{define "channel_options"}}
-    {{range .}}{{if eq .Type "text"}}<option value="{{.ID}}">#{{.Name}}</option>{{end}}{{end}}
+    {{$selected := or .Selected ""}}
+    {{range .Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}    
 {{end}}
 
+{{/*
+Argumens
+Roles - list of roles
+Selected - id of the selected channel
+*/}}
+{{define "role_options"}}
+    {{$selected := or .Selected ""}}
+    {{range .Roles}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>{{end}}
+{{end}}
+
+{{/*Help block for templating*/}}
 {{define "template_help"}}
 <p>To include the user or server in the message you can use the template data included, the templating engine used is go's text/template<br/>
 Some quick examples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - Will be replaced by server name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - The users id and so on..<br/>
 To mention the user for example you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code></p>
 {{end}}
 
+{{/*Specific template helpers*/}}
 {{define "template_helper_user"}}<code>{{"{{"}}.User.(ID/Username/Discriminator/Bot{{"}}"}}</code>{{end}}
 {{define "template_helper_guild"}}<code>{{"{{"}}.Server.(ID/Name/Icon/Owner/Permissions){{"}}"}}</code>{{end}}

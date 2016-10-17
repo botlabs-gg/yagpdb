@@ -32,7 +32,7 @@
                                             <select class="form-control" name="action_channel">
                                             {{$selected := .ModConfig.ActionChannel}}
                                             <option value="" {{if eq $selected ""}} selected{{end}}>Same as command was sent in</option>
-                                            {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                            {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
                                             </select>
                                         </div>
                                         <div class="checkbox">
@@ -66,7 +66,7 @@
                                             <select class="form-control" name="report_channel">
                                             {{$selected := .ModConfig.ReportChannel}}
                                             <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                            {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                            {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
                                             </select>
                                         </div>
                                         <div class="checkbox">

@@ -63,9 +63,66 @@ func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) str
 	return prefix
 }
 
+func GenerateHelp(target string) string {
+	if target != "" {
+		return CommandSystem.GenerateHelp(target, 100)
+	}
+
+	categories := make(map[CommandCategory][]*CustomCommand)
+
+	for _, v := range CommandSystem.Commands {
+		cast := v.(*CustomCommand)
+		categories[cast.Category] = append(categories[cast.Category], cast)
+	}
+
+	out := "```ini\n"
+
+	out += `[Legend] 
+#{alias1, alias2...} <required arg> (optional arg)
+#Example:
+#Help        = {hlp}   (command)       : blablabla
+# |             |          |                |
+#Comand name, Aliases,  optional arg,    Description
+
+`
+
+	// Do it manually to preserve order
+	out += "[General] # General YAGPDB commands"
+	out += generateComandsHelp(categories[CategoryGeneral]) + "\n"
+
+	out += "\n[Tools]"
+	out += generateComandsHelp(categories[CategoryTool]) + "\n"
+
+	out += "\n[Moderation] # These are off by default"
+	out += generateComandsHelp(categories[CategoryModeration]) + "\n"
+
+	out += "\n[Misc/Fun] # Fun commands for family and friends!"
+	out += generateComandsHelp(categories[CategoryFun]) + "\n"
+
+	unknown, ok := categories[CommandCategory("")]
+	if ok {
+		out += "\n[Unknown] # ??"
+		out += generateComandsHelp(unknown) + "\n"
+	}
+
+	out += "```"
+	return out
+}
+
+func generateComandsHelp(cmds []*CustomCommand) string {
+	out := ""
+	for _, v := range cmds {
+		if !v.HideFromHelp {
+			out += "\n" + v.GenerateHelp("", 100, 0)
+		}
+	}
+	return out
+}
+
 var GlobalCommands = []commandsystem.CommandHandler{
 	&CustomCommand{
 		Cooldown: 10,
+		Category: CategoryGeneral,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Help",
 			Description: "Shows help abut all or one specific command",
@@ -95,7 +152,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 			prefixStr += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n\n"
 
-			help := CommandSystem.GenerateHelp(target, 0)
+			help := GenerateHelp(target)
 
 			privateChannel, err := bot.GetCreatePrivateChannel(common.BotSession, m.Author.ID)
 			if err != nil {
@@ -103,12 +160,13 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 
 			dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
-			return "", nil
+			return "You've Got Mail!", nil
 		},
 	},
 	// Status command shows the bot's status, stuff like version, conntected servers, uptime, memory used etc..
 	&CustomCommand{
-		Cooldown: 2,
+		Cooldown: 5,
+		Category: CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Status",
 			Description: "Shows yagpdb status",
@@ -135,6 +193,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	// Some fun commands because why not
 	&CustomCommand{
+		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Reverse",
 			Aliases:      []string{"r", "rev"},
@@ -156,6 +215,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&CustomCommand{
+		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Weather",
 			Aliases:      []string{"w"},
@@ -204,20 +264,20 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&CustomCommand{
+		Category: CategoryGeneral,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Invite",
 			Aliases:     []string{"inv", "i"},
-			Description: "Responds with bto invite link",
+			Description: "Responds with bot invite link",
 			RunInDm:     true,
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			clientId := common.Conf.ClientID
-			link := fmt.Sprintf("https://discordapp.com/oauth2/authorize?client_id=%s&scope=bot&permissions=535948311&response_type=code&redirect_uri=http://yagpdb.xyz/cp/", clientId)
-			return "You manage this bot through the control panel interface but heres an invite link incase you just want that\n" + link, nil
+			return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
 		},
 	},
 	&CustomCommand{
 		Cooldown: 20,
+		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Ascii",
 			Aliases:      []string{"asci"},
@@ -246,6 +306,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&CustomCommand{
+		Category: CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Calc",
 			Aliases:      []string{"c", "calculate"},
@@ -269,6 +330,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown: 30,
+		Category: CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Hastebin",
 			Aliases:     []string{"ps", "paste", "pastebin"},
@@ -284,6 +346,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown: 5,
+		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Topic",
 			Description: "Generates a chat topic",
@@ -300,6 +363,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown: 5,
+		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "CatFact",
 			Aliases:     []string{"cf", "cat", "catfacts"},
@@ -332,6 +396,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown: 5,
+		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Advice",
 			Description: "Get a advice",
@@ -384,6 +449,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown: 5,
+		Category: CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "ping",
 			Description: "Ahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",

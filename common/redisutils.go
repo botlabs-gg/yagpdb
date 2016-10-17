@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"github.com/fzzy/radix/redis"
 	"strings"
 	"time"
@@ -25,4 +26,13 @@ func RedisDialFunc(network, addr string) (client *redis.Client, err error) {
 	}
 
 	return
+}
+
+func GenID(client *redis.Client, key string) string {
+	idInt, err := client.Cmd("INCR", key).Int64()
+	if err != nil {
+		panic(err)
+	}
+
+	return fmt.Sprintf("r%d", idInt)
 }

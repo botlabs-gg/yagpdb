@@ -46,6 +46,8 @@ func (p *Plugin) Name() string {
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
+		Category: commands.CategoryFun,
+		Cooldown: 5,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "sentiment",
 			Aliases:     []string{"sent"},
@@ -118,6 +120,7 @@ func (p *Plugin) InitBot() {
 		// This is a fun little always positive 8ball
 		&commands.CustomCommand{
 			Cooldown: 5,
+			Category: commands.CategoryFun,
 			SimpleCommand: &commandsystem.SimpleCommand{
 				Name:        "8Ball",
 				Description: "Wisdom",
@@ -157,5 +160,6 @@ func (p *Plugin) InitBot() {
 				}
 				return "Dunno", nil
 			},
-		})
+		},
+	)
 }

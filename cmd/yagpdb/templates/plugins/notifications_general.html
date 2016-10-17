@@ -1,12 +1,7 @@
 {{define "cp_notifications_general"}}
-
 {{template "cp_head" .}}
-
-
     <div id="wrapper">
-
     {{template "cp_nav" .}}
-
         <div id="page-wrapper">
             <div class="row">
                 <div class="col-lg-12">
@@ -36,7 +31,7 @@
                                             <select class="form-control" name="join_server_channel">
                                                 {{$selected := .NotifyConfig.JoinServerChannel}}
                                                 <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                                {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                                {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
                                             </select>
                                         </div>
                                         <div class="form-group">
@@ -62,7 +57,7 @@
                                             <select class="form-control" name="leave_channel">
                                                 {{$selected := .NotifyConfig.LeaveChannel}}
                                                 <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                                {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                                {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
                                             </select>
                                         </div>
                                         <div class="form-group">
@@ -112,7 +107,7 @@
                                             <select class="form-control" name="topic_channel">
                                                 {{$selected := .NotifyConfig.TopicChannel}}
                                                 <option value="" {{if eq $selected ""}} selected{{end}}>Channel event occured in</option>
-                                                {{range .ActiveGuild.Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                                {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
                                             </select>
                                         </div>
                                     </div>

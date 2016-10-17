@@ -32,7 +32,7 @@
                                 <div class="form-group">
                                     <label for="channel">Server Channel</label>
                                     <select id="channel" class="form-control" name="channel">
-                                        {{template "channel_options" .ActiveGuild.Channels}}
+                                        {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" "0"}}
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-default">Add</button>
@@ -57,7 +57,7 @@
                                     <label for="channel">Channel</label>
                                     <select id="channel" class="form-control" name="channel">
                                         {{$selected := .Channel}}
-                                        {{range $channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}
+                                        {{mTemplate "channel_options" "Channels" $channels "Selected" .Channel}}
                                     </select>
                                 </div>
                                 <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->

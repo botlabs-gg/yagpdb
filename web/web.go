@@ -26,6 +26,11 @@ var (
 )
 
 func Run() {
+	Templates.Funcs(template.FuncMap{
+		"dict":      dictionary,
+		"mTemplate": mTemplate,
+		"in":        in,
+	})
 	log.Info("Starting yagpdb web server")
 
 	InitOauth()

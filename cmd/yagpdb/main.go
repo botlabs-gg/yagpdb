@@ -5,6 +5,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -102,6 +103,7 @@ func main() {
 	reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
+	automod.RegisterPlugin()
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()

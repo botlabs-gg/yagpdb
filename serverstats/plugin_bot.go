@@ -23,10 +23,11 @@ func (p *Plugin) InitBot() {
 
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		Key:      "stats_settings_public:",
+		Category: commands.CategoryTool,
 		Cooldown: 10,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Stats",
-			Description: "Shows server stats",
+			Description: "Shows server stats (if public stats are enabled)",
 		},
 		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			stats, err := RetrieveFullStats(client, parsed.Guild.ID)

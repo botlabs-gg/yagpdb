@@ -105,7 +105,8 @@ func CheckCooldown(client *redis.Client, guildID, userID string) (int, error) {
 
 var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
-		Key: "reputation_enabled:",
+		Key:      "reputation_enabled:",
+		Category: commands.CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "GiveRep",
 			Aliases:      []string{"+", "+rep"},
@@ -143,7 +144,8 @@ var cmds = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Key: "reputation_enabled:",
+		Key:      "reputation_enabled:",
+		Category: commands.CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "rep",
 			Description: "Shows yours or the specified users current rep and rank",

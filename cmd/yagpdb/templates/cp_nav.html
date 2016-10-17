@@ -104,10 +104,23 @@
                 <!-- /.nav-second-level -->
             </li>
             <li>
-                <a href="#"><i class="fa fa-trophy fa-fw"></i> Fun &amp; Utilities <span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-bolt fa-fw"></i> Tools &amp; utilities <span class="label label-success">New!</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    <li>
+                        <a href="/cp/{{.ActiveGuild.ID}}/automod">Automoderator <span class="label label-success">New!</span></a>
+                    </li>
+                    </li>
+                </ul>
+                <!-- /.nav-second-level -->
+            </li>
+            <li>
+                <a href="#"><i class="fa fa-trophy fa-fw"></i> Fun <span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
                         <a href="/cp/{{.ActiveGuild.ID}}/reputation">Reputation</a>
+                    </li>
+                    <li>
+                        <p>Make suggestions for new fun additions!</p>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->
@@ -121,7 +134,7 @@
 
 {{define "cp_nav"}}
 <!-- Navigation -->
-<nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
     {{template "cp_nav_top" .}}
     {{template "cp_nav_sidebar" .}}    
 </nav>

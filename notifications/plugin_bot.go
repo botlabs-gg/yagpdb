@@ -75,7 +75,7 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 
 	guild, err := s.State.Guild(evt.GuildID)
 	if err != nil {
-		log.WithError(err).WithField("guild", guild.ID).Error("Guild not found in state")
+		log.WithError(err).Error("Guild not found in state")
 		return // We can't process this then
 	}
 

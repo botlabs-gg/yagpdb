@@ -41,7 +41,8 @@ func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
 
 var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
-		Key: "moderation_ban_enabled:",
+		Key:      "moderation_ban_enabled:",
+		Category: commands.CategoryModeration,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Ban",
 			Description:  "Bans a member",
@@ -108,7 +109,9 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Key: "moderation_kick_enabled:",
+		Key:      "moderation_kick_enabled:",
+		Category: commands.CategoryModeration,
+		Cooldown: 5,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Kick",
 			Description:  "Kicks a member",
@@ -202,6 +205,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Key:      "moderation_report_enabled:",
 		Cooldown: 5,
+		Category: commands.CategoryModeration,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Report",
 			Description:  "Reports a member",
@@ -243,6 +247,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Key:      "moderation_clean_enabled:",
 		Cooldown: 5,
+		Category: commands.CategoryModeration,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:                  "Clean",
 			Description:           "Cleans the chat",
