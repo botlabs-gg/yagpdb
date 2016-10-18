@@ -85,6 +85,7 @@ func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	templateData["GuildName"] = activeGuild.Name
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/stats/"
 
 	return templateData
 }

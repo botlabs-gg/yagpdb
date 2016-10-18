@@ -39,6 +39,7 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 
 func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
 	newCmd := ctx.Value(web.ContextKeyParsedForm).(*CustomCommand)
 	ok := ctx.Value(web.ContextKeyFormOk).(bool)
@@ -84,6 +85,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 
 func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
 	newCmd := ctx.Value(web.ContextKeyParsedForm).(*CustomCommand)
 	ok := ctx.Value(web.ContextKeyFormOk).(bool)
@@ -111,6 +113,7 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
 	cmdIndex := pat.Param(ctx, "cmd")
 

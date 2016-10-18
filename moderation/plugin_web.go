@@ -38,6 +38,7 @@ func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Reques
 // Update the settings
 func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/moderation/"
 
 	newConfig := ctx.Value(web.ContextKeyParsedForm).(*Config)
 	templateData["ModConfig"] = newConfig

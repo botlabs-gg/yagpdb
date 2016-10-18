@@ -31,6 +31,7 @@ func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reputation/"
 
 	currentSettings, err := GetFullSettings(client, activeGuild.ID)
 	if web.CheckErr(templateData, err, "Failed retrieving settings", logrus.Error) {

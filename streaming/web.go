@@ -55,6 +55,7 @@ func baseData(inner goji.Handler) goji.Handler {
 
 func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, guild, tmpl := web.GetBaseCPContextData(ctx)
+	tmpl["VisibleURL"] = "/cp/" + guild.ID + "/streaming/"
 
 	ok := ctx.Value(web.ContextKeyFormOk).(bool)
 	newConf := ctx.Value(web.ContextKeyParsedForm).(*Config)

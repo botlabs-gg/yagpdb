@@ -32,6 +32,7 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 // Handles more general command settings (prefix)
 func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
 	channels := ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel)
 
 	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, strings.TrimSpace(r.FormValue("prefix"))).Err
@@ -53,6 +54,8 @@ func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Reque
 // Handles the updating of global and per channel command settings
 func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
+
 	channels := ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel)
 
 	config := GetConfig(client, activeGuild.ID, channels)

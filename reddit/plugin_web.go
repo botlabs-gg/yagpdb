@@ -51,6 +51,7 @@ func (p *Plugin) InitWeb() {
 func baseData(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+		templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reddit/"
 
 		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+activeGuild.ID)
 		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", log.Error) {
