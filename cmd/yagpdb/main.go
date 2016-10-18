@@ -18,6 +18,7 @@ import (
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
+	//"github.com/wercker/journalhook"
 )
 
 var (
@@ -54,6 +55,8 @@ func init() {
 func main() {
 
 	log.AddHook(common.ContextHook{})
+	//log.AddHook(&journalhook.JournalHook{})
+	//journalhook.Enable()
 
 	if flagLogTimestamp {
 		web.LogRequestTimestamps = true

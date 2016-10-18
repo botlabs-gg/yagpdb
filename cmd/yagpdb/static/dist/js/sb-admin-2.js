@@ -26,6 +26,11 @@ $(function() {
         }
     });
 
+    $('#tabs a').click(function (e) {
+        e.preventDefault()
+        $(this).tab('show')
+    })
+
     var url = window.location;
     var element = $('ul.nav a').filter(function() {
         return this.href == url || url.href.indexOf(this.href) == 0;

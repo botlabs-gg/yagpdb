@@ -157,6 +157,10 @@ func GetConfig(client *redis.Client, guild string, channels []*discordgo.Channel
 	var config *CommandsConfig
 	err := common.GetRedisJson(client, "commands_settings:"+guild, &config)
 	if err != nil {
+		log.WithError(err).Error("Error retrieving command settings")
+	}
+
+	if config == nil {
 		config = &CommandsConfig{}
 	}
 

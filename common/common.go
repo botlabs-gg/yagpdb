@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	VERSION = "0.15 Eternal ALPHA"
+	VERSION = "0.16 Git Dank ALPHA"
 )
 
 var (

@@ -53,9 +53,10 @@ var DefaultConfig = &Config{}
 func GetConfig(client *redis.Client, server string) *Config {
 	var config *Config
 	if err := common.GetRedisJson(client, "notifications/general:"+server, &config); err != nil {
-		if _, ok := err.(*redis.CmdError); ok {
-			log.WithError(err).WithField("guild", server).Error("Failed retrieving noifications config")
-		}
+		log.WithError(err).WithField("guild", server).Error("Failed retrieving noifications config")
+		return DefaultConfig
+	}
+	if config == nil {
 		return DefaultConfig
 	}
 	return config

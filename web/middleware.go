@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/redis"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -386,4 +387,30 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 	}
 	return goji.HandlerFunc(mw)
 
+}
+
+type SimpleConfigSaver interface {
+	Save(guildID string, client *redis.Client) error
+}
+
+// Uses the FormParserMW to parse and validate the form, then saves it
+func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler goji.Handler) goji.Handler {
+	return FormParserMW(goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		client, g, templateData := GetBaseCPContextData(ctx)
+
+		if extraHandler != nil {
+			defer extraHandler.ServeHTTPC(ctx, w, r)
+		}
+
+		form := ctx.Value(ContextKeyParsedForm).(SimpleConfigSaver)
+		ok := ctx.Value(ContextKeyFormOk).(bool)
+		if !ok {
+			return
+		}
+
+		err := form.Save(g.ID, client)
+		if !CheckErr(templateData, err, "Failed saving config", log.Error) {
+			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
+		}
+	}), t)
 }

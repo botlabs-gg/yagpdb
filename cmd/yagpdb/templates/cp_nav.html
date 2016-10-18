@@ -42,7 +42,7 @@
     </li>
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-user fa-fw"></i> {{.User.Username}} <-- smells bad! <i class="fa fa-caret-down"></i>
+            <i class="fa fa-user fa-fw"></i>{{adjective | title}} {{.User.Username}} <i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">
             <li><a href=""><i class="fa fa-user fa-fw"></i> Admire yourself</a>
@@ -86,7 +86,7 @@
                 <!-- /.nav-second-level -->
             </li>
             <li>
-                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications and Feeds <span class="label label-success">New!</span><span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications &amp; Feeds <span class="label label-success">Updated!</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
                         <a href="/cp/{{.ActiveGuild.ID}}/notifications/general">General</a>
@@ -107,7 +107,7 @@
                 <a href="#"><i class="fa fa-bolt fa-fw"></i> Tools &amp; utilities <span class="label label-success">New!</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a href="/cp/{{.ActiveGuild.ID}}/automod">Automoderator <span class="label label-success">New!</span></a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/automod">Automoderator <span class="label label-success">New! Beta!</span></a>
                     </li>
                     </li>
                 </ul>

@@ -1,0 +1,292 @@
+{{define "cp_automod"}}
+
+{{template "cp_head" .}}
+
+    <div id="wrapper">
+    {{template "cp_nav" .}}
+        <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">Automoderator {{if .Enabled}}<span class="label label-success">Enabled</span>{{else}}<span class="label label-danger">Disabled</span>{{end}}</h1> 
+                    <!-- {{template "template_help"}} -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+
+            {{template "cp_alerts" .}}
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">General</a></li>
+                        <li role="presentation"><a href="#spam" aria-controls="spam" role="tab" data-toggle="tab">Spam/Slowmode</a></li>
+                        <li role="presentation"><a href="#mass-mention" aria-controls="mass-mention" role="tab" data-toggle="tab">Mass Mention</a></li>
+                        <li role="presentation"><a href="#invites" aria-controls="invites" role="tab" data-toggle="tab">Server Invites</a></li>
+                        <li role="presentation"><a href="#banned-words" aria-controls="banned-words" role="tab" data-toggle="tab">Banned words</a></li>
+                        <li role="presentation"><a href="#banned-websites" aria-controls="banned-websites" role="tab" data-toggle="tab">Banned websites</a></li>
+                    </ul>
+
+                    <!-- Tab panesy -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="general">{{template "automod_general" .}}</div>
+                        <div role="tabpanel" class="tab-pane" id="spam">{{template "automod_spam" .}}</div>
+                        <div role="tabpanel" class="tab-pane" id="mass-mention">{{template "automod_mention" .}}</div>
+                        <div role="tabpanel" class="tab-pane" id="invites">{{template "automod_invite" .}}</div>
+                        <div role="tabpanel" class="tab-pane" id="banned-words">{{template "automod_banned_words" .}}</div>
+                        <div role="tabpanel" class="tab-pane" id="banned-websites">{{template "automod_banned_websites" .}}</div>
+                    </div>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->            
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+{{template "cp_footer" .}}
+{{end}}
+
+<!-- GENERAL -->
+{{define "automod_general"}}
+        <div class="row">
+            <div class="col-lg-12">
+                <br/>
+                <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/automod/general">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="Enabled" {{if .Enabled }} checked{{end}}> Enable/Disable Automoderator
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-success">Save</button>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <h2>Informaion</h2>
+                <p>Automoderator helps performing mundane and repetetive duties on servers. Automoderator deals with the following cases:</p>
+                <ul>
+                    <li><b>Spam/slowmode:</b> You can set up a rule to only allow up to a certain amount of messages within a certain amount of seconds</li>
+                    <li><b>Mass mentions:</b> You can set up a rule to detect messages which contains more than a certain amount of mentions in them</li>
+                    <li><b>Invite links:</b> You can set up a rule for invite links (for example delete every invite link if they don't have a certain role)</li>
+                    <li><b>Bad words/websites:</b> YAGPDB comes with a builtin list of bad sites and swear words you can use if you want, or you can define your own.</li>
+                </ul>
+                <p>If you need any help setting up a rule, join the support server above. Keep in mind this feature is still in beta testing.</p>                
+            </div>
+        </div>
+{{end}}
+
+<!-- SPAM -->
+{{define "automod_spam"}}
+<div class="col-lg-12">
+    <form method="post" action="/cp/{{.ActiveGuild.ID}}/automod/spam">
+        {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .Spam "ID" "spam"}}
+        
+        <div class="form-group">
+            <label for="NumMessages">Number of messages</label>
+            <input type="number" class="form-control" name="NumMessages" value="{{.Spam.NumMessages}}"></input>
+            <p class="help-block">Number of messages sent within the time frame below for it to be triggered</p>
+        </div>
+        <div class="form-group">
+            <label for="Within">Within</label>
+            <input type="number" class="form-control" name="Within" value="{{.Spam.Within}}"></input>
+            <p class="help-block">The timeframe to check messages from, good value for this is 10s, you can't go above 3600 (an hour)</p>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+    </form>
+</div>
+{{end}}
+
+<!-- MASS MENTION -->
+{{define "automod_mention"}}
+<div class="col-lg-12">
+    <form method="post" action="/cp/{{.ActiveGuild.ID}}/automod/mention">
+        {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .Mention "ID" "mention"}}
+        
+        <div class="form-group">
+            <label for="Treshold">Mentions Treshold</label>
+            <input type="number" class="form-control" name="Treshold" value="{{.Mention.Treshold}}"></input>
+            <p class="help-block">Number of mentions in a message for it to trigger</p>
+        </div>
+
+        <button type="submit" class="btn btn-success">Save</button>
+    </form>
+</div>
+{{end}}
+
+<!-- SERVER INVITE -->
+{{define "automod_invite"}}
+<div class="col-lg-12">
+    <form method="post" action="/cp/{{.ActiveGuild.ID}}/automod/invite">
+
+        {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .Invite "ID" "invite"}}
+
+        <button type="submit" class="btn btn-success">Save</button>
+    </form>
+</div>
+{{end}}
+
+<!-- BANNED WORDS -->
+{{define "automod_banned_words"}}
+<form method="post" action="/cp/{{.ActiveGuild.ID}}/automod/words">
+    <div class="col-lg-12">
+        {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .Words "ID" "words"}}
+
+        <p class="help-block">Built in lists</p>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="BuiltinSwearWords" {{if .Words.BuiltinSwearWords }} checked{{end}}> Ban builtin swear words
+            </label>
+        </div>
+        <br/>
+        <div class="form-group">
+            <label>Banned words</label>
+            <p class="help-block"> Seperate entries by space or lines</p>
+            <textarea class="form-control" name="BannedWords" rows="10">{{.Words.BannedWords}}</textarea>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+    </div>
+</form>
+{{end}}
+
+<!-- BANNED WEBSITES -->
+{{define "automod_banned_websites"}}
+<form method="post" action="/cp/{{.ActiveGuild.ID}}/automod/sites">
+    <div class="col-lg-12">
+        {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .Sites "ID" "sites"}}
+
+        <p class="help-block">Built in lists</p>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="BuiltinBadSites" {{if .Sites.BuiltinBadSites }} checked{{end}}> Ban builtin malware/scam sites
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="BuiltinPornSites" {{if .Sites.BuiltinPornSites }} checked{{end}}> Ban builtin porn sites
+            </label>
+        </div>
+        <div class="form-group">
+            <label>Banned sites</label>
+            <p class="help-block"> Seperate entries by space or lines<br/>Only type the host, For example if you want to block google you would add "google.com", NOT "http://google.com"</p>
+            <textarea class="form-control" name="BannedWebsites" rows="10">{{.Sites.BannedWebsites}}</textarea>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+    </div>
+</form>
+{{end}}
+
+
+
+<!-- BANNED WORDS AND LINKS -->
+{{define "sss"}}
+<div class="col-lg-12">
+    <form class="form-horizontal" method="post" action="/cp/{{.ActiveGuild.ID}}/automod/lists">
+        <div class="col-lg-12">
+        <div class="row">
+            <div class="col-lg-12">
+                <p>Built in lists</p>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="BuiltinSwearWords" {{if .Lists.BuiltinSwearWords }} checked{{end}}> Ban builtin swear words
+                    </label>
+                </div>
+                
+            </div>
+        </div>
+        <div class="row">
+            <br/>
+            <p class="help-block"> Seperate entries by space or lines</p>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Banned words</label>
+                    <textarea class="form-control" name="BannedWords" rows="10">{{range .Lists.BannedWords}}{{.}}
+{{end}}</textarea>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Banned websites</label>
+                    <textarea class="form-control" name="BannedWebsites" rows="10">{{range .Lists.BannedWebsites}}{{.}}
+{{end}}</textarea>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        </div>
+    </form>
+</div>
+{{end}}
+
+
+<!-- COMMON RULE FIELDS -->
+{{define "automod_common_fields"}}
+
+<br/>
+<div class="checkbox">
+    <label>
+        <input type="checkbox" name="Enabled" {{if .Rule.Enabled}} checked {{end}}> Enable/Disable
+    </label>
+</div>
+
+<div class="form-group">
+    <label for="ViolationsExpire">Violations expire after (seconds)</label>
+    <input type="number" class="form-control" name="ViolationsExpire" value="{{.Rule.ViolationsExpire}}"></input>
+    <p class="help-block">When (n) seconds has passed without any violations, the users violations are forgotten</p>
+</div>
+
+<div class="form-group row">
+    <div class="col-lg-4">
+        <label for="WarnAfter">Warn after</label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.WarnAfter}}" name="WarnAfter">
+    </div>
+    <div class="col-lg-4">
+        <label for="KickAfter">Kick after</label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.KickAfter}}" name="KickAfter">
+    </div>
+    <div class="col-lg-4">
+        <label for="BanAfter">Ban after</label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.BanAfter}}" name="BanAfter">
+    </div>
+</div>
+<p class="help-block">Punish based on number of violations >:O (Punishment is disabled if set below 1)</p>
+
+
+{{$ignoreRole := or .Rule.IgnoreRole ""}}
+<div class="form-group">
+    <label for="IgnoreRole">Ignore role</label>
+    <select id="channel" class="form-control" name="IgnoreRole">
+        <option value="" {{if eq $ignoreRole ""}} selected{{end}}>None</option>
+        {{mTemplate "role_options" "Roles" .Guild.Roles "Selected" $ignoreRole}}
+    </select>
+</div>
+
+<div class="panel-group" id="rule-channel-ignore-accordion-{{.ID}}" role="tablist" aria-multiselectable="true">
+    <div class="panel panel-default">
+        <div class="panel-heading" role="tab" >
+            <h4 class="panel-title">
+                <a role="button" data-toggle="collapse" data-parent="#rule-channel-ignore-accordion-{{.ID}}" href="#collapse-{{.ID}}" aria-expanded="true" aria-controls="collapse-{{.ID}}">
+                    Ignore channels
+                </a>
+            </h4>
+        </div>
+        <div id="collapse-{{.ID}}" class="panel-collapse collapse" role="tabpanel">
+            <ul class="list-group">
+            {{$ingoredChannels := .Rule.IgnoreChannels}} 
+            {{range $k, $v := .Guild.Channels}}{{if eq .Type "text"}}
+                <li class="list-group-item">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="IgnoreChannels" value="{{$v.ID}}" {{if in $ingoredChannels $v.ID}} checked{{end}}> #{{$v.Name}}
+                        </label>
+                    </div>
+                </li>
+            {{end}}{{end}}
+            </ul>
+        </div>
+    </div>
+</div>
+
+{{end}}

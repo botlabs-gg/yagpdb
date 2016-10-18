@@ -2,70 +2,15 @@ package common
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"math/rand"
 	"text/template"
 	"time"
 )
-
-// GetRedisJson executes a get redis command and unmarshals the value into out
-func GetRedisJson(client *redis.Client, key string, out interface{}) error {
-	raw, err := client.Cmd("GET", key).Bytes()
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(raw, out)
-	return err
-}
-
-// SetRedisJson marshals the vlue and runs a set redis command for key
-func SetRedisJson(client *redis.Client, key string, value interface{}) error {
-	serialized, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-
-	err = client.Cmd("SET", key, serialized).Err
-	return err
-}
-
-// GetRedisReplies is a helper func when using redis pipelines
-// It retrieves n amount of replies and returns the first error it finds (but still continues to retrieve replies after that)
-func GetRedisReplies(client *redis.Client, n int) ([]*redis.Reply, error) {
-	var err error
-	out := make([]*redis.Reply, n)
-	for i := 0; i < n; i++ {
-		reply := client.GetReply()
-		out[i] = reply
-		if reply.Err != nil && err == nil {
-			err = reply.Err
-		}
-	}
-	return out, err
-}
-
-type RedisCmd struct {
-	Name string
-	Args []interface{}
-}
-
-// SafeRedisCommands Will do the following commands and stop if an error occurs
-func SafeRedisCommands(client *redis.Client, cmds []*RedisCmd) ([]*redis.Reply, error) {
-	out := make([]*redis.Reply, 0)
-	for _, cmd := range cmds {
-		reply := client.Cmd(cmd.Name, cmd.Args...)
-		out = append(out, reply)
-		if reply.Err != nil {
-			return out, reply.Err
-		}
-	}
-	return out, nil
-}
 
 // RefreshConnectedGuilds deletes the connected_guilds set and fill it up again
 // This is incase servers are removed/bot left servers while it was offline
@@ -227,6 +172,26 @@ func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {
 	var buf bytes.Buffer
 	err = parsed.Execute(&buf, data)
 	return buf.String(), err
+}
+
+func LogGetChannel(cID string) *discordgo.Channel {
+	c, err := BotSession.State.Channel(cID)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving channel from state")
+	}
+	return c
+}
+
+func LogGetGuild(gID string) *discordgo.Guild {
+	g, err := BotSession.State.Guild(gID)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving guild from state")
+	}
+	return g
+}
+
+func RandomAdjective() string {
+	return Adjectives[rand.Intn(len(Adjectives))]
 }
 
 // This was bad on large servers...

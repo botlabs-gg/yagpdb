@@ -47,7 +47,10 @@ $(function(){
 		return Math.floor(Math.random() * (max - min)) + min;
 	}
 
-
+	if (visibleURL) {
+		console.log("Should navigate to", visibleURL);
+		window.history.pushState("", "", visibleURL);
+	}
 })
 
 

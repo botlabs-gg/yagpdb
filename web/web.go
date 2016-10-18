@@ -10,11 +10,12 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 var (
 	// Core template files
-	Templates = template.Must(template.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
+	Templates *template.Template
 
 	Debug         = true // Turns on debug mode
 	ListenAddress = ":5000"
@@ -25,12 +26,19 @@ var (
 	CPMux   *goji.Mux
 )
 
-func Run() {
-	Templates.Funcs(template.FuncMap{
+func init() {
+	Templates = template.New("")
+	Templates = Templates.Funcs(template.FuncMap{
 		"dict":      dictionary,
 		"mTemplate": mTemplate,
 		"in":        in,
+		"adjective": common.RandomAdjective,
+		"title":     strings.Title,
 	})
+	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
+}
+
+func Run() {
 	log.Info("Starting yagpdb web server")
 
 	InitOauth()
