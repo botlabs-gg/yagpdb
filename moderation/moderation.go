@@ -1,7 +1,10 @@
 package moderation
 
 import (
+	"fmt"
+	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -98,4 +101,124 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 		KickMessage:          kickMsg,
 		DeleteMessagesOnKick: kickDeleteMessages,
 	}, nil
+}
+
+type Punishment int
+
+const (
+	PunishmentKick Punishment = iota
+	PunishmentBan
+)
+
+// Kick or bans someone, uploading a hasebin log, and sending the report tmessage in the action channel
+func punish(p Punishment, client *redis.Client, guildID, channelID, author, reason string, user *discordgo.User) error {
+	key := "moderation_ban_message:"
+	if p == PunishmentKick {
+		key = "moderation_kick_message:"
+	}
+
+	acionChannel, err := client.Cmd("GET", "moderation_action_channel:"+guildID).Str()
+	if err != nil || acionChannel == "" {
+		acionChannel = channelID
+	}
+
+	dmMsg, err := client.Cmd("GET", key+guildID).Str()
+	if err == nil && dmMsg != "" {
+		dmChannel, err := bot.GetCreatePrivateChannel(common.BotSession, user.ID)
+		if err != nil {
+			return err
+		}
+
+		executed, err := common.ParseExecuteTemplate(dmMsg, map[string]interface{}{
+			"User":   user,
+			"Reason": reason,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		common.BotSession.ChannelMessageSend(dmChannel.ID, executed)
+	}
+
+	hastebin := ""
+	if channelID != "" {
+		var err error
+		hastebin, err = common.CreateHastebinLog(channelID)
+		if err != nil {
+			hastebin = "Hastebin upload failed"
+			logrus.WithError(err).Error("Hastebin upload failed")
+		}
+	}
+
+	switch p {
+	case PunishmentKick:
+		err = common.BotSession.GuildMemberDelete(guildID, user.ID)
+	case PunishmentBan:
+		err = common.BotSession.GuildBanCreate(guildID, user.ID, 1)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	actionStr := "Banned"
+	if p == PunishmentKick {
+		actionStr = "Kicked"
+	}
+
+	logrus.Println(actionStr, author, user.Username, "cause", reason)
+
+	logMsg := fmt.Sprintf("%s %s **%s**#%s *(%s)*\n**Reason:** %s", author, actionStr, user.Username, user.Discriminator, user.ID, reason)
+	if hastebin != "" {
+		logMsg += fmt.Sprintf("\n**Hastebin:** <%s>", hastebin)
+	}
+
+	_, err = common.BotSession.ChannelMessageSend(channelID, logMsg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func KickUser(client *redis.Client, guildID, channelID, author, reason string, user *discordgo.User) error {
+	err := punish(PunishmentKick, client, guildID, channelID, author, reason, user)
+	if err != nil {
+		return err
+	}
+
+	// Delete messages if enabled
+	if shouldDelete, _ := client.Cmd("GET", "moderation_kick_delete_messages:"+guildID).Bool(); !shouldDelete {
+		return nil
+
+	}
+
+	lastMsgs, err := common.GetMessages(channelID, 100)
+	if err != nil {
+		return err
+	}
+	toDelete := make([]string, 0)
+
+	for _, v := range lastMsgs {
+		if v.Author.ID == user.ID {
+			toDelete = append(toDelete, v.ID)
+		}
+	}
+
+	if len(toDelete) < 1 {
+		return nil
+	}
+
+	if len(toDelete) == 1 {
+		common.BotSession.ChannelMessageDelete(channelID, toDelete[0])
+	} else {
+		common.BotSession.ChannelMessagesBulkDelete(channelID, toDelete)
+	}
+
+	return nil
+}
+
+func BanUser(client *redis.Client, guildID, channelID, author, reason string, user *discordgo.User) error {
+	return punish(PunishmentBan, client, guildID, channelID, author, reason, user)
 }

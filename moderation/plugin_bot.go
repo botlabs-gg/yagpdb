@@ -6,9 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"time"
@@ -69,40 +67,13 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 			target := parsed.Args[0].DiscordUser()
 
-			banMessage, err := client.Cmd("GET", "moderation_ban_message:"+parsed.Guild.ID).Str()
-			if err == nil && banMessage != "" {
-				dmChannel, err := bot.GetCreatePrivateChannel(common.BotSession, target.ID)
-				if err != nil {
-					return "Failed sending ban message", err
+			err = BanUser(client, parsed.Guild.ID, channelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
+			if err != nil {
+				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+					return cast.Message.Message, err
+				} else {
+					return "An error occurred", err
 				}
-
-				executed, err := common.ParseExecuteTemplate(banMessage, map[string]interface{}{
-					"User":   target,
-					"Reason": parsed.Args[1].Str(),
-				})
-
-				if err != nil {
-					return "Failed parsing/executing ban template: " + err.Error(), err
-				}
-
-				dutil.SplitSendMessage(common.BotSession, dmChannel.ID, executed)
-			}
-
-			hastebin, err := common.CreateHastebinLog(m.ChannelID)
-			if err != nil {
-				hastebin = "Hastebin upload failed"
-				log.WithError(err).Error("Hastebin upload failed")
-			}
-
-			err = common.BotSession.GuildBanCreate(parsed.Guild.ID, target.ID, 1)
-			if err != nil {
-				return "API Refused to ban... (Bot probably dosen't have enough permissions)", err
-			}
-
-			log.Println("Banned ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
-			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Banned **%s**#%s *(%s)*\n**Reason:** %s\n**Hastebin:** <%s>", m.Author.ID, target.Username, target.Discriminator, target.ID, parsed.Args[1].Str(), hastebin))
-			if err != nil {
-				return "Failed sending report log", err
 			}
 
 			return "", nil
@@ -138,64 +109,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 			target := parsed.Args[0].DiscordUser()
 
-			kickMessage, err := client.Cmd("GET", "moderation_kick_message:"+parsed.Guild.ID).Str()
-			if err == nil && kickMessage != "" {
-				dmChannel, err := bot.GetCreatePrivateChannel(common.BotSession, target.ID)
-				if err != nil {
-					return "Failed sending kick message", err
-				}
-
-				executed, err := common.ParseExecuteTemplate(kickMessage, map[string]interface{}{
-					"User":   target,
-					"Reason": parsed.Args[1].Str(),
-				})
-
-				if err != nil {
-					return "Failed parsing/executing kick template: " + err.Error(), err
-				}
-
-				dutil.SplitSendMessage(common.BotSession, dmChannel.ID, executed)
-			}
-
-			hastebin, err := common.CreateHastebinLog(m.ChannelID)
+			err = KickUser(client, parsed.Guild.ID, channelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
 			if err != nil {
-				hastebin = "Hastebin upload failed"
-				log.WithError(err).Error("Hastebin upload failed")
-			}
-
-			err = common.BotSession.GuildMemberDelete(parsed.Guild.ID, target.ID)
-			if err != nil {
-				return "API Refused to kick... :/ (Bot probably dosen't have enough permissions)", err
-			}
-
-			log.Println("Kicked ", parsed.Args[0].DiscordUser().Username, "cause", parsed.Args[1].Str())
-			_, err = common.BotSession.ChannelMessageSend(channelID, fmt.Sprintf("<@%s> Kicked **%s**#%s *(%s)*\n**Reason:** %s\n**Hastebin:** <%s>", m.Author.ID, target.Username, target.Discriminator, target.ID, parsed.Args[1].Str(), hastebin))
-			if err != nil {
-				return "Failed sending kick report in action channel", err
-			}
-
-			// Delete messages if enabled
-			if shouldDelete, _ := client.Cmd("GET", "moderation_kick_delete_messages:"+parsed.Guild.ID).Bool(); shouldDelete {
-				lastMsgs, err := common.GetMessages(parsed.Channel.ID, 100)
-				if err != nil {
-					return "Failed deleting recent messages by kicked user :'(", err
-				}
-				toDelete := make([]string, 0)
-
-				for _, v := range lastMsgs {
-					if v.Author.ID == target.ID {
-						toDelete = append(toDelete, v.ID)
-					}
-				}
-
-				if len(toDelete) < 1 {
-					return "", nil
-				}
-
-				if len(toDelete) == 1 {
-					common.BotSession.ChannelMessageDelete(parsed.Channel.ID, toDelete[0])
+				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+					return cast.Message.Message, err
 				} else {
-					common.BotSession.ChannelMessagesBulkDelete(parsed.Channel.ID, toDelete)
+					return "An error occurred", err
 				}
 			}
 
