@@ -10,6 +10,7 @@ type Config struct {
 	ClientSecret string `json:"client_secret"`
 	BotToken     string `json:"bot_token"`
 	Host         string `json:"host"`
+	Email        string `json:"email"` // The letsencrypt cert will use this email
 
 	Redis string `json:"redis"`
 

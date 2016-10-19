@@ -150,6 +150,7 @@
     </div>
 </form>
 {{end}}
+<!-- END BANNED WORDS -->
 
 <!-- BANNED WEBSITES -->
 {{define "automod_banned_websites"}}
@@ -157,19 +158,36 @@
     <div class="col-lg-12">
         {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .Sites "ID" "sites"}}
 
-        <p class="help-block">Built in lists</p>
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" name="BuiltinBadSites" {{if .Sites.BuiltinBadSites }} checked{{end}}> Ban builtin malware/scam sites
-            </label>
-        </div>
         <div class="checkbox">
             <label>
                 <input type="checkbox" name="BuiltinPornSites" {{if .Sites.BuiltinPornSites }} checked{{end}}> Ban builtin porn sites
             </label>
         </div>
+
+        <p><b>Google safe browsing integration <i>(Coming soon!)</i></b></p>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="BuiltinBadSites" {{if .Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing malware site detection
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="builtinbadsites" {{if .sites.builtinbadsites }} checked{{end}} disabled> Enable safe browsing social engineering site detection
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="builtinbadsites" {{if .sites.builtinbadsites }} checked{{end}} disabled> Enable safe browsing unwanted software site detection
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="builtinbadsites" {{if .sites.builtinbadsites }} checked{{end}} disabled> Enable safe browsing potentially harmfull application site detection
+            </label>
+        </div>
+
         <div class="form-group">
-            <label>Banned sites</label>
+            <label>User defined banned sites</label>
             <p class="help-block"> Seperate entries by space or lines<br/>Only type the host, For example if you want to block google you would add "google.com", NOT "http://google.com"</p>
             <textarea class="form-control" name="BannedWebsites" rows="10">{{.Sites.BannedWebsites}}</textarea>
         </div>
@@ -177,49 +195,7 @@
     </div>
 </form>
 {{end}}
-
-
-
-<!-- BANNED WORDS AND LINKS -->
-{{define "sss"}}
-<div class="col-lg-12">
-    <form class="form-horizontal" method="post" action="/cp/{{.ActiveGuild.ID}}/automod/lists">
-        <div class="col-lg-12">
-        <div class="row">
-            <div class="col-lg-12">
-                <p>Built in lists</p>
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox" name="BuiltinSwearWords" {{if .Lists.BuiltinSwearWords }} checked{{end}}> Ban builtin swear words
-                    </label>
-                </div>
-                
-            </div>
-        </div>
-        <div class="row">
-            <br/>
-            <p class="help-block"> Seperate entries by space or lines</p>
-            <div class="col-lg-6">
-                <div class="form-group">
-                    <label>Banned words</label>
-                    <textarea class="form-control" name="BannedWords" rows="10">{{range .Lists.BannedWords}}{{.}}
-{{end}}</textarea>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="form-group">
-                    <label>Banned websites</label>
-                    <textarea class="form-control" name="BannedWebsites" rows="10">{{range .Lists.BannedWebsites}}{{.}}
-{{end}}</textarea>
-                </div>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-success">Save</button>
-        </div>
-    </form>
-</div>
-{{end}}
-
+<!-- END BANNED WEBSITES -->
 
 <!-- COMMON RULE FIELDS -->
 {{define "automod_common_fields"}}
@@ -288,5 +264,5 @@
         </div>
     </div>
 </div>
-
 {{end}}
+<!-- END COMMON RULE FIELDS -->

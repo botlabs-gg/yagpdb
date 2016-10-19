@@ -62,6 +62,7 @@ func runServers(mainMuxer *goji.Mux) {
 	certManager := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist(common.Conf.Host),
+		Email:      common.Conf.Email,
 		Cache:      cache,
 	}
 
