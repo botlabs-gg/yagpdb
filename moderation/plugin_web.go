@@ -12,12 +12,12 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/moderation_commands.html"))
+	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/moderation.html"))
 
-	web.CPMux.HandleC(pat.Get("/commands/moderation"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation_commands")))
-	web.CPMux.HandleC(pat.Get("/commands/moderation/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation_commands")))
-	web.CPMux.HandleC(pat.Post("/commands/moderation"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation_commands"), Config{})))
-	web.CPMux.HandleC(pat.Post("/commands/moderation/"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation_commands"), Config{})))
+	web.CPMux.HandleC(pat.Get("/moderation"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation")))
+	web.CPMux.HandleC(pat.Get("/moderation/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation")))
+	web.CPMux.HandleC(pat.Post("/moderation"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{})))
+	web.CPMux.HandleC(pat.Post("/moderation/"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{})))
 }
 
 // The moderation page itself
@@ -38,7 +38,7 @@ func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Reques
 // Update the settings
 func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/moderation/"
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/moderation/"
 
 	newConfig := ctx.Value(web.ContextKeyParsedForm).(*Config)
 	templateData["ModConfig"] = newConfig
