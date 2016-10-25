@@ -59,7 +59,7 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 			return nil, err
 		}
 
-		log.WithField("num_msgs", len(msgs)).Error("API history req finished")
+		log.WithField("num_msgs", len(msgs)).Info("API history req finished")
 
 		if len(msgs) < 1 { // Nothing more
 			break

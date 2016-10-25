@@ -390,7 +390,7 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 }
 
 type SimpleConfigSaver interface {
-	Save(guildID string, client *redis.Client) error
+	Save(client *redis.Client, guildID string) error
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
@@ -408,7 +408,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler goji.Handler) go
 			return
 		}
 
-		err := form.Save(g.ID, client)
+		err := form.Save(client, g.ID)
 		if !CheckErr(templateData, err, "Failed saving config", log.Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
 		}

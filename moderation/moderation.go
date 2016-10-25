@@ -40,8 +40,8 @@ type Config struct {
 	DeleteMessagesOnKick bool   `schema:"kick_delete_messages"`
 	ActionChannel        string `schema:"action_channel" valid:"channel,true"`
 	ReportChannel        string `schema:"report_channel" valid:"channel,true"`
-	BanMessage           string `schema:"kick_message" valid:"template,2000"`
-	KickMessage          string `schema:"ban_message" valid:"template,2000"`
+	BanMessage           string `schema:"ban_message" valid:"template,2000"`
+	KickMessage          string `schema:"kick_message" valid:"template,2000"`
 }
 
 func (c *Config) Save(client *redis.Client, guildID string) error {
@@ -117,28 +117,35 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 		key = "moderation_kick_message:"
 	}
 
+	actionStr := "Banned"
+	if p == PunishmentKick {
+		actionStr = "Kicked"
+	}
+
 	acionChannel, err := client.Cmd("GET", "moderation_action_channel:"+guildID).Str()
 	if err != nil || acionChannel == "" {
 		acionChannel = channelID
 	}
 
 	dmMsg, err := client.Cmd("GET", key+guildID).Str()
-	if err == nil && dmMsg != "" {
-		dmChannel, err := bot.GetCreatePrivateChannel(common.BotSession, user.ID)
-		if err != nil {
-			return err
-		}
+	if dmMsg == "" {
+		dmMsg = "You were " + actionStr + "\nReason: {{.Reason}}"
+	}
 
-		executed, err := common.ParseExecuteTemplate(dmMsg, map[string]interface{}{
-			"User":   user,
-			"Reason": reason,
-		})
+	executed, err := common.ParseExecuteTemplate(dmMsg, map[string]interface{}{
+		"User":   user,
+		"Reason": reason,
+	})
 
-		if err != nil {
-			return err
-		}
+	gName := ""
+	guild := common.LogGetGuild(guildID)
+	if guild == nil {
+		gName = guild.Name + ": "
+	}
 
-		common.BotSession.ChannelMessageSend(dmChannel.ID, executed)
+	err = bot.SendDM(common.BotSession, user.ID, gName+executed)
+	if err != nil {
+		return err
 	}
 
 	hastebin := ""
@@ -162,11 +169,6 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 		return err
 	}
 
-	actionStr := "Banned"
-	if p == PunishmentKick {
-		actionStr = "Kicked"
-	}
-
 	logrus.Println(actionStr, author, user.Username, "cause", reason)
 
 	logMsg := fmt.Sprintf("%s %s **%s**#%s *(%s)*\n**Reason:** %s", author, actionStr, user.Username, user.Discriminator, user.ID, reason)
@@ -174,7 +176,7 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 		logMsg += fmt.Sprintf("\n**Hastebin:** <%s>", hastebin)
 	}
 
-	_, err = common.BotSession.ChannelMessageSend(channelID, logMsg)
+	_, err = common.BotSession.ChannelMessageSend(acionChannel, logMsg)
 	if err != nil {
 		return err
 	}

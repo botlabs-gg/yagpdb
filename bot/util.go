@@ -5,7 +5,12 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/patrickmn/go-cache"
 	"time"
+)
+
+var (
+	Cache = cache.New(time.Minute, time.Minute)
 )
 
 func GetCreatePrivateChannel(s *discordgo.Session, user string) (*discordgo.Channel, error) {
@@ -21,6 +26,16 @@ func GetCreatePrivateChannel(s *discordgo.Session, user string) (*discordgo.Chan
 	}
 
 	return channel, nil
+}
+
+func SendDM(s *discordgo.Session, user string, msg string) error {
+	channel, err := GetCreatePrivateChannel(s, user)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.ChannelMessageSend(channel.ID, msg)
+	return err
 }
 
 var (

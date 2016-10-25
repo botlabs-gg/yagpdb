@@ -1,84 +1,119 @@
 package automod
 
-// import (
-// 	"github.com/Sirupsen/logrus"
-// 	"github.com/fzzy/radix/redis"
-// 	"github.com/jonas747/discordgo"
-// 	"github.com/jonas747/yagpdb/bot"
-// 	"github.com/jonas747/yagpdb/common"
-// 	"net/url"
-// 	"strings"
-// )
+import (
+	"fmt"
+	"github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/moderation"
+)
 
-// func (p *Plugin) InitBot() {
-// 	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
-// }
+func (p *Plugin) InitBot() {
+	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
+	bot.AddEventHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
+}
 
-// func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
-// 	channel := common.LogGetChannel(evt.ChannelID)
-// 	if channel == nil {
-// 		return
-// 	}
+// Invalidate the cache when the rules have changed
+func HandleUpdateAutomodRules(event *bot.Event) {
+	bot.Cache.Delete(KeyAllRules(event.TargetGuild))
+}
 
-// 	// TODO cache configs
-// 	enabled, _ := client.Cmd("GET", KEYENABLED(channel.GuildID)).Bool()
-// 	if !enabled {
-// 		logrus.Info("Not enabled")
-// 		return
-// 	}
+func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
+	if config, ok := bot.Cache.Get(KeyConfig(gID)); ok {
+		return config.(*Config), nil
+	}
 
-// 	rules, err := GetRules(channel.GuildID, client)
-// 	if err != nil {
-// 		logrus.WithError(err).Error("Error retrieving automod rules")
-// 		return
-// 	}
+	return GetConfig(client, gID)
+}
 
-// 	lits, err := GetLists(channel.GuildID, client)
-// 	if err != nil {
-// 		logrus.WithError(err).Error("Error retreiving automod lists")
-// 		return
-// 	}
+func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
 
-// }
+	channel := common.LogGetChannel(evt.ChannelID)
+	if channel == nil {
+		return
+	}
 
-// // Return true if it should get deleted, and optionally the rule it belongs to
-// func checkWordsWebsites(evt *discordgo.MessageCreate, lists *ListConfig, rules []*Rule) (bool, *Rule) {
-// 	fields := strings.Fields(strings.ToLower(evt.Message.Content))
+	if channel.IsPrivate {
+		return
+	}
 
-// 	matchWord := false
-// 	matchSite := false
+	guild := common.LogGetGuild(channel.GuildID)
+	if guild == nil {
+		return
+	}
 
-// OUTER:
-// 	for _, field := range fields {
-// 		for _, word := range lists.BannedWords {
-// 			if field == word {
-// 				matchWord = true
-// 				break OUTER
-// 			}
-// 		}
+	config, err := CachedGetConfig(client, guild.ID)
+	if err != nil {
+		logrus.WithError(err).Error("Failed retrieving config")
+		return
+	}
 
-// 		u, err := url.ParseRequestURI(field)
-// 		if err != nil {
-// 			logrus.WithError(err).Error("Failed parsing url")
-// 			continue
-// 		}
+	if !config.Enabled {
+		logrus.Info("Automoderator is disabled")
+		return
+	}
 
-// 		for _, site := range lists.BannedWebsites {
-// 			if u.Host == site {
-// 				matchSite = true
-// 				break OUTER
-// 			}
-// 		}
-// 	}
+	member, err := s.State.Member(guild.ID, evt.Author.ID)
+	if err != nil {
+		logrus.WithError(err).Error("Failed finding guild member")
+		return
+	}
 
-// 	if !matchWord && !matchSite {
-// 		return false, nil
-// 	}
+	del := false
+	var punishMsg string
+	highestPunish := PunishNone
 
-// 	logrus.Info("Found word or site match", matchWord, matchSite)
+	rules := []Rule{config.Spam, config.Invite, config.Mention, config.Links, config.Words, config.Sites}
 
-// 	for _, v := range rules {
+	// We gonna need to have this locked while we check
+	s.State.RLock()
+	for _, r := range rules {
+		if r.ShouldIgnore(evt, member) {
+			continue
+		}
 
-// 	}
-// }
-// func checkSpam(evt *discordgo.MessageCreate, rules []*Rule) {}
+		d, punishment, msg, err := r.Check(evt, channel, client)
+		if d {
+			del = true
+		}
+		if err != nil {
+			logrus.WithError(err).Error("Failed checking aumod rule:", err)
+			continue
+		}
+
+		// If the rule did not trigger a deletion there wasnt any violation
+		if !d {
+			continue
+		}
+
+		punishMsg += msg + "\n"
+
+		if punishment > highestPunish {
+			highestPunish = punishment
+		}
+	}
+	s.State.RUnlock()
+
+	if del {
+		s.ChannelMessageDelete(evt.ChannelID, evt.ID)
+	} else {
+		return // Nothing to do
+	}
+
+	switch highestPunish {
+	case PunishNone:
+		err = bot.SendDM(s, member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", guild.Name, punishMsg))
+	case PunishMute:
+		// TODO
+	case PunishKick:
+		err = moderation.KickUser(client, channel.GuildID, channel.ID, "Automod", punishMsg, member.User)
+	case PunishBan:
+		err = moderation.BanUser(client, channel.GuildID, channel.ID, "Automod", punishMsg, member.User)
+	}
+
+	if err != nil {
+		logrus.WithError(err).Error("Error carrying out punishment")
+	}
+}

@@ -2,6 +2,7 @@ package automod
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -37,47 +38,29 @@ func (p *Plugin) InitWeb() {
 	autmodMux.HandleC(pat.Get(""), getHandler)
 
 	// Post handlers
-	autmodMux.HandleC(pat.Post("/general"), web.FormParserMW(web.RenderHandler(HandlePostGeneral, "cp_automod"), GeneralForm{}))
 
-	autmodMux.HandleC(pat.Post("/spam"), web.SimpleConfigSaverHandler(SpamRule{}, getHandler))
-	autmodMux.HandleC(pat.Post("/mention"), web.SimpleConfigSaverHandler(MentionRule{}, getHandler))
-	autmodMux.HandleC(pat.Post("/invite"), web.SimpleConfigSaverHandler(InviteRule{}, getHandler))
-	autmodMux.HandleC(pat.Post("/words"), web.SimpleConfigSaverHandler(WordsRule{}, getHandler))
-	autmodMux.HandleC(pat.Post("/sites"), web.SimpleConfigSaverHandler(SitesRule{}, getHandler))
+	autmodMux.HandleC(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
+	autmodMux.HandleC(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
 }
 
 func HandleAutomod(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, g, templateData := web.GetBaseCPContextData(ctx)
 
-	spam, mention, invite, words, sites, err := GetRules(g.ID, client)
+	config, err := GetConfig(client, g.ID)
 	web.CheckErr(templateData, err, "Failed retrieving rules", log.Error)
 
-	enabled, err := GetEnabled(g.ID, client)
-	web.CheckErr(templateData, err, "Failed checking enabled", log.Error)
-
-	templateData["Enabled"] = enabled
-	templateData["Spam"] = spam
-	templateData["Mention"] = mention
-	templateData["Invite"] = invite
-	templateData["Words"] = words
-	templateData["Sites"] = sites
-
+	templateData["AutomodConfig"] = config
 	templateData["VisibleURL"] = "/cp/" + g.ID + "/automod/"
 
 	return templateData
 }
 
-func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	form := ctx.Value(web.ContextKeyParsedForm).(*GeneralForm)
-	ok := ctx.Value(web.ContextKeyFormOk).(bool)
-	if !ok {
-		return HandleAutomod(ctx, w, r)
+// Invalidates the cache
+func ExtraPostMW(inner goji.Handler) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		client, activeGuild, _ := web.GetBaseCPContextData(ctx)
+		bot.PublishEvent(client, "update_automod_rules", activeGuild.ID, nil)
+		inner.ServeHTTPC(ctx, w, r)
 	}
-	err := client.Cmd("SET", KeyEnabled(activeGuild.ID), form.Enabled).Err
-	if !web.CheckErr(templateData, err, "Failed saving general settings", log.Error) {
-		templateData.AddAlerts(web.SucessAlert("Sucessfully saved general settings"))
-	}
-
-	return HandleAutomod(ctx, w, r)
+	return goji.HandlerFunc(mw)
 }

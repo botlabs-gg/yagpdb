@@ -2,6 +2,7 @@ package automod
 
 import (
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 )
@@ -9,13 +10,17 @@ import (
 type Condition string
 
 var (
-	KeyEnabled = func(gid string) string { return "automod_enabled:" + gid }
 
-	KeySpam    = func(gid string) string { return "automod_spam:" + gid }
-	KeyMention = func(gid string) string { return "automod_mention:" + gid }
-	KeyInvite  = func(gid string) string { return "automod_invite:" + gid }
-	KeySites   = func(gid string) string { return "automod_sites:" + gid }
-	KeyWords   = func(gid string) string { return "automod_words:" + gid }
+	// Redis keys
+	KeyEnabled = func(gID string) string { return "automod_enabled:" + gID }
+	KeyConfig  = func(gID string) string { return "automod_config:" + gID }
+
+	KeyViolations = func(gID, uID, violation string) string {
+		return "automod_words_violations_" + violation + ":" + gID + ":" + uID
+	}
+
+	// Local Bot Cache keys
+	KeyAllRules = func(gID string) string { return "automod_rules:" + gID }
 )
 
 type Plugin struct{}
@@ -24,120 +29,43 @@ func RegisterPlugin() {
 	p := &Plugin{}
 
 	web.RegisterPlugin(p)
+	bot.RegisterPlugin(p)
 }
 
 func (p *Plugin) Name() string { return "Automod" }
 
-func (p *Plugin) RedisConfigKeys(gID string) []string {
-	return []string{
-		KeyEnabled(gID),
-		KeySpam(gID),
-		KeyMention(gID),
-		KeyInvite(gID),
-		KeySites(gID),
-		KeyWords(gID),
-	}
-}
-
-type BaseRule struct {
+type Config struct {
 	Enabled bool
-
-	ViolationsExpire int
-
-	// Execute these punishments after certain number of repeated violaions
-	WarnAfter int
-	KickAfter int
-	BanAfter  int
-
-	IgnoreRole     string
-	IgnoreChannels []string
+	Spam    *SpamRule
+	Mention *MentionRule
+	Invite  *InviteRule
+	Links   *LinksRule
+	Sites   *SitesRule
+	Words   *WordsRule
 }
 
-type SpamRule struct {
-	BaseRule
-
-	NumMessages int
-	Within      int
-}
-
-func (s SpamRule) Save(gID string, client *redis.Client) error {
-	return common.SetRedisJson(client, KeySpam(gID), s)
-}
-
-type MentionRule struct {
-	BaseRule
-
-	Treshold int
-}
-
-func (m MentionRule) Save(gID string, client *redis.Client) error {
-	return common.SetRedisJson(client, KeyMention(gID), m)
-}
-
-type InviteRule struct {
-	BaseRule
-}
-
-func (i InviteRule) Save(gID string, client *redis.Client) error {
-	return common.SetRedisJson(client, KeyInvite(gID), i)
+func NewConfig() *Config {
+	return &Config{
+		Spam:    &SpamRule{},
+		Mention: &MentionRule{},
+		Invite:  &InviteRule{},
+		Links:   &LinksRule{},
+		Sites:   &SitesRule{},
+		Words:   &WordsRule{},
+	}
 }
 
 // Behold the almighty number of return values on this one!
-func GetRules(guildID string, client *redis.Client) (spam *SpamRule, mention *MentionRule, invite *InviteRule, words *WordsRule, sites *SitesRule, err error) {
+func GetConfig(client *redis.Client, guildID string) (config *Config, err error) {
 
-	spam = &SpamRule{}
-	invite = &InviteRule{}
-	mention = &MentionRule{}
-	words = &WordsRule{}
-	sites = &SitesRule{BannedWebsites: "somesite.com\nanothersite.org"}
-
-	if err = common.GetRedisJson(client, KeySpam(guildID), spam); err != nil {
-		return
-	}
-	if err = common.GetRedisJson(client, KeyMention(guildID), mention); err != nil {
-		return
-	}
-	if err = common.GetRedisJson(client, KeyInvite(guildID), invite); err != nil {
-		return
-	}
-	if err = common.GetRedisJson(client, KeyWords(guildID), words); err != nil {
-		return
-	}
-	if err = common.GetRedisJson(client, KeySites(guildID), sites); err != nil {
-		return
-	}
-
+	config = NewConfig()
+	err = common.GetRedisJson(client, KeyConfig(guildID), &config)
 	return
 }
 
-func GetEnabled(guildID string, client *redis.Client) (bool, error) {
-	reply := client.Cmd("GET", KeyEnabled(guildID))
-	if reply.Type == redis.NilReply {
-		return false, nil
+func (c Config) Save(client *redis.Client, guildID string) error {
+	if err := common.SetRedisJson(client, KeyConfig(guildID), c); err != nil {
+		return err
 	}
-
-	return reply.Bool()
-}
-
-type WordsRule struct {
-	BaseRule
-	BuiltinSwearWords bool
-	BannedWords       string
-}
-
-func (l WordsRule) Save(gID string, client *redis.Client) error {
-	return common.SetRedisJson(client, KeyWords(gID), l)
-}
-
-type SitesRule struct {
-	BaseRule
-
-	BuiltinBadSites  bool
-	BuiltinPornSites bool
-
-	BannedWebsites string
-}
-
-func (l SitesRule) Save(gID string, client *redis.Client) error {
-	return common.SetRedisJson(client, KeySites(gID), l)
+	return nil
 }
