@@ -4,6 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -261,9 +262,49 @@ type SitesRule struct {
 	BuiltinBadSites  bool
 	BuiltinPornSites bool
 
-	BannedWebsites string
+	BannedWebsites   string
+	compiledWebsites map[string]bool
 }
 
+func (w *SitesRule) GetCompiled() map[string]bool {
+	if w.compiledWebsites != nil {
+		return w.compiledWebsites
+	}
+
+	w.compiledWebsites = make(map[string]bool)
+	fields := strings.Fields(w.BannedWebsites)
+	for _, field := range fields {
+		w.compiledWebsites[field] = true
+	}
+
+	return w.compiledWebsites
+}
+
+var LinkRegex = regexp.MustCompile(`https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)`)
+
 func (s *SitesRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
-	return false, PunishNone, "", nil
+	matches := linkRegex.FindAllString(evt.Content, -1)
+
+	bannedLink := false
+
+	bannedLinks := s.GetCompiled()
+	for _, v := range matches {
+		parsed, err := url.ParseRequestURI(v)
+		if err != nil {
+			logrus.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
+		} else {
+			if _, ok := bannedLinks[strings.ToLower(parsed.Host)]; ok {
+				bannedLink = true
+				break
+			}
+		}
+	}
+
+	if !bannedLink {
+		return
+	}
+
+	punishment, err = s.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "badlink"))
+	msg = "That website is banned. Contact an admin if you think this was a mistake."
+	return
 }

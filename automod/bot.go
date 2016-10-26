@@ -24,8 +24,13 @@ func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
 	if config, ok := bot.Cache.Get(KeyConfig(gID)); ok {
 		return config.(*Config), nil
 	}
-
-	return GetConfig(client, gID)
+	conf, err := GetConfig(client, gID)
+	if err == nil {
+		// Compile the sites and word list
+		conf.Sites.GetCompiled()
+		conf.Words.GetCompiled()
+	}
+	return conf, err
 }
 
 func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {

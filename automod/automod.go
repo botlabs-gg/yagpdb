@@ -9,19 +9,16 @@ import (
 
 type Condition string
 
-var (
+// Redis keys
+func KeyEnabled(gID string) string { return "automod_enabled:" + gID }
+func KeyConfig(gID string) string  { return "automod_config:" + gID }
 
-	// Redis keys
-	KeyEnabled = func(gID string) string { return "automod_enabled:" + gID }
-	KeyConfig  = func(gID string) string { return "automod_config:" + gID }
+func KeyViolations(gID, uID, violation string) string {
+	return "automod_words_violations_" + violation + ":" + gID + ":" + uID
+}
 
-	KeyViolations = func(gID, uID, violation string) string {
-		return "automod_words_violations_" + violation + ":" + gID + ":" + uID
-	}
-
-	// Local Bot Cache keys
-	KeyAllRules = func(gID string) string { return "automod_rules:" + gID }
-)
+// Local Bot Cache keys
+func KeyAllRules(gID string) string { return "automod_rules:" + gID }
 
 type Plugin struct{}
 
