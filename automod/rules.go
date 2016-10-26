@@ -306,5 +306,6 @@ func (s *SitesRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Chann
 
 	punishment, err = s.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "badlink"))
 	msg = "That website is banned. Contact an admin if you think this was a mistake."
+	del = true
 	return
 }
