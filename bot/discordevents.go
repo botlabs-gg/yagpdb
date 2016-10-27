@@ -27,12 +27,6 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 		log.WithField("g_name", g.Name).Info("Joined new guild!")
 	}
 
-	// Reset this stat
-	err = client.Cmd("SET", "guild_stats_num_members:"+g.ID, 0).Err
-	if err != nil {
-		log.WithError(err).Error("Failed resetting guild members stat")
-	}
-
 	LoadGuildMembersQueue <- g.ID
 }
 
@@ -55,13 +49,13 @@ func HandleGuildMembersChunk(s *discordgo.Session, g *discordgo.GuildMembersChun
 	}).Info("Received guild members")
 
 	// Load all members in memory, this might cause issues in the future, who knows /shrug
-	for _, v := range g.Members {
-		v.GuildID = g.GuildID
-		err := common.BotSession.State.MemberAdd(v)
-		if err != nil {
-			log.WithError(err).Error("Failed adding member to state")
-		}
-	}
+	// for _, v := range g.Members {
+	// 	v.GuildID = g.GuildID
+	// 	err := common.BotSession.State.MemberAdd(v)
+	// 	if err != nil {
+	// 		log.WithError(err).Error("Failed adding member to state")
+	// 	}
+	// }
 
 	err := client.Cmd("INCRBY", "guild_stats_num_members:"+g.GuildID, len(g.Members)).Err
 	if err != nil {

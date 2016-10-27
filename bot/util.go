@@ -47,10 +47,22 @@ var (
 )
 
 func guildMembersRequester() {
+
+	client, err := common.RedisPool.Get()
+	if err != nil {
+		panic(err)
+	}
+
 	for {
 		g := <-LoadGuildMembersQueue
 
-		err := common.BotSession.RequestGuildMembers(g, "", 0)
+		// Reset this stat
+		err := client.Cmd("SET", "guild_stats_num_members:"+g, 0).Err
+		if err != nil {
+			logrus.WithError(err).Error("Failed resetting guild members stat")
+		}
+
+		err = common.BotSession.RequestGuildMembers(g, "", 0)
 		if err != nil {
 			// Put it back into the queue if an error occured
 			logrus.WithError(err).WithField("guild", g).Error("Failed requesting guild members")
