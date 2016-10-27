@@ -1,8 +1,11 @@
 package common
 
 import (
+	"fmt"
+	"github.com/Sirupsen/logrus"
 	"github.com/Syfaro/haste-client"
 	"github.com/fzzy/radix/extra/pool"
+	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 )
 
@@ -11,8 +14,47 @@ const (
 )
 
 var (
-	RedisPool  *pool.Pool
+	SQL       *gorm.DB
+	RedisPool *pool.Pool
+
 	BotSession *discordgo.Session
 	Conf       *Config
 	Hastebin   = haste.NewHaste("http://hastebin.com")
 )
+
+// Initalizes all database connections, config loading and so on
+func Init(configPath string) error {
+	config, err := LoadConfig(configPath)
+	if err != nil {
+		return err
+	}
+	Conf = config
+
+	BotSession, err = discordgo.New(config.BotToken)
+	if err != nil {
+		return err
+	}
+	BotSession.MaxRestRetries = 3
+
+	err = connectRedis(config.Redis)
+	if err != nil {
+		return err
+	}
+
+	err = connectDB(config.PQUsername, config.PQPassword)
+	return err
+}
+
+func connectRedis(addr string) (err error) {
+	RedisPool, err = pool.NewCustomPool("tcp", addr, 100, RedisDialFunc)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed initilizing redis pool")
+	}
+	return
+}
+
+func connectDB(user, pass string) error {
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=myhost user=%s dbname=gorm sslmode=disable password=%s", user, pass))
+	SQL = db
+	return err
+}

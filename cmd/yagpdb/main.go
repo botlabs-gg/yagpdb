@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/extra/pool"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/bot"
@@ -33,9 +31,6 @@ var (
 	flagLogTimestamp  bool
 	flagAddr          string
 	flagConfig        string
-
-	BotSession *discordgo.Session
-	RedisPool  *pool.Pool
 )
 
 func init() {
@@ -68,33 +63,17 @@ func main() {
 	}
 
 	log.Info("YAGPDB is initializing...")
-	config, err := common.LoadConfig(flagConfig)
+
+	err := common.Init(flagConfig)
 	if err != nil {
-		log.WithError(err).Fatal("Failed loading config")
+		log.WithError(err).Fatal("Failed intializing")
 	}
 
-	BotSession, err = discordgo.New(config.BotToken)
-	if err != nil {
-		log.WithError(err).Fatal("Failed initilizing bot session")
-	}
-
-	BotSession.MaxRestRetries = 3
 	//BotSession.LogLevel = discordgo.LogInformational
-
-	RedisPool, err = pool.NewCustomPool("tcp", config.Redis, 100, common.RedisDialFunc)
-	if err != nil {
-		log.WithError(err).Fatal("Failed initilizing redis pool")
-	}
-
 	if flagAction != "" {
 		runAction(flagAction)
 		return
 	}
-
-	common.RedisPool = RedisPool
-	common.Conf = config
-	common.BotSession = BotSession
-	// common.Pastebin = &pastebin.Pastebin{DevKey: config.PastebinDevKey}
 
 	// Setup plugins
 	commands.RegisterPlugin()
@@ -134,16 +113,16 @@ func main() {
 
 func runAction(str string) {
 	log.Info("Running action", str)
-	client, err := RedisPool.Get()
+	client, err := common.RedisPool.Get()
 	if err != nil {
 		log.WithError(err).Error("Failed to get redis connection")
 		return
 	}
-	defer RedisPool.CarefullyPut(client, &err)
+	defer common.RedisPool.CarefullyPut(client, &err)
 
 	switch str {
 	case "connected":
-		err = common.RefreshConnectedGuilds(BotSession, client)
+		err = common.RefreshConnectedGuilds(common.BotSession, client)
 	default:
 		log.Error("Unknown action")
 		return

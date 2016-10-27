@@ -12,6 +12,9 @@ type Config struct {
 	Host         string `json:"host"`
 	Email        string `json:"email"` // The letsencrypt cert will use this email
 
+	PQUsername string `json:"pq_user"`
+	PQPassword string `json:"pq_pass"`
+
 	Redis string `json:"redis"`
 
 	// Third party api's other than discord
