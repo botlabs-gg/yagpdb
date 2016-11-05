@@ -214,15 +214,21 @@
 </div>
 
 <div class="form-group row">
-    <div class="col-lg-4">
-        <label for="MuteAfter">Mute after <small>Requires a mute role setup, goto moderation to set it up</small></label>
+    <div class="col-lg-2">
+        <label for="MuteAfter">Mute after <small>(Set up role in moderation)</small></label>
         <input type="number" class="form-control" placeholder="" value="{{.Rule.MuteAfter}}" name="{{.Name}}.MuteAfter">
     </div>
-    <div class="col-lg-4">
+
+    <div class="col-lg-3">
+        <label for="BanAfter">Mute Duration <b>(minutes)</b></label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.MuteDuration}}" name="{{.Name}}.MuteDuration">
+    </div>
+
+    <div class="col-lg-3 col-lg-offset-1">
         <label for="KickAfter">Kick after</label>
         <input type="number" class="form-control" placeholder="" value="{{.Rule.KickAfter}}" name="{{.Name}}.KickAfter">
     </div>
-    <div class="col-lg-4">
+    <div class="col-lg-3">
         <label for="BanAfter">Ban after <b>(Be careful with this)</b></label>
         <input type="number" class="form-control" placeholder="" value="{{.Rule.BanAfter}}" name="{{.Name}}.BanAfter">
     </div>

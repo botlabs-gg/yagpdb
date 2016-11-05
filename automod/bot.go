@@ -66,9 +66,10 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
-	del := false
-	var punishMsg string
+	del := false // Set if a rule triggered a message delete
+	punishMsg := ""
 	highestPunish := PunishNone
+	muteDuration := 0
 
 	rules := []Rule{config.Spam, config.Invite, config.Mention, config.Links, config.Words, config.Sites}
 
@@ -97,6 +98,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 
 		if punishment > highestPunish {
 			highestPunish = punishment
+			muteDuration = r.GetMuteDuration()
 		}
 	}
 	s.State.RUnlock()
@@ -104,14 +106,15 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	if del {
 		s.ChannelMessageDelete(evt.ChannelID, evt.ID)
 	} else {
-		return // Nothing to do
+		return
 	}
 
 	switch highestPunish {
 	case PunishNone:
 		err = bot.SendDM(s, member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", guild.Name, punishMsg))
 	case PunishMute:
-		// TODO
+		bot.SendDM(s, member.User.ID, fmt.Sprintf("**Automoderator for %s: You have been muted\n Rule violations:**\n%s\n", guild.Name, punishMsg))
+		err = moderation.MuteUnmuteUser(true, client, channel.GuildID, channel.ID, "Automod", punishMsg, member, muteDuration)
 	case PunishKick:
 		err = moderation.KickUser(client, channel.GuildID, channel.ID, "Automod", punishMsg, member.User)
 	case PunishBan:
