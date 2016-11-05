@@ -4,21 +4,20 @@
 
 
 <div id="wrapper">
-    {{if .ActiveGuild}}
+    {{if .Public}}<div id="public-wrapper">
+    {{else}}
     {{template "cp_nav" .}}
     <div id="page-wrapper">
-    {{else}}
-    <div id="public-wrapper">
     {{end}}
         <div class="row">
             <div class="col-lg-12">
                 <div class="page-header">
-                    <h1>Server stats - {{.GuildName}} {{if not .ActiveGuild}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
-                    {{if .ActiveGuild}}
+                    <h1>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
+                    {{if not .Public}}
                     <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="public" {{if .Public}} checked{{end}}> Publicly accessible
+                                <input type="checkbox" name="public" {{if .PublicEnabled}} checked{{end}}> Publicly accessible
                             </label>
                         </div>
                         <button type="submit" class="btn btn-success">Save</button>
@@ -171,10 +170,10 @@
 
         function fetchStats(){
             console.log("Fetching stats...");
-            {{if .ActiveGuild}}
-            createRequest("GET", "/cp/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
+            {{if .Public}}
+            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
             {{else}}
-            createRequest("GET", "/public/{{.PublicGuildID}}/stats/full", null, statsCB);
+            createRequest("GET", "/cp/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
             {{end}}
         }
         setInterval(fetchStats, 10000);

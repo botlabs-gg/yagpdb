@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -210,38 +211,95 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(mw)
 }
 
-// Makes sure the user has admin priviledges on the server
-// Also sets active guild
-func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
+func setFullGuild(ctx context.Context, guildID string) (context.Context, error) {
+
+	fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guildID)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving guild")
+		return ctx, err
+	}
+
+	ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
+	return context.WithValue(ctx, ContextKeyCurrentGuild, fullGuild), nil
+}
+
+// Sets the active guild context and template data
+// It will only attempt to fetch full guild if not logged in
+func ActiveServerMW(inner goji.Handler) goji.Handler {
+
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		guilds := ctx.Value(ContextKeyGuilds).([]*discordgo.UserGuild)
-		user := ctx.Value(ContextKeyUser).(*discordgo.User)
+		defer func() {
+			inner.ServeHTTPC(ctx, w, r)
+		}()
+
 		guildID := pat.Param(ctx, "server")
 
-		var guild *discordgo.UserGuild
+		// Validate the id
+		if _, err := strconv.ParseInt(guildID, 10, 64); err != nil {
+			log.WithError(err).Error("GuilID is not a number")
+			return
+		}
+
+		guilds, ok := ctx.Value(ContextKeyGuilds).([]*discordgo.UserGuild)
+		if !ok {
+			var err error
+			ctx, err = setFullGuild(ctx, guildID)
+			if err != nil {
+				log.WithError(err).Error("Failed setting full guild")
+			}
+			log.Info("No guilds, set full guild instead of userguild")
+			return
+		}
+
+		var userGuild *discordgo.UserGuild
 		for _, g := range guilds {
-			if g.ID == guildID && (g.Owner || g.Permissions&discordgo.PermissionManageServer != 0) {
-				guild = g
+			if g.ID == guildID {
+				userGuild = g
 				break
 			}
 		}
 
-		if guild == nil {
-			log.Info("User tried managing server it dosen't have admin access to", user.ID, user.Username, guildID)
-			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
+		if userGuild == nil {
+			var err error
+			ctx, err = setFullGuild(ctx, guildID)
+			if err != nil {
+				log.WithError(err).Error("Failed setting full guild")
+			}
+			log.Info("Userguild not found")
 			return
 		}
 
 		fullGuild := &discordgo.Guild{
-			ID:   guild.ID,
-			Name: guild.Name,
+			ID:   userGuild.ID,
+			Name: userGuild.Name,
+		}
+		ctx = context.WithValue(ctx, ContextKeyCurrentUserGuild, userGuild)
+		ctx = context.WithValue(ctx, ContextKeyCurrentGuild, fullGuild)
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
+	}
+	return goji.HandlerFunc(mw)
+}
+
+func RequireActiveServer(inner goji.Handler) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		if v := ctx.Value(ContextKeyCurrentGuild); v == nil {
+			http.Redirect(w, r, "/?err=no_active_guild", http.StatusTemporaryRedirect)
+			return
 		}
 
-		newCtx := context.WithValue(ctx, ContextKeyCurrentUserGuild, guild)
-		newCtx = context.WithValue(ctx, ContextKeyCurrentGuild, fullGuild)
-		newCtx = SetContextTemplateData(newCtx, map[string]interface{}{"ActiveGuild": fullGuild})
+		inner.ServeHTTPC(ctx, w, r)
+	}
+	return goji.HandlerFunc(mw)
+}
 
-		inner.ServeHTTPC(newCtx, w, r)
+func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
+	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		if !IsAdminCtx(ctx) {
+			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
+			return
+		}
+
+		inner.ServeHTTPC(ctx, w, r)
 	}
 	return goji.HandlerFunc(mw)
 }
@@ -269,6 +327,12 @@ func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
 func RequireFullGuildMW(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		guild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+
+		if guild.OwnerID != "" {
+			// Was already full. so this is not needed
+			inner.ServeHTTPC(ctx, w, r)
+			return
+		}
 
 		fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guild.ID)
 		if err != nil {

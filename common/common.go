@@ -6,6 +6,7 @@ import (
 	"github.com/Syfaro/haste-client"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
 )
 
@@ -54,7 +55,7 @@ func connectRedis(addr string) (err error) {
 }
 
 func connectDB(user, pass string) error {
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=myhost user=%s dbname=gorm sslmode=disable password=%s", user, pass))
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=yagpdb sslmode=disable password=%s", user, pass))
 	SQL = db
 	return err
 }

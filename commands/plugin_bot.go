@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/logs"
 	"github.com/lunixbochs/vtclean"
 	"image"
 	"io/ioutil"
@@ -337,11 +338,17 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			Description: "Creates a hastebin of the channels last 100 messages",
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			id, err := common.CreateHastebinLog(m.ChannelID)
+			// id, err := common.CreateHastebinLog(m.ChannelID)
+			// if err != nil {
+			// 	return "Failed uploading to hastebin", err
+			// }
+			// return fmt.Sprintf("Link: <%s>", id), nil
+			l, err := logs.CreateChannelLog(m.ChannelID, m.Author.Username, m.Author.ID, 100)
 			if err != nil {
-				return "Failed uploading to hastebin", err
+				return "An error occured", err
 			}
-			return fmt.Sprintf("Link: <%s>", id), nil
+
+			return fmt.Sprint(l.ID), err
 		},
 	},
 	&CustomCommand{

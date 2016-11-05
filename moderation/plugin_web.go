@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"goji.io"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
@@ -14,10 +15,17 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/moderation.html"))
 
-	web.CPMux.HandleC(pat.Get("/moderation"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation")))
-	web.CPMux.HandleC(pat.Get("/moderation/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleModeration, "cp_moderation")))
-	web.CPMux.HandleC(pat.Post("/moderation"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{})))
-	web.CPMux.HandleC(pat.Post("/moderation/"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{})))
+	subMux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/moderation"), subMux)
+	web.CPMux.Handle(pat.New("/moderation/*"), subMux)
+
+	subMux.UseC(web.RequireGuildChannelsMiddleware)
+	subMux.UseC(web.RequireFullGuildMW)
+
+	subMux.HandleC(pat.Get(""), web.RenderHandler(HandleModeration, "cp_moderation"))
+	subMux.HandleC(pat.Get("/"), web.RenderHandler(HandleModeration, "cp_moderation"))
+	subMux.HandleC(pat.Post(""), web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{}))
+	subMux.HandleC(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{}))
 }
 
 // The moderation page itself

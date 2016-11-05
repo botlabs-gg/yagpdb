@@ -5,6 +5,8 @@ package common
 // In the key, everythign after : is ignored, use this to store things like, serverid, playerids or other simple
 // data (for example for reminders, you would set it to channelid, and userid)
 
+// LIMITATIONS: different events cannot have same key as another event
+
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
@@ -13,9 +15,10 @@ import (
 	"time"
 )
 
-type ScheduledEvtHandler func(evt string)
+// If error is not nil, it will be added back
+type ScheduledEvtHandler func(evt string) error
 
-var scheduledHandlers map[string]ScheduledEvtHandler
+var scheduledHandlers = make(map[string]ScheduledEvtHandler)
 
 func RegisterScheduledEventHandler(evt string, handler ScheduledEvtHandler) {
 	scheduledHandlers[evt] = handler
@@ -24,6 +27,10 @@ func RegisterScheduledEventHandler(evt string, handler ScheduledEvtHandler) {
 func ScheduleEvent(client *redis.Client, evt, data string, when time.Time) error {
 	reply := client.Cmd("ZADD", "scheduled_events", when.Unix(), evt+":"+data)
 	return reply.Err
+}
+
+func RemoveScheduledEvent(client *redis.Client, evt, data string) error {
+	return client.Cmd("ZREM", "scheduled_events", evt+":"+data).Err
 }
 
 // Checks for and handles scheduled events every minute
@@ -58,15 +65,19 @@ func checkScheduledEvents(client *redis.Client) (int, error) {
 		return 0, err
 	}
 
-	for _, v := range evts {
-		handleScheduledEvent(v, client)
+	err = client.Cmd("ZREMRANGEBYSCORE", "scheduled_events", "-inf", now.Unix()).Err
+	if err != nil {
+		return 0, err
 	}
 
-	err = client.Cmd("ZREMRANGEBYSCORE", "scheduled_events", "-inf", now.Unix()).Err
-	return len(evts), err
+	for _, v := range evts {
+		go handleScheduledEvent(v)
+	}
+
+	return len(evts), nil
 }
 
-func handleScheduledEvent(evt string, client *redis.Client) {
+func handleScheduledEvent(evt string) {
 	split := strings.SplitN(evt, ":", 2)
 	rest := ""
 	if len(split) > 1 {
@@ -79,5 +90,19 @@ func handleScheduledEvent(evt string, client *redis.Client) {
 		return
 	}
 
-	go handler(rest)
+	handlerErr := handler(rest)
+	// Re-schedule the event if an error occured
+	if handlerErr != nil {
+		logrus.WithError(handlerErr).WithField("sevt", split[0]).Error("Failed handling scheduled event, re-scheduling.")
+
+		client, err := RedisPool.Get()
+		if err != nil {
+			logrus.WithError(err).Error("Failed retrieving redis connection from pool")
+			return
+		}
+		err = ScheduleEvent(client, split[0], rest, time.Now())
+		if err != nil {
+			logrus.WithError(err).Error("Failed re-scheduling failed event")
+		}
+	}
 }

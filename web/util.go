@@ -142,6 +142,15 @@ func (t TemplateData) AddAlerts(alerts ...*Alert) TemplateData {
 	return t
 }
 
+func GetCreateTemplateData(ctx context.Context) (context.Context, TemplateData) {
+	if v := ctx.Value(ContextKeyTemplateData); v != nil {
+		return ctx, v.(TemplateData)
+	}
+	tmplData := TemplateData(make(map[string]interface{}))
+	ctx = context.WithValue(ctx, ContextKeyTemplateData, tmplData)
+	return ctx, tmplData
+}
+
 type Alert struct {
 	Style   string
 	Message string
@@ -225,4 +234,18 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 	}
 
 	return true
+}
+
+// Checks the context if there is a logged in user and if so if he's and admin or not
+func IsAdminCtx(ctx context.Context) bool {
+	if v := ctx.Value(ContextKeyCurrentUserGuild); v != nil {
+
+		cast := v.(*discordgo.UserGuild)
+		if cast.Owner || cast.Permissions&discordgo.PermissionManageServer != 0 {
+			return true
+		}
+
+	}
+
+	return false
 }

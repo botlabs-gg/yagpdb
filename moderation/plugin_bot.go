@@ -60,14 +60,9 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "You have no admin or ban permissions >:(", nil
 			}
 
-			channelID, err := client.Cmd("GET", "moderation_action_channel:"+parsed.Guild.ID).Str()
-			if err != nil || channelID == "" {
-				channelID = m.ChannelID
-			}
-
 			target := parsed.Args[0].DiscordUser()
 
-			err = BanUser(client, parsed.Guild.ID, channelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
+			err = BanUser(client, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -102,14 +97,99 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "You have no admin or kick permissions >:(", nil
 			}
 
-			channelID, err := client.Cmd("GET", "moderation_action_channel:"+parsed.Guild.ID).Str()
-			if err != nil || channelID == "" {
-				channelID = m.ChannelID
+			target := parsed.Args[0].DiscordUser()
+
+			err = KickUser(client, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
+			if err != nil {
+				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+					return cast.Message.Message, err
+				} else {
+					return "An error occurred", err
+				}
+			}
+
+			return "", nil
+		},
+	},
+	&commands.CustomCommand{
+		Key:      "moderation_mute_enabled:",
+		Category: commands.CategoryModeration,
+		Cooldown: 5,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "Mute",
+			Description:  "Mutes a member",
+			RequiredArgs: 3,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
+				&commandsystem.ArgumentDef{Name: "Minutes", Type: commandsystem.ArgumentTypeNumber},
+				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
+			},
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+
+			ok, err := AdminOrPerm(discordgo.PermissionKickMembers, m.Author.ID, m.ChannelID)
+			if err != nil {
+				return ErrFailedPerms, err
+			}
+			if !ok {
+				return "You have no admin or kick(<- required for mute) permissions >:(", nil
+			}
+
+			muteDuration := parsed.Args[1].Int()
+			if muteDuration < 1 || muteDuration > 1440 {
+				return "Duration out of bounds (min 1, max 1440 - 1 day)", nil
 			}
 
 			target := parsed.Args[0].DiscordUser()
 
-			err = KickUser(client, parsed.Guild.ID, channelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
+			member, err := common.BotSession.State.Member(parsed.Guild.ID, target.ID)
+			if err != nil {
+				return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
+			}
+
+			err = MuteUnmuteUser(true, client, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[2].Str(), member, parsed.Args[1].Int())
+			if err != nil {
+				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+					return cast.Message.Message, err
+				} else {
+					return "An error occurred", err
+				}
+			}
+
+			return "", nil
+		},
+	},
+	&commands.CustomCommand{
+		Key:      "moderation_mute_enabled:",
+		Category: commands.CategoryModeration,
+		Cooldown: 5,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "Unmute",
+			Description:  "unmutes a member",
+			RequiredArgs: 2,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
+				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
+			},
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+
+			ok, err := AdminOrPerm(discordgo.PermissionKickMembers, m.Author.ID, m.ChannelID)
+			if err != nil {
+				return ErrFailedPerms, err
+			}
+			if !ok {
+				return "You have no admin or kick(<- required for mute) permissions >:(", nil
+			}
+
+			target := parsed.Args[0].DiscordUser()
+
+			member, err := common.BotSession.State.Member(parsed.Guild.ID, target.ID)
+			if err != nil {
+				return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
+			}
+
+			err = MuteUnmuteUser(false, client, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), member, 0)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err

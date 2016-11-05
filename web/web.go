@@ -22,8 +22,9 @@ var (
 
 	LogRequestTimestamps bool
 
-	RootMux *goji.Mux
-	CPMux   *goji.Mux
+	RootMux         *goji.Mux
+	CPMux           *goji.Mux
+	ServerPublicMux *goji.Mux
 )
 
 func init() {
@@ -106,6 +107,14 @@ func setupRoutes() *goji.Mux {
 	mux.HandleFuncC(pat.Get("/confirm_login"), HandleConfirmLogin)
 	mux.HandleFuncC(pat.Get("/logout"), HandleLogout)
 
+	// The public muxer, for public server stuff like stats and logs
+	serverPublicMux := goji.SubMux()
+	serverPublicMux.UseC(ActiveServerMW)
+
+	mux.HandleC(pat.Get("/public/:server"), serverPublicMux)
+	mux.HandleC(pat.Get("/public/:server/*"), serverPublicMux)
+	ServerPublicMux = serverPublicMux
+
 	// Control panel muxer, requires a session
 	cpMuxer := goji.NewMux()
 	cpMuxer.UseC(RequireSessionMiddleware)
@@ -121,6 +130,7 @@ func setupRoutes() *goji.Mux {
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	serverCpMuxer := goji.SubMux()
+	serverCpMuxer.UseC(ActiveServerMW)
 	serverCpMuxer.UseC(RequireServerAdminMiddleware)
 
 	cpMuxer.HandleC(pat.New("/cp/:server"), serverCpMuxer)

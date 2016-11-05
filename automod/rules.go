@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type Punishment int
+type PunishmentType int
 
 const (
 	PunishNone Punishment = iota
@@ -18,6 +18,11 @@ const (
 	PunishKick
 	PunishBan
 )
+
+type Punishment struct {
+	Type     PunishmentType
+	Duration int
+}
 
 type Rule interface {
 	Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error)
@@ -31,9 +36,7 @@ type BaseRule struct {
 	ViolationsExpire int
 
 	// Execute these punishments after certain number of repeated violaions
-	MuteAfter int
-	KickAfter int
-	BanAfter  int
+	Punishments []Punishment
 
 	IgnoreRole     string
 	IgnoreChannels []string
