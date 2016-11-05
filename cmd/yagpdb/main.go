@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/customcommands"
+	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/reddit"
@@ -16,6 +17,7 @@ import (
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
+	"sync"
 	//"github.com/wercker/journalhook"
 )
 
@@ -86,6 +88,7 @@ func main() {
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	automod.RegisterPlugin()
+	logs.InitPlugin()
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()
@@ -106,6 +109,7 @@ func main() {
 
 	if flagRunStats || flagRunEverything {
 		go serverstats.UpdateStatsLoop()
+		go common.RunScheduledEvents(make(chan *sync.WaitGroup))
 	}
 
 	select {}
