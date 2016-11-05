@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/web"
 	"strings"
 	"time"
@@ -186,13 +187,14 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 		return err
 	}
 
-	hastebin := ""
+	logLink := ""
 	if channelID != "" {
-		var err error
-		hastebin, err = common.CreateHastebinLog(channelID)
+		logs, err := logs.CreateChannelLog(channelID, author, "", 100)
 		if err != nil {
-			hastebin = "Hastebin upload failed"
-			logrus.WithError(err).Error("Hastebin upload failed")
+			logLink = "Log Creation failed"
+			logrus.WithError(err).Error("Log Creation failed")
+		} else {
+			logLink = logs.Link()
 		}
 	}
 
@@ -209,7 +211,7 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 
 	logrus.Println(actionStr, author, user.Username, "cause", reason)
 
-	logMsg := GenModlogMessage(author, actionStr, user, reason, hastebin)
+	logMsg := GenModlogMessage(author, actionStr, user, reason, logLink)
 
 	_, err = common.BotSession.ChannelMessageSend(acionChannel, logMsg)
 	if err != nil {
@@ -319,12 +321,13 @@ func MuteUnmuteUser(mute bool, client *redis.Client, guildID, channelID, author,
 
 	// Upload logs
 	logLink := ""
-	if channelID != "" && mute {
-		var err error
-		logLink, err = common.CreateHastebinLog(channelID)
+	if channelID != "" {
+		logs, err := logs.CreateChannelLog(channelID, author, "", 100)
 		if err != nil {
-			logLink = "Hastebin upload failed"
-			logrus.WithError(err).Error("Hastebin upload failed")
+			logLink = "Log Creation failed"
+			logrus.WithError(err).Error("Log Creation failed")
+		} else {
+			logLink = logs.Link()
 		}
 	}
 

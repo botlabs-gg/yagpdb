@@ -2,8 +2,6 @@ package common
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
@@ -118,49 +116,6 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 	}
 
 	return
-}
-
-// Creates a pastebin log form the last 100 messages in a channel
-// Returns the id of the paste
-func CreateHastebinLog(cID string) (string, error) {
-	channel, err := BotSession.State.Channel(cID)
-	if err != nil {
-		return "", err
-	}
-
-	msgs, err := GetMessages(cID, 100)
-	if err != nil {
-		return "", err
-	}
-
-	if len(msgs) < 1 {
-		return "", errors.New("No messages in channel")
-	}
-
-	paste := ""
-
-	for _, m := range msgs {
-		body := m.ContentWithMentionsReplaced()
-
-		tsStr := "[TS_PARSING_FAILED]"
-		parsedTs, err := m.Timestamp.Parse()
-		if err == nil {
-			tsStr = parsedTs.Format("2006 " + time.Stamp)
-		}
-
-		for _, attachment := range m.Attachments {
-			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
-		}
-
-		paste += fmt.Sprintf("[%s] (%19s) %20s: %s\n", tsStr, m.Author.ID, m.Author.Username, body)
-	}
-
-	resp, err := Hastebin.UploadString("Logs of #" + channel.Name + " by YAGPDB :')\n" + paste)
-	if err != nil {
-		return "", err
-	}
-
-	return resp.GetLink(Hastebin) + ".txt", nil
 }
 
 func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {

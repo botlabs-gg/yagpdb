@@ -3,12 +3,13 @@ package moderation
 import (
 	"errors"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/logs"
 	"time"
 )
 
@@ -219,10 +220,14 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			// Send typing event to indicate the bot is working
 			common.BotSession.ChannelTyping(m.ChannelID)
 
-			logLink, err := common.CreateHastebinLog(m.ChannelID)
+			logLink := ""
+
+			logs, err := logs.CreateChannelLog(m.ChannelID, m.Author.Username, m.Author.ID, 100)
 			if err != nil {
-				log.WithError(err).Error("Hastebin upload failed")
-				logLink = "Hastebin upload failed"
+				logLink = "Log Creation failed"
+				logrus.WithError(err).Error("Log Creation failed")
+			} else {
+				logLink = logs.Link()
 			}
 
 			channelID, err := client.Cmd("GET", "moderation_report_channel:"+parsed.Guild.ID).Str()

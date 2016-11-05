@@ -343,7 +343,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				return "An error occured", err
 			}
 
-			return fmt.Sprintf("https://%s/public/%s/logs/%d", common.Conf.Host, cmd.Guild.ID, l.ID), err
+			return l.Link(), err
 		},
 	},
 	&CustomCommand{
