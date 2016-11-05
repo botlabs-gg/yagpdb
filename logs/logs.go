@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -29,9 +30,14 @@ type MessageLog struct {
 
 	ChannelName string
 	ChannelID   string
+	GuildID     string
 
 	Author   string
 	AuthorID string
+}
+
+func (m *MessageLog) Link() string {
+	return fmt.Sprintf("https://%s/public/%s/logs/%d", common.Conf.Host, m.GuildID, m.ID)
 }
 
 type Message struct {
@@ -87,6 +93,7 @@ func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLo
 		ChannelName: channel.Name,
 		Author:      author,
 		AuthorID:    authorID,
+		GuildID:     channel.GuildID,
 	}
 
 	err = common.SQL.Create(log).Error
