@@ -333,22 +333,17 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Cooldown: 30,
 		Category: CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "Hastebin",
-			Aliases:     []string{"ps", "paste", "pastebin"},
-			Description: "Creates a hastebin of the channels last 100 messages",
+			Name:        "Logs",
+			Aliases:     []string{"ps", "paste", "pastebin", "log"},
+			Description: "Creates a log of the channels last 100 messages",
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			// id, err := common.CreateHastebinLog(m.ChannelID)
-			// if err != nil {
-			// 	return "Failed uploading to hastebin", err
-			// }
-			// return fmt.Sprintf("Link: <%s>", id), nil
 			l, err := logs.CreateChannelLog(m.ChannelID, m.Author.Username, m.Author.ID, 100)
 			if err != nil {
 				return "An error occured", err
 			}
 
-			return fmt.Sprint(l.ID), err
+			return fmt.Sprintf("https://%s/public/%s/logs/%d", common.Conf.Host, cmd.Guild.ID, l.ID), err
 		},
 	},
 	&CustomCommand{
