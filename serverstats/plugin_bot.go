@@ -67,7 +67,12 @@ func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client)
 }
 
 func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
-	err := ApplyPresences(client, g.ID, g.Presences)
+	err := client.Cmd("SET", "guild_stats_num_members:"+g.ID, g.MemberCount).Err
+	if err != nil {
+		log.WithError(err).Error("Failed Settings member count")
+	}
+
+	err = ApplyPresences(client, g.ID, g.Presences)
 	if err != nil {
 		log.WithError(err).Error("Failed applying presences")
 	}

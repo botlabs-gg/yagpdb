@@ -2,9 +2,7 @@ package bot
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/patrickmn/go-cache"
 	"time"
 )
@@ -42,35 +40,35 @@ var (
 	ErrStartingUp = errors.New("Starting up, caches are being filled...")
 )
 
-var (
-	LoadGuildMembersQueue = make(chan string)
-)
+// var (
+// 	LoadGuildMembersQueue = make(chan string)
+// )
 
-func guildMembersRequester() {
+// func guildMembersRequester() {
 
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		panic(err)
-	}
+// 	client, err := common.RedisPool.Get()
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	for {
-		g := <-LoadGuildMembersQueue
+// 	for {
+// 		g := <-LoadGuildMembersQueue
 
-		// Reset this stat
-		err := client.Cmd("SET", "guild_stats_num_members:"+g, 0).Err
-		if err != nil {
-			logrus.WithError(err).Error("Failed resetting guild members stat")
-		}
+// 		// Reset this stat
+// 		err := client.Cmd("SET", "guild_stats_num_members:"+g, 0).Err
+// 		if err != nil {
+// 			logrus.WithError(err).Error("Failed resetting guild members stat")
+// 		}
 
-		err = common.BotSession.RequestGuildMembers(g, "", 0)
-		if err != nil {
-			// Put it back into the queue if an error occured
-			logrus.WithError(err).WithField("guild", g).Error("Failed requesting guild members")
-			go func() {
-				LoadGuildMembersQueue <- g
-			}()
-		}
+// 		err = common.BotSession.RequestGuildMembers(g, "", 0)
+// 		if err != nil {
+// 			// Put it back into the queue if an error occured
+// 			logrus.WithError(err).WithField("guild", g).Error("Failed requesting guild members")
+// 			go func() {
+// 				LoadGuildMembersQueue <- g
+// 			}()
+// 		}
 
-		time.Sleep(time.Second)
-	}
-}
+// 		time.Sleep(time.Second)
+// 	}
+// }

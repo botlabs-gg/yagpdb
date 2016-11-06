@@ -27,7 +27,7 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 		log.WithField("g_name", g.Name).Info("Joined new guild!")
 	}
 
-	LoadGuildMembersQueue <- g.ID
+	// LoadGuildMembersQueue <- g.ID
 }
 
 func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *redis.Client) {
@@ -42,23 +42,23 @@ func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *r
 	}
 }
 
-func HandleGuildMembersChunk(s *discordgo.Session, g *discordgo.GuildMembersChunk, client *redis.Client) {
-	log.WithFields(log.Fields{
-		"num_members": len(g.Members),
-		"guild":       g.GuildID,
-	}).Info("Received guild members")
+// func HandleGuildMembersChunk(s *discordgo.Session, g *discordgo.GuildMembersChunk, client *redis.Client) {
+// 	log.WithFields(log.Fields{
+// 		"num_members": len(g.Members),
+// 		"guild":       g.GuildID,
+// 	}).Info("Received guild members")
 
-	// Load all members in memory, this might cause issues in the future, who knows /shrug
-	// for _, v := range g.Members {
-	// 	v.GuildID = g.GuildID
-	// 	err := common.BotSession.State.MemberAdd(v)
-	// 	if err != nil {
-	// 		log.WithError(err).Error("Failed adding member to state")
-	// 	}
-	// }
+// 	// Load all members in memory, this might cause issues in the future, who knows /shrug
+// 	// for _, v := range g.Members {
+// 	// 	v.GuildID = g.GuildID
+// 	// 	err := common.BotSession.State.MemberAdd(v)
+// 	// 	if err != nil {
+// 	// 		log.WithError(err).Error("Failed adding member to state")
+// 	// 	}
+// 	// }
 
-	err := client.Cmd("INCRBY", "guild_stats_num_members:"+g.GuildID, len(g.Members)).Err
-	if err != nil {
-		log.WithError(err).Error("Failed increasing guild members stat")
-	}
-}
+// 	err := client.Cmd("INCRBY", "guild_stats_num_members:"+g.GuildID, len(g.Members)).Err
+// 	if err != nil {
+// 		log.WithError(err).Error("Failed increasing guild members stat")
+// 	}
+// }
