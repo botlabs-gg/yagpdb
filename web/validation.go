@@ -4,6 +4,8 @@ package web
 // Pass it a struct and it will validate each field
 // depending on struct tags
 //
+// struct: `valid:"traverse"`
+//	  - Validates the struct
 // float/int: `valid:"{min],{max}"`
 //    - Makes sure the float/int is whitin min and max
 // normal string: `valid:",{minLen},{maxLen}"` or `valid:",{maxLen}"`
@@ -33,6 +35,43 @@ import (
 	"unicode/utf8"
 )
 
+type ValidationTag struct {
+	values []string
+}
+
+func ParseValidationTag(tag string) *ValidationTag {
+	fields := strings.Split(tag, ",")
+	return &ValidationTag{
+		values: fields,
+	}
+}
+
+func (p *ValidationTag) Str(index int) (string, bool) {
+	if len(p.values) <= index {
+		return "", false
+	}
+	return p.values[index], true
+}
+
+func (p *ValidationTag) Float(index int) (float64, bool) {
+	s, ok := p.Str(index)
+	if !ok {
+		return 0, false
+	}
+
+	f, err := strconv.ParseFloat(s, 64)
+	return f, err == nil
+}
+
+func (p *ValidationTag) Int(index int) (int, bool) {
+	f, ok := p.Float(index)
+	return int(f), ok
+}
+
+func (p *ValidationTag) Len() int {
+	return len(p.values)
+}
+
 var (
 	ErrChannelNotFound = errors.New("Channel not found")
 	ErrRoleNotFound    = errors.New("Role not found")
@@ -46,77 +85,50 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 	v := reflect.Indirect(reflect.ValueOf(form))
 	t := v.Type()
 
+	// Walk over each field and look for valid tag
 	numFields := v.NumField()
 	for i := 0; i < numFields; i++ {
 		tField := t.Field(i)
 		tag := tField.Tag
-		validation := tag.Get("valid")
-		if validation == "" {
+		validationStr := tag.Get("valid")
+		if validationStr == "" {
 			continue
 		}
 
+		validationTag := ParseValidationTag(validationStr)
 		vField := v.Field(i)
-
-		validationSplit := strings.Split(validation, ",")
 
 		var err error
 
+		// Perform validation based on value type
 		switch cv := vField.Interface().(type) {
 		case int:
-			min, max := readMinMax(validationSplit)
+			min, max := readMinMax(validationTag)
 			err = ValidateIntField(int64(cv), int64(min), int64(max))
 		case float64:
-			min, max := readMinMax(validationSplit)
+			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(cv, min, max)
 		case float32:
-			min, max := readMinMax(validationSplit)
+			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(float64(cv), min, max)
 		case string:
-			if len(validationSplit) < 1 {
-				continue
-			}
-			maxLen := 2000
-
-			// Retrieve max len from tag is needed
-			if len(validationSplit) > 1 && (validationSplit[0] == "template" || validationSplit[0] == "regex" || validationSplit[0] == "") {
-				newMaxLen, err := strconv.ParseInt(validationSplit[1], 10, 32)
-				if err != nil {
-					logrus.WithError(err).Error("Failed parsing int")
-				} else {
-					maxLen = int(newMaxLen)
+			err = ValidateStringField(cv, validationTag, guild)
+		case []string:
+			for _, s := range cv {
+				e := ValidateStringField(s, validationTag, guild)
+				if e != nil {
+					err = e
+					break
 				}
 			}
-
-			// Treat non empty as true
-			allowEmpty := false
-			if len(validationSplit) > 1 {
-				if validationSplit[1] != "false" {
-					allowEmpty = true
+		default:
+			// Recurse if it's another struct
+			switch tField.Type.Kind() {
+			case reflect.Struct:
+				innerOk := ValidateForm(guild, tmpl, vField.Interface())
+				if !innerOk {
+					ok = false
 				}
-			}
-
-			switch validationSplit[0] {
-			case "template":
-				err = ValidateTemplateField(cv, maxLen)
-			case "regex":
-				err = ValidateRegexField(cv, maxLen)
-			case "role":
-				err = ValidateRoleField(cv, guild.Roles, allowEmpty)
-			case "channel":
-				err = ValidateChannelField(cv, guild.Channels, allowEmpty)
-			default:
-				min := -1
-				if len(validationSplit) > 2 {
-					min = maxLen
-
-					newMaxLen, err := strconv.ParseInt(validationSplit[2], 10, 32)
-					if err != nil {
-						logrus.WithError(err).Error("Failed parsing max len")
-					} else {
-						maxLen = int(newMaxLen)
-					}
-				}
-				err = ValidateStringField(cv, min, maxLen)
 			}
 		}
 
@@ -147,17 +159,11 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 	return ok
 }
 
-func readMinMax(split []string) (float64, float64) {
-	if len(split) < 1 {
-		return 0, 0
-	}
+func readMinMax(valid *ValidationTag) (float64, float64) {
 
-	min, _ := strconv.ParseFloat(split[0], 64)
+	min, _ := valid.Float(0)
+	max, _ := valid.Float(1)
 
-	max := float64(0)
-	if len(split) > 1 {
-		max, _ = strconv.ParseFloat(split[1], 64)
-	}
 	return min, max
 }
 
@@ -191,7 +197,56 @@ func ValidateRegexField(s string, max int) error {
 	return nil
 }
 
-func ValidateStringField(s string, min, max int) error {
+func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) error {
+	maxLen := 2000
+
+	kind, _ := tags.Str(0)
+
+	// Retrieve max len from tag is needed
+	if kind == "template" || kind == "regex" || kind == "" {
+
+		m, ok := tags.Int(1)
+		if ok {
+			maxLen = m
+		}
+	}
+
+	// Treat any non empty and non-"false" true
+	allowEmpty := false
+	if allow, ok := tags.Str(1); ok {
+		if strings.ToLower(allow) != "false" && allow != "-" && allow != "" {
+			allowEmpty = true
+		}
+	}
+
+	// Check what kind of string field it is, and perform the needed vliadation depending on type
+	var err error
+	switch kind {
+	case "template":
+		err = ValidateTemplateField(s, maxLen)
+	case "regex":
+		err = ValidateRegexField(s, maxLen)
+	case "role":
+		err = ValidateRoleField(s, guild.Roles, allowEmpty)
+	case "channel":
+		err = ValidateChannelField(s, guild.Channels, allowEmpty)
+	case "":
+		min := -1
+		// If only 1 argument provided, its max, if 2 then it's min,max
+		if newMax, ok := tags.Int(2); ok {
+			min = maxLen
+			maxLen = newMax
+		}
+
+		err = ValidateNormalStringField(s, min, maxLen)
+	default:
+		logrus.WithField("kind", kind).Error("UNKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
+	}
+
+	return err
+}
+
+func ValidateNormalStringField(s string, min, max int) error {
 	rCount := utf8.RuneCountInString(s)
 	if rCount > max {
 		return fmt.Errorf("Too long (max %d)", max)
