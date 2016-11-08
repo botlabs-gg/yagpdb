@@ -165,7 +165,9 @@ func GetGuildMember(s *discordgo.Session, guildID, userID string) (m *discordgo.
 		return
 	}
 
-	s.State.MemberAdd(m)
+	m.GuildID = guildID
+
+	err = s.State.MemberAdd(m)
 	return
 }
 

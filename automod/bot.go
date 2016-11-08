@@ -73,7 +73,6 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 	}
 
 	if !config.Enabled {
-		logrus.Info("Automoderator is disabled")
 		return
 	}
 
