@@ -652,3 +652,4 @@ func CustomResumed(inner func(s *discordgo.Session, evt *discordgo.Resumed, r *r
 		inner(s, evt, r)
 	}
 }
+

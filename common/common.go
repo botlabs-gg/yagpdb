@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	VERSION = "0.16 Git Dank ALPHA"
+	VERSION = "0.16 Dank ALPHA"
 )
 
 var (

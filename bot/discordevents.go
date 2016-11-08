@@ -62,3 +62,34 @@ func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *r
 // 		log.WithError(err).Error("Failed increasing guild members stat")
 // 	}
 // }
+
+func HandleGuildUpdate(s *discordgo.Session, evt *discordgo.GuildUpdate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.Guild.ID)
+}
+
+func HandleGuildRoleUpdate(s *discordgo.Session, evt *discordgo.GuildRoleUpdate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func HandleGuildRoleCreate(s *discordgo.Session, evt *discordgo.GuildRoleCreate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func HandleGuildRoleRemove(s *discordgo.Session, evt *discordgo.GuildRoleDelete, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func HandleChannelCreate(s *discordgo.Session, evt *discordgo.ChannelCreate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+func HandleChannelDelete(s *discordgo.Session, evt *discordgo.ChannelDelete, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func InvalidateGuildCache(client *redis.Client, guildID string) {
+	client.Cmd("DEL", common.KeyGuild(guildID))
+	client.Cmd("DEL", common.KeyGuildChannels(guildID))
+}

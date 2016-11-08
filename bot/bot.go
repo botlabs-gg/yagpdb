@@ -32,6 +32,14 @@ func Run() {
 	common.BotSession.AddHandler(CustomGuildCreate(HandleGuildCreate))
 	common.BotSession.AddHandler(CustomGuildDelete(HandleGuildDelete))
 
+	common.BotSession.AddHandler(CustomGuildUpdate(HandleGuildUpdate))
+	common.BotSession.AddHandler(CustomGuildRoleCreate(HandleGuildRoleCreate))
+	common.BotSession.AddHandler(CustomGuildRoleUpdate(HandleGuildRoleUpdate))
+	common.BotSession.AddHandler(CustomGuildRoleDelete(HandleGuildRoleRemove))
+	common.BotSession.AddHandler(CustomChannelCreate(HandleChannelCreate))
+	common.BotSession.AddHandler(CustomChannelUpdate(HandleChannelUpdate))
+	common.BotSession.AddHandler(CustomChannelDelete(HandleChannelDelete))
+
 	// common.BotSession.Debug = true
 	common.BotSession.LogLevel = discordgo.LogWarning
 	err := common.BotSession.Open()
