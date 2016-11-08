@@ -290,16 +290,20 @@ func MuteUnmuteUser(mute bool, client *redis.Client, guildID, channelID, author,
 
 	// Mute or unmute if needed
 	if mute && !isMuted {
-		member.Roles = append(member.Roles, muteRole)
-		err = common.BotSession.GuildMemberEdit(guildID, user.ID, member.Roles)
+		newRoles := make([]string, len(member.Roles)+1)
+		copy(newRoles, member.Roles)
+		newRoles[len(member.Roles)] = muteRole
+
+		err = common.BotSession.GuildMemberEdit(guildID, user.ID, newRoles)
 		logrus.Info("Added mute role yoooo")
 	} else if !mute && isMuted {
-		for k, v := range member.Roles {
-			if v == muteRole {
-				member.Roles = append(member.Roles[:k], member.Roles[k+1:]...)
+		newRoles := make([]string, 0)
+		for _, v := range member.Roles {
+			if v != muteRole {
+				newRoles = append(newRoles, v)
 			}
 		}
-		err = common.BotSession.GuildMemberEdit(guildID, user.ID, member.Roles)
+		err = common.BotSession.GuildMemberEdit(guildID, user.ID, newRoles)
 	} else if !mute && !isMuted {
 		// Trying to unmute an unmuted user? e.e
 		return nil

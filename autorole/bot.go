@@ -73,19 +73,20 @@ var roleCommands = []commandsystem.CommandHandler{
 			}
 
 			found := false
-			for k, v := range member.Roles {
+			newRoles := make([]string, 0)
+			for _, v := range member.Roles {
 				if v == role {
-					member.Roles = append(member.Roles[:k], member.Roles[k+1:]...)
 					found = true
-					break
+				} else {
+					newRoles = append(newRoles, v)
 				}
 			}
 
 			if !found {
-				member.Roles = append(member.Roles, role)
+				newRoles = append(newRoles, role)
 			}
 
-			err = common.BotSession.GuildMemberEdit(parsed.Guild.ID, m.Author.ID, member.Roles)
+			err = common.BotSession.GuildMemberEdit(parsed.Guild.ID, m.Author.ID, newRoles)
 			if err != nil {
 				if cast, ok := err.(discordgo.RESTError); ok && cast.Message != nil {
 					return "API error, Discord said: " + cast.Message.Message, err
@@ -248,8 +249,10 @@ OUTER:
 			continue
 		}
 
-		member.Roles = append(member.Roles, config.Role)
-		err = common.BotSession.GuildMemberEdit(guild.ID, userID, member.Roles)
+		newRoles := make([]string, len(member.Roles)+1)
+		copy(newRoles, member.Roles)
+		newRoles[len(newRoles)-1] = config.Role
+		err = common.BotSession.GuildMemberEdit(guild.ID, userID, newRoles)
 		if err != nil {
 			logrus.WithError(err).Error("Failed adding autorole role")
 		}

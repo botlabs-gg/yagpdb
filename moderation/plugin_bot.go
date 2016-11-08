@@ -151,7 +151,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			err = MuteUnmuteUser(true, client, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[2].Str(), member, parsed.Args[1].Int())
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return cast.Message.Message, err
+					return "API Error: " + cast.Message.Message, err
 				} else {
 					return "An error occurred", err
 				}
@@ -193,7 +193,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			err = MuteUnmuteUser(false, client, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), member, 0)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return cast.Message.Message, err
+					return "API Error: " + cast.Message.Message, err
 				} else {
 					return "An error occurred", err
 				}

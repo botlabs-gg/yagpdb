@@ -264,29 +264,33 @@ func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.G
 		}
 	}
 
-	member.Roles = append(member.Roles, role)
-	err := common.BotSession.GuildMemberEdit(guild.ID, member.User.ID, member.Roles)
+	newRoles := make([]string, len(member.Roles)+1)
+	copy(newRoles, member.Roles)
+	newRoles[len(newRoles)-1] = role
+
+	err := common.BotSession.GuildMemberEdit(guild.ID, member.User.ID, newRoles)
 	if err != nil {
 		log.WithError(err).Error("Error adding streaming role")
 	}
 }
 
 func RemoveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) {
-	index := -1
-	for k, r := range member.Roles {
+	found := false
+	newRoles := make([]string, 0)
+	for _, r := range member.Roles {
 		if r == role {
-			index = k
-			break
+			found = true
+		} else {
+			newRoles = append(newRoles, r)
 		}
 	}
 
 	// Does not have role
-	if index == -1 {
+	if !found {
 		return
 	}
 
-	member.Roles = append(member.Roles[:index], member.Roles[index+1:]...)
-	err := common.BotSession.GuildMemberEdit(guild.ID, member.User.ID, member.Roles)
+	err := common.BotSession.GuildMemberEdit(guild.ID, member.User.ID, newRoles)
 	if err != nil {
 		log.WithError(err).Error("Error removing streaming role")
 	}
