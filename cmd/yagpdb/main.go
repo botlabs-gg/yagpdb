@@ -129,6 +129,8 @@ func runAction(str string) {
 	switch str {
 	case "connected":
 		err = common.RefreshConnectedGuilds(common.BotSession, client)
+	case "rsconnected":
+		err = client.Cmd("DEL", "connected_guilds").Err
 	default:
 		log.Error("Unknown action")
 		return
