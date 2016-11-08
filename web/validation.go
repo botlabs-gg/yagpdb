@@ -152,10 +152,6 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 		}
 	}
 
-	if !ok {
-		tmpl.AddAlerts(ErrorAlert("Form is invalid, please fix the above and try again (contact me on discord if you're still having issues, server link is above)"))
-	}
-
 	return ok
 }
 

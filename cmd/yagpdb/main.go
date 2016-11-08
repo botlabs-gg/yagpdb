@@ -4,6 +4,7 @@ import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -89,6 +90,7 @@ func main() {
 	streaming.RegisterPlugin()
 	automod.RegisterPlugin()
 	logs.InitPlugin()
+	autorole.RegisterPlugin()
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()

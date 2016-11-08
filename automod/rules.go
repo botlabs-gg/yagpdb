@@ -27,18 +27,18 @@ type Rule interface {
 
 type BaseRule struct {
 	Enabled bool
-	Name    string
+	// Name    string
 
-	ViolationsExpire int
+	ViolationsExpire int `valid:"0,1440"`
 
 	// Execute these punishments after certain number of repeated violaions
-	MuteAfter    int
-	MuteDuration int
-	KickAfter    int
-	BanAfter     int
+	MuteAfter    int `valid:"0,100"`
+	MuteDuration int `valid:"0,100"`
+	KickAfter    int `valid:"0,100"`
+	BanAfter     int `valid:"0,100"`
 
-	IgnoreRole     string
-	IgnoreChannels []string
+	IgnoreRole     string   `valid:"role,true"`
+	IgnoreChannels []string `valid:"channel,false"`
 }
 
 func (r BaseRule) GetMuteDuration() int {
@@ -91,10 +91,10 @@ func (r BaseRule) ShouldIgnore(evt *discordgo.MessageCreate, m *discordgo.Member
 }
 
 type SpamRule struct {
-	BaseRule
+	BaseRule `valid:"traverse"`
 
-	NumMessages int
-	Within      int
+	NumMessages int `valid:"0,1000"`
+	Within      int `valid:"0,100"`
 }
 
 // Triggers when a certain number of messages is found by the same author within a timeframe
@@ -141,7 +141,7 @@ func (s *SpamRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channe
 }
 
 type InviteRule struct {
-	BaseRule
+	BaseRule `valid:"traverse"`
 }
 
 var inviteRegex = regexp.MustCompile(`discord\.gg(?:\/#)?(?:\/invite)?\/([a-zA-Z0-9-]+)`)
@@ -164,9 +164,9 @@ func (i *InviteRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Chan
 }
 
 type MentionRule struct {
-	BaseRule
+	BaseRule `valid:"traverse"`
 
-	Treshold int
+	Treshold int `valid:"0,500"`
 }
 
 func (m *MentionRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
@@ -185,7 +185,7 @@ func (m *MentionRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Cha
 }
 
 type LinksRule struct {
-	BaseRule
+	BaseRule `valid:"traverse"`
 }
 
 var linkRegex = regexp.MustCompile(`^((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
@@ -208,9 +208,9 @@ func (l *LinksRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Chann
 }
 
 type WordsRule struct {
-	BaseRule
+	BaseRule          `valid:"traverse"`
 	BuiltinSwearWords bool
-	BannedWords       string
+	BannedWords       string          `valid:",10000"`
 	compiledWords     map[string]bool `json:"-"`
 }
 
@@ -263,12 +263,12 @@ func (w *WordsRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Chann
 }
 
 type SitesRule struct {
-	BaseRule
+	BaseRule `valid:"traverse"`
 
 	BuiltinBadSites  bool
 	BuiltinPornSites bool
 
-	BannedWebsites   string
+	BannedWebsites   string `valid:",10000"`
 	compiledWebsites map[string]bool
 }
 
@@ -285,8 +285,6 @@ func (w *SitesRule) GetCompiled() map[string]bool {
 
 	return w.compiledWebsites
 }
-
-var LinkRegex = regexp.MustCompile(`https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)`)
 
 func (s *SitesRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	matches := linkRegex.FindAllString(evt.Content, -1)

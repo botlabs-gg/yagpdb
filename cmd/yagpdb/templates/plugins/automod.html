@@ -91,8 +91,8 @@
     
     <div class="form-group">
         <label for="NumMessages">Number of messages</label>
-        <input type="number" class="form-control" name="Spam.NumMessages" value="{{.AutomodConfig.Spam.NumMessages}}"></input>
-        <p class="help-block">Number of messages sent within the time frame below for it to be triggered</p>
+        <input type="number" class="form-control" name="Spam.NumMessages" value="{{.AutomodConfig.Spam.NumMessages}}"></input>minutes
+        <p class="help-block">Number of messages sent within the time frame below for  (1440 minutes)it to be triggered</p>
     </div>
     <div class="form-group">
         <label for="Within">Within</label>
@@ -210,7 +210,7 @@
 <div class="form-group">
     <label for="ViolationsExpire">Violations expire after (seconds)</label>
     <input type="number" class="form-control" name="{{.Name}}.ViolationsExpire" value="{{.Rule.ViolationsExpire}}"></input>
-    <p class="help-block">When (n) seconds has passed without any violations, the users violations are forgotten, max is 1 day.</p>
+    <p class="help-block">When this many minutes has passed without any violations, the users violations are forgotten, max is 1 day. (1440 minutes)</p>
 </div>
 
 <div class="form-group row">

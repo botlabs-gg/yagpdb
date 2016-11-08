@@ -149,6 +149,23 @@ func RandomAdjective() string {
 	return Adjectives[rand.Intn(len(Adjectives))]
 }
 
+func GetGuildMember(s *discordgo.Session, guildID, userID string) (m *discordgo.Member, err error) {
+	m, err = s.State.Member(guildID, userID)
+	if err == nil {
+		return
+	}
+
+	log.WithField("guild", guildID).WithField("user", userID).Info("Querying api for guild member")
+
+	m, err = s.GuildMember(guildID, userID)
+	if err != nil {
+		return
+	}
+
+	s.State.MemberAdd(m)
+	return
+}
+
 // This was bad on large servers...
 
 // func GetGuildMembers(client *redis.Client, guildID string) (members []*discordgo.Member, err error) {

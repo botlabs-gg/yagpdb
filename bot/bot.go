@@ -4,6 +4,7 @@ package bot
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"time"
 )
@@ -20,20 +21,19 @@ func Setup() {
 	log.Info("Initializing bot plugins")
 	for _, plugin := range plugins {
 		plugin.InitBot()
-		log.WithField("plugin", plugin.Name()).Info("Initialized plugin")
+		log.WithField("plugin", plugin.Name()).Info("Initialized bot plugin")
 	}
 }
 
 func Run() {
+
 	log.Println("Running bot")
 	common.BotSession.AddHandler(HandleReady)
 	common.BotSession.AddHandler(CustomGuildCreate(HandleGuildCreate))
 	common.BotSession.AddHandler(CustomGuildDelete(HandleGuildDelete))
-	// common.BotSession.AddHandler(CustomGuildMembersChunk(HandleGuildMembersChunk))
 
 	// common.BotSession.Debug = true
-	// common.BotSession.LogLevel = discordgo.LogDebug
-
+	common.BotSession.LogLevel = discordgo.LogWarning
 	err := common.BotSession.Open()
 	if err != nil {
 		panic(err)
@@ -42,6 +42,13 @@ func Run() {
 	Running = true
 
 	go mergedMessageSender()
-	// go guildMembersRequester()
 	go pollEvents()
+
+	for _, p := range plugins {
+		starter, ok := p.(BotStarterHandler)
+		if ok {
+			starter.BotStart()
+			log.WithField("plugin", p.Name()).Info("Ran BotStart")
+		}
+	}
 }

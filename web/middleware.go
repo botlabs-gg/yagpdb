@@ -455,6 +455,7 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 
 type SimpleConfigSaver interface {
 	Save(client *redis.Client, guildID string) error
+	Name() string // Returns this config's name, as it will be logged in the server's control panel log
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
@@ -475,6 +476,10 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler goji.Handler) go
 		err := form.Save(client, g.ID)
 		if !CheckErr(templateData, err, "Failed saving config", log.Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
+			user, ok := ctx.Value(ContextKeyUser).(*discordgo.User)
+			if ok {
+				common.AddCPLogEntry(user, g.ID, "Updated "+t.Name()+" Config.")
+			}
 		}
 	}), t)
 }

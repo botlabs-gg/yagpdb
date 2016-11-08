@@ -131,7 +131,7 @@ func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, cli
 		return
 	}
 
-	member, err := common.BotSession.State.Member(p.GuildID, p.User.ID)
+	member, err := common.GetGuildMember(common.BotSession, p.GuildID, p.User.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving member")
 		return

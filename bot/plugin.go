@@ -27,6 +27,10 @@ type NewGuildHandler interface {
 	NewGuild(client *redis.Client, guild *discordgo.Guild) error
 }
 
+type BotStarterHandler interface {
+	BotStart()
+}
+
 var plugins []Plugin
 
 // Register a plugin, should only be called before webserver is started!!!

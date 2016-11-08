@@ -72,6 +72,10 @@ func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLo
 	logMsgs := make([]Message, len(msgs))
 
 	for k, v := range msgs {
+		if v.Author == nil || v.Timestamp == "" {
+			continue
+		}
+
 		body := v.Content
 		for _, attachment := range v.Attachments {
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)

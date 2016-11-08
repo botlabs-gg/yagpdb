@@ -13,7 +13,7 @@ import (
 )
 
 func (lp *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/public_channellogs.html"))
+	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/public_channel_logs.html"))
 
 	web.ServerPublicMux.HandleC(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
 	web.ServerPublicMux.HandleC(pat.Get("/logs/:id/"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))

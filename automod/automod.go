@@ -33,12 +33,16 @@ func (p *Plugin) Name() string { return "Automod" }
 
 type Config struct {
 	Enabled bool
-	Spam    *SpamRule
-	Mention *MentionRule
-	Invite  *InviteRule
-	Links   *LinksRule
-	Sites   *SitesRule
-	Words   *WordsRule
+	Spam    *SpamRule    `valid:"traverse"`
+	Mention *MentionRule `valid:"traverse"`
+	Invite  *InviteRule  `valid:"traverse"`
+	Links   *LinksRule   `valid:"traverse"`
+	Sites   *SitesRule   `valid:"traverse"`
+	Words   *WordsRule   `valid:"traverse"`
+}
+
+func (c Config) Name() string {
+	return "Automoderator"
 }
 
 func NewConfig() *Config {

@@ -6,6 +6,8 @@ import (
 )
 
 type Config struct {
+	Owner string `json:"owner"`
+
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	BotToken     string `json:"bot_token"`

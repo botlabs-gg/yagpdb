@@ -105,7 +105,7 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 	}
 
 	// We already checked errors above, altthough if someone were to fuck shit up manually
-	// Then yeah, these would be default values
+	// Then yeah, these would be default values with errors thrown
 	banEnabled, _ := replies[0].Bool()
 	kickEnabled, _ := replies[1].Bool()
 	cleanEnabled, _ := replies[2].Bool()

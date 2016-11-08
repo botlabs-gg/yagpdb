@@ -2,7 +2,9 @@ package streaming
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -75,5 +77,9 @@ func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		logrus.WithError(err).Error("Failed sending update streaming event")
 	}
+
+	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	common.AddCPLogEntry(user, guild.ID, "Updated streaming config.")
+
 	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))
 }
