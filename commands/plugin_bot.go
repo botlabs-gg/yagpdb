@@ -14,7 +14,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/lunixbochs/vtclean"
-	"image"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -139,19 +138,19 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 
 			// Fetch the prefix if ther command was not run in a dm
-			prefixStr := ""
+			footer := ""
 			if parsed.Source != commandsystem.CommandSourceDM {
 				prefix, err := GetCommandPrefix(client, parsed.Guild.ID)
 				if err != nil {
 					return "Error communicating with redis", err
 				}
 
-				prefixStr = "**No command prefix set, you can still use commands through mentioning the bot\n**"
+				footer = "**No command prefix set, you can still use commands through mentioning the bot\n**"
 				if prefix != "" {
-					prefixStr = fmt.Sprintf("**Command prefix: %q**\n", prefix)
+					footer = fmt.Sprintf("**Command prefix: %q**\n", prefix)
 				}
 			}
-			prefixStr += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n\n"
+			footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n"
 
 			help := GenerateHelp(target)
 
@@ -160,7 +159,8 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				return "", err
 			}
 
-			dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
+			dutil.SplitSendMessagePS(common.BotSession, privateChannel.ID, help+"\n"+footer, "```ini\n", "```", false, false)
+			//dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
 			return "You've Got Mail!", nil
 		},
 	},
@@ -291,19 +291,20 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 
-			resp, err := http.Get(cmd.Args[0].Str())
-			if err != nil {
-				return err, err
-			}
+			// resp, err := http.Get(cmd.Args[0].Str())
+			// if err != nil {
+			// 	return err, err
+			// }
 
-			img, _, err := image.Decode(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				return err, err
-			}
+			// img, _, err := image.Decode(resp.Body)
+			// resp.Body.Close()
+			// if err != nil {
+			// 	return err, err
+			// }
 
-			out := Convert2Ascii(ScaleImage(img, 50))
-			return "```\n" + string(out) + "\n```", nil
+			// out := Convert2Ascii(ScaleImage(img, 50))
+			// return "```\n" + string(out) + "\n```", nil
+			return "This command has been disabled for eating up memory", nil
 		},
 	},
 	&CustomCommand{
