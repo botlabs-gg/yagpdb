@@ -312,3 +312,7 @@ img::-moz-selection {
 body {
   webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
 }
+
+#homepage-nav{
+  width: 100% !important;
+}
