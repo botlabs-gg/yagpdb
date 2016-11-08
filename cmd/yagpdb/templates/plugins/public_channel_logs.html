@@ -1,7 +1,16 @@
 {{define "public_server_logs"}}
 
 {{template "cp_head" .}}
-
+<style type="text/css">
+    table {
+        table-layout:fixed;
+        width:100%;
+        font-size: 0.9em;
+    }
+    table th:nth-of-type(1) {width:150px;}/*Setting the width of column 1.*/
+    table th:nth-of-type(2) {width:200px;}/*Setting the width of column 2.*/
+    table th:nth-of-type(3) {width:100%;}/*Setting the width of column 3.*/
+</style>
 <div id="wrapper">
     <div id="public-wrapper">
 
@@ -25,9 +34,9 @@
                     
                     <table class="table table-hover table-striped">
                         <tr>
-                            <th class="col-sm-2">Time (UTC)</th>
-                            <th class="col-sm-2">Author</th>
-                            <th class="col-sm-8">Message</th>
+                            <th class="" id="time-col">Time (UTC)</th>
+                            <th class="" id="author-col">Author</th>
+                            <th class="" id="msg-col">Message</th>
                         </tr>
 
                         {{range .Logs.Messages}}

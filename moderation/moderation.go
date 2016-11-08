@@ -64,8 +64,8 @@ type Config struct {
 	DeleteMessagesOnKick bool   `schema:"kick_delete_messages"`
 	ActionChannel        string `schema:"action_channel" valid:"channel,true"`
 	ReportChannel        string `schema:"report_channel" valid:"channel,true"`
-	BanMessage           string `schema:"ban_message" valid:"template,2000"`
-	KickMessage          string `schema:"kick_message" valid:"template,2000"`
+	BanMessage           string `schema:"ban_message" valid:"template,1900"`
+	KickMessage          string `schema:"kick_message" valid:"template,1900"`
 	MuteRole             string `schema:"mute_role" valid:"role,true"`
 }
 
@@ -178,8 +178,8 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 
 	gName := ""
 	guild := common.LogGetGuild(guildID)
-	if guild == nil {
-		gName = guild.Name + ": "
+	if guild != nil {
+		gName = "**" + guild.Name + ":** "
 	}
 
 	err = bot.SendDM(common.BotSession, user.ID, gName+executed)

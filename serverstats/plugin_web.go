@@ -53,9 +53,9 @@ func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		log.WithError(err).Error("Failed saving stats settings to redis")
 		templateData.AddAlerts(web.ErrorAlert("Failed saving setting..."))
-		templateData["Public"] = current
+		templateData["PublicEnabled"] = current
 	} else {
-		templateData["Public"] = public
+		templateData["PublicEnabled"] = public
 	}
 
 	templateData["GuildName"] = activeGuild.Name

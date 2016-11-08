@@ -77,10 +77,12 @@ func GenerateHelp(target string) string {
 
 	out := "```ini\n"
 
-	out += `[Legend] 
-#{alias1, alias2...} <required arg> (optional arg)
+	out += `[Legend]
+# 
+#Command   = {alias1, alias2...} <required arg> (optional arg) : Description
+#
 #Example:
-#Help        = {hlp}   (command)       : blablabla
+Help        = {hlp}   (command)       : blablabla
 # |             |          |                |
 #Comand name, Aliases,  optional arg,    Description
 
@@ -100,7 +102,7 @@ func GenerateHelp(target string) string {
 	out += generateComandsHelp(categories[CategoryFun]) + "\n"
 
 	unknown, ok := categories[CommandCategory("")]
-	if ok {
+	if ok && len(unknown) > 1 {
 		out += "\n[Unknown] # ??"
 		out += generateComandsHelp(unknown) + "\n"
 	}

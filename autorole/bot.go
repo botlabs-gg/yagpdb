@@ -23,6 +23,7 @@ func (p *Plugin) InitBot() {
 var roleCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Cooldown: 10,
+		Category: commands.CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Role",
 			Description: "Give yourself a role or list all available roles",

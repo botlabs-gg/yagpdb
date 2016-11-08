@@ -66,6 +66,7 @@
                                             <option value="" {{if eq $muteRole ""}} selected{{end}}>None</option>
                                             {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" $muteRole}}
                                         </select>
+                                        <p class="help-block">You have to set up the role yourself so that people with it cannot talk in any channels</p>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
