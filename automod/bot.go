@@ -13,6 +13,14 @@ import (
 func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
 	bot.AddEventHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
+
+	common.BotSession.AddHandler(bot.CustomGuildUpdate(HandleGuildUpdate))
+	common.BotSession.AddHandler(bot.CustomGuildRoleCreate(HandleGuildRoleCreate))
+	common.BotSession.AddHandler(bot.CustomGuildRoleUpdate(HandleGuildRoleUpdate))
+	common.BotSession.AddHandler(bot.CustomGuildRoleDelete(HandleGuildRoleRemove))
+	common.BotSession.AddHandler(bot.CustomChannelCreate(HandleChannelCreate))
+	common.BotSession.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
+	common.BotSession.AddHandler(bot.CustomChannelDelete(HandleChannelDelete))
 }
 
 // Invalidate the cache when the rules have changed
@@ -124,4 +132,35 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	if err != nil {
 		logrus.WithError(err).Error("Error carrying out punishment")
 	}
+}
+
+func HandleGuildUpdate(s *discordgo.Session, evt *discordgo.GuildUpdate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.Guild.ID)
+}
+
+func HandleGuildRoleUpdate(s *discordgo.Session, evt *discordgo.GuildRoleUpdate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func HandleGuildRoleCreate(s *discordgo.Session, evt *discordgo.GuildRoleCreate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func HandleGuildRoleRemove(s *discordgo.Session, evt *discordgo.GuildRoleDelete, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func HandleChannelCreate(s *discordgo.Session, evt *discordgo.ChannelCreate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+func HandleChannelDelete(s *discordgo.Session, evt *discordgo.ChannelDelete, client *redis.Client) {
+	InvalidateGuildCache(client, evt.GuildID)
+}
+
+func InvalidateGuildCache(client *redis.Client, guildID string) {
+	client.Cmd("DEL", common.KeyGuild(guildID))
+	client.Cmd("DEL", common.KeyGuildChannels(guildID))
 }

@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+func KeyGuild(guildID string) string         { return "guild:" + guildID }
+func KeyGuildChannels(guildID string) string { return "channels:" + guildID }
+
 // RefreshConnectedGuilds deletes the connected_guilds set and fill it up again
 // This is incase servers are removed/bot left servers while it was offline
 func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) error {
@@ -93,11 +96,11 @@ func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, ms
 // GetGuildChannels returns the guilds channels either from cache or api
 func GetGuildChannels(client *redis.Client, guildID string) (channels []*discordgo.Channel, err error) {
 	// Check cache first
-	err = GetCacheDataJson(client, "channels:"+guildID, &channels)
+	err = GetCacheDataJson(client, KeyGuildChannels(guildID), &channels)
 	if err != nil {
 		channels, err = BotSession.GuildChannels(guildID)
 		if err == nil {
-			SetCacheDataJsonSimple(client, "channels:"+guildID, channels)
+			SetCacheDataJsonSimple(client, KeyGuildChannels(guildID), channels)
 		}
 	}
 
@@ -107,11 +110,11 @@ func GetGuildChannels(client *redis.Client, guildID string) (channels []*discord
 // GetGuild returns the guild from guildid either from cache or api
 func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err error) {
 	// Check cache first
-	err = GetCacheDataJson(client, "guild:"+guildID, &guild)
+	err = GetCacheDataJson(client, KeyGuild(guildID), &guild)
 	if err != nil {
 		guild, err = BotSession.Guild(guildID)
 		if err == nil {
-			SetCacheDataJsonSimple(client, "guild:"+guildID, guild)
+			SetCacheDataJsonSimple(client, KeyGuild(guildID), guild)
 		}
 	}
 

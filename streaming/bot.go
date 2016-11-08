@@ -72,7 +72,7 @@ func HandleGuildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdat
 
 	presence, err := s.State.Presence(m.GuildID, m.User.ID)
 	if err != nil {
-		log.WithError(err).Error("Presence not, found. Most likely offline?")
+		log.WithError(err).Warn("Presence not, found. Most likely offline?")
 		return
 	}
 
