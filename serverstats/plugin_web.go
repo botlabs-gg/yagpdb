@@ -26,6 +26,7 @@ type publicHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.
 
 func publicHandler(inner publicHandlerFunc, public bool) web.CustomHandlerFunc {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+
 		return inner(web.SetContextTemplateData(ctx, map[string]interface{}{"Public": public}), w, r, public)
 	}
 
@@ -37,6 +38,7 @@ func HandleStatsHtml(ctx context.Context, w http.ResponseWriter, r *http.Request
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
+
 	templateData["PublicEnabled"] = publicEnabled
 
 	return templateData
@@ -66,6 +68,11 @@ func HandleStatsSettings(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 func HandleStatsJson(ctx context.Context, w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
 	client, activeGuild, _ := web.GetBaseCPContextData(ctx)
+
+	publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
+	if !publicEnabled && isPublicAccess {
+		return nil
+	}
 
 	stats, err := RetrieveFullStats(client, activeGuild.ID)
 	if err != nil {
