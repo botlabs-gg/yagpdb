@@ -12,6 +12,7 @@ import (
 
 func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
+	common.BotSession.AddHandler(bot.CustomMessageUpdate(HandleMessageUpdate))
 	bot.AddEventHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
 
 	common.BotSession.AddHandler(bot.CustomGuildUpdate(HandleGuildUpdate))
@@ -42,8 +43,16 @@ func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
 }
 
 func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
+	CheckMessage(s, evt.Message, client)
+}
 
-	channel := common.LogGetChannel(evt.ChannelID)
+func HandleMessageUpdate(s *discordgo.Session, evt *discordgo.MessageUpdate, client *redis.Client) {
+	CheckMessage(s, evt.Message, client)
+}
+
+func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Client) {
+
+	channel := common.LogGetChannel(m.ChannelID)
 	if channel == nil {
 		return
 	}
@@ -68,7 +77,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
-	member, err := s.State.Member(guild.ID, evt.Author.ID)
+	member, err := s.State.Member(guild.ID, m.Author.ID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed finding guild member")
 		return
@@ -84,11 +93,11 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	// We gonna need to have this locked while we check
 	s.State.RLock()
 	for _, r := range rules {
-		if r.ShouldIgnore(evt, member) {
+		if r.ShouldIgnore(m, member) {
 			continue
 		}
 
-		d, punishment, msg, err := r.Check(evt, channel, client)
+		d, punishment, msg, err := r.Check(m, channel, client)
 		if d {
 			del = true
 		}
@@ -112,7 +121,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	s.State.RUnlock()
 
 	if del {
-		s.ChannelMessageDelete(evt.ChannelID, evt.ID)
+		s.ChannelMessageDelete(m.ChannelID, m.ID)
 	} else {
 		return
 	}
@@ -132,6 +141,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	if err != nil {
 		logrus.WithError(err).Error("Error carrying out punishment")
 	}
+
 }
 
 func HandleGuildUpdate(s *discordgo.Session, evt *discordgo.GuildUpdate, client *redis.Client) {

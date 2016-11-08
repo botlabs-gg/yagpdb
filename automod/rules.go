@@ -20,8 +20,8 @@ const (
 )
 
 type Rule interface {
-	Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error)
-	ShouldIgnore(evt *discordgo.MessageCreate, m *discordgo.Member) bool
+	Check(m *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error)
+	ShouldIgnore(msg *discordgo.Message, m *discordgo.Member) bool
 	GetMuteDuration() int
 }
 
@@ -70,7 +70,7 @@ func (r BaseRule) PushViolation(client *redis.Client, key string) (p Punishment,
 }
 
 // Returns true if this rule should be ignored
-func (r BaseRule) ShouldIgnore(evt *discordgo.MessageCreate, m *discordgo.Member) bool {
+func (r BaseRule) ShouldIgnore(evt *discordgo.Message, m *discordgo.Member) bool {
 	if !r.Enabled {
 		return true
 	}
@@ -98,7 +98,7 @@ type SpamRule struct {
 }
 
 // Triggers when a certain number of messages is found by the same author within a timeframe
-func (s *SpamRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (s *SpamRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 
 	within := time.Duration(s.Within) * time.Second
 	now := time.Now()
@@ -146,7 +146,7 @@ type InviteRule struct {
 
 var inviteRegex = regexp.MustCompile(`discord\.gg(?:\/#)?(?:\/invite)?\/([a-zA-Z0-9-]+)`)
 
-func (i *InviteRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (i *InviteRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	containsInvite := inviteRegex.MatchString(evt.ContentWithMentionsReplaced())
 	if !containsInvite {
 		return
@@ -169,7 +169,7 @@ type MentionRule struct {
 	Treshold int `valid:"0,500"`
 }
 
-func (m *MentionRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (m *MentionRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	if len(evt.Mentions) < m.Treshold {
 		return
 	}
@@ -190,7 +190,7 @@ type LinksRule struct {
 
 var linkRegex = regexp.MustCompile(`^((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
 
-func (l *LinksRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (l *LinksRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 
 	if !linkRegex.MatchString(evt.ContentWithMentionsReplaced()) {
 		return
@@ -228,7 +228,7 @@ func (w *WordsRule) GetCompiled() map[string]bool {
 	return w.compiledWords
 }
 
-func (w *WordsRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (w *WordsRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 
 	found := false
 
@@ -286,7 +286,7 @@ func (w *SitesRule) GetCompiled() map[string]bool {
 	return w.compiledWebsites
 }
 
-func (s *SitesRule) Check(evt *discordgo.MessageCreate, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (s *SitesRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	matches := linkRegex.FindAllString(evt.Content, -1)
 
 	bannedLink := false
