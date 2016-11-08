@@ -36,11 +36,10 @@
                                 <label for="autorole-duration">Minutes of membership required for role</label>
                                 <input type="number" class="form-control" id="autorole-duration" name="General.RequiredDuration" placeholder="" value="{{.Autorole.RequiredDuration}}">
                             </div>
-                            <div class="form-group">
-                                <label class="control-label">Currently assigning role to {{.Processing}} members. ETA (minutes): {{.ProcessingETA}} (May take up to a minute befor the bot starts assigning roles)</label>
-                                <label class="control-label">To stop set the role to "None"</label>
+                                
+                            <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA: <code>{{.ProcessingETA}}</code>minutes (May take up to a minute before the bot starts assigning roles)</p>
+                            <p>To stop set the role to "None"</p>
                             </div>
-                        </div>
                     </div>
                     <div class="panel panel-default">
                         <div class="panel-heading">

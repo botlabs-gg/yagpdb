@@ -27,6 +27,25 @@ body {
     }
 }
 
+@media (max-width: 768px) and (min-width: 650px) {
+  #page-wrapper {
+    margin-top: 75px;
+  }
+}
+
+@media (max-width: 650px) and (min-width: 360px) {
+  #page-wrapper {
+    margin-top: 150px;
+  }
+}
+
+@media (max-width: 360px)  {
+  #page-wrapper {
+    margin-top: 250px;
+  }
+}
+
+
 .navbar-top-links {
     margin-right: 0;
 }
@@ -130,9 +149,9 @@ body {
 @media(min-width:768px) {
     .sidebar {
         z-index: 1;
-        position: absolute;
+        /*position: absolute;*/
         width: 250px;
-        margin-top: 51px;
+        /*margin-top: 51px;*/
     }
 
     .navbar-top-links .dropdown-messages,

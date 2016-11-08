@@ -11,8 +11,11 @@ textarea {
 	margin: 0 20px 0 20px;
 }
 
-#nav-sidebar {
+#sidebar-wrapper {
 	position: fixed;
+	overflow-y: auto;
+	top: 51px;
+	bottom: 0%;
 }
 
 form table td input{
