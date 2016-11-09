@@ -483,3 +483,89 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler goji.Handler) go
 		}
 	}), t)
 }
+
+type PublicError struct {
+	msg string
+}
+
+func (p *PublicError) Error() string {
+	return p.msg
+}
+
+func NewPublicError(a ...interface{}) error {
+	return &PublicError{fmt.Sprint(a...)}
+}
+
+type ControllerHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request) (TemplateData, error)
+
+// Handlers can return templatedata and an erro.
+// If error is not nil and publicerror it will be added as an alert,
+// if error is not a publicerror it will render a error page
+func ControllerHandler(f ControllerHandlerFunc, templateName string) goji.Handler {
+	return RenderHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+
+		guild, _ := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+
+		data, err := f(ctx, w, r)
+		if data == nil {
+			ctx, data = GetCreateTemplateData(ctx)
+		}
+
+		checkControllerError(guild, data, err)
+
+		return data
+
+	}, templateName)
+}
+
+// Uses the FormParserMW to parse and validate the form, then saves it
+func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler goji.Handler, formData interface{}, logMsg string) goji.Handler {
+	return FormParserMW(goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		_, g, templateData := GetBaseCPContextData(ctx)
+
+		if extraHandler != nil {
+			defer func() {
+				extraHandler.ServeHTTPC(ctx, w, r)
+			}()
+		}
+
+		ok := ctx.Value(ContextKeyFormOk).(bool)
+		if !ok {
+			return
+		}
+
+		data, err := mainHandler(ctx, w, r)
+		if data == nil {
+			data = templateData
+		}
+		checkControllerError(g, data, err)
+
+		if err == nil {
+			data.AddAlerts(SucessAlert("Sucessfully saved! :')"))
+			user, ok := ctx.Value(ContextKeyUser).(*discordgo.User)
+			if ok {
+				go common.AddCPLogEntry(user, g.ID, logMsg)
+			}
+		}
+	}), formData)
+}
+
+func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) {
+	if err == nil {
+		return
+	}
+
+	if cast, ok := err.(*PublicError); ok {
+		data.AddAlerts(ErrorAlert(cast.Error()))
+	} else {
+		data.AddAlerts(ErrorAlert("An error occured... Contact support."))
+	}
+
+	entry := log.WithError(err)
+
+	if guild != nil {
+		entry = entry.WithField("guild", guild.ID)
+	}
+
+	entry.Error("Web handler reported error")
+}

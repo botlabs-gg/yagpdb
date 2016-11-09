@@ -41,7 +41,7 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 
 	config := GetConfig(client, evt.GuildID)
 
-	// Beware of the spaghetti
+	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled {
 
 		msg, err := common.ParseExecuteTemplate(config.JoinDMMsg, templateData)

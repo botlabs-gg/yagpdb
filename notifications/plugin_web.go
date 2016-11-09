@@ -1,8 +1,6 @@
 package notifications
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
@@ -14,41 +12,41 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/notifications_general.html"))
 
-	web.CPMux.HandleC(pat.Get("/notifications/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")))
-	web.CPMux.HandleC(pat.Get("/notifications/general/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")))
-	web.CPMux.HandleC(pat.Post("/notifications/general"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"), Config{})))
-	web.CPMux.HandleC(pat.Post("/notifications/general/"), web.RequireGuildChannelsMiddleware(web.FormParserMW(web.RenderHandler(HandleNotificationsPost, "cp_notifications_general"), Config{})))
+	getHandler := web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")
+	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifiactions config.")
+
+	web.CPMux.HandleC(pat.Get("/notifications/general"), web.RequireGuildChannelsMiddleware(getHandler))
+	web.CPMux.HandleC(pat.Get("/notifications/general/"), web.RequireGuildChannelsMiddleware(getHandler))
+
+	web.CPMux.HandleC(pat.Post("/notifications/general"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.HandleC(pat.Post("/notifications/general/"), web.RequireGuildChannelsMiddleware(postHandler))
 }
 
 func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	templateData["NotifyConfig"] = GetConfig(client, activeGuild.ID)
+	formConfig, ok := ctx.Value(web.ContextKeyParsedForm).(*Config)
+	if ok {
+		templateData["NotifyConfig"] = formConfig
+	} else {
+		templateData["NotifyConfig"] = GetConfig(client, activeGuild.ID)
+	}
 
 	return templateData
 }
 
-func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/notifications/general/"
 
 	newConfig := ctx.Value(web.ContextKeyParsedForm).(*Config)
-	ok := ctx.Value(web.ContextKeyFormOk).(bool)
-
-	templateData["NotifyConfig"] = newConfig
-	if !ok {
-		return templateData
-	}
 
 	err := common.SetRedisJson(client, "notifications/general:"+activeGuild.ID, newConfig)
-	if web.CheckErr(templateData, err, "Failed saving :(", log.Error) {
-		return templateData
+	if err != nil {
+		return nil, err
 	}
 
 	templateData.AddAlerts(web.SucessAlert("Sucessfully saved everything! :')"))
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Updated general notification settings")
-
-	return templateData
+	return templateData, nil
 }
