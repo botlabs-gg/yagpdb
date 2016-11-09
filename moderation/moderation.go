@@ -50,6 +50,13 @@ func handleUnMute(data string) error {
 
 	err = MuteUnmuteUser(false, client, guildID, "", "YAGPDB", "Mute Duration expired", member, 0)
 	if err != ErrNoMuteRole {
+
+		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+			if cast.Message.Code == 10007 {
+				return nil // MemberNot found
+			}
+		}
+
 		return err
 	}
 	return nil
