@@ -88,7 +88,7 @@ var roleCommands = []commandsystem.CommandHandler{
 
 			err = common.BotSession.GuildMemberEdit(parsed.Guild.ID, m.Author.ID, newRoles)
 			if err != nil {
-				if cast, ok := err.(discordgo.RESTError); ok && cast.Message != nil {
+				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API error, Discord said: " + cast.Message.Message, err
 				}
 				return "Something went wrong :upside_down: ", err
