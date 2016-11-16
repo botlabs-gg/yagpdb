@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/lunixbochs/vtclean"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -443,6 +444,27 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
+		},
+	},
+	&CustomCommand{
+		Cooldown: 2,
+		Category: CategoryTool,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "throw",
+			Description: "Throw things at people cause why not",
+			Arguments: []*commandsystem.ArgumentDef{
+				{Name: "Target", Type: commandsystem.ArgumentTypeUser},
+			},
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			thing := common.Things[rand.Intn(len(common.Things))]
+
+			target := "a random person nearby"
+			if cmd.Args[0] != nil {
+				target = cmd.Args[0].DiscordUser().Username
+			}
+
+			return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
 		},
 	},
 }
