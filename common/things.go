@@ -208,7 +208,7 @@ var Things = []string{
 	"tree",
 	"truck",
 	"tv",
-	"twezzers",
+	"tweezers",
 	"twister",
 	"usb drive",
 	"vase",

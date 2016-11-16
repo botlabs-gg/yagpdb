@@ -440,7 +440,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Category: CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "ping",
-			Description: "Ahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+			Description: "I prefer tabletennis",
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
@@ -448,10 +448,10 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown: 2,
-		Category: CategoryTool,
+		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "throw",
-			Description: "Throw things at people cause why not",
+			Description: "Cause you're a rebel",
 			Arguments: []*commandsystem.ArgumentDef{
 				{Name: "Target", Type: commandsystem.ArgumentTypeUser},
 			},
