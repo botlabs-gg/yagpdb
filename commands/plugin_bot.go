@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/logs"
 	"github.com/lunixbochs/vtclean"
 	"io/ioutil"
 	"net/http"
@@ -330,23 +329,6 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 
 			return fmt.Sprintf("Result: `%G`", result), nil
-		},
-	},
-	&CustomCommand{
-		Cooldown: 30,
-		Category: CategoryTool,
-		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "Logs",
-			Aliases:     []string{"ps", "paste", "pastebin", "log"},
-			Description: "Creates a log of the channels last 100 messages",
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			l, err := logs.CreateChannelLog(m.ChannelID, m.Author.Username, m.Author.ID, 100)
-			if err != nil {
-				return "An error occured", err
-			}
-
-			return l.Link(), err
 		},
 	},
 	&CustomCommand{

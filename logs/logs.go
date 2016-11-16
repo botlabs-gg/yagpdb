@@ -3,6 +3,7 @@ package logs
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 )
@@ -15,13 +16,14 @@ func (p *Plugin) Name() string {
 
 func InitPlugin() {
 	//p := &Plugin{}
-	err := common.SQL.AutoMigrate(&MessageLog{}, &Message{}).Error
+	err := common.SQL.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}).Error
 	if err != nil {
 		panic(err)
 	}
 
 	p := &Plugin{}
 	web.RegisterPlugin(p)
+	bot.RegisterPlugin(p)
 }
 
 type MessageLog struct {
