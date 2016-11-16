@@ -122,7 +122,16 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 }
 
 func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {
-	parsed, err := template.New("").Parse(tmplSource)
+	return ParseExecuteTemplateFM(tmplSource, data, nil)
+}
+
+func ParseExecuteTemplateFM(tmplSource string, data interface{}, f template.FuncMap) (string, error) {
+	tmpl := template.New("")
+	if f != nil {
+		tmpl.Funcs(f)
+	}
+
+	parsed, err := tmpl.Parse(tmplSource)
 	if err != nil {
 		return "", err
 	}
@@ -140,10 +149,28 @@ func LogGetChannel(cID string) *discordgo.Channel {
 	return c
 }
 
+// Panics if chanel is not available
+func MustGetChannel(cID string) *discordgo.Channel {
+	c, err := BotSession.State.Channel(cID)
+	if err != nil {
+		panic("Failed retrieving channel from state: " + err.Error())
+	}
+	return c
+}
+
 func LogGetGuild(gID string) *discordgo.Guild {
 	g, err := BotSession.State.Guild(gID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving guild from state")
+	}
+	return g
+}
+
+// Panics if guild is not available
+func MustGetGuild(gID string) *discordgo.Guild {
+	g, err := BotSession.State.Guild(gID)
+	if err != nil {
+		panic("Failed retrieving guild from state: " + err.Error())
 	}
 	return g
 }

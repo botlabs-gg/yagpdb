@@ -1,13 +1,17 @@
 package customcommands
 
 import (
+	"errors"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"regexp"
 	"strings"
+	"text/template"
 	"unicode/utf8"
 )
 
@@ -20,11 +24,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return // ignore bots
 	}
 
-	channel, err := s.State.Channel(evt.ChannelID)
-	if err != nil {
-		log.WithError(err).Error("Failed retrieving channel from state")
-		return
-	}
+	channel := common.MustGetChannel(evt.ChannelID)
 
 	cmds, _, err := GetCommands(client, channel.GuildID)
 	if err != nil {
@@ -61,25 +61,123 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
+	out, err := ExecuteCustomCommand(matched, client, s, evt)
+	if err != nil {
+		log.WithField("guild", channel.GuildID).WithError(err).Error("Failed executing custom command")
+	}
+
+	if out != "" {
+		_, err = s.ChannelMessageSend(evt.ChannelID, out)
+		if err != nil {
+			log.WithError(err).Error("Failed sending message")
+		}
+	}
+}
+
+func ExecuteCustomCommand(cmd *CustomCommand, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (string, error) {
+	channel := common.MustGetChannel(m.ChannelID)
+
 	data := map[string]interface{}{
-		"User":    evt.Author,
-		"user":    evt.Author,
+		"User":    m.Author,
+		"user":    m.Author,
 		"Channel": channel,
 	}
 
-	out, err := common.ParseExecuteTemplate(matched.Response, data)
+	args := commandsystem.ReadArgs(m.Content)
+	for k, v := range args {
+		data[fmt.Sprintf("$%d", k)] = v.Raw
+	}
+
+	data["$"] = m.Content
+
+	execUser, execBot := execCmdFuncs(3, false, client, s, m)
+
+	//out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": execUser, "execBot": execBot})
+	out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": execUser, "execBot": execBot})
 	if err != nil {
-		out = "Error executing custom command:" + err.Error() + " (Contact support on the yagpdb support server)"
+		out = "Error executing custom command:" + err.Error()
 	}
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
 	}
 
-	_, err = s.ChannelMessageSend(evt.ChannelID, out)
-	if err != nil {
-		log.WithError(err).Error("Failed sending message")
+	return out, err
+}
+
+type cmdExecFunc func(cmd string, args ...string) (string, error)
+
+// Returns 2 functions to execute commands in user or bot context with limited about of commands executed
+func execCmdFuncs(maxExec int, dryRun bool, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
+	execUser := func(cmd string, args ...string) (string, error) {
+		if maxExec < 1 {
+			return "", errors.New("Max number of commands executed in custom command")
+		}
+		maxExec -= 1
+		return execCmd(dryRun, client, s.State.User.User, s, m, cmd, args...)
 	}
+
+	execBot := func(cmd string, args ...string) (string, error) {
+		if maxExec < 1 {
+			return "", errors.New("Max number of commands executed in custom command")
+		}
+		maxExec -= 1
+		return execCmd(dryRun, client, m.Author, s, m, cmd, args...)
+	}
+
+	return execUser, execBot
+}
+
+func execCmd(dryRun bool, client *redis.Client, ctx *discordgo.User, s *discordgo.Session, m *discordgo.MessageCreate, cmd string, args ...string) (string, error) {
+	cmdLine := cmd
+
+	log.Info("Custom command is executing a command:", cmdLine)
+
+	for _, arg := range args {
+		cmdLine += " \"" + arg + "\""
+	}
+
+	var matchedCmd commandsystem.CommandHandler
+	for _, command := range commands.CommandSystem.Commands {
+		if !command.CheckMatch(cmdLine, commandsystem.CommandSourcePrefix, m, s) {
+			continue
+		}
+		matchedCmd = command
+		break
+	}
+
+	if matchedCmd == nil {
+		return "", errors.New("Couldn't find command")
+	}
+
+	cast, ok := matchedCmd.(*commands.CustomCommand)
+	if !ok {
+		return "", errors.New("Unsopported command")
+	}
+
+	// Do not actually execute the command if it's a dry-run
+	if dryRun {
+		return "", nil
+	}
+
+	parsed, err := cast.ParseCommand(cmdLine, m, s)
+	if err != nil {
+		return "", err
+	}
+
+	parsed.Channel = common.MustGetChannel(m.ChannelID)
+	parsed.Guild = common.MustGetGuild(parsed.Channel.GuildID)
+
+	resp, err := cast.RunFunc(parsed, client, m)
+
+	switch v := resp.(type) {
+	case error:
+		return "Error: " + v.Error(), err
+	case string:
+		return v, err
+	}
+
+	return "", err
 }
 
 func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {

@@ -10,6 +10,8 @@ import (
 	"sort"
 )
 
+func KeyCommands(guildID string) string { return "custom_commands:" + guildID }
+
 type Plugin struct{}
 
 func RegisterPlugin() {
@@ -40,9 +42,19 @@ type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
 	TriggerTypeForm string             `json:"-" schema:"type"`
 	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,2000"`
-	Response        string             `json:"response" schema:"response" valid:"template,2000"`
+	Response        string             `json:"response" schema:"response" valid:",2000"`
 	CaseSensitive   bool               `json:"case_sensitive" schema:"case_sensitive"`
 	ID              int                `json:"id"`
+}
+
+func (cc *CustomCommand) Save(client *redis.Client, guildID string) error {
+	serialized, err := json.Marshal(cc)
+	if err != nil {
+		return err
+	}
+
+	err = client.Cmd("HSET", KeyCommands(guildID), cc.ID, serialized).Err
+	return err
 }
 
 func GetCommands(client *redis.Client, guild string) ([]*CustomCommand, int, error) {
