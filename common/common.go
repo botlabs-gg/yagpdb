@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/Syfaro/haste-client"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -11,7 +10,7 @@ import (
 )
 
 const (
-	VERSION = "0.16.1 Dank ALPHA"
+	VERSION = "Edgy 0.17 git"
 )
 
 var (
@@ -20,7 +19,6 @@ var (
 
 	BotSession *discordgo.Session
 	Conf       *Config
-	Hastebin   = haste.NewHaste("http://hastebin.com")
 )
 
 // Initalizes all database connections, config loading and so on
