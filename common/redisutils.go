@@ -113,3 +113,11 @@ func SetRedisJson(client *redis.Client, key string, value interface{}) error {
 	err = client.Cmd("SET", key, serialized).Err
 	return err
 }
+
+func MustGetRedisClient() *redis.Client {
+	client, err := RedisPool.Get()
+	if err != nil {
+		panic("Failed retrieving redis client from pool: " + err.Error())
+	}
+	return client
+}

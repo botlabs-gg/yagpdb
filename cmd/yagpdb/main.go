@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/reddit"
+	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/streaming"
@@ -91,6 +92,7 @@ func main() {
 	automod.RegisterPlugin()
 	logs.InitPlugin()
 	autorole.RegisterPlugin()
+	reminders.RegisterPlugin()
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()
