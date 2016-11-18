@@ -100,11 +100,13 @@ var cmds = []commandsystem.CommandHandler{
 	},
 }
 
-// Guildmemberupdate is sent when user changes username/nick
+// Guildmemberupdate is sent when user changes nick
 func HandleGuildmemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	CheckNickname(m.User.ID, m.GuildID, m.Nick)
 }
 
+// While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
+// Also check nickname incase the user came online
 func HandlePresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpdate) {
 	CheckNickname(m.User.ID, m.GuildID, m.Presence.Nick)
 	if m.User.Username != "" {

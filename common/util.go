@@ -13,9 +13,27 @@ import (
 func KeyGuild(guildID string) string         { return "guild:" + guildID }
 func KeyGuildChannels(guildID string) string { return "channels:" + guildID }
 
+func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
+	perms, err := BotSession.State.UserChannelPermissions(userID, channelID)
+	if err != nil {
+		return false, err
+	}
+
+	if perms&needed != 0 {
+		return true, nil
+	}
+
+	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // RefreshConnectedGuilds deletes the connected_guilds set and fill it up again
 // This is incase servers are removed/bot left servers while it was offline
 func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) error {
+	panic("REFRESH CONNECTED DOSEN'T WORK")
 	guilds, err := session.UserGuilds()
 	if err != nil {
 		return err

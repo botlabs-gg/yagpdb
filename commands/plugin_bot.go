@@ -450,7 +450,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Cooldown: 2,
 		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "throw",
+			Name:        "Throw",
 			Description: "Cause you're a rebel",
 			Arguments: []*commandsystem.ArgumentDef{
 				{Name: "Target", Type: commandsystem.ArgumentTypeUser},
