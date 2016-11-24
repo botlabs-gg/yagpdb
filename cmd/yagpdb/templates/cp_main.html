@@ -132,7 +132,7 @@ Selected - id of the selected channel
 */}}
 {{define "role_options"}}
     {{$selected := or .Selected ""}}
-    {{range .Roles}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>{{end}}
+    {{range .Roles}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if .Highest}}{{if lt .Highest .Position}} disabled {{end}}{{end}}>{{.Name}}</option>{{end}}
 {{end}}
 
 {{/*Help block for templating*/}}

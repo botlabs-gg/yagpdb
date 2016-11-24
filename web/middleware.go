@@ -7,6 +7,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/reststate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/miolini/datacounter"
 	"goji.io"
@@ -350,6 +351,57 @@ func RequireFullGuildMW(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(mw)
 }
 
+func RequireBotMemberMW(inner goji.Handler) goji.Handler {
+	return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		member, err := reststate.GetBotMember(pat.Param(ctx, "server"))
+		if err != nil {
+			log.WithError(err).Error("Failed retrieving bot member")
+			http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
+			return
+		}
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"BotMember": member})
+		ctx = context.WithValue(ctx, ContextKeyBotMember, member)
+
+		defer inner.ServeHTTPC(ctx, w, r)
+
+		// Set highest role and combined perms
+		guild := ctx.Value(ContextKeyCurrentGuild)
+		if guild == nil {
+			return
+		}
+
+		guildCast := guild.(*discordgo.Guild)
+		if len(guildCast.Roles) < 1 { // Not full guild
+			return
+		}
+
+		var highest *discordgo.Role
+		combinedPerms := 0
+		for _, role := range guildCast.Roles {
+			found := false
+			for _, mr := range member.Roles {
+				if mr == role.ID {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				continue
+			}
+
+			combinedPerms |= role.Permissions
+			if highest == nil || role.Position > highest.Position {
+				highest = role
+			}
+		}
+
+		ctx = context.WithValue(ctx, ContextKeyHighestBotRole, highest)
+		ctx = context.WithValue(ctx, ContextKeyBotPermissions, combinedPerms)
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": highest, "BotPermissions": combinedPerms})
+	})
+}
+
 type CustomHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{}
 
 // A helper wrapper that renders a template
@@ -568,4 +620,47 @@ func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) 
 	}
 
 	entry.Error("Web handler reported error")
+}
+
+var stringPerms = map[int]string{
+	discordgo.PermissionReadMessages:       "Read Messages",
+	discordgo.PermissionSendMessages:       "Send Messages",
+	discordgo.PermissionSendTTSMessages:    "Send TTS Messages",
+	discordgo.PermissionManageMessages:     "Manage Messages",
+	discordgo.PermissionEmbedLinks:         "Embed Links",
+	discordgo.PermissionAttachFiles:        "Attach Files",
+	discordgo.PermissionReadMessageHistory: "Read Message History",
+	discordgo.PermissionMentionEveryone:    "Mention Everyone",
+	discordgo.PermissionVoiceConnect:       "Voice Connect",
+	discordgo.PermissionVoiceSpeak:         "Voice Speak",
+	discordgo.PermissionVoiceMuteMembers:   "Voice Mute Members",
+	discordgo.PermissionVoiceDeafenMembers: "Voice Deafen Members",
+	discordgo.PermissionVoiceMoveMembers:   "Voice Move Members",
+	discordgo.PermissionVoiceUseVAD:        "Voice Use VAD",
+}
+
+func RequirePermMW(perm int) func(goji.Handler) goji.Handler {
+	return func(inner goji.Handler) goji.Handler {
+		return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+			permsInterface := ctx.Value(ContextKeyBotPermissions)
+			currentPerms := 0
+			if permsInterface == nil {
+				currentPerms = permsInterface.(int)
+			} else {
+				log.Warn("Requires perms but no permsinterface available")
+			}
+
+			has := currentPerms&perm != 0
+			c, tmpl := GetCreateTemplateData(ctx)
+			ctx = c
+
+			if !has {
+				tmpl.AddAlerts(ErrorAlert("This plugin requires ", stringPerms[perm], ", which the bot does not have at the moment. It may continue to function without the functionality that requires this permission."))
+			} else {
+				tmpl.AddAlerts(SucessAlert("The bot has the permission ", stringPerms[perm]))
+			}
+
+			inner.ServeHTTPC(ctx, w, r)
+		})
+	}
 }

@@ -54,9 +54,7 @@
                                             <select class="form-control" name="give_role">
                                                 {{$selected := .StreamingConfig.GiveRole}}
                                                 <option value="" {{if eq $selected ""}} selected{{end}}>None (Disable Give Role)</option>
-                                                {{range .ActiveGuild.Roles}}
-                                                <option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>
-                                                {{end}}
+                                                {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" .StreamingConfig.GiveRole "Highest" .HighestRole}}
                                             </select>
                                             <p class="help-block">Assign a role to people currently streaming, so you can for example hoist it up where people can see</p>
                                         </div>
@@ -65,9 +63,7 @@
                                             <select class="form-control" name="require_role">
                                                 {{$selected := .StreamingConfig.RequireRole}}
                                                 <option value="" {{if eq $selected ""}} selected{{end}}>None</option>
-                                                {{range .ActiveGuild.Roles}}
-                                                <option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>
-                                                {{end}}
+                                                {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" $selected}}
                                             </select>
                                             <p class="help-block">Only care about the people with this role</p>
                                         </div>
@@ -76,9 +72,7 @@
                                             <select class="form-control" name="ignore_role">
                                                 {{$selected := .StreamingConfig.IgnoreRole}}
                                                 <option value="" {{if eq $selected ""}} selected{{end}}>None</option>
-                                                {{range .ActiveGuild.Roles}}
-                                                <option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>{{.Name}}</option>
-                                                {{end}}
+                                                {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" $selected}}
                                             </select>
                                             <p class="help-block">Ignore people with this role</p>
                                         </div>

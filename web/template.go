@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"errors"
+	"github.com/jonas747/discordgo"
 	"html/template"
 	"reflect"
 	"strings"
@@ -99,4 +100,18 @@ func in(l interface{}, v interface{}) bool {
 	}
 
 	return false
+}
+
+var permsString = map[string]int{
+	"ManageRoles":    discordgo.PermissionManageRoles,
+	"ManageMessages": discordgo.PermissionManageMessages,
+}
+
+func hasPerm(botPerms int, checkPerm string) (bool, error) {
+	p, ok := permsString[checkPerm]
+	if !ok {
+		return false, errors.New("Unknown permission: " + checkPerm)
+	}
+
+	return botPerms&p != 0, nil
 }

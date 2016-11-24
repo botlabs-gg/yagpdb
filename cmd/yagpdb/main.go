@@ -38,14 +38,13 @@ var (
 )
 
 func init() {
-	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot")
+	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
 	flag.BoolVar(&flagRunReddit, "reddit", false, "Set to run reddit bot")
-	flag.BoolVar(&flagRunStats, "stats", false, "Set to update stats")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
-	flag.StringVar(&flagAddr, "addr", ":5000", "Address for webserver to listen on")
+	flag.StringVar(&flagAddr, "addr", ":5001", "Address for webserver to listen on")
 	flag.StringVar(&flagConfig, "conf", "config.json", "Path to config file")
 	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected")
 	flag.Parse()
@@ -99,21 +98,17 @@ func main() {
 
 	// RUN FORREST RUN
 	if flagRunWeb || flagRunEverything {
-		web.ListenAddress = flagAddr
 		go web.Run()
 	}
 
 	if flagRunBot || flagRunEverything {
 		go bot.Run()
+		go serverstats.UpdateStatsLoop()
+		go common.RunScheduledEvents(make(chan *sync.WaitGroup))
 	}
 
 	if flagRunReddit || flagRunEverything {
 		go reddit.RunReddit()
-	}
-
-	if flagRunStats || flagRunEverything {
-		go serverstats.UpdateStatsLoop()
-		go common.RunScheduledEvents(make(chan *sync.WaitGroup))
 	}
 
 	select {}

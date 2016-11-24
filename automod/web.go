@@ -2,6 +2,7 @@ package automod
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -31,6 +32,11 @@ func (p *Plugin) InitWeb() {
 	// Alll handlers here require guild channels present
 	autmodMux.UseC(web.RequireFullGuildMW)
 	autmodMux.UseC(web.RequireGuildChannelsMiddleware)
+	autmodMux.UseC(web.RequireBotMemberMW)
+	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles))
+	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionKickMembers))
+	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionBanMembers))
+	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionManageMessages))
 
 	getHandler := web.RenderHandler(HandleAutomod, "cp_automod")
 
@@ -38,7 +44,6 @@ func (p *Plugin) InitWeb() {
 	autmodMux.HandleC(pat.Get(""), getHandler)
 
 	// Post handlers
-
 	autmodMux.HandleC(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
 	autmodMux.HandleC(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
 }

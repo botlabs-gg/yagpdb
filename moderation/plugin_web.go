@@ -22,6 +22,12 @@ func (p *Plugin) InitWeb() {
 	subMux.UseC(web.RequireGuildChannelsMiddleware)
 	subMux.UseC(web.RequireFullGuildMW)
 
+	subMux.UseC(web.RequireBotMemberMW) // need the bot's role
+	subMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles))
+	subMux.UseC(web.RequirePermMW(discordgo.PermissionKickMembers))
+	subMux.UseC(web.RequirePermMW(discordgo.PermissionBanMembers))
+	subMux.UseC(web.RequirePermMW(discordgo.PermissionManageMessages))
+
 	subMux.HandleC(pat.Get(""), web.RenderHandler(HandleModeration, "cp_moderation"))
 	subMux.HandleC(pat.Get("/"), web.RenderHandler(HandleModeration, "cp_moderation"))
 	subMux.HandleC(pat.Post(""), web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{}))

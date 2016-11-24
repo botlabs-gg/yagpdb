@@ -36,6 +36,7 @@ func init() {
 		"in":        in,
 		"adjective": common.RandomAdjective,
 		"title":     strings.Title,
+		"hasPerm":   hasPerm,
 	})
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
 }

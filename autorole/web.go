@@ -3,6 +3,7 @@ package autorole
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -51,7 +52,9 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.HandleC(pat.New("/autorole"), muxer)
 	web.CPMux.HandleC(pat.New("/autorole/*"), muxer)
 
-	muxer.UseC(web.RequireFullGuildMW)
+	muxer.UseC(web.RequireFullGuildMW) // need roles
+	muxer.UseC(web.RequireBotMemberMW) // need the bot's role
+	muxer.UseC(web.RequirePermMW(discordgo.PermissionManageRoles))
 
 	getHandler := web.RenderHandler(HandleAutoroles, "cp_autorole")
 

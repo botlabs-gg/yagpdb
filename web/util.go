@@ -30,6 +30,9 @@ const (
 	ContextKeyGuildRoles
 	ContextKeyParsedForm
 	ContextKeyFormOk
+	ContextKeyBotMember
+	ContextKeyBotPermissions
+	ContextKeyHighestBotRole
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")

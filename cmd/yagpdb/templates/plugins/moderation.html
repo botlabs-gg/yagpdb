@@ -64,7 +64,7 @@
                                         <label for="MuteRole">Mute role</label>
                                         <select class="form-control" name="mute_role">
                                             <option value="" {{if eq $muteRole ""}} selected{{end}}>None</option>
-                                            {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" $muteRole}}
+                                            {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" $muteRole "Highest" .HighestRole}}
                                         </select>
                                         <p class="help-block">You have to set up the role yourself so that people with it cannot talk in any channels</p>
                                     </div>

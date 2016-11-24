@@ -29,6 +29,8 @@ func (p *Plugin) InitWeb() {
 	// Alll handlers here require guild channels present
 	streamingMux.UseC(web.RequireGuildChannelsMiddleware)
 	streamingMux.UseC(web.RequireFullGuildMW)
+	streamingMux.UseC(web.RequireBotMemberMW)
+	streamingMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles))
 	streamingMux.UseC(baseData)
 
 	// Get just renders the template, so let the renderhandler do all the work
