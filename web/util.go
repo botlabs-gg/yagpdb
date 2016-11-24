@@ -241,7 +241,9 @@ func IsAdminCtx(ctx context.Context) bool {
 	if v := ctx.Value(ContextKeyCurrentUserGuild); v != nil {
 
 		cast := v.(*discordgo.UserGuild)
-		if cast.Owner || cast.Permissions&discordgo.PermissionManageServer != 0 {
+		user := ctx.Value(ContextKeyUser).(*discordgo.User)
+		// Require manageserver, ownership of guild or ownership of bot
+		if cast.Owner || cast.Permissions&discordgo.PermissionManageServer != 0 || user.ID == common.Conf.Owner {
 			return true
 		}
 
