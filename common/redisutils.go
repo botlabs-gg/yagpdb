@@ -103,7 +103,7 @@ func GetRedisJsonDefault(client *redis.Client, key string, out interface{}) erro
 	return err
 }
 
-// SetRedisJson marshals the vlue and runs a set redis command for key
+// SetRedisJson marshals the value and runs a set redis command for key
 func SetRedisJson(client *redis.Client, key string, value interface{}) error {
 	serialized, err := json.Marshal(value)
 	if err != nil {

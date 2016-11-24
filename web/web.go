@@ -17,8 +17,9 @@ var (
 	// Core template files
 	Templates *template.Template
 
-	Debug         = true // Turns on debug mode
-	ListenAddress = ":5000"
+	Debug              = true // Turns on debug mode
+	ListenAddressHTTP  = ":5000"
+	ListenAddressHTTPS = ":5001"
 
 	LogRequestTimestamps bool
 
@@ -52,7 +53,7 @@ func Run() {
 func runServers(mainMuxer *goji.Mux) {
 	// launch the redir server
 	go func() {
-		err := http.ListenAndServe(":5000", http.HandlerFunc(httpsRedirHandler))
+		err := http.ListenAndServe(ListenAddressHTTP, http.HandlerFunc(httpsRedirHandler))
 		if err != nil {
 			log.Error("Failed http ListenAndServe:", err)
 		}
@@ -68,7 +69,7 @@ func runServers(mainMuxer *goji.Mux) {
 	}
 
 	tlsServer := &http.Server{
-		Addr:    ":5001",
+		Addr:    ListenAddressHTTPS,
 		Handler: mainMuxer,
 		TLSConfig: &tls.Config{
 			GetCertificate: certManager.GetCertificate,

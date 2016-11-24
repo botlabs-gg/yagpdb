@@ -246,7 +246,6 @@ func IsAdminCtx(ctx context.Context) bool {
 		if cast.Owner || cast.Permissions&discordgo.PermissionManageServer != 0 || user.ID == common.Conf.Owner {
 			return true
 		}
-
 	}
 
 	return false
