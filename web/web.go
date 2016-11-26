@@ -118,25 +118,26 @@ func setupRoutes() *goji.Mux {
 	ServerPublicMux = serverPublicMux
 
 	// Control panel muxer, requires a session
-	cpMuxer := goji.NewMux()
-	cpMuxer.UseC(RequireSessionMiddleware)
+	// cpMuxer := goji.NewMux()
+	// cpMuxer.UseC(RequireSessionMiddleware)
 
-	mux.HandleC(pat.Get("/cp/*"), cpMuxer)
-	mux.HandleC(pat.Get("/cp"), cpMuxer)
-	mux.HandleC(pat.Post("/cp/*"), cpMuxer)
-	mux.HandleC(pat.Post("/cp"), cpMuxer)
+	// mux.HandleC(pat.Get("/cp/*"), cpMuxer)
+	// mux.HandleC(pat.Get("/cp"), cpMuxer)
+	// mux.HandleC(pat.Post("/cp/*"), cpMuxer)
+	// mux.HandleC(pat.Post("/cp"), cpMuxer)
 
 	// Server selection has it's own handler
-	cpMuxer.HandleC(pat.Get("/cp"), RenderHandler(nil, "cp_selectserver"))
-	cpMuxer.HandleC(pat.Get("/cp/"), RenderHandler(nil, "cp_selectserver"))
+	mux.HandleC(pat.Get("/cp"), RenderHandler(nil, "cp_selectserver"))
+	mux.HandleC(pat.Get("/cp/"), RenderHandler(nil, "cp_selectserver"))
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	serverCpMuxer := goji.SubMux()
+	serverCpMuxer.UseC(RequireSessionMiddleware)
 	serverCpMuxer.UseC(ActiveServerMW)
 	serverCpMuxer.UseC(RequireServerAdminMiddleware)
 
-	cpMuxer.HandleC(pat.New("/cp/:server"), serverCpMuxer)
-	cpMuxer.HandleC(pat.New("/cp/:server/*"), serverCpMuxer)
+	mux.HandleC(pat.New("/cp/:server"), serverCpMuxer)
+	mux.HandleC(pat.New("/cp/:server/*"), serverCpMuxer)
 
 	serverCpMuxer.HandleC(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	serverCpMuxer.HandleC(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))

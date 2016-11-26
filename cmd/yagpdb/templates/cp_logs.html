@@ -1,62 +1,49 @@
 {{define "cp_action_logs"}}
 
 {{template "cp_head" .}}
-
-
-    <div id="wrapper">
-
-    {{template "cp_nav" .}}
-
-        <div id="page-wrapper">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">Control panel logs</h1>
-                    <p>Logs who changed settings, and in some cases what</p>
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            {{template "cp_alerts" .}}
-            <!-- /.row -->
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            Logs
-                        </div>
-                        <div class="panel-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {{range .entries}}
-                                        <tr>
-                                            <td>{{.TimestampString}}</td>
-                                            <td>{{.Action}}</td>
-                                        </tr>
-                                        {{end}}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <!-- /.table-responsive -->
-                        </div>
-                        <!-- /.panel-body -->
-                    </div>
-                    <!-- /.panel -->
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            <!-- /.row -->            
-        </div>
-        <!-- /#page-wrapper -->
-
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Control panel logs</h1>
+        <p>Logs who changed settings, and in some cases what</p>
     </div>
-    <!-- /#wrapper -->
-
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Logs
+            </div>
+            <div class="panel-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .entries}}
+                            <tr>
+                                <td>{{.TimestampString}}</td>
+                                <td>{{.Action}}</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.table-responsive -->
+            </div>
+            <!-- /.panel-body -->
+        </div>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
 {{template "cp_footer" .}}
 
 {{end}}

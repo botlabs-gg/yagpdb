@@ -19,6 +19,7 @@
     <li>
         <a href="/cp"><i class="fa fa-newspaper-o fa-fw"></i> v{{.Version}}</a>
     </li>
+    {{if .ManagedGuilds}}
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
             <i class="fa fa-folder-open  fa-lg fa-fw"></i> {{if .ActiveGuild}}{{.ActiveGuild.Name}}{{else}}Select a server{{end}} <i class="fa fa-caret-down"></i>
@@ -40,12 +41,14 @@
         </ul>
         <!-- /.dropdown-user -->
     </li>
+    {{end}}
+    {{if .User}}
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
             <i class="fa fa-user fa-fw"></i>{{adjective | title}} {{.User.Username}} <i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">
-            <li><a href=""><i class="fa fa-user fa-fw"></i> Admire yourself</a>
+            <li><a href=""><i class="fa fa-user fa-fw"></i> Flip a table</a>
             </li>
             <li><a href=""><i class="fa fa-gear fa-fw"></i> Smell</a>
             </li>
@@ -55,6 +58,11 @@
         </ul>
         <!-- /.dropdown-user -->
     </li>
+    {{else}}
+    <li>
+        <a href="/login"><i class="fa fa-user fa-fw"></i> Login you {{adjective}} goose.</a>
+    </li>
+    {{end}}
     <!-- /.dropdown -->
 </ul>
 <!-- /.navbar-top-links -->
@@ -140,6 +148,11 @@
 <!-- Navigation -->
 <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
     {{template "cp_nav_top" .}}
-    {{template "cp_nav_sidebar" .}}    
+    {{if and .ActiveGuild .User}}{{template "cp_nav_sidebar" .}}{{end}}
 </nav>
+{{if and .ActiveGuild .User}}
+<div id="page-wrapper">
+{{else}}
+<div id="public-wrapper">
+{{end}}
 {{end}}

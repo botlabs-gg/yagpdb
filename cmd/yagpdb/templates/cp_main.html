@@ -62,16 +62,16 @@
 
 </head>
 <body>
+    <div id="wrapper">
+    {{template "cp_nav" .}}
 {{end}}
 
 {{define "cp_footer"}}
+    </div>
+    </div>
     <script>
     var visibleURL;
-
-    {{if .VisibleURL }}
-    visibleURL = {{.VisibleURL}};
-    {{end}}
-
+    {{if .VisibleURL }}visibleURL = {{.VisibleURL}};{{end}}
     </script>
 
     <!-- Bootstrap Core JavaScript -->

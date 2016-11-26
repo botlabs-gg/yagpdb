@@ -1,136 +1,128 @@
 {{define "cp_notifications_general"}}
 {{template "cp_head" .}}
-    <div id="wrapper">
-    {{template "cp_nav" .}}
-        <div id="page-wrapper">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">General notifications</h1>
-                    {{template "template_help"}}
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            {{template "cp_alerts" .}}
-            <!-- /.row -->
-            <div class="row">
-                <div class="col-lg-12">
-                    <form role="form" action="" method="post">
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="panel {{if .NotifyConfig.JoinServerEnabled}}panel-green{{else}}panel-default{{end}}">
-                                    <div class="panel-heading">
-                                        <div class="checkbox">
-                                            <label>
-                                                <input type="checkbox" name="join_server_enabled" {{if .NotifyConfig.JoinServerEnabled}} checked{{end}}>Join message in server channel
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="panel-body">
-                                        <div class="form-group">
-                                            <label>Channel</label>
-                                            <select class="form-control" name="join_server_channel">
-                                                {{$selected := .NotifyConfig.JoinServerChannel}}
-                                                <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                                {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Message</label>
-                                            <textarea class="form-control" rows="3" name="join_server_msg">{{.NotifyConfig.JoinServerMsg}}</textarea>
-                                            <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="panel {{if .NotifyConfig.LeaveEnabled}}panel-green{{else}}panel-default{{end}}">
-                                    <div class="panel-heading">
-                                        <div class="checkbox">
-                                            <label>
-                                                <input type="checkbox" name="leave_enabled" {{if .NotifyConfig.LeaveEnabled}} checked {{end}}>User Leave Message
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="panel-body">
-                                        <div class="form-group">
-                                            <label>Channel</label>
-                                            <select class="form-control" name="leave_channel">
-                                                {{$selected := .NotifyConfig.LeaveChannel}}
-                                                <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                                {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Message</label>
-                                            <textarea class="form-control" rows="3" name="leave_msg">{{.NotifyConfig.LeaveMsg}}</textarea>
-                                            <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                            <!-- /.col-lg-6 (nested) -->
-                        </div>
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="panel {{if .NotifyConfig.JoinDMEnabled}}panel-green{{else}}panel-default{{end}}">
-                                    <div class="panel-heading">
-                                        <div class="checkbox">
-                                            <div class="checkbox">
-                                                <label>
-                                                    <input type="checkbox" name="join_dm_enabled" {{if .NotifyConfig.JoinDMEnabled}} checked {{end}}>Join message in direct message
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="panel-body">
-                                        <div class="form-group">
-                                            <label>Message</label>
-                                            <textarea class="form-control" rows="3" name="join_dm_msg">{{.NotifyConfig.JoinDMMsg}}</textarea>
-                                            <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="panel {{if .NotifyConfig.TopicEnabled}}panel-green{{else}}panel-default{{end}}">
-                                    <div class="panel-heading">
-                                        <div class="checkbox">
-                                            <label>
-                                                <input type="checkbox" name="topic_enabled" {{if .NotifyConfig.TopicEnabled}} checked {{end}}>Topic change message
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="panel-body">
-                                        <div class="form-group">
-                                            <label>Channel</label>
-                                            <select class="form-control" name="topic_channel">
-                                                {{$selected := .NotifyConfig.TopicChannel}}
-                                                <option value="" {{if eq $selected ""}} selected{{end}}>Channel event occured in</option>
-                                                {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- /.col-lg-6 (nested) -->
-                        </div>
-                        <div class="row">
-                            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
-                        </div>
-                        <!-- /.row (nested) -->
-                        <!-- /.panel-body -->
-                    </form>
-                    <!-- /.panel -->
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            <!-- /.row -->            
-        </div>
-        <!-- /#page-wrapper -->
-
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">General notifications</h1>
+        {{template "template_help"}}
     </div>
-    <!-- /#wrapper -->
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <form role="form" action="" method="post">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="panel {{if .NotifyConfig.JoinServerEnabled}}panel-green{{else}}panel-default{{end}}">
+                        <div class="panel-heading">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="join_server_enabled" {{if .NotifyConfig.JoinServerEnabled}} checked{{end}}>Join message in server channel
+                                </label>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select class="form-control" name="join_server_channel">
+                                    {{$selected := .NotifyConfig.JoinServerChannel}}
+                                    <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
+                                    {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea class="form-control" rows="3" name="join_server_msg">{{.NotifyConfig.JoinServerMsg}}</textarea>
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="panel {{if .NotifyConfig.LeaveEnabled}}panel-green{{else}}panel-default{{end}}">
+                        <div class="panel-heading">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="leave_enabled" {{if .NotifyConfig.LeaveEnabled}} checked {{end}}>User Leave Message
+                                </label>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select class="form-control" name="leave_channel">
+                                    {{$selected := .NotifyConfig.LeaveChannel}}
+                                    <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
+                                    {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea class="form-control" rows="3" name="leave_msg">{{.NotifyConfig.LeaveMsg}}</textarea>
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.col-lg-6 (nested) -->
+            </div>
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="panel {{if .NotifyConfig.JoinDMEnabled}}panel-green{{else}}panel-default{{end}}">
+                        <div class="panel-heading">
+                            <div class="checkbox">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="join_dm_enabled" {{if .NotifyConfig.JoinDMEnabled}} checked {{end}}>Join message in direct message
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea class="form-control" rows="3" name="join_dm_msg">{{.NotifyConfig.JoinDMMsg}}</textarea>
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="panel {{if .NotifyConfig.TopicEnabled}}panel-green{{else}}panel-default{{end}}">
+                        <div class="panel-heading">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="topic_enabled" {{if .NotifyConfig.TopicEnabled}} checked {{end}}>Topic change message
+                                </label>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select class="form-control" name="topic_channel">
+                                    {{$selected := .NotifyConfig.TopicChannel}}
+                                    <option value="" {{if eq $selected ""}} selected{{end}}>Channel event occured in</option>
+                                    {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.col-lg-6 (nested) -->
+            </div>
+            <div class="row">
+                <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
+            </div>
+            <!-- /.row (nested) -->
+            <!-- /.panel-body -->
+        </form>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->            
 
 {{template "cp_footer" .}}
 

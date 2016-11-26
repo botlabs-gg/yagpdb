@@ -11,52 +11,44 @@
     table th:nth-of-type(2) {width:200px;}/*Setting the width of column 2.*/
     table th:nth-of-type(3) {width:100%;}/*Setting the width of column 3.*/
 </style>
-<div id="wrapper">
-    <div id="public-wrapper">
-
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="page-header">
-                    <h1>Channel logs {{.ActiveGuild.Name}} <small><a href="/">by YAGPDB.xyz</a></small></h1>
-                </div>
-            </div>
-            <!-- /.col-lg-12 -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="page-header">
+            <h1>Channel logs {{.ActiveGuild.Name}} <small><a href="/">by YAGPDB.xyz</a></small></h1>
         </div>
-        
-        {{template "cp_alerts" .}}
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                    #{{.Logs.ChannelName}} (ChannelID: {{.Logs.ChannelID}})
-                    </div>
-                    <!-- /.panel-heading -->
-                    
-                    <table class="table table-hover table-striped">
-                        <tr>
-                            <th class="" id="time-col">Time (UTC)</th>
-                            <th class="" id="author-col">Author</th>
-                            <th class="" id="msg-col">Message</th>
-                        </tr>
-
-                        {{range .Logs.Messages}}
-                        <tr>
-                            <td>{{.Timestamp}}</td>
-                            <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
-                            <td>{{.Content}}</td>
-                        </tr>
-                        {{end}}
-                    </table>
-                </div>
-                <!-- /.panel -->
-            </div>
-        </div>
-        <!-- /.row -->
     </div>
-    <!-- /#page-wrapper -->
+    <!-- /.col-lg-12 -->
 </div>
-<!-- /#wrapper -->
 
+{{template "cp_alerts" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            #{{.Logs.ChannelName}} (ChannelID: {{.Logs.ChannelID}})
+            </div>
+            <!-- /.panel-heading -->
+            
+            <table class="table table-hover table-striped">
+                <tr>
+                    <th class="" id="time-col">Time (UTC)</th>
+                    <th class="" id="author-col">Author</th>
+                    <th class="" id="msg-col">Message</th>
+                </tr>
+
+                {{range .Logs.Messages}}
+                <tr>
+                    <td>{{.Timestamp}}</td>
+                    <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
+                    <td>{{.Content}}</td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+        <!-- /.panel -->
+    </div>
+</div>
+<!-- /.row -->
 {{template "cp_footer"}}
 
 {{end}}

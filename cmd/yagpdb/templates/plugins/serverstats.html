@@ -1,120 +1,109 @@
 {{define "cp_serverstats"}}
 
 {{template "cp_head" .}}
-
-
-<div id="wrapper">
-    {{if .Public}}<div id="public-wrapper">
-    {{else}}
-    {{template "cp_nav" .}}
-    <div id="page-wrapper">
-    {{end}}
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="page-header">
-                    <h1>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
-                    {{if (not .PublicEnabled | and .Public) }}
-                    <h1>Public access has been disabled by the server admins.</h1>
-                    {{end}}
-                    {{if not .Public}}
-                    <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="public" {{if .PublicEnabled}} checked{{end}}> Publicly accessible
-                            </label>
-                        </div>
-                        <button type="submit" class="btn btn-success">Save</button>
-                        <div class="form-group">
-                            <p class="form-control-static"><a href="/public/{{.ActiveGuild.ID}}/stats">Public link</a></p>
-                        </div>
-                    </form>
-                    {{end}}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="page-header">
+            <h1>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
+            {{if (not .PublicEnabled | and .Public) }}
+            <h1>Public access has been disabled by the server admins.</h1>
+            {{end}}
+            {{if not .Public}}
+            <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="public" {{if .PublicEnabled}} checked{{end}}> Publicly accessible
+                    </label>
                 </div>
-            </div>
-            <!-- /.col-lg-12 -->
+                <button type="submit" class="btn btn-success">Save</button>
+                <div class="form-group">
+                    <p class="form-control-static"><a href="/public/{{.ActiveGuild.ID}}/stats">Public link</a></p>
+                </div>
+            </form>
+            {{end}}
         </div>
-        <div class="row">
-            <div class="col-lg-3 col-md-6">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-comments fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge" id="messages-24h">...</div>
-                                <div>New messages last 24h!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel panel-green">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-users fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge" id="members-changed-24h">...</div>
-                                <div>Members joined/left last 24h!</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div> 
-            <div class="col-lg-3 col-md-6">
-                <div class="panel panel-yellow">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-trash fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge" id="online-members">...</div>
-                                <div>Online members</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <i class="fa fa-trash fa-5x"></i>
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge" id="total-members">...</div>
-                                <div>Total members</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-         <!-- /.col-lg-6 -->
-            <div class="col-lg-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        Channels over 24 hours
-                    </div>
-                    <!-- /.panel-heading -->
-                    <div class="panel-body">
-                        <div id="channels-chart-24h"></div>
-                    </div>
-                    <!-- /.panel-body -->
-                </div>
-                <!-- /.panel -->
-            </div>
-        </div>
-        <!-- /.row -->
     </div>
-    <!-- /#page-wrapper -->
+    <!-- /.col-lg-12 -->
 </div>
+<div class="row">
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-comments fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="huge" id="messages-24h">...</div>
+                        <div>New messages last 24h!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-green">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-users fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="huge" id="members-changed-24h">...</div>
+                        <div>Members joined/left last 24h!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-yellow">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-trash fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="huge" id="online-members">...</div>
+                        <div>Online members</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-trash fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="huge" id="total-members">...</div>
+                        <div>Total members</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+ <!-- /.col-lg-6 -->
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Channels over 24 hours
+            </div>
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div id="channels-chart-24h"></div>
+            </div>
+            <!-- /.panel-body -->
+        </div>
+        <!-- /.panel -->
+    </div>
+</div>
+<!-- /.row -->
 <script type="text/javascript">
     $(function(){
         function createRequest(method, path, data, cb){
