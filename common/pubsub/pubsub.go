@@ -2,7 +2,7 @@
 // For example when you change the streamer settings, and event gets fired
 // Telling the streamer plugin to recheck everyones streaming status
 
-package bot
+package pubsub
 
 import (
 	"encoding/json"
@@ -32,8 +32,8 @@ var (
 )
 
 // AddEventHandler adds a event handler
-// For the specified event
-func AddEventHandler(evt string, cb func(*Event), t interface{}) {
+// For the specified event, should only be done during startup
+func AddHandler(evt string, cb func(*Event), t interface{}) {
 	handler := &eventHandler{
 		evt:     evt,
 		handler: cb,
@@ -48,7 +48,7 @@ func AddEventHandler(evt string, cb func(*Event), t interface{}) {
 }
 
 // PublishEvent publishes the specified event
-func PublishEvent(client *redis.Client, evt string, target string, data interface{}) error {
+func Publish(client *redis.Client, evt string, target string, data interface{}) error {
 	dataStr := ""
 	if data != nil {
 		encoded, err := json.Marshal(data)
@@ -62,7 +62,7 @@ func PublishEvent(client *redis.Client, evt string, target string, data interfac
 	return client.Cmd("PUBLISH", "events", value).Err
 }
 
-func pollEvents() {
+func PollEvents() {
 	client, err := common.RedisPool.Get()
 	if err != nil {
 		panic(err)
@@ -100,13 +100,6 @@ func handleEvent(evt string) {
 	target := split[0]
 	name := split[1]
 	data := split[2]
-
-	if target != "*" {
-		_, err := common.BotSession.State.Guild(target)
-		if err != nil {
-			return // This event wasnt meant for this shard
-		}
-	}
 
 	t, ok := eventTypes[name]
 	if !ok && data != "" {

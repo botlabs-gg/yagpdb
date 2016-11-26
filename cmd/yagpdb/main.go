@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
@@ -110,6 +111,8 @@ func main() {
 	if flagRunReddit || flagRunEverything {
 		go reddit.RunReddit()
 	}
+
+	go pubsub.PollEvents()
 
 	select {}
 }

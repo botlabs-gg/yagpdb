@@ -6,17 +6,15 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"strings"
 	"sync"
 	"time"
 )
 
 func (p *Plugin) InitBot() {
-	bot.AddEventHandler("autorole_stop_processing", HandleUpdateAutomodRules, nil)
-	// common.BotSession.AddHandler(handlePresenceUpdate)
 	commands.CommandSystem.RegisterCommands(roleCommands...)
 }
 
@@ -115,12 +113,13 @@ var roleCommands = []commandsystem.CommandHandler{
 	},
 }
 
-func (p *Plugin) BotStart() {
+func (p *Plugin) StartBot() {
 	go runDurationChecker()
+	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutomodRules, nil)
 }
 
 // Stop updating
-func HandleUpdateAutomodRules(event *bot.Event) {
+func HandleUpdateAutomodRules(event *pubsub.Event) {
 	stopProcessing(event.TargetGuild)
 }
 

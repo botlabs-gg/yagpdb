@@ -7,18 +7,21 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 )
 
 func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
 	common.BotSession.AddHandler(bot.CustomMessageUpdate(HandleMessageUpdate))
-	bot.AddEventHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
+}
 
+func (p *Plugin) StartBot() {
+	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
 }
 
 // Invalidate the cache when the rules have changed
-func HandleUpdateAutomodRules(event *bot.Event) {
+func HandleUpdateAutomodRules(event *pubsub.Event) {
 	bot.Cache.Delete(KeyAllRules(event.TargetGuild))
 }
 

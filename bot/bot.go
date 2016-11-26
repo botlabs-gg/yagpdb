@@ -51,13 +51,12 @@ func Run() {
 	Running = true
 
 	go mergedMessageSender()
-	go pollEvents()
 
 	for _, p := range plugins {
 		starter, ok := p.(BotStarterHandler)
 		if ok {
-			starter.BotStart()
-			log.WithField("plugin", p.Name()).Info("Ran BotStart")
+			starter.StartBot()
+			log.WithField("plugin", p.Name()).Info("Ran StartBot")
 		}
 	}
 

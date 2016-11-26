@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
 func (p *Plugin) InitBot() {
@@ -13,11 +14,14 @@ func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
 	common.BotSession.AddHandler(bot.CustomGuildMemberUpdate(HandleGuildMemberUpdate))
 
-	bot.AddEventHandler("update_streaming", HandleUpdateStreaming, nil)
+}
+
+func (p *Plugin) StartBot() {
+	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 
 // YAGPDB event
-func HandleUpdateStreaming(event *bot.Event) {
+func HandleUpdateStreaming(event *pubsub.Event) {
 	log.Info("Received the streaming event boi", event.TargetGuild)
 
 	client, err := common.RedisPool.Get()

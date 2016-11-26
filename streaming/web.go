@@ -3,8 +3,8 @@ package streaming
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -75,7 +75,7 @@ func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return tmpl
 	}
 
-	err = bot.PublishEvent(client, "update_streaming", guild.ID, nil)
+	err = pubsub.Publish(client, "update_streaming", guild.ID, nil)
 	if err != nil {
 		logrus.WithError(err).Error("Failed sending update streaming event")
 	}

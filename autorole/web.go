@@ -4,8 +4,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -20,7 +20,7 @@ type Form struct {
 }
 
 func (f Form) Save(client *redis.Client, guildID string) error {
-	bot.PublishEvent(client, "autorole_stop_processing", guildID, nil)
+	pubsub.Publish(client, "autorole_stop_processing", guildID, nil)
 
 	realCommands := make([]*RoleCommand, 0)
 

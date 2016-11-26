@@ -3,7 +3,7 @@ package automod
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -61,7 +61,7 @@ func HandleAutomod(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 func ExtraPostMW(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		client, activeGuild, _ := web.GetBaseCPContextData(ctx)
-		bot.PublishEvent(client, "update_automod_rules", activeGuild.ID, nil)
+		pubsub.Publish(client, "update_automod_rules", activeGuild.ID, nil)
 		inner.ServeHTTPC(ctx, w, r)
 	}
 	return goji.HandlerFunc(mw)

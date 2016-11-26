@@ -28,7 +28,7 @@ type NewGuildHandler interface {
 }
 
 type BotStarterHandler interface {
-	BotStart()
+	StartBot()
 }
 
 var plugins []Plugin
