@@ -33,10 +33,7 @@ func (p *Plugin) InitWeb() {
 	autmodMux.UseC(web.RequireFullGuildMW)
 	autmodMux.UseC(web.RequireGuildChannelsMiddleware)
 	autmodMux.UseC(web.RequireBotMemberMW)
-	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles))
-	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionKickMembers))
-	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionBanMembers))
-	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionManageMessages))
+	autmodMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages))
 
 	getHandler := web.RenderHandler(HandleAutomod, "cp_automod")
 

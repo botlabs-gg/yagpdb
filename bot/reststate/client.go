@@ -12,7 +12,7 @@ var (
 )
 
 func get(url string, dest interface{}) error {
-	resp, err := http.Get(serverAddr + "/" + url)
+	resp, err := http.Get("http://" + serverAddr + "/" + url)
 	if err != nil {
 		return err
 	}

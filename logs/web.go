@@ -20,7 +20,7 @@ func (lp *Plugin) InitWeb() {
 }
 
 func HandleLogsHTML(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	_, _, tmpl := web.GetBaseCPContextData(ctx)
+	_, g, tmpl := web.GetBaseCPContextData(ctx)
 
 	idString := pat.Param(ctx, "id")
 
@@ -32,6 +32,10 @@ func HandleLogsHTML(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	msgLogs, err := GetChannelLogs(parsed)
 	if web.CheckErr(tmpl, err, "Failed retrieving message logs", logrus.Error) {
 		return tmpl
+	}
+
+	if msgLogs.GuildID != g.ID {
+		return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
 	}
 
 	for k, v := range msgLogs.Messages {

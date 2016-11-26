@@ -57,13 +57,14 @@
 
                                 {{$guild := .ActiveGuild.ID}}
                                 {{$roles := .ActiveGuild.Roles}}
-                                
+                                {{$highest := .HighestRole}}
+
                                 {{range $k, $v := .RoleCommands}}
                                 <tr id="role-cmd-{{$k}}" class="role-cmd">
                                     <td>
                                         <div class="form-group">
                                             <select class="form-control" name="Commands.{{$k}}.Role">
-                                                {{mTemplate "role_options" "Roles" $roles "Selected" .Role "Highest" .HighestRole}}
+                                                {{mTemplate "role_options" "Roles" $roles "Selected" .Role "Highest" $highest}}
                                             </select>
                                         </div>
                                     </td> 

@@ -129,10 +129,12 @@ Selected - id of the selected channel
 Argumens
 Roles - list of roles
 Selected - id of the selected channel
+Highest - the highest role the bot currently has, roles below this will be set to disabled
 */}}
 {{define "role_options"}}
     {{$selected := or .Selected ""}}
-    {{range .Roles}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if .Highest}}{{if lt .Highest .Position}} disabled {{end}}{{end}}>{{.Name}}</option>{{end}}
+    {{$highest := or .Highest.Position 1000}}
+    {{range .Roles}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if le $highest .Position}} disabled> {{.Name}} (Role is above bot) {{else}}>{{.Name}}</option>{{end}}{{end}}
 {{end}}
 
 {{/*Help block for templating*/}}

@@ -362,7 +362,11 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"BotMember": member})
 		ctx = context.WithValue(ctx, ContextKeyBotMember, member)
 
-		defer inner.ServeHTTPC(ctx, w, r)
+		defer func() {
+			inner.ServeHTTPC(ctx, w, r)
+		}()
+
+		log.Println("Checking if guild is available")
 
 		// Set highest role and combined perms
 		guild := ctx.Value(ContextKeyCurrentGuild)
@@ -374,6 +378,8 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 		if len(guildCast.Roles) < 1 { // Not full guild
 			return
 		}
+
+		log.Println("full guild available")
 
 		var highest *discordgo.Role
 		combinedPerms := 0
@@ -395,7 +401,6 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 				highest = role
 			}
 		}
-
 		ctx = context.WithValue(ctx, ContextKeyHighestBotRole, highest)
 		ctx = context.WithValue(ctx, ContextKeyBotPermissions, combinedPerms)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": highest, "BotPermissions": combinedPerms})
@@ -637,27 +642,52 @@ var stringPerms = map[int]string{
 	discordgo.PermissionVoiceDeafenMembers: "Voice Deafen Members",
 	discordgo.PermissionVoiceMoveMembers:   "Voice Move Members",
 	discordgo.PermissionVoiceUseVAD:        "Voice Use VAD",
+
+	discordgo.PermissionCreateInstantInvite: "Create Instant Invite",
+	discordgo.PermissionKickMembers:         "Kick Members",
+	discordgo.PermissionBanMembers:          "Ban Members",
+	discordgo.PermissionManageRoles:         "Manage Roles",
+	discordgo.PermissionManageChannels:      "Manage Channels",
+	discordgo.PermissionManageServer:        "Manage Server",
 }
 
-func RequirePermMW(perm int) func(goji.Handler) goji.Handler {
+func RequirePermMW(perms ...int) func(goji.Handler) goji.Handler {
 	return func(inner goji.Handler) goji.Handler {
 		return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			permsInterface := ctx.Value(ContextKeyBotPermissions)
 			currentPerms := 0
 			if permsInterface == nil {
-				currentPerms = permsInterface.(int)
-			} else {
 				log.Warn("Requires perms but no permsinterface available")
+			} else {
+				currentPerms = permsInterface.(int)
 			}
 
-			has := currentPerms&perm != 0
+			has := ""
+			missing := ""
+
+			for _, perm := range perms {
+				if currentPerms&perm != 0 {
+					if has != "" {
+						has += ", "
+					}
+					has += stringPerms[perm]
+				} else {
+					if missing != "" {
+						missing += ", "
+					}
+					missing += stringPerms[perm]
+
+				}
+			}
+
 			c, tmpl := GetCreateTemplateData(ctx)
 			ctx = c
 
-			if !has {
-				tmpl.AddAlerts(ErrorAlert("This plugin requires ", stringPerms[perm], ", which the bot does not have at the moment. It may continue to function without the functionality that requires this permission."))
-			} else {
-				tmpl.AddAlerts(SucessAlert("The bot has the permission ", stringPerms[perm]))
+			if missing != "" {
+				tmpl.AddAlerts(ErrorAlert("This plugin is missing the following permissions ", missing, ", It may continue to work without the functionality that requires those permissions."))
+			}
+			if has != "" {
+				tmpl.AddAlerts(SucessAlert("The bot has the permissions ", has))
 			}
 
 			inner.ServeHTTPC(ctx, w, r)

@@ -5,6 +5,7 @@ package bot
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/reststate"
 	"github.com/jonas747/yagpdb/common"
 	"time"
 )
@@ -59,4 +60,6 @@ func Run() {
 			log.WithField("plugin", p.Name()).Info("Ran BotStart")
 		}
 	}
+
+	reststate.StartServer()
 }

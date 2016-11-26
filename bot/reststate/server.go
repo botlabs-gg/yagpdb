@@ -8,6 +8,7 @@ import (
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"net/http"
+	"strings"
 )
 
 var serverAddr = ":5002"
@@ -42,7 +43,7 @@ func ServerError(w http.ResponseWriter, r *http.Request, err error) bool {
 
 func dropNonLocal(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if r.RemoteAddr != "127.0.0.1" {
+		if strings.Split(r.RemoteAddr, ":")[0] != "127.0.0.1" {
 			logrus.Info("Dropped non local connection", r.RemoteAddr)
 			return
 		}
