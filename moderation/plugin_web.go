@@ -1,7 +1,6 @@
 package moderation
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -25,49 +24,42 @@ func (p *Plugin) InitWeb() {
 	subMux.UseC(web.RequireBotMemberMW) // need the bot's role
 	subMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages))
 
-	subMux.HandleC(pat.Get(""), web.RenderHandler(HandleModeration, "cp_moderation"))
-	subMux.HandleC(pat.Get("/"), web.RenderHandler(HandleModeration, "cp_moderation"))
-	subMux.HandleC(pat.Post(""), web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{}))
-	subMux.HandleC(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandlePostModeration, "cp_moderation"), Config{}))
+	getHandler := web.ControllerHandler(HandleModeration, "cp_moderation")
+	postHandler := web.ControllerPostHandler(HandlePostModeration, getHandler, Config{}, "Updated moderation config")
+
+	subMux.HandleC(pat.Get(""), getHandler)
+	subMux.HandleC(pat.Get("/"), getHandler)
+	subMux.HandleC(pat.Post(""), postHandler)
+	subMux.HandleC(pat.Post("/"), postHandler)
 }
 
 // The moderation page itself
-func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	config, err := GetConfig(client, activeGuild.ID)
+func HandleModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed retrieving config", err))
-		log.WithError(err).WithField("guild", activeGuild.ID).Error("Failed retrieving config")
+	if _, ok := templateData["ModConfig"]; !ok {
+		config, err := GetConfig(activeGuild.ID)
+		if err != nil {
+			return templateData, err
+		}
+		templateData["ModConfig"] = config
 	}
 
-	templateData["ModConfig"] = config
-
-	return templateData
+	return templateData, nil
 }
 
 // Update the settings
-func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/moderation/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	templateData["ModConfig"] = newConfig
 
-	ok := ctx.Value(common.ContextKeyFormOk).(bool)
-	if !ok {
-		return templateData
-	}
-
 	err := newConfig.Save(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed saving :(", log.Error) {
-		return templateData
+	if err != nil {
+		return templateData, err
 	}
 
-	templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :')"))
-
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Updated moderation settings")
-
-	return templateData
+	return templateData, nil
 }

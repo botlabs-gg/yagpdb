@@ -73,7 +73,7 @@
                             <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
                                 <td>{{.Cmd}}</td>
                                 <td>
-                                    {{if .Info.Key}}
+                                    {{if or .Info.Key .Info.CustomEnabled}}
                                     This command can be toggled on/off on its own page.
                                     {{else}}
                                     <label class="checkbox-inline">

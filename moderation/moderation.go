@@ -8,8 +8,10 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/web"
+	"golang.org/x/net/context"
 	"strings"
 	"time"
 )
@@ -20,11 +22,24 @@ func (p *Plugin) Name() string {
 	return "Moderation"
 }
 
+func (p *Plugin) MigrateSQL(client *redis.Client, guildID string, guildIDInt int64) error {
+	config, err := GetConfig(guildID)
+	if err != nil {
+		return err
+	}
+
+	config.GuildID = guildIDInt
+	err = common.SQL.Save(config).Error
+	return err
+}
+
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
 	bot.RegisterPlugin(plugin)
 	common.RegisterScheduledEventHandler("unmute", handleUnMute)
+	configstore.RegisterConfig(configstore.SQL, &Config{})
+	common.SQL.AutoMigrate(&Config{})
 }
 
 func handleUnMute(data string) error {
@@ -43,12 +58,7 @@ func handleUnMute(data string) error {
 		return err
 	}
 
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		return err
-	}
-
-	err = MuteUnmuteUser(false, client, guildID, "", "YAGPDB", "Mute Duration expired", member, 0)
+	err = MuteUnmuteUser(nil, nil, false, guildID, "", "YAGPDB", "Mute Duration expired", member, 0)
 	if err != ErrNoMuteRole {
 
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
@@ -63,6 +73,7 @@ func handleUnMute(data string) error {
 }
 
 type Config struct {
+	configstore.GuildConfigModel
 	BanEnabled           bool   `schema:"ban_enabled"`
 	KickEnabled          bool   `schema:"kick_enabled"`
 	CleanEnabled         bool   `schema:"clean_enabled"`
@@ -76,24 +87,28 @@ type Config struct {
 	MuteRole             string `schema:"mute_role" valid:"role,true"`
 }
 
-func (c *Config) Save(client *redis.Client, guildID string) error {
-	client.Append("SET", "moderation_ban_enabled:"+guildID, c.BanEnabled)
-	client.Append("SET", "moderation_kick_enabled:"+guildID, c.KickEnabled)
-	client.Append("SET", "moderation_clean_enabled:"+guildID, c.CleanEnabled)
-	client.Append("SET", "moderation_report_enabled:"+guildID, c.ReportEnabled)
-	client.Append("SET", "moderation_action_channel:"+guildID, c.ActionChannel)
-	client.Append("SET", "moderation_report_channel:"+guildID, c.ReportChannel)
-	client.Append("SET", "moderation_ban_message:"+guildID, c.BanMessage)
-	client.Append("SET", "moderation_kick_message:"+guildID, c.KickMessage)
-	client.Append("SET", "moderation_kick_delete_messages:"+guildID, c.DeleteMessagesOnKick)
-	client.Append("SET", "moderation_mute_enabled:"+guildID, c.MuteEnabled)
-	client.Append("SET", "moderation_mute_role:"+guildID, c.MuteRole)
-
-	_, err := common.GetRedisReplies(client, 11)
-	return err
+func (c *Config) GetName() string {
+	return "moderation"
 }
 
-func GetConfig(client *redis.Client, guildID string) (config *Config, err error) {
+func (c *Config) TableName() string {
+	return "moderation_configs"
+}
+
+func (c *Config) Save(client *redis.Client, guildID string) error {
+	return configstore.SQL.SetGuildConfig(context.Background(), c)
+}
+
+func GetConfig(guildID string) (*Config, error) {
+	var config Config
+	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &config)
+	if err == configstore.ErrNotFound {
+		err = nil
+	}
+	return &config, err
+}
+
+func GetConfigDeprecated(client *redis.Client, guildID string) (config *Config, err error) {
 	client.Append("GET", "moderation_ban_enabled:"+guildID)
 	client.Append("GET", "moderation_kick_enabled:"+guildID)
 	client.Append("GET", "moderation_clean_enabled:"+guildID)
@@ -157,10 +172,13 @@ func GenModlogMessage(author, action string, target *discordgo.User, reason, log
 }
 
 // Kick or bans someone, uploading a hasebin log, and sending the report tmessage in the action channel
-func punish(p Punishment, client *redis.Client, guildID, channelID, author, reason string, user *discordgo.User) error {
-	key := "moderation_ban_message:"
-	if p == PunishmentKick {
-		key = "moderation_kick_message:"
+func punish(config *Config, p Punishment, guildID, channelID, author, reason string, user *discordgo.User) error {
+	if config == nil {
+		var err error
+		config, err = GetConfig(guildID)
+		if err != nil {
+			return err
+		}
 	}
 
 	actionStr := "Banned"
@@ -168,12 +186,18 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 		actionStr = "Kicked"
 	}
 
-	acionChannel, err := client.Cmd("GET", "moderation_action_channel:"+guildID).Str()
-	if err != nil || acionChannel == "" {
-		acionChannel = channelID
+	actionChannel := config.ActionChannel
+	if actionChannel == "" {
+		actionChannel = channelID
 	}
 
-	dmMsg, err := client.Cmd("GET", key+guildID).Str()
+	dmMsg := ""
+	if p == PunishmentKick {
+		dmMsg = config.KickMessage
+	} else {
+		dmMsg = config.BanMessage
+	}
+
 	if dmMsg == "" {
 		dmMsg = "You were " + actionStr + "\nReason: {{.Reason}}"
 	}
@@ -183,11 +207,8 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 		"Reason": reason,
 	})
 
-	gName := ""
-	guild := common.LogGetGuild(guildID)
-	if guild != nil {
-		gName = "**" + guild.Name + ":** "
-	}
+	guild := common.MustGetGuild(guildID)
+	gName := "**" + guild.Name + ":** "
 
 	err = bot.SendDM(common.BotSession, user.ID, gName+executed)
 	if err != nil {
@@ -216,11 +237,11 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 		return err
 	}
 
-	logrus.Println(actionStr, author, user.Username, "cause", reason)
+	logrus.Println(author, actionStr, user.Username, "cause", reason)
 
 	logMsg := GenModlogMessage(author, actionStr, user, reason, logLink)
 
-	_, err = common.BotSession.ChannelMessageSend(acionChannel, logMsg)
+	_, err = common.BotSession.ChannelMessageSend(actionChannel, logMsg)
 	if err != nil {
 		return err
 	}
@@ -228,16 +249,22 @@ func punish(p Punishment, client *redis.Client, guildID, channelID, author, reas
 	return nil
 }
 
-func KickUser(client *redis.Client, guildID, channelID, author, reason string, user *discordgo.User) error {
-	err := punish(PunishmentKick, client, guildID, channelID, author, reason, user)
+func KickUser(config *Config, guildID, channelID, author, reason string, user *discordgo.User) error {
+	if config == nil {
+		var err error
+		config, err = GetConfig(guildID)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := punish(config, PunishmentKick, guildID, channelID, author, reason, user)
 	if err != nil {
 		return err
 	}
 
-	// Delete messages if enabled
-	if shouldDelete, _ := client.Cmd("GET", "moderation_kick_delete_messages:"+guildID).Bool(); !shouldDelete {
+	if !config.DeleteMessagesOnKick {
 		return nil
-
 	}
 
 	lastMsgs, err := common.GetMessages(channelID, 100)
@@ -265,8 +292,8 @@ func KickUser(client *redis.Client, guildID, channelID, author, reason string, u
 	return nil
 }
 
-func BanUser(client *redis.Client, guildID, channelID, author, reason string, user *discordgo.User) error {
-	return punish(PunishmentBan, client, guildID, channelID, author, reason, user)
+func BanUser(config *Config, guildID, channelID, author, reason string, user *discordgo.User) error {
+	return punish(config, PunishmentBan, guildID, channelID, author, reason, user)
 }
 
 var (
@@ -274,14 +301,21 @@ var (
 )
 
 // Unmut or mute a user, ignore duration if unmuting
-func MuteUnmuteUser(mute bool, client *redis.Client, guildID, channelID, author, reason string, member *discordgo.Member, duration int) error {
-	muteRole, err := client.Cmd("GET", "moderation_mute_role:"+guildID).Str()
-	if err != nil || muteRole == "" {
+func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, channelID, author, reason string, member *discordgo.Member, duration int) error {
+	if config == nil {
+		var err error
+		config, err = GetConfig(guildID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if config.MuteRole == "" {
 		return ErrNoMuteRole
 	}
 
-	logChannel, err := client.Cmd("GET", "moderation_action_channel:"+guildID).Str()
-	if err != nil || logChannel == "" {
+	logChannel := config.ActionChannel
+	if config.ActionChannel == "" {
 		logChannel = channelID
 	}
 
@@ -289,24 +323,25 @@ func MuteUnmuteUser(mute bool, client *redis.Client, guildID, channelID, author,
 
 	isMuted := false
 	for _, v := range member.Roles {
-		if v == muteRole {
+		if v == config.MuteRole {
 			isMuted = true
 			break
 		}
 	}
 
+	var err error
 	// Mute or unmute if needed
 	if mute && !isMuted {
 		newRoles := make([]string, len(member.Roles)+1)
 		copy(newRoles, member.Roles)
-		newRoles[len(member.Roles)] = muteRole
+		newRoles[len(member.Roles)] = config.MuteRole
 
 		err = common.BotSession.GuildMemberEdit(guildID, user.ID, newRoles)
 		logrus.Info("Added mute role yoooo")
 	} else if !mute && isMuted {
 		newRoles := make([]string, 0)
 		for _, v := range member.Roles {
-			if v != muteRole {
+			if v != config.MuteRole {
 				newRoles = append(newRoles, v)
 			}
 		}
@@ -324,7 +359,9 @@ func MuteUnmuteUser(mute bool, client *redis.Client, guildID, channelID, author,
 	if mute {
 		err = common.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
 	} else {
-		err = common.RemoveScheduledEvent(client, "unmute", guildID+":"+user.ID)
+		if client != nil {
+			err = common.RemoveScheduledEvent(client, "unmute", guildID+":"+user.ID)
+		}
 	}
 	if err != nil {
 		logrus.WithError(err).Error("Failed shceduling/removing unmute event")
@@ -332,7 +369,7 @@ func MuteUnmuteUser(mute bool, client *redis.Client, guildID, channelID, author,
 
 	// Upload logs
 	logLink := ""
-	if channelID != "" {
+	if channelID != "" && mute {
 		logs, err := logs.CreateChannelLog(channelID, author, "", 100)
 		if err != nil {
 			logLink = "Log Creation failed"
