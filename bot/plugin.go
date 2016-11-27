@@ -31,13 +31,13 @@ type BotStarterHandler interface {
 	StartBot()
 }
 
-var plugins []Plugin
+var Plugins []Plugin
 
 // Register a plugin, should only be called before webserver is started!!!
 func RegisterPlugin(plugin Plugin) {
-	if plugins == nil {
-		plugins = []Plugin{plugin}
+	if Plugins == nil {
+		Plugins = []Plugin{plugin}
 	} else {
-		plugins = append(plugins, plugin)
+		Plugins = append(Plugins, plugin)
 	}
 }

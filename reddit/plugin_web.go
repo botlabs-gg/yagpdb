@@ -81,8 +81,8 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 
 	templateData["RedditConfig"] = currentConfig
 
-	newElem := ctx.Value(web.ContextKeyParsedForm).(*Form)
-	ok := ctx.Value(web.ContextKeyFormOk).(bool)
+	newElem := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	ok := ctx.Value(common.ContextKeyFormOk).(bool)
 	if !ok {
 		return templateData
 	}
@@ -116,7 +116,7 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Sub))
 
 	// Log
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Added reddit feed from /r/"+newElem.Subreddit)
 	return templateData
 }
@@ -127,8 +127,8 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
 
-	updated := ctx.Value(web.ContextKeyParsedForm).(*Form)
-	ok := ctx.Value(web.ContextKeyFormOk).(bool)
+	updated := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	ok := ctx.Value(common.ContextKeyFormOk).(bool)
 	if !ok {
 		return templateData
 	}
@@ -160,7 +160,7 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, activeGuild.ID, "Modified a feed to /r/"+r.FormValue("subreddit"))
 	return templateData
 }
@@ -200,7 +200,7 @@ func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 
 	templateData["RedditConfig"] = currentConfig
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+item.Sub)
 	return templateData
 }

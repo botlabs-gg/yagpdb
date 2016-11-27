@@ -8,12 +8,9 @@ import (
 
 func IndexHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 
-	templateData := TemplateData(make(map[string]interface{}))
+	_, tmpl := GetCreateTemplateData(ctx)
 
-	if val := ctx.Value(ContextKeyTemplateData); val != nil {
-		templateData = val.(TemplateData)
-	}
-	return templateData
+	return tmpl
 }
 
 func HandleCPLogs(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {

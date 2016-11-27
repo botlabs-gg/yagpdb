@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	// calc/compute isnt threadsage :'(
+	// calc/compute isnt threadsafe :'(
 	computeLock   sync.Mutex
 	CommandSystem *commandsystem.System
 )

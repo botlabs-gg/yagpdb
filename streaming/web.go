@@ -61,8 +61,8 @@ func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Req
 	client, guild, tmpl := web.GetBaseCPContextData(ctx)
 	tmpl["VisibleURL"] = "/cp/" + guild.ID + "/streaming/"
 
-	ok := ctx.Value(web.ContextKeyFormOk).(bool)
-	newConf := ctx.Value(web.ContextKeyParsedForm).(*Config)
+	ok := ctx.Value(common.ContextKeyFormOk).(bool)
+	newConf := ctx.Value(common.ContextKeyParsedForm).(*Config)
 
 	tmpl["StreamingConfig"] = newConf
 
@@ -80,7 +80,7 @@ func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Req
 		logrus.WithError(err).Error("Failed sending update streaming event")
 	}
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, guild.ID, "Updated streaming config.")
 
 	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))

@@ -20,7 +20,7 @@ func Setup() {
 	common.BotSession.State.MaxMessageCount = 1000
 
 	log.Info("Initializing bot plugins")
-	for _, plugin := range plugins {
+	for _, plugin := range Plugins {
 		plugin.InitBot()
 		log.WithField("plugin", plugin.Name()).Info("Initialized bot plugin")
 	}
@@ -52,7 +52,7 @@ func Run() {
 
 	go mergedMessageSender()
 
-	for _, p := range plugins {
+	for _, p := range Plugins {
 		starter, ok := p.(BotStarterHandler)
 		if ok {
 			starter.StartBot()

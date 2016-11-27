@@ -16,25 +16,6 @@ import (
 	"strings"
 )
 
-type ContextKey int
-
-const (
-	ContextKeyRedis ContextKey = iota
-	ContextKeyDiscordSession
-	ContextKeyTemplateData
-	ContextKeyUser
-	ContextKeyGuilds
-	ContextKeyCurrentGuild
-	ContextKeyCurrentUserGuild
-	ContextKeyGuildChannels
-	ContextKeyGuildRoles
-	ContextKeyParsedForm
-	ContextKeyFormOk
-	ContextKeyBotMember
-	ContextKeyBotPermissions
-	ContextKeyHighestBotRole
-)
-
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
 
 // Retrives an oauth2 token for the session
@@ -75,7 +56,7 @@ func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client
 
 func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
 	// Check for existing data
-	if val := ctx.Value(ContextKeyTemplateData); val != nil {
+	if val := ctx.Value(common.ContextKeyTemplateData); val != nil {
 		cast := val.(TemplateData)
 		for k, v := range data {
 			cast[k] = v
@@ -84,11 +65,11 @@ func SetContextTemplateData(ctx context.Context, data map[string]interface{}) co
 	}
 
 	// Fallback
-	return context.WithValue(ctx, ContextKeyTemplateData, TemplateData(data))
+	return context.WithValue(ctx, common.ContextKeyTemplateData, TemplateData(data))
 }
 
 func DiscordSessionFromContext(ctx context.Context) *discordgo.Session {
-	if val := ctx.Value(ContextKeyDiscordSession); val != nil {
+	if val := ctx.Value(common.ContextKeyDiscordSession); val != nil {
 		if cast, ok := val.(*discordgo.Session); ok {
 			return cast
 		}
@@ -97,7 +78,7 @@ func DiscordSessionFromContext(ctx context.Context) *discordgo.Session {
 }
 
 func RedisClientFromContext(ctx context.Context) *redis.Client {
-	if val := ctx.Value(ContextKeyRedis); val != nil {
+	if val := ctx.Value(common.ContextKeyRedis); val != nil {
 		if cast, ok := val.(*redis.Client); ok {
 			return cast
 		}
@@ -146,11 +127,11 @@ func (t TemplateData) AddAlerts(alerts ...*Alert) TemplateData {
 }
 
 func GetCreateTemplateData(ctx context.Context) (context.Context, TemplateData) {
-	if v := ctx.Value(ContextKeyTemplateData); v != nil {
+	if v := ctx.Value(common.ContextKeyTemplateData); v != nil {
 		return ctx, v.(TemplateData)
 	}
 	tmplData := TemplateData(make(map[string]interface{}))
-	ctx = context.WithValue(ctx, ContextKeyTemplateData, tmplData)
+	ctx = context.WithValue(ctx, common.ContextKeyTemplateData, tmplData)
 	return ctx, tmplData
 }
 
@@ -190,8 +171,8 @@ func SucessAlert(args ...interface{}) *Alert {
 // Returns base context data for control panel plugins
 func GetBaseCPContextData(ctx context.Context) (*redis.Client, *discordgo.Guild, TemplateData) {
 	client := RedisClientFromContext(ctx)
-	guild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
-	templateData := ctx.Value(ContextKeyTemplateData).(TemplateData)
+	guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
 
 	return client, guild, templateData
 }
@@ -241,10 +222,10 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 
 // Checks the context if there is a logged in user and if so if he's and admin or not
 func IsAdminCtx(ctx context.Context) bool {
-	if v := ctx.Value(ContextKeyCurrentUserGuild); v != nil {
+	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
 
 		cast := v.(*discordgo.UserGuild)
-		user := ctx.Value(ContextKeyUser).(*discordgo.User)
+		user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 		// Require manageserver, ownership of guild or ownership of bot
 		if cast.Owner || cast.Permissions&discordgo.PermissionManageServer != 0 || user.ID == common.Conf.Owner {
 			return true

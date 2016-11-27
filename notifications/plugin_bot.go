@@ -39,7 +39,7 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 		"Server": guild,
 	}
 
-	config := GetConfig(client, evt.GuildID)
+	config := GetConfig(evt.GuildID)
 
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled {
@@ -86,7 +86,7 @@ func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRem
 		"Guild":  guild,
 		"Server": guild,
 	}
-	config := GetConfig(client, evt.GuildID)
+	config := GetConfig(evt.GuildID)
 
 	if !config.LeaveEnabled {
 		return
@@ -112,7 +112,7 @@ func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, cli
 		return
 	}
 
-	config := GetConfig(client, evt.GuildID)
+	config := GetConfig(evt.GuildID)
 	if config.TopicEnabled {
 		guild, err := s.State.Guild(evt.GuildID)
 		if err != nil {

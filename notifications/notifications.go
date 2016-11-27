@@ -5,7 +5,9 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
+	"golang.org/x/net/context"
 )
 
 type Plugin struct{}
@@ -14,6 +16,9 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	bot.RegisterPlugin(plugin)
 	web.RegisterPlugin(plugin)
+
+	common.SQL.AutoMigrate(&Config{})
+	configstore.RegisterConfig(configstore.SQL, &Config{})
 }
 
 func (p *Plugin) Name() string {
@@ -27,7 +32,18 @@ func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
 }
 
+func (p *Plugin) MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error {
+	conf := GetConfigDeprecated(client, guildID)
+	if conf == DefaultConfig {
+		return nil
+	}
+
+	conf.GuildID = guildIDInt
+	return configstore.SQL.SetGuildConfig(context.Background(), conf)
+}
+
 type Config struct {
+	configstore.GuildConfigModel
 	JoinServerEnabled bool   `json:"join_server_enabled" schema:"join_server_enabled"`
 	JoinServerChannel string `json:"join_server_channel" schema:"join_server_channel" valid:"channel,true"`
 	JoinServerMsg     string `json:"join_server_msg" schema:"join_server_msg" valid:"template,2000"`
@@ -48,9 +64,17 @@ type Config struct {
 	PinChannel string `json:"pin_channel,omitempty"`
 }
 
+func (c *Config) GetName() string {
+	return "general_notifications"
+}
+
+func (c *Config) TableName() string {
+	return "general_notification_configs"
+}
+
 var DefaultConfig = &Config{}
 
-func GetConfig(client *redis.Client, server string) *Config {
+func GetConfigDeprecated(client *redis.Client, server string) *Config {
 	var config *Config
 	if err := common.GetRedisJson(client, "notifications/general:"+server, &config); err != nil {
 		log.WithError(err).WithField("guild", server).Error("Failed retrieving noifications config")
@@ -60,4 +84,19 @@ func GetConfig(client *redis.Client, server string) *Config {
 		return DefaultConfig
 	}
 	return config
+}
+
+func GetConfig(guildID string) *Config {
+	var conf Config
+	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &conf)
+	if err != nil {
+		if err != configstore.ErrNotFound {
+			log.WithError(err).Error("Failed retrieving config")
+		}
+		return &Config{
+			JoinServerMsg: "<@{{.User.ID}}> Joined!",
+			LeaveMsg:      "**{{.User.Username}}** Left... :'(",
+		}
+	}
+	return &conf
 }

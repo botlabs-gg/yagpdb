@@ -2,11 +2,13 @@ package notifications
 
 import (
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
+	"strconv"
 )
 
 func (p *Plugin) InitWeb() {
@@ -23,30 +25,31 @@ func (p *Plugin) InitWeb() {
 }
 
 func HandleNotificationsGet(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	formConfig, ok := ctx.Value(web.ContextKeyParsedForm).(*Config)
+	formConfig, ok := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	if ok {
 		templateData["NotifyConfig"] = formConfig
 	} else {
-		templateData["NotifyConfig"] = GetConfig(client, activeGuild.ID)
+		templateData["NotifyConfig"] = GetConfig(activeGuild.ID)
 	}
 
 	return templateData
 }
 
 func HandleNotificationsPost(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/notifications/general/"
 
-	newConfig := ctx.Value(web.ContextKeyParsedForm).(*Config)
+	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 
-	err := common.SetRedisJson(client, "notifications/general:"+activeGuild.ID, newConfig)
+	parsed, _ := strconv.ParseInt(activeGuild.ID, 10, 64)
+	newConfig.GuildID = parsed
+
+	err := configstore.SQL.SetGuildConfig(ctx, newConfig)
 	if err != nil {
-		return nil, err
+		return templateData, nil
 	}
-
-	templateData.AddAlerts(web.SucessAlert("Sucessfully saved everything! :')"))
 
 	return templateData, nil
 }

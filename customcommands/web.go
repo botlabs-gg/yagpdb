@@ -50,7 +50,7 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
-	newCmd := ctx.Value(web.ContextKeyParsedForm).(*CustomCommand)
+	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
 	currentCommands, highest, err := GetCommands(client, activeGuild.ID)
 	if err != nil {
@@ -79,7 +79,7 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
-	cmd := ctx.Value(web.ContextKeyParsedForm).(*CustomCommand)
+	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
 	// Validate that they haven't messed with the id
 	exists, _ := client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID).Bool()
@@ -105,7 +105,7 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 		return templateData, err
 	}
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Deleted command #"+cmdIndex)
 
 	return HandleCommands(ctx, w, r)

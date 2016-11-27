@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/logs"
@@ -20,7 +22,9 @@ import (
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
+	"strconv"
 	"sync"
+	"time"
 	//"github.com/wercker/journalhook"
 )
 
@@ -73,11 +77,9 @@ func main() {
 		log.WithError(err).Fatal("Failed intializing")
 	}
 
+	configstore.InitDatabases()
+
 	//BotSession.LogLevel = discordgo.LogInformational
-	if flagAction != "" {
-		runAction(flagAction)
-		return
-	}
 
 	// Setup plugins
 	commands.RegisterPlugin()
@@ -98,6 +100,11 @@ func main() {
 	bot.Setup()
 
 	// RUN FORREST RUN
+	if flagAction != "" {
+		runAction(flagAction)
+		return
+	}
+
 	if flagRunWeb || flagRunEverything {
 		go web.Run()
 	}
@@ -131,6 +138,8 @@ func runAction(str string) {
 		err = common.RefreshConnectedGuilds(common.BotSession, client)
 	case "rsconnected":
 		err = client.Cmd("DEL", "connected_guilds").Err
+	case "migrate":
+		err = migrate(client)
 	default:
 		log.Error("Unknown action")
 		return
@@ -141,4 +150,59 @@ func runAction(str string) {
 	} else {
 		log.Info("Sucessfully ran action", str)
 	}
+}
+
+type SQLMigrater interface {
+	MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error
+	Name() string
+}
+
+func migrate(client *redis.Client) error {
+	plugins := make([]SQLMigrater, 0)
+
+	for _, v := range bot.Plugins {
+		cast, ok := v.(SQLMigrater)
+		if ok {
+			plugins = append(plugins, cast)
+		}
+	}
+
+OUTER:
+	for _, v := range web.Plugins {
+		for _, p := range plugins {
+			if interface{}(v) == p {
+				log.Info("Found duplicate ", v.Name())
+				continue OUTER
+			}
+		}
+
+		if cast, ok := v.(SQLMigrater); ok {
+			plugins = append(plugins, cast)
+		}
+	}
+
+	guilds, err := client.Cmd("SMEMBERS", "connected_guilds").List()
+	if err != nil {
+		return err
+	}
+
+	started := time.Now()
+	for _, g := range guilds {
+
+		parsed, err := strconv.ParseInt(g, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		for _, p := range plugins {
+			err = p.MigrateStorage(client, g, parsed)
+			if err != nil {
+				log.WithError(err).Error("Error migrating ", p.Name())
+			}
+		}
+	}
+	elapsed := time.Since(started)
+	log.Info("Migrated ", len(guilds), " guilds in ", elapsed.String())
+
+	return nil
 }

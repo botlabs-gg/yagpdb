@@ -24,7 +24,7 @@ func (p *Plugin) InitWeb() {
 // Servers the command page with current config
 func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	channels := ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel)
+	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)
 	return templateData
 }
@@ -33,7 +33,7 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
-	channels := ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel)
+	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 
 	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, strings.TrimSpace(r.FormValue("prefix"))).Err
 	if err != nil {
@@ -45,7 +45,7 @@ func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	config := GetConfig(client, activeGuild.ID, channels)
 	templateData["CommandConfig"] = config
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Updated general command settings")
 
 	return templateData
@@ -56,7 +56,7 @@ func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
 
-	channels := ctx.Value(web.ContextKeyGuildChannels).([]*discordgo.Channel)
+	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 
 	config := GetConfig(client, activeGuild.ID, channels)
 
@@ -99,7 +99,7 @@ func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return templateData
 	}
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Updated advanced command settings")
 
 	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)

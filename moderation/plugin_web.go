@@ -51,10 +51,10 @@ func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Re
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/moderation/"
 
-	newConfig := ctx.Value(web.ContextKeyParsedForm).(*Config)
+	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	templateData["ModConfig"] = newConfig
 
-	ok := ctx.Value(web.ContextKeyFormOk).(bool)
+	ok := ctx.Value(common.ContextKeyFormOk).(bool)
 	if !ok {
 		return templateData
 	}
@@ -66,7 +66,7 @@ func HandlePostModeration(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :')"))
 
-	user := ctx.Value(web.ContextKeyUser).(*discordgo.User)
+	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Updated moderation settings")
 
 	return templateData

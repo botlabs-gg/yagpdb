@@ -40,7 +40,7 @@ func HandleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	redisClient := ctx.Value(ContextKeyRedis).(*redis.Client)
+	redisClient := ctx.Value(common.ContextKeyRedis).(*redis.Client)
 
 	state := r.FormValue("state")
 	if ok, err := CheckCSRFToken(redisClient, state); !ok {
@@ -84,7 +84,7 @@ func HandleLogout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	}
 	session := sessionCookie.Value
 
-	redisClient := ctx.Value(ContextKeyRedis).(*redis.Client)
+	redisClient := ctx.Value(common.ContextKeyRedis).(*redis.Client)
 
 	err = redisClient.Cmd("DEL", "discord_token:"+session).Err
 	if err != nil {

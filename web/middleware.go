@@ -50,7 +50,7 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		inner.ServeHTTPC(context.WithValue(ctx, ContextKeyRedis, client), w, r)
+		inner.ServeHTTPC(context.WithValue(ctx, common.ContextKeyRedis, client), w, r)
 		common.RedisPool.Put(client)
 	}
 	return goji.HandlerFunc(mw)
@@ -112,7 +112,7 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		newCtx = context.WithValue(ctx, ContextKeyDiscordSession, session)
+		newCtx = context.WithValue(ctx, common.ContextKeyDiscordSession, session)
 	}
 	return goji.HandlerFunc(mw)
 }
@@ -203,8 +203,8 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			"Guilds":        wrapped,
 			"ManagedGuilds": managedGuilds,
 		}
-		newCtx := context.WithValue(SetContextTemplateData(ctx, templateData), ContextKeyUser, user)
-		newCtx = context.WithValue(newCtx, ContextKeyGuilds, guilds)
+		newCtx := context.WithValue(SetContextTemplateData(ctx, templateData), common.ContextKeyUser, user)
+		newCtx = context.WithValue(newCtx, common.ContextKeyGuilds, guilds)
 
 		inner.ServeHTTPC(newCtx, w, r)
 
@@ -221,7 +221,7 @@ func setFullGuild(ctx context.Context, guildID string) (context.Context, error) 
 	}
 
 	ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
-	return context.WithValue(ctx, ContextKeyCurrentGuild, fullGuild), nil
+	return context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild), nil
 }
 
 // Sets the active guild context and template data
@@ -241,7 +241,7 @@ func ActiveServerMW(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		guilds, ok := ctx.Value(ContextKeyGuilds).([]*discordgo.UserGuild)
+		guilds, ok := ctx.Value(common.ContextKeyGuilds).([]*discordgo.UserGuild)
 		if !ok {
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
@@ -274,8 +274,8 @@ func ActiveServerMW(inner goji.Handler) goji.Handler {
 			ID:   userGuild.ID,
 			Name: userGuild.Name,
 		}
-		ctx = context.WithValue(ctx, ContextKeyCurrentUserGuild, userGuild)
-		ctx = context.WithValue(ctx, ContextKeyCurrentGuild, fullGuild)
+		ctx = context.WithValue(ctx, common.ContextKeyCurrentUserGuild, userGuild)
+		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
 	}
 	return goji.HandlerFunc(mw)
@@ -283,7 +283,7 @@ func ActiveServerMW(inner goji.Handler) goji.Handler {
 
 func RequireActiveServer(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if v := ctx.Value(ContextKeyCurrentGuild); v == nil {
+		if v := ctx.Value(common.ContextKeyCurrentGuild); v == nil {
 			http.Redirect(w, r, "/?err=no_active_guild", http.StatusTemporaryRedirect)
 			return
 		}
@@ -307,7 +307,7 @@ func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
 
 func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		guild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 		channels, err := common.GetGuildChannels(RedisClientFromContext(ctx), guild.ID)
 		if err != nil {
@@ -318,7 +318,7 @@ func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
 
 		guild.Channels = channels
 
-		newCtx := context.WithValue(ctx, ContextKeyGuildChannels, channels)
+		newCtx := context.WithValue(ctx, common.ContextKeyGuildChannels, channels)
 
 		inner.ServeHTTPC(newCtx, w, r)
 	}
@@ -327,7 +327,7 @@ func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
 
 func RequireFullGuildMW(inner goji.Handler) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		guild := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 		if guild.OwnerID != "" {
 			// Was already full. so this is not needed
@@ -360,7 +360,7 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 			return
 		}
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"BotMember": member})
-		ctx = context.WithValue(ctx, ContextKeyBotMember, member)
+		ctx = context.WithValue(ctx, common.ContextKeyBotMember, member)
 
 		defer func() {
 			inner.ServeHTTPC(ctx, w, r)
@@ -369,7 +369,7 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 		log.Println("Checking if guild is available")
 
 		// Set highest role and combined perms
-		guild := ctx.Value(ContextKeyCurrentGuild)
+		guild := ctx.Value(common.ContextKeyCurrentGuild)
 		if guild == nil {
 			return
 		}
@@ -401,8 +401,8 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 				highest = role
 			}
 		}
-		ctx = context.WithValue(ctx, ContextKeyHighestBotRole, highest)
-		ctx = context.WithValue(ctx, ContextKeyBotPermissions, combinedPerms)
+		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, highest)
+		ctx = context.WithValue(ctx, common.ContextKeyBotPermissions, combinedPerms)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": highest, "BotPermissions": combinedPerms})
 	})
 }
@@ -418,7 +418,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) goji.Handler {
 		}
 
 		if out == nil {
-			if d, ok := ctx.Value(ContextKeyTemplateData).(TemplateData); ok {
+			if d, ok := ctx.Value(common.ContextKeyTemplateData).(TemplateData); ok {
 				out = d
 			}
 		}
@@ -502,8 +502,8 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 			ok = ValidateForm(guild, tmpl, decoded)
 		}
 
-		newCtx := context.WithValue(ctx, ContextKeyParsedForm, decoded)
-		newCtx = context.WithValue(newCtx, ContextKeyFormOk, ok)
+		newCtx := context.WithValue(ctx, common.ContextKeyParsedForm, decoded)
+		newCtx = context.WithValue(newCtx, common.ContextKeyFormOk, ok)
 		inner.ServeHTTPC(newCtx, w, r)
 	}
 	return goji.HandlerFunc(mw)
@@ -524,8 +524,8 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler goji.Handler) go
 			defer extraHandler.ServeHTTPC(ctx, w, r)
 		}
 
-		form := ctx.Value(ContextKeyParsedForm).(SimpleConfigSaver)
-		ok := ctx.Value(ContextKeyFormOk).(bool)
+		form := ctx.Value(common.ContextKeyParsedForm).(SimpleConfigSaver)
+		ok := ctx.Value(common.ContextKeyFormOk).(bool)
 		if !ok {
 			return
 		}
@@ -533,7 +533,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler goji.Handler) go
 		err := form.Save(client, g.ID)
 		if !CheckErr(templateData, err, "Failed saving config", log.Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
-			user, ok := ctx.Value(ContextKeyUser).(*discordgo.User)
+			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 			if ok {
 				common.AddCPLogEntry(user, g.ID, "Updated "+t.Name()+" Config.")
 			}
@@ -561,7 +561,7 @@ type ControllerHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *h
 func ControllerHandler(f ControllerHandlerFunc, templateName string) goji.Handler {
 	return RenderHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
 
-		guild, _ := ctx.Value(ContextKeyCurrentGuild).(*discordgo.Guild)
+		guild, _ := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 		data, err := f(ctx, w, r)
 		if data == nil {
@@ -586,7 +586,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler goji.
 			}()
 		}
 
-		ok := ctx.Value(ContextKeyFormOk).(bool)
+		ok := ctx.Value(common.ContextKeyFormOk).(bool)
 		if !ok {
 			return
 		}
@@ -599,7 +599,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler goji.
 
 		if err == nil {
 			data.AddAlerts(SucessAlert("Sucessfully saved! :')"))
-			user, ok := ctx.Value(ContextKeyUser).(*discordgo.User)
+			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 			if ok {
 				go common.AddCPLogEntry(user, g.ID, logMsg)
 			}
@@ -654,7 +654,7 @@ var stringPerms = map[int]string{
 func RequirePermMW(perms ...int) func(goji.Handler) goji.Handler {
 	return func(inner goji.Handler) goji.Handler {
 		return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-			permsInterface := ctx.Value(ContextKeyBotPermissions)
+			permsInterface := ctx.Value(common.ContextKeyBotPermissions)
 			currentPerms := 0
 			if permsInterface == nil {
 				log.Warn("Requires perms but no permsinterface available")
