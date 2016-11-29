@@ -230,7 +230,7 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, guild *di
 
 // CooldownLeft returns the number of seconds before a command can be used again
 func (cs *CustomCommand) CooldownLeft(client *redis.Client, userID string) (int, error) {
-	if cs.Cooldown < 1 {
+	if cs.Cooldown < 1 || common.Testing {
 		return 0, nil
 	}
 

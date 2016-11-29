@@ -43,7 +43,7 @@ var cmds = []commandsystem.CommandHandler{
 		Cooldown: 10,
 		Category: commands.CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "whois",
+			Name:        "Whois",
 			Description: "shows users pervious username and nicknames",
 			Aliases:     []string{"whoami"},
 			RunInDm:     false,
@@ -102,23 +102,51 @@ var cmds = []commandsystem.CommandHandler{
 
 // Guildmemberupdate is sent when user changes nick
 func HandleGuildmemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	CheckNickname(m.User.ID, m.GuildID, m.Nick)
+	conf, err := GetConfig(m.GuildID)
+	if err != nil {
+		logrus.WithError(err).Error("Failed fetching config")
+		return
+	}
+	if conf.NicknameLoggingEnabled {
+		CheckNickname(m.User.ID, m.GuildID, m.Nick)
+	}
 }
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
 // Also check nickname incase the user came online
 func HandlePresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpdate) {
-	CheckNickname(m.User.ID, m.GuildID, m.Presence.Nick)
-	if m.User.Username != "" {
-		CheckUsername(m.User)
+	conf, err := GetConfig(m.GuildID)
+	if err != nil {
+		logrus.WithError(err).Error("Failed fetching config")
+		return
+	}
+
+	if conf.NicknameLoggingEnabled {
+		CheckNickname(m.User.ID, m.GuildID, m.Presence.Nick)
+	}
+
+	if conf.UsernameLoggingEnabled {
+		if m.User.Username != "" {
+			CheckUsername(m.User)
+		}
 	}
 }
 
 func HandleGuildCreate(s *discordgo.Session, c *discordgo.GuildCreate) {
+	conf, err := GetConfig(c.ID)
+	if err != nil {
+		logrus.WithError(err).Error("Failed fetching config")
+		return
+	}
+
 	started := time.Now()
 	for _, v := range c.Members {
-		CheckNickname(v.User.ID, c.Guild.ID, v.Nick)
-		CheckUsername(v.User)
+		if conf.NicknameLoggingEnabled {
+			CheckNickname(v.User.ID, c.Guild.ID, v.Nick)
+		}
+		if conf.UsernameLoggingEnabled {
+			CheckUsername(v.User)
+		}
 	}
 	logrus.Infof("Checked %d members in %s", len(c.Members), time.Since(started).String())
 }

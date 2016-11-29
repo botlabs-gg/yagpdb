@@ -490,7 +490,7 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 		// Decode the form into the destination struct
 		decoded := reflect.New(typ).Interface()
 		decoder := schema.NewDecoder()
-		err = decoder.Decode(decoded, r.Form)
+		err = decoder.Decode(decoded, r.PostForm)
 
 		ok := true
 		if err != nil {

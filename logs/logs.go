@@ -5,7 +5,9 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
+	"golang.org/x/net/context"
 )
 
 type Plugin struct{}
@@ -16,14 +18,44 @@ func (p *Plugin) Name() string {
 
 func InitPlugin() {
 	//p := &Plugin{}
-	err := common.SQL.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}).Error
+	err := common.SQL.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
 	if err != nil {
 		panic(err)
 	}
 
+	configstore.RegisterConfig(configstore.SQL, &GuildLoggingConfig{})
+
 	p := &Plugin{}
 	web.RegisterPlugin(p)
 	bot.RegisterPlugin(p)
+
+}
+
+type GuildLoggingConfig struct {
+	configstore.GuildConfigModel
+	UsernameLoggingEnabled bool
+	NicknameLoggingEnabled bool
+}
+
+func (g *GuildLoggingConfig) GetName() string {
+	return "guild_logging_config"
+}
+
+// Returns either stored config, err or a default config
+func GetConfig(guildID string) (*GuildLoggingConfig, error) {
+	var general GuildLoggingConfig
+	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &general)
+	if err != nil {
+		if err == configstore.ErrNotFound {
+			return &GuildLoggingConfig{
+				UsernameLoggingEnabled: true,
+				NicknameLoggingEnabled: false,
+			}, nil
+		}
+		return nil, err
+	}
+
+	return &general, nil
 }
 
 type MessageLog struct {
@@ -115,8 +147,31 @@ func GetChannelLogs(id int64) (*MessageLog, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	err = common.SQL.Model(&result).Related(&result.Messages, "MessageLogID").Error
 
 	return &result, err
+}
+
+func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error) {
+
+	var result []*MessageLog
+	var q *gorm.DB
+	if before != 0 {
+		q = common.SQL.Where("guild_id = ? AND id < ?", guildID, before)
+	} else if after != 0 {
+		q = common.SQL.Where("guild_id = ? AND id > ?", guildID, after)
+	} else {
+		q = common.SQL.Where("guild_id = ?", guildID)
+	}
+
+	err := q.Order("id desc").Limit(limit).Find(&result).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return []*MessageLog{}, nil
+		}
+
+		return nil, err
+	}
+
+	return result, err
 }

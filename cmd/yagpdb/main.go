@@ -164,6 +164,7 @@ func migrate(client *redis.Client) error {
 		cast, ok := v.(SQLMigrater)
 		if ok {
 			plugins = append(plugins, cast)
+			log.Info("Migrating ", cast.Name())
 		}
 	}
 
@@ -178,6 +179,7 @@ OUTER:
 
 		if cast, ok := v.(SQLMigrater); ok {
 			plugins = append(plugins, cast)
+			log.Info("Migrating ", cast.Name())
 		}
 	}
 

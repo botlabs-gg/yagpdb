@@ -7,7 +7,12 @@ import (
 	"html/template"
 	"reflect"
 	"strings"
+	"time"
 )
+
+func prettyTime(t time.Time) string {
+	return t.Format(time.RFC822)
+}
 
 // mTemplate combines "template" with dictionary. so you can specify multiple variables
 // and call templates almost as if they were functions with arguments
