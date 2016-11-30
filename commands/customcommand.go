@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/common"
+	"math/rand"
 	"strings"
 	"time"
 )
@@ -108,20 +109,10 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 	if cs.RunFunc != nil {
 		resp, err := cs.RunFunc(parsed, client, m)
 		if resp != nil {
-			out := ""
-
-			if err, ok := resp.(error); ok {
-				out = "Error: " + err.Error()
-			} else if str, ok := resp.(string); ok {
-				out = str
-			}
-
-			if out != "" {
-				msgs, err := dutil.SplitSendMessage(s, m.ChannelID, out)
-				// Autodelete response if enabled
-				if autodel && err == nil {
-					go cs.deleteResponse(append(msgs, m.Message))
-				}
+			err2 := cs.sendResponse(s, resp, m.Message, autodel)
+			if err2 != nil {
+				log.WithError(err2).Errorf("Failed sending command response %#v", resp)
+				return err2
 			}
 		}
 		if err == nil {
@@ -134,6 +125,68 @@ func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandS
 	}
 
 	return nil
+}
+
+func (cs *CustomCommand) sendResponse(s *discordgo.Session, response interface{}, trigger *discordgo.Message, autodel bool) error {
+
+	var msgs []*discordgo.Message
+	var err error
+
+	switch t := response.(type) {
+	case error:
+		msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, "Error: "+t.Error())
+	case string:
+		msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, t)
+	case *discordgo.MessageEmbed:
+		perms, err := s.State.UserChannelPermissions(s.State.User.ID, trigger.ChannelID)
+		if err != nil {
+			return err
+		}
+
+		if perms&discordgo.PermissionAdministrator != 0 || perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionEmbedLinks != 0 {
+			log.Println("Has perms", perms&discordgo.PermissionAdministrator != 0, perms&discordgo.PermissionManageServer != 0, perms&discordgo.PermissionEmbedLinks != 0)
+			if t.Color == 0 {
+				t.Color = rand.Intn(0xffffff)
+			}
+			m, e := s.ChannelMessageSendEmbed(trigger.ChannelID, t)
+			msgs = []*discordgo.Message{m}
+			err = e
+		} else {
+			// fallback
+			msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, fallbackEmbed(t))
+		}
+
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if autodel && len(msgs) > 0 {
+		go cs.deleteResponse(append(msgs, trigger))
+	}
+
+	return nil
+}
+
+func fallbackEmbed(embed *discordgo.MessageEmbed) string {
+	body := ""
+
+	if embed.Title != "" {
+		body += embed.Title + "\n"
+	}
+
+	if embed.Description != "" {
+		body += embed.Description + "\n"
+	}
+	if body != "" {
+		body += "\n"
+	}
+
+	for _, v := range embed.Fields {
+		body += fmt.Sprintf("**%s**\n%s\n\n", v.Name, v.Value)
+	}
+	return body + "**I have no 'embed links' permissions here, this is a fallback. it looks prettier if i have that perm :)**"
 }
 
 func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender string) {

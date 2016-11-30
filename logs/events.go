@@ -52,6 +52,11 @@ var cmds = []commandsystem.CommandHandler{
 			},
 		},
 		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			config, err := GetConfig(parsed.Guild.ID)
+			if err != nil {
+				return "AAAAA", err
+			}
+
 			target := m.Author
 			if parsed.Args[0] != nil {
 				target = parsed.Args[0].DiscordUser()
@@ -62,40 +67,99 @@ var cmds = []commandsystem.CommandHandler{
 				return "An error occured fetching guild member, contact bot owner", err
 			}
 
-			usernames, err := GetUsernames(target.ID)
-			if err != nil {
-				return err, err
-			}
-
-			nicknames, err := GetNicknames(target.ID, parsed.Guild.ID)
-			if err != nil {
-				return err, err
-			}
-
 			nick := ""
 			if member.Nick != "" {
 				nick = " (" + member.Nick + ")"
 			}
-			header := fmt.Sprintf("**%s%s**:\n", target.Username, nick)
-			header += fmt.Sprintf("Joined server at: %s", member.JoinedAt)
 
-			body := "**Usernames:**```\n"
-			for _, v := range usernames {
-				body += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Format(time.RFC822), v.Username)
-			}
-			body += "```\n\n"
-
-			body += "**Nicknames:**```\n"
-			if len(nicknames) < 1 {
-				body += "No nicknames tracked"
+			joinedAtStr := ""
+			joinedAtDurStr := ""
+			joinedAt, err := discordgo.Timestamp(member.JoinedAt).Parse()
+			if err != nil {
+				joinedAtStr = "Uh oh something baddy happening parsing time"
+				logrus.WithError(err).Error("Failed parsing joinedat")
 			} else {
-				for _, v := range nicknames {
-					body += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Format(time.RFC822), v.Nickname)
-				}
+				joinedAtStr = joinedAt.UTC().Format(time.RFC822)
+				dur := time.Since(joinedAt)
+				joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionSeconds, dur)
 			}
-			body += "```"
 
-			return header + "\n" + body, nil
+			embed := &discordgo.MessageEmbed{
+				Title: fmt.Sprintf("**%s%s#%s**", target.Username, target.Discriminator, nick),
+				// Description: "Aaaa",
+				// Author: &discordgo.MessageEmbedAuthor{
+				// 	URL:  "https://yagpdb.xyz",
+				// 	Name: "YAGPDB.xyz",
+				// },
+				Fields: []*discordgo.MessageEmbedField{
+					&discordgo.MessageEmbedField{
+						Name:   "ID",
+						Value:  target.ID,
+						Inline: true,
+					}, &discordgo.MessageEmbedField{
+						Name:   "Joined at",
+						Value:  joinedAtStr,
+						Inline: true,
+					}, &discordgo.MessageEmbedField{
+						Name:   "Join Age",
+						Value:  joinedAtDurStr,
+						Inline: true,
+					},
+				},
+			}
+
+			if config.UsernameLoggingEnabled {
+				usernames, err := GetUsernames(target.ID)
+				if err != nil {
+					return err, err
+				}
+
+				usernamesStr := "```\n"
+				for _, v := range usernames {
+					usernamesStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.UTC().Format(time.RFC822), v.Username)
+				}
+				usernamesStr += "```\n\n"
+
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Usernames",
+					Value: usernamesStr,
+				})
+			} else {
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Usernames",
+					Value: "Username tracking disabled",
+				})
+			}
+
+			if config.NicknameLoggingEnabled {
+
+				nicknames, err := GetNicknames(target.ID, parsed.Guild.ID)
+				if err != nil {
+					return err, err
+				}
+
+				nicknameStr := "```\n"
+				if len(nicknames) < 1 {
+					nicknameStr += "No nicknames tracked"
+				} else {
+					for _, v := range nicknames {
+						nicknameStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.UTC().Format(time.RFC822), v.Nickname)
+					}
+				}
+				nicknameStr += "```"
+
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Nicknames",
+					Value: nicknameStr,
+				})
+			} else {
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Nicknames",
+					Value: "Nickname tracking disabled",
+				})
+			}
+
+			return embed, nil
 		},
 	},
 }

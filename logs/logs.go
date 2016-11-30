@@ -49,7 +49,7 @@ func GetConfig(guildID string) (*GuildLoggingConfig, error) {
 		if err == configstore.ErrNotFound {
 			return &GuildLoggingConfig{
 				UsernameLoggingEnabled: true,
-				NicknameLoggingEnabled: false,
+				NicknameLoggingEnabled: true,
 			}, nil
 		}
 		return nil, err

@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
@@ -213,6 +214,40 @@ func GetGuildMember(s *discordgo.Session, guildID, userID string) (m *discordgo.
 	m.GuildID = guildID
 
 	err = s.State.MemberAdd(m)
+	return
+}
+
+type DurationFormatPrecision int
+
+const (
+	DurationPrecisionSeconds DurationFormatPrecision = iota
+	DurationPrecisionMinutes
+	DurationPrecisionHours
+	DurationPrecisionDays
+)
+
+func HumanizeDuration(precision DurationFormatPrecision, in time.Duration) (out string) {
+	seconds := int64(in.Seconds())
+
+	if precision == DurationPrecisionSeconds {
+		out = fmt.Sprintf("%d Seconds", seconds%60)
+	}
+
+	if precision <= DurationPrecisionMinutes && seconds >= 60 {
+		out = fmt.Sprintf("%d Minutes %s", (seconds/60)%60, out)
+	}
+
+	if precision <= DurationPrecisionHours && seconds >= 60*60 {
+		out = fmt.Sprintf("%d Hours %s", ((seconds/60)/60)%24, out)
+	}
+
+	if precision <= DurationPrecisionDays && seconds >= 60*60*24 {
+		out = fmt.Sprintf("%d Days %s", (((seconds/60)/60)/24)%7, out)
+	}
+
+	if precision <= DurationPrecisionDays && seconds >= 60*60*24*7 {
+		out = fmt.Sprintf("%d Weeks %s", (((seconds/60)/60)/24)/7, out)
+	}
 	return
 }
 
