@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -62,9 +63,7 @@ func handleUnMute(data string) error {
 	if err != ErrNoMuteRole {
 
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-			if cast.Message.Code == 10007 {
-				return nil // MemberNot found
-			}
+			return nil // Discord api ok, something else went wrong. do not reschedule
 		}
 
 		return err
@@ -74,17 +73,29 @@ func handleUnMute(data string) error {
 
 type Config struct {
 	configstore.GuildConfigModel
-	BanEnabled           bool   `schema:"ban_enabled"`
-	KickEnabled          bool   `schema:"kick_enabled"`
-	CleanEnabled         bool   `schema:"clean_enabled"`
-	ReportEnabled        bool   `schema:"report_enabled"`
-	MuteEnabled          bool   `schema:"mute_enabled"`
-	DeleteMessagesOnKick bool   `schema:"kick_delete_messages"`
-	ActionChannel        string `schema:"action_channel" valid:"channel,true"`
-	ReportChannel        string `schema:"report_channel" valid:"channel,true"`
-	BanMessage           string `schema:"ban_message" valid:"template,1900"`
-	KickMessage          string `schema:"kick_message" valid:"template,1900"`
-	MuteRole             string `schema:"mute_role" valid:"role,true"`
+
+	// Kick command
+	KickEnabled          bool
+	DeleteMessagesOnKick bool
+	KickReasonOptional   bool
+	KickMessage          string `valid:"template,1900"`
+
+	// Ban
+	BanEnabled        bool
+	BanReasonOptional bool
+	BanMessage        string `valid:"template,1900"`
+
+	// Mute/unmute
+	MuteEnabled          bool
+	MuteRole             string `valid:"role,true"`
+	MuteReasonOptional   bool
+	UnmuteReasonOptional bool
+
+	// Misc
+	CleanEnabled  bool
+	ReportEnabled bool
+	ActionChannel string `valid:"channel,true"`
+	ReportChannel string `valid:"channel,true"`
 }
 
 func (c *Config) GetName() string {
@@ -96,6 +107,11 @@ func (c *Config) TableName() string {
 }
 
 func (c *Config) Save(client *redis.Client, guildID string) error {
+	parsedId, err := strconv.ParseInt(guildID, 10, 64)
+	if err != nil {
+		return err
+	}
+	c.GuildID = parsedId
 	return configstore.SQL.SetGuildConfig(context.Background(), c)
 }
 

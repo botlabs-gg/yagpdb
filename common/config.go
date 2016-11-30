@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Owner string `json:"owner"`
+	BotID string `json:"bot_id"`
 
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`

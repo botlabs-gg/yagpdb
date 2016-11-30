@@ -59,9 +59,16 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "You do not have ban permissions.", nil
 			}
 
+			reason := "(No reason specified)"
+			if parsed.Args[1] != nil && parsed.Args[1].Str() != "" {
+				reason = parsed.Args[1].Str()
+			} else if !config.BanReasonOptional {
+				return "No reason specified", nil
+			}
+
 			target := parsed.Args[0].DiscordUser()
 
-			err = BanUser(config, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
+			err = BanUser(config, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, target)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -99,9 +106,16 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "You do not have kick permissions.", nil
 			}
 
+			reason := "(No reason specified)"
+			if parsed.Args[1] != nil && parsed.Args[1].Str() != "" {
+				reason = parsed.Args[1].Str()
+			} else if !config.KickReasonOptional {
+				return "No reason specified", nil
+			}
+
 			target := parsed.Args[0].DiscordUser()
 
-			err = KickUser(config, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), target)
+			err = KickUser(config, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, target)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -140,6 +154,13 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "You do not have kick (Required for mute) permissions.", nil
 			}
 
+			reason := "(No reason specified)"
+			if parsed.Args[2] != nil && parsed.Args[2].Str() != "" {
+				reason = parsed.Args[2].Str()
+			} else if !config.MuteReasonOptional {
+				return "No reason specified", nil
+			}
+
 			muteDuration := parsed.Args[1].Int()
 			if muteDuration < 1 || muteDuration > 1440 {
 				return "Duration out of bounds (min 1, max 1440 - 1 day)", nil
@@ -152,7 +173,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
 			}
 
-			err = MuteUnmuteUser(config, client, true, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[2].Str(), member, parsed.Args[1].Int())
+			err = MuteUnmuteUser(config, client, true, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, member, parsed.Args[1].Int())
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err
@@ -189,6 +210,13 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "You do not have kick (Required for mute) permissions.", nil
 			}
 
+			reason := "(No reason specified)"
+			if parsed.Args[1] != nil && parsed.Args[1].Str() != "" {
+				reason = parsed.Args[1].Str()
+			} else if !config.UnmuteReasonOptional {
+				return "No reason specified", nil
+			}
+
 			target := parsed.Args[0].DiscordUser()
 
 			member, err := common.BotSession.State.Member(parsed.Guild.ID, target.ID)
@@ -196,7 +224,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
 			}
 
-			err = MuteUnmuteUser(config, client, false, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", parsed.Args[1].Str(), member, 0)
+			err = MuteUnmuteUser(config, client, false, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, member, 0)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err

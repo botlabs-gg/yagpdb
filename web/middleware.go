@@ -355,9 +355,14 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		member, err := reststate.GetBotMember(pat.Param(ctx, "server"))
 		if err != nil {
-			log.WithError(err).Error("Failed retrieving bot member")
-			http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
-			return
+			log.WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
+			member, err = DiscordSessionFromContext(ctx).GuildMember(pat.Param(ctx, "server"), common.Conf.BotID)
+			log.Println(common.Conf.BotID)
+			if err != nil {
+				log.WithError(err).Error("Failed retrieving bot member")
+				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
+				return
+			}
 		}
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"BotMember": member})
 		ctx = context.WithValue(ctx, common.ContextKeyBotMember, member)
@@ -684,10 +689,10 @@ func RequirePermMW(perms ...int) func(goji.Handler) goji.Handler {
 			ctx = c
 
 			if missing != "" {
-				tmpl.AddAlerts(ErrorAlert("This plugin is missing the following permissions ", missing, ", It may continue to work without the functionality that requires those permissions."))
+				tmpl.AddAlerts(ErrorAlert("This plugin is missing the following permissions: ", missing, ", It may continue to work without the functionality that requires those permissions."))
 			}
 			if has != "" {
-				tmpl.AddAlerts(SucessAlert("The bot has the permissions ", has))
+				tmpl.AddAlerts(SucessAlert("The bot has the following permissions used by this plugin: ", has))
 			}
 
 			inner.ServeHTTPC(ctx, w, r)

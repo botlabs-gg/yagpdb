@@ -161,6 +161,16 @@ func runDurationChecker() {
 				continue
 			}
 
+			perms, err := state.UserChannelPermissions(common.BotSession.State.User.ID, g.ID)
+			if err != nil {
+				logrus.WithError(err).Error("Error checking perms")
+				continue
+			}
+
+			if perms&discordgo.PermissionManageRoles == 0 {
+				continue
+			}
+
 			conf, err := GetGeneralConfig(client, g.ID)
 			if err != nil {
 				logrus.WithError(err).Error("Failed retrieivng general config")
