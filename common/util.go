@@ -251,6 +251,61 @@ func HumanizeDuration(precision DurationFormatPrecision, in time.Duration) (out 
 	return
 }
 
+func SendEmbedWithFallback(s *discordgo.Session, channelID string, embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
+	perms, err := s.State.UserChannelPermissions(s.State.User.ID, channelID)
+	if err != nil {
+		return nil, err
+	}
+
+	if perms&discordgo.PermissionEmbedLinks != 0 {
+		return s.ChannelMessageSendEmbed(channelID, embed)
+	}
+
+	return s.ChannelMessageSend(channelID, FallbackEmbed(embed))
+}
+
+func FallbackEmbed(embed *discordgo.MessageEmbed) string {
+	body := ""
+
+	if embed.Title != "" {
+		body += embed.Title + "\n"
+	}
+
+	if embed.Description != "" {
+		body += embed.Description + "\n"
+	}
+	if body != "" {
+		body += "\n"
+	}
+
+	for _, v := range embed.Fields {
+		body += fmt.Sprintf("**%s**\n%s\n\n", v.Name, v.Value)
+	}
+	return body + "**I have no 'embed links' permissions here, this is a fallback. it looks prettier if i have that perm :)**"
+}
+
+// CutStringShort stops a strinng at "l"-3 if it's longer than "l" and adds "..."
+func CutStringShort(s string, l int) string {
+	var mainBuf bytes.Buffer
+	var latestBuf bytes.Buffer
+
+	i := 0
+	for _, r := range s {
+		latestBuf.WriteRune(r)
+		if i > 3 {
+			lRune, _, _ := latestBuf.ReadRune()
+			mainBuf.WriteRune(lRune)
+		}
+
+		if i >= l {
+			return mainBuf.String() + "..."
+		}
+		i++
+	}
+
+	return mainBuf.String() + latestBuf.String()
+}
+
 // This was bad on large servers...
 
 // func GetGuildMembers(client *redis.Client, guildID string) (members []*discordgo.Member, err error) {

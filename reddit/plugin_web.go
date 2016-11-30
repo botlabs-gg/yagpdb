@@ -35,6 +35,9 @@ func (p *Plugin) InitWeb() {
 
 	// Alll handlers here require guild channels present
 	redditMux.UseC(web.RequireGuildChannelsMiddleware)
+	redditMux.UseC(web.RequireFullGuildMW)
+	redditMux.UseC(web.RequireBotMemberMW)
+	redditMux.UseC(web.RequirePermMW(discordgo.PermissionEmbedLinks))
 	redditMux.UseC(baseData)
 
 	redditMux.HandleC(pat.Get("/"), web.RenderHandler(HandleReddit, "cp_reddit"))

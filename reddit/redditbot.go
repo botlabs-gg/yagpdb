@@ -1,9 +1,8 @@
 package reddit
 
 import (
-	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/jonas747/dutil"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/turnage/graw"
 	"github.com/turnage/redditproto"
@@ -92,21 +91,41 @@ OUTER:
 	author := post.GetAuthor()
 	sub := post.GetSubreddit()
 
-	typeStr := "link"
-	if post.GetIsSelf() {
-		typeStr = "self post"
+	// typeStr := "link"
+	// if post.GetIsSelf() {
+	// 	typeStr = "self"
+	// }
+
+	//body := fmt.Sprintf("**/u/%s Posted a new %s in /r/%s**:\n<%s>\n\n__%s__\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
+	embed := &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://reddit.com/u/" + author,
+			Name:    author,
+			IconURL: "https://" + common.Conf.Host + "/static/img/reddit_icon.png",
+		},
+		Provider: &discordgo.MessageEmbedProvider{
+			Name: "Reddit",
+			URL:  "https://reddit.com",
+		},
+		Description: "**" + post.GetTitle() + "**\n",
 	}
-
-	body := fmt.Sprintf("**/u/%s Posted a new %s in /r/%s**:\n<%s>\n\n__%s__\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
+	embed.URL = "https://redd.it/" + post.GetId()
 
 	if post.GetIsSelf() {
-		body += fmt.Sprintf("%s", post.GetSelftext()) + "\n\n"
+		embed.Title = "New self post in /r/" + sub
+		embed.Description += common.CutStringShort(post.GetSelftext(), 250)
+		embed.Color = 0xc3fc7e
 	} else {
-		body += post.GetUrl() + "\n\n"
+		embed.Color = 0x718aed
+		embed.Title = "New link post in /r/" + sub
+		embed.Description += post.GetUrl()
+		embed.Image = &discordgo.MessageEmbedImage{
+			URL: post.GetUrl(),
+		}
 	}
 
 	for _, channel := range channels {
-		_, err := dutil.SplitSendMessage(common.BotSession, channel, body)
+		_, err := common.BotSession.ChannelMessageSendEmbed(channel, embed)
 		if err != nil {
 			log.WithError(err).Error("Error posting message")
 		}

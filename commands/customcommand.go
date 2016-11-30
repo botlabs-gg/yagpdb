@@ -153,7 +153,7 @@ func (cs *CustomCommand) sendResponse(s *discordgo.Session, response interface{}
 			err = e
 		} else {
 			// fallback
-			msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, fallbackEmbed(t))
+			msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, common.FallbackEmbed(t))
 		}
 
 	}
@@ -167,26 +167,6 @@ func (cs *CustomCommand) sendResponse(s *discordgo.Session, response interface{}
 	}
 
 	return nil
-}
-
-func fallbackEmbed(embed *discordgo.MessageEmbed) string {
-	body := ""
-
-	if embed.Title != "" {
-		body += embed.Title + "\n"
-	}
-
-	if embed.Description != "" {
-		body += embed.Description + "\n"
-	}
-	if body != "" {
-		body += "\n"
-	}
-
-	for _, v := range embed.Fields {
-		body += fmt.Sprintf("**%s**\n%s\n\n", v.Name, v.Value)
-	}
-	return body + "**I have no 'embed links' permissions here, this is a fallback. it looks prettier if i have that perm :)**"
 }
 
 func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
