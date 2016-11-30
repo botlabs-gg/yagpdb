@@ -36,8 +36,8 @@
                         </div>
                         <div class="form-group">
                             <label for="response">Response</label>
-                            <textarea class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
-                            <p class="help-block">Available template data is {{template "template_helper_user"}}</p>
+                            <textarea rows="5" class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
+                            {{template "custom_command_help"}}
                         </div>
                         <div class="form-group">
                             <div class="checkbox">
@@ -87,8 +87,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="response">Response</label>
-                                <textarea class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
-                                <p class="help-block">Available template data is {{template "template_helper_user"}}</p>
+                                <textarea rows="3" class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
+                                {{template "custom_command_help"}}
                             </div>
                             <div class="form-group">
                                 <div class="checkbox">
@@ -112,5 +112,14 @@
 </div>
 <!-- /.row -->            
 {{template "cp_footer" .}}
+
+{{end}}
+
+{{define "custom_command_help"}}
+<p class="help-block">Available template data is {{template "template_helper_user"}}</p>
+
+<p class="help-block">Execute bot commands using <code>{{"{{"}}exec "command" "arg1" "arg2"{{"}}"}}</code>, Example: <code>{{"{{"}}exec "role" "yagpdb"{{"}}"}}</code> will be the same as the user typing <code>(mention or prefix) role yagpdb</code></p>
+
+<p class="help-block">Arguments are available in a string array: <code>.Args</code><br> Acess single arguments by index using <code>{{"{{"}}index .Args 0{{"}}"}}</code><br>Get the number of arguments using <code>{{"{{"}}len .Args{{"}}"}}</code><br>Loop over them with <br><code>{{"{{"}}range .Args{{"}}"}}{{"{{"}}.{{"}}"}} <- that dot will be replaced by the current argument were looping over{{"{{"}}end{{"}}"}}</code><br>"end" marks the end of the for loop. <a href="https://golang.org/pkg/text/template/">See the templating engine docs for more info</a> and join the support server if you have questions. It's rather complicated so i will make more guides in the future<p>
 
 {{end}}

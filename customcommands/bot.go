@@ -2,7 +2,6 @@ package customcommands
 
 import (
 	"errors"
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
@@ -63,7 +62,8 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 
 	out, err := ExecuteCustomCommand(matched, client, s, evt)
 	if err != nil {
-		log.WithField("guild", channel.GuildID).WithError(err).Error("Failed executing custom command")
+		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
+		out += "\nAn error caused the execution of the custom command template to stop"
 	}
 
 	if out != "" {
@@ -84,18 +84,20 @@ func ExecuteCustomCommand(cmd *CustomCommand, client *redis.Client, s *discordgo
 	}
 
 	args := commandsystem.ReadArgs(m.Content)
+	argsStr := make([]string, len(args))
 	for k, v := range args {
-		data[fmt.Sprintf("$%d", k)] = v.Raw
+		argsStr[k] = v.Raw.Str
 	}
-
-	data["$"] = m.Content
+	data["Args"] = argsStr
 
 	execUser, execBot := execCmdFuncs(3, false, client, s, m)
 
 	//out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": execUser, "execBot": execBot})
 	out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": execUser, "execBot": execBot})
 	if err != nil {
-		out = "Error executing custom command:" + err.Error()
+		if out == "" {
+			out = "Error executing custom command"
+		}
 	}
 
 	if utf8.RuneCountInString(out) > 2000 {
@@ -175,6 +177,8 @@ func execCmd(dryRun bool, client *redis.Client, ctx *discordgo.User, s *discordg
 		return "Error: " + v.Error(), err
 	case string:
 		return v, err
+	case *discordgo.MessageEmbed:
+		return common.FallbackEmbed(v), err
 	}
 
 	return "", err
