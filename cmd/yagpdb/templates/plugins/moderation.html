@@ -55,6 +55,12 @@
                             Clean deletes up to a 1000 messages back in history. (max 100 messages at a time)
                         </label>
                     </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
+                            Log Unban events in the mod log channel<br/>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>

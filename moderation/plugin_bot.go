@@ -23,6 +23,25 @@ var (
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(ModerationCommands...)
+	common.BotSession.AddHandler(bot.CustomGuildBanRemove(HandleGuildBanRemove))
+}
+
+func HandleGuildBanRemove(s *discordgo.Session, r *discordgo.GuildBanRemove, client *redis.Client) {
+	config, err := GetConfig(r.GuildID)
+	if err != nil {
+		logrus.WithError(err).Error("Failed retrieving config")
+		return
+	}
+
+	if !config.LogUnbans || config.ActionChannel == "" {
+		return
+	}
+
+	embed := CreateModlogEmbed(nil, "Unbanned", r.User, "", "")
+	_, err = s.ChannelMessageSendEmbed(config.ActionChannel, embed)
+	if err != nil {
+		logrus.WithError(err).Error("Failed sending unban log message")
+	}
 }
 
 func BaseCmd(neededPerm int, userID, channelID, guildID string) (config *Config, hasPerms bool, err error) {

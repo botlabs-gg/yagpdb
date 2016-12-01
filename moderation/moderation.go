@@ -56,6 +56,10 @@ func handleUnMute(data string) error {
 
 	member, err := common.BotSession.GuildMember(guildID, userID)
 	if err != nil {
+		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+			return nil // Discord api ok, something else went wrong. do not reschedule
+		}
+
 		return err
 	}
 
@@ -96,6 +100,7 @@ type Config struct {
 	ReportEnabled bool
 	ActionChannel string `valid:"channel,true"`
 	ReportChannel string `valid:"channel,true"`
+	LogUnbans     bool
 }
 
 func (c *Config) GetName() string {
@@ -178,26 +183,57 @@ const (
 	PunishmentBan
 )
 
-func createModlogEmbed(author *discordgo.User, action string, target *discordgo.User, reason, logLink string) *discordgo.MessageEmbed {
+func CreateModlogEmbed(author *discordgo.User, action string, target *discordgo.User, reason, logLink string) *discordgo.MessageEmbed {
+	if author == nil {
+		author = &discordgo.User{
+			ID:            "??",
+			Username:      "Unknown",
+			Discriminator: "????",
+		}
+	}
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:    "<@" + author.ID + ">",
+			Name:    fmt.Sprintf("%s#%s (ID %s)", author.Username, author.Discriminator, author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		},
-		Title:       action + target.Username + "#" + target.Discriminator + "(ID:" + target.ID + ")",
 		Description: reason,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: fmt.Sprintf("%s %s#%s (ID %s)", action, target.Username, target.Discriminator, target.ID),
+		},
+	}
+
+	if strings.HasPrefix(action, "Muted") {
+		embed.Color = 0x57728e
+		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hotwomen.png"
+	} else if strings.HasPrefix(action, "Unmuted") || action == "Unbanned" {
+		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/spugaht.png"
+		embed.Color = 0x62c65f
+	} else if strings.HasPrefix(action, "Banned") {
+		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hummur.png"
+		embed.Color = 0xd64848
+	} else {
+		// kick
+		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/whodis.png"
+		embed.Color = 0xf2a013
 	}
 
 	if logLink != "" {
-		embed.Footer = &discordgo.MessageEmbedFooter{
-			Text: "[Logs](" + logLink + ")",
-		}
+		embed.Description += " ([Logs](" + logLink + "))"
 	}
 	return embed
 }
 
 // Kick or bans someone, uploading a hasebin log, and sending the report tmessage in the action channel
 func punish(config *Config, p Punishment, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
+	if author == nil {
+		author = &discordgo.User{
+			ID:            "??",
+			Username:      "Unknown",
+			Discriminator: "????",
+		}
+	}
+
 	if config == nil {
 		var err error
 		config, err = GetConfig(guildID)
@@ -264,7 +300,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	logrus.Println("MODERATION:", author.Username, actionStr, user.Username, "cause", reason)
 
-	embed := createModlogEmbed(author, actionStr, user, reason, logLink)
+	embed := CreateModlogEmbed(author, actionStr, user, reason, logLink)
 	_, err = common.BotSession.ChannelMessageSendEmbed(actionChannel, embed)
 	if err != nil {
 		return err
@@ -411,7 +447,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	}
 
 	if logChannel != "" {
-		embed := createModlogEmbed(author, action, user, reason, logLink)
+		embed := CreateModlogEmbed(author, action, user, reason, logLink)
 		_, err := common.BotSession.ChannelMessageSendEmbed(logChannel, embed)
 		return err
 	}
