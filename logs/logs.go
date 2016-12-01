@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
+	"strconv"
 )
 
 type Plugin struct{}
@@ -174,4 +175,25 @@ func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error
 	}
 
 	return result, err
+}
+
+func GetUsernames(userID string, limit int) ([]UsernameListing, error) {
+	var listings []UsernameListing
+	err := common.SQL.Where(&UsernameListing{UserID: MustParseID(userID)}).Order("id desc").Limit(limit).Find(&listings).Error
+	return listings, err
+}
+
+func GetNicknames(userID, GuildID string, limit int) ([]NicknameListing, error) {
+	var listings []NicknameListing
+	err := common.SQL.Where(&NicknameListing{UserID: MustParseID(userID), GuildID: GuildID}).Order("id desc").Limit(limit).Find(&listings).Error
+	return listings, err
+}
+
+func MustParseID(id string) int64 {
+	v, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		panic("Failed parsing id: " + err.Error())
+	}
+
+	return v
 }

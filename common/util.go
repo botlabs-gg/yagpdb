@@ -224,30 +224,44 @@ const (
 	DurationPrecisionMinutes
 	DurationPrecisionHours
 	DurationPrecisionDays
+	DurationPrecisionWeeks
+	DurationPrecisionYears
 )
+
+func pluralize(val int64) string {
+	if val == 1 {
+		return ""
+	}
+	return "s"
+}
 
 func HumanizeDuration(precision DurationFormatPrecision, in time.Duration) (out string) {
 	seconds := int64(in.Seconds())
 
 	if precision == DurationPrecisionSeconds {
-		out = fmt.Sprintf("%d Seconds", seconds%60)
+		out = fmt.Sprintf("%d Second%s", seconds%60, pluralize(seconds%60))
 	}
 
 	if precision <= DurationPrecisionMinutes && seconds >= 60 {
-		out = fmt.Sprintf("%d Minutes %s", (seconds/60)%60, out)
+		out = fmt.Sprintf("%d Minute%s, %s", (seconds/60)%60, pluralize((seconds/60)%60), out)
 	}
 
 	if precision <= DurationPrecisionHours && seconds >= 60*60 {
-		out = fmt.Sprintf("%d Hours %s", ((seconds/60)/60)%24, out)
+		out = fmt.Sprintf("%d Hour%s, %s", ((seconds/60)/60)%24, pluralize(((seconds/60)/60)%24), out)
 	}
 
 	if precision <= DurationPrecisionDays && seconds >= 60*60*24 {
-		out = fmt.Sprintf("%d Days %s", (((seconds/60)/60)/24)%7, out)
+		out = fmt.Sprintf("%d Day%s, %s", (((seconds/60)/60)/24)%7, pluralize((((seconds/60)/60)/24)%7), out)
 	}
 
-	if precision <= DurationPrecisionDays && seconds >= 60*60*24*7 {
-		out = fmt.Sprintf("%d Weeks %s", (((seconds/60)/60)/24)/7, out)
+	if precision <= DurationPrecisionWeeks && seconds >= 60*60*24*7 {
+		out = fmt.Sprintf("%d Week%s, %s", ((((seconds/60)/60)/24)/7)%52, pluralize(((((seconds/60)/60)/24)/7)%52), out)
 	}
+
+	if precision <= DurationPrecisionWeeks && seconds >= 60*60*24*365 {
+		out = fmt.Sprintf("%d Year%s, %s", (((seconds/60)/60)/24)/365, pluralize((((seconds/60)/60)/24)/365), out)
+	}
+
 	return
 }
 

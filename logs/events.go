@@ -3,6 +3,7 @@ package logs
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/bwmarrin/snowflake"
 	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
@@ -12,6 +13,10 @@ import (
 	"strconv"
 	"time"
 )
+
+func init() {
+	snowflake.Epoch = 1420070400000
+}
 
 func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(HandleGuildmemberUpdate)
@@ -44,7 +49,7 @@ var cmds = []commandsystem.CommandHandler{
 		Category: commands.CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Whois",
-			Description: "shows users pervious username and nicknames",
+			Description: "shows infromation about a user",
 			Aliases:     []string{"whoami"},
 			RunInDm:     false,
 			Arguments: []*commandsystem.ArgumentDef{
@@ -81,27 +86,49 @@ var cmds = []commandsystem.CommandHandler{
 			} else {
 				joinedAtStr = joinedAt.UTC().Format(time.RFC822)
 				dur := time.Since(joinedAt)
-				joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionSeconds, dur)
+				joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionHours, dur)
+			}
+			if joinedAtDurStr == "" {
+				joinedAtDurStr = "Lesss than an hour ago"
 			}
 
+			parsedId, _ := strconv.ParseInt(target.ID, 10, 64)
+			flake := snowflake.ID(parsedId)
+			t := time.Unix(flake.Time()/1000, 0)
+			createdDurStr := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
+			if createdDurStr == "" {
+				createdDurStr = "Less than an hour ago"
+			}
+			logrus.Println(createdDurStr)
 			embed := &discordgo.MessageEmbed{
-				Title: fmt.Sprintf("**%s%s#%s**", target.Username, target.Discriminator, nick),
-				// Description: "Aaaa",
-				// Author: &discordgo.MessageEmbedAuthor{
-				// 	URL:  "https://yagpdb.xyz",
-				// 	Name: "YAGPDB.xyz",
-				// },
+				Title: fmt.Sprintf("%s#%s%s", target.Username, target.Discriminator, nick),
 				Fields: []*discordgo.MessageEmbedField{
 					&discordgo.MessageEmbedField{
 						Name:   "ID",
 						Value:  target.ID,
 						Inline: true,
-					}, &discordgo.MessageEmbedField{
-						Name:   "Joined at",
+					},
+					&discordgo.MessageEmbedField{
+						Name:   "Avatar",
+						Value:  "[Link](" + discordgo.EndpointUserAvatar(target.ID, target.Avatar) + ")",
+						Inline: true,
+					},
+					&discordgo.MessageEmbedField{
+						Name:   "Account created",
+						Value:  t.UTC().Format(time.RFC822),
+						Inline: true,
+					},
+					&discordgo.MessageEmbedField{
+						Name:   "Account Age",
+						Value:  createdDurStr,
+						Inline: true,
+					},
+					&discordgo.MessageEmbedField{
+						Name:   "Joined server at",
 						Value:  joinedAtStr,
 						Inline: true,
 					}, &discordgo.MessageEmbedField{
-						Name:   "Join Age",
+						Name:   "Join server Age",
 						Value:  joinedAtDurStr,
 						Inline: true,
 					},
@@ -109,7 +136,7 @@ var cmds = []commandsystem.CommandHandler{
 			}
 
 			if config.UsernameLoggingEnabled {
-				usernames, err := GetUsernames(target.ID)
+				usernames, err := GetUsernames(target.ID, 5)
 				if err != nil {
 					return err, err
 				}
@@ -118,10 +145,10 @@ var cmds = []commandsystem.CommandHandler{
 				for _, v := range usernames {
 					usernamesStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.UTC().Format(time.RFC822), v.Username)
 				}
-				usernamesStr += "```\n\n"
+				usernamesStr += "```"
 
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-					Name:  "Usernames",
+					Name:  "5 last usernames",
 					Value: usernamesStr,
 				})
 			} else {
@@ -133,7 +160,7 @@ var cmds = []commandsystem.CommandHandler{
 
 			if config.NicknameLoggingEnabled {
 
-				nicknames, err := GetNicknames(target.ID, parsed.Guild.ID)
+				nicknames, err := GetNicknames(target.ID, parsed.Guild.ID, 5)
 				if err != nil {
 					return err, err
 				}
@@ -149,7 +176,7 @@ var cmds = []commandsystem.CommandHandler{
 				nicknameStr += "```"
 
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-					Name:  "Nicknames",
+					Name:  "5 last nicknames",
 					Value: nicknameStr,
 				})
 			} else {
@@ -160,6 +187,92 @@ var cmds = []commandsystem.CommandHandler{
 			}
 
 			return embed, nil
+		},
+	},
+	&commands.CustomCommand{
+		Cooldown: 10,
+		Category: commands.CategoryTool,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Usernames",
+			Description: "Shows past usernames of a user",
+			Aliases:     []string{"unames", "un"},
+			RunInDm:     true,
+			Arguments: []*commandsystem.ArgumentDef{
+				{Name: "User", Type: commandsystem.ArgumentTypeUser},
+			},
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			config, err := GetConfig(parsed.Guild.ID)
+			if err != nil {
+				return "AAAAA", err
+			}
+
+			target := m.Author
+			if parsed.Args[0] != nil {
+				target = parsed.Args[0].DiscordUser()
+			}
+
+			if !config.UsernameLoggingEnabled {
+				return "Username logging is disabled on this server", nil
+			}
+
+			usernames, err := GetUsernames(target.ID, 25)
+			if err != nil {
+				return err, err
+			}
+
+			out := fmt.Sprintf("Past username of **%s#%s** ```\n", target.Username, target.Discriminator)
+			for _, v := range usernames {
+				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.UTC().Format(time.RFC822), v.Username)
+			}
+			out += "```"
+			if len(usernames) == 25 {
+				out += "\nOnly showing last 25 usernames"
+			}
+			return out, nil
+		},
+	},
+	&commands.CustomCommand{
+		Cooldown: 10,
+		Category: commands.CategoryTool,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Nicknames",
+			Description: "Shows past nicknames of a user",
+			Aliases:     []string{"nn"},
+			RunInDm:     false,
+			Arguments: []*commandsystem.ArgumentDef{
+				{Name: "User", Type: commandsystem.ArgumentTypeUser},
+			},
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			config, err := GetConfig(parsed.Guild.ID)
+			if err != nil {
+				return "AAAAA", err
+			}
+
+			target := m.Author
+			if parsed.Args[0] != nil {
+				target = parsed.Args[0].DiscordUser()
+			}
+
+			if !config.NicknameLoggingEnabled {
+				return "Nickname logging is disabled on this server", nil
+			}
+
+			nicknames, err := GetNicknames(target.ID, parsed.Guild.ID, 25)
+			if err != nil {
+				return err, err
+			}
+
+			out := fmt.Sprintf("Past nicknames of **%s#%s** ```\n", target.Username, target.Discriminator)
+			for _, v := range nicknames {
+				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.UTC().Format(time.RFC822), v.Nickname)
+			}
+			out += "```"
+			if len(nicknames) == 25 {
+				out += "\nOnly showing last 25 nicknames"
+			}
+			return out, nil
 		},
 	},
 }
@@ -282,25 +395,4 @@ func CheckNickname(userID, guildID, nickname string) {
 	if err != nil {
 		logrus.WithError(err).Error("Failed setting nickname")
 	}
-}
-
-func GetUsernames(userID string) ([]UsernameListing, error) {
-	var listings []UsernameListing
-	err := common.SQL.Where(&UsernameListing{UserID: MustParseID(userID)}).Order("id desc").Find(&listings).Error
-	return listings, err
-}
-
-func GetNicknames(userID, GuildID string) ([]NicknameListing, error) {
-	var listings []NicknameListing
-	err := common.SQL.Where(&NicknameListing{UserID: MustParseID(userID), GuildID: GuildID}).Order("id desc").Find(&listings).Error
-	return listings, err
-}
-
-func MustParseID(id string) int64 {
-	v, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		panic("Failed parsing id: " + err.Error())
-	}
-
-	return v
 }
