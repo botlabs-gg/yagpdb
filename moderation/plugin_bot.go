@@ -72,7 +72,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 			target := parsed.Args[0].DiscordUser()
 
-			err = BanUser(config, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, target)
+			err = BanUser(config, parsed.Guild.ID, m.ChannelID, m.Author, reason, target)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -119,7 +119,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 			target := parsed.Args[0].DiscordUser()
 
-			err = KickUser(config, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, target)
+			err = KickUser(config, parsed.Guild.ID, m.ChannelID, m.Author, reason, target)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -177,7 +177,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
 			}
 
-			err = MuteUnmuteUser(config, client, true, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, member, parsed.Args[1].Int())
+			err = MuteUnmuteUser(config, client, true, parsed.Guild.ID, m.ChannelID, m.Author, reason, member, parsed.Args[1].Int())
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err
@@ -228,7 +228,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
 			}
 
-			err = MuteUnmuteUser(config, client, false, parsed.Guild.ID, m.ChannelID, "<@"+m.Author.ID+">", reason, member, 0)
+			err = MuteUnmuteUser(config, client, false, parsed.Guild.ID, m.ChannelID, m.Author, reason, member, 0)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err

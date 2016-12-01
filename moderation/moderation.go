@@ -59,7 +59,7 @@ func handleUnMute(data string) error {
 		return err
 	}
 
-	err = MuteUnmuteUser(nil, nil, false, guildID, "", "YAGPDB", "Mute Duration expired", member, 0)
+	err = MuteUnmuteUser(nil, nil, false, guildID, "", common.BotSession.State.User.User, "Mute Duration expired", member, 0)
 	if err != ErrNoMuteRole {
 
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
@@ -178,17 +178,26 @@ const (
 	PunishmentBan
 )
 
-func GenModlogMessage(author, action string, target *discordgo.User, reason, logLink string) string {
-	msg := fmt.Sprintf("%s %s **%s**#%s *(%s)*\n**Reason:** %s", author, action, target.Username, target.Discriminator, target.ID, reason)
-	if logLink != "" {
-		msg += fmt.Sprintf("\n**Logs:** <%s>", logLink)
+func createModlogEmbed(author *discordgo.User, action string, target *discordgo.User, reason, logLink string) *discordgo.MessageEmbed {
+	embed := &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    "<@" + author.ID + ">",
+			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
+		},
+		Title:       action + target.Username + "#" + target.Discriminator + "(ID:" + target.ID + ")",
+		Description: reason,
 	}
 
-	return msg
+	if logLink != "" {
+		embed.Footer = &discordgo.MessageEmbedFooter{
+			Text: "[Logs](" + logLink + ")",
+		}
+	}
+	return embed
 }
 
 // Kick or bans someone, uploading a hasebin log, and sending the report tmessage in the action channel
-func punish(config *Config, p Punishment, guildID, channelID, author, reason string, user *discordgo.User) error {
+func punish(config *Config, p Punishment, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
 	if config == nil {
 		var err error
 		config, err = GetConfig(guildID)
@@ -233,7 +242,7 @@ func punish(config *Config, p Punishment, guildID, channelID, author, reason str
 
 	logLink := ""
 	if channelID != "" {
-		logs, err := logs.CreateChannelLog(channelID, author, "", 100)
+		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
 		if err != nil {
 			logLink = "Log Creation failed"
 			logrus.WithError(err).Error("Log Creation failed")
@@ -253,11 +262,10 @@ func punish(config *Config, p Punishment, guildID, channelID, author, reason str
 		return err
 	}
 
-	logrus.Println(author, actionStr, user.Username, "cause", reason)
+	logrus.Println("MODERATION:", author.Username, actionStr, user.Username, "cause", reason)
 
-	logMsg := GenModlogMessage(author, actionStr, user, reason, logLink)
-
-	_, err = common.BotSession.ChannelMessageSend(actionChannel, logMsg)
+	embed := createModlogEmbed(author, actionStr, user, reason, logLink)
+	_, err = common.BotSession.ChannelMessageSendEmbed(actionChannel, embed)
 	if err != nil {
 		return err
 	}
@@ -265,7 +273,7 @@ func punish(config *Config, p Punishment, guildID, channelID, author, reason str
 	return nil
 }
 
-func KickUser(config *Config, guildID, channelID, author, reason string, user *discordgo.User) error {
+func KickUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
 	if config == nil {
 		var err error
 		config, err = GetConfig(guildID)
@@ -308,7 +316,7 @@ func KickUser(config *Config, guildID, channelID, author, reason string, user *d
 	return nil
 }
 
-func BanUser(config *Config, guildID, channelID, author, reason string, user *discordgo.User) error {
+func BanUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
 	return punish(config, PunishmentBan, guildID, channelID, author, reason, user)
 }
 
@@ -317,7 +325,7 @@ var (
 )
 
 // Unmut or mute a user, ignore duration if unmuting
-func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, channelID, author, reason string, member *discordgo.Member, duration int) error {
+func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, channelID string, author *discordgo.User, reason string, member *discordgo.Member, duration int) error {
 	if config == nil {
 		var err error
 		config, err = GetConfig(guildID)
@@ -386,7 +394,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	// Upload logs
 	logLink := ""
 	if channelID != "" && mute {
-		logs, err := logs.CreateChannelLog(channelID, author, "", 100)
+		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
 		if err != nil {
 			logLink = "Log Creation failed"
 			logrus.WithError(err).Error("Log Creation failed")
@@ -402,9 +410,9 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 		action = "Unmuted"
 	}
 
-	msg := GenModlogMessage(author, action, user, reason, logLink)
 	if logChannel != "" {
-		_, err = common.BotSession.ChannelMessageSend(logChannel, msg)
+		embed := createModlogEmbed(author, action, user, reason, logLink)
+		_, err := common.BotSession.ChannelMessageSendEmbed(logChannel, embed)
 		return err
 	}
 

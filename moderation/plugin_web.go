@@ -22,7 +22,7 @@ func (p *Plugin) InitWeb() {
 	subMux.UseC(web.RequireFullGuildMW)
 
 	subMux.UseC(web.RequireBotMemberMW) // need the bot's role
-	subMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages))
+	subMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionEmbedLinks))
 
 	getHandler := web.ControllerHandler(HandleModeration, "cp_moderation")
 	postHandler := web.ControllerPostHandler(HandlePostModeration, getHandler, Config{}, "Updated moderation config")
