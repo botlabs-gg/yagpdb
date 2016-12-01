@@ -136,6 +136,9 @@ func (cs *CustomCommand) sendResponse(s *discordgo.Session, response interface{}
 	case error:
 		msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, "Error: "+t.Error())
 	case string:
+		if t == "" {
+			return nil
+		}
 		msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, t)
 	case *discordgo.MessageEmbed:
 		perms := 0

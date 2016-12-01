@@ -6,10 +6,14 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -40,7 +44,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Ban",
 			Description:  "Bans a member",
-			RequiredArgs: 2,
+			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
@@ -87,7 +91,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Kick",
 			Description:  "Kicks a member",
-			RequiredArgs: 2,
+			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
@@ -134,7 +138,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Mute",
 			Description:  "Mutes a member",
-			RequiredArgs: 3,
+			RequiredArgs: 2,
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Minutes", Type: commandsystem.ArgumentTypeNumber},
@@ -192,7 +196,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:         "Unmute",
 			Description:  "unmutes a member",
-			RequiredArgs: 2,
+			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
@@ -373,4 +377,218 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			return "", err
 		},
 	},
+	&commands.CustomCommand{
+		Cooldown: 5,
+		Category: commands.CategoryModeration,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "SearchModLog",
+			Aliases:      []string{"sml"},
+			Description:  "Searches the mod log up to 'Msgs' messages back for a string",
+			RequiredArgs: 2,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "Msgs", Type: commandsystem.ArgumentTypeNumber},
+				&commandsystem.ArgumentDef{Name: "What", Type: commandsystem.ArgumentTypeString},
+			},
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			conf, perm, err := BaseCmd(discordgo.PermissionKickMembers, m.Author.ID, m.ChannelID, parsed.Guild.ID)
+			if err != nil {
+				return "Error retrieving config.", err
+			}
+			if !perm {
+				return "You do not have manage messages permissions in this channel.", nil
+			}
+
+			num := parsed.Args[0].Int()
+			if num > 100000 {
+				num = 100000
+			}
+
+			if num < 1 {
+				if num < 0 {
+					return errors.New("Bot is having a stroke <https://www.youtube.com/watch?v=dQw4w9WgXcQ>"), nil
+				}
+				return errors.New("Can't delete nothing"), nil
+			}
+
+			currentSearchingLock.Lock()
+			if remaining, ok := currentSearching[parsed.Guild.ID]; ok {
+				currentSearchingLock.Unlock()
+				return fmt.Sprintf("Already searching a channel in this server, ETA: %s", common.HumanizeDuration(common.DurationPrecisionSeconds, time.Duration(remaining/100)*time.Second)), nil
+			}
+			currentSearching[parsed.Guild.ID] = num
+			currentSearchingLock.Unlock()
+
+			privChannel, err := bot.GetCreatePrivateChannel(common.BotSession, m.Author.ID)
+			if err != nil {
+				return "Failed retrieving private channel", err
+			}
+			go searcher(parsed.Guild.ID, conf.ActionChannel, privChannel.ID, num, strings.ToLower(parsed.Args[1].Str()))
+
+			return fmt.Sprintf("Started searching back %d messages, ETA: %s, i will send you a DM with results.", num, common.HumanizeDuration(common.DurationPrecisionSeconds, time.Duration(num/100)*time.Second)), err
+		},
+	},
+	&commands.CustomCommand{
+		Cooldown: 5,
+		Category: commands.CategoryModeration,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "SearchStatus",
+			Aliases:     []string{"ss"},
+			Description: "Responds with the status of the current search going on",
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+
+			currentSearchingLock.Lock()
+			defer currentSearchingLock.Unlock()
+			if remaining, ok := currentSearching[parsed.Guild.ID]; ok {
+				return fmt.Sprintf("A search in this server is going on, ETA: %s", common.HumanizeDuration(common.DurationPrecisionSeconds, time.Duration(remaining/100)*time.Second)), nil
+			}
+
+			return "No search is currently ongoign in this server", nil
+		},
+	},
+}
+
+var (
+	currentSearching     = make(map[string]int)
+	currentSearchingLock sync.Mutex
+)
+
+func searcher(guildID, channelID string, sendTo string, limit int, what string) {
+	before := ""
+
+	remaining := limit
+
+	errMsg := ""
+
+	embedHits := make([]*SearchHit, 0)
+	normalHits := ""
+
+	numRetries := 0
+	for {
+		numFetching := remaining
+		if numFetching > 100 {
+			numFetching = 100
+		}
+
+		msgs, err := common.BotSession.ChannelMessages(channelID, numFetching, before, "")
+		if err != nil {
+			// If it was a api error then we must be msising permissions or something, either way we can't continue
+			if cast, ok := err.(*discordgo.RESTError); ok {
+				errMsg = "Unknown error"
+				if cast.Message != nil {
+					errMsg = cast.Message.Message
+				}
+				break
+			}
+
+			// Otherwise retry up to 5 times
+			numRetries++
+			if numRetries > 5 {
+				logrus.WithError(err).Error("Stopped search early")
+				errMsg = "Network error?"
+				break
+			}
+			continue
+		}
+
+		for _, v := range msgs {
+			if hit := searchMsg(v, what); hit != nil {
+				parsedTime, err := v.Timestamp.Parse()
+				if err != nil {
+					logrus.WithError(err).Error("Failed parsing timestamp")
+					continue
+				}
+
+				prefix := fmt.Sprintf("%s (ID %s): ", parsedTime.UTC().Format(time.RFC822), v.ID)
+
+				if hit.Embed != nil {
+					hit.Embed.Title = prefix + hit.Embed.Title
+					embedHits = append(embedHits, hit)
+				} else {
+					normalHits += prefix + hit.Content + "\n\n"
+				}
+			}
+		}
+		remaining -= numFetching
+		// were done here, fucking quit life
+		if remaining < 1 || len(msgs) < numFetching {
+			break
+		} else {
+			before = msgs[len(msgs)-1].ID
+			currentSearchingLock.Lock()
+			currentSearching[guildID] = remaining
+			currentSearchingLock.Unlock()
+		}
+	}
+
+	if normalHits != "" {
+
+		_, err := dutil.SplitSendMessage(common.BotSession, sendTo, normalHits)
+		if err != nil {
+			errMsg += "\nFailed sending some replies"
+			logrus.WithError(err).Error("Failed sending search replies")
+		}
+	}
+
+	for _, hit := range embedHits {
+		_, err := common.BotSession.ChannelMessageSendEmbed(sendTo, hit.Embed)
+		if err != nil {
+			errMsg += "\nFailed sending some replies"
+			logrus.WithError(err).Error("Failed sending search results")
+			break
+		}
+	}
+
+	extraMsg := ""
+	if normalHits == "" && len(embedHits) < 1 {
+		extraMsg = "No hits for searchstring: " + what + "\n"
+	} else {
+		extraMsg = "All results sent."
+	}
+	if errMsg != "" {
+		extraMsg += "Errors:\n" + errMsg
+	}
+	_, err := common.BotSession.ChannelMessageSend(sendTo, extraMsg)
+	if err != nil {
+		logrus.WithError(err).Error("Failed sending final reply")
+	}
+
+	currentSearchingLock.Lock()
+	delete(currentSearching, guildID)
+	currentSearchingLock.Unlock()
+}
+
+type SearchHit struct {
+	Embed   *discordgo.MessageEmbed
+	Content string
+}
+
+func searchMsg(m *discordgo.Message, searchStr string) *SearchHit {
+	if strings.Contains(strings.ToLower(m.Content), searchStr) {
+		return &SearchHit{
+			Content: m.Content,
+		}
+	}
+
+	for _, embed := range m.Embeds {
+		if embed.Type != "rich" {
+			continue
+		}
+
+		if strings.Contains(strings.ToLower(embed.Title), searchStr) || strings.Contains(strings.ToLower(embed.Description), searchStr) {
+			return &SearchHit{
+				Embed: embed,
+			}
+		}
+		for _, field := range embed.Fields {
+			if strings.Contains(strings.ToLower(field.Name), searchStr) || strings.Contains(strings.ToLower(field.Value), searchStr) {
+				return &SearchHit{
+					Embed: embed,
+				}
+			}
+		}
+	}
+
+	return nil
 }

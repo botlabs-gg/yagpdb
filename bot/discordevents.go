@@ -90,6 +90,6 @@ func HandleChannelDelete(s *discordgo.Session, evt *discordgo.ChannelDelete, cli
 }
 
 func InvalidateGuildCache(client *redis.Client, guildID string) {
-	client.Cmd("DEL", common.KeyGuild(guildID))
-	client.Cmd("DEL", common.KeyGuildChannels(guildID))
+	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))
+	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))
 }

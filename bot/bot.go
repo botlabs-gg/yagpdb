@@ -41,6 +41,7 @@ func Run() {
 	common.BotSession.AddHandler(CustomChannelUpdate(HandleChannelUpdate))
 	common.BotSession.AddHandler(CustomChannelDelete(HandleChannelDelete))
 
+	// common.BotSession.LogLevel = discordgo.LogDebug
 	// common.BotSession.Debug = true
 	common.BotSession.LogLevel = discordgo.LogWarning
 	err := common.BotSession.Open()
