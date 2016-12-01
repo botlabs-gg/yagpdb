@@ -467,32 +467,6 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
 		},
 	},
-	&CustomCommand{
-		Cooldown: 2,
-		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "test",
-			Description: "Cause you're a rebel",
-			Arguments: []*commandsystem.ArgumentDef{
-				{Name: "Target", Type: commandsystem.ArgumentTypeUser},
-			},
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			str := ""
-			for i := 0; i < 1100; i++ {
-				str += "A"
-			}
-
-			return &discordgo.MessageEmbed{
-				Fields: []*discordgo.MessageEmbedField{
-					&discordgo.MessageEmbedField{
-						Name:  "Test",
-						Value: str,
-					},
-				},
-			}, nil
-		},
-	},
 }
 
 type AdviceSlip struct {
