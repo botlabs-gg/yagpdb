@@ -484,7 +484,13 @@ func RequestLogger(logger io.Writer) func(goji.Handler) goji.Handler {
 // Parses a form
 func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+		var err error
+		if strings.Contains(r.Header.Get("content-type"), "multipart/form-data") {
+			err = r.ParseMultipartForm(100000)
+		} else {
+			err = r.ParseForm()
+		}
+
 		if err != nil {
 			panic(err)
 		}
@@ -495,6 +501,7 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 		// Decode the form into the destination struct
 		decoded := reflect.New(typ).Interface()
 		decoder := schema.NewDecoder()
+		decoder.IgnoreUnknownKeys(true)
 		err = decoder.Decode(decoded, r.PostForm)
 
 		ok := true
