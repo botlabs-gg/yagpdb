@@ -83,6 +83,9 @@ func (c *CachedStorage) GetGuildConfig(ctx context.Context, guildID string, dest
 
 		cached = false
 		err := underlying.GetGuildConfig(ctx, guildID, dest)
+		if err == gorm.ErrRecordNotFound {
+			err = ErrNotFound
+		}
 		return dest, err
 	})
 
