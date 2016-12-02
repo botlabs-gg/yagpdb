@@ -446,6 +446,12 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 		action = "Unmuted"
 	}
 
+	dmMsg := "You have been " + action
+	if reason != "" {
+		dmMsg += "\n**Reason:** " + reason
+	}
+	bot.SendDM(common.BotSession, user.ID, dmMsg)
+
 	if logChannel != "" {
 		embed := CreateModlogEmbed(author, action, user, reason, logLink)
 		_, err := common.BotSession.ChannelMessageSendEmbed(logChannel, embed)
