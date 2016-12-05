@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"math/rand"
 	"strings"
 )
 
@@ -142,7 +143,11 @@ func (p *Plugin) InitBot() {
 
 				switch resp.Polarity {
 				case "neutral":
-					return "Maybe", nil
+					if rand.Intn(2) > 0 {
+						return "Yes", nil
+					} else {
+						return "No", nil
+					}
 				case "positive":
 					switch {
 					case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
