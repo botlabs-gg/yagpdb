@@ -94,7 +94,6 @@ func (c *CachedStorage) GetGuildConfig(ctx context.Context, guildID string, dest
 
 	// If it was loaded from cache, we need to load it into "dest" ourselves
 	if err == nil && cached {
-		logrus.Info("Cached")
 		reflect.Indirect(reflect.ValueOf(dest)).Set(reflect.Indirect(reflect.ValueOf(item.Value())))
 	}
 

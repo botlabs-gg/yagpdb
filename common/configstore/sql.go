@@ -10,7 +10,7 @@ type Postgres struct{}
 
 // conf is requried to be a pointer value
 func (p *Postgres) GetGuildConfig(ctx context.Context, guildID string, conf GuildConfig) error {
-	err := common.SQL.Where(guildID).First(conf).Error
+	err := common.SQL.Where("guild_id = ?", guildID).First(conf).Error
 	if err == gorm.ErrRecordNotFound {
 		return ErrNotFound
 	}

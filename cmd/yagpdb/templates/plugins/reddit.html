@@ -41,24 +41,25 @@
                 {{$guild := .ActiveGuild.ID}}
                 {{$channels := .ActiveGuild.Channels}}
                 {{range .RedditConfig}}
-                <form class="form-inline" method="post" action="/cp/{{$guild}}/reddit/{{.ID}}/update">
-                    <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
-                    <div class="form-group">
-                        <label for="subreddit">Subreddit</label>
-                        <input type="text" class="form-control" id="subreddit" name="subreddit" placeholder="" value="{{.Sub}}">
-                    </div>
-                    <div class="form-group">
-                        <label for="channel">Channel</label>
-                        <select id="channel" class="form-control" name="channel">
-                            {{$selected := .Channel}}
-                            {{mTemplate "channel_options" "Channels" $channels "Selected" .Channel}}
-                        </select>
-                    </div>
-                    <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
-                    <button type="submit" class="btn btn-success" formaction="/cp/{{$guild}}/reddit/{{.ID}}/update">Save</button>
-                    <button type="submit" class="btn btn-danger" formaction="/cp/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
-                </form>
-                <br/>
+                <div class="well well-sm">
+                    <form class="form-inline" method="post" action="/cp/{{$guild}}/reddit/{{.ID}}/update">
+                        <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
+                        <div class="form-group">
+                            <label for="subreddit">Subreddit</label>
+                            <input type="text" class="form-control" id="subreddit" name="subreddit" placeholder="" value="{{.Sub}}">
+                        </div>
+                        <div class="form-group">
+                            <label for="channel">Channel</label>
+                            <select id="channel" class="form-control" name="channel">
+                                {{$selected := .Channel}}
+                                {{mTemplate "channel_options" "Channels" $channels "Selected" .Channel}}
+                            </select>
+                        </div>
+                        <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
+                        <button type="submit" class="btn btn-success" formaction="/cp/{{$guild}}/reddit/{{.ID}}/update">Save</button>
+                        <button type="submit" class="btn btn-danger" formaction="/cp/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                    </form>
+                </div>
                 {{end}}
             </div>
         </div>

@@ -151,9 +151,9 @@
 <!-- Navigation -->
 <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
     {{template "cp_nav_top" .}}
-    {{if and .ActiveGuild .User}}{{template "cp_nav_sidebar" .}}{{end}}
+    {{if and .ActiveGuild .User .IsAdmin}}{{template "cp_nav_sidebar" .}}{{end}}
 </nav>
-{{if and .ActiveGuild .User}}
+{{if and .ActiveGuild .User .IsAdmin}}
 <div id="page-wrapper">
 {{else}}
 <div id="public-wrapper">

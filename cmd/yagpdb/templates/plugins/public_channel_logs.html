@@ -14,7 +14,10 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="page-header">
-            <h1>Channel logs {{.ActiveGuild.Name}} <small><a href="/">by YAGPDB.xyz</a></small></h1>
+            <form action="/cp/{{.ActiveGuild.ID}}/logging/delete" method="post">
+                <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
+                <h1>Channel logs {{.ActiveGuild.Name}} <small><a href="/">by YAGPDB.xyz</a></small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h1>
+            </form>
         </div>
     </div>
     <!-- /.col-lg-12 -->

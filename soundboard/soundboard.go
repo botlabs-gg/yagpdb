@@ -17,7 +17,7 @@ type Plugin struct{}
 func (p *Plugin) GetGuildConfig(ctx context.Context, guildID string, dest configstore.GuildConfig) (err error) {
 	cast := dest.(*SoundboardConfig)
 
-	err = common.SQL.Where(guildID).First(cast).Error
+	err = common.SQL.Where(common.MustParseInt(guildID)).First(cast).Error
 	if err != nil {
 		// Return default config if not found
 		if err == gorm.ErrRecordNotFound {

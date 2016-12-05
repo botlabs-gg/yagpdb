@@ -75,11 +75,11 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			if err != nil {
 				return "Error retrieving config.", err
 			}
-			if !config.BanEnabled {
-				return "Ban command disabled.", nil
-			}
 			if !perm {
 				return "You do not have ban permissions.", nil
+			}
+			if !config.BanEnabled {
+				return "Ban command disabled.", nil
 			}
 
 			reason := "(No reason specified)"
@@ -122,11 +122,11 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			if err != nil {
 				return "Error retrieving config.", err
 			}
-			if !config.KickEnabled {
-				return "Kick command disabled.", nil
-			}
 			if !perm {
 				return "You do not have kick permissions.", nil
+			}
+			if !config.KickEnabled {
+				return "Kick command disabled.", nil
 			}
 
 			reason := "(No reason specified)"
@@ -170,11 +170,11 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			if err != nil {
 				return "Error retrieving config.", err
 			}
-			if !config.MuteEnabled {
-				return "Mute command disabled.", nil
-			}
 			if !perm {
 				return "You do not have kick (Required for mute) permissions.", nil
+			}
+			if !config.MuteEnabled {
+				return "Mute command disabled.", nil
 			}
 
 			reason := "(No reason specified)"
@@ -226,11 +226,11 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			if err != nil {
 				return "Error retrieving config.", err
 			}
-			if !config.MuteEnabled {
-				return "Mute command disabled.", nil
-			}
 			if !perm {
 				return "You do not have kick (Required for mute) permissions.", nil
+			}
+			if !config.MuteEnabled {
+				return "Mute command disabled.", nil
 			}
 
 			reason := "(No reason specified)"
@@ -273,7 +273,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			},
 		},
 		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			config, _, err := BaseCmd(discordgo.PermissionKickMembers, m.Author.ID, m.ChannelID, parsed.Guild.ID)
+			config, _, err := BaseCmd(0, m.Author.ID, m.ChannelID, parsed.Guild.ID)
 			if err != nil {
 				return "Error retrieving config.", err
 			}
@@ -330,11 +330,11 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			if err != nil {
 				return "Error retrieving config.", err
 			}
-			if !config.CleanEnabled {
-				return "Clean command disabled.", nil
-			}
 			if !perm {
 				return "You do not have manage messages permissions in this channel.", nil
+			}
+			if !config.CleanEnabled {
+				return "Clean command disabled.", nil
 			}
 
 			filter := ""
@@ -530,6 +530,7 @@ func searcher(guildID, channelID string, sendTo string, limit int, what string) 
 			}
 		}
 		remaining -= numFetching
+		logrus.Println(len(msgs), numFetching)
 		// were done here, fucking quit life
 		if remaining < 1 || len(msgs) < numFetching {
 			break

@@ -482,7 +482,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 
 			result := rand.Intn(sides)
-			return fmt.Sprintf(":game_die: %d", result), nil
+			return fmt.Sprintf(":game_die: %d", result+1), nil
 		},
 	},
 	&CustomCommand{

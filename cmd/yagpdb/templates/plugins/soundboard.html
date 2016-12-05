@@ -40,7 +40,7 @@
                     </div>
                     <div class="form-group">
                         <label>Sound URL</label>
-                        <input type="text" class="form-control" name="SoundURL" placeholder="name">
+                        <input type="text" class="form-control" name="SoundURL" placeholder="URL">
                         <p class="help-block">Specify a sound url instead of uploading a sound</p>
                     </div>
                     <input type="submit" class="btn btn-success" value="Upload/Download!">
@@ -57,6 +57,7 @@
                     {{$roles := .ActiveGuild.Roles}}
                     {{$highest := .HighestRole}}
                     {{range .Config.Sounds}}
+                    <div class="well well-sm">
                     <form class="form-inline" method="post" action="update">
                         <input type="text" name="ID" class="hidden" value="{{.ID}}">
 
@@ -83,7 +84,7 @@
                         <button type="submit" class="btn btn-success" formaction="update">Save</button>
                         <button type="submit" class="btn btn-danger" formaction="delete">Delete</button>
                     </form>
-                    <br/>
+                    </div>
                     {{end}}
                 </div>
             </div>

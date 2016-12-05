@@ -207,7 +207,7 @@ func CreateModlogEmbed(author *discordgo.User, action string, target *discordgo.
 		embed.Color = 0x57728e
 		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hotwomen.png"
 	} else if strings.HasPrefix(action, "Unmuted") || action == "Unbanned" {
-		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/spugaht.png"
+		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/spugahtt.png"
 		embed.Color = 0x62c65f
 	} else if strings.HasPrefix(action, "Banned") {
 		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hummur.png"

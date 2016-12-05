@@ -99,7 +99,6 @@ var cmds = []commandsystem.CommandHandler{
 			if createdDurStr == "" {
 				createdDurStr = "Less than an hour ago"
 			}
-			logrus.Println(createdDurStr)
 			embed := &discordgo.MessageEmbed{
 				Title: fmt.Sprintf("%s#%s%s", target.Username, target.Discriminator, nick),
 				Fields: []*discordgo.MessageEmbedField{

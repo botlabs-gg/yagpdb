@@ -276,7 +276,8 @@ func ActiveServerMW(inner goji.Handler) goji.Handler {
 		}
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentUserGuild, userGuild)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
+		isAdmin := IsAdminCtx(ctx)
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild, "IsAdmin": isAdmin})
 	}
 	return goji.HandlerFunc(mw)
 }

@@ -228,7 +228,9 @@ func HandleDelete(ctx context.Context, w http.ResponseWriter, r *http.Request) (
 	}
 
 	if err != nil {
-		return tmpl, err
+		if !os.IsNotExist(err) {
+			return tmpl, err
+		}
 	}
 
 	err = common.SQL.Delete(storedSound).Error
