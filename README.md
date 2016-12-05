@@ -20,7 +20,32 @@ Currently i do not provide precompiled binaries so you will have to compile it y
 
 You can now build it and run `$GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb`
 
-For configuration create a config.json file in the same dir as the built binary, for what you should include see [config.go](https://github.com/jonas747/yagpdb/blob/master/common/config.go#L8) 
+For configuration create a config.json file in the same dir as the built binary, for what you should include see [config.go](https://github.com/jonas747/yagpdb/blob/master/common/config.go#L8)
+
+Heres an example:
+
+```json
+{
+     "bot_id": "Bot ID here NOT CLIENT ID",
+     "owner": "Owners id here, owner has access to all control panels",
+     
+     "client_id": "Bots client id here",
+     "client_secret": "The client secret here",
+     "bot_token": "The token here, prefix with 'Bot ' if it's a bot token (which it is in 99.99% of the cases",
+
+     "host": "banana.yagpdb.xyz <- Host, used with letsencrypt to do https",
+     "email": "jonasr747@gmail.com <- your email, also for letsencrypt", 
+
+     "pq_user": "postgres username",
+     "pq_pass": "postgres password",
+
+     "redis": "localhost:6379",
+
+     // Fields below are not required
+     "aylien_app_id": "",
+     "aylien_app_key": ""
+}
+```
 
 The reddit bot requires a seperate file called `reddit.agent` [it looks like this](https://github.com/turnage/graw/blob/master/useragent.protobuf.template)
 
@@ -28,25 +53,7 @@ The reddit bot requires a seperate file called `reddit.agent` [it looks like thi
 
 **Standard plugins:**
 
- - notifications
-     + Provides general notifications about dsicord events
-     + Events:
-         * member joins, leave, topic change
- - commands
-     + This plugin provides utilities for configuring global command settings
-     + It also provides some fun utility commands
- - customcommands
-     + Custom commands is a plugin which lets server admins define their own custom commands
-     + Currently only simple custom commands can be made which responds with a fixed message on a trigger, more is planned 
- - aylien
-     + A fun plugin that provides access to the aylien text analysys api
- - serverstats
-     + Tracks stats on your server and you can optionally make them public
- - reddit
-     + Posts post from a subreddit into a discord channel
-     + Optimally it should be posted within 1 minute of the post being posted but should that fail it might take some time for the secondary crawler to find it
- - reputation
-     + Allows people to give reputation (rep) to eachother
+TODO information
 
 **Planned plugins**
 
@@ -68,3 +75,7 @@ yagpdb uses redis for light data and caching, by light data i mean configuration
 
 In the future yagpdb will use a relational database for heavier data such as logs
 
+### Creating a new plugin
+
+See bot/plugin for info about bot plugins and web/plugin for web plugins. Expect the webserver instance to be seperated from the bot instance for reliability measures (ddos only being able to take out the webserver with bot still alive), 
+Stuff that requires their own goroutine running to for example check for stuff at intervals should be run in the bot process, launched from Plugin.StartBot() called by the bot when the bot is starting (BotInit is always called on both the webserver and the bot)

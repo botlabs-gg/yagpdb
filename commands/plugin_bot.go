@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 var (
@@ -29,6 +30,10 @@ var (
 	computeLock   sync.Mutex
 	CommandSystem *commandsystem.System
 )
+
+type PluginStatus interface {
+	Status(client *redis.Client) (string, string)
+}
 
 func (p *Plugin) InitBot() {
 
@@ -171,7 +176,8 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Cooldown: 5,
 		Category: CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "Status",
+			Name:        "Yagstatus",
+			Aliases:     []string{"Status"},
 			Description: "Shows yagpdb status",
 			RunInDm:     true,
 		},
@@ -184,14 +190,37 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 			// Convert to megabytes for ez readings
 			allocated := float64(memStats.Alloc) / 1000000
-			totalAllocated := float64(memStats.TotalAlloc) / 1000000
 
 			numGoroutines := runtime.NumGoroutine()
 
-			status := fmt.Sprintf("**YAGPDB STATUS** *bot version: %s*\n - Connected Servers: %d\n - Uptime: %s\n - Allocated: %.2fMB\n - Total Allocated: %.2fMB\n - Number of Goroutines: %d\n",
-				common.VERSION, servers, uptime.String(), allocated, totalAllocated, numGoroutines)
+			numScheduledEvent, _ := common.NumScheduledEvents(client)
 
-			return status, nil
+			embed := &discordgo.MessageEmbed{
+				Author: &discordgo.MessageEmbedAuthor{
+					Name:    common.BotSession.State.User.Username,
+					IconURL: discordgo.EndpointUserAvatar(common.BotSession.State.User.ID, common.BotSession.State.User.Avatar),
+				},
+				Title: "YAGPDB Status, version " + common.VERSION,
+				Fields: []*discordgo.MessageEmbedField{
+					&discordgo.MessageEmbedField{Name: "Number of servers", Value: fmt.Sprint(servers), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Uptime", Value: common.HumanizeDuration(common.DurationPrecisionSeconds, uptime), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Memory Allocated", Value: fmt.Sprintf("%.1fMB", allocated), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Goroutines", Value: fmt.Sprint(numGoroutines), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Scheduled events (reminders etc)", Value: fmt.Sprint(numScheduledEvent), Inline: true},
+				},
+			}
+
+			for _, v := range common.AllPlugins {
+				if cast, ok := v.(PluginStatus); ok {
+					name, val := cast.Status(client)
+					if name == "" || val == "" {
+						continue
+					}
+					embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: v.Name() + ": " + name, Value: val, Inline: true})
+				}
+			}
+
+			return embed, nil
 		},
 	},
 	// Some fun commands because why not
@@ -276,37 +305,6 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 			return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
-		},
-	},
-	&CustomCommand{
-		Cooldown: 20,
-		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "Ascii",
-			Aliases:      []string{"asci"},
-			Description:  "Converts an image to ascii",
-			RunInDm:      true,
-			RequiredArgs: 1,
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentTypeString},
-			},
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-
-			// resp, err := http.Get(cmd.Args[0].Str())
-			// if err != nil {
-			// 	return err, err
-			// }
-
-			// img, _, err := image.Decode(resp.Body)
-			// resp.Body.Close()
-			// if err != nil {
-			// 	return err, err
-			// }
-
-			// out := Convert2Ascii(ScaleImage(img, 50))
-			// return "```\n" + string(out) + "\n```", nil
-			return "This command has been disabled for eating up memory", nil
 		},
 	},
 	&CustomCommand{
@@ -451,7 +449,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Category: CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
 			Name:        "Throw",
-			Description: "Cause you're a rebel",
+			Description: "Cause you are a rebel",
 			Arguments: []*commandsystem.ArgumentDef{
 				{Name: "Target", Type: commandsystem.ArgumentTypeUser},
 			},
@@ -465,6 +463,91 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			}
 
 			return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
+		},
+	},
+	&CustomCommand{
+		Cooldown: 2,
+		Category: CategoryFun,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "Roll",
+			Description: "Roll a dice",
+			Arguments: []*commandsystem.ArgumentDef{
+				{Name: "Sides", Type: commandsystem.ArgumentTypeNumber},
+			},
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			sides := 6
+			if cmd.Args[0] != nil && cmd.Args[0].Int() > 0 {
+				sides = cmd.Args[0].Int()
+			}
+
+			result := rand.Intn(sides)
+			return fmt.Sprintf(":game_die: %d", result), nil
+		},
+	},
+	&CustomCommand{
+		Cooldown:             2,
+		Category:             CategoryFun,
+		HideFromCommandsPage: true,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "Yagmem",
+			Description:  "Send some memory stats",
+			HideFromHelp: true,
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			if m.Author.ID != common.Conf.Owner {
+				return "Only bot owner can run this", nil
+			}
+
+			totalGuilds := 0
+			totalMembers := 0
+			membersMem := 0
+			totalChannels := 0
+			channelsMem := 0
+			totalMessages := 0
+			messagesMem := 0
+
+			state := common.BotSession.State
+			state.RLock()
+			defer state.RUnlock()
+
+			for _, v := range state.Guilds {
+				totalGuilds++
+
+				for _, channel := range v.Channels {
+					totalChannels++
+					channelsMem += int(unsafe.Sizeof(channel))
+
+					if channel.Messages != nil {
+						totalMessages += len(channel.Messages)
+						for _, msg := range channel.Messages {
+							messagesMem += int(unsafe.Sizeof(msg))
+						}
+					}
+				}
+
+				totalMembers += len(v.Members)
+				for _, member := range v.Members {
+					membersMem += int(unsafe.Sizeof(member))
+				}
+			}
+
+			var stats runtime.MemStats
+			runtime.ReadMemStats(&stats)
+
+			embed := &discordgo.MessageEmbed{
+				Title: "Memory stats",
+				Fields: []*discordgo.MessageEmbedField{
+					&discordgo.MessageEmbedField{Name: "Allocated", Value: fmt.Sprintf("%dMB", stats.Alloc/1000000), Inline: true},
+					&discordgo.MessageEmbedField{Name: "TotalAlloc", Value: fmt.Sprintf("%dMB", stats.TotalAlloc/1000000), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Guilds", Value: fmt.Sprint(totalGuilds), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprintf("%d (%.1fKB)", totalMembers, float64(membersMem)/1000), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d (%.1fKB)", totalMessages, float64(messagesMem)/1000), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprintf("%d (%.1fKB)", totalChannels, float64(channelsMem)/1000), Inline: true},
+				},
+			}
+
+			return embed, nil
 		},
 	},
 }

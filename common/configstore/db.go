@@ -3,10 +3,13 @@ package configstore
 import (
 	"errors"
 	"github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/redis"
+	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/karlseguin/ccache"
 	"golang.org/x/net/context"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -110,4 +113,27 @@ func HandleInvalidateCacheEvt(event *pubsub.Event) {
 	}
 
 	Cached.InvalidateCache(event.TargetGuild, *conf)
+}
+
+// InvalidateGuildCache is a helper that both instantly invalides the local application cache
+// As well as sending the pusub event
+func InvalidateGuildCache(client *redis.Client, guildID interface{}, conf GuildConfig) {
+	gStr := ""
+	switch t := guildID.(type) {
+	case int64:
+		gStr = strconv.FormatInt(t, 10)
+	case string:
+		gStr = t
+	case GuildConfig:
+		idInt := t.GetGuildID()
+		gStr = strconv.FormatInt(idInt, 10)
+	default:
+		panic("Invalid guildID passed to InvalidateGuildCache")
+	}
+
+	Cached.InvalidateCache(gStr, conf.GetName())
+	err := pubsub.Publish(client, "invalidate_guild_config_cache", gStr, conf.GetName())
+	if err != nil {
+		logrus.WithError(err).Error("FAILED INVALIDATING CACHE")
+	}
 }

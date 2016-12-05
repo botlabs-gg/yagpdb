@@ -20,8 +20,12 @@ import (
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/serverstats"
+	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/shiena/ansicolor"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync"
 	"time"
@@ -32,13 +36,11 @@ var (
 	flagRunBot    bool
 	flagRunWeb    bool
 	flagRunReddit bool
-	flagRunStats  bool
 
 	flagAction string
 
 	flagRunEverything bool
 	flagLogTimestamp  bool
-	flagAddr          string
 	flagConfig        string
 )
 
@@ -49,15 +51,15 @@ func init() {
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
-	flag.StringVar(&flagAddr, "addr", ":5001", "Address for webserver to listen on")
 	flag.StringVar(&flagConfig, "conf", "config.json", "Path to config file")
 	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected")
-	flag.Parse()
 }
 
 func main() {
+	flag.Parse()
 
 	log.AddHook(common.ContextHook{})
+	log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
 	//log.AddHook(&journalhook.JournalHook{})
 	//journalhook.Enable()
 
@@ -95,6 +97,7 @@ func main() {
 	logs.InitPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
+	soundboard.RegisterPlugin()
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()
@@ -111,8 +114,7 @@ func main() {
 
 	if flagRunBot || flagRunEverything {
 		go bot.Run()
-		go serverstats.UpdateStatsLoop()
-		go common.RunScheduledEvents(make(chan *sync.WaitGroup))
+		go common.RunScheduledEvents()
 	}
 
 	if flagRunReddit || flagRunEverything {
@@ -121,7 +123,7 @@ func main() {
 
 	go pubsub.PollEvents()
 
-	select {}
+	listenSignal()
 }
 
 func runAction(str string) {
@@ -150,6 +152,27 @@ func runAction(str string) {
 	} else {
 		log.Info("Sucessfully ran action", str)
 	}
+}
+
+func listenSignal() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt)
+
+	<-c
+	log.Info("SHUTTING DOWN...")
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go bot.Stop(&wg)
+	go common.StopSheduledEvents(&wg)
+
+	wg.Wait()
+
+	log.Info("Sleeping for a second to allow work to finish")
+	time.Sleep(time.Second)
+	log.Info("Bye..")
+	os.Exit(0)
 }
 
 type SQLMigrater interface {

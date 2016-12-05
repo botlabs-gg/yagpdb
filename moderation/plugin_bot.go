@@ -600,6 +600,14 @@ func searchMsg(m *discordgo.Message, searchStr string) *SearchHit {
 				Embed: embed,
 			}
 		}
+		if embed.Footer != nil {
+			if strings.Contains(strings.ToLower(embed.Footer.Text), searchStr) {
+				return &SearchHit{
+					Embed: embed,
+				}
+			}
+		}
+
 		for _, field := range embed.Fields {
 			if strings.Contains(strings.ToLower(field.Name), searchStr) || strings.Contains(strings.ToLower(field.Value), searchStr) {
 				return &SearchHit{

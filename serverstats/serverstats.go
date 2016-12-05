@@ -22,6 +22,10 @@ func RegisterPlugin() {
 	bot.RegisterPlugin(plugin)
 }
 
+func (p *Plugin) StartBot() {
+	go UpdateStatsLoop()
+}
+
 // Removes expired stats on a interval
 func UpdateStatsLoop() {
 	client, _ := common.RedisPool.Get()

@@ -33,8 +33,18 @@ func RemoveScheduledEvent(client *redis.Client, evt, data string) error {
 	return client.Cmd("ZREM", "scheduled_events", evt+":"+data).Err
 }
 
+var stopScheduledEventsChan = make(chan *sync.WaitGroup)
+
+func StopSheduledEvents(wg *sync.WaitGroup) {
+	stopScheduledEventsChan <- wg
+}
+
+func NumScheduledEvents(client *redis.Client) (int, error) {
+	return client.Cmd("ZCARD", "scheduled_events").Int()
+}
+
 // Checks for and handles scheduled events every minute
-func RunScheduledEvents(stop chan *sync.WaitGroup) {
+func RunScheduledEvents() {
 	client, err := RedisPool.Get()
 	if err != nil {
 		panic(err)
@@ -43,7 +53,7 @@ func RunScheduledEvents(stop chan *sync.WaitGroup) {
 	ticker := time.NewTicker(time.Minute)
 	for {
 		select {
-		case wg := <-stop:
+		case wg := <-stopScheduledEventsChan:
 			wg.Done()
 			return
 		case <-ticker.C:

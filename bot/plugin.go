@@ -3,6 +3,8 @@ package bot
 import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
+	"sync"
 )
 
 const (
@@ -30,6 +32,9 @@ type NewGuildHandler interface {
 type BotStarterHandler interface {
 	StartBot()
 }
+type BotStopperHandler interface {
+	StopBot(wg *sync.WaitGroup)
+}
 
 var Plugins []Plugin
 
@@ -40,4 +45,6 @@ func RegisterPlugin(plugin Plugin) {
 	} else {
 		Plugins = append(Plugins, plugin)
 	}
+
+	common.AddPlugin(plugin)
 }

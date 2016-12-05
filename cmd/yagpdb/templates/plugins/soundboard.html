@@ -1,0 +1,99 @@
+{{define "cp_soundboard"}}
+
+{{template "cp_head" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Soundboard</h1>
+        <p>Soundbaord sound are boarding fun</p>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Upload new
+            </div>
+            <div class="panel-body">
+                <form method="post" action="new" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="form-control" name="Name" placeholder="name">
+                    </div>
+                    <div class="form-group">
+                        <label>Required Role</label>
+                        <select class="form-control" name="RequiredRole">
+                            <option {{if not .RequiredRole}}selected{{end}} value="">None</option>
+                            {{mTemplate "role_options" "Roles" .ActiveGuild.Roles}}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <p class="form-control-static">Either upload a sound or specify a sound url</p>
+                        <p class="form-control-static">You can find fany great sounds <a href="http://soundboard.panictank.net/">here</a></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="sound-file">Upload a sound</label>
+                        <input type="file" id="sound-file" name="Sound">
+                    </div>
+                    <div class="form-group">
+                        <label>Sound URL</label>
+                        <input type="text" class="form-control" name="SoundURL" placeholder="name">
+                        <p class="help-block">Specify a sound url instead of uploading a sound</p>
+                    </div>
+                    <input type="submit" class="btn btn-success" value="Upload/Download!">
+                </form>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Existing sounds
+            </div>
+            <div class="panel-body">
+                <div class="col-lg-12">
+                    {{$guild := .ActiveGuild.ID}}
+                    {{$roles := .ActiveGuild.Roles}}
+                    {{$highest := .HighestRole}}
+                    {{range .Config.Sounds}}
+                    <form class="form-inline" method="post" action="update">
+                        <input type="text" name="ID" class="hidden" value="{{.ID}}">
+
+                        <div class="form-group">
+                            <label for="Name">Name</label>
+                            <input type="text" class="form-control" name="Name" placeholder="" value="{{.Name}}">
+                        </div>
+
+
+
+                        <div class="form-group">
+                            <label>Required Role</label>
+                            <select class="form-control" name="RequiredRole">
+                                <option {{if not .RequiredRole}}selected{{end}} value="">None</option>
+                                {{mTemplate "role_options" "Roles" $roles "Selected" .RequiredRole "Highest" $highest}}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <p class="form-control-static">Transcode status: {{.Status}}</p>
+                        </div>
+                        
+                        <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
+                        <button type="submit" class="btn btn-success" formaction="update">Save</button>
+                        <button type="submit" class="btn btn-danger" formaction="delete">Delete</button>
+                    </form>
+                    <br/>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->            
+
+{{template "cp_footer" .}}
+
+{{end}}

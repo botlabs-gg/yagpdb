@@ -7,6 +7,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"math/rand"
+	"strconv"
 	"text/template"
 	"time"
 )
@@ -318,6 +319,21 @@ func CutStringShort(s string, l int) string {
 	}
 
 	return mainBuf.String() + latestBuf.String()
+}
+
+type SmallModel struct {
+	ID        uint `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func MustParseInt(s string) int64 {
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		panic("Failed parsing int: " + err.Error())
+	}
+
+	return i
 }
 
 // This was bad on large servers...

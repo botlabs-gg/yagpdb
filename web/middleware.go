@@ -356,7 +356,7 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 		member, err := reststate.GetBotMember(pat.Param(ctx, "server"))
 		if err != nil {
 			log.WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
-			member, err = DiscordSessionFromContext(ctx).GuildMember(pat.Param(ctx, "server"), common.Conf.BotID)
+			member, err = common.BotSession.GuildMember(pat.Param(ctx, "server"), common.Conf.BotID)
 			log.Println(common.Conf.BotID)
 			if err != nil {
 				log.WithError(err).Error("Failed retrieving bot member")
@@ -494,6 +494,7 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 		if err != nil {
 			panic(err)
 		}
+
 		_, guild, tmpl := GetBaseCPContextData(ctx)
 
 		typ := reflect.TypeOf(dst)
@@ -502,7 +503,7 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 		decoded := reflect.New(typ).Interface()
 		decoder := schema.NewDecoder()
 		decoder.IgnoreUnknownKeys(true)
-		err = decoder.Decode(decoded, r.PostForm)
+		err = decoder.Decode(decoded, r.Form)
 
 		ok := true
 		if err != nil {

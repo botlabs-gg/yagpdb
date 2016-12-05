@@ -121,3 +121,19 @@ func MustGetRedisClient() *redis.Client {
 	}
 	return client
 }
+
+// Locks the lock and if succeded sets it to expire after maxdur
+// So that if someting went wrong its not locked forever
+func TryLockRedisKey(client *redis.Client, key string, maxDur int) (bool, error) {
+	didSet, err := client.Cmd("SETNX", key, true).Bool()
+	if err != nil || !didSet {
+		return didSet, err
+	}
+
+	client.Cmd("EXPIRE", key, maxDur)
+	return didSet, nil
+}
+
+func UnlockRedisKey(client *redis.Client, key string) {
+	client.Cmd("DEL", key)
+}

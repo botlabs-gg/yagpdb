@@ -2,6 +2,7 @@ package web
 
 import (
 	"crypto/tls"
+	"flag"
 	log "github.com/Sirupsen/logrus"
 	"github.com/golang/crypto/acme/autocert"
 	"github.com/jonas747/yagpdb/common"
@@ -26,6 +27,8 @@ var (
 	RootMux         *goji.Mux
 	CPMux           *goji.Mux
 	ServerPublicMux *goji.Mux
+
+	properAddresses bool
 )
 
 func init() {
@@ -40,10 +43,18 @@ func init() {
 		"formatTime": prettyTime,
 	})
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
+
+	flag.BoolVar(&properAddresses, "pa", false, "Sets the listen addresses to 80 and 443")
 }
 
 func Run() {
-	log.Info("Starting yagpdb web server")
+
+	if properAddresses {
+		ListenAddressHTTP = ":80"
+		ListenAddressHTTPS = ":443"
+	}
+
+	log.Info("Starting yagpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
 
 	InitOauth()
 	mux := setupRoutes()

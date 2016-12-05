@@ -69,7 +69,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {{range .CommandConfig.Global}}
+                            {{range .CommandConfig.Global}}{{if not .HideFromCommandsPage}}
                             <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
                                 <td>{{.Cmd}}</td>
                                 <td>
@@ -87,7 +87,7 @@
                                     </label>
                                 </td>
                             </tr>
-                            {{end}}
+                            {{end}}{{end}}
                         </tbody>
                     </table>
                 </div>
@@ -127,7 +127,7 @@
                         </thead>
                         <tbody>
                             {{$Channel := .Channel}}
-                            {{range .Settings}}
+                            {{range .Settings}}{{if not .Info.HideFromCommandsPage}}
                             <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
                                 <td>{{.Cmd}}</td>
                                 <td>
@@ -141,7 +141,7 @@
                                     </label>
                                 </td>
                             </tr>
-                            {{end}}
+                            {{end}}{{end}}
                         </tbody>
                     </table>
                 </div>

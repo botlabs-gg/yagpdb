@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/reststate"
 	"github.com/jonas747/yagpdb/common"
+	"sync"
 	"time"
 )
 
@@ -62,4 +63,20 @@ func Run() {
 	}
 
 	reststate.StartServer()
+}
+
+func Stop(wg *sync.WaitGroup) {
+
+	for _, v := range Plugins {
+		stopper, ok := v.(BotStopperHandler)
+		if !ok {
+			continue
+		}
+		wg.Add(1)
+		log.Info("Sending stop event to stopper: ", v.Name())
+		go stopper.StopBot(wg)
+	}
+
+	common.BotSession.Close()
+	wg.Done()
 }

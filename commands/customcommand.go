@@ -31,12 +31,13 @@ var (
 // And invoke a custom handlerfunc with provided redis client
 type CustomCommand struct {
 	*commandsystem.SimpleCommand
-	Key           string // GuildId is appended to the key, e.g if key is "test:", it will check for "test:<guildid>"
-	CustomEnabled bool   // Set to true to handle the enable check itself
-	Default       bool   // The default state of this command
-	Cooldown      int    // Cooldown in seconds before user can use it again
-	Category      CommandCategory
-	RunFunc       func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error)
+	HideFromCommandsPage bool   // Set to  hide this command from the commands page
+	Key                  string // GuildId is appended to the key, e.g if key is "test:", it will check for "test:<guildid>"
+	CustomEnabled        bool   // Set to true to handle the enable check itself
+	Default              bool   // The default state of this command
+	Cooldown             int    // Cooldown in seconds before user can use it again
+	Category             CommandCategory
+	RunFunc              func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error)
 }
 
 func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandSource, m *discordgo.MessageCreate, s *discordgo.Session) error {

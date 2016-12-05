@@ -1,6 +1,8 @@
 package web
 
-import ()
+import (
+	"github.com/jonas747/yagpdb/common"
+)
 
 // Plugin represents a web plugin
 type Plugin interface {
@@ -21,4 +23,5 @@ func RegisterPlugin(plugin Plugin) {
 	} else {
 		Plugins = append(Plugins, plugin)
 	}
+	common.AddPlugin(plugin)
 }

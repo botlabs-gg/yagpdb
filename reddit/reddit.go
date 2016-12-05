@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"strconv"
@@ -20,6 +21,7 @@ func (p *Plugin) Name() string {
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
+	bot.RegisterPlugin(plugin)
 }
 
 type SubredditWatchItem struct {
