@@ -20,6 +20,7 @@ type PlayRequest struct {
 var (
 	playQueues      = make(map[string][]*PlayRequest)
 	playQueuesMutex sync.Mutex
+	Silence         = []byte{0xF8, 0xFF, 0xFE}
 )
 
 func RequestPlaySound(guildID string, channelID string, soundID uint) (queued bool) {
@@ -101,14 +102,23 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 		vc.Speaking(true)
 	}
 
+	numFrames := 0
 	for {
-		frame, err := decoder.OpusFrame()
-		if err != nil {
-			if err != io.EOF {
-				return vc, err
+		var frame []byte
+		// Start with silence
+		if numFrames < 3 {
+			frame = Silence
+		} else {
+			var err error
+			frame, err = decoder.OpusFrame()
+			if err != nil {
+				if err != io.EOF {
+					return vc, err
+				}
+				return vc, nil
 			}
-			return vc, nil
 		}
+		numFrames++
 		select {
 		case vc.OpusSend <- frame:
 		case <-time.After(time.Second):
