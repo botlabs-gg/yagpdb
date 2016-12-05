@@ -2,7 +2,6 @@ package notifications
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -31,21 +30,6 @@ func (p *Plugin) InitBot() {
 	common.BotSession.AddHandler(bot.CustomGuildMemberAdd(HandleGuildMemberAdd))
 	common.BotSession.AddHandler(bot.CustomGuildMemberRemove(HandleGuildMemberRemove))
 	common.BotSession.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
-}
-
-func (p *Plugin) MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error {
-	conf := GetConfigDeprecated(client, guildID)
-	if conf == DefaultConfig {
-		return nil
-	}
-
-	conf.GuildID = guildIDInt
-	err := configstore.SQL.SetGuildConfig(context.Background(), conf)
-	if err != nil {
-		return err
-	}
-
-	return client.Cmd("DEL", "notifications/general:"+guildID).Err
 }
 
 type Config struct {
@@ -79,18 +63,6 @@ func (c *Config) TableName() string {
 }
 
 var DefaultConfig = &Config{}
-
-func GetConfigDeprecated(client *redis.Client, server string) *Config {
-	var config *Config
-	if err := common.GetRedisJson(client, "notifications/general:"+server, &config); err != nil {
-		log.WithError(err).WithField("guild", server).Error("Failed retrieving noifications config")
-		return DefaultConfig
-	}
-	if config == nil {
-		return DefaultConfig
-	}
-	return config
-}
 
 func GetConfig(guildID string) *Config {
 	var conf Config

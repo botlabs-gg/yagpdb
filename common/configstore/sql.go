@@ -1,20 +1,50 @@
 package configstore
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/net/context"
+	"math/rand"
+	"strings"
+	"time"
 )
+
+const MaxRetries = 1000
 
 type Postgres struct{}
 
 // conf is requried to be a pointer value
 func (p *Postgres) GetGuildConfig(ctx context.Context, guildID string, conf GuildConfig) error {
-	err := common.SQL.Where("guild_id = ?", guildID).First(conf).Error
-	if err == gorm.ErrRecordNotFound {
-		return ErrNotFound
+
+	currentRetries := 0
+	for {
+
+		err := common.SQL.Where("guild_id = ?", guildID).First(conf).Error
+		if err == nil {
+			if currentRetries > 1 {
+				logrus.Info("Suceeded after ", currentRetries, " retries")
+			}
+			return nil
+		}
+
+		if err == gorm.ErrRecordNotFound {
+			return ErrNotFound
+		}
+
+		if strings.Contains(err.Error(), "sorry, too many clients already") {
+			time.Sleep(time.Millisecond * 10 * time.Duration(rand.Intn(10)))
+			currentRetries++
+			if currentRetries > MaxRetries {
+				return err
+			}
+			continue
+		}
+
+		return err
 	}
-	return err
+
+	return nil
 }
 
 // conf is requried to be a pointer value

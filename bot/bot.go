@@ -44,7 +44,8 @@ func Run() {
 
 	// common.BotSession.LogLevel = discordgo.LogDebug
 	// common.BotSession.Debug = true
-	common.BotSession.LogLevel = discordgo.LogWarning
+
+	common.BotSession.LogLevel = discordgo.LogInformational
 	err := common.BotSession.Open()
 	if err != nil {
 		panic(err)

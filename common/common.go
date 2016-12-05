@@ -44,6 +44,7 @@ type Plugin interface {
 
 // Initalizes all database connections, config loading and so on
 func Init(configPath string) error {
+
 	config, err := LoadConfig(configPath)
 	if err != nil {
 		return err

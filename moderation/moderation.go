@@ -23,33 +23,6 @@ func (p *Plugin) Name() string {
 	return "Moderation"
 }
 
-func (p *Plugin) MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error {
-	config, err := GetConfigDeprecated(client, guildID)
-	if err != nil {
-		return err
-	}
-
-	config.GuildID = guildIDInt
-	err = common.SQL.Save(config).Error
-	if err != nil {
-		return err
-	}
-
-	client.Append("DEL", "moderation_ban_enabled:"+guildID)
-	client.Append("DEL", "moderation_kick_enabled:"+guildID)
-	client.Append("DEL", "moderation_clean_enabled:"+guildID)
-	client.Append("DEL", "moderation_report_enabled:"+guildID)
-	client.Append("DEL", "moderation_action_channel:"+guildID)
-	client.Append("DEL", "moderation_report_channel:"+guildID)
-	client.Append("DEL", "moderation_ban_message:"+guildID)
-	client.Append("DEL", "moderation_kick_message:"+guildID)
-	client.Append("DEL", "moderation_kick_delete_messages:"+guildID)
-	client.Append("DEL", "moderation_mute_enabled:"+guildID)
-	client.Append("DEL", "moderation_mute_role:"+guildID)
-	_, err = common.GetRedisReplies(client, 11)
-	return err
-}
-
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
@@ -143,53 +116,6 @@ func GetConfig(guildID string) (*Config, error) {
 		err = nil
 	}
 	return &config, err
-}
-
-func GetConfigDeprecated(client *redis.Client, guildID string) (config *Config, err error) {
-	client.Append("GET", "moderation_ban_enabled:"+guildID)
-	client.Append("GET", "moderation_kick_enabled:"+guildID)
-	client.Append("GET", "moderation_clean_enabled:"+guildID)
-	client.Append("GET", "moderation_report_enabled:"+guildID)
-	client.Append("GET", "moderation_action_channel:"+guildID)
-	client.Append("GET", "moderation_report_channel:"+guildID)
-	client.Append("GET", "moderation_ban_message:"+guildID)
-	client.Append("GET", "moderation_kick_message:"+guildID)
-	client.Append("GET", "moderation_kick_delete_messages:"+guildID)
-	client.Append("GET", "moderation_mute_enabled:"+guildID)
-	client.Append("GET", "moderation_mute_role:"+guildID)
-
-	replies, err := common.GetRedisReplies(client, 11)
-	if err != nil {
-		return nil, err
-	}
-
-	// We already checked errors above, altthough if someone were to fuck shit up manually
-	// Then yeah, these would be default values with errors thrown
-	banEnabled, _ := replies[0].Bool()
-	kickEnabled, _ := replies[1].Bool()
-	cleanEnabled, _ := replies[2].Bool()
-	reportEnabled, _ := replies[3].Bool()
-	actionChannel, _ := replies[4].Str()
-	reportChannel, _ := replies[5].Str()
-	banMsg, _ := replies[6].Str()
-	kickMsg, _ := replies[7].Str()
-	kickDeleteMessages, _ := replies[8].Bool()
-	muteEnabled, _ := replies[9].Bool()
-	muteRole, _ := replies[10].Str()
-
-	return &Config{
-		BanEnabled:           banEnabled,
-		KickEnabled:          kickEnabled,
-		CleanEnabled:         cleanEnabled,
-		ReportEnabled:        reportEnabled,
-		ActionChannel:        actionChannel,
-		ReportChannel:        reportChannel,
-		BanMessage:           banMsg,
-		KickMessage:          kickMsg,
-		DeleteMessagesOnKick: kickDeleteMessages,
-		MuteEnabled:          muteEnabled,
-		MuteRole:             muteRole,
-	}, nil
 }
 
 type Punishment int

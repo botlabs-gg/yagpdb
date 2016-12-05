@@ -161,7 +161,9 @@ func runDurationChecker() {
 				continue
 			}
 
+			state.RUnlock()
 			perms, err := state.UserChannelPermissions(common.BotSession.State.User.ID, g.ID)
+			state.RLock()
 			if err != nil {
 				logrus.WithError(err).Error("Error checking perms")
 				continue
