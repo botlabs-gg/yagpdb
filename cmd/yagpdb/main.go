@@ -161,13 +161,16 @@ func listenSignal() {
 	<-c
 	log.Info("SHUTTING DOWN...")
 
-	var wg sync.WaitGroup
-	wg.Add(2)
+	if flagRunBot || flagRunEverything {
 
-	go bot.Stop(&wg)
-	go common.StopSheduledEvents(&wg)
+		var wg sync.WaitGroup
+		wg.Add(2)
 
-	wg.Wait()
+		go bot.Stop(&wg)
+		go common.StopSheduledEvents(&wg)
+
+		wg.Wait()
+	}
 
 	log.Info("Sleeping for a second to allow work to finish")
 	time.Sleep(time.Second)

@@ -147,7 +147,7 @@ var cmds = []commandsystem.CommandHandler{
 		Key:      "reputation_enabled:",
 		Category: commands.CategoryFun,
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:        "rep",
+			Name:        "Rep",
 			Description: "Shows yours or the specified users current rep and rank",
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},

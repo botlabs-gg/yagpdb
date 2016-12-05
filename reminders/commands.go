@@ -26,12 +26,12 @@ var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Category: commands.CategoryTool,
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "remindme",
-			Description:  "Schedules a reminder",
+			Name:         "Remindme",
+			Description:  "Schedules a reminder, example: 'remindme 1h30min are you alive still?'",
 			Aliases:      []string{"remind"},
 			RequiredArgs: 2,
 			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "Time from now", Type: commandsystem.ArgumentTypeString},
+				&commandsystem.ArgumentDef{Name: "Time", Type: commandsystem.ArgumentTypeString},
 				&commandsystem.ArgumentDef{Name: "Message", Type: commandsystem.ArgumentTypeString},
 			},
 		},

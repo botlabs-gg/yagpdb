@@ -40,14 +40,19 @@ func (p *Plugin) InitBot() {
 				total += c.Count
 			}
 
-			header := fmt.Sprintf("Server stats for **%s** *(Also viewable at https://%s/public/%s/stats)* ", parsed.Guild.Name, common.Conf.Host, parsed.Guild.ID)
-			body := fmt.Sprintf("Members joined last 24h: **%d**\n", stats.JoinedDay)
-			body += fmt.Sprintf("Members Left last 24h: **%d**\n", stats.LeftDay)
-			body += fmt.Sprintf("Members online: **%d**\n", stats.Online)
-			body += fmt.Sprintf("Total Members: **%d**\n", stats.TotalMembers)
-			body += fmt.Sprintf("Messages last 24h: **%d**\n", total)
+			embed := &discordgo.MessageEmbed{
+				Title:       "Server stats",
+				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%s/stats)", common.Conf.Host, parsed.Guild.ID),
+				Fields: []*discordgo.MessageEmbedField{
+					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
+				},
+			}
 
-			return header + "\n\n" + body, nil
+			return embed, nil
 		},
 	})
 

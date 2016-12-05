@@ -23,14 +23,30 @@ func (p *Plugin) Name() string {
 	return "Moderation"
 }
 
-func (p *Plugin) MigrateSQL(client *redis.Client, guildID string, guildIDInt int64) error {
-	config, err := GetConfig(guildID)
+func (p *Plugin) MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error {
+	config, err := GetConfigDeprecated(client, guildID)
 	if err != nil {
 		return err
 	}
 
 	config.GuildID = guildIDInt
 	err = common.SQL.Save(config).Error
+	if err != nil {
+		return err
+	}
+
+	client.Append("DEL", "moderation_ban_enabled:"+guildID)
+	client.Append("DEL", "moderation_kick_enabled:"+guildID)
+	client.Append("DEL", "moderation_clean_enabled:"+guildID)
+	client.Append("DEL", "moderation_report_enabled:"+guildID)
+	client.Append("DEL", "moderation_action_channel:"+guildID)
+	client.Append("DEL", "moderation_report_channel:"+guildID)
+	client.Append("DEL", "moderation_ban_message:"+guildID)
+	client.Append("DEL", "moderation_kick_message:"+guildID)
+	client.Append("DEL", "moderation_kick_delete_messages:"+guildID)
+	client.Append("DEL", "moderation_mute_enabled:"+guildID)
+	client.Append("DEL", "moderation_mute_role:"+guildID)
+	_, err = common.GetRedisReplies(client, 11)
 	return err
 }
 

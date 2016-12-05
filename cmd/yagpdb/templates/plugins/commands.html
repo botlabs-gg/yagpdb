@@ -69,7 +69,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {{range .CommandConfig.Global}}{{if not .HideFromCommandsPage}}
+                            {{range .CommandConfig.Global}}{{if not .Info.HideFromCommandsPage}}
                             <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
                                 <td>{{.Cmd}}</td>
                                 <td>
@@ -104,8 +104,8 @@
                         <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('{{.Channel}}-enabled')">Disable All</button>
                         <button type="button" class="btn btn-success btn-sm" onclick="checkAll('{{.Channel}}-autodelete')">Autodelete All</button>
                         <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('{{.Channel}}-autodelete')">Autodelete None</button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="copy('{{.Channel}}-enabled')">Copy</button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="paste('{{.Channel}}-enabled')">Paste</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="copy('{{.Channel}}-enabled','{{.Channel}}-autodelete')">Copy</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="paste('{{.Channel}}-enabled','{{.Channel}}-autodelete')">Paste</button>
                     </div>
                     <h4 class="panel-title">
                         <label>
@@ -170,22 +170,30 @@
         })
     }
 
-    var copybuf = null;
-    function copy(what){
-        copybuf = [];
-        $("."+what).each(function(i, item){
-            copybuf[i] = item.checked;
+    var copybufEnable = null;
+    var copybufAutoDel = null;
+    function copy(enable, autodel){
+        copybufEnable = [];
+        copybufAutoDel = [];
+        $("."+enable).each(function(i, item){
+            copybufEnable[i] = item.checked;
+        })
+        $("."+autodel).each(function(i, item){
+            copybufAutoDel[i] = item.checked;
         })
     }
 
-    function paste(where){
-        if(copybuf == null){
+    function paste(enable, autodel){
+        if(copybufAutoDel == null){
             alert("Nothing is copied"); 
             return;
         }
 
-        $("."+where).each(function(i, item){
-            item.checked = copybuf[i];
+        $("."+enable).each(function(i, item){
+            item.checked = copybufEnable[i];
+        })
+        $("."+autodel).each(function(i, item){
+            item.checked = copybufAutoDel[i];
         })
     }
 </script>

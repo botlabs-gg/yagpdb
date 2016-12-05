@@ -19,6 +19,7 @@ func RegisterPlugin() {
 
 	common.SQL.AutoMigrate(&Config{})
 	configstore.RegisterConfig(configstore.SQL, &Config{})
+
 }
 
 func (p *Plugin) Name() string {
@@ -39,7 +40,12 @@ func (p *Plugin) MigrateStorage(client *redis.Client, guildID string, guildIDInt
 	}
 
 	conf.GuildID = guildIDInt
-	return configstore.SQL.SetGuildConfig(context.Background(), conf)
+	err := configstore.SQL.SetGuildConfig(context.Background(), conf)
+	if err != nil {
+		return err
+	}
+
+	return client.Cmd("DEL", "notifications/general:"+guildID).Err
 }
 
 type Config struct {
