@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	VERSION = "0.17 Funky git"
-	Testing = true // Disables stuff like command cooldowns
+	VERSION = "0.17 Funky"
+	Testing = false // Disables stuff like command cooldowns
 )
 
 var (
