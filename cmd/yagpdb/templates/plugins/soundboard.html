@@ -72,7 +72,7 @@
                             <label>Required Role</label>
                             <select class="form-control" name="RequiredRole">
                                 <option {{if not .RequiredRole}}selected{{end}} value="">None</option>
-                                {{mTemplate "role_options" "Roles" $roles "Selected" .RequiredRole "Highest" $highest}}
+                                {{mTemplate "role_options" "Roles" $roles "Selected" .RequiredRole}}
                             </select>
                         </div>
 

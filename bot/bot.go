@@ -23,7 +23,7 @@ func Setup() {
 	log.Info("Initializing bot plugins")
 	for _, plugin := range Plugins {
 		plugin.InitBot()
-		log.WithField("plugin", plugin.Name()).Info("Initialized bot plugin")
+		log.Info("Initialized bot plugin ", plugin.Name())
 	}
 }
 
@@ -59,7 +59,7 @@ func Run() {
 		starter, ok := p.(BotStarterHandler)
 		if ok {
 			starter.StartBot()
-			log.WithField("plugin", p.Name()).Info("Ran StartBot")
+			log.Info("Ran StartBot for ", p.Name())
 		}
 	}
 

@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -486,6 +487,32 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&CustomCommand{
+		Cooldown: 10,
+		Category: CategoryFun,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:        "TopServers",
+			Description: "Responds with the top 10 servers im on",
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			state := common.BotSession.State
+			state.RLock()
+
+			sortable := GuildsSortUsers(state.Guilds)
+			sort.Sort(sortable)
+
+			out := "```"
+			for k, v := range sortable {
+				if k > 10 {
+					break
+				}
+
+				out += fmt.Sprintf("\n#%-2d: %s (%d)", k, v.Name, v.MemberCount)
+			}
+			state.RUnlock()
+			return out + "\n```", nil
+		},
+	},
+	&CustomCommand{
 		Cooldown:             2,
 		Category:             CategoryFun,
 		HideFromCommandsPage: true,
@@ -516,19 +543,19 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 				for _, channel := range v.Channels {
 					totalChannels++
-					channelsMem += int(unsafe.Sizeof(channel))
+					channelsMem += ChannelMemorySize(channel)
 
 					if channel.Messages != nil {
 						totalMessages += len(channel.Messages)
 						for _, msg := range channel.Messages {
-							messagesMem += int(unsafe.Sizeof(msg))
+							messagesMem += GetMessageMemorySize(msg)
 						}
 					}
 				}
 
 				totalMembers += len(v.Members)
 				for _, member := range v.Members {
-					membersMem += int(unsafe.Sizeof(member))
+					membersMem += GetMemberMemorySize(member)
 				}
 			}
 
@@ -592,4 +619,127 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, clien
 
 	taken := time.Duration(time.Now().UnixNano() - parsed)
 	s.ChannelMessageEdit(m.ChannelID, m.ID, "Received pong, took: "+taken.String())
+}
+
+// Stuff for measuring memory below
+func GetMessageMemorySize(msg *discordgo.Message) int {
+	result := int(unsafe.Sizeof(*msg))
+	result += len(msg.Content)
+	result += len(string(msg.Timestamp))
+	if msg.Author != nil {
+		result += DiscordUserMemorySize(msg.Author)
+	}
+	for _, embed := range msg.Embeds {
+		result += int(unsafe.Sizeof(*embed))
+
+		if embed.Footer != nil {
+			result += len(embed.Footer.IconURL)
+			result += len(embed.Footer.ProxyIconURL)
+			result += len(embed.Footer.Text)
+		}
+		if embed.Author != nil {
+			result += len(embed.Author.IconURL)
+			result += len(embed.Author.Name)
+			result += len(embed.Author.ProxyIconURL)
+			result += len(embed.Author.URL)
+		}
+		if embed.Thumbnail != nil {
+			result += int(unsafe.Sizeof(*embed.Thumbnail))
+			result += len(embed.Thumbnail.ProxyURL)
+			result += len(embed.Thumbnail.URL)
+		}
+		if embed.Provider != nil {
+			result += len(embed.Provider.Name)
+			result += len(embed.Provider.URL)
+		}
+		if embed.Video != nil {
+			result += int(unsafe.Sizeof(*embed.Video))
+			result += len(embed.Video.ProxyURL)
+			result += len(embed.Video.URL)
+		}
+		if embed.Image != nil {
+			result += int(unsafe.Sizeof(*embed.Image))
+			result += len(embed.Image.ProxyURL)
+			result += len(embed.Image.URL)
+		}
+
+		for _, field := range embed.Fields {
+			result += int(unsafe.Sizeof(*field))
+			result += len(field.Name)
+			result += len(field.Value)
+		}
+
+		result += len(embed.Title)
+		result += len(embed.Description)
+		result += len(embed.Timestamp)
+		result += len(embed.Type)
+		result += len(embed.URL)
+	}
+
+	return result
+}
+func ChannelMemorySize(channel *discordgo.Channel) int {
+	result := int(unsafe.Sizeof(*channel))
+	result += len(channel.Type)
+	result += len(channel.Topic)
+	result += len(channel.Name)
+	result += len(channel.LastMessageID)
+	result += len(channel.ID)
+	result += len(channel.GuildID)
+
+	if channel.Recipient != nil {
+		result += DiscordUserMemorySize(channel.Recipient)
+	}
+
+	for _, overwrite := range channel.PermissionOverwrites {
+		result += int(unsafe.Sizeof(*overwrite))
+		result += len(overwrite.ID)
+		result += len(overwrite.Type)
+	}
+
+	return result
+}
+
+func DiscordUserMemorySize(user *discordgo.User) int {
+	result := int(unsafe.Sizeof(*user))
+	result += len(user.Avatar)
+	result += len(user.Username)
+	result += len(user.ID)
+	result += len(user.Discriminator)
+	result += len(user.Email)
+	return result
+}
+
+func GetMemberMemorySize(member *discordgo.Member) int {
+	result := int(unsafe.Sizeof(*member))
+	result += len(member.GuildID)
+	result += len(member.JoinedAt)
+	result += len(member.Nick)
+	if member.User != nil {
+		result += DiscordUserMemorySize(member.User)
+	}
+
+	for _, role := range member.Roles {
+		result += len(role)
+	}
+	return result
+}
+
+type GuildsSortUsers []*discordgo.Guild
+
+func (g GuildsSortUsers) Len() int {
+	return len(g)
+}
+
+// Less reports whether the element with
+// index i should sort before the element with index j.
+func (g GuildsSortUsers) Less(i, j int) bool {
+	return g[i].MemberCount > g[j].MemberCount
+}
+
+// Swap swaps the elements with indexes i and j.
+func (g GuildsSortUsers) Swap(i, j int) {
+	temp := g[i]
+	g[i] = g[j]
+	g[j] = temp
 }

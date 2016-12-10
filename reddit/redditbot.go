@@ -148,7 +148,7 @@ func (b *RedditBot) BlockTime() time.Duration {
 	return time.Second * 10
 }
 
-func RunReddit() {
+func (p *Plugin) StartFeed() {
 	go runBot()
 	monitorBot()
 }

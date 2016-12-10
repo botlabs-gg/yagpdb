@@ -48,3 +48,11 @@ func RegisterPlugin(plugin Plugin) {
 
 	common.AddPlugin(plugin)
 }
+
+func EmitGuildRemoved(client *redis.Client, guild *discordgo.Guild) {
+	for _, v := range Plugins {
+		if remover, ok := v.(RemoveGuildHandler); ok {
+			remover.RemoveGuild(client, guild)
+		}
+	}
+}

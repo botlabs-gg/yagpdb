@@ -7,6 +7,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
+	feeds.RegisterPlugin(plugin)
 	web.RegisterPlugin(plugin)
 	bot.RegisterPlugin(plugin)
 }

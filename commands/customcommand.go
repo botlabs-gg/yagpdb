@@ -226,6 +226,10 @@ func (cs *CustomCommand) customEnabled(client *redis.Client, guildID string) (bo
 
 // Enabled returns wether the command is enabled or not
 func (cs *CustomCommand) Enabled(client *redis.Client, channel string, guild *discordgo.Guild) (enabled bool, autodel bool, err error) {
+	if cs.HideFromCommandsPage {
+		return true, false, nil
+	}
+
 	ce, err := cs.customEnabled(client, guild.ID)
 	if err != nil {
 		return false, false, err
@@ -250,6 +254,10 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, guild *di
 			}
 			break
 		}
+	}
+
+	if cs.Key != "" || cs.CustomEnabled {
+		return true, false, nil
 	}
 
 	// Return from global settings then

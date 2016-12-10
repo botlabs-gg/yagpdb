@@ -26,6 +26,10 @@ func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(cmds...)
 }
 
+func (p *Plugin) StartBot() {
+	go EvtProcesser()
+}
+
 var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Cooldown: 30,
@@ -278,53 +282,17 @@ var cmds = []commandsystem.CommandHandler{
 
 // Guildmemberupdate is sent when user changes nick
 func HandleGuildmemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	conf, err := GetConfig(m.GuildID)
-	if err != nil {
-		logrus.WithError(err).Error("Failed fetching config")
-		return
-	}
-	if conf.NicknameLoggingEnabled {
-		CheckNickname(m.User.ID, m.GuildID, m.Nick)
-	}
+	evtChan <- m
 }
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
 // Also check nickname incase the user came online
 func HandlePresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpdate) {
-	conf, err := GetConfig(m.GuildID)
-	if err != nil {
-		logrus.WithError(err).Error("Failed fetching config")
-		return
-	}
-
-	if conf.NicknameLoggingEnabled {
-		CheckNickname(m.User.ID, m.GuildID, m.Presence.Nick)
-	}
-
-	if conf.UsernameLoggingEnabled {
-		if m.User.Username != "" {
-			CheckUsername(m.User)
-		}
-	}
+	evtChan <- m
 }
 
 func HandleGuildCreate(s *discordgo.Session, c *discordgo.GuildCreate) {
-	conf, err := GetConfig(c.ID)
-	if err != nil {
-		logrus.WithError(err).Error("Failed fetching config")
-		return
-	}
-
-	started := time.Now()
-	for _, v := range c.Members {
-		if conf.NicknameLoggingEnabled {
-			CheckNickname(v.User.ID, c.Guild.ID, v.Nick)
-		}
-		if conf.UsernameLoggingEnabled {
-			CheckUsername(v.User)
-		}
-	}
-	logrus.Infof("Checked %d members in %s", len(c.Members), time.Since(started).String())
+	evtChan <- c
 }
 
 type UsernameListing struct {
@@ -393,5 +361,61 @@ func CheckNickname(userID, guildID, nickname string) {
 	err = common.SQL.Create(&listing).Error
 	if err != nil {
 		logrus.WithError(err).Error("Failed setting nickname")
+	}
+}
+
+var (
+	evtChan = make(chan interface{})
+)
+
+// Queue up all the events and process them one by one, because of limited connections
+func EvtProcesser() {
+	for {
+		e := <-evtChan
+
+		switch t := e.(type) {
+		case *discordgo.GuildCreate:
+			conf, err := GetConfig(t.ID)
+			if err != nil {
+				logrus.WithError(err).Error("Failed fetching config")
+				continue
+			}
+
+			started := time.Now()
+			for _, v := range t.Members {
+				if conf.NicknameLoggingEnabled {
+					CheckNickname(v.User.ID, t.Guild.ID, v.Nick)
+				}
+				if conf.UsernameLoggingEnabled {
+					CheckUsername(v.User)
+				}
+			}
+			logrus.Infof("Checked %d members in %s", len(t.Members), time.Since(started).String())
+		case *discordgo.PresenceUpdate:
+			conf, err := GetConfig(t.GuildID)
+			if err != nil {
+				logrus.WithError(err).Error("Failed fetching config")
+				continue
+			}
+
+			if conf.NicknameLoggingEnabled {
+				CheckNickname(t.User.ID, t.GuildID, t.Presence.Nick)
+			}
+
+			if conf.UsernameLoggingEnabled {
+				if t.User.Username != "" {
+					CheckUsername(t.User)
+				}
+			}
+		case *discordgo.GuildMemberUpdate:
+			conf, err := GetConfig(t.GuildID)
+			if err != nil {
+				logrus.WithError(err).Error("Failed fetching config")
+				continue
+			}
+			if conf.NicknameLoggingEnabled {
+				CheckNickname(t.User.ID, t.GuildID, t.Nick)
+			}
+		}
 	}
 }

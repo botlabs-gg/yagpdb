@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/customcommands"
+	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
@@ -33,9 +34,9 @@ import (
 )
 
 var (
-	flagRunBot    bool
-	flagRunWeb    bool
-	flagRunReddit bool
+	flagRunBot   bool
+	flagRunWeb   bool
+	flagRunFeeds bool
 
 	flagAction string
 
@@ -47,7 +48,7 @@ var (
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
-	flag.BoolVar(&flagRunReddit, "reddit", false, "Set to run reddit bot")
+	flag.BoolVar(&flagRunFeeds, "feeds", false, "Set to run feeds")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
@@ -67,7 +68,7 @@ func main() {
 		web.LogRequestTimestamps = true
 	}
 
-	if !flagRunBot && !flagRunWeb && !flagRunReddit && !flagRunEverything && flagAction == "" {
+	if !flagRunBot && !flagRunWeb && !flagRunFeeds && !flagRunEverything && flagAction == "" {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
@@ -117,8 +118,8 @@ func main() {
 		go common.RunScheduledEvents()
 	}
 
-	if flagRunReddit || flagRunEverything {
-		go reddit.RunReddit()
+	if flagRunFeeds || flagRunEverything {
+		go feeds.Run()
 	}
 
 	go pubsub.PollEvents()
