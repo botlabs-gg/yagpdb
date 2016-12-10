@@ -141,7 +141,7 @@ func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, cli
 		return
 	}
 
-	err = CheckPresence(client, p.Presence, config, guild, member)
+	err = CheckPresence(client, &p.Presence, config, guild, member)
 	if err != nil {
 		log.WithError(err).Error("Failed checking presence")
 	}
