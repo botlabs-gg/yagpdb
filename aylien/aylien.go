@@ -12,11 +12,15 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"math/rand"
+	"os"
 	"strings"
 )
 
 var (
 	ErrNoMessages = errors.New("Failed finding any messages to analyze")
+
+	appID  = os.Getenv("YAGPDB_AYLIENAPPID")
+	appKey = os.Getenv("YAGPDB_AYLIENAPPKEY")
 )
 
 type Plugin struct {
@@ -24,12 +28,12 @@ type Plugin struct {
 }
 
 func RegisterPlugin() {
-	if common.Conf.AylienAppID == "" || common.Conf.AylienAppKey == "" {
+	if appID == "" || appKey == "" {
 		log.Warn("Missing AYLIEN appid and/or key, not loading plugin")
 		return
 	}
 
-	client, err := textapi.NewClient(textapi.Auth{ApplicationID: common.Conf.AylienAppID, ApplicationKey: common.Conf.AylienAppKey}, true)
+	client, err := textapi.NewClient(textapi.Auth{ApplicationID: appID, ApplicationKey: appKey}, true)
 	if err != nil {
 		log.WithError(err).Error("Failed initializing aylien client")
 		return

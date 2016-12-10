@@ -81,3 +81,49 @@ func Stop(wg *sync.WaitGroup) {
 	common.BotSession.Close()
 	wg.Done()
 }
+
+// checks all connected guilds and emites guildremoved on those no longer connected
+func checkConnectedGuilds() {
+	log.Info("Checking joined guilds")
+
+	client, err := common.RedisPool.Get()
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving connection from redis pool")
+		return
+	}
+
+	currentlyConnected, err := client.Cmd("SMEMBERS", "connected_guilds").List()
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving currently connected guilds")
+		return
+	}
+
+	guilds := make([]*discordgo.UserGuild, 0)
+	after := ""
+
+	for {
+		g, err := common.BotSession.UserGuilds(100, "", after)
+		if err != nil {
+			log.WithError(err).Error("Userguilds failed")
+			return
+		}
+
+		guilds = append(guilds, g...)
+		if len(guilds) < 100 {
+			break
+		}
+
+		after = g[len(g)-1].ID
+	}
+
+OUTER:
+	for _, gID := range currentlyConnected {
+		for _, g := range guilds {
+			if g.ID == gID {
+				continue OUTER
+			}
+		}
+
+		EmitGuildRemoved(client, gID)
+	}
+}

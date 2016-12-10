@@ -20,32 +20,7 @@ Currently i do not provide precompiled binaries so you will have to compile it y
 
 You can now build it and run `$GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb`
 
-For configuration create a config.json file in the same dir as the built binary, for what you should include see [config.go](https://github.com/jonas747/yagpdb/blob/master/common/config.go#L8)
-
-Heres an example:
-
-```json
-{
-     "bot_id": "Bot ID here NOT CLIENT ID",
-     "owner": "Owners id here, owner has access to all control panels",
-     
-     "client_id": "Bots client id here",
-     "client_secret": "The client secret here",
-     "bot_token": "The token here, prefix with 'Bot ' if it's a bot token (which it is in 99.99% of the cases",
-
-     "host": "banana.yagpdb.xyz <- Host, used with letsencrypt to do https",
-     "email": "jonasr747@gmail.com <- your email, also for letsencrypt", 
-
-     "pq_user": "postgres username",
-     "pq_pass": "postgres password",
-
-     "redis": "localhost:6379",
-
-     // Fields below are not required
-     "aylien_app_id": "",
-     "aylien_app_key": ""
-}
-```
+Configuration is done through environment variables. see `cmd/yagpdb/sampleenvfile` for which environment variables there are
 
 The reddit bot requires a seperate file called `reddit.agent` [it looks like this](https://github.com/turnage/graw/blob/master/useragent.protobuf.template)
 

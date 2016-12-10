@@ -26,8 +26,6 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	if n > 0 {
 		log.WithField("g_name", g.Name).Info("Joined new guild!")
 	}
-
-	// LoadGuildMembersQueue <- g.ID
 }
 
 func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *redis.Client) {
@@ -40,6 +38,8 @@ func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *r
 	if err != nil {
 		log.WithError(err).Error("Redis error")
 	}
+
+	EmitGuildRemoved(client, g.ID)
 }
 
 // func HandleGuildMembersChunk(s *discordgo.Session, g *discordgo.GuildMembersChunk, client *redis.Client) {

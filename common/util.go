@@ -36,27 +36,6 @@ func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
 // This is incase servers are removed/bot left servers while it was offline
 func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) error {
 	panic("REFRESH CONNECTED DOSEN'T WORK")
-	guilds, err := session.UserGuilds()
-	if err != nil {
-		return err
-	}
-
-	args := make([]interface{}, len(guilds)+1)
-	for k, v := range guilds {
-		args[k+1] = v.ID
-	}
-	args[0] = "connected_guilds"
-
-	client.Append("DEL", "connected_guilds")
-	count := 1
-
-	if len(guilds) > 0 {
-		client.Append("SADD", args...)
-		count = 2
-	}
-
-	_, err = GetRedisReplies(client, count)
-	return err
 }
 
 type WrappedGuild struct {

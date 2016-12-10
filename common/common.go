@@ -19,7 +19,7 @@ var (
 	RedisPool *pool.Pool
 
 	BotSession *discordgo.Session
-	Conf       *Config
+	Conf       *CoreConfig
 
 	AllPlugins []Plugin
 )
@@ -43,9 +43,9 @@ type Plugin interface {
 }
 
 // Initalizes all database connections, config loading and so on
-func Init(configPath string) error {
+func Init() error {
 
-	config, err := LoadConfig(configPath)
+	config, err := LoadConfig()
 	if err != nil {
 		return err
 	}

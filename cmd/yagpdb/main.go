@@ -34,15 +34,15 @@ import (
 )
 
 var (
-	flagRunBot   bool
-	flagRunWeb   bool
-	flagRunFeeds bool
+	flagRunBot        bool
+	flagRunWeb        bool
+	flagRunFeeds      bool
+	flagRunEverything bool
+	flagDryRun        bool
 
 	flagAction string
 
-	flagRunEverything bool
-	flagLogTimestamp  bool
-	flagConfig        string
+	flagLogTimestamp bool
 )
 
 func init() {
@@ -50,9 +50,9 @@ func init() {
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
 	flag.BoolVar(&flagRunFeeds, "feeds", false, "Set to run feeds")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
+	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
-	flag.StringVar(&flagConfig, "conf", "config.json", "Path to config file")
 	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected")
 }
 
@@ -68,14 +68,14 @@ func main() {
 		web.LogRequestTimestamps = true
 	}
 
-	if !flagRunBot && !flagRunWeb && !flagRunFeeds && !flagRunEverything && flagAction == "" {
+	if !flagRunBot && !flagRunWeb && !flagRunFeeds && !flagRunEverything && flagAction == "" && !flagDryRun {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
 
 	log.Info("YAGPDB is initializing...")
 
-	err := common.Init(flagConfig)
+	err := common.Init()
 	if err != nil {
 		log.WithError(err).Fatal("Failed intializing")
 	}
@@ -99,6 +99,11 @@ func main() {
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
+
+	if flagDryRun {
+		log.Println("This is a dry run, exiting")
+		return
+	}
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()

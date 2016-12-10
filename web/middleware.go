@@ -174,7 +174,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 		var guilds []*discordgo.UserGuild
 		err = common.GetCacheDataJson(redisClient, session.Token+":guilds", &guilds)
 		if err != nil {
-			guilds, err = session.UserGuilds()
+			guilds, err = session.UserGuilds(100, "", "")
 			if err != nil {
 				log.WithError(err).Error("Failed getting user guilds")
 				HandleLogout(ctx, w, r)

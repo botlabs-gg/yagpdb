@@ -305,7 +305,6 @@ func CensorError(err error) string {
 	toCensor := []string{
 		common.BotSession.Token,
 		common.Conf.ClientSecret,
-		common.Conf.PastebinDevKey,
 	}
 
 	out := err.Error()

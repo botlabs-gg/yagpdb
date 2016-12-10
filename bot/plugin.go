@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -21,7 +22,7 @@ type Plugin interface {
 
 // Used for deleting configuration about servers
 type RemoveGuildHandler interface {
-	RemoveGuild(client *redis.Client, guild *discordgo.Guild) error
+	RemoveGuild(client *redis.Client, guildID string) error
 }
 
 // Used for intializing stuff for new servers
@@ -46,13 +47,23 @@ func RegisterPlugin(plugin Plugin) {
 		Plugins = append(Plugins, plugin)
 	}
 
+	if _, ok := plugin.(BotStarterHandler); ok {
+		logrus.Info(plugin.Name(), " is a BotStarter")
+	}
+	if _, ok := plugin.(BotStopperHandler); ok {
+		logrus.Info(plugin.Name(), " is a BotStopper")
+	}
+	if _, ok := plugin.(RemoveGuildHandler); ok {
+		logrus.Info(plugin.Name(), " is a RemoveGuildHandler")
+	}
+
 	common.AddPlugin(plugin)
 }
 
-func EmitGuildRemoved(client *redis.Client, guild *discordgo.Guild) {
+func EmitGuildRemoved(client *redis.Client, guildID string) {
 	for _, v := range Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {
-			remover.RemoveGuild(client, guild)
+			remover.RemoveGuild(client, guildID)
 		}
 	}
 }
