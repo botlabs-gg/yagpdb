@@ -4,23 +4,20 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
 )
 
-func (p *Plugin) InitBot() {
-	common.BotSession.AddHandler(bot.CustomGuildDelete(OnGuildRemove))
-}
+func (p *Plugin) InitBot() {}
 
-func OnGuildRemove(s *discordgo.Session, g *discordgo.GuildDelete, c *redis.Client) {
-	config, err := GetConfig(c, "guild_subreddit_watch:"+g.ID)
+func (p *Plugin) RemoveGuild(c *redis.Client, g string) error {
+	config, err := GetConfig(c, "guild_subreddit_watch:"+g)
 	if err != nil {
-		logrus.WithError(err).Error("Failed retrieving reddit config")
+		return err
 	}
 	for _, v := range config {
 		v.Remove(c)
 	}
+	logrus.Info("Removed reddit config for deleted guild")
+	return nil
 }
 
 func (p *Plugin) Status(client *redis.Client) (string, string) {

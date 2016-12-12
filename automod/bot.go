@@ -132,7 +132,7 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 	case PunishNone:
 		err = bot.SendDM(s, member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", guild.Name, punishMsg))
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, nil, true, channel.GuildID, channel.ID, common.BotSession.State.User.User, "Automoderator: "+punishMsg, member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, client, true, channel.GuildID, channel.ID, common.BotSession.State.User.User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
 		err = moderation.KickUser(nil, channel.GuildID, channel.ID, common.BotSession.State.User.User, "Automoderator: "+punishMsg, member.User)
 	case PunishBan:

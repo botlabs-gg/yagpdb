@@ -87,7 +87,7 @@ func ListSounds(config *SoundboardConfig, member *discordgo.Member) string {
 		out += "Can Play: " + canPlay[:len(canPlay)-2] + "\n"
 	}
 	if restricted != "" {
-		out += "No access: " + restricted[:len(canPlay)-2] + "\n"
+		out += "No access: " + restricted[:len(restricted)-2] + "\n"
 	}
 
 	out += "\nPlay a sound with `sb <soundname>`"

@@ -63,7 +63,10 @@ func RegisterPlugin(plugin Plugin) {
 func EmitGuildRemoved(client *redis.Client, guildID string) {
 	for _, v := range Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {
-			remover.RemoveGuild(client, guildID)
+			err := remover.RemoveGuild(client, guildID)
+			if err != nil {
+				logrus.WithError(err).Error("Error Running RemoveGuild on ", v.Name())
+			}
 		}
 	}
 }

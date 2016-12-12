@@ -47,11 +47,6 @@ type Config struct {
 
 	TopicEnabled bool   `json:"topic_enabled" schema:"topic_enabled"`
 	TopicChannel string `json:"topic_channel" schema:"topic_channel" valid:"channel,true"`
-
-	// Deprecated
-	// Need to safely remove these fields from redis with a script
-	PinEnabled bool   `json:"pin_enabled,omitempty"`
-	PinChannel string `json:"pin_channel,omitempty"`
 }
 
 func (c *Config) GetName() string {
