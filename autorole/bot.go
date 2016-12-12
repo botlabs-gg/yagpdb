@@ -151,6 +151,8 @@ func runDurationChecker() {
 
 	ticker := time.NewTicker(time.Minute)
 	state := common.BotSession.State
+
+OUTER:
 	for {
 		<-ticker.C
 
@@ -179,9 +181,22 @@ func runDurationChecker() {
 				continue
 			}
 
-			if conf.Role != "" {
-				go processGuild(g, conf)
+			if conf.Role == "" {
+				continue
 			}
+
+			// Make sure the role exists
+			for _, role := range g.Roles {
+				if role.ID == conf.Role {
+					go processGuild(g, conf)
+					continue OUTER
+				}
+			}
+
+			// If not remove it
+			logrus.WithField("guild", g.ID).Info("Autorole role dosen't exist, removing...")
+			conf.Role = ""
+			saveGeneral(client, g.ID, conf)
 		}
 
 		state.RUnlock()
@@ -254,22 +269,39 @@ OUTER:
 		default:
 		}
 
-		member, err := common.BotSession.GuildMember(guild.ID, userID)
+		err := common.BotSession.GuildMemberRoleAdd(guild.ID, userID, config.Role)
 		if err != nil {
-			logrus.WithError(err).Warn("Member not found in autorole processing")
-			continue
+			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
+				// No perms, remove autorole
+				logrus.WithError(err).Info("No perms to add autorole, removing from config")
+				config.Role = ""
+				saveGeneral(client, guild.ID, config)
+				return
+			}
+			logrus.WithError(err).WithField("guild", guild.ID).Error("Failed adding autorole role")
+		} else {
+			if client != nil {
+				client.Cmd("SET", KeyProcessing(guild.ID), len(membersToGiveRole)-i)
+			}
+			logrus.WithField("guild", guild.ID).WithField("g_name", guild.Name).WithField("user", userID).Info("Gave autorole role")
+		}
+	}
+}
+
+func saveGeneral(client *redis.Client, guildID string, config *GeneralConfig) {
+	if client == nil {
+		var err error
+		client, err = common.RedisPool.Get()
+		if err != nil {
+			logrus.WithError(err).Error("Failed retrieving redis connection")
+			return
 		}
 
-		newRoles := make([]string, len(member.Roles)+1)
-		copy(newRoles, member.Roles)
-		newRoles[len(newRoles)-1] = config.Role
-		err = common.BotSession.GuildMemberEdit(guild.ID, userID, newRoles)
-		if err != nil {
-			logrus.WithError(err).Error("Failed adding autorole role")
-		}
-		if client != nil {
-			client.Cmd("SET", KeyProcessing(guild.ID), len(membersToGiveRole)-i)
-		}
-		logrus.WithField("guild", guild.ID).WithField("g_name", guild.Name).WithField("user", userID).Info("Gave autorole role")
+		common.RedisPool.Put(client)
+	}
+
+	err := common.SetRedisJson(client, KeyGeneral(guildID), config)
+	if err != nil {
+		logrus.WithError(err).Error("Failed saving autorole config")
 	}
 }
