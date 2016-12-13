@@ -152,12 +152,12 @@ func runDurationChecker() {
 	ticker := time.NewTicker(time.Minute)
 	state := common.BotSession.State
 
-OUTER:
 	for {
 		<-ticker.C
 
 		state.RLock()
 
+	OUTER:
 		for _, g := range state.Guilds {
 			if g.Unavailable {
 				continue
