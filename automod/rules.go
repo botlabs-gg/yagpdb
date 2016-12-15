@@ -4,6 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 	"net/url"
 	"regexp"
 	"strings"
@@ -147,8 +148,47 @@ type InviteRule struct {
 var inviteRegex = regexp.MustCompile(`discord\.gg(?:\/#)?(?:\/invite)?\/([a-zA-Z0-9-]+)`)
 
 func (i *InviteRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
-	containsInvite := inviteRegex.MatchString(evt.ContentWithMentionsReplaced())
-	if !containsInvite {
+	matches := inviteRegex.FindAllStringSubmatch(evt.ContentWithMentionsReplaced(), -1)
+	if len(matches) < 1 {
+		return
+	}
+
+	checked := make([]string, 0)
+
+	badInvite := false
+
+OUTER:
+	for _, v := range matches {
+		if len(v) < 2 {
+			continue
+		}
+		id := v[1]
+
+		// only check each link once
+		for _, c := range checked {
+			if id == c {
+				continue OUTER
+			}
+		}
+
+		checked = append(checked, id)
+
+		invite, err := common.BotSession.Invite(id)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
+
+		// Ignore invites to this server
+		if invite.Guild.ID == channel.GuildID {
+			continue
+		}
+
+		badInvite = true
+		break
+	}
+
+	if !badInvite {
 		return
 	}
 
@@ -159,7 +199,7 @@ func (i *InviteRule) Check(evt *discordgo.Message, channel *discordgo.Channel, c
 		return
 	}
 
-	msg = "Sending server invites."
+	msg = "Sending server invites to another server."
 	return
 }
 

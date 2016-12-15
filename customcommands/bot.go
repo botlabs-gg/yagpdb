@@ -231,7 +231,7 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {
 	case CommandTriggerStartsWith:
 		startsWith = trigger
 	case CommandTriggerCommand:
-		startsWith = globalPrefix + trigger
+		startsWith = globalPrefix + trigger + " "
 
 	// Special trigger types
 	case CommandTriggerContains:
