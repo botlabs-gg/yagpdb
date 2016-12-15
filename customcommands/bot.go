@@ -97,7 +97,13 @@ func ExecuteCustomCommand(cmd *CustomCommand, client *redis.Client, s *discordgo
 	execUser, execBot := execCmdFuncs(3, false, client, s, m)
 
 	//out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": execUser, "execBot": execBot})
-	out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": (execUser), "execBot": (execBot)})
+	out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{
+		"exec":    execUser,
+		"execBot": execBot,
+		"shuffle": shuffle,
+		"seq":     sequence,
+		"joinStr": joinStrings,
+	})
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
