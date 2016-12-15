@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"unicode/utf8"
@@ -62,6 +63,9 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 
 	out, err := ExecuteCustomCommand(matched, client, s, evt)
 	if err != nil {
+		if out == "" {
+			out += err.Error()
+		}
 		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop"
 	}
@@ -93,12 +97,7 @@ func ExecuteCustomCommand(cmd *CustomCommand, client *redis.Client, s *discordgo
 	execUser, execBot := execCmdFuncs(3, false, client, s, m)
 
 	//out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": execUser, "execBot": execBot})
-	out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": execUser, "execBot": execBot})
-	if err != nil {
-		if out == "" {
-			out = "Error executing custom command"
-		}
-	}
+	out, err := common.ParseExecuteTemplateFM(cmd.Response, data, template.FuncMap{"exec": (execUser), "execBot": (execBot)})
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
@@ -107,19 +106,19 @@ func ExecuteCustomCommand(cmd *CustomCommand, client *redis.Client, s *discordgo
 	return out, err
 }
 
-type cmdExecFunc func(cmd string, args ...string) (string, error)
+type cmdExecFunc func(cmd string, args ...interface{}) (string, error)
 
 // Returns 2 functions to execute commands in user or bot context with limited about of commands executed
 func execCmdFuncs(maxExec int, dryRun bool, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
-	execUser := func(cmd string, args ...string) (string, error) {
+	execUser := func(cmd string, args ...interface{}) (string, error) {
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
 		maxExec -= 1
-		return execCmd(dryRun, client, s.State.User.User, s, m, cmd, args...)
+		return execCmd(dryRun, client, m.Author, s, m, cmd, args...)
 	}
 
-	execBot := func(cmd string, args ...string) (string, error) {
+	execBot := func(cmd string, args ...interface{}) (string, error) {
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
@@ -130,14 +129,40 @@ func execCmdFuncs(maxExec int, dryRun bool, client *redis.Client, s *discordgo.S
 	return execUser, execBot
 }
 
-func execCmd(dryRun bool, client *redis.Client, ctx *discordgo.User, s *discordgo.Session, m *discordgo.MessageCreate, cmd string, args ...string) (string, error) {
+func execCmd(dryRun bool, client *redis.Client, ctx *discordgo.User, s *discordgo.Session, m *discordgo.MessageCreate, cmd string, args ...interface{}) (string, error) {
 	cmdLine := cmd
 
-	log.Info("Custom command is executing a command:", cmdLine)
-
 	for _, arg := range args {
-		cmdLine += " \"" + arg + "\""
+		switch t := arg.(type) {
+		case string:
+			cmdLine += " \"" + t + "\""
+		case int:
+			cmdLine += strconv.FormatInt(int64(t), 10)
+		case int32:
+			cmdLine += strconv.FormatInt(int64(t), 10)
+		case int64:
+			cmdLine += strconv.FormatInt(t, 10)
+		case uint:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint8:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint16:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint32:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint64:
+			cmdLine += strconv.FormatUint(t, 10)
+		case float32:
+			cmdLine += strconv.FormatFloat(float64(t), 'E', -1, 32)
+		case float64:
+			cmdLine += strconv.FormatFloat(t, 'E', -1, 64)
+		default:
+			return "", errors.New("Unknown type in exec, contact bot owner")
+		}
+		cmdLine += " "
 	}
+
+	log.Info("Custom command is executing a command:", cmdLine)
 
 	var matchedCmd commandsystem.CommandHandler
 	for _, command := range commands.CommandSystem.Commands {

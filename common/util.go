@@ -143,7 +143,7 @@ func ParseExecuteTemplateFM(tmplSource string, data interface{}, f template.Func
 func LogGetChannel(cID string) *discordgo.Channel {
 	c, err := BotSession.State.Channel(cID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving channel from state")
+		log.WithError(err).WithField("channel", cID).Error("Failed retrieving channel from state")
 	}
 	return c
 }

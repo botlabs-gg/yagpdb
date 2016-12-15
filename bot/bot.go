@@ -5,7 +5,7 @@ package bot
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/reststate"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"sync"
 	"time"
@@ -63,7 +63,7 @@ func Run() {
 		}
 	}
 
-	reststate.StartServer()
+	botrest.StartServer()
 }
 
 func Stop(wg *sync.WaitGroup) {

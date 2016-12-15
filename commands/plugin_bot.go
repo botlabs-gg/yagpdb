@@ -511,6 +511,28 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			state.RUnlock()
 			return out + "\n```", nil
 		},
+	}, &CustomCommand{
+		Cooldown:             10,
+		Category:             CategoryFun,
+		HideFromCommandsPage: true,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "dumpdm",
+			Description:  "dudidadudida",
+			HideFromHelp: true,
+		},
+		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			if m.Author.ID != common.Conf.Owner {
+				return "Only bot owner can run this", nil
+			}
+			state := common.BotSession.State
+			state.RLock()
+			defer state.RUnlock()
+			out := "Dm channels"
+			for _, v := range state.PrivateChannels {
+				out += fmt.Sprintf("\n%s - (%s)", v.Recipient.Username, v.ID)
+			}
+			return out, nil
+		},
 	},
 	&CustomCommand{
 		Cooldown:             2,

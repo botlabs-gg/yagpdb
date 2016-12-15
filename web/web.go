@@ -5,6 +5,7 @@ import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
 	"github.com/golang/crypto/acme/autocert"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
@@ -58,6 +59,9 @@ func Run() {
 
 	InitOauth()
 	mux := setupRoutes()
+
+	// Start monitoring the bot
+	go botrest.RunPinger()
 
 	log.Info("Running webservers")
 	runServers(mux)

@@ -7,7 +7,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/reststate"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/miolini/datacounter"
 	"goji.io"
@@ -354,7 +354,7 @@ func RequireFullGuildMW(inner goji.Handler) goji.Handler {
 
 func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 	return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		member, err := reststate.GetBotMember(pat.Param(ctx, "server"))
+		member, err := botrest.GetBotMember(pat.Param(ctx, "server"))
 		if err != nil {
 			log.WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
 			member, err = common.BotSession.GuildMember(pat.Param(ctx, "server"), common.Conf.BotID)
