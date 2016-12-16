@@ -278,7 +278,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "Error retrieving config.", err
 			}
 			if !config.ReportEnabled {
-				return "Mute command disabled.", nil
+				return "Report command disabled.", nil
 			}
 
 			logLink := ""
@@ -296,7 +296,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				channelID = parsed.Guild.ID
 			}
 
-			reportBody := fmt.Sprintf("<@%s> Reported <@%s> For %s\nLast 100 messages from channel: <%s>", m.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Args[1].Str(), logLink)
+			reportBody := fmt.Sprintf("<@%s> Reported <@%s> in <#%s> For `%s`\nLast 100 messages from channel: <%s>", m.Author.ID, parsed.Args[0].DiscordUser().ID, m.ChannelID, parsed.Args[1].Str(), logLink)
 
 			_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
 			if err != nil {

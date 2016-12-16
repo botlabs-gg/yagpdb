@@ -5,6 +5,11 @@
     <div class="col-lg-12">
         <h1 class="page-header">Welcome to YAGPDB.xyz!</h1>
         
+        <h3>Version 0.17.4- <small>17th Dec 2016</small></h3>
+        <ul>
+            <li>Reports shows originating channel</li>
+        </ul>
+
         <h3>Version 0.17-0.17.4 <small>17th Dec 2016</small></h3>
         <p>Contains a series of small improvements and bugfixes, will be more of these as i try to get it into beta</p>
         <ul>
@@ -14,28 +19,6 @@
             <li>Automod invite rule will ignore invites to the current server</li>
             <li>New modlog style</li>
         </ul>
-
-        <h3>Version 0.17 <small>5th Dec 2016</small></h3>
-        <p>Beta soon... next update maybe?</p>
-        <ul>
-            <li><b>Added soundboard!</b> Upload sounds to yagpdb and play them through a command in a voice channel!</li>
-            <li><b>Added reminders!</b> you can set up reminders and the bot will remind you of them later (reminders may be off by up to 1 minute)</li>
-            <li><b>Added <code>Whois/whoami</code> command</b> with logged usernames and nicknames (Servers can opt out of this)</li>
-            <li><b>Added modlog search command</b> (<code>sml (SearchModLog)</code>) to search the modlog, this is actually just a channel history search so work with any kind of modlogs, be it handwritten or bot controlled.</li>
-            <li><b>EMBEDS</b> I've turned a couple things into embeds like reddit, status, stats, and some other things.</li>
-            <li>Added <code>throw</code> command cause throwing things at people is fun</li>
-            <li>Added <code>roll</code> command</li>
-            <li>Added channel log management, view all logs created on the server and delete them</li>
-            <li>You can now set the reason argument in moderation commands to be optional if you want!</li>
-            <li>Custom commands now has access to arguments</li>
-            <li>Custom commands can now execute up to 3 (non-custom)commands in their response (in the user that triggered it context)</li>
-            <li>Improvements to public pages</li>
-            <li>Show warning in the control panel when bot dosen't have enough permissions</li>
-            <li>Start migrating configs to sql+application cache</li>
-            <li>Probably some stuff i forgot...</li>
-        </ul>
-
-        <p>Next there wil be uh... something... /shrug (Maybe giveaway assistant?)</p>
         
         <h3>Information</h3>
 
@@ -62,32 +45,62 @@
 
         <h2>Older changelogs</h2>
 
-        <div class="panel panel-default">
-            <div class="panel-heading" role="tab" id="heading9">
-                <h4 class="panel-title">
-                    <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse9" aria-expanded=false aria-controls="collapse9">
-                        Version 0.16 <small>6th Nov 2016</small>
-                    </a>
-                </h4>
-            </div>
-            <div id="collapse9" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading9">
-                <div class="panel-body">
-                    Huge update
-                    <ul>
-                        <li><b>Added HTTPS via lets encrypt!</b></li>
-                        <li><b>New plugin: Automoderator</b>(beta), this plugin lets you define certain rules and auto punishment for breaking those rules</li>
-                        <li><b>New plugin: AutoRole</b>(beta), this plugin can assign people a role on joins, and also using the command (if they already had the role it will get removed): <code>role &lt;role&gt;</code></li>
-                        <li><b>New Plugin: Logs</b>(beta), use <code>logs (number of messages)</code> to save the n last messages (similar to how hastebin worked but locally hosted on yagpdb instead)</li>
-                        <li><b>Updated moderation plugin,</b> You can now specify a mute role, and give people the role with the commands <code>mute</code> and <code>unmute</code></li>
-                        <li>New/changed roles and channels now instantly shows up in the control panel!</li>
-                        <li>More tweaks to the website!</li>
-                        <li>Fixed a bug where streamer plugin would fail to remove streaming status when the status has them not playing any game</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
 
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="heading10">
+                    <h4 class="panel-title">
+                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse10" aria-expanded=false aria-controls="collapse10">
+                            Version 0.17 <small>5th Dec 2016</small>
+                        </a>
+                    </h4>
+                </div>
+                <div id="collapse10" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading10">
+                    <div class="panel-body">
+                        <ul>
+                            <li><b>Added soundboard!</b> Upload sounds to yagpdb and play them through a command in a voice channel!</li>
+                            <li><b>Added reminders!</b> you can set up reminders and the bot will remind you of them later (reminders may be off by up to 1 minute)</li>
+                            <li><b>Added <code>Whois/whoami</code> command</b> with logged usernames and nicknames (Servers can opt out of this)</li>
+                            <li><b>Added modlog search command</b> (<code>sml (SearchModLog)</code>) to search the modlog, this is actually just a channel history search so work with any kind of modlogs, be it handwritten or bot controlled.</li>
+                            <li><b>EMBEDS</b> I've turned a couple things into embeds like reddit, status, stats, and some other things.</li>
+                            <li>Added <code>throw</code> command cause throwing things at people is fun</li>
+                            <li>Added <code>roll</code> command</li>
+                            <li>Added channel log management, view all logs created on the server and delete them</li>
+                            <li>You can now set the reason argument in moderation commands to be optional if you want!</li>
+                            <li>Custom commands now has access to arguments</li>
+                            <li>Custom commands can now execute up to 3 (non-custom)commands in their response (in the user that triggered it context)</li>
+                            <li>Improvements to public pages</li>
+                            <li>Show warning in the control panel when bot dosen't have enough permissions</li>
+                            <li>Start migrating configs to sql+application cache</li>
+                            <li>Probably some stuff i forgot...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="heading9">
+                    <h4 class="panel-title">
+                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse9" aria-expanded=false aria-controls="collapse9">
+                            Version 0.16 <small>6th Nov 2016</small>
+                        </a>
+                    </h4>
+                </div>
+                <div id="collapse9" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading9">
+                    <div class="panel-body">
+                        Huge update
+                        <ul>
+                            <li><b>Added HTTPS via lets encrypt!</b></li>
+                            <li><b>New plugin: Automoderator</b>(beta), this plugin lets you define certain rules and auto punishment for breaking those rules</li>
+                            <li><b>New plugin: AutoRole</b>(beta), this plugin can assign people a role on joins, and also using the command (if they already had the role it will get removed): <code>role &lt;role&gt;</code></li>
+                            <li><b>New Plugin: Logs</b>(beta), use <code>logs (number of messages)</code> to save the n last messages (similar to how hastebin worked but locally hosted on yagpdb instead)</li>
+                            <li><b>Updated moderation plugin,</b> You can now specify a mute role, and give people the role with the commands <code>mute</code> and <code>unmute</code></li>
+                            <li>New/changed roles and channels now instantly shows up in the control panel!</li>
+                            <li>More tweaks to the website!</li>
+                            <li>Fixed a bug where streamer plugin would fail to remove streaming status when the status has them not playing any game</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <div class="panel panel-default">
                 <div class="panel-heading" role="tab" id="heading8">
                     <h4 class="panel-title">
