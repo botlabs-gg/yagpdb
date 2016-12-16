@@ -139,24 +139,28 @@ func CreateModlogEmbed(author *discordgo.User, action string, target *discordgo.
 			Name:    fmt.Sprintf("%s#%s (ID %s)", author.Username, author.Discriminator, author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		},
-		Description: reason,
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("%s %s#%s (ID %s)", action, target.Username, target.Discriminator, target.ID),
+		Description: fmt.Sprintf("**%s %s**#%s *(ID %s)*\n:notepad_spiral:**Reason:** %s", action, target.Username, target.Discriminator, target.ID, reason),
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
 		},
 	}
 
 	if strings.HasPrefix(action, "Muted") {
 		embed.Color = 0x57728e
-		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hotwomen.png"
+		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hotwomen.png"
+		embed.Description = ":mute:" + embed.Description
 	} else if strings.HasPrefix(action, "Unmuted") || action == "Unbanned" {
-		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/spugahtt.png"
+		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/spugahtt.png"
+		embed.Description = ":speaker:" + embed.Description
 		embed.Color = 0x62c65f
 	} else if strings.HasPrefix(action, "Banned") {
-		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hummur.png"
+		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hummur.png"
+		embed.Description = ":hammer:" + embed.Description
 		embed.Color = 0xd64848
 	} else {
 		// kick
-		embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/whodis.png"
+		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/whodis.png"
+		embed.Description = ":boot:" + embed.Description
 		embed.Color = 0xf2a013
 	}
 
