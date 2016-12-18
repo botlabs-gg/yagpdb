@@ -10,8 +10,10 @@ import (
 )
 
 const (
-	VERSION = "0.17.4 Funky"
-	Testing = false // Disables stuff like command cooldowns
+	VERSIONNUMBER = "0.17.5"
+	VERSION       = VERSIONNUMBER + " git Funky"
+
+	Testing = true // Disables stuff like command cooldowns
 )
 
 var (
@@ -44,6 +46,10 @@ type Plugin interface {
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
+
+	if Testing {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
 
 	config, err := LoadConfig()
 	if err != nil {

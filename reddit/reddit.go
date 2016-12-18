@@ -11,16 +11,21 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"strconv"
 	"strings"
+	"sync"
 )
 
-type Plugin struct{}
+type Plugin struct {
+	stopFeedChan chan *sync.WaitGroup
+}
 
 func (p *Plugin) Name() string {
 	return "Reddit"
 }
 
 func RegisterPlugin() {
-	plugin := &Plugin{}
+	plugin := &Plugin{
+		stopFeedChan: make(chan *sync.WaitGroup),
+	}
 	feeds.RegisterPlugin(plugin)
 	web.RegisterPlugin(plugin)
 	bot.RegisterPlugin(plugin)

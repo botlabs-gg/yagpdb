@@ -1,11 +1,11 @@
 #!/bin/bash
 
 
-export YAGPDB_OWNER="Insert owner id here" #owner has access to all control panels
+export YAGPDB_OWNER="Insert owner id here"
 export YAGPDB_BOTID="Insert bot ID here"
-export YAGPDB_CLIENTID="Insert client id here" # Needed for oauth
-export YAGPDB_CLIENTSECRET="Insert client secret here" # Needed for oauth
-export YAGPDB_BOTTOKEN="Bot token_here" # "Bot " needs to be before the actual token 
+export YAGPDB_CLIENTID="Insert client id here"
+export YAGPDB_CLIENTSECRET="Insert client secret here"
+export YAGPDB_BOTTOKEN="Bot token_here"
 
 #Used for the website, required for https
 export YAGPDB_HOST="somehost.com"   
@@ -15,6 +15,14 @@ export YAGPDB_PQUSERNAME="postgres username"
 export YAGPDB_PQPASSWORD="postgres password"
 export YAGPDB_REDIS="redis address"
 
-#Plugins, not required
+#Plugins below, not required
+
+#Aylien
 export YAGPDB_AYLIENAPPID="aylien app id here"
 export YAGPDB_AYLIENAPPKEY="aylien app key here"
+
+#Reddit
+export YAGPDB_REDDIT_CLIENTID="Reddit application clientid here"
+export YAGPDB_REDDIT_CLIENTSECRET="Reddit application client secret here"
+export YAGPDB_REDDIT_REDIRECT="Reddit redirect uri here"
+export YAGPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (duration=permanent)"

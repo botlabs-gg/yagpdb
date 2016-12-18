@@ -160,6 +160,7 @@ func runAction(str string) {
 	}
 }
 
+// Gracefull shutdown
 func listenSignal() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)
@@ -167,14 +168,26 @@ func listenSignal() {
 	<-c
 	log.Info("SHUTTING DOWN...")
 
+	shouldWait := false
+	var wg sync.WaitGroup
+
 	if flagRunBot || flagRunEverything {
 
-		var wg sync.WaitGroup
 		wg.Add(2)
 
 		go bot.Stop(&wg)
 		go common.StopSheduledEvents(&wg)
 
+		shouldWait = true
+	}
+
+	if flagRunFeeds || flagRunEverything {
+		feeds.Stop(&wg)
+		shouldWait = true
+	}
+
+	if shouldWait {
+		log.Info("Waiting for things to shut down...")
 		wg.Wait()
 	}
 
