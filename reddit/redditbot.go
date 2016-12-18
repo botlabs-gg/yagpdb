@@ -41,8 +41,8 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) runBot() {
-	redditClient := setupClient()
 
+	redditClient := setupClient()
 	redisClient := common.MustGetRedisClient()
 
 	storedLastIds := getLastIds(redisClient)
@@ -61,21 +61,19 @@ func (p *Plugin) runBot() {
 		case <-ticker.C:
 		}
 
-		logrus.Debug("Ticking reddit")
-
 		links, err := fetcher.GetNewPosts()
 		if err != nil {
 			logrus.WithError(err).Error("Error fetchind new links")
 			continue
 		}
 		if len(links) < 1 {
-			logrus.Info("No new posts")
 			continue
 		}
 
 		for _, v := range links {
-			since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-			logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+			// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
+			// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+			p.handlePost(v, redisClient)
 		}
 	}
 }
@@ -92,9 +90,8 @@ func getLastIds(client *redis.Client) []string {
 
 func (p *Plugin) handlePost(post *reddit.Link, redisClient *redis.Client) error {
 
-	createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
-
-	logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
+	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
+	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
 	config, err := GetConfig(redisClient, "global_subreddit_watch:"+strings.ToLower(post.Subreddit))
 	if err != nil {

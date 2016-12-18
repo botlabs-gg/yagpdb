@@ -8,7 +8,7 @@ import (
 )
 
 type PostFetcher struct {
-	// Id buffer is a number of last posts, this is needed
+	// postBuffer is a number of last posts, this is needed
 	// because when you do `before` a post that's deleted reddit will not show anything
 	// no error either (really why couldnt there be an error atleast, i mean comeon)
 	// We initially try to load it from redis from a previous session
@@ -45,7 +45,6 @@ func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 
 	if len(p.postBuffer) > 1+p.healthyIDOffset {
 		before = p.postBuffer[1+p.healthyIDOffset]
-		logrus.Debug("Before is", before, ", offset: ", p.healthyIDOffset)
 	} else if len(p.postBuffer) > 1 {
 		// ran out of id's, throw an error because this we can't recover from and we will lose posts
 		// and throw away the idbuffer
@@ -54,13 +53,13 @@ func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 		p.postBuffer = make([]string, 0)
 	}
 
-	resp, err := p.redditClient.GetNewLinks("jonas747", "t3_"+before, "")
+	resp, err := p.redditClient.GetNewLinks("all", "t3_"+before, "")
 	if err != nil {
 		return nil, err
 	}
 
 	if len(resp) < 1 {
-		logrus.Info("No posts in response, incementing id offset")
+		logrus.Warn("No posts in response, incementing id offset")
 		p.healthyIDOffset++
 		return nil, nil
 	}
@@ -110,7 +109,6 @@ OUTER2:
 	// Resize it if it exceeds the limit
 	if len(newBuffer) > p.MaxPostBufferSize {
 		newBuffer = newBuffer[:p.MaxPostBufferSize]
-		logrus.Println("Cutting off")
 	}
 	p.postBuffer = newBuffer
 
