@@ -55,7 +55,7 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
-	newScore, err := GiveRep(client, evt.Author, who, channel.GuildID)
+	newScore, err := ModifyRep(client, 1, evt.Author, who, channel.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed giving rep")
 		return
@@ -65,14 +65,14 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	s.ChannelMessageSend(evt.ChannelID, msg)
 }
 
-func GiveRep(client *redis.Client, sender, target *discordgo.User, guildID string) (int, error) {
+func ModifyRep(client *redis.Client, amount int, sender, target *discordgo.User, guildID string) (int, error) {
 	settings, err := GetFullSettings(client, guildID)
 	if err != nil {
 		return 0, err
 	}
 
 	// Increase score
-	newScoref, err := client.Cmd("ZINCRBY", "reputation_users:"+guildID, 1, target.ID).Float64()
+	newScoref, err := client.Cmd("ZINCRBY", "reputation_users:"+guildID, amount, target.ID).Float64()
 	if err != nil {
 		return 0, err
 	}
@@ -134,12 +134,51 @@ var cmds = []commandsystem.CommandHandler{
 				return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
 			}
 
-			newScore, err := GiveRep(client, m.Author, target, channel.GuildID)
+			newScore, err := ModifyRep(client, 1, m.Author, target, channel.GuildID)
 			if err != nil {
 				return "Failed giving rep >:I", err
 			}
 
 			msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", target.Username, newScore)
+			return msg, nil
+		},
+	},
+	&commands.CustomCommand{
+		Key:      "reputation_enabled:",
+		Category: commands.CategoryFun,
+		SimpleCommand: &commandsystem.SimpleCommand{
+			Name:         "RemoveRep",
+			Aliases:      []string{"-", "-rep"},
+			Description:  "Takes away 1 rep from someone",
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgumentDef{
+				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
+			},
+		},
+		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
+			target := parsed.Args[0].DiscordUser()
+
+			if target.ID == m.Author.ID {
+				return "Can't take away your own rep... **stopid**", nil
+			}
+
+			channel := parsed.Channel
+
+			timeLeft, err := CheckCooldown(client, channel.GuildID, m.Author.ID)
+			if err != nil {
+				return "Failed checking cooldown", err
+			}
+
+			if timeLeft > 0 {
+				return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
+			}
+
+			newScore, err := ModifyRep(client, 1, m.Author, target, channel.GuildID)
+			if err != nil {
+				return "Failed removing rep >:I", err
+			}
+
+			msg := fmt.Sprintf("Removed 1 rep from **%s** *(%d rep total)*", target.Username, newScore)
 			return msg, nil
 		},
 	},
