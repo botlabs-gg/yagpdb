@@ -4,7 +4,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -13,14 +12,14 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reputation.html"))
 
-	web.CPMux.HandleC(pat.Get("/reputation"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
-	web.CPMux.HandleC(pat.Get("/reputation/"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
-	web.CPMux.HandleC(pat.Post("/reputation"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
-	web.CPMux.HandleC(pat.Post("/reputation/"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
+	web.CPMux.Handle(pat.Get("/reputation"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
+	web.CPMux.Handle(pat.Get("/reputation/"), web.RenderHandler(HandleGetReputation, "cp_reputation"))
+	web.CPMux.Handle(pat.Post("/reputation"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
+	web.CPMux.Handle(pat.Post("/reputation/"), web.RenderHandler(HandlePostReputation, "cp_reputation"))
 }
 
-func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
+	client, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	settings, err := GetFullSettings(client, activeGuild.ID)
 	if !web.CheckErr(templateData, err, "Failed retrieving settings", logrus.Error) {
@@ -29,8 +28,8 @@ func HandleGetReputation(ctx context.Context, w http.ResponseWriter, r *http.Req
 	return templateData
 }
 
-func HandlePostReputation(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+func HandlePostReputation(w http.ResponseWriter, r *http.Request) interface{} {
+	client, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reputation/"
 
 	currentSettings, err := GetFullSettings(client, activeGuild.ID)

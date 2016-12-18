@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"net/http"
 	"net/http/pprof"
 	"strings"
@@ -16,11 +15,11 @@ var serverAddr = ":5002"
 
 func StartServer() {
 	muxer := goji.NewMux()
-	muxer.UseC(dropNonLocal)
+	muxer.Use(dropNonLocal)
 
-	muxer.HandleFuncC(pat.Get("/:guild/guild"), HandleGuild)
-	muxer.HandleFuncC(pat.Get("/:guild/botmember"), HandleBotMember)
-	muxer.HandleFuncC(pat.Get("/ping"), HandlePing)
+	muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
+	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
+	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
 	// Debug stuff
 	muxer.HandleFunc(pat.Get("/debug/pprof/*"), pprof.Index)
@@ -50,20 +49,19 @@ func ServerError(w http.ResponseWriter, r *http.Request, err error) bool {
 	return true
 }
 
-func dropNonLocal(inner goji.Handler) goji.Handler {
-	return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func dropNonLocal(inner http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Split(r.RemoteAddr, ":")[0] != "127.0.0.1" {
 			logrus.Info("Dropped non local connection", r.RemoteAddr)
 			return
 		}
 
-		inner.ServeHTTPC(ctx, w, r)
+		inner.ServeHTTP(w, r)
 	})
-
 }
 
-func HandleGuild(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(ctx, "guild")
+func HandleGuild(w http.ResponseWriter, r *http.Request) {
+	gId := pat.Param(r, "guild")
 
 	guild, err := common.BotSession.State.Guild(gId)
 	if ServerError(w, r, err) {
@@ -78,8 +76,8 @@ func HandleGuild(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ServeJson(w, r, gCopy)
 }
 
-func HandleBotMember(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(ctx, "guild")
+func HandleBotMember(w http.ResponseWriter, r *http.Request) {
+	gId := pat.Param(r, "guild")
 
 	member, err := common.BotSession.State.Member(gId, common.BotSession.State.User.ID)
 	if ServerError(w, r, err) {
@@ -89,6 +87,6 @@ func HandleBotMember(ctx context.Context, w http.ResponseWriter, r *http.Request
 	ServeJson(w, r, member)
 }
 
-func HandlePing(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandlePing(w http.ResponseWriter, r *http.Request) {
 	ServeJson(w, r, "pong")
 }

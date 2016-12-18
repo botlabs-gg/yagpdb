@@ -1,13 +1,13 @@
 package reddit
 
 import (
+	"context"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -30,29 +30,30 @@ func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reddit.html"))
 
 	redditMux := goji.SubMux()
-	web.CPMux.HandleC(pat.New("/reddit/*"), redditMux)
-	web.CPMux.HandleC(pat.New("/reddit"), redditMux)
+	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
+	web.CPMux.Handle(pat.New("/reddit"), redditMux)
 
 	// Alll handlers here require guild channels present
-	redditMux.UseC(web.RequireGuildChannelsMiddleware)
-	redditMux.UseC(web.RequireFullGuildMW)
-	redditMux.UseC(web.RequireBotMemberMW)
-	redditMux.UseC(web.RequirePermMW(discordgo.PermissionEmbedLinks))
-	redditMux.UseC(baseData)
+	redditMux.Use(web.RequireGuildChannelsMiddleware)
+	redditMux.Use(web.RequireFullGuildMW)
+	redditMux.Use(web.RequireBotMemberMW)
+	redditMux.Use(web.RequirePermMW(discordgo.PermissionEmbedLinks))
+	redditMux.Use(baseData)
 
-	redditMux.HandleC(pat.Get("/"), web.RenderHandler(HandleReddit, "cp_reddit"))
-	redditMux.HandleC(pat.Get(""), web.RenderHandler(HandleReddit, "cp_reddit"))
+	redditMux.Handle(pat.Get("/"), web.RenderHandler(HandleReddit, "cp_reddit"))
+	redditMux.Handle(pat.Get(""), web.RenderHandler(HandleReddit, "cp_reddit"))
 
 	// If only html forms allowed patch and delete.. if only
-	redditMux.HandleC(pat.Post(""), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
-	redditMux.HandleC(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
-	redditMux.HandleC(pat.Post("/:item/update"), web.FormParserMW(web.RenderHandler(HandleModify, "cp_reddit"), Form{}))
-	redditMux.HandleC(pat.Post("/:item/delete"), web.FormParserMW(web.RenderHandler(HandleRemove, "cp_reddit"), Form{}))
+	redditMux.Handle(pat.Post(""), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
+	redditMux.Handle(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
+	redditMux.Handle(pat.Post("/:item/update"), web.FormParserMW(web.RenderHandler(HandleModify, "cp_reddit"), Form{}))
+	redditMux.Handle(pat.Post("/:item/delete"), web.FormParserMW(web.RenderHandler(HandleRemove, "cp_reddit"), Form{}))
 }
 
 // Adds the current config to the context
-func baseData(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func baseData(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 		templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reddit/"
 
@@ -61,14 +62,14 @@ func baseData(inner goji.Handler) goji.Handler {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		}
 
-		inner.ServeHTTPC(context.WithValue(ctx, CurrentConfig, currentConfig), w, r)
-
+		inner.ServeHTTP(w, r.WithContext(context.WithValue(ctx, CurrentConfig, currentConfig)))
 	}
 
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
-func HandleReddit(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	_, _, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
@@ -77,7 +78,8 @@ func HandleReddit(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	return templateData
 }
 
-func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
@@ -124,7 +126,8 @@ func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) inte
 	return templateData
 }
 
-func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
@@ -168,13 +171,14 @@ func HandleModify(ctx context.Context, w http.ResponseWriter, r *http.Request) i
 	return templateData
 }
 
-func HandleRemove(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
 
-	id := pat.Param(ctx, "item")
+	id := pat.Param(r, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
 	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))

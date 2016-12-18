@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
@@ -10,9 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/miolini/datacounter"
-	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,22 +22,22 @@ import (
 )
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
-func MiscMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func MiscMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
-		inner.ServeHTTPC(ctx, w, r)
+		inner.ServeHTTP(w, r)
 	}
 
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
 // Will put a redis client in the context if available
-func RedisMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func RedisMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
 		//log.Println("redis middleware")
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r)
 			return
 		}
 
@@ -46,41 +45,45 @@ func RedisMiddleware(inner goji.Handler) goji.Handler {
 		if err != nil {
 			log.WithError(err).Error("Failed retrieving client from redis pool")
 			// Redis is unavailable, just server without then
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r)
 			return
 		}
+		defer common.RedisPool.Put(client)
 
-		inner.ServeHTTPC(context.WithValue(ctx, common.ContextKeyRedis, client), w, r)
-		common.RedisPool.Put(client)
+		ctx := context.WithValue(r.Context(), common.ContextKeyRedis, client)
+		inner.ServeHTTP(w, r.WithContext(ctx))
 	}
-	return goji.HandlerFunc(mw)
+
+	return http.HandlerFunc(mw)
 }
 
 // Fills the template data in the context with basic data such as clientid and redirects
-func BaseTemplateDataMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r)
 			return
 		}
 
 		baseData := map[string]interface{}{
-			"ClientID": common.Conf.ClientID,
-			"Host":     common.Conf.Host,
-			"Version":  common.VERSION,
+			"ClientID":   common.Conf.ClientID,
+			"Host":       common.Conf.Host,
+			"Version":    common.VERSION,
+			"BotRunning": botrest.BotIsRunning(),
 		}
-		inner.ServeHTTPC(SetContextTemplateData(ctx, baseData), w, r)
+		inner.ServeHTTP(w, r.WithContext(SetContextTemplateData(r.Context(), baseData)))
 	}
-	return goji.HandlerFunc(mw)
+
+	return http.HandlerFunc(mw)
 }
 
 // Will put a session cookie in the response if not available and discord session in the context if available
-func SessionMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func SessionMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
 		//log.Println("Session middleware")
-		var newCtx = ctx
+		ctx := r.Context()
 		defer func() {
-			inner.ServeHTTPC(newCtx, w, r)
+			inner.ServeHTTP(w, r.WithContext(ctx))
 		}()
 
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
@@ -112,16 +115,16 @@ func SessionMiddleware(inner goji.Handler) goji.Handler {
 			return
 		}
 
-		newCtx = context.WithValue(ctx, common.ContextKeyDiscordSession, session)
+		ctx = context.WithValue(ctx, common.ContextKeyDiscordSession, session)
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
 // Will not serve pages unless a session is available
 // Also validates the origin header if present
-func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		session := DiscordSessionFromContext(ctx)
+func RequireSessionMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		session := DiscordSessionFromContext(r.Context())
 		if session == nil {
 			values := url.Values{
 				"error": []string{"No session"},
@@ -139,20 +142,21 @@ func RequireSessionMiddleware(inner goji.Handler) goji.Handler {
 			}
 		}
 
-		inner.ServeHTTPC(ctx, w, r)
+		inner.ServeHTTP(w, r)
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
 // Fills the context with user and guilds if possible
-func UserInfoMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func UserInfoMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		session := DiscordSessionFromContext(ctx)
 		redisClient := RedisClientFromContext(ctx)
 
 		if session == nil || redisClient == nil {
 			// We can't find any info if a session or redis client is not avialable to just skiddadle our way out
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r)
 			return
 		}
 
@@ -163,7 +167,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			user, err = session.User("@me")
 			if err != nil {
 				log.WithError(err).Error("Failed getting user info from discord")
-				HandleLogout(ctx, w, r)
+				HandleLogout(w, r)
 				return
 			}
 
@@ -177,7 +181,7 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 			guilds, err = session.UserGuilds(100, "", "")
 			if err != nil {
 				log.WithError(err).Error("Failed getting user guilds")
-				HandleLogout(ctx, w, r)
+				HandleLogout(w, r)
 				return
 			}
 
@@ -206,14 +210,13 @@ func UserInfoMiddleware(inner goji.Handler) goji.Handler {
 		newCtx := context.WithValue(SetContextTemplateData(ctx, templateData), common.ContextKeyUser, user)
 		newCtx = context.WithValue(newCtx, common.ContextKeyGuilds, guilds)
 
-		inner.ServeHTTPC(newCtx, w, r)
+		inner.ServeHTTP(w, r.WithContext(newCtx))
 
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
 func setFullGuild(ctx context.Context, guildID string) (context.Context, error) {
-
 	fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving guild")
@@ -226,14 +229,14 @@ func setFullGuild(ctx context.Context, guildID string) (context.Context, error) 
 
 // Sets the active guild context and template data
 // It will only attempt to fetch full guild if not logged in
-func ActiveServerMW(inner goji.Handler) goji.Handler {
+func ActiveServerMW(inner http.Handler) http.Handler {
 
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	mw := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r)
 		}()
-
-		guildID := pat.Param(ctx, "server")
+		ctx := r.Context()
+		guildID := pat.Param(r, "server")
 
 		// Validate the id
 		if _, err := strconv.ParseInt(guildID, 10, 64); err != nil {
@@ -248,6 +251,7 @@ func ActiveServerMW(inner goji.Handler) goji.Handler {
 			if err != nil {
 				log.WithError(err).Error("Failed setting full guild")
 			}
+			r = r.WithContext(ctx)
 			log.Info("No guilds, set full guild instead of userguild")
 			return
 		}
@@ -266,6 +270,7 @@ func ActiveServerMW(inner goji.Handler) goji.Handler {
 			if err != nil {
 				log.WithError(err).Error("Failed setting full guild")
 			}
+			r = r.WithContext(ctx)
 			log.Info("Userguild not found")
 			return
 		}
@@ -278,36 +283,38 @@ func ActiveServerMW(inner goji.Handler) goji.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
 		isAdmin := IsAdminCtx(ctx)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild, "IsAdmin": isAdmin})
+		r = r.WithContext(ctx)
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
-func RequireActiveServer(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if v := ctx.Value(common.ContextKeyCurrentGuild); v == nil {
+func RequireActiveServer(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		if v := r.Context().Value(common.ContextKeyCurrentGuild); v == nil {
 			http.Redirect(w, r, "/?err=no_active_guild", http.StatusTemporaryRedirect)
 			return
 		}
 
-		inner.ServeHTTPC(ctx, w, r)
+		inner.ServeHTTP(w, r)
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
-func RequireServerAdminMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		if !IsAdminCtx(ctx) {
+func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		if !IsAdminCtx(r.Context()) {
 			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
 			return
 		}
 
-		inner.ServeHTTPC(ctx, w, r)
+		inner.ServeHTTP(w, r)
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
-func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 		channels, err := common.GetGuildChannels(RedisClientFromContext(ctx), guild.ID)
@@ -321,18 +328,19 @@ func RequireGuildChannelsMiddleware(inner goji.Handler) goji.Handler {
 
 		newCtx := context.WithValue(ctx, common.ContextKeyGuildChannels, channels)
 
-		inner.ServeHTTPC(newCtx, w, r)
+		inner.ServeHTTP(w, r.WithContext(newCtx))
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
-func RequireFullGuildMW(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func RequireFullGuildMW(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 		if guild.OwnerID != "" {
 			// Was already full. so this is not needed
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r)
 			return
 		}
 
@@ -347,17 +355,17 @@ func RequireFullGuildMW(inner goji.Handler) goji.Handler {
 		guild.OwnerID = fullGuild.OwnerID
 		guild.Roles = fullGuild.Roles
 
-		inner.ServeHTTPC(ctx, w, r)
+		inner.ServeHTTP(w, r)
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
-func RequireBotMemberMW(inner goji.Handler) goji.Handler {
-	return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		member, err := botrest.GetBotMember(pat.Param(ctx, "server"))
+func RequireBotMemberMW(inner http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		member, err := botrest.GetBotMember(pat.Param(r, "server"))
 		if err != nil {
 			log.WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
-			member, err = common.BotSession.GuildMember(pat.Param(ctx, "server"), common.Conf.BotID)
+			member, err = common.BotSession.GuildMember(pat.Param(r, "server"), common.Conf.BotID)
 			log.Println(common.Conf.BotID)
 			if err != nil {
 				log.WithError(err).Error("Failed retrieving bot member")
@@ -365,11 +373,12 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 				return
 			}
 		}
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"BotMember": member})
+
+		ctx := SetContextTemplateData(r.Context(), map[string]interface{}{"BotMember": member})
 		ctx = context.WithValue(ctx, common.ContextKeyBotMember, member)
 
 		defer func() {
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r)
 		}()
 
 		log.Println("Checking if guild is available")
@@ -410,47 +419,48 @@ func RequireBotMemberMW(inner goji.Handler) goji.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, highest)
 		ctx = context.WithValue(ctx, common.ContextKeyBotPermissions, combinedPerms)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": highest, "BotPermissions": combinedPerms})
+		r = r.WithContext(ctx)
 	})
 }
 
-type CustomHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{}
+type CustomHandlerFunc func(w http.ResponseWriter, r *http.Request) interface{}
 
 // A helper wrapper that renders a template
-func RenderHandler(inner CustomHandlerFunc, tmpl string) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
 		var out interface{}
 		if inner != nil {
-			out = inner(ctx, w, r)
+			out = inner(w, r)
 		}
 
 		if out == nil {
-			if d, ok := ctx.Value(common.ContextKeyTemplateData).(TemplateData); ok {
+			if d, ok := r.Context().Value(common.ContextKeyTemplateData).(TemplateData); ok {
 				out = d
 			}
 		}
 
 		LogIgnoreErr(Templates.ExecuteTemplate(w, tmpl, out))
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
 // A helper wrapper that json encodes the returned value
-func APIHandler(inner CustomHandlerFunc) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		out := inner(ctx, w, r)
+func APIHandler(inner CustomHandlerFunc) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		out := inner(w, r)
 		if out != nil {
 			LogIgnoreErr(json.NewEncoder(w).Encode(out))
 		}
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
 // Writes the request log into logger, returns a new middleware
-func RequestLogger(logger io.Writer) func(goji.Handler) goji.Handler {
+func RequestLogger(logger io.Writer) func(http.Handler) http.Handler {
 
-	handler := func(inner goji.Handler) goji.Handler {
+	handler := func(inner http.Handler) http.Handler {
 
-		mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		mw := func(w http.ResponseWriter, r *http.Request) {
 			started := time.Now()
 			counter := datacounter.NewResponseWriterCounter(w)
 
@@ -473,18 +483,18 @@ func RequestLogger(logger io.Writer) func(goji.Handler) goji.Handler {
 				logger.Write([]byte(out))
 			}()
 
-			inner.ServeHTTPC(ctx, counter, r)
+			inner.ServeHTTP(counter, r)
 
 		}
-		return goji.HandlerFunc(mw)
+		return http.HandlerFunc(mw)
 	}
 
 	return handler
 }
 
 // Parses a form
-func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		if strings.Contains(r.Header.Get("content-type"), "multipart/form-data") {
 			err = r.ParseMultipartForm(100000)
@@ -495,7 +505,7 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 		if err != nil {
 			panic(err)
 		}
-
+		ctx := r.Context()
 		_, guild, tmpl := GetBaseCPContextData(ctx)
 
 		typ := reflect.TypeOf(dst)
@@ -518,9 +528,9 @@ func FormParserMW(inner goji.Handler, dst interface{}) goji.Handler {
 
 		newCtx := context.WithValue(ctx, common.ContextKeyParsedForm, decoded)
 		newCtx = context.WithValue(newCtx, common.ContextKeyFormOk, ok)
-		inner.ServeHTTPC(newCtx, w, r)
+		inner.ServeHTTP(w, r.WithContext(newCtx))
 	}
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 
 }
 
@@ -530,12 +540,13 @@ type SimpleConfigSaver interface {
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
-func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler goji.Handler) goji.Handler {
-	return FormParserMW(goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) http.Handler {
+	return FormParserMW(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		client, g, templateData := GetBaseCPContextData(ctx)
 
 		if extraHandler != nil {
-			defer extraHandler.ServeHTTPC(ctx, w, r)
+			defer extraHandler.ServeHTTP(w, r)
 		}
 
 		form := ctx.Value(common.ContextKeyParsedForm).(SimpleConfigSaver)
@@ -567,17 +578,17 @@ func NewPublicError(a ...interface{}) error {
 	return &PublicError{fmt.Sprint(a...)}
 }
 
-type ControllerHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request) (TemplateData, error)
+type ControllerHandlerFunc func(w http.ResponseWriter, r *http.Request) (TemplateData, error)
 
 // Handlers can return templatedata and an erro.
 // If error is not nil and publicerror it will be added as an alert,
 // if error is not a publicerror it will render a error page
-func ControllerHandler(f ControllerHandlerFunc, templateName string) goji.Handler {
-	return RenderHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-
+func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handler {
+	return RenderHandler(func(w http.ResponseWriter, r *http.Request) interface{} {
+		ctx := r.Context()
 		guild, _ := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
-		data, err := f(ctx, w, r)
+		data, err := f(w, r)
 		if data == nil {
 			ctx, data = GetCreateTemplateData(ctx)
 		}
@@ -590,13 +601,14 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) goji.Handle
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
-func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler goji.Handler, formData interface{}, logMsg string) goji.Handler {
-	return FormParserMW(goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
+	return FormParserMW(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		_, g, templateData := GetBaseCPContextData(ctx)
 
 		if extraHandler != nil {
 			defer func() {
-				extraHandler.ServeHTTPC(ctx, w, r)
+				extraHandler.ServeHTTP(w, r)
 			}()
 		}
 
@@ -605,7 +617,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler goji.
 			return
 		}
 
-		data, err := mainHandler(ctx, w, r)
+		data, err := mainHandler(w, r)
 		if data == nil {
 			data = templateData
 		}
@@ -665,9 +677,10 @@ var stringPerms = map[int]string{
 	discordgo.PermissionManageServer:        "Manage Server",
 }
 
-func RequirePermMW(perms ...int) func(goji.Handler) goji.Handler {
-	return func(inner goji.Handler) goji.Handler {
-		return goji.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
+	return func(inner http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 			permsInterface := ctx.Value(common.ContextKeyBotPermissions)
 			currentPerms := 0
 			if permsInterface == nil {
@@ -704,7 +717,7 @@ func RequirePermMW(perms ...int) func(goji.Handler) goji.Handler {
 				tmpl.AddAlerts(SucessAlert("The bot has the following permissions used by this plugin: ", has))
 			}
 
-			inner.ServeHTTPC(ctx, w, r)
+			inner.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

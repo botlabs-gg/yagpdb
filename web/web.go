@@ -107,56 +107,56 @@ func setupRoutes() *goji.Mux {
 
 	mux := goji.NewMux()
 	RootMux = mux
-	mux.UseC(RequestLogger(requestLogger))
+	mux.Use(RequestLogger(requestLogger))
 
 	// Setup fileserver
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 
 	// General middleware
-	mux.UseC(MiscMiddleware)
-	mux.UseC(RedisMiddleware)
-	mux.UseC(BaseTemplateDataMiddleware)
-	mux.UseC(SessionMiddleware)
-	mux.UseC(UserInfoMiddleware)
+	mux.Use(MiscMiddleware)
+	mux.Use(RedisMiddleware)
+	mux.Use(BaseTemplateDataMiddleware)
+	mux.Use(SessionMiddleware)
+	mux.Use(UserInfoMiddleware)
 
 	// General handlers
-	mux.HandleC(pat.Get("/"), RenderHandler(IndexHandler, "index"))
-	mux.HandleFuncC(pat.Get("/login"), HandleLogin)
-	mux.HandleFuncC(pat.Get("/confirm_login"), HandleConfirmLogin)
-	mux.HandleFuncC(pat.Get("/logout"), HandleLogout)
+	mux.Handle(pat.Get("/"), RenderHandler(nil, "index"))
+	mux.HandleFunc(pat.Get("/login"), HandleLogin)
+	mux.HandleFunc(pat.Get("/confirm_login"), HandleConfirmLogin)
+	mux.HandleFunc(pat.Get("/logout"), HandleLogout)
 
 	// The public muxer, for public server stuff like stats and logs
 	serverPublicMux := goji.SubMux()
-	serverPublicMux.UseC(ActiveServerMW)
+	serverPublicMux.Use(ActiveServerMW)
 
-	mux.HandleC(pat.Get("/public/:server"), serverPublicMux)
-	mux.HandleC(pat.Get("/public/:server/*"), serverPublicMux)
+	mux.Handle(pat.Get("/public/:server"), serverPublicMux)
+	mux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
 	ServerPublicMux = serverPublicMux
 
 	// Control panel muxer, requires a session
 	// cpMuxer := goji.NewMux()
-	// cpMuxer.UseC(RequireSessionMiddleware)
+	// cpMuxer.Use(RequireSessionMiddleware)
 
-	// mux.HandleC(pat.Get("/cp/*"), cpMuxer)
-	// mux.HandleC(pat.Get("/cp"), cpMuxer)
-	// mux.HandleC(pat.Post("/cp/*"), cpMuxer)
-	// mux.HandleC(pat.Post("/cp"), cpMuxer)
+	// mux.Handle(pat.Get("/cp/*"), cpMuxer)
+	// mux.Handle(pat.Get("/cp"), cpMuxer)
+	// mux.Handle(pat.Post("/cp/*"), cpMuxer)
+	// mux.Handle(pat.Post("/cp"), cpMuxer)
 
 	// Server selection has it's own handler
-	mux.HandleC(pat.Get("/cp"), RenderHandler(nil, "cp_selectserver"))
-	mux.HandleC(pat.Get("/cp/"), RenderHandler(nil, "cp_selectserver"))
+	mux.Handle(pat.Get("/cp"), RenderHandler(nil, "cp_selectserver"))
+	mux.Handle(pat.Get("/cp/"), RenderHandler(nil, "cp_selectserver"))
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	serverCpMuxer := goji.SubMux()
-	serverCpMuxer.UseC(RequireSessionMiddleware)
-	serverCpMuxer.UseC(ActiveServerMW)
-	serverCpMuxer.UseC(RequireServerAdminMiddleware)
+	serverCpMuxer.Use(RequireSessionMiddleware)
+	serverCpMuxer.Use(ActiveServerMW)
+	serverCpMuxer.Use(RequireServerAdminMiddleware)
 
-	mux.HandleC(pat.New("/cp/:server"), serverCpMuxer)
-	mux.HandleC(pat.New("/cp/:server/*"), serverCpMuxer)
+	mux.Handle(pat.New("/cp/:server"), serverCpMuxer)
+	mux.Handle(pat.New("/cp/:server/*"), serverCpMuxer)
 
-	serverCpMuxer.HandleC(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
-	serverCpMuxer.HandleC(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
+	serverCpMuxer.Handle(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
+	serverCpMuxer.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	CPMux = serverCpMuxer
 
 	for _, plugin := range Plugins {

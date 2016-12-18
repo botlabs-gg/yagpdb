@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"io"
 	"mime/multipart"
@@ -23,22 +22,23 @@ func (p *Plugin) InitWeb() {
 
 	cpMux := goji.SubMux()
 
-	web.CPMux.HandleC(pat.New("/soundboard/*"), cpMux)
-	web.CPMux.HandleC(pat.New("/soundboard"), cpMux)
+	web.CPMux.Handle(pat.New("/soundboard/*"), cpMux)
+	web.CPMux.Handle(pat.New("/soundboard"), cpMux)
 
-	cpMux.UseC(web.RequireFullGuildMW)
-	cpMux.UseC(web.RequireBotMemberMW)
+	cpMux.Use(web.RequireFullGuildMW)
+	cpMux.Use(web.RequireBotMemberMW)
 
 	getHandler := web.ControllerHandler(HandleGetCP, "cp_soundboard")
 
-	cpMux.HandleC(pat.Get("/"), getHandler)
-	//cpMux.HandleC(pat.Get(""), getHandler)
-	cpMux.HandleC(pat.Post("/new"), web.ControllerPostHandler(HandleNew, getHandler, SoundboardSound{}, "Added a new sound to the soundboard"))
-	cpMux.HandleC(pat.Post("/update"), web.ControllerPostHandler(HandleUpdate, getHandler, SoundboardSound{}, "Updated a soundboard sound"))
-	cpMux.HandleC(pat.Post("/delete"), web.ControllerPostHandler(HandleDelete, getHandler, SoundboardSound{}, "Removed a sound from the soundboard"))
+	cpMux.Handle(pat.Get("/"), getHandler)
+	//cpMux.Handle(pat.Get(""), getHandler)
+	cpMux.Handle(pat.Post("/new"), web.ControllerPostHandler(HandleNew, getHandler, SoundboardSound{}, "Added a new sound to the soundboard"))
+	cpMux.Handle(pat.Post("/update"), web.ControllerPostHandler(HandleUpdate, getHandler, SoundboardSound{}, "Updated a soundboard sound"))
+	cpMux.Handle(pat.Post("/delete"), web.ControllerPostHandler(HandleDelete, getHandler, SoundboardSound{}, "Removed a sound from the soundboard"))
 }
 
-func HandleGetCP(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleGetCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	_, g, tmpl := web.GetBaseCPContextData(ctx)
 
 	var config SoundboardConfig
@@ -51,7 +51,8 @@ func HandleGetCP(ctx context.Context, w http.ResponseWriter, r *http.Request) (w
 	return tmpl, nil
 }
 
-func HandleNew(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	client, g, tmpl := web.GetBaseCPContextData(ctx)
 
 	var file multipart.File
@@ -181,7 +182,8 @@ func DownloadNewSondFile(r io.Reader, w io.Writer, limit int) (tooBig bool, err 
 	return
 }
 
-func HandleUpdate(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	client, g, tmpl := web.GetBaseCPContextData(ctx)
 	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
 	data.GuildID = common.MustParseInt(g.ID)
@@ -198,7 +200,8 @@ func HandleUpdate(ctx context.Context, w http.ResponseWriter, r *http.Request) (
 	return tmpl, err
 }
 
-func HandleDelete(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	client, g, tmpl := web.GetBaseCPContextData(ctx)
 	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
 	data.GuildID = common.MustParseInt(g.ID)

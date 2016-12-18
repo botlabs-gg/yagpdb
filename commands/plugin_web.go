@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
 	"strings"
@@ -15,14 +14,15 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/commands.html"))
 
-	web.CPMux.HandleC(pat.Get("/commands/settings"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
-	web.CPMux.HandleC(pat.Get("/commands/settings/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
-	web.CPMux.HandleC(pat.Post("/commands/settings/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostGeneral, "cp_commands")))
-	web.CPMux.HandleC(pat.Post("/commands/settings/channels"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostChannels, "cp_commands")))
+	web.CPMux.Handle(pat.Get("/commands/settings"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
+	web.CPMux.Handle(pat.Get("/commands/settings/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
+	web.CPMux.Handle(pat.Post("/commands/settings/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostGeneral, "cp_commands")))
+	web.CPMux.Handle(pat.Post("/commands/settings/channels"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostChannels, "cp_commands")))
 }
 
 // Servers the command page with current config
-func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandleCommands(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)
@@ -30,7 +30,8 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 }
 
 // Handles more general command settings (prefix)
-func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandlePostGeneral(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
@@ -52,7 +53,8 @@ func HandlePostGeneral(ctx context.Context, w http.ResponseWriter, r *http.Reque
 }
 
 // Handles the updating of global and per channel command settings
-func HandlePostChannels(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
 

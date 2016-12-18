@@ -4,7 +4,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"net/http"
 )
@@ -26,8 +25,8 @@ func InitOauth() {
 	}
 }
 
-func HandleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	client := RedisClientFromContext(ctx)
+func HandleLogin(w http.ResponseWriter, r *http.Request) {
+	client := RedisClientFromContext(r.Context())
 
 	csrfToken, err := CreateCSRFToken(client)
 	if err != nil {
@@ -39,7 +38,8 @@ func HandleLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	redisClient := ctx.Value(common.ContextKeyRedis).(*redis.Client)
 
 	state := r.FormValue("state")
@@ -75,7 +75,7 @@ func HandleConfirmLogin(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-func HandleLogout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 
 	sessionCookie, err := r.Cookie("yagpdb-session")
@@ -84,7 +84,7 @@ func HandleLogout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	}
 	session := sessionCookie.Value
 
-	redisClient := ctx.Value(common.ContextKeyRedis).(*redis.Client)
+	redisClient := r.Context().Value(common.ContextKeyRedis).(*redis.Client)
 
 	err = redisClient.Cmd("DEL", "discord_token:"+session).Err
 	if err != nil {

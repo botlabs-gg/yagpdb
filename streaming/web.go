@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"context"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -8,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
 )
@@ -23,41 +23,42 @@ func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/streaming.html"))
 
 	streamingMux := goji.SubMux()
-	web.CPMux.HandleC(pat.New("/streaming/*"), streamingMux)
-	web.CPMux.HandleC(pat.New("/streaming"), streamingMux)
+	web.CPMux.Handle(pat.New("/streaming/*"), streamingMux)
+	web.CPMux.Handle(pat.New("/streaming"), streamingMux)
 
 	// Alll handlers here require guild channels present
-	streamingMux.UseC(web.RequireGuildChannelsMiddleware)
-	streamingMux.UseC(web.RequireFullGuildMW)
-	streamingMux.UseC(web.RequireBotMemberMW)
-	streamingMux.UseC(web.RequirePermMW(discordgo.PermissionManageRoles))
-	streamingMux.UseC(baseData)
+	streamingMux.Use(web.RequireGuildChannelsMiddleware)
+	streamingMux.Use(web.RequireFullGuildMW)
+	streamingMux.Use(web.RequireBotMemberMW)
+	streamingMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
+	streamingMux.Use(baseData)
 
 	// Get just renders the template, so let the renderhandler do all the work
-	streamingMux.HandleC(pat.Get(""), web.RenderHandler(nil, "cp_streaming"))
-	streamingMux.HandleC(pat.Get("/"), web.RenderHandler(nil, "cp_streaming"))
+	streamingMux.Handle(pat.Get(""), web.RenderHandler(nil, "cp_streaming"))
+	streamingMux.Handle(pat.Get("/"), web.RenderHandler(nil, "cp_streaming"))
 
-	streamingMux.HandleC(pat.Post(""), web.FormParserMW(web.RenderHandler(HandlePostStreaming, "cp_streaming"), Config{}))
-	streamingMux.HandleC(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandlePostStreaming, "cp_streaming"), Config{}))
+	streamingMux.Handle(pat.Post(""), web.FormParserMW(web.RenderHandler(HandlePostStreaming, "cp_streaming"), Config{}))
+	streamingMux.Handle(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandlePostStreaming, "cp_streaming"), Config{}))
 }
 
 // Adds the current config to the context
-func baseData(inner goji.Handler) goji.Handler {
-	mw := func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		client, guild, tmpl := web.GetBaseCPContextData(ctx)
+func baseData(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		client, guild, tmpl := web.GetBaseCPContextData(r.Context())
 		config, err := GetConfig(client, guild.ID)
 		if web.CheckErr(tmpl, err, "Failed retrieving streaming config :'(", logrus.Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_streaming", tmpl))
 			return
 		}
 		tmpl["StreamingConfig"] = config
-		inner.ServeHTTPC(context.WithValue(ctx, ConextKeyConfig, config), w, r)
+		inner.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ConextKeyConfig, config)))
 	}
 
-	return goji.HandlerFunc(mw)
+	return http.HandlerFunc(mw)
 }
 
-func HandlePostStreaming(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, guild, tmpl := web.GetBaseCPContextData(ctx)
 	tmpl["VisibleURL"] = "/cp/" + guild.ID + "/streaming/"
 

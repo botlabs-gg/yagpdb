@@ -5,7 +5,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
 	"unicode/utf8"
@@ -16,23 +15,18 @@ func (p *Plugin) InitWeb() {
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
 
-	web.CPMux.HandleC(pat.Get("/customcommands"), getHandler)
-	web.CPMux.HandleC(pat.Get("/customcommands/"), getHandler)
+	web.CPMux.Handle(pat.Get("/customcommands"), getHandler)
+	web.CPMux.Handle(pat.Get("/customcommands/"), getHandler)
 
 	newHandler := web.ControllerPostHandler(HandleNewCommand, getHandler, CustomCommand{}, "Created a new custom command")
-	web.CPMux.HandleC(pat.Post("/customcommands"), newHandler)
-	web.CPMux.HandleC(pat.Post("/customcommands/"), newHandler)
-
-	// If only html allowed patch and delete.. if only
-	//web.CPMux.HandleC(pat.Post("/customcommands"), web.FormParserMW(web.RenderHandler(HandleNewCommand, "cp_custom_commands"), CustomCommand{}))
-	//web.CPMux.HandleC(pat.Post("/customcommands/"), web.FormParserMW(web.RenderHandler(HandleNewCommand, "cp_custom_commands"), CustomCommand{}))
-	// web.CPMux.HandleC(pat.Post("/customcommands/:cmd/update"), web.FormParserMW(web.RenderHandler(HandleUpdateCommand, "cp_custom_commands"), CustomCommand{}))
-	web.CPMux.HandleC(pat.Post("/customcommands/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
-	web.CPMux.HandleC(pat.Post("/customcommands/:cmd/delete"), web.ControllerHandler(HandleDeleteCommand, "cp_custom_commands"))
+	web.CPMux.Handle(pat.Post("/customcommands"), newHandler)
+	web.CPMux.Handle(pat.Post("/customcommands/"), newHandler)
+	web.CPMux.Handle(pat.Post("/customcommands/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
+	web.CPMux.Handle(pat.Post("/customcommands/:cmd/delete"), web.ControllerHandler(HandleDeleteCommand, "cp_custom_commands"))
 }
 
-func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	client, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	_, ok := templateData["CustomCommands"]
 	if !ok {
@@ -46,7 +40,8 @@ func HandleCommands(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	return templateData, nil
 }
 
-func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
@@ -75,7 +70,8 @@ func HandleNewCommand(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	return templateData, nil
 }
 
-func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
@@ -94,11 +90,12 @@ func HandleUpdateCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	return templateData, err
 }
 
-func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
 
-	cmdIndex := pat.Param(ctx, "cmd")
+	cmdIndex := pat.Param(r, "cmd")
 
 	err := client.Cmd("HDEL", KeyCommands(activeGuild.ID), cmdIndex).Err
 	if err != nil {
@@ -108,7 +105,7 @@ func HandleDeleteCommand(ctx context.Context, w http.ResponseWriter, r *http.Req
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	go common.AddCPLogEntry(user, activeGuild.ID, "Deleted command #"+cmdIndex)
 
-	return HandleCommands(ctx, w, r)
+	return HandleCommands(w, r)
 }
 
 func TriggerTypeFromForm(str string) CommandTriggerType {

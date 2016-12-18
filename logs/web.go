@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -24,27 +23,28 @@ func (lp *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/logging.html"))
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/public_channel_logs.html"))
 
-	web.ServerPublicMux.HandleC(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
-	web.ServerPublicMux.HandleC(pat.Get("/logs/:id/"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
+	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
+	web.ServerPublicMux.Handle(pat.Get("/logs/:id/"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
 
 	logCPMux := goji.SubMux()
-	web.CPMux.HandleC(pat.New("/logging"), logCPMux)
-	web.CPMux.HandleC(pat.New("/logging/*"), logCPMux)
+	web.CPMux.Handle(pat.New("/logging"), logCPMux)
+	web.CPMux.Handle(pat.New("/logging/*"), logCPMux)
 
 	cpGetHandler := web.ControllerHandler(HandleLogsCP, "cp_logging")
-	logCPMux.HandleC(pat.Get("/"), cpGetHandler)
-	logCPMux.HandleC(pat.Get(""), cpGetHandler)
+	logCPMux.Handle(pat.Get("/"), cpGetHandler)
+	logCPMux.Handle(pat.Get(""), cpGetHandler)
 
 	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, GuildLoggingConfig{}, "Updated logging config")
 	deleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
 
-	logCPMux.HandleC(pat.Post("/"), saveHandler)
-	logCPMux.HandleC(pat.Post(""), saveHandler)
+	logCPMux.Handle(pat.Post("/"), saveHandler)
+	logCPMux.Handle(pat.Post(""), saveHandler)
 
-	logCPMux.HandleC(pat.Post("/delete"), deleteHandler)
+	logCPMux.Handle(pat.Post("/delete"), deleteHandler)
 }
 
-func HandleLogsCP(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	_, g, tmpl := web.GetBaseCPContextData(ctx)
 
 	beforeID := 0
@@ -89,7 +89,8 @@ func HandleLogsCP(ctx context.Context, w http.ResponseWriter, r *http.Request) (
 	return tmpl, nil
 }
 
-func HandleLogsCPSaveGeneral(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	_, g, tmpl := web.GetBaseCPContextData(ctx)
 
 	config := ctx.Value(common.ContextKeyParsedForm).(*GuildLoggingConfig)
@@ -100,7 +101,8 @@ func HandleLogsCPSaveGeneral(ctx context.Context, w http.ResponseWriter, r *http
 	return tmpl, err
 }
 
-func HandleLogsCPDelete(ctx context.Context, w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
 	_, g, tmpl := web.GetBaseCPContextData(ctx)
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*DeleteData)
@@ -123,10 +125,10 @@ func HandleLogsCPDelete(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	return tmpl, err
 }
 
-func HandleLogsHTML(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
+	_, g, tmpl := web.GetBaseCPContextData(r.Context())
 
-	idString := pat.Param(ctx, "id")
+	idString := pat.Param(r, "id")
 
 	parsed, err := strconv.ParseInt(idString, 10, 64)
 	if web.CheckErr(tmpl, err, "Thats's not a real log id", nil) {

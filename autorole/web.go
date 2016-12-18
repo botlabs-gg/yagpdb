@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"golang.org/x/net/context"
 	"html/template"
 	"net/http"
 )
@@ -49,23 +48,24 @@ func (p *Plugin) InitWeb() {
 
 	muxer := goji.SubMux()
 
-	web.CPMux.HandleC(pat.New("/autorole"), muxer)
-	web.CPMux.HandleC(pat.New("/autorole/*"), muxer)
+	web.CPMux.Handle(pat.New("/autorole"), muxer)
+	web.CPMux.Handle(pat.New("/autorole/*"), muxer)
 
-	muxer.UseC(web.RequireFullGuildMW) // need roles
-	muxer.UseC(web.RequireBotMemberMW) // need the bot's role
-	muxer.UseC(web.RequirePermMW(discordgo.PermissionManageRoles))
+	muxer.Use(web.RequireFullGuildMW) // need roles
+	muxer.Use(web.RequireBotMemberMW) // need the bot's role
+	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 
 	getHandler := web.RenderHandler(HandleAutoroles, "cp_autorole")
 
-	muxer.HandleC(pat.Get(""), getHandler)
-	muxer.HandleC(pat.Get("/"), getHandler)
+	muxer.Handle(pat.Get(""), getHandler)
+	muxer.Handle(pat.Get("/"), getHandler)
 
-	muxer.HandleC(pat.Post(""), web.SimpleConfigSaverHandler(Form{}, getHandler))
-	muxer.HandleC(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler))
+	muxer.Handle(pat.Post(""), web.SimpleConfigSaverHandler(Form{}, getHandler))
+	muxer.Handle(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler))
 }
 
-func HandleAutoroles(ctx context.Context, w http.ResponseWriter, r *http.Request) interface{} {
+func HandleAutoroles(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
 	client, activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
 	commands, err := GetCommands(client, activeGuild.ID)
