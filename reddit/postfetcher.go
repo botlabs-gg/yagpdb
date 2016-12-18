@@ -5,6 +5,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
+	"time"
 )
 
 type PostFetcher struct {
@@ -120,4 +121,5 @@ func (p *PostFetcher) SaveBuffer() {
 	if err != nil {
 		logrus.WithError(err).Error("Failed saving post buffer")
 	}
+	p.redisClient.Cmd("SET", "reddit_last_link_time", time.Now().Unix())
 }

@@ -11,7 +11,7 @@ import (
 
 const (
 	VERSIONNUMBER = "0.17.5"
-	VERSION       = VERSIONNUMBER + " git Funky"
+	VERSION       = VERSIONNUMBER + " Funky"
 
 	Testing = true // Disables stuff like command cooldowns
 )

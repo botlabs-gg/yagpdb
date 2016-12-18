@@ -83,6 +83,18 @@ func getLastIds(client *redis.Client) []string {
 	err := common.GetRedisJson(client, "reddit_last_links", &result)
 	if err != nil {
 		logrus.WithError(err).Error("Failed retrieving post buffer from redis")
+	} else {
+		t, err := client.Cmd("GET", "reddit_last_link_time").Int64()
+		if err != nil {
+			logrus.WithError(err).Error("Too long since last link, can't resume")
+			return nil
+		}
+
+		if time.Since(time.Unix(t, 0)) > time.Hour {
+			logrus.Warn("Too long since last link, can't resume")
+			return nil
+		}
+
 	}
 
 	return result
