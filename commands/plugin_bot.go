@@ -629,7 +629,7 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 }
 
 func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, client *redis.Client) {
-	if s.State.User == nil || s.State.User.ID == m.Author.ID {
+	if s.State.User == nil || s.State.User.ID != m.Author.ID {
 		return
 	}
 
