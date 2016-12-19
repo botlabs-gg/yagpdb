@@ -215,34 +215,60 @@ func pluralize(val int64) string {
 	return "s"
 }
 
-func HumanizeDuration(precision DurationFormatPrecision, in time.Duration) (out string) {
+func HumanizeDuration(precision DurationFormatPrecision, in time.Duration) string {
 	seconds := int64(in.Seconds())
 
+	out := make([]string, 0)
+
 	if precision == DurationPrecisionSeconds {
-		out = fmt.Sprintf("%d Second%s", seconds%60, pluralize(seconds%60))
+		out = append(out, fmt.Sprintf("%d second%s", seconds%60, pluralize(seconds%60)))
 	}
 
 	if precision <= DurationPrecisionMinutes && seconds >= 60 {
-		out = fmt.Sprintf("%d Minute%s, %s", (seconds/60)%60, pluralize((seconds/60)%60), out)
+		out = append(out, fmt.Sprintf("%d minute%s", (seconds/60)%60, pluralize((seconds/60)%60)))
 	}
 
 	if precision <= DurationPrecisionHours && seconds >= 60*60 {
-		out = fmt.Sprintf("%d Hour%s, %s", ((seconds/60)/60)%24, pluralize(((seconds/60)/60)%24), out)
+		out = append(out, fmt.Sprintf("%d hour%s", ((seconds/60)/60)%24, pluralize(((seconds/60)/60)%24)))
 	}
 
 	if precision <= DurationPrecisionDays && seconds >= 60*60*24 {
-		out = fmt.Sprintf("%d Day%s, %s", (((seconds/60)/60)/24)%7, pluralize((((seconds/60)/60)/24)%7), out)
+		out = append(out, fmt.Sprintf("%d day%s", (((seconds/60)/60)/24)%7, pluralize((((seconds/60)/60)/24)%7)))
 	}
 
 	if precision <= DurationPrecisionWeeks && seconds >= 60*60*24*7 {
-		out = fmt.Sprintf("%d Week%s, %s", ((((seconds/60)/60)/24)/7)%52, pluralize(((((seconds/60)/60)/24)/7)%52), out)
+		out = append(out, fmt.Sprintf("%d week%s", ((((seconds/60)/60)/24)/7)%52, pluralize(((((seconds/60)/60)/24)/7)%52)))
 	}
 
 	if precision <= DurationPrecisionWeeks && seconds >= 60*60*24*365 {
-		out = fmt.Sprintf("%d Year%s, %s", (((seconds/60)/60)/24)/365, pluralize((((seconds/60)/60)/24)/365), out)
+		out = append(out, fmt.Sprintf("%d year%s", (((seconds/60)/60)/24)/365, pluralize((((seconds/60)/60)/24)/365)))
 	}
 
-	return
+	outStr := ""
+
+	for i := len(out) - 1; i >= 0; i-- {
+		if i == 0 && i != len(out)-1 {
+			outStr += " and "
+		} else if i != len(out)-1 {
+			outStr += ", "
+		}
+		outStr += out[i]
+
+	}
+
+	return outStr
+}
+
+func HumanizeTime(precision DurationFormatPrecision, in time.Time) string {
+
+	now := time.Now()
+	if now.After(in) {
+		duration := now.Sub(in)
+		return HumanizeDuration(precision, duration) + " ago"
+	} else {
+		duration := in.Sub(now)
+		return "in " + HumanizeDuration(precision, duration)
+	}
 }
 
 func SendEmbedWithFallback(s *discordgo.Session, channelID string, embed *discordgo.MessageEmbed) (*discordgo.Message, error) {

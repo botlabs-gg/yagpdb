@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/dustin/go-humanize"
 	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
@@ -55,10 +54,10 @@ var cmds = []commandsystem.CommandHandler{
 				return err, err
 			}
 
-			timeFromNow := humanize.Time(when)
+			timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
 			tStr := when.Format(time.RFC822)
 
-			return "Set a reminder for " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
+			return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 		},
 	},
 	&commands.CustomCommand{
@@ -170,7 +169,7 @@ func stringReminders(state *discordgo.State, reminders []*Reminder, displayUsern
 		channel := common.MustGetChannel(v.ChannelID)
 
 		t := time.Unix(v.When, 0)
-		timeFromNow := humanize.Time(t)
+		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
 		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
 			out += fmt.Sprintf("**%d**: <#%s>: %q - %s from now (%s)\n", v.ID, channel.ID, v.Message, timeFromNow, tStr)
