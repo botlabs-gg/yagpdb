@@ -237,7 +237,11 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {
 	case CommandTriggerContains:
 		return strings.Contains(msg, trigger)
 	case CommandTriggerRegex:
-		ok, err := regexp.Match(cmd.Trigger, []byte(msg))
+		rTrigger := cmd.Trigger
+		if !cmd.CaseSensitive && !strings.HasPrefix(rTrigger, "(?i)") {
+			rTrigger = "(?i)" + rTrigger
+		}
+		ok, err := regexp.Match(rTrigger, []byte(msg))
 		if err != nil {
 			log.WithError(err).Error("Failed compiling regex")
 		}
