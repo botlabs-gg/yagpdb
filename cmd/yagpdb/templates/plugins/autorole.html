@@ -64,7 +64,7 @@
                             </td> 
 
                             <td> <div class="form-group"><input type="text" name="Commands.{{$k}}.Name" value="{{.Name}}"></div></td>
-                            <td> <div class="form-group"><button type="button" class="btn btn-danger" onclick="remove({{$k}})">Remove</button></div></td>
+                            <td> <div class="form-group"><button type="button" noconfirm class="btn btn-danger" onclick="remove({{$k}})">Remove</button></div></td>
                         </tr>
                         {{end}}
                     </table>

@@ -240,3 +240,7 @@ func IsAdminCtx(ctx context.Context) bool {
 
 	return false
 }
+
+type APIError struct {
+	Message string
+}

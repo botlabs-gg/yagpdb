@@ -9,12 +9,13 @@
     }
     table th:nth-of-type(1) {width:150px;}/*Setting the width of column 1.*/
     table th:nth-of-type(2) {width:200px;}/*Setting the width of column 2.*/
-    table th:nth-of-type(3) {width:100%;}/*Setting the width of column 3.*/
+    /*table th:nth-of-type(3) {width:100%;}/*Setting the width of column 3.*/
+    table th:nth-of-type(4) {width:100px;}/*Setting the width of column 3.*/
 </style>
 <div class="row">
     <div class="col-lg-12">
         <div class="page-header">
-            <form action="/cp/{{.ActiveGuild.ID}}/logging/delete" method="post">
+            <form action="/cp/{{.ActiveGuild.ID}}/logging/fulldelete" method="post">
                 <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
                 <h1>Channel logs {{.ActiveGuild.Name}} <small><a href="/">by YAGPDB.xyz</a></small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h1>
             </form>
@@ -36,14 +37,16 @@
                 <tr>
                     <th class="" id="time-col">Time (UTC)</th>
                     <th class="" id="author-col">Author</th>
-                    <th class="" id="msg-col">Message</th>
+                    <th class="" id="msg-col">Message</th>{{if .IsAdmin}}
+                    <th>Actions</th>{{end}}
                 </tr>
-
+                {{$IsAdmin := .IsAdmin}}
                 {{range .Logs.Messages}}
-                <tr>
+                <tr id="msg-row-{{.ID}}">
                     <td>{{.Timestamp}}</td>
                     <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
-                    <td>{{.Content}}</td>
+                    <td>{{.Content}}</td>{{if $IsAdmin}}
+                    <td><button class="btn btn-danger" noconfirm onclick="deleteMessage({{.ID}})">Delete</button></td>{{end}}
                 </tr>
                 {{end}}
             </table>
@@ -52,6 +55,32 @@
     </div>
 </div>
 <!-- /.row -->
+<script>
+var logsID = {{.Logs.ID}};
+function deleteMessage(msg){
+    if(!confirm("Are you sure you want to delete this message?")){
+        return;
+    }
+
+    req = new XMLHttpRequest();
+    req.addEventListener("load", function(evt, aaa){
+        if (req.status != 200) {
+            alert("Something went wrong: "+req.response);
+        }else{
+            $("#msg-row-"+msg).remove();
+        }
+    });
+    req.addEventListener("error", function(){
+        alert("An error occured");
+    });
+    req.open("POST", "https://{{.Host}}/cp/{{.ActiveGuild.ID}}/logging/msgdelete");
+
+    var data = new FormData();
+    data.set("LogID", logsID);
+    data.set("MessageID", msg);
+    req.send(data);
+}
+</script>
 {{template "cp_footer"}}
 
 {{end}}

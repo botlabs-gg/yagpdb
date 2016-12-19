@@ -6,7 +6,26 @@ $(function(){
 		elem.onsubmit = submitform;
 	})
 
+	$(".btn-danger").click(function(evt){
+		var target = $(evt.target);
+		if(target.attr("noconfirm") !== undefined){
+			return;
+		}
 
+		if ($(evt.target).attr("noconfirm")) {
+			console.log("no confirm")
+			return
+		}
+
+		// console.log("aaaaa", evt, evt.preventDefault);
+		if(!confirm("Are you sure you want to do this?")){
+			evt.preventDefault(true);
+			evt.stopPropagation();
+		}
+		// alert("aaa")
+	})
+
+	console.log("aa");
 
 	function submitform(evt){
 

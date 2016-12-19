@@ -76,7 +76,7 @@ func (m *MessageLog) Link() string {
 }
 
 type Message struct {
-	gorm.Model
+	common.SmallModel
 	MessageLogID uint `gorm:"index"` // Foreign key, belongs to MessageLog
 
 	MessageID string

@@ -35,12 +35,14 @@ func (lp *Plugin) InitWeb() {
 	logCPMux.Handle(pat.Get(""), cpGetHandler)
 
 	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, GuildLoggingConfig{}, "Updated logging config")
-	deleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
+	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
+	msgDeleteHandler := web.APIHandler(HandleDeleteMessageJson)
 
 	logCPMux.Handle(pat.Post("/"), saveHandler)
 	logCPMux.Handle(pat.Post(""), saveHandler)
 
-	logCPMux.Handle(pat.Post("/delete"), deleteHandler)
+	logCPMux.Handle(pat.Post("/fulldelete"), fullDeleteHandler)
+	logCPMux.Handle(pat.Post("/msgdelete"), msgDeleteHandler)
 }
 
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -156,4 +158,30 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 
 	tmpl["Logs"] = msgLogs
 	return tmpl
+}
+
+func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{} {
+	_, g, _ := web.GetBaseCPContextData(r.Context())
+
+	logsId := r.FormValue("LogID")
+	msgID := r.FormValue("MessageID")
+
+	if logsId == "" || msgID == "" {
+		return web.NewPublicError("Empty id")
+	}
+
+	var logContainer MessageLog
+	err := common.SQL.Where("id = ?", logsId).First(&logContainer).Error
+	if err != nil {
+		return err
+	}
+
+	if logContainer.GuildID != g.ID {
+		return err
+	}
+
+	err = common.SQL.Where("message_log_id = ? AND id = ?", logsId, msgID).Delete(Message{}).Error
+	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
+	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
+	return err
 }

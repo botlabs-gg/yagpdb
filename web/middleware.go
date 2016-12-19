@@ -448,6 +448,19 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 func APIHandler(inner CustomHandlerFunc) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		out := inner(w, r)
+
+		if cast, ok := out.(error); ok {
+			if cast == nil {
+				out = map[string]interface{}{"ok": true}
+			} else {
+				if public, ok := cast.(*PublicError); ok {
+					out = map[string]interface{}{"ok": false, "error": public.msg}
+				}
+				log.WithError(cast).WithField("req", r.URL.String()).Error("API Error")
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
 		if out != nil {
 			LogIgnoreErr(json.NewEncoder(w).Encode(out))
 		}
@@ -579,6 +592,7 @@ func NewPublicError(a ...interface{}) error {
 }
 
 type ControllerHandlerFunc func(w http.ResponseWriter, r *http.Request) (TemplateData, error)
+type ControllerHandlerFuncJson func(w http.ResponseWriter, r *http.Request) (interface{}, error)
 
 // Handlers can return templatedata and an erro.
 // If error is not nil and publicerror it will be added as an alert,
