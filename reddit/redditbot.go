@@ -90,7 +90,7 @@ func getLastIds(client *redis.Client) []string {
 			return nil
 		}
 
-		if time.Since(time.Unix(t, 0)) > time.Minute*10 {
+		if time.Since(time.Unix(t, 0)) > time.Minute*5 {
 			logrus.Warn("Too long since last link, can't resume")
 			return nil
 		}

@@ -136,6 +136,9 @@ var cmds = []commandsystem.CommandHandler{
 						Inline: true,
 					},
 				},
+				Thumbnail: &discordgo.MessageEmbedThumbnail{
+					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
+				},
 			}
 
 			if config.UsernameLoggingEnabled {

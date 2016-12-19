@@ -209,6 +209,9 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					&discordgo.MessageEmbedField{Name: "Goroutines", Value: fmt.Sprint(numGoroutines), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Scheduled events (reminders etc)", Value: fmt.Sprint(numScheduledEvent), Inline: true},
 				},
+				Thumbnail: &discordgo.MessageEmbedThumbnail{
+					URL: discordgo.EndpointUserAvatar(common.BotSession.State.User.ID, common.BotSession.State.User.Avatar),
+				},
 			}
 
 			for _, v := range common.AllPlugins {
