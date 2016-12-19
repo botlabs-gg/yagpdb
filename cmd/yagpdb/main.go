@@ -29,6 +29,7 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 	//"github.com/wercker/journalhook"
 )
@@ -163,7 +164,7 @@ func runAction(str string) {
 // Gracefull shutdown
 func listenSignal() {
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	<-c
 	log.Info("SHUTTING DOWN...")
