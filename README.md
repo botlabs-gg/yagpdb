@@ -22,7 +22,6 @@ You can now build it and run `$GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb`
 
 Configuration is done through environment variables. see `cmd/yagpdb/sampleenvfile` for which environment variables there are
 
-The reddit bot requires a seperate file called `reddit.agent` [it looks like this](https://github.com/turnage/graw/blob/master/useragent.protobuf.template)
 
 ### Plugins
 
