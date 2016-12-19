@@ -90,7 +90,7 @@ func getLastIds(client *redis.Client) []string {
 			return nil
 		}
 
-		if time.Since(time.Unix(t, 0)) > time.Hour {
+		if time.Since(time.Unix(t, 0)) > time.Minute*10 {
 			logrus.Warn("Too long since last link, can't resume")
 			return nil
 		}
@@ -136,14 +136,24 @@ OUTER:
 		"subreddit":    post.Subreddit,
 	}).Info("Found matched reddit post")
 
-	author := post.Author
-	sub := post.Subreddit
+	embed := CreatePostEmbed(post)
 
+	for _, channel := range channels {
+		_, err := common.BotSession.ChannelMessageSendEmbed(channel, embed)
+		if err != nil {
+			logrus.WithError(err).Error("Error posting message")
+		}
+	}
+
+	return nil
+}
+
+func CreatePostEmbed(post *reddit.Link) *discordgo.MessageEmbed {
 	//body := fmt.Sprintf("**/u/%s Posted a new %s in /r/%s**:\n<%s>\n\n__%s__\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			URL:     "https://reddit.com/u/" + author,
-			Name:    author,
+			URL:     "https://reddit.com/u/" + post.Author,
+			Name:    post.Author,
 			IconURL: "https://" + common.Conf.Host + "/static/img/reddit_icon.png",
 		},
 		Provider: &discordgo.MessageEmbedProvider{
@@ -155,29 +165,29 @@ OUTER:
 	embed.URL = "https://redd.it/" + post.ID
 
 	if post.IsSelf {
-		embed.Title = "New self post in /r/" + sub
+		embed.Title = "New self post in /r/" + post.Subreddit
 		embed.Description += common.CutStringShort(post.Selftext, 250)
 		embed.Color = 0xc3fc7e
 	} else {
 		embed.Color = 0x718aed
-		embed.Title = "New link post in /r/" + sub
+		embed.Title = "New link post in /r/" + post.Subreddit
 		embed.Description += post.URL
-		embed.Image = &discordgo.MessageEmbedImage{
-			URL: post.URL,
-		}
-		embed.Video = &discordgo.MessageEmbedVideo{
-			URL: post.URL,
+
+		if post.Media.Type != "" {
+			embed.Video = &discordgo.MessageEmbedVideo{
+				URL: post.URL,
+			}
+			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+				URL: post.Thumbnail,
+			}
+		} else {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: post.URL,
+			}
 		}
 	}
 
-	for _, channel := range channels {
-		_, err := common.BotSession.ChannelMessageSendEmbed(channel, embed)
-		if err != nil {
-			logrus.WithError(err).Error("Error posting message")
-		}
-	}
-
-	return nil
+	return embed
 }
 
 type RedditIdSlice []string

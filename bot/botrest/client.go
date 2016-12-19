@@ -43,19 +43,24 @@ var (
 )
 
 func RunPinger() {
+	lastFailed := false
 	for {
 		time.Sleep(time.Second)
 
 		var dest string
 		err := get("ping", &dest)
 		if err != nil {
-			log.Println("Ping failed", err)
+			if !lastFailed {
+				log.Println("Ping failed", err)
+				lastFailed = true
+			}
 			continue
 		}
 
 		lastPingMutex.Lock()
 		lastPing = time.Now()
 		lastPingMutex.Unlock()
+		lastFailed = false
 	}
 }
 
