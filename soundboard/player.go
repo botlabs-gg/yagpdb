@@ -106,7 +106,7 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 	for {
 		var frame []byte
 		// Start with silence
-		if numFrames < 3 {
+		if numFrames < 10 {
 			frame = Silence
 		} else {
 			var err error
