@@ -11,6 +11,9 @@
     table th:nth-of-type(2) {width:200px;}/*Setting the width of column 2.*/
     /*table th:nth-of-type(3) {width:100%;}/*Setting the width of column 3.*/
     table th:nth-of-type(4) {width:100px;}/*Setting the width of column 3.*/
+    .deleted-message{
+        color: red;
+    }
 </style>
 <div class="row">
     <div class="col-lg-12">
@@ -42,11 +45,11 @@
                 </tr>
                 {{$IsAdmin := .IsAdmin}}
                 {{range .Logs.Messages}}
-                <tr id="msg-row-{{.ID}}">
+                <tr class="popover-trigger" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID}} Message ID: {{.MessageID}}">
                     <td>{{.Timestamp}}</td>
                     <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
-                    <td>{{.Content}}</td>{{if $IsAdmin}}
-                    <td><button class="btn btn-danger" noconfirm onclick="deleteMessage({{.ID}})">Delete</button></td>{{end}}
+                    <td id="msg-cell-{{.ID}}" {{if .Deleted}}class="deleted-message"{{end}}>{{if or (not .Deleted) $IsAdmin}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
+                    <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
                 </tr>
                 {{end}}
             </table>
@@ -67,7 +70,8 @@ function deleteMessage(msg){
         if (req.status != 200) {
             alert("Something went wrong: "+req.response);
         }else{
-            $("#msg-row-"+msg).remove();
+            $("#msg-cell-"+msg).addClass("deleted-message");
+            $("#msg-button-"+msg).remove();
         }
     });
     req.addEventListener("error", function(){

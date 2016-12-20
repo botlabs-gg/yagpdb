@@ -25,6 +25,17 @@ $(function(){
 		// alert("aaa")
 	})
 
+	$('[data-toggle="popover"]').popover()
+	$('[data-toggle="popover"]').click(function(evt){
+		$('[data-toggle="popover"]').each(function(i, elem){
+			// console.log(elem, elem == evt.target);
+			if (evt.currentTarget == elem) {
+				return;
+			}
+			$(elem).popover('hide');
+		})
+	})
+
 	console.log("aa");
 
 	function submitform(evt){

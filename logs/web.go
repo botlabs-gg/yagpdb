@@ -180,7 +180,7 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return err
 	}
 
-	err = common.SQL.Where("message_log_id = ? AND id = ?", logsId, msgID).Delete(Message{}).Error
+	err = common.SQL.Model(&Message{}).Where("message_log_id = ? AND id = ?", logsId, msgID).Update("deleted", true).Error
 	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
 	return err

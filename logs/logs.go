@@ -116,6 +116,10 @@ func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLo
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
 		}
 
+		if len(v.Embeds) > 0 {
+			body += fmt.Sprintf("(%d embeds is not shown)", len(v.Embeds))
+		}
+
 		logMsgs[k] = Message{
 			MessageID:      v.ID,
 			Content:        body,
