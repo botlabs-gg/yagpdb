@@ -15,6 +15,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"sync/atomic"
 )
 
 var (
@@ -34,9 +35,14 @@ var (
 	properAddresses bool
 
 	minifier *minify.M
+
+	acceptingRequests *int32
 )
 
 func init() {
+	b := int32(1)
+	acceptingRequests = &b
+
 	Templates = template.New("")
 	Templates = Templates.Funcs(template.FuncMap{
 		"dict":       dictionary,
@@ -72,6 +78,14 @@ func Run() {
 
 	log.Info("Running webservers")
 	runServers(mux)
+}
+
+func Stop() {
+	atomic.StoreInt32(acceptingRequests, 0)
+}
+
+func IsAcceptingRequests() bool {
+	return atomic.LoadInt32(acceptingRequests) != 0
 }
 
 func runServers(mainMuxer *goji.Mux) {

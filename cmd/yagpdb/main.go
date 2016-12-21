@@ -187,6 +187,12 @@ func listenSignal() {
 		shouldWait = true
 	}
 
+	if flagRunWeb {
+		web.Stop()
+		// Slep for a extra second
+		time.Sleep(time.Second)
+	}
+
 	if shouldWait {
 		log.Info("Waiting for things to shut down...")
 		wg.Wait()

@@ -23,8 +23,14 @@ import (
 )
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
+// And discards requests when shutting down
 func MiscMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
+		if !IsAcceptingRequests() {
+			w.Write([]byte(`{"error":"Shutting down, try again in a minute"}`))
+			return
+		}
+
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
 		inner.ServeHTTP(w, r)
