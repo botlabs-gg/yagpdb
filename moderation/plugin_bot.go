@@ -155,14 +155,14 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		Category:      commands.CategoryModeration,
 		Cooldown:      5,
 		SimpleCommand: &commandsystem.SimpleCommand{
-			Name:         "Mute",
-			Description:  "Mutes a member",
-			RequiredArgs: 2,
+			Name:        "Mute",
+			Description: "Mutes a member",
 			Arguments: []*commandsystem.ArgumentDef{
 				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
 				&commandsystem.ArgumentDef{Name: "Minutes", Type: commandsystem.ArgumentTypeNumber},
 				&commandsystem.ArgumentDef{Name: "Reason", Type: commandsystem.ArgumentTypeString},
 			},
+			ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
 		},
 		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
 
@@ -184,9 +184,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "No reason specified", nil
 			}
 
-			muteDuration := parsed.Args[1].Int()
-			if muteDuration < 1 || muteDuration > 1440 {
-				return "Duration out of bounds (min 1, max 1440 - 1 day)", nil
+			muteDuration := 10
+			if parsed.Args[1] != nil {
+				muteDuration = parsed.Args[1].Int()
+				if muteDuration < 1 || muteDuration > 1440 {
+					return "Duration out of bounds (min 1, max 1440 - 1 day)", nil
+				}
 			}
 
 			target := parsed.Args[0].DiscordUser()
@@ -196,7 +199,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
 			}
 
-			err = MuteUnmuteUser(config, client, true, parsed.Guild.ID, m.ChannelID, m.Author, reason, member, parsed.Args[1].Int())
+			err = MuteUnmuteUser(config, client, true, parsed.Guild.ID, m.ChannelID, m.Author, reason, member, muteDuration)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err

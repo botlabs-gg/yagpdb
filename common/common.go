@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	VERSIONNUMBER = "0.17.6"
+	VERSIONNUMBER = "0.17.7"
 	VERSION       = VERSIONNUMBER + " Funky"
 
 	Testing = true // Disables stuff like command cooldowns
