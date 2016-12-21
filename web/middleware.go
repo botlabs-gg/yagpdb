@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -438,8 +439,18 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 				out = d
 			}
 		}
+		var buf bytes.Buffer
+		err := Templates.ExecuteTemplate(&buf, tmpl, out)
+		if err != nil {
+			log.WithError(err).Error("Failed executing template")
+			return
+		}
 
-		LogIgnoreErr(Templates.ExecuteTemplate(w, tmpl, out))
+		LogIgnoreErr(minifier.Minify("text/html", w, &buf))
+
+		// writer := minifier.Writer("text/html", w)
+		// defer writer.Close()
+		// LogIgnoreErr(Templates.ExecuteTemplate(writer, tmpl, out))
 	}
 	return http.HandlerFunc(mw)
 }

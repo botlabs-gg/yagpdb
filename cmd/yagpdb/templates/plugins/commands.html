@@ -111,9 +111,7 @@
                         <label>
                             <input type="checkbox" name="{{.Channel}}_override_enabled" {{if .OverrideEnabled}} checked{{end}}>
                         </label>
-                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd_{{.Channel}}" aria-expanded="false" aria-controls="collapse_cmd_{{.Channel}}">
-                            Override Settings #{{.ChannelName}}
-                        </a>
+                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd_{{.Channel}}" aria-expanded="false" aria-controls="collapse_cmd_{{.Channel}}">Override Settings #{{.ChannelName}}</a>
                     </h4>
                 </div>
                 <div id="collapse_cmd_{{.Channel}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby=".Channel">

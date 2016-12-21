@@ -8,6 +8,8 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/natefinch/lumberjack"
+	"github.com/tdewolff/minify"
+	"github.com/tdewolff/minify/html"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -30,6 +32,8 @@ var (
 	ServerPublicMux *goji.Mux
 
 	properAddresses bool
+
+	minifier *minify.M
 )
 
 func init() {
@@ -56,6 +60,9 @@ func Run() {
 	}
 
 	log.Info("Starting yagpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
+
+	minifier = minify.New()
+	minifier.AddFunc("text/html", html.Minify)
 
 	InitOauth()
 	mux := setupRoutes()
