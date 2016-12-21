@@ -77,6 +77,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"Host":       common.Conf.Host,
 			"Version":    common.VERSION,
 			"BotRunning": botrest.BotIsRunning(),
+			"RequestURI": r.RequestURI,
 		}
 		inner.ServeHTTP(w, r.WithContext(SetContextTemplateData(r.Context(), baseData)))
 	}

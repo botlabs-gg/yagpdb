@@ -58,7 +58,7 @@
     </li>
     {{else}}
     <li>
-        <a href="/login"><i class="fa fa-user fa-fw"></i> Login you {{adjective}} goose.</a>
+        <a href="/login?goto={{urlquery .RequestURI}}"><i class="fa fa-user fa-fw"></i> Login you {{adjective}} goose.</a>
     </li>
     {{end}}
     <!-- /.dropdown -->

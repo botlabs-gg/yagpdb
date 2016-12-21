@@ -34,6 +34,12 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	redir := r.FormValue("goto")
+	if redir != "" {
+		client.Cmd("SET", "csrf_redir:"+csrfToken, redir)
+		client.Cmd("EXPIRE", "csrf_redir:"+csrfToken, 500)
+	}
+
 	url := oauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -72,7 +78,15 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	redirUrl, err := redisClient.Cmd("GET", "csrf_redir:"+state).Str()
+	if err != nil {
+		redirUrl = "/cp"
+	} else {
+		redisClient.Cmd("DEL", "csrf_redir:"+state)
+	}
+
+	http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
+
 }
 
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
