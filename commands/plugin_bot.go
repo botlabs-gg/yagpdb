@@ -13,6 +13,8 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/lunixbochs/vtclean"
+	"github.com/shirou/gopsutil/load"
+	"github.com/shirou/gopsutil/mem"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -187,9 +189,26 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			runtime.ReadMemStats(&memStats)
 			servers := len(common.BotSession.State.Guilds)
 
+			sysMem, err := mem.VirtualMemory()
+			sysMemStats := ""
+			if err == nil {
+				sysMemStats = fmt.Sprintf("%dMB (%.0f%%), %dMB", sysMem.Used/1000000, sysMem.UsedPercent, sysMem.Total/100000)
+			} else {
+				sysMemStats = "Failed collecting mem stats"
+				log.WithError(err).Error("Failed collecting memory stats")
+			}
+
+			sysLoad, err := load.Avg()
+			sysLoadStats := ""
+			if err == nil {
+				sysLoadStats = fmt.Sprintf("%.2f, %.2f, %.2f", sysLoad.Load1, sysLoad.Load5, sysLoad.Load15)
+			} else {
+				sysLoadStats = "Failed collecting"
+				log.WithError(err).Error("Failed collecting load stats")
+			}
+
 			uptime := time.Since(bot.Started)
 
-			// Convert to megabytes for ez readings
 			allocated := float64(memStats.Alloc) / 1000000
 
 			numGoroutines := runtime.NumGoroutine()
@@ -203,14 +222,15 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				},
 				Title: "YAGPDB Status, version " + common.VERSION,
 				Fields: []*discordgo.MessageEmbedField{
-					&discordgo.MessageEmbedField{Name: "Number of servers", Value: fmt.Sprint(servers), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Servers", Value: fmt.Sprint(servers), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Go version", Value: runtime.Version(), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Uptime", Value: common.HumanizeDuration(common.DurationPrecisionSeconds, uptime), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Memory Allocated", Value: fmt.Sprintf("%.1fMB", allocated), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Goroutines", Value: fmt.Sprint(numGoroutines), Inline: true},
+					&discordgo.MessageEmbedField{Name: "GC Pause Fraction", Value: fmt.Sprintf("%.3f%%", memStats.GCCPUFraction*100), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Process Mem (alloc, sys, freed)", Value: fmt.Sprintf("%.1fMB, %.1fMB, %.1fMB", float64(memStats.Alloc)/1000000, float64(memStats.Sys)/1000000, (float64(memStats.TotalAlloc)/1000000)-allocated), Inline: true},
+					&discordgo.MessageEmbedField{Name: "System Mem (used, total)", Value: sysMemStats, Inline: true},
+					&discordgo.MessageEmbedField{Name: "System load (1, 5, 15)", Value: sysLoadStats, Inline: true},
 					&discordgo.MessageEmbedField{Name: "Scheduled events (reminders etc)", Value: fmt.Sprint(numScheduledEvent), Inline: true},
-				},
-				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL: discordgo.EndpointUserAvatar(common.BotSession.State.User.ID, common.BotSession.State.User.Avatar),
 				},
 			}
 

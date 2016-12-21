@@ -5,6 +5,25 @@
     <div class="col-lg-12">
         <h1 class="page-header">Welcome to YAGPDB.xyz!</h1>
         
+        {{if .JoinedGuild}}
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <h3 class="panel-title">Bot added to <b>{{.JoinedGuild.Name}}!</b></h3>
+            </div>
+            <div class="panel-body">
+                <p><a href="/cp/{{.JoinedGuild.ID}}/stats">Click here to start managing it</a>, if you need any help or want to contact the owner you can join the support server (There is a link above)</p>
+                <p>I'm working on adding proper documentation and guides but at this moment the documentation is very lacking, and it may seem a bit complicated. As as i said earlier, join the support server if you have any questions</p>
+            </div>
+        </div>
+        {{end}}
+
+        <h3>Version 0.17.7 <small>21th Dec 2016</small></h3>
+        <ul>
+            <li>Deleted log messages is still shown to admins</li>
+            <li>Performance improvements to the website (bigger pages should be around 50% faster on load times)</li>
+            <li>Various other backend changes and improvements to the site</li>
+        </ul>
+
         <h3>Version 0.17.6 <small>19th Dec 2016</small></h3>
         <ul>
             <li>Logs shows deleted messages (admins can delete indiv messages from logs)</li>

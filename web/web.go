@@ -154,18 +154,9 @@ func setupRoutes() *goji.Mux {
 	mux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
 	ServerPublicMux = serverPublicMux
 
-	// Control panel muxer, requires a session
-	// cpMuxer := goji.NewMux()
-	// cpMuxer.Use(RequireSessionMiddleware)
-
-	// mux.Handle(pat.Get("/cp/*"), cpMuxer)
-	// mux.Handle(pat.Get("/cp"), cpMuxer)
-	// mux.Handle(pat.Post("/cp/*"), cpMuxer)
-	// mux.Handle(pat.Post("/cp"), cpMuxer)
-
 	// Server selection has it's own handler
-	mux.Handle(pat.Get("/cp"), RenderHandler(nil, "cp_selectserver"))
-	mux.Handle(pat.Get("/cp/"), RenderHandler(nil, "cp_selectserver"))
+	mux.Handle(pat.Get("/cp"), RenderHandler(HandleSelectServer, "cp_selectserver"))
+	mux.Handle(pat.Get("/cp/"), RenderHandler(HandleSelectServer, "cp_selectserver"))
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	serverCpMuxer := goji.SubMux()
