@@ -192,7 +192,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			sysMem, err := mem.VirtualMemory()
 			sysMemStats := ""
 			if err == nil {
-				sysMemStats = fmt.Sprintf("%dMB (%.0f%%), %dMB", sysMem.Used/1000000, sysMem.UsedPercent, sysMem.Total/100000)
+				sysMemStats = fmt.Sprintf("%dMB (%.0f%%), %dMB", sysMem.Used/1000000, sysMem.UsedPercent, sysMem.Total/1000000)
 			} else {
 				sysMemStats = "Failed collecting mem stats"
 				log.WithError(err).Error("Failed collecting memory stats")
