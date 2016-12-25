@@ -84,7 +84,7 @@ func connectDB(user, pass string) error {
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=yagpdb sslmode=disable password=%s", user, pass))
 	SQL = db
 	if err == nil {
-		db.DB().SetMaxOpenConns(100)
+		db.DB().SetMaxOpenConns(10)
 	}
 
 	return err
