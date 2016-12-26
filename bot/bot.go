@@ -5,7 +5,7 @@ package bot
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"sync"
 	"time"
@@ -15,10 +15,12 @@ var (
 	// When the bot was started
 	Started = time.Now()
 	Running bool
+	State   *dstate.State
 )
 
 func Setup() {
-	common.BotSession.State.MaxMessageCount = 1000
+	// Things may rely on state being available at this point for initialization
+	State = dstate.NewState()
 
 	log.Info("Initializing bot plugins")
 	for _, plugin := range Plugins {
@@ -45,6 +47,13 @@ func Run() {
 	// common.BotSession.LogLevel = discordgo.LogDebug
 	// common.BotSession.Debug = true
 
+	State.MaxChannelMessages = 1000
+	State.MaxMessageAge = time.Hour
+	State.Debug = true
+
+	common.BotSession.StateEnabled = false
+	common.BotSession.AddHandler(State.HandleEvent)
+
 	common.BotSession.LogLevel = discordgo.LogInformational
 	err := common.BotSession.Open()
 	if err != nil {
@@ -63,7 +72,6 @@ func Run() {
 		}
 	}
 
-	botrest.StartServer()
 }
 
 func Stop(wg *sync.WaitGroup) {
@@ -124,6 +132,12 @@ OUTER:
 			}
 		}
 
-		EmitGuildRemoved(client, gID)
+		err := client.Cmd("SREM", "connected_guilds", gID).Err
+		if err != nil {
+			log.WithError(err).Error("Failed removing guild from connected guilds")
+		} else {
+			EmitGuildRemoved(client, gID)
+			log.WithField("guild", gID).Info("Removed from guild when offline")
+		}
 	}
 }

@@ -43,6 +43,7 @@ func (p *Plugin) InitBot() {
 	CommandSystem = commandsystem.NewSystem(common.BotSession, "")
 	CommandSystem.SendError = false
 	CommandSystem.CensorError = CensorError
+	CommandSystem.State = bot.State
 
 	CommandSystem.Prefix = p
 	CommandSystem.RegisterCommands(GlobalCommands...)
@@ -59,12 +60,13 @@ func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) str
 	}
 	defer common.RedisPool.Put(client)
 
-	channel, err := s.State.Channel(m.ChannelID)
-	if err != nil {
-		log.WithError(err).Error("Failed retrieving channels from state")
+	channel := bot.State.Channel(true, m.ChannelID)
+	if channel == nil {
+		log.Error("Failed retrieving channels from state")
 		return ""
 	}
-	prefix, err := GetCommandPrefix(client, channel.GuildID)
+
+	prefix, err := GetCommandPrefix(client, channel.Channel.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -86,7 +88,7 @@ func GenerateHelp(target string) string {
 	out := "```ini\n"
 
 	out += `[Legend]
-# 
+#
 #Command   = {alias1, alias2...} <required arg> (optional arg) : Description
 #
 #Example:
@@ -133,493 +135,508 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	&CustomCommand{
 		Cooldown: 10,
 		Category: CategoryGeneral,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Help",
 			Description: "Shows help abut all or one specific command",
 			RunInDm:     true,
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "command", Type: commandsystem.ArgumentTypeString},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "command", Type: commandsystem.ArgumentString},
 			},
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			target := ""
-			if parsed.Args[0] != nil {
-				target = parsed.Args[0].Str()
-			}
 
-			// Fetch the prefix if ther command was not run in a dm
-			footer := ""
-			if parsed.Source != commandsystem.CommandSourceDM {
-				prefix, err := GetCommandPrefix(client, parsed.Guild.ID)
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				target := ""
+				if data.Args[0] != nil {
+					target = data.Args[0].Str()
+				}
+
+				// Fetch the prefix if ther command was not run in a dm
+				footer := ""
+				if data.Source != commandsystem.SourceDM {
+					prefix, err := GetCommandPrefix(data.Context().Value(CtxKeyRedisClient).(*redis.Client), data.Guild.Guild.ID)
+					if err != nil {
+						return "Error communicating with redis", err
+					}
+
+					footer = "**No command prefix set, you can still use commands through mentioning the bot\n**"
+					if prefix != "" {
+						footer = fmt.Sprintf("**Command prefix: %q**\n", prefix)
+					}
+				}
+				footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n"
+
+				help := GenerateHelp(target)
+
+				privateChannel, err := bot.GetCreatePrivateChannel(common.BotSession, data.Message.Author.ID)
 				if err != nil {
-					return "Error communicating with redis", err
+					return "", err
 				}
 
-				footer = "**No command prefix set, you can still use commands through mentioning the bot\n**"
-				if prefix != "" {
-					footer = fmt.Sprintf("**Command prefix: %q**\n", prefix)
-				}
-			}
-			footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n"
-
-			help := GenerateHelp(target)
-
-			privateChannel, err := bot.GetCreatePrivateChannel(common.BotSession, m.Author.ID)
-			if err != nil {
-				return "", err
-			}
-
-			dutil.SplitSendMessagePS(common.BotSession, privateChannel.ID, help+"\n"+footer, "```ini\n", "```", false, false)
-			//dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
-			return "You've Got Mail!", nil
+				dutil.SplitSendMessagePS(common.BotSession, privateChannel.ID, help+"\n"+footer, "```ini\n", "```", false, false)
+				//dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
+				return "You've Got Mail!", nil
+			},
 		},
 	},
 	// Status command shows the bot's status, stuff like version, conntected servers, uptime, memory used etc..
 	&CustomCommand{
 		Cooldown: 5,
 		Category: CategoryTool,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Yagstatus",
 			Aliases:     []string{"Status"},
 			Description: "Shows yagpdb status",
 			RunInDm:     true,
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			var memStats runtime.MemStats
-			runtime.ReadMemStats(&memStats)
-			servers := len(common.BotSession.State.Guilds)
 
-			sysMem, err := mem.VirtualMemory()
-			sysMemStats := ""
-			if err == nil {
-				sysMemStats = fmt.Sprintf("%dMB (%.0f%%), %dMB", sysMem.Used/1000000, sysMem.UsedPercent, sysMem.Total/1000000)
-			} else {
-				sysMemStats = "Failed collecting mem stats"
-				log.WithError(err).Error("Failed collecting memory stats")
-			}
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				var memStats runtime.MemStats
+				runtime.ReadMemStats(&memStats)
+				servers := len(common.BotSession.State.Guilds)
 
-			sysLoad, err := load.Avg()
-			sysLoadStats := ""
-			if err == nil {
-				sysLoadStats = fmt.Sprintf("%.2f, %.2f, %.2f", sysLoad.Load1, sysLoad.Load5, sysLoad.Load15)
-			} else {
-				sysLoadStats = "Failed collecting"
-				log.WithError(err).Error("Failed collecting load stats")
-			}
-
-			uptime := time.Since(bot.Started)
-
-			allocated := float64(memStats.Alloc) / 1000000
-
-			numGoroutines := runtime.NumGoroutine()
-
-			numScheduledEvent, _ := common.NumScheduledEvents(client)
-
-			embed := &discordgo.MessageEmbed{
-				Author: &discordgo.MessageEmbedAuthor{
-					Name:    common.BotSession.State.User.Username,
-					IconURL: discordgo.EndpointUserAvatar(common.BotSession.State.User.ID, common.BotSession.State.User.Avatar),
-				},
-				Title: "YAGPDB Status, version " + common.VERSION,
-				Fields: []*discordgo.MessageEmbedField{
-					&discordgo.MessageEmbedField{Name: "Servers", Value: fmt.Sprint(servers), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Go version", Value: runtime.Version(), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Uptime", Value: common.HumanizeDuration(common.DurationPrecisionSeconds, uptime), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Goroutines", Value: fmt.Sprint(numGoroutines), Inline: true},
-					&discordgo.MessageEmbedField{Name: "GC Pause Fraction", Value: fmt.Sprintf("%.3f%%", memStats.GCCPUFraction*100), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Process Mem (alloc, sys, freed)", Value: fmt.Sprintf("%.1fMB, %.1fMB, %.1fMB", float64(memStats.Alloc)/1000000, float64(memStats.Sys)/1000000, (float64(memStats.TotalAlloc)/1000000)-allocated), Inline: true},
-					&discordgo.MessageEmbedField{Name: "System Mem (used, total)", Value: sysMemStats, Inline: true},
-					&discordgo.MessageEmbedField{Name: "System load (1, 5, 15)", Value: sysLoadStats, Inline: true},
-					&discordgo.MessageEmbedField{Name: "Scheduled events (reminders etc)", Value: fmt.Sprint(numScheduledEvent), Inline: true},
-				},
-			}
-
-			for _, v := range common.AllPlugins {
-				if cast, ok := v.(PluginStatus); ok {
-					name, val := cast.Status(client)
-					if name == "" || val == "" {
-						continue
-					}
-					embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: v.Name() + ": " + name, Value: val, Inline: true})
+				sysMem, err := mem.VirtualMemory()
+				sysMemStats := ""
+				if err == nil {
+					sysMemStats = fmt.Sprintf("%dMB (%.0f%%), %dMB", sysMem.Used/1000000, sysMem.UsedPercent, sysMem.Total/1000000)
+				} else {
+					sysMemStats = "Failed collecting mem stats"
+					log.WithError(err).Error("Failed collecting memory stats")
 				}
-			}
 
-			return embed, nil
+				sysLoad, err := load.Avg()
+				sysLoadStats := ""
+				if err == nil {
+					sysLoadStats = fmt.Sprintf("%.2f, %.2f, %.2f", sysLoad.Load1, sysLoad.Load5, sysLoad.Load15)
+				} else {
+					sysLoadStats = "Failed collecting"
+					log.WithError(err).Error("Failed collecting load stats")
+				}
+
+				uptime := time.Since(bot.Started)
+
+				allocated := float64(memStats.Alloc) / 1000000
+
+				numGoroutines := runtime.NumGoroutine()
+
+				numScheduledEvent, _ := common.NumScheduledEvents(data.Context().Value(CtxKeyRedisClient).(*redis.Client))
+
+				embed := &discordgo.MessageEmbed{
+					Author: &discordgo.MessageEmbedAuthor{
+						Name:    common.BotSession.State.User.Username,
+						IconURL: discordgo.EndpointUserAvatar(common.BotSession.State.User.ID, common.BotSession.State.User.Avatar),
+					},
+					Title: "YAGPDB Status, version " + common.VERSION,
+					Fields: []*discordgo.MessageEmbedField{
+						&discordgo.MessageEmbedField{Name: "Servers", Value: fmt.Sprint(servers), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Go version", Value: runtime.Version(), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Uptime", Value: common.HumanizeDuration(common.DurationPrecisionSeconds, uptime), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Goroutines", Value: fmt.Sprint(numGoroutines), Inline: true},
+						&discordgo.MessageEmbedField{Name: "GC Pause Fraction", Value: fmt.Sprintf("%.3f%%", memStats.GCCPUFraction*100), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Process Mem (alloc, sys, freed)", Value: fmt.Sprintf("%.1fMB, %.1fMB, %.1fMB", float64(memStats.Alloc)/1000000, float64(memStats.Sys)/1000000, (float64(memStats.TotalAlloc)/1000000)-allocated), Inline: true},
+						&discordgo.MessageEmbedField{Name: "System Mem (used, total)", Value: sysMemStats, Inline: true},
+						&discordgo.MessageEmbedField{Name: "System load (1, 5, 15)", Value: sysLoadStats, Inline: true},
+						&discordgo.MessageEmbedField{Name: "Scheduled events (reminders etc)", Value: fmt.Sprint(numScheduledEvent), Inline: true},
+					},
+				}
+
+				for _, v := range common.AllPlugins {
+					if cast, ok := v.(PluginStatus); ok {
+						name, val := cast.Status(data.Context().Value(CtxKeyRedisClient).(*redis.Client))
+						if name == "" || val == "" {
+							continue
+						}
+						embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: v.Name() + ": " + name, Value: val, Inline: true})
+					}
+				}
+
+				return embed, nil
+			},
 		},
 	},
 	// Some fun commands because why not
 	&CustomCommand{
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "Reverse",
 			Aliases:      []string{"r", "rev"},
 			Description:  "Flips stuff",
 			RunInDm:      true,
 			RequiredArgs: 1,
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "What", Description: "To flip", Type: commandsystem.ArgumentTypeString},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "What", Description: "To flip", Type: commandsystem.ArgumentString},
 			},
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			toFlip := cmd.Args[0].Str()
 
-			out := ""
-			for _, r := range toFlip {
-				out = string(r) + out
-			}
-			return out, nil
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				toFlip := data.Args[0].Str()
+
+				out := ""
+				for _, r := range toFlip {
+					out = string(r) + out
+				}
+				return out, nil
+			},
 		},
 	},
 	&CustomCommand{
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "Weather",
 			Aliases:      []string{"w"},
 			Description:  "Shows the weather somewhere",
 			RunInDm:      true,
 			RequiredArgs: 1,
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentTypeString},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentString},
 			},
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			where := cmd.Args[0].Str()
 
-			req, err := http.NewRequest("GET", "http://wttr.in/"+where, nil)
-			if err != nil {
-				return err, err
-			}
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				where := data.Args[0].Str()
 
-			req.Header.Set("User-Agent", "curl/7.49.1")
-
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				return err, err
-			}
-
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return err, err
-			}
-
-			// remove escape sequences
-			unescaped := vtclean.Clean(string(body), false)
-
-			split := strings.Split(string(unescaped), "\n")
-
-			out := "```\n"
-			for i := 0; i < 7; i++ {
-				if i >= len(split) {
-					break
+				req, err := http.NewRequest("GET", "http://wttr.in/"+where, nil)
+				if err != nil {
+					return err, err
 				}
-				out += strings.TrimRight(split[i], " ") + "\n"
-			}
-			out += "\n```"
 
-			return out, nil
+				req.Header.Set("User-Agent", "curl/7.49.1")
+
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					return err, err
+				}
+
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					return err, err
+				}
+
+				// remove escape sequences
+				unescaped := vtclean.Clean(string(body), false)
+
+				split := strings.Split(string(unescaped), "\n")
+
+				out := "```\n"
+				for i := 0; i < 7; i++ {
+					if i >= len(split) {
+						break
+					}
+					out += strings.TrimRight(split[i], " ") + "\n"
+				}
+				out += "\n```"
+
+				return out, nil
+			},
 		},
 	},
 	&CustomCommand{
 		Category: CategoryGeneral,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Invite",
 			Aliases:     []string{"inv", "i"},
 			Description: "Responds with bot invite link",
 			RunInDm:     true,
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
+
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
+			},
 		},
 	},
 	&CustomCommand{
 		Category: CategoryTool,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "Calc",
 			Aliases:      []string{"c", "calculate"},
 			Description:  "Calculator 2+2=5",
 			RunInDm:      true,
 			RequiredArgs: 1,
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "What", Description: "What to calculate", Type: commandsystem.ArgumentTypeString},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "What", Description: "What to calculate", Type: commandsystem.ArgumentString},
+			},
+
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				computeLock.Lock()
+				defer computeLock.Unlock()
+				result, err := compute.Evaluate(data.Args[0].Str())
+				if err != nil {
+					return err, err
+				}
+
+				return fmt.Sprintf("Result: `%G`", result), nil
 			},
 		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			computeLock.Lock()
-			defer computeLock.Unlock()
-			result, err := compute.Evaluate(cmd.Args[0].Str())
-			if err != nil {
-				return err, err
-			}
-
-			return fmt.Sprintf("Result: `%G`", result), nil
-		},
 	},
 	&CustomCommand{
 		Cooldown: 5,
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Topic",
 			Description: "Generates a chat topic",
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
-			if err != nil {
-				return err, err
-			}
 
-			topic := doc.Find("#random").Text()
-			return topic, nil
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
+				if err != nil {
+					return err, err
+				}
+
+				topic := doc.Find("#random").Text()
+				return topic, nil
+			},
 		},
 	},
 	&CustomCommand{
 		Cooldown: 5,
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "CatFact",
 			Aliases:     []string{"cf", "cat", "catfacts"},
 			Description: "Cat Facts",
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			resp, err := http.Get("http://catfacts-api.appspot.com/api/facts")
-			if err != nil {
-				return err, err
-			}
 
-			decoded := struct {
-				Facts   []string `json:"facts"`
-				Success string   `json:"success"`
-			}{}
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				resp, err := http.Get("http://catfacts-api.appspot.com/api/facts")
+				if err != nil {
+					return err, err
+				}
 
-			err = json.NewDecoder(resp.Body).Decode(&decoded)
-			if err != nil {
-				return err, err
-			}
+				decoded := struct {
+					Facts   []string `json:"facts"`
+					Success string   `json:"success"`
+				}{}
 
-			fact := "No catfact :'("
+				err = json.NewDecoder(resp.Body).Decode(&decoded)
+				if err != nil {
+					return err, err
+				}
 
-			if decoded.Success == "true" && len(decoded.Facts) > 0 {
-				fact = decoded.Facts[0]
-			}
+				fact := "No catfact :'("
 
-			return fact, nil
+				if decoded.Success == "true" && len(decoded.Facts) > 0 {
+					fact = decoded.Facts[0]
+				}
+
+				return fact, nil
+			},
 		},
 	},
 	&CustomCommand{
 		Cooldown: 5,
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Advice",
 			Description: "Get a advice",
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "What", Description: "What to get advice on", Type: commandsystem.ArgumentTypeString},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "What", Description: "What to get advice on", Type: commandsystem.ArgumentString},
 			},
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			random := true
-			addr := "http://api.adviceslip.com/advice"
-			if cmd.Args[0] != nil {
-				random = false
-				addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(cmd.Args[0].Str())
-			}
 
-			resp, err := http.Get(addr)
-			if err != nil {
-				return err, err
-			}
-
-			var decoded interface{}
-
-			if random {
-				decoded = &RandomAdviceResp{}
-			} else {
-				decoded = &SearchAdviceResp{}
-			}
-
-			err = json.NewDecoder(resp.Body).Decode(&decoded)
-			if err != nil {
-				return err, err
-			}
-
-			advice := "No advice found :'("
-
-			if random {
-				slip := decoded.(*RandomAdviceResp).Slip
-				if slip != nil {
-					advice = slip.Advice
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				random := true
+				addr := "http://api.adviceslip.com/advice"
+				if data.Args[0] != nil {
+					random = false
+					addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
 				}
-			} else {
-				cast := decoded.(*SearchAdviceResp)
-				if len(cast.Slips) > 0 {
-					advice = cast.Slips[0].Advice
-				}
-			}
 
-			return advice, nil
+				resp, err := http.Get(addr)
+				if err != nil {
+					return err, err
+				}
+
+				var decoded interface{}
+
+				if random {
+					decoded = &RandomAdviceResp{}
+				} else {
+					decoded = &SearchAdviceResp{}
+				}
+
+				err = json.NewDecoder(resp.Body).Decode(&decoded)
+				if err != nil {
+					return err, err
+				}
+
+				advice := "No advice found :'("
+
+				if random {
+					slip := decoded.(*RandomAdviceResp).Slip
+					if slip != nil {
+						advice = slip.Advice
+					}
+				} else {
+					cast := decoded.(*SearchAdviceResp)
+					if len(cast.Slips) > 0 {
+						advice = cast.Slips[0].Advice
+					}
+				}
+
+				return advice, nil
+			},
 		},
 	},
 	&CustomCommand{
 		Cooldown: 5,
 		Category: CategoryTool,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "ping",
 			Description: "I prefer tabletennis",
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
+
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
+			},
 		},
 	},
 	&CustomCommand{
 		Cooldown: 2,
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Throw",
 			Description: "Cause you are a rebel",
-			Arguments: []*commandsystem.ArgumentDef{
-				{Name: "Target", Type: commandsystem.ArgumentTypeUser},
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "Target", Type: commandsystem.ArgumentUser},
 			},
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			thing := common.Things[rand.Intn(len(common.Things))]
 
-			target := "a random person nearby"
-			if cmd.Args[0] != nil {
-				target = cmd.Args[0].DiscordUser().Username
-			}
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				thing := common.Things[rand.Intn(len(common.Things))]
 
-			return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
+				target := "a random person nearby"
+				if data.Args[0] != nil {
+					target = data.Args[0].DiscordUser().Username
+				}
+
+				return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
+			},
 		},
 	},
 	&CustomCommand{
 		Cooldown: 2,
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Roll",
 			Description: "Roll a dice",
-			Arguments: []*commandsystem.ArgumentDef{
-				{Name: "Sides", Type: commandsystem.ArgumentTypeNumber},
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "Sides", Type: commandsystem.ArgumentNumber},
 			},
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			sides := 6
-			if cmd.Args[0] != nil && cmd.Args[0].Int() > 0 {
-				sides = cmd.Args[0].Int()
-			}
 
-			result := rand.Intn(sides)
-			return fmt.Sprintf(":game_die: %d", result+1), nil
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				sides := 6
+				if data.Args[0] != nil && data.Args[0].Int() > 0 {
+					sides = data.Args[0].Int()
+				}
+
+				result := rand.Intn(sides)
+				return fmt.Sprintf(":game_die: %d", result+1), nil
+			},
 		},
 	},
 	&CustomCommand{
 		Cooldown: 10,
 		Category: CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "TopServers",
 			Description: "Responds with the top 10 servers im on",
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			state := common.BotSession.State
-			state.RLock()
 
-			sortable := GuildsSortUsers(state.Guilds)
-			sort.Sort(sortable)
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				state := common.BotSession.State
+				state.RLock()
 
-			out := "```"
-			for k, v := range sortable {
-				if k > 10 {
-					break
+				sortable := GuildsSortUsers(state.Guilds)
+				sort.Sort(sortable)
+
+				out := "```"
+				for k, v := range sortable {
+					if k > 10 {
+						break
+					}
+
+					out += fmt.Sprintf("\n#%-2d: %s (%d)", k, v.Name, v.MemberCount)
 				}
-
-				out += fmt.Sprintf("\n#%-2d: %s (%d)", k, v.Name, v.MemberCount)
-			}
-			state.RUnlock()
-			return out + "\n```", nil
+				state.RUnlock()
+				return out + "\n```", nil
+			},
 		},
 	}, &CustomCommand{
 		Cooldown:             10,
 		Category:             CategoryFun,
 		HideFromCommandsPage: true,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "dumpdm",
 			Description:  "dudidadudida",
 			HideFromHelp: true,
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			if m.Author.ID != common.Conf.Owner {
-				return "Only bot owner can run this", nil
-			}
-			state := common.BotSession.State
-			state.RLock()
-			defer state.RUnlock()
-			out := "Dm channels"
-			for _, v := range state.PrivateChannels {
-				out += fmt.Sprintf("\n%s - (%s)", v.Recipient.Username, v.ID)
-			}
-			return out, nil
+
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				if data.Message.Author.ID != common.Conf.Owner {
+					return "Only bot owner can run this", nil
+				}
+				state := common.BotSession.State
+				state.RLock()
+				defer state.RUnlock()
+				out := "Dm channels"
+				for _, v := range state.PrivateChannels {
+					out += fmt.Sprintf("\n%s - (%s)", v.Recipient.Username, v.ID)
+				}
+				return out, nil
+			},
 		},
 	},
 	&CustomCommand{
 		Cooldown:             2,
 		Category:             CategoryFun,
 		HideFromCommandsPage: true,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "Yagmem",
 			Description:  "Send some memory stats",
 			HideFromHelp: true,
-		},
-		RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			if m.Author.ID != common.Conf.Owner {
-				return "Only bot owner can run this", nil
-			}
 
-			totalGuilds := 0
-			totalMembers := 0
-			membersMem := 0
-			totalChannels := 0
-			channelsMem := 0
-			totalMessages := 0
-			messagesMem := 0
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				if data.Message.Author.ID != common.Conf.Owner {
+					return "Only bot owner can run this", nil
+				}
 
-			state := common.BotSession.State
-			state.RLock()
-			defer state.RUnlock()
+				totalGuilds := 0
+				totalMembers := 0
+				membersMem := 0
+				totalChannels := 0
+				channelsMem := 0
+				totalMessages := 0
+				messagesMem := 0
 
-			for _, v := range state.Guilds {
-				totalGuilds++
+				state := common.BotSession.State
+				state.RLock()
+				defer state.RUnlock()
 
-				for _, channel := range v.Channels {
-					totalChannels++
-					channelsMem += ChannelMemorySize(channel)
+				for _, v := range state.Guilds {
+					totalGuilds++
 
-					if channel.Messages != nil {
-						totalMessages += len(channel.Messages)
-						for _, msg := range channel.Messages {
-							messagesMem += GetMessageMemorySize(msg)
+					for _, channel := range v.Channels {
+						totalChannels++
+						channelsMem += ChannelMemorySize(channel)
+
+						if channel.Messages != nil {
+							totalMessages += len(channel.Messages)
+							for _, msg := range channel.Messages {
+								messagesMem += GetMessageMemorySize(msg)
+							}
 						}
+					}
+
+					totalMembers += len(v.Members)
+					for _, member := range v.Members {
+						membersMem += GetMemberMemorySize(member)
 					}
 				}
 
-				totalMembers += len(v.Members)
-				for _, member := range v.Members {
-					membersMem += GetMemberMemorySize(member)
+				var stats runtime.MemStats
+				runtime.ReadMemStats(&stats)
+
+				embed := &discordgo.MessageEmbed{
+					Title: "Memory stats",
+					Fields: []*discordgo.MessageEmbedField{
+						&discordgo.MessageEmbedField{Name: "Allocated", Value: fmt.Sprintf("%dMB", stats.Alloc/1000000), Inline: true},
+						&discordgo.MessageEmbedField{Name: "TotalAlloc", Value: fmt.Sprintf("%dMB", stats.TotalAlloc/1000000), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Guilds", Value: fmt.Sprint(totalGuilds), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprintf("%d (%.1fKB)", totalMembers, float64(membersMem)/1000), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d (%.1fKB)", totalMessages, float64(messagesMem)/1000), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprintf("%d (%.1fKB)", totalChannels, float64(channelsMem)/1000), Inline: true},
+					},
 				}
-			}
 
-			var stats runtime.MemStats
-			runtime.ReadMemStats(&stats)
-
-			embed := &discordgo.MessageEmbed{
-				Title: "Memory stats",
-				Fields: []*discordgo.MessageEmbedField{
-					&discordgo.MessageEmbedField{Name: "Allocated", Value: fmt.Sprintf("%dMB", stats.Alloc/1000000), Inline: true},
-					&discordgo.MessageEmbedField{Name: "TotalAlloc", Value: fmt.Sprintf("%dMB", stats.TotalAlloc/1000000), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Guilds", Value: fmt.Sprint(totalGuilds), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprintf("%d (%.1fKB)", totalMembers, float64(membersMem)/1000), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d (%.1fKB)", totalMessages, float64(messagesMem)/1000), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprintf("%d (%.1fKB)", totalChannels, float64(channelsMem)/1000), Inline: true},
-				},
-			}
-
-			return embed, nil
+				return embed, nil
+			},
 		},
 	},
 }

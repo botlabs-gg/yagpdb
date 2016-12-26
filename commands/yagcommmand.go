@@ -1,17 +1,24 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"math/rand"
 	"strings"
 	"time"
+)
+
+type ContextKey int
+
+const (
+	CtxKeyRedisClient ContextKey = iota
 )
 
 type CommandCategory string
@@ -30,148 +37,93 @@ var (
 // Slight extension to the simplecommand, it will check if the command is enabled in the HandleCommand func
 // And invoke a custom handlerfunc with provided redis client
 type CustomCommand struct {
-	*commandsystem.SimpleCommand
+	*commandsystem.Command
 	HideFromCommandsPage bool   // Set to  hide this command from the commands page
 	Key                  string // GuildId is appended to the key, e.g if key is "test:", it will check for "test:<guildid>"
 	CustomEnabled        bool   // Set to true to handle the enable check itself
 	Default              bool   // The default state of this command
 	Cooldown             int    // Cooldown in seconds before user can use it again
 	Category             CommandCategory
-	RunFunc              func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error)
 }
 
-func (cs *CustomCommand) HandleCommand(raw string, source commandsystem.CommandSource, m *discordgo.MessageCreate, s *discordgo.Session) error {
+func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.TriggerData, ctx context.Context) ([]*discordgo.Message, error) {
 	// Track how long execution of a command took
 	started := time.Now()
 	defer func() {
-		cs.logExecutionTime(time.Since(started), raw, m.Author.Username)
+		cs.logExecutionTime(time.Since(started), raw, trigger.Message.Author.Username)
 	}()
 
-	if source == commandsystem.CommandSourceDM && !cs.RunInDm {
-		return errors.New("Cannot run this command in direct messages")
-	}
-
+	// Need a redis client to check cooldowns and retrieve command settings
 	client, err := common.RedisPool.Get()
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving redis client")
-		return errors.New("Failed retrieving redis client")
+		return nil, errors.New("Failed retrieving redis client")
 	}
 	defer common.RedisPool.Put(client)
 
-	channel, err := s.State.Channel(m.ChannelID)
-	if err != nil {
-		return err
+	cState := bot.State.Channel(true, trigger.Message.ChannelID)
+	if cState == nil {
+		return nil, errors.New("Channel not found")
 	}
 
-	var guild *discordgo.Guild
+	var guild *dstate.GuildState
 	var autodel bool
 
-	if source != commandsystem.CommandSourceDM {
-		guild, err = s.State.Guild(channel.GuildID)
-		if err != nil {
-			return err
+	if trigger.Source != commandsystem.SourceDM {
+
+		guild = bot.State.Guild(true, cState.Channel.GuildID)
+		if guild == nil {
+			return nil, errors.New("Guild not found")
 		}
 
 		var enabled bool
 		// Check wether it's enabled or not
-		enabled, autodel, err = cs.Enabled(client, channel.ID, guild)
+		enabled, autodel, err = cs.Enabled(client, cState.Channel.ID, guild)
 		if err != nil {
-			s.ChannelMessageSend(channel.ID, "Bot is having issues... contact the junas D:")
-			return err
+			trigger.Session.ChannelMessageSend(cState.Channel.ID, "Bot is having issues... contact the bot author D:")
+			return nil, err
 		}
 
 		if !enabled {
-			go common.SendTempMessage(common.BotSession, time.Second*10, m.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host))
-			return nil
+			go common.SendTempMessage(trigger.Session, time.Second*10, trigger.Message.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host))
+			return nil, nil
 		}
 	}
 
-	cdLeft, err := cs.CooldownLeft(client, m.Author.ID)
+	cdLeft, err := cs.CooldownLeft(client, trigger.Message.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
 		log.WithError(err).Error("Failed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", m.Author.Username, cdLeft, cs.Name))
-		return nil
+		trigger.Session.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", trigger.Message.Author.Username, cdLeft, cs.Name))
+		return nil, nil
 	}
 
-	parsed, err := cs.ParseCommand(raw, m, s)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Failed parsing command: "+CensorError(err))
-		return nil
+	// parsed, err := cs.ParseCommand(raw, m, s)
+	// if err != nil {
+	// 	trigger.Session.ChannelMessageSend(m.ChannelID, "Failed parsing command: "+CensorError(err))
+	// 	return nil, nil
+	// }
+
+	// parsed.Source = source
+	// parsed.Channel = channel
+	// parsed.Guild = guild
+
+	replies, err := cs.Command.HandleCommand(raw, trigger, context.WithValue(ctx, CtxKeyRedisClient, client))
+
+	if len(replies) > 0 && autodel {
+		go cs.deleteResponse(append(replies, trigger.Message))
 	}
 
-	parsed.Source = source
-	parsed.Channel = channel
-	parsed.Guild = guild
-
-	if cs.RunFunc != nil {
-		resp, err := cs.RunFunc(parsed, client, m)
-		if resp != nil {
-			err2 := cs.sendResponse(s, resp, m.Message, autodel)
-			if err2 != nil {
-				log.WithError(err2).Errorf("Failed sending command response %#v", resp)
-				return err2
-			}
-		}
-		if err == nil {
-			err = cs.SetCooldown(client, m.Author.ID)
-			if err != nil {
-				log.WithError(err).Error("Failed setting cooldown")
-			}
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (cs *CustomCommand) sendResponse(s *discordgo.Session, response interface{}, trigger *discordgo.Message, autodel bool) error {
-
-	var msgs []*discordgo.Message
-	var err error
-
-	switch t := response.(type) {
-	case error:
-		msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, "Error: "+t.Error())
-	case string:
-		if t == "" {
-			return nil
-		}
-		msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, t)
-	case *discordgo.MessageEmbed:
-		perms := 0
-		perms, err = s.State.UserChannelPermissions(s.State.User.ID, trigger.ChannelID)
+	if err == nil {
+		err = cs.SetCooldown(client, trigger.Message.Author.ID)
 		if err != nil {
-			return err
+			log.WithError(err).Error("Failed setting cooldown")
 		}
-
-		if perms&discordgo.PermissionAdministrator != 0 || perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionEmbedLinks != 0 {
-			log.Println("Has perms", perms&discordgo.PermissionAdministrator != 0, perms&discordgo.PermissionManageServer != 0, perms&discordgo.PermissionEmbedLinks != 0)
-			if t.Color == 0 {
-				t.Color = rand.Intn(0xffffff)
-			}
-			m, e := s.ChannelMessageSendEmbed(trigger.ChannelID, t)
-			msgs = []*discordgo.Message{m}
-			err = e
-		} else {
-			// fallback
-			msgs, err = dutil.SplitSendMessage(s, trigger.ChannelID, common.FallbackEmbed(t))
-		}
-
 	}
-
-	if err != nil {
-		return err
-	}
-
-	if autodel && len(msgs) > 0 {
-		go cs.deleteResponse(append(msgs, trigger))
-	}
-
-	return nil
+	return replies, err
 }
 
 func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
@@ -225,12 +177,15 @@ func (cs *CustomCommand) customEnabled(client *redis.Client, guildID string) (bo
 }
 
 // Enabled returns wether the command is enabled or not
-func (cs *CustomCommand) Enabled(client *redis.Client, channel string, guild *discordgo.Guild) (enabled bool, autodel bool, err error) {
+func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *dstate.GuildState) (enabled bool, autodel bool, err error) {
+	gState.RLock()
+	defer gState.RUnlock()
+
 	if cs.HideFromCommandsPage {
 		return true, false, nil
 	}
 
-	ce, err := cs.customEnabled(client, guild.ID)
+	ce, err := cs.customEnabled(client, gState.Guild.ID)
 	if err != nil {
 		return false, false, err
 	}
@@ -238,7 +193,14 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, guild *di
 		return false, false, nil
 	}
 
-	config := GetConfig(client, guild.ID, guild.Channels)
+	channels := make([]*discordgo.Channel, len(gState.Channels))
+	i := 0
+	for _, v := range gState.Channels {
+		channels[i] = v.Channel
+		i++
+	}
+
+	config := GetConfig(client, gState.Guild.ID, channels)
 
 	// Check overrides first to see if one was enabled, and if so determine if the command is available
 	for _, override := range config.ChannelOverrides {

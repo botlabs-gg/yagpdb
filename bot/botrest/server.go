@@ -2,8 +2,10 @@ package botrest
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/Sirupsen/logrus"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"goji.io"
 	"goji.io/pat"
 	"net/http"
@@ -63,12 +65,18 @@ func dropNonLocal(inner http.Handler) http.Handler {
 func HandleGuild(w http.ResponseWriter, r *http.Request) {
 	gId := pat.Param(r, "guild")
 
-	guild, err := common.BotSession.State.Guild(gId)
-	if ServerError(w, r, err) {
+	guild := bot.State.Guild(true, gId)
+	if guild == nil {
+		ServerError(w, r, errors.New("Guild not found"))
 		return
 	}
 
-	gCopy := *guild
+	guild.RLock()
+	defer guild.RUnlock()
+
+	gCopy := new(discordgo.Guild)
+	*gCopy = *guild.Guild
+
 	gCopy.Members = nil
 	gCopy.Presences = nil
 	gCopy.VoiceStates = nil
@@ -79,8 +87,17 @@ func HandleGuild(w http.ResponseWriter, r *http.Request) {
 func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 	gId := pat.Param(r, "guild")
 
-	member, err := common.BotSession.State.Member(gId, common.BotSession.State.User.ID)
-	if ServerError(w, r, err) {
+	guild := bot.State.Guild(true, gId)
+	if guild == nil {
+		ServerError(w, r, errors.New("Guild not found"))
+		return
+	}
+
+	botUser := bot.State.User(true)
+
+	member := guild.MemberCopy(true, botUser.ID, false)
+	if member == nil {
+		ServerError(w, r, errors.New("Bot Member not found"))
 		return
 	}
 

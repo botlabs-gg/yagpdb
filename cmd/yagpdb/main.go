@@ -4,25 +4,26 @@ import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/automod"
-	"github.com/jonas747/yagpdb/autorole"
-	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/logs"
-	"github.com/jonas747/yagpdb/moderation"
-	"github.com/jonas747/yagpdb/notifications"
-	"github.com/jonas747/yagpdb/reddit"
-	"github.com/jonas747/yagpdb/reminders"
-	"github.com/jonas747/yagpdb/reputation"
-	"github.com/jonas747/yagpdb/serverstats"
-	"github.com/jonas747/yagpdb/soundboard"
-	"github.com/jonas747/yagpdb/streaming"
+	stdlog "log"
+	// "github.com/jonas747/yagpdb/customcommands"
+	// "github.com/jonas747/yagpdb/automod"
+	// "github.com/jonas747/yagpdb/autorole"
+	// "github.com/jonas747/yagpdb/aylien"
+	// "github.com/jonas747/yagpdb/logs"
+	// "github.com/jonas747/yagpdb/moderation"
+	// "github.com/jonas747/yagpdb/notifications"
+	// "github.com/jonas747/yagpdb/reddit"
+	// "github.com/jonas747/yagpdb/reminders"
+	// "github.com/jonas747/yagpdb/reputation"
+	// "github.com/jonas747/yagpdb/serverstats"
+	// "github.com/jonas747/yagpdb/soundboard"
+	// "github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/shiena/ansicolor"
 	"os"
@@ -62,6 +63,7 @@ func main() {
 
 	log.AddHook(common.ContextHook{})
 	log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
+	stdlog.SetOutput(log.StandardLogger().Writer())
 	//log.AddHook(&journalhook.JournalHook{})
 	//journalhook.Enable()
 
@@ -87,19 +89,19 @@ func main() {
 
 	// Setup plugins
 	commands.RegisterPlugin()
-	serverstats.RegisterPlugin()
-	notifications.RegisterPlugin()
-	customcommands.RegisterPlugin()
-	reddit.RegisterPlugin()
-	moderation.RegisterPlugin()
-	reputation.RegisterPlugin()
-	aylien.RegisterPlugin()
-	streaming.RegisterPlugin()
-	automod.RegisterPlugin()
-	logs.InitPlugin()
-	autorole.RegisterPlugin()
-	reminders.RegisterPlugin()
-	soundboard.RegisterPlugin()
+	// serverstats.RegisterPlugin()
+	// notifications.RegisterPlugin()
+	// customcommands.RegisterPlugin()
+	// reddit.RegisterPlugin()
+	// moderation.RegisterPlugin()
+	// reputation.RegisterPlugin()
+	// aylien.RegisterPlugin()
+	// streaming.RegisterPlugin()
+	// automod.RegisterPlugin()
+	// logs.InitPlugin()
+	// autorole.RegisterPlugin()
+	// reminders.RegisterPlugin()
+	// soundboard.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
