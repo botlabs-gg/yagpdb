@@ -55,6 +55,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	ctx := r.Context()
 	client, g, tmpl := web.GetBaseCPContextData(ctx)
 
+	isDCA := false
 	var file multipart.File
 	if r.FormValue("SoundURL") == "" {
 		f, header, err := r.FormFile("Sound")
@@ -63,14 +64,21 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		}
 		file = f
 
-		if !strings.HasSuffix(header.Filename, ".mp3") && !strings.HasSuffix(header.Filename, ".ogg") && !strings.HasSuffix(header.Filename, ".wav") {
-			tmpl.AddAlerts(web.ErrorAlert("Only mp3, ogg and wav files allowed"))
+		if !strings.HasSuffix(header.Filename, ".mp3") && !strings.HasSuffix(header.Filename, ".ogg") && !strings.HasSuffix(header.Filename, ".wav") && !strings.HasSuffix(header.Filename, ".dca") {
+			tmpl.AddAlerts(web.ErrorAlert("Only mp3, ogg, wav and dca files allowed"))
 			return tmpl, nil
+		}
+
+		if strings.HasSuffix(header.Filename, ".dca") {
+			isDCA = true
 		}
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
 	data.Status = TranscodingStatusQueued
+	if isDCA {
+		data.Status = TranscodingStatusReady
+	}
 	data.GuildID = common.MustParseInt(g.ID)
 
 	count := 0
@@ -110,6 +118,9 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 
 	//logrus.Error("CREAte errror:", err)
 	fname := "soundboard/queue/" + strconv.Itoa(int(data.ID))
+	if isDCA {
+		fname += ".dca"
+	}
 	destFile, err := os.Create(fname)
 	if err != nil {
 		return tmpl, err

@@ -22,7 +22,7 @@ func StartServer() {
 	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
 	// Debug stuff
-	muxer.HandleFunc(pat.Get("/debug/pprof/*"), pprof.Index)
+	muxer.HandleFunc(pat.Get("/debug/pprof/other/*"), pprof.Index)
 	muxer.HandleFunc(pat.Get("/debug/pprof/cmdline"), pprof.Cmdline)
 	muxer.HandleFunc(pat.Get("/debug/pprof/profile"), pprof.Profile)
 	muxer.HandleFunc(pat.Get("/debug/pprof/symbol"), pprof.Symbol)

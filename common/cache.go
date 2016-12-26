@@ -7,11 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/fzzy/radix/redis"
+	"github.com/karlseguin/ccache"
 )
 
 var (
 	ErrNotFound    = errors.New("Not found")
 	CacheKeyPrefix = "cache_"
+
+	Cache *ccache.Cache
 )
 
 // Items in the cache expire after 1 min
