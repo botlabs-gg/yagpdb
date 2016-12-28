@@ -49,7 +49,7 @@ func Run() {
 
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
-	State.Debug = true
+	// State.Debug = true
 
 	common.BotSession.StateEnabled = false
 	common.BotSession.AddHandler(State.HandleEvent)
@@ -72,6 +72,7 @@ func Run() {
 		}
 	}
 
+	go checkConnectedGuilds()
 }
 
 func Stop(wg *sync.WaitGroup) {

@@ -25,7 +25,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 var (
@@ -66,7 +65,7 @@ func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) str
 		return ""
 	}
 
-	prefix, err := GetCommandPrefix(client, channel.Channel.GuildID)
+	prefix, err := GetCommandPrefix(client, channel.ID())
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -152,7 +151,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				// Fetch the prefix if ther command was not run in a dm
 				footer := ""
 				if data.Source != commandsystem.SourceDM {
-					prefix, err := GetCommandPrefix(data.Context().Value(CtxKeyRedisClient).(*redis.Client), data.Guild.Guild.ID)
+					prefix, err := GetCommandPrefix(data.Context().Value(CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
 					if err != nil {
 						return "Error communicating with redis", err
 					}
@@ -190,7 +189,10 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				var memStats runtime.MemStats
 				runtime.ReadMemStats(&memStats)
-				servers := len(common.BotSession.State.Guilds)
+
+				bot.State.RLock()
+				servers := len(bot.State.Guilds)
+				bot.State.RUnlock()
 
 				sysMem, err := mem.VirtualMemory()
 				sysMemStats := ""
@@ -218,10 +220,12 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 				numScheduledEvent, _ := common.NumScheduledEvents(data.Context().Value(CtxKeyRedisClient).(*redis.Client))
 
+				botUser := bot.State.User(true)
+
 				embed := &discordgo.MessageEmbed{
 					Author: &discordgo.MessageEmbedAuthor{
-						Name:    common.BotSession.State.User.Username,
-						IconURL: discordgo.EndpointUserAvatar(common.BotSession.State.User.ID, common.BotSession.State.User.Avatar),
+						Name:    botUser.Username,
+						IconURL: discordgo.EndpointUserAvatar(botUser.ID, botUser.Avatar),
 					},
 					Title: "YAGPDB Status, version " + common.VERSION,
 					Fields: []*discordgo.MessageEmbedField{
@@ -247,7 +251,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					}
 				}
 
-				return embed, nil
+				return &commandsystem.FallbackEmebd{embed}, nil
 			},
 		},
 	},
@@ -531,45 +535,31 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			Description: "Responds with the top 10 servers im on",
 
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				state := common.BotSession.State
+				state := bot.State
 				state.RLock()
 
-				sortable := GuildsSortUsers(state.Guilds)
+				guilds := make([]*discordgo.Guild, len(state.Guilds))
+				i := 0
+				for _, v := range state.Guilds {
+					state.RUnlock()
+					guilds[i] = v.LightCopy(true)
+					state.RLock()
+					i++
+				}
+				state.RUnlock()
+
+				sortable := GuildsSortUsers(guilds)
 				sort.Sort(sortable)
 
 				out := "```"
 				for k, v := range sortable {
-					if k > 10 {
+					if k > 9 {
 						break
 					}
 
-					out += fmt.Sprintf("\n#%-2d: %s (%d)", k, v.Name, v.MemberCount)
+					out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
 				}
-				state.RUnlock()
 				return out + "\n```", nil
-			},
-		},
-	}, &CustomCommand{
-		Cooldown:             10,
-		Category:             CategoryFun,
-		HideFromCommandsPage: true,
-		Command: &commandsystem.Command{
-			Name:         "dumpdm",
-			Description:  "dudidadudida",
-			HideFromHelp: true,
-
-			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				if data.Message.Author.ID != common.Conf.Owner {
-					return "Only bot owner can run this", nil
-				}
-				state := common.BotSession.State
-				state.RLock()
-				defer state.RUnlock()
-				out := "Dm channels"
-				for _, v := range state.PrivateChannels {
-					out += fmt.Sprintf("\n%s - (%s)", v.Recipient.Username, v.ID)
-				}
-				return out, nil
 			},
 		},
 	},
@@ -578,10 +568,9 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Category:             CategoryFun,
 		HideFromCommandsPage: true,
 		Command: &commandsystem.Command{
-			Name:         "Yagmem",
-			Description:  "Send some memory stats",
+			Name:         "stateinfo",
+			Description:  "Responds with state debug info",
 			HideFromHelp: true,
-
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				if data.Message.Author.ID != common.Conf.Owner {
 					return "Only bot owner can run this", nil
@@ -589,49 +578,37 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 				totalGuilds := 0
 				totalMembers := 0
-				membersMem := 0
 				totalChannels := 0
-				channelsMem := 0
 				totalMessages := 0
-				messagesMem := 0
 
-				state := common.BotSession.State
+				state := bot.State
 				state.RLock()
 				defer state.RUnlock()
 
-				for _, v := range state.Guilds {
-					totalGuilds++
+				totalGuilds = len(state.Guilds)
 
-					for _, channel := range v.Channels {
-						totalChannels++
-						channelsMem += ChannelMemorySize(channel)
+				for _, g := range state.Guilds {
 
-						if channel.Messages != nil {
-							totalMessages += len(channel.Messages)
-							for _, msg := range channel.Messages {
-								messagesMem += GetMessageMemorySize(msg)
-							}
-						}
+					state.RUnlock()
+					g.RLock()
+
+					totalChannels += len(g.Channels)
+					totalMembers += len(g.Members)
+
+					for _, cState := range g.Channels {
+						totalMessages += len(cState.Messages)
 					}
-
-					totalMembers += len(v.Members)
-					for _, member := range v.Members {
-						membersMem += GetMemberMemorySize(member)
-					}
+					g.RUnlock()
+					state.RLock()
 				}
 
-				var stats runtime.MemStats
-				runtime.ReadMemStats(&stats)
-
 				embed := &discordgo.MessageEmbed{
-					Title: "Memory stats",
+					Title: "State size",
 					Fields: []*discordgo.MessageEmbedField{
-						&discordgo.MessageEmbedField{Name: "Allocated", Value: fmt.Sprintf("%dMB", stats.Alloc/1000000), Inline: true},
-						&discordgo.MessageEmbedField{Name: "TotalAlloc", Value: fmt.Sprintf("%dMB", stats.TotalAlloc/1000000), Inline: true},
 						&discordgo.MessageEmbedField{Name: "Guilds", Value: fmt.Sprint(totalGuilds), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprintf("%d (%.1fKB)", totalMembers, float64(membersMem)/1000), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d (%.1fKB)", totalMessages, float64(messagesMem)/1000), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprintf("%d (%.1fKB)", totalChannels, float64(channelsMem)/1000), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprintf("%d", totalMembers), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d", totalMessages), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
 					},
 				}
 
@@ -669,7 +646,7 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 }
 
 func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, client *redis.Client) {
-	if s.State.User == nil || s.State.User.ID != m.Author.ID {
+	if bot.State.User(true).ID != m.Author.ID {
 		return
 	}
 
@@ -685,110 +662,6 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, clien
 
 	taken := time.Duration(time.Now().UnixNano() - parsed)
 	s.ChannelMessageEdit(m.ChannelID, m.ID, "Received pong, took: "+taken.String())
-}
-
-// Stuff for measuring memory below
-func GetMessageMemorySize(msg *discordgo.Message) int {
-	result := int(unsafe.Sizeof(*msg))
-	result += len(msg.Content)
-	result += len(string(msg.Timestamp))
-	if msg.Author != nil {
-		result += DiscordUserMemorySize(msg.Author)
-	}
-	for _, embed := range msg.Embeds {
-		result += int(unsafe.Sizeof(*embed))
-
-		if embed.Footer != nil {
-			result += len(embed.Footer.IconURL)
-			result += len(embed.Footer.ProxyIconURL)
-			result += len(embed.Footer.Text)
-		}
-		if embed.Author != nil {
-			result += len(embed.Author.IconURL)
-			result += len(embed.Author.Name)
-			result += len(embed.Author.ProxyIconURL)
-			result += len(embed.Author.URL)
-		}
-		if embed.Thumbnail != nil {
-			result += int(unsafe.Sizeof(*embed.Thumbnail))
-			result += len(embed.Thumbnail.ProxyURL)
-			result += len(embed.Thumbnail.URL)
-		}
-		if embed.Provider != nil {
-			result += len(embed.Provider.Name)
-			result += len(embed.Provider.URL)
-		}
-		if embed.Video != nil {
-			result += int(unsafe.Sizeof(*embed.Video))
-			result += len(embed.Video.ProxyURL)
-			result += len(embed.Video.URL)
-		}
-		if embed.Image != nil {
-			result += int(unsafe.Sizeof(*embed.Image))
-			result += len(embed.Image.ProxyURL)
-			result += len(embed.Image.URL)
-		}
-
-		for _, field := range embed.Fields {
-			result += int(unsafe.Sizeof(*field))
-			result += len(field.Name)
-			result += len(field.Value)
-		}
-
-		result += len(embed.Title)
-		result += len(embed.Description)
-		result += len(embed.Timestamp)
-		result += len(embed.Type)
-		result += len(embed.URL)
-	}
-
-	return result
-}
-func ChannelMemorySize(channel *discordgo.Channel) int {
-	result := int(unsafe.Sizeof(*channel))
-	result += len(channel.Type)
-	result += len(channel.Topic)
-	result += len(channel.Name)
-	result += len(channel.LastMessageID)
-	result += len(channel.ID)
-	result += len(channel.GuildID)
-
-	if channel.Recipient != nil {
-		result += DiscordUserMemorySize(channel.Recipient)
-	}
-
-	for _, overwrite := range channel.PermissionOverwrites {
-		result += int(unsafe.Sizeof(*overwrite))
-		result += len(overwrite.ID)
-		result += len(overwrite.Type)
-	}
-
-	return result
-}
-
-func DiscordUserMemorySize(user *discordgo.User) int {
-	result := int(unsafe.Sizeof(*user))
-	result += len(user.Avatar)
-	result += len(user.Username)
-	result += len(user.ID)
-	result += len(user.Discriminator)
-	result += len(user.Email)
-	return result
-}
-
-func GetMemberMemorySize(member *discordgo.Member) int {
-	result := int(unsafe.Sizeof(*member))
-	result += len(member.GuildID)
-	result += len(member.JoinedAt)
-	result += len(member.Nick)
-	if member.User != nil {
-		result += DiscordUserMemorySize(member.User)
-	}
-
-	for _, role := range member.Roles {
-		result += len(role)
-	}
-	return result
 }
 
 type GuildsSortUsers []*discordgo.Guild

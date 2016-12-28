@@ -12,11 +12,14 @@ var (
 )
 
 func GetCreatePrivateChannel(s *discordgo.Session, user string) (*discordgo.Channel, error) {
-	// for _, v := range s.State.PrivateChannels {
-	// 	if v.Recipient.ID == user {
-	// 		return v, nil
-	// 	}
-	// }
+
+	State.RLock()
+	defer State.RUnlock()
+	for _, c := range State.PrivateChannels {
+		if c.Recipient().ID == user {
+			return c.Copy(true, false), nil
+		}
+	}
 
 	channel, err := s.UserChannelCreate(user)
 	if err != nil {

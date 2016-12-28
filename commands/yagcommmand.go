@@ -71,16 +71,16 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 
 	if trigger.Source != commandsystem.SourceDM {
 
-		guild = bot.State.Guild(true, cState.Channel.GuildID)
+		guild = cState.Guild
 		if guild == nil {
 			return nil, errors.New("Guild not found")
 		}
 
 		var enabled bool
 		// Check wether it's enabled or not
-		enabled, autodel, err = cs.Enabled(client, cState.Channel.ID, guild)
+		enabled, autodel, err = cs.Enabled(client, cState.ID(), guild)
 		if err != nil {
-			trigger.Session.ChannelMessageSend(cState.Channel.ID, "Bot is having issues... contact the bot author D:")
+			trigger.Session.ChannelMessageSend(cState.ID(), "Bot is having issues... contact the bot author D:")
 			return nil, err
 		}
 
@@ -185,7 +185,7 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *d
 		return true, false, nil
 	}
 
-	ce, err := cs.customEnabled(client, gState.Guild.ID)
+	ce, err := cs.customEnabled(client, gState.ID())
 	if err != nil {
 		return false, false, err
 	}
@@ -200,7 +200,7 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *d
 		i++
 	}
 
-	config := GetConfig(client, gState.Guild.ID, channels)
+	config := GetConfig(client, gState.ID(), channels)
 
 	// Check overrides first to see if one was enabled, and if so determine if the command is available
 	for _, override := range config.ChannelOverrides {
