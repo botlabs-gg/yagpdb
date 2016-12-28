@@ -17,12 +17,12 @@ import (
 	// "github.com/jonas747/yagpdb/aylien"
 	// "github.com/jonas747/yagpdb/logs"
 	// "github.com/jonas747/yagpdb/moderation"
-	// "github.com/jonas747/yagpdb/notifications"
-	// "github.com/jonas747/yagpdb/reddit"
+	"github.com/jonas747/yagpdb/notifications"
+	"github.com/jonas747/yagpdb/reddit"
 	// "github.com/jonas747/yagpdb/reminders"
 	// "github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/serverstats"
-	// "github.com/jonas747/yagpdb/soundboard"
+	"github.com/jonas747/yagpdb/soundboard"
 	// "github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/shiena/ansicolor"
@@ -90,9 +90,9 @@ func main() {
 	// Setup plugins
 	commands.RegisterPlugin()
 	serverstats.RegisterPlugin()
-	// notifications.RegisterPlugin()
+	notifications.RegisterPlugin()
 	// customcommands.RegisterPlugin()
-	// reddit.RegisterPlugin()
+	reddit.RegisterPlugin()
 	// moderation.RegisterPlugin()
 	// reputation.RegisterPlugin()
 	// aylien.RegisterPlugin()
@@ -101,7 +101,7 @@ func main() {
 	// logs.InitPlugin()
 	// autorole.RegisterPlugin()
 	// reminders.RegisterPlugin()
-	// soundboard.RegisterPlugin()
+	soundboard.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")

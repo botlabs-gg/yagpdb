@@ -2,7 +2,9 @@ package bot
 
 import (
 	"errors"
+	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/patrickmn/go-cache"
 	"time"
 )
@@ -42,3 +44,25 @@ func SendDM(s *discordgo.Session, user string, msg string) error {
 var (
 	ErrStartingUp = errors.New("Starting up, caches are being filled...")
 )
+
+func GetMember(guildID, userID string) *discordgo.Member {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return nil
+	}
+
+	cop := gs.MemberCopy(true, userID, true)
+	if cop != nil {
+		return cop
+	}
+
+	member, err := common.BotSession.GuildMember(guildID, userID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", guildID).Error("Failed retrieving guild member")
+		return nil
+	}
+
+	gs.MemberAddUpdate(true, member)
+
+	return member
+}

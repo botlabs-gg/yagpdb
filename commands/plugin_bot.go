@@ -65,10 +65,11 @@ func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) str
 		return ""
 	}
 
-	prefix, err := GetCommandPrefix(client, channel.ID())
+	prefix, err := GetCommandPrefix(client, channel.Guild.ID())
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving commands prefix")
 	}
+
 	return prefix
 }
 
