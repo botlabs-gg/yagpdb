@@ -21,7 +21,7 @@ import (
 	// "github.com/jonas747/yagpdb/reddit"
 	// "github.com/jonas747/yagpdb/reminders"
 	// "github.com/jonas747/yagpdb/reputation"
-	// "github.com/jonas747/yagpdb/serverstats"
+	"github.com/jonas747/yagpdb/serverstats"
 	// "github.com/jonas747/yagpdb/soundboard"
 	// "github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
@@ -89,7 +89,7 @@ func main() {
 
 	// Setup plugins
 	commands.RegisterPlugin()
-	// serverstats.RegisterPlugin()
+	serverstats.RegisterPlugin()
 	// notifications.RegisterPlugin()
 	// customcommands.RegisterPlugin()
 	// reddit.RegisterPlugin()

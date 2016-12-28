@@ -25,34 +25,34 @@ func (p *Plugin) InitBot() {
 		Key:      "stats_settings_public:",
 		Category: commands.CategoryTool,
 		Cooldown: 10,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Stats",
 			Description: "Shows server stats (if public stats are enabled)",
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			stats, err := RetrieveFullStats(client, parsed.Guild.ID)
-			if err != nil {
-				return "Error retrieving stats", err
-			}
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
+				if err != nil {
+					return "Error retrieving stats", err
+				}
 
-			total := 0
-			for _, c := range stats.ChannelsHour {
-				total += c.Count
-			}
+				total := 0
+				for _, c := range stats.ChannelsHour {
+					total += c.Count
+				}
 
-			embed := &discordgo.MessageEmbed{
-				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%s/stats)", common.Conf.Host, parsed.Guild.ID),
-				Fields: []*discordgo.MessageEmbedField{
-					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
-				},
-			}
+				embed := &discordgo.MessageEmbed{
+					Title:       "Server stats",
+					Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%s/stats)", common.Conf.Host, data.Guild.ID()),
+					Fields: []*discordgo.MessageEmbedField{
+						&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
+						&discordgo.MessageEmbedField{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
+					},
+				}
 
-			return embed, nil
+				return embed, nil
+			},
 		},
 	})
 
@@ -126,12 +126,12 @@ func HandleMemberRemove(s *discordgo.Session, g *discordgo.GuildMemberRemove, cl
 }
 
 func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, client *redis.Client) {
-	channel, err := s.State.Channel(m.ChannelID)
-	if err != nil {
-		log.WithError(err).Error("Error retrieving channel from state")
+	channel := bot.State.Channel(true, m.ChannelID)
+	if channel.IsPrivate() {
 		return
 	}
-	err = client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.GuildID, time.Now().Unix(), channel.ID+":"+m.ID+":"+m.Author.ID).Err
+
+	err := client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.Guild.ID(), time.Now().Unix(), channel.ID()+":"+m.ID+":"+m.Author.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
