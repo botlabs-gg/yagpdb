@@ -370,19 +370,24 @@ func MustParseInt(s string) int64 {
 	return i
 }
 
-// This was bad on large servers...
+func AddRole(member *discordgo.Member, role string, guildID string) error {
+	for _, v := range member.Roles {
+		if v == role {
+			// Already has the role
+			return nil
+		}
+	}
 
-// func GetGuildMembers(client *redis.Client, guildID string) (members []*discordgo.Member, err error) {
-// 	err = GetCacheDataJson(client, "guild_members:"+guildID, &members)
-// 	if err == nil {
-// 		return
-// 	}
+	return BotSession.GuildMemberRoleAdd(guildID, member.User.ID, role)
+}
 
-// 	members, err = dutil.GetAllGuildMembers(BotSession, guildID)
-// 	if err != nil {
-// 		return
-// 	}
+func RemoveRole(member *discordgo.Member, role string, guildID string) error {
+	for _, r := range member.Roles {
+		if r == role {
+			return BotSession.GuildMemberRoleRemove(guildID, member.User.ID, r)
+		}
+	}
 
-// 	SetCacheDataJsonSimple(client, "guild_members:"+guildID, members)
-// 	return
-// }
+	// Never had the role in the first place if we got here
+	return nil
+}
