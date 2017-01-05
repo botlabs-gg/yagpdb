@@ -12,6 +12,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
 	"reflect"
+	"runtime/debug"
 	"strings"
 )
 
@@ -126,6 +127,13 @@ func handleEvent(evt string) {
 		EventName:   name,
 		Data:        decoded,
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			stack := string(debug.Stack())
+			logrus.Error("Recovered from panic in pubsub event handler", r, "\n", stack)
+		}
+	}()
 
 	for _, handler := range eventHandlers {
 		if handler.evt != name {
