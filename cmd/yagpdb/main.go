@@ -11,8 +11,19 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/feeds"
+	"github.com/shiena/ansicolor"
+	"os"
+	"os/signal"
+	"strconv"
+	"sync"
+	"syscall"
+	"time"
+	//"github.com/wercker/journalhook"
 	stdlog "log"
-	// "github.com/jonas747/yagpdb/customcommands"
+
+	// Plugin imports
+
+	"github.com/jonas747/yagpdb/customcommands"
 	// "github.com/jonas747/yagpdb/automod"
 	// "github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
@@ -26,14 +37,6 @@ import (
 	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/shiena/ansicolor"
-	"os"
-	"os/signal"
-	"strconv"
-	"sync"
-	"syscall"
-	"time"
-	//"github.com/wercker/journalhook"
 )
 
 var (
@@ -92,7 +95,7 @@ func main() {
 	commands.RegisterPlugin()
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()
-	// customcommands.RegisterPlugin()
+	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
 	// moderation.RegisterPlugin()
 	// reputation.RegisterPlugin()

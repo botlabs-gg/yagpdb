@@ -1,11 +1,13 @@
 package customcommands
 
 import (
+	"context"
 	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"regexp"
@@ -16,8 +18,8 @@ import (
 )
 
 func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
-	if s.State.User == nil || s.State.User.ID == evt.Author.ID {
-		return // ignore ourselves
+	if bot.State.User(true).ID == evt.Author.ID {
+		return
 	}
 
 	if evt.Author.Bot {
@@ -171,8 +173,16 @@ func execCmd(dryRun bool, client *redis.Client, ctx *discordgo.User, s *discordg
 	log.Info("Custom command is executing a command:", cmdLine)
 
 	var matchedCmd commandsystem.CommandHandler
+
+	triggerData := &commandsystem.TriggerData{
+		Session: common.BotSession,
+		DState:  bot.State,
+		Message: m.Message,
+		Source:  commandsystem.SourcePrefix,
+	}
+
 	for _, command := range commands.CommandSystem.Commands {
-		if !command.CheckMatch(cmdLine, commandsystem.CommandSourcePrefix, m, s) {
+		if !command.CheckMatch(cmdLine, triggerData) {
 			continue
 		}
 		matchedCmd = command
@@ -193,15 +203,17 @@ func execCmd(dryRun bool, client *redis.Client, ctx *discordgo.User, s *discordg
 		return "", nil
 	}
 
-	parsed, err := cast.ParseCommand(cmdLine, m, s)
+	parsed, err := cast.ParseCommand(cmdLine, triggerData)
 	if err != nil {
 		return "", err
 	}
 
-	parsed.Channel = common.MustGetChannel(m.ChannelID)
-	parsed.Guild = common.MustGetGuild(parsed.Channel.GuildID)
+	parsed.Source = triggerData.Source
 
-	resp, err := cast.RunFunc(parsed, client, m)
+	parsed.Channel = bot.State.Channel(true, m.ChannelID)
+	parsed.Guild = parsed.Channel.Guild
+
+	resp, err := cast.Run(parsed.WithContext(context.WithValue(parsed.Context(), commands.CtxKeyRedisClient, client)))
 
 	switch v := resp.(type) {
 	case error:
