@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/AYLIEN/aylien_textapi_go"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
@@ -53,121 +52,121 @@ func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		Category: commands.CategoryFun,
 		Cooldown: 5,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "sentiment",
 			Aliases:     []string{"sent"},
 			Description: "Does sentiment analysys on a message or your last 5 messages longer than 3 words",
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "what", Description: "Specify something to analyze, by default it takes your last 5 messages", Type: commandsystem.ArgumentTypeString},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "what", Description: "Specify something to analyze, by default it takes your last 5 messages", Type: commandsystem.ArgumentString},
 			},
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			// Were working hard!
-			common.BotSession.ChannelTyping(m.ChannelID)
+			Run: func(cmd *commandsystem.ExecData) (interface{}, error) {
+				// Were working hard!
+				common.BotSession.ChannelTyping(cmd.Channel.ID())
 
-			var responses []*textapi.SentimentResponse
-			if parsed.Args[0] != nil {
-				resp, err := p.aylien.Sentiment(&textapi.SentimentParams{
-					Text: parsed.Args[0].Str(),
-				})
-				if err != nil {
-					return "Error querying aylien api", err
-				}
-				responses = []*textapi.SentimentResponse{resp}
-			} else {
-
-				// Get the message to analyze
-				msgs, err := common.GetMessages(m.ChannelID, 100)
-				if err != nil {
-					return "Error retrieving messages", err
-				}
-
-				if len(msgs) < 1 {
-					return ErrNoMessages, ErrNoMessages
-				}
-
-				// filter out our own and longer than 3 words
-				toAnalyze := make([]*discordgo.Message, 0)
-				for i := len(msgs) - 1; i >= 0; i-- {
-					msg := msgs[i]
-					// log.Println(msg.ID, msg.ContentWithMentionsReplaced())
-					if msg.Author.ID == m.Author.ID {
-						if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
-							toAnalyze = append(toAnalyze, msg)
-							if len(toAnalyze) >= 5 {
-								break
-							}
-						}
-					}
-				}
-
-				if len(toAnalyze) < 1 {
-					return ErrNoMessages, ErrNoMessages
-				}
-
-				for _, msg := range toAnalyze {
-					resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: msg.ContentWithMentionsReplaced()})
+				var responses []*textapi.SentimentResponse
+				if cmd.Args[0] != nil {
+					resp, err := p.aylien.Sentiment(&textapi.SentimentParams{
+						Text: cmd.Args[0].Str(),
+					})
 					if err != nil {
 						return "Error querying aylien api", err
 					}
+					responses = []*textapi.SentimentResponse{resp}
+				} else {
 
-					responses = append(responses, resp)
+					// Get the message to analyze
+					msgs, err := common.GetMessages(cmd.Channel.ID(), 100)
+					if err != nil {
+						return "Error retrieving messages", err
+					}
+
+					if len(msgs) < 1 {
+						return ErrNoMessages, ErrNoMessages
+					}
+
+					// filter out our own and longer than 3 words
+					toAnalyze := make([]*discordgo.Message, 0)
+					for i := len(msgs) - 1; i >= 0; i-- {
+						msg := msgs[i]
+						// log.Println(msg.ID, msg.ContentWithMentionsReplaced())
+						if msg.Author.ID == cmd.Message.Author.ID {
+							if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
+								toAnalyze = append(toAnalyze, msg)
+								if len(toAnalyze) >= 5 {
+									break
+								}
+							}
+						}
+					}
+
+					if len(toAnalyze) < 1 {
+						return ErrNoMessages, ErrNoMessages
+					}
+
+					for _, msg := range toAnalyze {
+						resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: msg.ContentWithMentionsReplaced()})
+						if err != nil {
+							return "Error querying aylien api", err
+						}
+
+						responses = append(responses, resp)
+					}
 				}
-			}
 
-			out := fmt.Sprintf("**Sentiment analysys on %d messages:**\n", len(responses))
-			for _, resp := range responses {
-				out += fmt.Sprintf("*%s*\nPolarity: **%s** *(Confidence: %.2f%%)* Subjectivity: **%s** *(Confidence: %.2f%%)*\n\n", resp.Text, resp.Polarity, resp.PolarityConfidence*100, resp.Subjectivity, resp.SubjectivityConfidence*100)
-			}
-			return out, nil
+				out := fmt.Sprintf("**Sentiment analysys on %d messages:**\n", len(responses))
+				for _, resp := range responses {
+					out += fmt.Sprintf("*%s*\nPolarity: **%s** *(Confidence: %.2f%%)* Subjectivity: **%s** *(Confidence: %.2f%%)*\n\n", resp.Text, resp.Polarity, resp.PolarityConfidence*100, resp.Subjectivity, resp.SubjectivityConfidence*100)
+				}
+				return out, nil
+			},
 		},
 	},
 		// This is a fun little always positive 8ball
 		&commands.CustomCommand{
 			Cooldown: 5,
 			Category: commands.CategoryFun,
-			SimpleCommand: &commandsystem.SimpleCommand{
+			Command: &commandsystem.Command{
 				Name:        "8Ball",
 				Description: "Wisdom",
-				Arguments: []*commandsystem.ArgumentDef{
-					&commandsystem.ArgumentDef{Name: "What to ask", Type: commandsystem.ArgumentTypeString},
+				Arguments: []*commandsystem.ArgDef{
+					&commandsystem.ArgDef{Name: "What to ask", Type: commandsystem.ArgumentString},
 				},
 				RequiredArgs: 1,
-			},
-			RunFunc: func(cmd *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-				resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: cmd.Args[0].Str()})
-				if err != nil {
-					resp = &textapi.SentimentResponse{
-						Polarity:               "neutral",
-						PolarityConfidence:     1,
-						Subjectivity:           "subjective",
-						SubjectivityConfidence: 1,
+				Run: func(cmd *commandsystem.ExecData) (interface{}, error) {
+					resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: cmd.Args[0].Str()})
+					if err != nil {
+						resp = &textapi.SentimentResponse{
+							Polarity:               "neutral",
+							PolarityConfidence:     1,
+							Subjectivity:           "subjective",
+							SubjectivityConfidence: 1,
+						}
 					}
-				}
 
-				switch resp.Polarity {
-				case "neutral":
-					if rand.Intn(2) > 0 {
-						return "Yes", nil
-					} else {
-						return "No", nil
+					switch resp.Polarity {
+					case "neutral":
+						if rand.Intn(2) > 0 {
+							return "Yes", nil
+						} else {
+							return "No", nil
+						}
+					case "positive":
+						switch {
+						case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
+							return "Most likely", nil
+						case resp.PolarityConfidence >= 0.5:
+							return "Without a doubt", nil
+						}
+					case "negative":
+						switch {
+						case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
+							return "Not likely", nil
+						case resp.PolarityConfidence >= 0.5:
+							return "Definetively not", nil
+						}
 					}
-				case "positive":
-					switch {
-					case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
-						return "Most likely", nil
-					case resp.PolarityConfidence >= 0.5:
-						return "Without a doubt", nil
-					}
-				case "negative":
-					switch {
-					case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
-						return "Not likely", nil
-					case resp.PolarityConfidence >= 0.5:
-						return "Definetively not", nil
-					}
-				}
-				return "Dunno", nil
+					return "Dunno", nil
+				},
 			},
 		},
 	)

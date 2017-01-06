@@ -15,7 +15,7 @@ import (
 	// "github.com/jonas747/yagpdb/customcommands"
 	// "github.com/jonas747/yagpdb/automod"
 	// "github.com/jonas747/yagpdb/autorole"
-	// "github.com/jonas747/yagpdb/aylien"
+	"github.com/jonas747/yagpdb/aylien"
 	// "github.com/jonas747/yagpdb/logs"
 	// "github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
@@ -96,7 +96,7 @@ func main() {
 	reddit.RegisterPlugin()
 	// moderation.RegisterPlugin()
 	// reputation.RegisterPlugin()
-	// aylien.RegisterPlugin()
+	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	// automod.RegisterPlugin()
 	// logs.InitPlugin()
