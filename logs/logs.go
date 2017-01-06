@@ -90,58 +90,59 @@ type Message struct {
 }
 
 func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLog, error) {
-	if count > 1000 {
-		panic("count > 1000")
-	}
+	// if count > 1000 {
+	// 	panic("count > 1000")
+	// }
 
-	channel, err := common.BotSession.State.Channel(channelID)
-	if err != nil {
-		return nil, err
-	}
+	// channel, err := common.BotSession.State.Channel(channelID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	msgs, err := common.GetMessages(channel.ID, count)
-	if err != nil {
-		return nil, err
-	}
+	// msgs, err := common.GetMessages(channel.ID, count)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	logMsgs := make([]Message, len(msgs))
+	// logMsgs := make([]Message, len(msgs))
 
-	for k, v := range msgs {
-		if v.Author == nil || v.Timestamp == "" {
-			continue
-		}
+	// for k, v := range msgs {
+	// 	if v.Author == nil || v.Timestamp == "" {
+	// 		continue
+	// 	}
 
-		body := v.Content
-		for _, attachment := range v.Attachments {
-			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
-		}
+	// 	body := v.Content
+	// 	for _, attachment := range v.Attachments {
+	// 		body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
+	// 	}
 
-		if len(v.Embeds) > 0 {
-			body += fmt.Sprintf("(%d embeds is not shown)", len(v.Embeds))
-		}
+	// 	if len(v.Embeds) > 0 {
+	// 		body += fmt.Sprintf("(%d embeds is not shown)", len(v.Embeds))
+	// 	}
 
-		logMsgs[k] = Message{
-			MessageID:      v.ID,
-			Content:        body,
-			Timestamp:      string(v.Timestamp),
-			AuthorUsername: v.Author.Username,
-			AuthorDiscrim:  v.Author.Discriminator,
-			AuthorID:       v.Author.ID,
-		}
-	}
+	// 	logMsgs[k] = Message{
+	// 		MessageID:      v.ID,
+	// 		Content:        body,
+	// 		Timestamp:      string(v.Timestamp),
+	// 		AuthorUsername: v.Author.Username,
+	// 		AuthorDiscrim:  v.Author.Discriminator,
+	// 		AuthorID:       v.Author.ID,
+	// 	}
+	// }
 
-	log := &MessageLog{
-		Messages:    logMsgs,
-		ChannelID:   channel.ID,
-		ChannelName: channel.Name,
-		Author:      author,
-		AuthorID:    authorID,
-		GuildID:     channel.GuildID,
-	}
+	// log := &MessageLog{
+	// 	Messages:    logMsgs,
+	// 	ChannelID:   channel.ID,
+	// 	ChannelName: channel.Name,
+	// 	Author:      author,
+	// 	AuthorID:    authorID,
+	// 	GuildID:     channel.GuildID,
+	// }
 
-	err = common.SQL.Create(log).Error
+	// err = common.SQL.Create(log).Error
 
-	return log, err
+	// return log, err
+	return nil, nil
 }
 
 func GetChannelLogs(id int64) (*MessageLog, error) {
