@@ -5,6 +5,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -23,7 +24,7 @@ import (
 	// "github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
-	// "github.com/jonas747/yagpdb/streaming"
+	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/shiena/ansicolor"
 	"os"
@@ -96,7 +97,7 @@ func main() {
 	// moderation.RegisterPlugin()
 	// reputation.RegisterPlugin()
 	// aylien.RegisterPlugin()
-	// streaming.RegisterPlugin()
+	streaming.RegisterPlugin()
 	// automod.RegisterPlugin()
 	// logs.InitPlugin()
 	// autorole.RegisterPlugin()
@@ -124,6 +125,7 @@ func main() {
 	if flagRunBot || flagRunEverything {
 		go bot.Run()
 		go common.RunScheduledEvents()
+		go botrest.StartServer()
 	}
 
 	if flagRunFeeds || flagRunEverything {

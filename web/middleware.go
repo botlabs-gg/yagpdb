@@ -389,8 +389,6 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			inner.ServeHTTP(w, r)
 		}()
 
-		log.Println("Checking if guild is available")
-
 		// Set highest role and combined perms
 		guild := ctx.Value(common.ContextKeyCurrentGuild)
 		if guild == nil {
@@ -402,16 +400,18 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		log.Println("full guild available")
-
 		var highest *discordgo.Role
 		combinedPerms := 0
 		for _, role := range guildCast.Roles {
 			found := false
-			for _, mr := range member.Roles {
-				if mr == role.ID {
-					found = true
-					break
+			if role.ID == guildCast.ID {
+				found = true
+			} else {
+				for _, mr := range member.Roles {
+					if mr == role.ID {
+						found = true
+						break
+					}
 				}
 			}
 
@@ -424,6 +424,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 				highest = role
 			}
 		}
+
 		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, highest)
 		ctx = context.WithValue(ctx, common.ContextKeyBotPermissions, combinedPerms)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": highest, "BotPermissions": combinedPerms})

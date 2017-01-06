@@ -47,7 +47,9 @@ func transcoderLoop() {
 			items := getQueue()
 			for _, v := range items {
 				started := time.Now()
+				logrus.Println("handling queue item")
 				err := handleQueueItem(redisClient, v)
+				logrus.Println("done handling queue item")
 				if err != nil {
 					logrus.WithError(err).WithField("soundid", v).Error("Failed processing transcode queue item")
 				}

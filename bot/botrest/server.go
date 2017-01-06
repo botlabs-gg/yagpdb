@@ -24,11 +24,12 @@ func StartServer() {
 	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
 	// Debug stuff
-	muxer.HandleFunc(pat.Get("/debug/pprof/other/*"), pprof.Index)
-	muxer.HandleFunc(pat.Get("/debug/pprof/cmdline"), pprof.Cmdline)
-	muxer.HandleFunc(pat.Get("/debug/pprof/profile"), pprof.Profile)
-	muxer.HandleFunc(pat.Get("/debug/pprof/symbol"), pprof.Symbol)
-	muxer.HandleFunc(pat.Get("/debug/pprof/trace"), pprof.Trace)
+	muxer.HandleFunc(pat.Get("/debug/pprof/*"), pprof.Index)
+	muxer.HandleFunc(pat.Get("/debug/pprof"), pprof.Index)
+	muxer.HandleFunc(pat.Get("/debug/pproff/cmdline"), pprof.Cmdline)
+	muxer.HandleFunc(pat.Get("/debug/pproff/profile"), pprof.Profile)
+	muxer.HandleFunc(pat.Get("/debug/pproff/symbol"), pprof.Symbol)
+	muxer.HandleFunc(pat.Get("/debug/pproff/trace"), pprof.Trace)
 
 	http.ListenAndServe(serverAddr, muxer)
 }
@@ -95,7 +96,7 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 
 	botUser := bot.State.User(true)
 
-	member := guild.MemberCopy(true, botUser.ID, false)
+	member := guild.MemberCopy(true, botUser.ID, true)
 	if member == nil {
 		ServerError(w, r, errors.New("Bot Member not found"))
 		return
