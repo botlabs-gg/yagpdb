@@ -152,7 +152,9 @@ func GetChannelLogs(id int64) (*MessageLog, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = common.SQL.Model(&result).Related(&result.Messages, "MessageLogID").Error
+
+	err = common.SQL.Where("message_log_id = ?", result.ID).Order("id desc").Find(&result.Messages).Error
+	// err = common.SQL.Model(&result).Related(&result.Messages, "MessageLogID").Error
 
 	return &result, err
 }
