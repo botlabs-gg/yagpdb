@@ -120,7 +120,11 @@ func transcodeSound(sound *SoundboardSound) error {
 	}
 	defer destFile.Close()
 
-	session := dca.EncodeFile(SoundFilePath(sound.ID, sound.Status), transcoderOptions)
+	session, err := dca.EncodeFile(SoundFilePath(sound.ID, sound.Status), transcoderOptions)
+	if err != nil {
+		return err
+	}
+
 	_, err = io.Copy(destFile, session)
 	if err != nil {
 		session.Truncate()

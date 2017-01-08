@@ -29,9 +29,9 @@ func (p *Plugin) InitBot() {
 				}
 
 				// Get member from api or state
-				member := bot.GetMember(data.Guild.ID(), data.Message.Author.ID)
-				if member == nil {
-					return "Something went wrong, we couldn't find you?", errors.New("Failed finding member")
+				member, err := bot.GetMember(data.Guild.ID(), data.Message.Author.ID)
+				if err != nil {
+					return "Something went wrong, we couldn't find you?", errors.New("Failed finding guild member")
 				}
 
 				if data.Args[0] == nil || data.Args[0].Str() == "" {

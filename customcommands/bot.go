@@ -26,11 +26,11 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return // ignore bots
 	}
 
-	channel := common.MustGetChannel(evt.ChannelID)
+	cs := bot.State.Channel(true, evt.ChannelID)
 
-	cmds, _, err := GetCommands(client, channel.GuildID)
+	cmds, _, err := GetCommands(client, cs.Guild.ID())
 	if err != nil {
-		log.WithError(err).Error("Failed getting comamnds")
+		log.WithError(err).WithField("guild", cs.Guild.ID()).Error("Failed retrieving comamnds")
 		return
 	}
 
@@ -38,7 +38,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
-	prefix, err := commands.GetCommandPrefix(client, channel.GuildID)
+	prefix, err := commands.GetCommandPrefix(client, cs.Guild.ID())
 	if err != nil {
 		log.WithError(err).Error("Failed getting prefix")
 		return
@@ -56,6 +56,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
+	channel := cs.Copy(true, true)
 	log.WithFields(log.Fields{
 		"trigger":      matched.Trigger,
 		"trigger_type": matched.TriggerType,
@@ -81,7 +82,8 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 }
 
 func ExecuteCustomCommand(cmd *CustomCommand, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (string, error) {
-	channel := common.MustGetChannel(m.ChannelID)
+	cs := bot.State.Channel(true, m.ChannelID)
+	channel := cs.Copy(true, true)
 
 	data := map[string]interface{}{
 		"User":    m.Author,

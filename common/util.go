@@ -140,61 +140,8 @@ func ParseExecuteTemplateFM(tmplSource string, data interface{}, f template.Func
 	return buf.String(), err
 }
 
-func LogGetChannel(cID string) *discordgo.Channel {
-	c, err := BotSession.State.Channel(cID)
-	if err != nil {
-		log.WithError(err).WithField("channel", cID).Error("Failed retrieving channel from state")
-	}
-	return c
-}
-
-// Panics if chanel is not available
-func MustGetChannel(cID string) *discordgo.Channel {
-	c, err := BotSession.State.Channel(cID)
-	if err != nil {
-		panic("Failed retrieving channel from state: " + err.Error())
-	}
-	return c
-}
-
-func LogGetGuild(gID string) *discordgo.Guild {
-	g, err := BotSession.State.Guild(gID)
-	if err != nil {
-		log.WithError(err).Error("Failed retrieving guild from state")
-	}
-	return g
-}
-
-// Panics if guild is not available
-func MustGetGuild(gID string) *discordgo.Guild {
-	g, err := BotSession.State.Guild(gID)
-	if err != nil {
-		panic("Failed retrieving guild from state: " + err.Error())
-	}
-	return g
-}
-
 func RandomAdjective() string {
 	return Adjectives[rand.Intn(len(Adjectives))]
-}
-
-func GetGuildMember(s *discordgo.Session, guildID, userID string) (m *discordgo.Member, err error) {
-	m, err = s.State.Member(guildID, userID)
-	if err == nil {
-		return
-	}
-
-	log.WithField("guild", guildID).WithField("user", userID).Info("Querying api for guild member")
-
-	m, err = s.GuildMember(guildID, userID)
-	if err != nil {
-		return
-	}
-
-	m.GuildID = guildID
-
-	err = s.State.MemberAdd(m)
-	return
 }
 
 type DurationFormatPrecision int

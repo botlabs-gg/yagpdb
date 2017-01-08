@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"strconv"
@@ -84,7 +85,7 @@ var cmds = []commandsystem.CommandHandler{
 					target = parsed.Args[0].DiscordUser()
 				}
 
-				member, err := common.GetGuildMember(common.BotSession, parsed.Guild.ID(), target.ID)
+				member, err := bot.GetMember(parsed.Guild.ID(), target.ID)
 				if err != nil {
 					return "An error occured fetching guild member, contact bot owner", err
 				}
