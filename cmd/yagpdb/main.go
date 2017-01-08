@@ -32,7 +32,7 @@ import (
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/reddit"
 	// "github.com/jonas747/yagpdb/reminders"
-	// "github.com/jonas747/yagpdb/reputation"
+	"github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/streaming"
@@ -98,7 +98,7 @@ func main() {
 	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()
-	// reputation.RegisterPlugin()
+	reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	automod.RegisterPlugin()

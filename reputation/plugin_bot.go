@@ -35,17 +35,14 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
-	channel, err := s.State.Channel(evt.ChannelID)
-	if err != nil {
-		return
-	}
+	cs := bot.State.Channel(true, evt.ChannelID)
 
-	enabled, _ := client.Cmd("GET", "reputation_enabled:"+channel.GuildID).Bool()
+	enabled, _ := client.Cmd("GET", "reputation_enabled:"+cs.ID()).Bool()
 	if !enabled {
 		return
 	}
 
-	cooldown, err := CheckCooldown(client, channel.GuildID, evt.Author.ID)
+	cooldown, err := CheckCooldown(client, cs.Guild.ID(), evt.Author.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed checking cooldown for reputation")
 		return
@@ -55,7 +52,7 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		return
 	}
 
-	newScore, err := ModifyRep(client, 1, evt.Author, who, channel.GuildID)
+	newScore, err := ModifyRep(client, 1, evt.Author, who, cs.Guild.ID())
 	if err != nil {
 		log.WithError(err).Error("Failed giving rep")
 		return
@@ -107,115 +104,112 @@ var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Key:      "reputation_enabled:",
 		Category: commands.CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "GiveRep",
 			Aliases:      []string{"+", "+rep"},
 			Description:  "Gives +1 rep to someone",
 			RequiredArgs: 1,
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
 			},
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			target := parsed.Args[0].DiscordUser()
+			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+				target := parsed.Args[0].DiscordUser()
 
-			if target.ID == m.Author.ID {
-				return "Can't give rep to yourself... **silly**", nil
-			}
+				if target.ID == parsed.Message.Author.ID {
+					return "Can't give rep to yourself... **silly**", nil
+				}
 
-			channel := parsed.Channel
+				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+				timeLeft, err := CheckCooldown(client, parsed.Guild.ID(), parsed.Message.Author.ID)
+				if err != nil {
+					return "Failed checking cooldown", err
+				}
 
-			timeLeft, err := CheckCooldown(client, channel.GuildID, m.Author.ID)
-			if err != nil {
-				return "Failed checking cooldown", err
-			}
+				if timeLeft > 0 {
+					return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
+				}
 
-			if timeLeft > 0 {
-				return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
-			}
+				newScore, err := ModifyRep(client, 1, parsed.Message.Author, target, parsed.Guild.ID())
+				if err != nil {
+					return "Failed giving rep >:I", err
+				}
 
-			newScore, err := ModifyRep(client, 1, m.Author, target, channel.GuildID)
-			if err != nil {
-				return "Failed giving rep >:I", err
-			}
-
-			msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", target.Username, newScore)
-			return msg, nil
+				msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", target.Username, newScore)
+				return msg, nil
+			},
 		},
 	},
 	&commands.CustomCommand{
 		Key:      "reputation_enabled:",
 		Category: commands.CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "RemoveRep",
 			Aliases:      []string{"-", "-rep"},
 			Description:  "Takes away 1 rep from someone",
 			RequiredArgs: 1,
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
 			},
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			target := parsed.Args[0].DiscordUser()
+			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+				target := parsed.Args[0].DiscordUser()
 
-			if target.ID == m.Author.ID {
-				return "Can't take away your own rep... **stopid**", nil
-			}
+				if target.ID == parsed.Message.Author.ID {
+					return "Can't take away your own rep... **stopid**", nil
+				}
 
-			channel := parsed.Channel
+				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+				timeLeft, err := CheckCooldown(client, parsed.Guild.ID(), parsed.Message.Author.ID)
+				if err != nil {
+					return "Failed checking cooldown", err
+				}
 
-			timeLeft, err := CheckCooldown(client, channel.GuildID, m.Author.ID)
-			if err != nil {
-				return "Failed checking cooldown", err
-			}
+				if timeLeft > 0 {
+					return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
+				}
 
-			if timeLeft > 0 {
-				return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
-			}
+				newScore, err := ModifyRep(client, 1, parsed.Message.Author, target, parsed.Guild.ID())
+				if err != nil {
+					return "Failed removing rep >:I", err
+				}
 
-			newScore, err := ModifyRep(client, 1, m.Author, target, channel.GuildID)
-			if err != nil {
-				return "Failed removing rep >:I", err
-			}
-
-			msg := fmt.Sprintf("Removed 1 rep from **%s** *(%d rep total)*", target.Username, newScore)
-			return msg, nil
+				msg := fmt.Sprintf("Removed 1 rep from **%s** *(%d rep total)*", target.Username, newScore)
+				return msg, nil
+			},
 		},
 	},
 	&commands.CustomCommand{
 		Key:      "reputation_enabled:",
 		Category: commands.CategoryFun,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Rep",
 			Description: "Shows yours or the specified users current rep and rank",
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "User", Type: commandsystem.ArgumentTypeUser},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
 			},
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			target := m.Author
-			if parsed.Args[0] != nil {
-				target = parsed.Args[0].DiscordUser()
-			}
-
-			channel := parsed.Channel
-
-			score, rank, err := GetUserStats(client, channel.GuildID, target.ID)
-
-			if err != nil {
-				if err == ErrUserNotFound {
-					rank = -1
-				} else {
-					return "Error retrieving stats", err
+			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+				target := parsed.Message.Author
+				if parsed.Args[0] != nil {
+					target = parsed.Args[0].DiscordUser()
 				}
-			}
 
-			rankStr := "∞"
-			if rank != -1 {
-				rankStr = strconv.FormatInt(int64(rank)+1, 10)
-			}
+				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+				score, rank, err := GetUserStats(client, parsed.Guild.ID(), target.ID)
 
-			return fmt.Sprintf("**%s**: **%d** Rep (#**%s**)", target.Username, score, rankStr), nil
+				if err != nil {
+					if err == ErrUserNotFound {
+						rank = -1
+					} else {
+						return "Error retrieving stats", err
+					}
+				}
+
+				rankStr := "∞"
+				if rank != -1 {
+					rankStr = strconv.FormatInt(int64(rank)+1, 10)
+				}
+
+				return fmt.Sprintf("**%s**: **%d** Rep (#**%s**)", target.Username, score, rankStr), nil
+			},
 		},
 	},
 }

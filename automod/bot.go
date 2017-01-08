@@ -130,6 +130,7 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 		punishMsg = punishMsg[:len(punishMsg)-1]
 	}
 	gName := cs.Guild.Guild.Name
+	member := cs.Guild.MemberCopy(false, ms.ID(), true)
 	cs.Owner.RUnlock()
 	locked = false
 
@@ -137,11 +138,11 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 	case PunishNone:
 		err = bot.SendDM(s, ms.Member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", gName, punishMsg))
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), common.BotSession.State.User.User, "Automoderator: "+punishMsg, ms.Member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
-		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID(), common.BotSession.State.User.User, "Automoderator: "+punishMsg, ms.Member.User)
+		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User)
 	case PunishBan:
-		err = moderation.BanUser(nil, cs.Guild.ID(), cs.ID(), common.BotSession.State.User.User, "Automoderator: "+punishMsg, ms.Member.User)
+		err = moderation.BanUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User)
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs

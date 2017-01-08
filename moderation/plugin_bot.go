@@ -189,11 +189,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				target := parsed.Args[0].DiscordUser()
-
-				member, err := common.BotSession.State.Member(parsed.Guild.ID(), target.ID)
-				if err != nil {
-					return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
-				}
+				member := parsed.Guild.MemberCopy(true, target.ID, true)
 
 				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, muteDuration)
 				if err != nil {
@@ -241,11 +237,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				target := parsed.Args[0].DiscordUser()
-
-				member, err := common.BotSession.State.Member(parsed.Guild.ID(), target.ID)
-				if err != nil {
-					return "I COULDNT FIND ZE GUILDMEMEBER PLS HELP AAAAAAA", err
-				}
+				member := parsed.Guild.MemberCopy(true, target.ID, true)
 
 				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, 0)
 				if err != nil {

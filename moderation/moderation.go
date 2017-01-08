@@ -52,7 +52,7 @@ func handleUnMute(data string) error {
 		return err
 	}
 
-	err = MuteUnmuteUser(nil, nil, false, guildID, "", common.BotSession.State.User.User, "Mute Duration expired", member, 0)
+	err = MuteUnmuteUser(nil, nil, false, guildID, "", bot.State.User(true).User, "Mute Duration expired", member, 0)
 	if err != ErrNoMuteRole {
 
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
