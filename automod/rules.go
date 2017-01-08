@@ -4,6 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"net/url"
 	"regexp"
@@ -21,7 +22,7 @@ const (
 )
 
 type Rule interface {
-	Check(m *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error)
+	Check(m *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error)
 	ShouldIgnore(msg *discordgo.Message, m *discordgo.Member) bool
 	GetMuteDuration() int
 }
@@ -99,28 +100,22 @@ type SpamRule struct {
 }
 
 // Triggers when a certain number of messages is found by the same author within a timeframe
-func (s *SpamRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 
 	within := time.Duration(s.Within) * time.Second
 	now := time.Now()
 
 	amount := 1
 
-	for i := len(channel.Messages) - 1; i >= 0; i-- {
-		cMsg := channel.Messages[i]
+	for i := len(cs.Messages) - 1; i >= 0; i-- {
+		cMsg := cs.Messages[i]
 
-		cMsgParsed, err := cMsg.Timestamp.Parse()
-		if err != nil {
-			logrus.WithError(err).Error("Error parsing message timestamp")
-			continue
-		}
-
-		age := now.Sub(cMsgParsed)
+		age := now.Sub(cMsg.ParsedCreated)
 		if age > within {
 			break
 		}
 
-		if cMsg.Author.ID == evt.Author.ID && evt.ID != cMsg.ID {
+		if cMsg.Message.Author.ID == evt.Author.ID && evt.ID != cMsg.Message.ID {
 			amount++
 		}
 	}
@@ -131,7 +126,7 @@ func (s *SpamRule) Check(evt *discordgo.Message, channel *discordgo.Channel, cli
 
 	del = true
 
-	punishment, err = s.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "spam"))
+	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "spam"))
 	if err != nil {
 		return
 	}
@@ -147,7 +142,7 @@ type InviteRule struct {
 
 var inviteRegex = regexp.MustCompile(`discord\.gg(?:\/#)?(?:\/invite)?\/([a-zA-Z0-9-]+)`)
 
-func (i *InviteRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	matches := inviteRegex.FindAllStringSubmatch(evt.ContentWithMentionsReplaced(), -1)
 	if len(matches) < 1 {
 		return
@@ -180,7 +175,7 @@ OUTER:
 		}
 
 		// Ignore invites to this server
-		if invite.Guild.ID == channel.GuildID {
+		if invite.Guild.ID == cs.Guild.ID() {
 			continue
 		}
 
@@ -194,7 +189,7 @@ OUTER:
 
 	del = true
 
-	punishment, err = i.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "invite"))
+	punishment, err = i.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "invite"))
 	if err != nil {
 		return
 	}
@@ -209,14 +204,14 @@ type MentionRule struct {
 	Treshold int `valid:"0,500"`
 }
 
-func (m *MentionRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	if len(evt.Mentions) < m.Treshold {
 		return
 	}
 
 	del = true
 
-	punishment, err = m.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "mention"))
+	punishment, err = m.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "mention"))
 	if err != nil {
 		return
 	}
@@ -230,14 +225,14 @@ type LinksRule struct {
 
 var linkRegex = regexp.MustCompile(`^((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
 
-func (l *LinksRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 
 	if !linkRegex.MatchString(evt.ContentWithMentionsReplaced()) {
 		return
 	}
 
 	del = true
-	punishment, err = l.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "links"))
+	punishment, err = l.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "links"))
 	if err != nil {
 		return
 	}
@@ -268,7 +263,7 @@ func (w *WordsRule) GetCompiled() map[string]bool {
 	return w.compiledWords
 }
 
-func (w *WordsRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 
 	found := false
 
@@ -296,7 +291,7 @@ func (w *WordsRule) Check(evt *discordgo.Message, channel *discordgo.Channel, cl
 
 	// Fonud a bad word!
 	del = true
-	punishment, err = w.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "badword"))
+	punishment, err = w.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badword"))
 
 	msg = "You triggered the word filter, watch your language."
 	return
@@ -326,7 +321,7 @@ func (w *SitesRule) GetCompiled() map[string]bool {
 	return w.compiledWebsites
 }
 
-func (s *SitesRule) Check(evt *discordgo.Message, channel *discordgo.Channel, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
+func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	matches := linkRegex.FindAllString(evt.Content, -1)
 
 	bannedLink := false
@@ -348,7 +343,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, channel *discordgo.Channel, cl
 		return
 	}
 
-	punishment, err = s.PushViolation(client, KeyViolations(channel.GuildID, evt.Author.ID, "badlink"))
+	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badlink"))
 	msg = "That website is banned. Contact an admin if you think this was a mistake."
 	del = true
 	return

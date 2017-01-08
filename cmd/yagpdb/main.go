@@ -23,12 +23,12 @@ import (
 
 	// Plugin imports
 
+	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/customcommands"
-	// "github.com/jonas747/yagpdb/automod"
 	// "github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/logs"
-	// "github.com/jonas747/yagpdb/moderation"
+	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/reddit"
 	// "github.com/jonas747/yagpdb/reminders"
@@ -97,11 +97,11 @@ func main() {
 	notifications.RegisterPlugin()
 	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
-	// moderation.RegisterPlugin()
+	moderation.RegisterPlugin()
 	// reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
-	// automod.RegisterPlugin()
+	automod.RegisterPlugin()
 	logs.InitPlugin()
 	// autorole.RegisterPlugin()
 	// reminders.RegisterPlugin()

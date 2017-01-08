@@ -48,25 +48,21 @@ func HandleMessageUpdate(s *discordgo.Session, evt *discordgo.MessageUpdate, cli
 
 func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Client) {
 
-	if m.Author == nil || m.Author.ID == common.BotSession.State.User.ID {
+	if m.Author == nil || m.Author.ID == bot.State.User(true).ID {
 		return // Pls no panicerinos or banerinos self
 	}
 
-	channel := common.LogGetChannel(m.ChannelID)
-	if channel == nil {
+	cs := bot.State.Channel(true, m.ChannelID)
+	if cs == nil {
+		logrus.WithField("channel", m.ChannelID).Error("Channel not found in state")
 		return
 	}
 
-	if channel.IsPrivate {
+	if cs.IsPrivate() {
 		return
 	}
 
-	guild := common.LogGetGuild(channel.GuildID)
-	if guild == nil {
-		return
-	}
-
-	config, err := CachedGetConfig(client, guild.ID)
+	config, err := CachedGetConfig(client, cs.Guild.ID())
 	if err != nil {
 		logrus.WithError(err).Error("Failed retrieving config")
 		return
@@ -76,9 +72,17 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 		return
 	}
 
-	member, err := s.State.Member(guild.ID, m.Author.ID)
-	if err != nil {
-		logrus.WithError(err).Error("Failed finding guild member")
+	locked := true
+	cs.Owner.RLock()
+	defer func() {
+		if locked {
+			cs.Owner.RUnlock()
+		}
+	}()
+
+	ms := cs.Guild.Member(false, m.Author.ID)
+	if ms == nil || ms.Member == nil {
+		logrus.WithField("guild", cs.Guild.ID()).Error("Member not found in state, automod ignoring")
 		return
 	}
 
@@ -90,18 +94,17 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 	rules := []Rule{config.Spam, config.Invite, config.Mention, config.Links, config.Words, config.Sites}
 
 	// We gonna need to have this locked while we check
-	s.State.RLock()
 	for _, r := range rules {
-		if r.ShouldIgnore(m, member) {
+		if r.ShouldIgnore(m, ms.Member) {
 			continue
 		}
 
-		d, punishment, msg, err := r.Check(m, channel, client)
+		d, punishment, msg, err := r.Check(m, cs, client)
 		if d {
 			del = true
 		}
 		if err != nil {
-			logrus.WithError(err).Error("Failed checking aumod rule:", err)
+			logrus.WithError(err).WithField("guild", cs.Guild.ID()).Error("Failed checking aumod rule:", err)
 			continue
 		}
 
@@ -117,7 +120,6 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 			muteDuration = r.GetMuteDuration()
 		}
 	}
-	s.State.RUnlock()
 
 	if !del {
 		return
@@ -127,16 +129,19 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 		// Strip last newline
 		punishMsg = punishMsg[:len(punishMsg)-1]
 	}
+	gName := cs.Guild.Guild.Name
+	cs.Owner.RUnlock()
+	locked = false
 
 	switch highestPunish {
 	case PunishNone:
-		err = bot.SendDM(s, member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", guild.Name, punishMsg))
+		err = bot.SendDM(s, ms.Member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", gName, punishMsg))
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, client, true, channel.GuildID, channel.ID, common.BotSession.State.User.User, "Automoderator: "+punishMsg, member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), common.BotSession.State.User.User, "Automoderator: "+punishMsg, ms.Member, muteDuration)
 	case PunishKick:
-		err = moderation.KickUser(nil, channel.GuildID, channel.ID, common.BotSession.State.User.User, "Automoderator: "+punishMsg, member.User)
+		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID(), common.BotSession.State.User.User, "Automoderator: "+punishMsg, ms.Member.User)
 	case PunishBan:
-		err = moderation.BanUser(nil, channel.GuildID, channel.ID, common.BotSession.State.User.User, "Automoderator: "+punishMsg, member.User)
+		err = moderation.BanUser(nil, cs.Guild.ID(), cs.ID(), common.BotSession.State.User.User, "Automoderator: "+punishMsg, ms.Member.User)
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs

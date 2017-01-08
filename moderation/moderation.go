@@ -214,8 +214,10 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 		"Reason": reason,
 	})
 
-	guild := common.MustGetGuild(guildID)
-	gName := "**" + guild.Name + ":** "
+	gs := bot.State.Guild(true, guildID)
+	gs.RLock()
+	gName := "**" + gs.Guild.Name + ":** "
+	gs.RUnlock()
 
 	err = bot.SendDM(common.BotSession, user.ID, gName+executed)
 	if err != nil {
@@ -273,7 +275,7 @@ func KickUser(config *Config, guildID, channelID string, author *discordgo.User,
 		return nil
 	}
 
-	lastMsgs, err := common.GetMessages(channelID, 100)
+	lastMsgs, err := bot.GetMessages(channelID, 100)
 	if err != nil {
 		return err
 	}
