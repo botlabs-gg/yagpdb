@@ -6,6 +6,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -22,93 +23,97 @@ var roleCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Cooldown: 10,
 		Category: commands.CategoryTool,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:        "Role",
 			Description: "Give yourself a role or list all available roles",
-			Arguments: []*commandsystem.ArgumentDef{
-				&commandsystem.ArgumentDef{Name: "Role", Type: commandsystem.ArgumentTypeString},
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "Role", Type: commandsystem.ArgumentString},
 			},
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			roleCommands, err := GetCommands(client, parsed.Guild.ID)
-			if err != nil {
-				return "Failed retrieving roles, contact support", err
-			}
+			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+				roleCommands, err := GetCommands(client, parsed.Guild.ID())
+				if err != nil {
+					return "Failed retrieving roles, contact support", err
+				}
 
-			role := ""
-			if parsed.Args[0] != nil {
-				for _, v := range roleCommands {
-					if strings.EqualFold(v.Name, parsed.Args[0].Str()) {
-						role = v.Role
-						break
+				role := ""
+				if parsed.Args[0] != nil {
+					for _, v := range roleCommands {
+						if strings.EqualFold(v.Name, parsed.Args[0].Str()) {
+							role = v.Role
+							break
+						}
 					}
 				}
-			}
 
-			// If no role
-			if parsed.Args[0] == nil || role == "" {
+				// If no role
+				if parsed.Args[0] == nil || role == "" {
 
-				out := "Here is a list of roles you can assign yourself:"
-				if parsed.Args[0] != nil {
-					// We failed to find the proper role
-					out = "Sorry sir, i do not recognize that role (maybe your finger slipped?), heres a list of the roles you can assign yourself:"
+					out := "Here is a list of roles you can assign yourself:"
+					if parsed.Args[0] != nil {
+						// We failed to find the proper role
+						out = "Sorry sir, i do not recognize that role (maybe your finger slipped?), heres a list of the roles you can assign yourself:"
+					}
+
+					for _, r := range roleCommands {
+						out += "\n`" + r.Name + "`"
+					}
+
+					if len(roleCommands) < 1 {
+						out += "\nNo self assignable roles set up. Server admins can set them up in the control panel."
+					}
+
+					return out, nil
 				}
 
-				for _, r := range roleCommands {
-					out += "\n`" + r.Name + "`"
+				member, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.ID)
+				if err != nil {
+					return "Failed assigning role, contact support (bot error, not permissions)", err
 				}
 
-				if len(roleCommands) < 1 {
-					out += "\nNo self assignable roles set up. Server admins can set them up in the control panel."
+				found := false
+				newRoles := make([]string, 0)
+				for _, v := range member.Roles {
+					if v == role {
+						found = true
+					} else {
+						newRoles = append(newRoles, v)
+					}
 				}
 
-				return out, nil
-			}
-
-			member, err := common.GetGuildMember(common.BotSession, parsed.Guild.ID, m.Author.ID)
-			if err != nil {
-				return "Failed assigning role, contact support (bot error, not permissions)", err
-			}
-
-			found := false
-			newRoles := make([]string, 0)
-			for _, v := range member.Roles {
-				if v == role {
-					found = true
+				if found {
+					err = common.RemoveRole(member, role, parsed.Guild.ID())
 				} else {
-					newRoles = append(newRoles, v)
+					err = common.AddRole(member, role, parsed.Guild.ID())
 				}
-			}
 
-			if !found {
-				newRoles = append(newRoles, role)
-			}
+				if err != nil {
+					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+						return "API error, Discord said: " + cast.Message.Message, err
+					}
 
-			err = common.BotSession.GuildMemberEdit(parsed.Guild.ID, m.Author.ID, newRoles)
-			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return "API error, Discord said: " + cast.Message.Message, err
+					return "Something went wrong :upside_down: ", err
 				}
-				return "Something went wrong :upside_down: ", err
-			}
 
-			if found {
-				return "Took away your role! :eyes: ", nil
-			}
+				if found {
+					return "Took away your role!", nil
+				}
 
-			return "Gave you the role sir! :water_polo:", nil
+				return "Gave you the role!", nil
+			},
 		},
 	},
 	&commands.CustomCommand{
 		Cooldown: 10,
-		SimpleCommand: &commandsystem.SimpleCommand{
+		Command: &commandsystem.Command{
 			Name:         "roledbg",
 			HideFromHelp: true,
 			Description:  "Debug debug debug autorole assignment",
-		},
-		RunFunc: func(parsed *commandsystem.ParsedCommand, client *redis.Client, m *discordgo.MessageCreate) (interface{}, error) {
-			processing, _ := client.Cmd("GET", KeyProcessing(parsed.Guild.ID)).Int()
-			return fmt.Sprintf("Processing %d users.", processing), nil
+			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+				processing, _ := client.Cmd("GET", KeyProcessing(parsed.Guild.ID())).Int()
+				return fmt.Sprintf("Processing %d users.", processing), nil
+			},
 		},
 	},
 }
