@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"context"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/snowflake"
@@ -19,9 +20,9 @@ func init() {
 }
 
 func (p *Plugin) InitBot() {
-	common.BotSession.AddHandler(HandleGuildmemberUpdate)
-	common.BotSession.AddHandler(HandlePresenceUpdate)
-	common.BotSession.AddHandler(HandleGuildCreate)
+	bot.AddHandler(HandleUsernameNicknameEvent, bot.EventGuildMemberUpdate)
+	bot.AddHandler(HandleUsernameNicknameEvent, bot.EventPresenceUpdate)
+	bot.AddHandler(HandleUsernameNicknameEvent, bot.EventGuildCreate)
 
 	commands.CommandSystem.RegisterCommands(cmds...)
 }
@@ -298,19 +299,10 @@ var cmds = []commandsystem.CommandHandler{
 	},
 }
 
-// Guildmemberupdate is sent when user changes nick
-func HandleGuildmemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	evtChan <- m
-}
-
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
 // Also check nickname incase the user came online
-func HandlePresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpdate) {
-	evtChan <- m
-}
-
-func HandleGuildCreate(s *discordgo.Session, c *discordgo.GuildCreate) {
-	evtChan <- c
+func HandleUsernameNicknameEvent(ctx context.Context, evt interface{}) {
+	evtChan <- evt
 }
 
 type UsernameListing struct {

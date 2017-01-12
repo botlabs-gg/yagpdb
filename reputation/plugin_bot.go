@@ -1,6 +1,7 @@
 package reputation
 
 import (
+	"context"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
@@ -16,10 +17,13 @@ import (
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(cmds...)
-	common.BotSession.AddHandler(bot.CustomMessageCreate(handleMessageCreate))
+	bot.AddHandler(bot.RedisWrapper(handleMessageCreate), bot.EventMessageCreate)
 }
 
-func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
+func handleMessageCreate(ctx context.Context, e interface{}) {
+	evt := e.(*discordgo.MessageCreate)
+	client := bot.ContextRedis(ctx)
+
 	lower := strings.ToLower(evt.Content)
 	if strings.Index(lower, "thanks") != 0 {
 		return
@@ -59,7 +63,7 @@ func handleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	}
 
 	msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", who.Username, newScore)
-	s.ChannelMessageSend(evt.ChannelID, msg)
+	common.BotSession.ChannelMessageSend(evt.ChannelID, msg)
 }
 
 func ModifyRep(client *redis.Client, amount int, sender, target *discordgo.User, guildID string) (int, error) {
@@ -167,7 +171,7 @@ var cmds = []commandsystem.CommandHandler{
 					return fmt.Sprintf("Still %d seconds left on cooldown", timeLeft), nil
 				}
 
-				newScore, err := ModifyRep(client, 1, parsed.Message.Author, target, parsed.Guild.ID())
+				newScore, err := ModifyRep(client, -1, parsed.Message.Author, target, parsed.Guild.ID())
 				if err != nil {
 					return "Failed removing rep >:I", err
 				}

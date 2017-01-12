@@ -1,6 +1,7 @@
 package serverstats
 
 import (
+	"context"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
@@ -13,13 +14,13 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	common.BotSession.AddHandler(bot.CustomGuildMemberAdd(HandleMemberAdd))
-	common.BotSession.AddHandler(bot.CustomGuildMemberRemove(HandleMemberRemove))
-	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
+	bot.AddHandler(bot.RedisWrapper(HandleMemberAdd), bot.EventGuildMemberAdd)
+	bot.AddHandler(bot.RedisWrapper(HandleMemberRemove), bot.EventGuildMemberRemove)
+	bot.AddHandler(bot.RedisWrapper(HandleMessageCreate), bot.EventMessageCreate)
 
-	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
-	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
-	common.BotSession.AddHandler(bot.CustomReady(HandleReady))
+	bot.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), bot.EventPresenceUpdate)
+	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
+	bot.AddHandler(bot.RedisWrapper(HandleReady), bot.EventReady)
 
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		Key:      "stats_settings_public:",
@@ -58,7 +59,10 @@ func (p *Plugin) InitBot() {
 
 }
 
-func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client) {
+func HandleReady(ctx context.Context, evt interface{}) {
+	r := evt.(*discordgo.Ready)
+	client := bot.ContextRedis(ctx)
+
 	for _, guild := range r.Guilds {
 		if guild.Unavailable {
 			continue
@@ -71,7 +75,10 @@ func HandleReady(s *discordgo.Session, r *discordgo.Ready, client *redis.Client)
 	}
 }
 
-func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
+func HandleGuildCreate(ctx context.Context, evt interface{}) {
+	g := evt.(*discordgo.GuildCreate)
+	client := bot.ContextRedis(ctx)
+
 	err := client.Cmd("SET", "guild_stats_num_members:"+g.ID, g.MemberCount).Err
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
@@ -84,7 +91,10 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	}
 }
 
-func HandleMemberAdd(s *discordgo.Session, g *discordgo.GuildMemberAdd, client *redis.Client) {
+func HandleMemberAdd(ctx context.Context, evt interface{}) {
+	g := evt.(*discordgo.GuildMemberAdd)
+	client := bot.ContextRedis(ctx)
+
 	err := client.Cmd("ZADD", "guild_stats_members_joined_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
@@ -96,7 +106,10 @@ func HandleMemberAdd(s *discordgo.Session, g *discordgo.GuildMemberAdd, client *
 	}
 }
 
-func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, client *redis.Client) {
+func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
+	p := evt.(*discordgo.PresenceUpdate)
+	client := bot.ContextRedis(ctx)
+
 	if p.Status == "" { // Not a status update
 		return
 	}
@@ -113,7 +126,10 @@ func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, cli
 	}
 }
 
-func HandleMemberRemove(s *discordgo.Session, g *discordgo.GuildMemberRemove, client *redis.Client) {
+func HandleMemberRemove(ctx context.Context, evt interface{}) {
+	g := evt.(*discordgo.GuildMemberRemove)
+	client := bot.ContextRedis(ctx)
+
 	err := client.Cmd("ZADD", "guild_stats_members_left_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
@@ -125,7 +141,10 @@ func HandleMemberRemove(s *discordgo.Session, g *discordgo.GuildMemberRemove, cl
 	}
 }
 
-func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, client *redis.Client) {
+func HandleMessageCreate(ctx context.Context, evt interface{}) {
+	m := evt.(*discordgo.MessageCreate)
+	client := bot.ContextRedis(ctx)
+
 	channel := bot.State.Channel(true, m.ChannelID)
 	if channel.IsPrivate() {
 		return

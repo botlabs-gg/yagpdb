@@ -1,6 +1,7 @@
 package automod
 
 import (
+	"context"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
@@ -12,8 +13,8 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
-	common.BotSession.AddHandler(bot.CustomMessageUpdate(HandleMessageUpdate))
+	bot.AddHandler(bot.RedisWrapper(HandleMessageCreate), bot.EventMessageCreate)
+	bot.AddHandler(bot.RedisWrapper(HandleMessageUpdate), bot.EventMessageUpdate)
 }
 
 func (p *Plugin) StartBot() {
@@ -38,15 +39,15 @@ func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
 	return conf, err
 }
 
-func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
-	CheckMessage(s, evt.Message, client)
+func HandleMessageCreate(ctx context.Context, evt interface{}) {
+	CheckMessage(evt.(*discordgo.MessageCreate).Message, bot.ContextRedis(ctx))
 }
 
-func HandleMessageUpdate(s *discordgo.Session, evt *discordgo.MessageUpdate, client *redis.Client) {
-	CheckMessage(s, evt.Message, client)
+func HandleMessageUpdate(ctx context.Context, evt interface{}) {
+	CheckMessage(evt.(*discordgo.MessageUpdate).Message, bot.ContextRedis(ctx))
 }
 
-func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Client) {
+func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
 	if m.Author == nil || m.Author.ID == bot.State.User(true).ID {
 		return // Pls no panicerinos or banerinos self
@@ -136,7 +137,7 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 
 	switch highestPunish {
 	case PunishNone:
-		err = bot.SendDM(s, ms.Member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", gName, punishMsg))
+		err = bot.SendDM(ms.Member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", gName, punishMsg))
 	case PunishMute:
 		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
@@ -146,7 +147,7 @@ func CheckMessage(s *discordgo.Session, m *discordgo.Message, client *redis.Clie
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs
-	s.ChannelMessageDelete(m.ChannelID, m.ID)
+	common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
 
 	if err != nil {
 		logrus.WithError(err).Error("Error carrying out punishment")

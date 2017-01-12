@@ -5,7 +5,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"sort"
 )
@@ -21,7 +20,7 @@ func RegisterPlugin() {
 }
 
 func (p *Plugin) InitBot() {
-	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
+	bot.AddHandler(bot.RedisWrapper(HandleMessageCreate), bot.EventMessageCreate)
 }
 
 func (p *Plugin) Name() string {

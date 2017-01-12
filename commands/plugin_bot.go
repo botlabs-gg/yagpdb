@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
@@ -39,7 +40,7 @@ type PluginStatus interface {
 
 func (p *Plugin) InitBot() {
 
-	CommandSystem = commandsystem.NewSystem(common.BotSession, "")
+	CommandSystem = commandsystem.NewSystem(nil, "")
 	CommandSystem.SendError = false
 	CommandSystem.CensorError = CensorError
 	CommandSystem.State = bot.State
@@ -47,8 +48,8 @@ func (p *Plugin) InitBot() {
 	CommandSystem.Prefix = p
 	CommandSystem.RegisterCommands(GlobalCommands...)
 
-	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
-	common.BotSession.AddHandler(bot.CustomMessageCreate(HandleMessageCreate))
+	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
+	bot.AddHandler(HandleMessageCreate, bot.EventMessageCreate)
 }
 
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
@@ -166,7 +167,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 				help := GenerateHelp(target)
 
-				privateChannel, err := bot.GetCreatePrivateChannel(common.BotSession, data.Message.Author.ID)
+				privateChannel, err := bot.GetCreatePrivateChannel(data.Message.Author.ID)
 				if err != nil {
 					return "", err
 				}
@@ -633,7 +634,9 @@ type SearchAdviceResp struct {
 	Slips        []*AdviceSlip `json:"slips"`
 }
 
-func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
+func HandleGuildCreate(ctx context.Context, evt interface{}) {
+	client := bot.ContextRedis(ctx)
+	g := evt.(*discordgo.GuildCreate)
 	prefixExists, err := client.Cmd("EXISTS", "command_prefix:"+g.ID).Bool()
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")
@@ -646,7 +649,10 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	}
 }
 
-func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, client *redis.Client) {
+func HandleMessageCreate(ctx context.Context, evt interface{}) {
+	m := evt.(*discordgo.MessageCreate)
+	CommandSystem.HandleMessageCreate(bot.ContextSession(ctx), m)
+
 	if bot.State.User(true).ID != m.Author.ID {
 		return
 	}
@@ -662,7 +668,7 @@ func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate, clien
 	}
 
 	taken := time.Duration(time.Now().UnixNano() - parsed)
-	s.ChannelMessageEdit(m.ChannelID, m.ID, "Received pong, took: "+taken.String())
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Received pong, took: "+taken.String())
 }
 
 type GuildsSortUsers []*discordgo.Guild

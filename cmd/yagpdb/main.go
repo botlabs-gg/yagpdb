@@ -6,11 +6,11 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/feeds"
+	"github.com/jonas747/yagpdb/web"
 	"github.com/shiena/ansicolor"
 	"os"
 	"os/signal"
@@ -20,11 +20,11 @@ import (
 	"time"
 	//"github.com/wercker/journalhook"
 	stdlog "log"
-
 	// Plugin imports
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
@@ -35,7 +35,6 @@ import (
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/streaming"
-	"github.com/jonas747/yagpdb/web"
 )
 
 var (

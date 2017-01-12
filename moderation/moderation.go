@@ -219,7 +219,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	gName := "**" + gs.Guild.Name + ":** "
 	gs.RUnlock()
 
-	err = bot.SendDM(common.BotSession, user.ID, gName+executed)
+	err = bot.SendDM(user.ID, gName+executed)
 	if err != nil {
 		return err
 	}
@@ -398,7 +398,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	if reason != "" {
 		dmMsg += "\n**Reason:** " + reason
 	}
-	bot.SendDM(common.BotSession, user.ID, dmMsg)
+	bot.SendDM(user.ID, dmMsg)
 
 	if logChannel != "" {
 		embed := CreateModlogEmbed(author, action, user, reason, logLink)

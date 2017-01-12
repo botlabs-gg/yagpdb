@@ -16,8 +16,7 @@ type CoreConfig struct {
 
 	PQUsername string
 	PQPassword string
-
-	Redis string
+	Redis      string
 
 	// Third party api's other than discord
 	// for the Alyien text analysys plugin api access

@@ -1,7 +1,10 @@
 package bot
 
 import (
+	"context"
 	"errors"
+	"github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/patrickmn/go-cache"
@@ -12,7 +15,31 @@ var (
 	Cache = cache.New(time.Minute, time.Minute)
 )
 
-func GetCreatePrivateChannel(s *discordgo.Session, user string) (*discordgo.Channel, error) {
+func ContextSession(ctx context.Context) *discordgo.Session {
+	return ctx.Value(ContextKeySession).(*discordgo.Session)
+}
+
+func ContextRedis(ctx context.Context) *redis.Client {
+	return ctx.Value(common.ContextKeyRedis).(*redis.Client)
+}
+
+func RedisWrapper(inner Handler) Handler {
+	return func(ctx context.Context, evt interface{}) {
+		r, err := common.RedisPool.Get()
+		if err != nil {
+			logrus.WithError(err).WithField("evt", "{{.}}").Error("Failed retrieving redis client")
+			return
+		}
+
+		defer func() {
+			common.RedisPool.Put(r)
+		}()
+
+		inner(context.WithValue(ctx, common.ContextKeyRedis, r), evt)
+	}
+}
+
+func GetCreatePrivateChannel(user string) (*discordgo.Channel, error) {
 
 	State.RLock()
 	defer State.RUnlock()
@@ -22,7 +49,7 @@ func GetCreatePrivateChannel(s *discordgo.Session, user string) (*discordgo.Chan
 		}
 	}
 
-	channel, err := s.UserChannelCreate(user)
+	channel, err := common.BotSession.UserChannelCreate(user)
 	if err != nil {
 		return nil, err
 	}
@@ -30,13 +57,13 @@ func GetCreatePrivateChannel(s *discordgo.Session, user string) (*discordgo.Chan
 	return channel, nil
 }
 
-func SendDM(s *discordgo.Session, user string, msg string) error {
-	channel, err := GetCreatePrivateChannel(s, user)
+func SendDM(user string, msg string) error {
+	channel, err := GetCreatePrivateChannel(user)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.ChannelMessageSend(channel.ID, msg)
+	_, err = common.BotSession.ChannelMessageSend(channel.ID, msg)
 	return err
 }
 

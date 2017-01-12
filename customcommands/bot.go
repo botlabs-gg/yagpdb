@@ -17,7 +17,10 @@ import (
 	"unicode/utf8"
 )
 
-func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, client *redis.Client) {
+func HandleMessageCreate(ctx context.Context, e interface{}) {
+	evt := e.(*discordgo.MessageCreate)
+	client := bot.ContextRedis(ctx)
+
 	if bot.State.User(true).ID == evt.Author.ID {
 		return
 	}
@@ -64,7 +67,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	out, err := ExecuteCustomCommand(matched, client, s, evt)
+	out, err := ExecuteCustomCommand(matched, client, bot.ContextSession(ctx), evt)
 	if err != nil {
 		if out == "" {
 			out += err.Error()
@@ -74,7 +77,7 @@ func HandleMessageCreate(s *discordgo.Session, evt *discordgo.MessageCreate, cli
 	}
 
 	if out != "" {
-		_, err = s.ChannelMessageSend(evt.ChannelID, out)
+		_, err = common.BotSession.ChannelMessageSend(evt.ChannelID, out)
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
 		}

@@ -1,6 +1,6 @@
 package bot
 
-//go:generate go run ../cmd/gen/bot_wrappers.go -o wrappers.go
+//go:generate go run ../cmd/gen/bot_wrappers.go -o events.go
 
 import (
 	log "github.com/Sirupsen/logrus"
@@ -22,27 +22,42 @@ func Setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
 
+	AddHandler(HandleReady, EventReady)
+	AddHandler(StateHandler, EventAll)
+	AddHandler(RedisWrapper(HandleGuildCreate), EventGuildCreate)
+	AddHandler(RedisWrapper(HandleGuildDelete), EventGuildDelete)
+
+	AddHandler(RedisWrapper(HandleGuildUpdate), EventGuildUpdate)
+	AddHandler(RedisWrapper(HandleGuildRoleCreate), EventGuildRoleCreate)
+	AddHandler(RedisWrapper(HandleGuildRoleUpdate), EventGuildRoleUpdate)
+	AddHandler(RedisWrapper(HandleGuildRoleRemove), EventGuildRoleDelete)
+	AddHandler(RedisWrapper(HandleChannelCreate), EventChannelCreate)
+	AddHandler(RedisWrapper(HandleChannelUpdate), EventChannelUpdate)
+	AddHandler(RedisWrapper(HandleChannelDelete), EventChannelDelete)
+
 	log.Info("Initializing bot plugins")
 	for _, plugin := range Plugins {
 		plugin.InitBot()
 		log.Info("Initialized bot plugin ", plugin.Name())
 	}
+
+	numHandlers := make([]int, len(handlers))
+	total := 0
+	for k, v := range handlers {
+		numHandlers[k] = len(v)
+		total += len(v)
+	}
+
+	log.Printf("Registered %d event handlers", total)
+
 }
 
 func Run() {
 
 	log.Println("Running bot")
-	common.BotSession.AddHandler(HandleReady)
-	common.BotSession.AddHandler(CustomGuildCreate(HandleGuildCreate))
-	common.BotSession.AddHandler(CustomGuildDelete(HandleGuildDelete))
 
-	common.BotSession.AddHandler(CustomGuildUpdate(HandleGuildUpdate))
-	common.BotSession.AddHandler(CustomGuildRoleCreate(HandleGuildRoleCreate))
-	common.BotSession.AddHandler(CustomGuildRoleUpdate(HandleGuildRoleUpdate))
-	common.BotSession.AddHandler(CustomGuildRoleDelete(HandleGuildRoleRemove))
-	common.BotSession.AddHandler(CustomChannelCreate(HandleChannelCreate))
-	common.BotSession.AddHandler(CustomChannelUpdate(HandleChannelUpdate))
-	common.BotSession.AddHandler(CustomChannelDelete(HandleChannelDelete))
+	// Only handler
+	common.BotSession.AddHandler(handleEvent)
 
 	// common.BotSession.LogLevel = discordgo.LogDebug
 	// common.BotSession.Debug = true
@@ -52,7 +67,6 @@ func Run() {
 	// State.Debug = true
 
 	common.BotSession.StateEnabled = false
-	common.BotSession.AddHandler(State.HandleEvent)
 
 	common.BotSession.LogLevel = discordgo.LogInformational
 	err := common.BotSession.Open()

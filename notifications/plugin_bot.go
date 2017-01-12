@@ -1,31 +1,17 @@
 package notifications
 
 import (
+	"context"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"sync"
 )
 
-var (
-	// The current topics
-	Topics     map[string]string = make(map[string]string)
-	TopicsLock sync.Mutex
-)
-
-func HandleGuildCreate(s *discordgo.Session, evt *discordgo.GuildCreate, client *redis.Client) {
-	TopicsLock.Lock()
-	for _, channel := range evt.Channels {
-		Topics[channel.ID] = channel.Topic
-	}
-	TopicsLock.Unlock()
-}
-
-func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, client *redis.Client) {
+func HandleGuildMemberAdd(ctx context.Context, e interface{}) {
+	evt := e.(*discordgo.GuildMemberAdd)
 	config := GetConfig(evt.GuildID)
 	if !config.JoinServerEnabled && !config.JoinDMEnabled {
 		return
@@ -41,14 +27,9 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing dm template")
 		} else {
-			privateChannel, err := bot.GetCreatePrivateChannel(s, evt.User.ID)
+			err = bot.SendDM(evt.User.ID, msg)
 			if err != nil {
-				log.WithError(err).WithField("guild", gs.ID()).Error("Failed retrieving private channel")
-			} else {
-				_, err := s.ChannelMessageSend(privateChannel.ID, msg)
-				if err != nil {
-					log.WithError(err).WithField("guild", gs.ID()).Error("Failed sending join message")
-				}
+				log.WithError(err).WithField("guild", gs.ID()).Error("Failed sending join dm")
 			}
 		}
 	}
@@ -64,7 +45,8 @@ func HandleGuildMemberAdd(s *discordgo.Session, evt *discordgo.GuildMemberAdd, c
 	}
 }
 
-func HandleGuildMemberRemove(s *discordgo.Session, evt *discordgo.GuildMemberRemove, client *redis.Client) {
+func HandleGuildMemberRemove(ctx context.Context, e interface{}) {
+	evt := e.(*discordgo.GuildMemberRemove)
 	config := GetConfig(evt.GuildID)
 	if !config.LeaveEnabled {
 		return
@@ -97,34 +79,34 @@ func createTemplateData(gs *dstate.GuildState, user *discordgo.User) map[string]
 	return templateData
 }
 
-func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, client *redis.Client) {
-	TopicsLock.Lock()
-	curTopic := Topics[evt.ID]
-	Topics[evt.ID] = evt.Topic
-	TopicsLock.Unlock()
+func HandleChannelUpdate(ctx context.Context, evt interface{}) {
+	cu := evt.(*discordgo.ChannelUpdate)
 
-	if curTopic == evt.Topic {
+	curChannel := bot.State.Channel(true, cu.ID)
+	curChannel.Owner.RLock()
+	oldTopic := curChannel.Channel.Topic
+	curChannel.Owner.RUnlock()
+
+	if oldTopic == cu.Topic {
 		return
 	}
 
-	config := GetConfig(evt.GuildID)
+	config := GetConfig(cu.GuildID)
 	if !config.TopicEnabled {
 		return
 	}
 
-	gs := bot.State.Guild(true, evt.GuildID)
-	topicChannel := evt.Channel.ID
-
+	topicChannel := cu.Channel.ID
 	if config.TopicChannel != "" {
-		c := gs.Channel(true, config.TopicChannel)
+		c := curChannel.Guild.Channel(true, config.TopicChannel)
 		if c != nil {
 			topicChannel = c.ID()
 		}
 	}
 
-	_, err := s.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in channel **%s** changed to **%s**", evt.Name, evt.Topic))
+	_, err := common.BotSession.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in channel <#%s> changed to **%s**", cu.ID, cu.Topic))
 	if err != nil {
-		log.WithError(err).WithField("guild", evt.GuildID).Error("Failed sending topic change message")
+		log.WithError(err).WithField("guild", cu.GuildID).Error("Failed sending topic change message")
 	}
 }
 

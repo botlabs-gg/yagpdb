@@ -1,24 +1,27 @@
 package bot
 
 import (
+	"context"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"time"
 )
 
-func HandleReady(s *discordgo.Session, r *discordgo.Ready) {
+func HandleReady(ctx context.Context, evt interface{}) {
 	log.Info("Ready received!")
-	s.UpdateStatus(0, "v"+common.VERSION+" :)")
+	ContextSession(ctx).UpdateStatus(0, "v"+common.VERSION+" :)")
 }
 
-func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
+func HandleGuildCreate(ctx context.Context, evt interface{}) {
+	g := evt.(*discordgo.GuildCreate)
 	log.WithFields(log.Fields{
 		"g_name": g.Name,
 		"guild":  g.ID,
 	}).Info("Joined guild")
 
-	n, err := client.Cmd("SADD", "connected_guilds", g.ID).Int()
+	n, err := ContextRedis(ctx).Cmd("SADD", "connected_guilds", g.ID).Int()
 	if err != nil {
 		log.WithError(err).Error("Redis error")
 	}
@@ -28,44 +31,81 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	}
 }
 
-func HandleGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete, client *redis.Client) {
-
+func HandleGuildDelete(ctx context.Context, evt interface{}) {
+	g := evt.(*discordgo.GuildDelete)
 	log.WithFields(log.Fields{
 		"g_name": g.Name,
 	}).Info("Left guild")
 
+	client := ContextRedis(ctx)
 	err := client.Cmd("SREM", "connected_guilds", g.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Redis error")
 	}
 
-	EmitGuildRemoved(client, g.ID)
+	go EmitGuildRemoved(client, g.ID)
 }
 
-func HandleGuildUpdate(s *discordgo.Session, evt *discordgo.GuildUpdate, client *redis.Client) {
-	InvalidateGuildCache(client, evt.Guild.ID)
+// Makes the member is always in state when coming online
+func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
+	p := evt.(*discordgo.PresenceUpdate)
+	if p.Status == discordgo.StatusOffline {
+		return
+	}
+
+	gs := State.Guild(true, p.GuildID)
+	if gs == nil {
+		return
+	}
+
+	m := gs.Member(true, p.User.ID)
+	if m != nil && m.Member == nil {
+		return
+	}
+
+	started := time.Now()
+	log.WithField("guild", p.GuildID).WithField("user", p.User.ID).Info("Querying api for guildmember")
+	member, err := common.BotSession.GuildMember(p.GuildID, p.User.ID)
+	elapsed := time.Since(started)
+	if elapsed > time.Second*3 {
+		log.WithField("guild", p.GuildID).WithField("user", p.User.ID).Error("LongGMQuery: Took " + elapsed.String() + ", to query guild member! maybe ratelimits?")
+	}
+
+	if err == nil {
+		gs.MemberAddUpdate(true, member)
+	}
 }
 
-func HandleGuildRoleUpdate(s *discordgo.Session, evt *discordgo.GuildRoleUpdate, client *redis.Client) {
-	InvalidateGuildCache(client, evt.GuildID)
+// StateHandler updates the world state
+// use AddHandlerBefore to add handler before this one, otherwise they will alwyas be after
+func StateHandler(ctx context.Context, evt interface{}) {
+	State.HandleEvent(ContextSession(ctx), evt)
 }
 
-func HandleGuildRoleCreate(s *discordgo.Session, evt *discordgo.GuildRoleCreate, client *redis.Client) {
-	InvalidateGuildCache(client, evt.GuildID)
+func HandleGuildUpdate(ctx context.Context, evt interface{}) {
+	InvalidateGuildCache(ContextRedis(ctx), evt.(*discordgo.GuildUpdate).Guild.ID)
 }
 
-func HandleGuildRoleRemove(s *discordgo.Session, evt *discordgo.GuildRoleDelete, client *redis.Client) {
-	InvalidateGuildCache(client, evt.GuildID)
+func HandleGuildRoleUpdate(ctx context.Context, evt interface{}) {
+	InvalidateGuildCache(ContextRedis(ctx), evt.(*discordgo.GuildRoleUpdate).GuildID)
 }
 
-func HandleChannelCreate(s *discordgo.Session, evt *discordgo.ChannelCreate, client *redis.Client) {
-	InvalidateGuildCache(client, evt.GuildID)
+func HandleGuildRoleCreate(ctx context.Context, evt interface{}) {
+	InvalidateGuildCache(ContextRedis(ctx), evt.(*discordgo.GuildRoleCreate).GuildID)
 }
-func HandleChannelUpdate(s *discordgo.Session, evt *discordgo.ChannelUpdate, client *redis.Client) {
-	InvalidateGuildCache(client, evt.GuildID)
+
+func HandleGuildRoleRemove(ctx context.Context, evt interface{}) {
+	InvalidateGuildCache(ContextRedis(ctx), evt.(*discordgo.GuildRoleDelete).GuildID)
 }
-func HandleChannelDelete(s *discordgo.Session, evt *discordgo.ChannelDelete, client *redis.Client) {
-	InvalidateGuildCache(client, evt.GuildID)
+
+func HandleChannelCreate(ctx context.Context, evt interface{}) {
+	InvalidateGuildCache(ContextRedis(ctx), evt.(*discordgo.ChannelCreate).GuildID)
+}
+func HandleChannelUpdate(ctx context.Context, evt interface{}) {
+	InvalidateGuildCache(ContextRedis(ctx), evt.(*discordgo.ChannelUpdate).GuildID)
+}
+func HandleChannelDelete(ctx context.Context, evt interface{}) {
+	InvalidateGuildCache(ContextRedis(ctx), evt.(*discordgo.ChannelDelete).GuildID)
 }
 
 func InvalidateGuildCache(client *redis.Client, guildID string) {

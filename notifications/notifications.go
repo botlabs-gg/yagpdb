@@ -26,10 +26,9 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) InitBot() {
-	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
-	common.BotSession.AddHandler(bot.CustomGuildMemberAdd(HandleGuildMemberAdd))
-	common.BotSession.AddHandler(bot.CustomGuildMemberRemove(HandleGuildMemberRemove))
-	common.BotSession.AddHandler(bot.CustomChannelUpdate(HandleChannelUpdate))
+	bot.AddHandler(HandleGuildMemberAdd, bot.EventGuildMemberAdd)
+	bot.AddHandler(HandleGuildMemberRemove, bot.EventGuildMemberRemove)
+	bot.AddHandlerBefore(HandleChannelUpdate, bot.EventChannelUpdate, bot.StateHandler)
 }
 
 type Config struct {

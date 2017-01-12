@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
@@ -20,10 +21,11 @@ var (
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(ModerationCommands...)
-	common.BotSession.AddHandler(bot.CustomGuildBanRemove(HandleGuildBanRemove))
+	bot.AddHandler(HandleGuildBanRemove, bot.EventGuildBanRemove)
 }
 
-func HandleGuildBanRemove(s *discordgo.Session, r *discordgo.GuildBanRemove, client *redis.Client) {
+func HandleGuildBanRemove(ctx context.Context, evt interface{}) {
+	r := evt.(*discordgo.GuildBanRemove)
 	config, err := GetConfig(r.GuildID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed retrieving config")
@@ -35,7 +37,7 @@ func HandleGuildBanRemove(s *discordgo.Session, r *discordgo.GuildBanRemove, cli
 	}
 
 	embed := CreateModlogEmbed(nil, "Unbanned", r.User, "", "")
-	_, err = s.ChannelMessageSendEmbed(config.ActionChannel, embed)
+	_, err = common.BotSession.ChannelMessageSendEmbed(config.ActionChannel, embed)
 	if err != nil {
 		logrus.WithError(err).Error("Failed sending unban log message")
 	}

@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"context"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
@@ -10,9 +11,10 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	common.BotSession.AddHandler(bot.CustomGuildCreate(HandleGuildCreate))
-	common.BotSession.AddHandler(bot.CustomPresenceUpdate(HandlePresenceUpdate))
-	common.BotSession.AddHandler(bot.CustomGuildMemberUpdate(HandleGuildMemberUpdate))
+
+	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
+	bot.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), bot.EventPresenceUpdate)
+	bot.AddHandler(bot.RedisWrapper(HandleGuildMemberUpdate), bot.EventGuildMemberUpdate)
 
 }
 
@@ -58,7 +60,9 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 	}
 }
 
-func HandleGuildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate, client *redis.Client) {
+func HandleGuildMemberUpdate(ctx context.Context, evt interface{}) {
+	client := bot.ContextRedis(ctx)
+	m := evt.(*discordgo.GuildMemberUpdate)
 	config, err := GetConfig(client, m.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
@@ -91,7 +95,9 @@ func HandleGuildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdat
 	}
 }
 
-func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *redis.Client) {
+func HandleGuildCreate(ctx context.Context, evt interface{}) {
+	client := bot.ContextRedis(ctx)
+	g := evt.(*discordgo.GuildCreate)
 	config, err := GetConfig(client, g.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
@@ -121,7 +127,9 @@ func HandleGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate, client *r
 	}
 }
 
-func HandlePresenceUpdate(s *discordgo.Session, p *discordgo.PresenceUpdate, client *redis.Client) {
+func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
+	client := bot.ContextRedis(ctx)
+	p := evt.(*discordgo.PresenceUpdate)
 	config, err := GetConfig(client, p.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
