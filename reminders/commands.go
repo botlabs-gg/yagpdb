@@ -86,7 +86,7 @@ var cmds = []commandsystem.CommandHandler{
 			Name:        "CReminders",
 			Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-				ok, err := common.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Message.Author.ID, parsed.Channel.ID())
+				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Message.Author.ID, parsed.Channel.ID())
 				if err != nil {
 					return "An eror occured checkign for perms", err
 				}
@@ -129,7 +129,7 @@ var cmds = []commandsystem.CommandHandler{
 
 				// Check perms
 				if reminder.UserID != parsed.Message.Author.ID {
-					ok, err := common.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Message.Author.ID, reminder.ChannelID)
+					ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Message.Author.ID, reminder.ChannelID)
 					if err != nil {
 						return "An eror occured checkign for perms", err
 					}

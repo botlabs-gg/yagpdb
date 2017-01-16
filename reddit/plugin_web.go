@@ -196,7 +196,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 		return templateData
 	}
 
-	templateData.AddAlerts(web.SucessAlert("Sucessfully removed subreddit feed for /r/ :')", item.Sub))
+	templateData.AddAlerts(web.SucessAlert("Sucessfully removed subreddit feed for /r/" + item.Sub))
 
 	// Remove it form the displayed list
 	for k, c := range currentConfig {

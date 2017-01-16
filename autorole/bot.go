@@ -6,6 +6,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -155,69 +156,81 @@ func runDurationChecker() {
 	}
 
 	ticker := time.NewTicker(time.Minute)
-	state := common.BotSession.State
+	state := bot.State
 
 	for {
 		<-ticker.C
 
+		// Copy the list of guilds so that we dont need to keep the entire state locked
 		state.RLock()
-
-	OUTER:
-		for _, g := range state.Guilds {
-			if g.Unavailable {
-				continue
-			}
-
-			state.RUnlock()
-			perms, err := state.UserChannelPermissions(common.BotSession.State.User.ID, g.ID)
-			state.RLock()
-			if err != nil {
-				logrus.WithError(err).Error("Error checking perms")
-				continue
-			}
-
-			if perms&discordgo.PermissionManageRoles == 0 {
-				continue
-			}
-
-			conf, err := GetGeneralConfig(client, g.ID)
-			if err != nil {
-				logrus.WithError(err).Error("Failed retrieivng general config")
-				continue
-			}
-
-			if conf.Role == "" {
-				continue
-			}
-
-			// Make sure the role exists
-			for _, role := range g.Roles {
-				if role.ID == conf.Role {
-					go processGuild(g, conf)
-					continue OUTER
-				}
-			}
-
-			// If not remove it
-			logrus.WithField("guild", g.ID).Info("Autorole role dosen't exist, removing...")
-			conf.Role = ""
-			saveGeneral(client, g.ID, conf)
+		guildStates := make([]*dstate.GuildState, len(state.Guilds))
+		i := 0
+		for _, v := range state.Guilds {
+			guildStates[i] = v
+			i++
 		}
-
 		state.RUnlock()
+
+		for _, g := range guildStates {
+			checkGuild(client, g)
+		}
 	}
 }
 
-func processGuild(guild *discordgo.Guild, config *GeneralConfig) {
+func checkGuild(client *redis.Client, gs *dstate.GuildState) {
+	gs.RLock()
+	defer gs.RUnlock()
+	if gs.Guild.Unavailable {
+		return
+	}
+
+	logger := logrus.WithField("guild", gs.ID())
+
+	perms, err := gs.MemberPermissions(false, gs.ID(), bot.State.User(true).ID)
+	if err != nil {
+		logger.WithError(err).Error("Error checking perms")
+		return
+	}
+
+	if perms&discordgo.PermissionManageRoles == 0 {
+		// Not enough permissions to assign roles, skip this guild
+		return
+	}
+
+	conf, err := GetGeneralConfig(client, gs.ID())
+	if err != nil {
+		logger.WithError(err).Error("Failed retrieivng general config")
+		return
+	}
+
+	if conf.Role == "" {
+		return
+	}
+
+	// Make sure the role exists
+	for _, role := range gs.Guild.Roles {
+		if role.ID == conf.Role {
+			go processGuild(gs, conf)
+			return
+		}
+	}
+
+	// If not remove it
+	logger.Info("Autorole role dosen't exist, removing config...")
+	conf.Role = ""
+	saveGeneral(client, gs.ID(), conf)
+}
+
+func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 	processingLock.Lock()
 
-	if _, ok := processingGuilds[guild.ID]; ok {
+	if _, ok := processingGuilds[gs.ID()]; ok {
 		// Still processing this guild
 		processingLock.Unlock()
 		return
 	}
 	stopChan := make(chan bool, 1)
-	processingGuilds[guild.ID] = stopChan
+	processingGuilds[gs.ID()] = stopChan
 	processingLock.Unlock()
 
 	var client *redis.Client
@@ -225,36 +238,44 @@ func processGuild(guild *discordgo.Guild, config *GeneralConfig) {
 	// Reset the processing state
 	defer func() {
 		processingLock.Lock()
-		delete(processingGuilds, guild.ID)
+		delete(processingGuilds, gs.ID())
 		processingLock.Unlock()
 
 		if client != nil {
-			client.Cmd("DEL", KeyProcessing(guild.ID))
+			client.Cmd("DEL", KeyProcessing(gs.ID()))
 			common.RedisPool.Put(client)
 		}
 	}()
 
 	membersToGiveRole := make([]string, 0)
 
+	gs.RLock()
+
 	now := time.Now()
 OUTER:
-	for _, member := range guild.Members {
-		parsedJoined, err := discordgo.Timestamp(member.JoinedAt).Parse()
+	for _, ms := range gs.Members {
+		if ms.Member == nil {
+			continue
+		}
+
+		parsedJoined, err := discordgo.Timestamp(ms.Member.JoinedAt).Parse()
 		if err != nil {
 			logrus.WithError(err).Error("Failed parsing join timestamp")
 			continue
 		}
 
 		if now.Sub(parsedJoined) > time.Duration(config.RequiredDuration)*time.Minute {
-			for _, r := range member.Roles {
+			for _, r := range ms.Member.Roles {
 				if r == config.Role {
 					continue OUTER
 				}
 			}
 
-			membersToGiveRole = append(membersToGiveRole, member.User.ID)
+			membersToGiveRole = append(membersToGiveRole, ms.ID())
 		}
 	}
+
+	gs.RUnlock()
 
 	if len(membersToGiveRole) > 10 {
 		var err error
@@ -263,32 +284,32 @@ OUTER:
 			logrus.WithError(err).Error("Failed retrieving redis client from pool")
 			return
 		}
-		client.Cmd("SET", KeyProcessing(guild.ID), len(membersToGiveRole))
+		client.Cmd("SET", KeyProcessing(gs.ID()), len(membersToGiveRole))
 	}
 
 	for i, userID := range membersToGiveRole {
 		select {
 		case <-stopChan:
-			logrus.WithField("guild", guild.ID).Info("Stopping autorole assigning...")
+			logrus.WithField("guild", gs.ID()).Info("Stopping autorole assigning...")
 			return
 		default:
 		}
 
-		err := common.BotSession.GuildMemberRoleAdd(guild.ID, userID, config.Role)
+		err := common.BotSession.GuildMemberRoleAdd(gs.ID(), userID, config.Role)
 		if err != nil {
 			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
 				// No perms, remove autorole
 				logrus.WithError(err).Info("No perms to add autorole, removing from config")
 				config.Role = ""
-				saveGeneral(client, guild.ID, config)
+				saveGeneral(client, gs.ID(), config)
 				return
 			}
-			logrus.WithError(err).WithField("guild", guild.ID).Error("Failed adding autorole role")
+			logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed adding autorole role")
 		} else {
 			if client != nil {
-				client.Cmd("SET", KeyProcessing(guild.ID), len(membersToGiveRole)-i)
+				client.Cmd("SET", KeyProcessing(gs.ID()), len(membersToGiveRole)-i)
 			}
-			logrus.WithField("guild", guild.ID).WithField("g_name", guild.Name).WithField("user", userID).Info("Gave autorole role")
+			logrus.WithField("guild", gs.ID()).WithField("user", userID).Info("Gave autorole role")
 		}
 	}
 }

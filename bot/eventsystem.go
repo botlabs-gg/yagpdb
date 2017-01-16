@@ -10,7 +10,7 @@ const (
 	ContextKeySession ContextKey = iota
 )
 
-func triggerHandlers(ctx context.Context, id Event, evt interface{}) {
+func EmitEvent(ctx context.Context, id Event, evt interface{}) {
 	for _, v := range handlers[id] {
 		(*v)(ctx, evt)
 	}

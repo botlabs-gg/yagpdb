@@ -98,7 +98,7 @@ func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLo
 	// Make a light copy of the channel
 	channel := cs.Copy(true, false)
 
-	msgs, err := bot.GetMessages(channel.ID, count)
+	msgs, err := bot.GetMessages(channel.ID, count, true)
 	if err != nil {
 		return nil, err
 	}

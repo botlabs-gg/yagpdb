@@ -10,7 +10,7 @@ import (
 
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api
 // Puts the messages in the state aswell
-func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
+func GetMessages(channelID string, limit int, deleted bool) ([]*discordgo.Message, error) {
 	if limit < 1 {
 		return []*discordgo.Message{}, nil
 	}
@@ -24,6 +24,11 @@ func GetMessages(channelID string, limit int) ([]*discordgo.Message, error) {
 
 	n := len(msgBuf) - 1
 	for i := len(cs.Messages) - 1; i >= 0; i-- {
+		if !deleted {
+			if cs.Messages[i].Deleted {
+				continue
+			}
+		}
 		msgBuf[n] = cs.Messages[i].Copy(true)
 		n--
 		if n < 0 {

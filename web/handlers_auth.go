@@ -15,9 +15,10 @@ var (
 func InitOauth() {
 	oauthConf = &oauth2.Config{
 		ClientID:     common.Conf.ClientID,
-		ClientSecret: common.Conf.ClientSecret,
-		Scopes:       []string{"identify", "guilds"},
-		RedirectURL:  "https://" + common.Conf.Host + "/confirm_login",
+		ClientSecret: "asdads",
+		// ClientSecret: common.Conf.ClientSecret,
+		Scopes:      []string{"identify", "guilds"},
+		RedirectURL: "https://" + common.Conf.Host + "/confirm_login",
 		Endpoint: oauth2.Endpoint{
 			TokenURL: "https://discordapp.com/api/oauth2/token",
 			AuthURL:  "https://discordapp.com/api/oauth2/authorize",

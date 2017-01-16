@@ -60,9 +60,9 @@ func handleEvent(s *discordgo.Session, evt interface{}){
 
 	ctx := context.WithValue(context.Background(), ContextKeySession, s)
 
-	triggerHandlers(ctx, EventAllPre, evt)
-	triggerHandlers(ctx, Event(evtId), evt)
-	triggerHandlers(ctx, EventAllPost, evt)
+	EmitEvent(ctx, EventAllPre, evt)
+	EmitEvent(ctx, Event(evtId), evt)
+	EmitEvent(ctx, EventAllPost, evt)
 }
 `
 
@@ -94,6 +94,7 @@ var Events = []Event{
 	Event{"MessageCreate", true},
 	Event{"MessageUpdate", true},
 	Event{"MessageDelete", true},
+	Event{"MessageDeleteBulk", true},
 	Event{"PresenceUpdate", true},
 	Event{"PresencesReplace", true},
 	Event{"Ready", true},
@@ -105,6 +106,7 @@ var Events = []Event{
 	Event{"VoiceStateUpdate", true},
 	Event{"Resumed", true},
 
+	Event{"NewGuild", false},
 	Event{"All", false},
 	Event{"AllPre", false},
 	Event{"AllPost", false},

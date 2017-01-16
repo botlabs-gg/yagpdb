@@ -744,10 +744,16 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 			ctx = c
 
 			if missing != "" {
-				tmpl.AddAlerts(ErrorAlert("This plugin is missing the following permissions: ", missing, ", It may continue to work without the functionality that requires those permissions."))
+				tmpl.AddAlerts(&Alert{
+					Style:   AlertWarning,
+					Message: fmt.Sprint("This plugin is missing the following permissions: ", missing, ", It may continue to work without the functionality that requires those permissions."),
+				})
 			}
 			if has != "" {
-				tmpl.AddAlerts(SucessAlert("The bot has the following permissions used by this plugin: ", has))
+				tmpl.AddAlerts(&Alert{
+					Style:   AlertInfo,
+					Message: fmt.Sprint("The bot has the following permissions used by this plugin: ", has),
+				})
 			}
 
 			inner.ServeHTTP(w, r.WithContext(ctx))

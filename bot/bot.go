@@ -1,6 +1,6 @@
 package bot
 
-//go:generate go run ../cmd/gen/bot_wrappers.go -o events.go
+//go:generate go run ../cmd/gen/events.go -o events.go
 
 import (
 	log "github.com/Sirupsen/logrus"
@@ -21,7 +21,7 @@ var (
 func Setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
-
+	State.Debug = true
 	AddHandler(HandleReady, EventReady)
 	AddHandler(StateHandler, EventAll)
 	AddHandler(RedisWrapper(HandleGuildCreate), EventGuildCreate)
@@ -68,6 +68,8 @@ func Run() {
 
 	common.BotSession.StateEnabled = false
 
+	// common.BotSession.LogLevel = discordgo.LogDebug
+	// common.BotSession.Debug = true
 	common.BotSession.LogLevel = discordgo.LogInformational
 	err := common.BotSession.Open()
 	if err != nil {

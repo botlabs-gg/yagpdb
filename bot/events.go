@@ -15,44 +15,47 @@ import (
 type Event int
 
 const (
-	EventChannelCreate           Event = 0
-	EventChannelUpdate           Event = 1
-	EventChannelDelete           Event = 2
-	EventChannelPinsUpdate       Event = 3
-	EventGuildCreate             Event = 4
-	EventGuildUpdate             Event = 5
-	EventGuildDelete             Event = 6
-	EventGuildBanAdd             Event = 7
-	EventGuildBanRemove          Event = 8
-	EventGuildMemberAdd          Event = 9
-	EventGuildMemberUpdate       Event = 10
-	EventGuildMemberRemove       Event = 11
-	EventGuildMembersChunk       Event = 12
-	EventGuildRoleCreate         Event = 13
-	EventGuildRoleUpdate         Event = 14
-	EventGuildRoleDelete         Event = 15
+	
+	EventChannelCreate Event = 0
+	EventChannelUpdate Event = 1
+	EventChannelDelete Event = 2
+	EventChannelPinsUpdate Event = 3
+	EventGuildCreate Event = 4
+	EventGuildUpdate Event = 5
+	EventGuildDelete Event = 6
+	EventGuildBanAdd Event = 7
+	EventGuildBanRemove Event = 8
+	EventGuildMemberAdd Event = 9
+	EventGuildMemberUpdate Event = 10
+	EventGuildMemberRemove Event = 11
+	EventGuildMembersChunk Event = 12
+	EventGuildRoleCreate Event = 13
+	EventGuildRoleUpdate Event = 14
+	EventGuildRoleDelete Event = 15
 	EventGuildIntegrationsUpdate Event = 16
-	EventGuildEmojisUpdate       Event = 17
-	EventMessageAck              Event = 18
-	EventMessageCreate           Event = 19
-	EventMessageUpdate           Event = 20
-	EventMessageDelete           Event = 21
-	EventPresenceUpdate          Event = 22
-	EventPresencesReplace        Event = 23
-	EventReady                   Event = 24
-	EventUserUpdate              Event = 25
-	EventUserSettingsUpdate      Event = 26
-	EventUserGuildSettingsUpdate Event = 27
-	EventTypingStart             Event = 28
-	EventVoiceServerUpdate       Event = 29
-	EventVoiceStateUpdate        Event = 30
-	EventResumed                 Event = 31
-	EventAll                     Event = 32
-	EventAllPre                  Event = 33
-	EventAllPost                 Event = 34
+	EventGuildEmojisUpdate Event = 17
+	EventMessageAck Event = 18
+	EventMessageCreate Event = 19
+	EventMessageUpdate Event = 20
+	EventMessageDelete Event = 21
+	EventMessageDeleteBulk Event = 22
+	EventPresenceUpdate Event = 23
+	EventPresencesReplace Event = 24
+	EventReady Event = 25
+	EventUserUpdate Event = 26
+	EventUserSettingsUpdate Event = 27
+	EventUserGuildSettingsUpdate Event = 28
+	EventTypingStart Event = 29
+	EventVoiceServerUpdate Event = 30
+	EventVoiceStateUpdate Event = 31
+	EventResumed Event = 32
+	EventNewGuild Event = 33
+	EventAll Event = 34
+	EventAllPre Event = 35
+	EventAllPost Event = 36
 )
 
-var AllDiscordEvents = []Event{
+var AllDiscordEvents = []Event{ 
 	EventChannelCreate,
 	EventChannelUpdate,
 	EventChannelDelete,
@@ -75,6 +78,7 @@ var AllDiscordEvents = []Event{
 	EventMessageCreate,
 	EventMessageUpdate,
 	EventMessageDelete,
+	EventMessageDeleteBulk,
 	EventPresenceUpdate,
 	EventPresencesReplace,
 	EventReady,
@@ -88,15 +92,14 @@ var AllDiscordEvents = []Event{
 }
 
 type Handler func(ctx context.Context, evt interface{})
+var handlers = make([][]*Handler, 37)
 
-var handlers = make([][]*Handler, 35)
-
-func handleEvent(s *discordgo.Session, evt interface{}) {
+func handleEvent(s *discordgo.Session, evt interface{}){
 
 	evtId := -10
 	name := ""
 
-	switch evt.(type) {
+	switch evt.(type){ 
 	case *discordgo.ChannelCreate:
 		evtId = 0
 		name = "ChannelCreate"
@@ -163,35 +166,38 @@ func handleEvent(s *discordgo.Session, evt interface{}) {
 	case *discordgo.MessageDelete:
 		evtId = 21
 		name = "MessageDelete"
-	case *discordgo.PresenceUpdate:
+	case *discordgo.MessageDeleteBulk:
 		evtId = 22
+		name = "MessageDeleteBulk"
+	case *discordgo.PresenceUpdate:
+		evtId = 23
 		name = "PresenceUpdate"
 	case *discordgo.PresencesReplace:
-		evtId = 23
+		evtId = 24
 		name = "PresencesReplace"
 	case *discordgo.Ready:
-		evtId = 24
+		evtId = 25
 		name = "Ready"
 	case *discordgo.UserUpdate:
-		evtId = 25
+		evtId = 26
 		name = "UserUpdate"
 	case *discordgo.UserSettingsUpdate:
-		evtId = 26
+		evtId = 27
 		name = "UserSettingsUpdate"
 	case *discordgo.UserGuildSettingsUpdate:
-		evtId = 27
+		evtId = 28
 		name = "UserGuildSettingsUpdate"
 	case *discordgo.TypingStart:
-		evtId = 28
+		evtId = 29
 		name = "TypingStart"
 	case *discordgo.VoiceServerUpdate:
-		evtId = 29
+		evtId = 30
 		name = "VoiceServerUpdate"
 	case *discordgo.VoiceStateUpdate:
-		evtId = 30
+		evtId = 31
 		name = "VoiceStateUpdate"
 	case *discordgo.Resumed:
-		evtId = 31
+		evtId = 32
 		name = "Resumed"
 	default:
 		return
@@ -206,7 +212,7 @@ func handleEvent(s *discordgo.Session, evt interface{}) {
 
 	ctx := context.WithValue(context.Background(), ContextKeySession, s)
 
-	triggerHandlers(ctx, EventAllPre, evt)
-	triggerHandlers(ctx, Event(evtId), evt)
-	triggerHandlers(ctx, EventAllPost, evt)
+	EmitEvent(ctx, EventAllPre, evt)
+	EmitEvent(ctx, Event(evtId), evt)
+	EmitEvent(ctx, EventAllPost, evt)
 }

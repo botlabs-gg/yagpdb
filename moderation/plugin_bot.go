@@ -45,7 +45,7 @@ func HandleGuildBanRemove(ctx context.Context, evt interface{}) {
 
 func BaseCmd(neededPerm int, userID, channelID, guildID string) (config *Config, hasPerms bool, err error) {
 	if neededPerm != 0 {
-		hasPerms, err = common.AdminOrPerm(neededPerm, userID, channelID)
+		hasPerms, err = bot.AdminOrPerm(neededPerm, userID, channelID)
 		if err != nil || !hasPerms {
 			return
 		}
@@ -313,6 +313,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		Command: &commandsystem.Command{
 			Name:                  "Clean",
 			Description:           "Cleans the chat",
+			Aliases:               []string{"clear", "cl"},
 			RequiredArgs:          1,
 			UserArgRequireMention: true,
 			Arguments: []*commandsystem.ArgDef{
@@ -359,37 +360,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					limitFetch = 1000
 				}
 
-				msgs, err := bot.GetMessages(parsed.Message.ChannelID, limitFetch)
-
-				ids := make([]string, 0)
-				for i := len(msgs) - 1; i >= 0; i-- {
-					//log.Println(msgs[i].ID, msgs[i].ContentWithMentionsReplaced())
-					if (filter == "" || msgs[i].Author.ID == filter) && msgs[i].ID != parsed.Message.ID {
-						ids = append(ids, msgs[i].ID)
-						//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
-						if len(ids) >= num || len(ids) >= 99 {
-							break
-						}
-					}
-				}
-				ids = append(ids, parsed.Message.ID)
-
-				if len(ids) < 2 {
-					return "Deleted nothing... sorry :(", nil
-				}
-
-				var delMsg *discordgo.Message
-				delMsg, err = common.BotSession.ChannelMessageSend(parsed.Message.ChannelID, fmt.Sprintf("Deleting %d messages! :')", len(ids)))
-				// Self destruct in 3...
-				if err == nil {
-					go common.DelayedMessageDelete(common.BotSession, time.Second*5, delMsg.ChannelID, delMsg.ID)
-				}
-
 				// Wait a second so the client dosen't gltich out
 				time.Sleep(time.Second)
-				err = common.BotSession.ChannelMessagesBulkDelete(parsed.Message.ChannelID, ids)
 
-				return "", err
+				numDeleted, err := DeleteMessages(parsed.Message.ChannelID, filter, num, limitFetch)
+
+				return commandsystem.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted)), err
 			},
 		},
 	},

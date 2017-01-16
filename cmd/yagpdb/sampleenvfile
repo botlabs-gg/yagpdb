@@ -15,6 +15,12 @@ export YAGPDB_PQUSERNAME="postgres username"
 export YAGPDB_PQPASSWORD="postgres password"
 export YAGPDB_REDIS="redis address"
 
+#Logging, not required
+# Send errors to a discord channel
+export YAGPDB_ERRORCHANNEL=""
+# Bot leaves joins to this channel
+export YAGPDB_BOTLEAVESJOINS=""
+
 #Plugins below, not required
 
 #Aylien

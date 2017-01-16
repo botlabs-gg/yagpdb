@@ -146,6 +146,16 @@ func HandleMessageCreate(ctx context.Context, evt interface{}) {
 	client := bot.ContextRedis(ctx)
 
 	channel := bot.State.Channel(true, m.ChannelID)
+	if channel == nil {
+		ch, err := common.BotSession.Channel(m.ChannelID)
+		if err != nil {
+			log.WithField("channel", m.ChannelID).WithField("msg", m.Content).Error("nil channel")
+		} else {
+			log.Println("Found channel but nil in state? ", m.ChannelID, ch.Name, ch.GuildID)
+		}
+		return
+	}
+
 	if channel.IsPrivate() {
 		return
 	}

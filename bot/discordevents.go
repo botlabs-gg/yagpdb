@@ -28,6 +28,7 @@ func HandleGuildCreate(ctx context.Context, evt interface{}) {
 
 	if n > 0 {
 		log.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
+		go EmitEvent(ctx, EventNewGuild, evt)
 	}
 }
 

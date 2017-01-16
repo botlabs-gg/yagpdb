@@ -85,7 +85,7 @@ func HandleGuildMemberUpdate(ctx context.Context, evt interface{}) {
 	defer gs.RUnlock()
 
 	if ms.Presence == nil {
-		log.WithField("guild", m.GuildID).Error("Presence not found in state")
+		log.WithField("guild", m.GuildID).Warn("Presence not found in state")
 		return
 	}
 

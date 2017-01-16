@@ -92,3 +92,29 @@ func GetMember(guildID, userID string) (*discordgo.Member, error) {
 
 	return member, nil
 }
+
+func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
+	channel := State.Channel(true, channelID)
+	if channel == nil {
+		return false, errors.New("Channel not found")
+	}
+
+	perms, err := channel.Guild.MemberPermissions(true, channelID, userID)
+	if err != nil {
+		return false, err
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	if perms&needed != 0 {
+		return true, nil
+	}
+
+	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}

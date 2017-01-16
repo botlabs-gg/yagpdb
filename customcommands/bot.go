@@ -30,6 +30,9 @@ func HandleMessageCreate(ctx context.Context, e interface{}) {
 	}
 
 	cs := bot.State.Channel(true, evt.ChannelID)
+	if cs == nil || cs.IsPrivate() {
+		return
+	}
 
 	cmds, _, err := GetCommands(client, cs.Guild.ID())
 	if err != nil {

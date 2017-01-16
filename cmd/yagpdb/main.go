@@ -26,6 +26,7 @@ import (
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/customcommands"
+	"github.com/jonas747/yagpdb/discordlogger"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
@@ -90,6 +91,7 @@ func main() {
 	//BotSession.LogLevel = discordgo.LogInformational
 
 	// Setup plugins
+	discordlogger.Register()
 	commands.RegisterPlugin()
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()

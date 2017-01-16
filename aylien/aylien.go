@@ -75,7 +75,7 @@ func (p *Plugin) InitBot() {
 				} else {
 
 					// Get the message to analyze
-					msgs, err := bot.GetMessages(cmd.Channel.ID(), 100)
+					msgs, err := bot.GetMessages(cmd.Channel.ID(), 100, false)
 					if err != nil {
 						return "Error retrieving messages", err
 					}

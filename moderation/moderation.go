@@ -275,29 +275,48 @@ func KickUser(config *Config, guildID, channelID string, author *discordgo.User,
 		return nil
 	}
 
-	lastMsgs, err := bot.GetMessages(channelID, 100)
-	if err != nil {
-		return err
-	}
-	toDelete := make([]string, 0)
+	_, err = DeleteMessages(channelID, user.ID, 100, 100)
+	return err
+}
 
-	for _, v := range lastMsgs {
-		if v.Author.ID == user.ID {
-			toDelete = append(toDelete, v.ID)
+func DeleteMessages(channelID string, filterUser string, deleteNum, fetchNum int) (int, error) {
+	msgs, err := bot.GetMessages(channelID, fetchNum, false)
+	if err != nil {
+		return 0, err
+	}
+
+	toDelete := make([]string, 0)
+	now := time.Now()
+	for i := len(msgs) - 1; i >= 0; i-- {
+		if filterUser == "" || msgs[i].Author.ID == filterUser {
+
+			parsedCreatedAt, _ := msgs[i].Timestamp.Parse()
+			// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)
+			if now.Sub(parsedCreatedAt) > (time.Hour*24*14)-time.Minute {
+				continue
+			}
+
+			toDelete = append(toDelete, msgs[i].ID)
+			//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
+			if len(toDelete) >= deleteNum || len(toDelete) >= 100 {
+				break
+			}
 		}
 	}
 
 	if len(toDelete) < 1 {
-		return nil
+		return 0, nil
 	}
 
-	if len(toDelete) == 1 {
-		common.BotSession.ChannelMessageDelete(channelID, toDelete[0])
+	if len(toDelete) < 1 {
+		return 0, nil
+	} else if len(toDelete) == 1 {
+		err = common.BotSession.ChannelMessageDelete(channelID, toDelete[0])
 	} else {
-		common.BotSession.ChannelMessagesBulkDelete(channelID, toDelete)
+		err = common.BotSession.ChannelMessagesBulkDelete(channelID, toDelete)
 	}
 
-	return nil
+	return len(toDelete), err
 }
 
 func BanUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {

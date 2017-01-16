@@ -29,3 +29,7 @@ form table td{
 	padding: 2 !important;
 	vertical-align: middle !important;
 }
+
+.form-inline .form-group, .form-inline .checkbox {
+	margin-right: 5px;
+}

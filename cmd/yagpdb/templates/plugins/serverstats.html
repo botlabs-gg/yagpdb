@@ -9,17 +9,19 @@
             <h1>Public access has been disabled by the server admins.</h1>
             {{end}}
             {{if not .Public}}
-            <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox" name="public" {{if .PublicEnabled}} checked{{end}}> Publicly accessible
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-success">Save</button>
-                <div class="form-group">
-                    <p class="form-control-static"><a href="/public/{{.ActiveGuild.ID}}/stats">Public link</a></p>
-                </div>
-            </form>
+            <div class="well well-sm">
+                <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="public" {{if .PublicEnabled}} checked{{end}}> Publicly accessible
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <p class="form-control-static"><a href="/public/{{.ActiveGuild.ID}}/stats">Public link</a></p>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm">Save</button>
+                </form>
+            </div>
             {{end}}
         </div>
     </div>
