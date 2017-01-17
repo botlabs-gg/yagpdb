@@ -66,6 +66,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		return nil, errors.New("Channel not found")
 	}
 
+	// Set up log entry for later use
 	logEntry := &LoggedExecutedCommand{
 		UserID:    trigger.Message.Author.ID,
 		ChannelID: cState.ID(),
@@ -75,6 +76,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		TimeStamp:  time.Now(),
 	}
 
+	// Check guild specific settings if not triggered from a DM
 	var guild *dstate.GuildState
 	var autodel bool
 
@@ -101,6 +103,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		}
 	}
 
+	// Check the command cooldown
 	cdLeft, err := cs.CooldownLeft(client, trigger.Message.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
@@ -112,16 +115,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		return nil, nil
 	}
 
-	// parsed, err := cs.ParseCommand(raw, m, s)
-	// if err != nil {
-	// 	trigger.Session.ChannelMessageSend(m.ChannelID, "Failed parsing command: "+CensorError(err))
-	// 	return nil, nil
-	// }
-
-	// parsed.Source = source
-	// parsed.Channel = channel
-	// parsed.Guild = guild
-
+	// Run the command
 	replies, err := cs.Command.HandleCommand(raw, trigger, context.WithValue(ctx, CtxKeyRedisClient, client))
 
 	if err != nil {
@@ -134,6 +128,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		go cs.deleteResponse(append(replies, trigger.Message))
 	}
 
+	// Log errors
 	if err == nil {
 		err = cs.SetCooldown(client, trigger.Message.Author.ID)
 		if err != nil {
@@ -141,6 +136,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		}
 	}
 
+	// Create command log entry
 	err = common.SQL.Create(logEntry).Error
 	if err != nil {
 		log.WithError(err).Error("Failed creating command execution log")
