@@ -58,7 +58,7 @@ func GetMessages(channelID string, limit int, deleted bool) ([]*discordgo.Messag
 		if toFetch > 100 {
 			toFetch = 100
 		}
-		msgs, err := common.BotSession.ChannelMessages(channelID, toFetch, before, "")
+		msgs, err := common.BotSession.ChannelMessages(channelID, toFetch, before, "", "")
 		if err != nil {
 			return nil, err
 		}

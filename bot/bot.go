@@ -21,7 +21,6 @@ var (
 func Setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
-	State.Debug = true
 	AddHandler(HandleReady, EventReady)
 	AddHandler(StateHandler, EventAll)
 	AddHandler(RedisWrapper(HandleGuildCreate), EventGuildCreate)

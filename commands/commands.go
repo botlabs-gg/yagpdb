@@ -16,6 +16,10 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
 	bot.RegisterPlugin(plugin)
+	err := common.SQL.AutoMigrate(&LoggedExecutedCommand{}).Error
+	if err != nil {
+		log.WithError(err).Error("Failed migrating database")
+	}
 }
 
 func (p *Plugin) Name() string {

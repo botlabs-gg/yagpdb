@@ -66,6 +66,15 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		return nil, errors.New("Channel not found")
 	}
 
+	logEntry := &LoggedExecutedCommand{
+		UserID:    trigger.Message.Author.ID,
+		ChannelID: cState.ID(),
+
+		Command:    cs.Name,
+		RawCommand: raw,
+		TimeStamp:  time.Now(),
+	}
+
 	var guild *dstate.GuildState
 	var autodel bool
 
@@ -75,6 +84,8 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		if guild == nil {
 			return nil, errors.New("Guild not found")
 		}
+
+		logEntry.GuildID = guild.ID()
 
 		var enabled bool
 		// Check wether it's enabled or not
@@ -113,6 +124,12 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 
 	replies, err := cs.Command.HandleCommand(raw, trigger, context.WithValue(ctx, CtxKeyRedisClient, client))
 
+	if err != nil {
+		logEntry.Error = err.Error()
+	}
+
+	logEntry.ResponseTime = int64(time.Since(started))
+
 	if len(replies) > 0 && autodel {
 		go cs.deleteResponse(append(replies, trigger.Message))
 	}
@@ -123,6 +140,12 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 			log.WithError(err).Error("Failed setting cooldown")
 		}
 	}
+
+	err = common.SQL.Create(logEntry).Error
+	if err != nil {
+		log.WithError(err).Error("Failed creating command execution log")
+	}
+
 	return replies, err
 }
 

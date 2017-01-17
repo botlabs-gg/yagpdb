@@ -47,6 +47,7 @@ func (p *Plugin) InitBot() {
 
 	CommandSystem.Prefix = p
 	CommandSystem.RegisterCommands(GlobalCommands...)
+	CommandSystem.RegisterCommands(debugCommands...)
 
 	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
 	bot.AddHandler(HandleMessageCreate, bot.EventMessageCreate)
@@ -478,7 +479,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Cooldown: 5,
 		Category: CategoryTool,
 		Command: &commandsystem.Command{
-			Name:        "ping",
+			Name:        "Ping",
 			Description: "I prefer tabletennis",
 
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
@@ -562,59 +563,6 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
 				}
 				return out + "\n```", nil
-			},
-		},
-	},
-	&CustomCommand{
-		Cooldown:             2,
-		Category:             CategoryFun,
-		HideFromCommandsPage: true,
-		Command: &commandsystem.Command{
-			Name:         "stateinfo",
-			Description:  "Responds with state debug info",
-			HideFromHelp: true,
-			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				if data.Message.Author.ID != common.Conf.Owner {
-					return "Only bot owner can run this", nil
-				}
-
-				totalGuilds := 0
-				totalMembers := 0
-				totalChannels := 0
-				totalMessages := 0
-
-				state := bot.State
-				state.RLock()
-				defer state.RUnlock()
-
-				totalGuilds = len(state.Guilds)
-
-				for _, g := range state.Guilds {
-
-					state.RUnlock()
-					g.RLock()
-
-					totalChannels += len(g.Channels)
-					totalMembers += len(g.Members)
-
-					for _, cState := range g.Channels {
-						totalMessages += len(cState.Messages)
-					}
-					g.RUnlock()
-					state.RLock()
-				}
-
-				embed := &discordgo.MessageEmbed{
-					Title: "State size",
-					Fields: []*discordgo.MessageEmbedField{
-						&discordgo.MessageEmbedField{Name: "Guilds", Value: fmt.Sprint(totalGuilds), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprintf("%d", totalMembers), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d", totalMessages), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
-					},
-				}
-
-				return embed, nil
 			},
 		},
 	},
