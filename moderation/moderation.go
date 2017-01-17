@@ -221,7 +221,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	err = bot.SendDM(user.ID, gName+executed)
 	if err != nil {
-		return err
+		logrus.WithError(err).Warn("Failed sending punishment dm")
 	}
 
 	logLink := ""

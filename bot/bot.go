@@ -135,7 +135,7 @@ func checkConnectedGuilds() {
 		}
 
 		guilds = append(guilds, g...)
-		if len(guilds) < 100 {
+		if len(g) < 100 {
 			break
 		}
 

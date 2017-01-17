@@ -120,6 +120,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 
 	if err != nil {
 		logEntry.Error = err.Error()
+		log.WithError(err).WithField("channel", cState.ID()).Error(cs.Name, ": failed handling command")
 	}
 
 	logEntry.ResponseTime = int64(time.Since(started))

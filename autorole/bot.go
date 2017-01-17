@@ -67,9 +67,9 @@ var roleCommands = []commandsystem.CommandHandler{
 					return out, nil
 				}
 
-				member, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.ID)
+				member, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.Author.ID)
 				if err != nil {
-					return "Failed assigning role, contact support (bot error, not permissions)", err
+					return "Failed assigning role, contact bot support (bot error, not permissions)", err
 				}
 
 				found := false
