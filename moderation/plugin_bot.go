@@ -28,6 +28,7 @@ const (
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(ModerationCommands...)
 	bot.AddHandler(HandleGuildBanRemove, bot.EventGuildBanRemove)
+	bot.AddHandler(bot.RedisWrapper(HandleMemberJoin), bot.EventGuildMemberAdd)
 }
 
 func HandleGuildBanRemove(ctx context.Context, evt interface{}) {
@@ -46,6 +47,31 @@ func HandleGuildBanRemove(ctx context.Context, evt interface{}) {
 	_, err = common.BotSession.ChannelMessageSendEmbed(config.ActionChannel, embed)
 	if err != nil {
 		logrus.WithError(err).Error("Failed sending unban log message")
+	}
+}
+
+func HandleMemberJoin(ctx context.Context, evt interface{}) {
+	c := evt.(*discordgo.GuildMemberAdd)
+	client := bot.ContextRedis(ctx)
+
+	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.User.ID)).Int()
+	if muteLeft < 10 {
+		return
+	}
+
+	config, err := GetConfig(c.GuildID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
+		return
+	}
+	if config.MuteRole == "" {
+		return
+	}
+
+	logrus.WithField("guild", c.GuildID).WithField("user", c.User.ID).Info("Assigning back mute role after member rejoined")
+	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.MuteRole)
+	if err != nil {
+		logrus.WithField("guild", c.GuildID).WithError(err).Error("Failed assigning mute role")
 	}
 }
 

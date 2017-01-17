@@ -23,6 +23,8 @@ func (p *Plugin) Name() string {
 	return "Moderation"
 }
 
+func RedisKeyMutedUser(userID string) string { return "moderation_muted_user:" + userID }
+
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
@@ -377,6 +379,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	// Either remove the scheduled unmute or schedule an unmute in the future
 	if mute {
 		err = common.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
+		client.Cmd("SETEX", RedisKeyMutedUser(user.ID), duration*60, 1)
 	} else {
 		if client != nil {
 			err = common.RemoveScheduledEvent(client, "unmute", guildID+":"+user.ID)
