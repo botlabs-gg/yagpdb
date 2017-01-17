@@ -127,6 +127,8 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 
 	if len(replies) > 0 && autodel {
 		go cs.deleteResponse(append(replies, trigger.Message))
+	} else if autodel {
+		go cs.deleteResponse([]*discordgo.Message{trigger.Message})
 	}
 
 	// Log errors
