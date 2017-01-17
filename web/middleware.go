@@ -686,30 +686,6 @@ func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) 
 	entry.Error("Web handler reported error")
 }
 
-var stringPerms = map[int]string{
-	discordgo.PermissionReadMessages:       "Read Messages",
-	discordgo.PermissionSendMessages:       "Send Messages",
-	discordgo.PermissionSendTTSMessages:    "Send TTS Messages",
-	discordgo.PermissionManageMessages:     "Manage Messages",
-	discordgo.PermissionEmbedLinks:         "Embed Links",
-	discordgo.PermissionAttachFiles:        "Attach Files",
-	discordgo.PermissionReadMessageHistory: "Read Message History",
-	discordgo.PermissionMentionEveryone:    "Mention Everyone",
-	discordgo.PermissionVoiceConnect:       "Voice Connect",
-	discordgo.PermissionVoiceSpeak:         "Voice Speak",
-	discordgo.PermissionVoiceMuteMembers:   "Voice Mute Members",
-	discordgo.PermissionVoiceDeafenMembers: "Voice Deafen Members",
-	discordgo.PermissionVoiceMoveMembers:   "Voice Move Members",
-	discordgo.PermissionVoiceUseVAD:        "Voice Use VAD",
-
-	discordgo.PermissionCreateInstantInvite: "Create Instant Invite",
-	discordgo.PermissionKickMembers:         "Kick Members",
-	discordgo.PermissionBanMembers:          "Ban Members",
-	discordgo.PermissionManageRoles:         "Manage Roles",
-	discordgo.PermissionManageChannels:      "Manage Channels",
-	discordgo.PermissionManageServer:        "Manage Server",
-}
-
 func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -730,12 +706,12 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 					if has != "" {
 						has += ", "
 					}
-					has += stringPerms[perm]
+					has += common.StringPerms[perm]
 				} else {
 					if missing != "" {
 						missing += ", "
 					}
-					missing += stringPerms[perm]
+					missing += common.StringPerms[perm]
 
 				}
 			}

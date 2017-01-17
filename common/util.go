@@ -321,3 +321,27 @@ func RemoveRole(member *discordgo.Member, role string, guildID string) error {
 	// Never had the role in the first place if we got here
 	return nil
 }
+
+var StringPerms = map[int]string{
+	discordgo.PermissionReadMessages:       "Read Messages",
+	discordgo.PermissionSendMessages:       "Send Messages",
+	discordgo.PermissionSendTTSMessages:    "Send TTS Messages",
+	discordgo.PermissionManageMessages:     "Manage Messages",
+	discordgo.PermissionEmbedLinks:         "Embed Links",
+	discordgo.PermissionAttachFiles:        "Attach Files",
+	discordgo.PermissionReadMessageHistory: "Read Message History",
+	discordgo.PermissionMentionEveryone:    "Mention Everyone",
+	discordgo.PermissionVoiceConnect:       "Voice Connect",
+	discordgo.PermissionVoiceSpeak:         "Voice Speak",
+	discordgo.PermissionVoiceMuteMembers:   "Voice Mute Members",
+	discordgo.PermissionVoiceDeafenMembers: "Voice Deafen Members",
+	discordgo.PermissionVoiceMoveMembers:   "Voice Move Members",
+	discordgo.PermissionVoiceUseVAD:        "Voice Use VAD",
+
+	discordgo.PermissionCreateInstantInvite: "Create Instant Invite",
+	discordgo.PermissionKickMembers:         "Kick Members",
+	discordgo.PermissionBanMembers:          "Ban Members",
+	discordgo.PermissionManageRoles:         "Manage Roles",
+	discordgo.PermissionManageChannels:      "Manage Channels",
+	discordgo.PermissionManageServer:        "Manage Server",
+}

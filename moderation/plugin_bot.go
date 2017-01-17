@@ -19,6 +19,12 @@ var (
 	ErrFailedPerms = errors.New("Failed retrieving perms")
 )
 
+type ContextKey int
+
+const (
+	ContextKeyConfig ContextKey = iota
+)
+
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(ModerationCommands...)
 	bot.AddHandler(HandleGuildBanRemove, bot.EventGuildBanRemove)
@@ -43,16 +49,83 @@ func HandleGuildBanRemove(ctx context.Context, evt interface{}) {
 	}
 }
 
-func BaseCmd(neededPerm int, userID, channelID, guildID string) (config *Config, hasPerms bool, err error) {
-	if neededPerm != 0 {
-		hasPerms, err = bot.AdminOrPerm(neededPerm, userID, channelID)
-		if err != nil || !hasPerms {
-			return
-		}
-	}
+const (
+	ModCmdBan int = iota
+	ModCmdKick
+	ModCmdMute
+	ModCmdUnMute
+	ModCmdClean
+	ModCmdReport
+)
 
-	config, err = GetConfig(guildID)
-	return
+// ModBaseCmd is the base command for moderation commands, it makes sure proper permissions are there for the user invoking it
+// and that the command is required and the reason is specified if required
+func ModBaseCmd(neededPerm, cmd int, inner commandsystem.RunFunc) commandsystem.RunFunc {
+	// userID, channelID, guildID string (config *Config, hasPerms bool, err error) {
+
+	return func(data *commandsystem.ExecData) (interface{}, error) {
+
+		userID := data.Message.Author.ID
+		channelID := data.Channel.ID()
+		guildID := data.Guild.ID()
+
+		cmdName := data.Command.(*commandsystem.Command).Name
+
+		if neededPerm != 0 {
+			hasPerms, err := bot.AdminOrPerm(neededPerm, userID, channelID)
+			if err != nil || !hasPerms {
+				return fmt.Sprintf("The **%s** command requires the **%s** permission in this channel, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm]), nil
+			}
+		}
+
+		config, err := GetConfig(guildID)
+		if err != nil {
+			return "Error retrieving config", err
+		}
+
+		enabled := false
+		reasonOptional := false
+		reason := ""
+
+		switch cmd {
+		case ModCmdBan:
+			enabled = config.BanEnabled
+			reasonOptional = config.BanReasonOptional
+			reason = data.SafeArgString(1)
+		case ModCmdKick:
+			enabled = config.KickEnabled
+			reasonOptional = config.KickReasonOptional
+			reason = data.SafeArgString(1)
+		case ModCmdMute, ModCmdUnMute:
+			enabled = config.MuteEnabled
+			if cmd == ModCmdMute {
+				reasonOptional = config.MuteReasonOptional
+				reason = data.SafeArgString(2)
+			} else {
+				reasonOptional = config.UnmuteReasonOptional
+				reason = data.SafeArgString(1)
+			}
+		case ModCmdClean:
+			reasonOptional = true
+			enabled = config.CleanEnabled
+		case ModCmdReport:
+			reasonOptional = true
+			enabled = config.ReportEnabled
+		default:
+			panic("Unknown command")
+		}
+
+		if !enabled {
+			return fmt.Sprintf("The **%s** command is disabled on this server. Enable it in the control panel", cmdName), nil
+		}
+
+		if !reasonOptional && reason == "" {
+			return "Reason is required.", nil
+		}
+
+		return inner(data.WithContext(context.WithValue(data.Context(), ContextKeyConfig, config)))
+
+	}
 }
 
 var ModerationCommands = []commandsystem.CommandHandler{
@@ -67,29 +140,16 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
 				&commandsystem.ArgDef{Name: "Reason", Type: commandsystem.ArgumentString},
 			},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+			Run: ModBaseCmd(discordgo.PermissionBanMembers, ModCmdBan, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
-				config, perm, err := BaseCmd(discordgo.PermissionBanMembers, parsed.Message.Author.ID, parsed.Message.ChannelID, parsed.Guild.ID())
-				if err != nil {
-					return "Error retrieving config.", err
+				reason := parsed.SafeArgString(1)
+				if reason == "" {
+					reason = "(No reason specified)"
 				}
-				if !perm {
-					return "You do not have ban permissions.", nil
-				}
-				if !config.BanEnabled {
-					return "Ban command disabled.", nil
-				}
-
-				reason := "(No reason specified)"
-				if parsed.Args[1] != nil && parsed.Args[1].Str() != "" {
-					reason = parsed.Args[1].Str()
-				} else if !config.BanReasonOptional {
-					return "No reason specified", nil
-				}
-
 				target := parsed.Args[0].DiscordUser()
 
-				err = BanUser(config, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, target)
+				err := BanUser(config, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, target)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return cast.Message.Message, err
@@ -99,7 +159,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				return "", nil
-			},
+			}),
 		},
 	},
 	&commands.CustomCommand{
@@ -114,29 +174,17 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
 				&commandsystem.ArgDef{Name: "Reason", Type: commandsystem.ArgumentString},
 			},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+			Run: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdKick, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
-				config, perm, err := BaseCmd(discordgo.PermissionKickMembers, parsed.Message.Author.ID, parsed.Message.ChannelID, parsed.Guild.ID())
-				if err != nil {
-					return "Error retrieving config.", err
-				}
-				if !perm {
-					return "You do not have kick permissions.", nil
-				}
-				if !config.KickEnabled {
-					return "Kick command disabled.", nil
-				}
-
-				reason := "(No reason specified)"
-				if parsed.Args[1] != nil && parsed.Args[1].Str() != "" {
-					reason = parsed.Args[1].Str()
-				} else if !config.KickReasonOptional {
-					return "No reason specified", nil
+				reason := parsed.SafeArgString(1)
+				if reason == "" {
+					reason = "(No reason specified)"
 				}
 
 				target := parsed.Args[0].DiscordUser()
 
-				err = KickUser(config, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, target)
+				err := KickUser(config, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, target)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return cast.Message.Message, err
@@ -146,7 +194,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				return "", nil
-			},
+			}),
 		},
 	},
 	&commands.CustomCommand{
@@ -162,24 +210,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgDef{Name: "Reason", Type: commandsystem.ArgumentString},
 			},
 			ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-
-				config, perm, err := BaseCmd(discordgo.PermissionKickMembers, parsed.Message.Author.ID, parsed.Message.ChannelID, parsed.Guild.ID())
-				if err != nil {
-					return "Error retrieving config.", err
-				}
-				if !perm {
-					return "You do not have kick (Required for mute) permissions.", nil
-				}
-				if !config.MuteEnabled {
-					return "Mute command disabled.", nil
-				}
+			Run: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdMute, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
 				reason := "(No reason specified)"
 				if parsed.Args[2] != nil && parsed.Args[2].Str() != "" {
 					reason = parsed.Args[2].Str()
-				} else if !config.MuteReasonOptional {
-					return "No reason specified", nil
 				}
 
 				muteDuration := 10
@@ -193,7 +229,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				target := parsed.Args[0].DiscordUser()
 				member := parsed.Guild.MemberCopy(true, target.ID, true)
 
-				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, muteDuration)
+				err := MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, muteDuration)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return "API Error: " + cast.Message.Message, err
@@ -203,7 +239,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				return "", nil
-			},
+			}),
 		},
 	},
 	&commands.CustomCommand{
@@ -218,18 +254,8 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
 				&commandsystem.ArgDef{Name: "Reason", Type: commandsystem.ArgumentString},
 			},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-
-				config, perm, err := BaseCmd(discordgo.PermissionKickMembers, parsed.Message.Author.ID, parsed.Message.ChannelID, parsed.Guild.ID())
-				if err != nil {
-					return "Error retrieving config.", err
-				}
-				if !perm {
-					return "You do not have kick (Required for mute) permissions.", nil
-				}
-				if !config.MuteEnabled {
-					return "Mute command disabled.", nil
-				}
+			Run: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdUnMute, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
 				reason := "(No reason specified)"
 				if parsed.Args[1] != nil && parsed.Args[1].Str() != "" {
@@ -241,7 +267,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				target := parsed.Args[0].DiscordUser()
 				member := parsed.Guild.MemberCopy(true, target.ID, true)
 
-				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, 0)
+				err := MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, 0)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return "API Error: " + cast.Message.Message, err
@@ -251,7 +277,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				return "", nil
-			},
+			}),
 		},
 	},
 	&commands.CustomCommand{
@@ -266,15 +292,8 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
 				&commandsystem.ArgDef{Name: "Reason", Type: commandsystem.ArgumentString},
 			},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-
-				config, _, err := BaseCmd(0, parsed.Message.Author.ID, parsed.Message.ChannelID, parsed.Guild.ID())
-				if err != nil {
-					return "Error retrieving config.", err
-				}
-				if !config.ReportEnabled {
-					return "Report command disabled.", nil
-				}
+			Run: ModBaseCmd(0, ModCmdReport, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
 				logLink := ""
 
@@ -303,7 +322,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					return "User reported to the proper authorities", nil
 				}
 				return "", nil
-			},
+			}),
 		},
 	},
 	&commands.CustomCommand{
@@ -321,19 +340,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				&commandsystem.ArgDef{Name: "User", Description: "Optionally specify a user, Deletions may be less than `num` if set", Type: commandsystem.ArgumentUser},
 			},
 			ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-
-				config, perm, err := BaseCmd(discordgo.PermissionManageMessages, parsed.Message.Author.ID, parsed.Message.ChannelID, parsed.Guild.ID())
-				if err != nil {
-					return "Error retrieving config.", err
-				}
-				if !perm {
-					return "You do not have manage messages permissions in this channel.", nil
-				}
-				if !config.CleanEnabled {
-					return "Clean command disabled.", nil
-				}
-
+			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdClean, func(parsed *commandsystem.ExecData) (interface{}, error) {
 				filter := ""
 				if parsed.Args[1] != nil {
 					filter = parsed.Args[1].DiscordUser().ID
@@ -366,7 +373,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				numDeleted, err := DeleteMessages(parsed.Message.ChannelID, filter, num, limitFetch)
 
 				return commandsystem.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted)), err
-			},
+			}),
 		},
 	},
 }
