@@ -60,7 +60,7 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 	}
 
 	m := gs.Member(true, p.User.ID)
-	if m != nil && m.Member == nil {
+	if m != nil && m.Member != nil {
 		return
 	}
 
