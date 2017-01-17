@@ -113,3 +113,9 @@ func InvalidateGuildCache(client *redis.Client, guildID string) {
 	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))
 	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))
 }
+
+func ConcurrentEventHandler(inner Handler) Handler {
+	return func(ctx context.Context, evt interface{}) {
+		go inner(ctx, evt)
+	}
+}

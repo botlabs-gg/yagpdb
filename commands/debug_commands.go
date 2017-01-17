@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"log"
+	"sort"
 	"time"
 )
 
@@ -105,7 +106,7 @@ var debugCommands = []commandsystem.CommandHandler{
 					return "Uh oh something bad happened", err
 				}
 
-				out := "```"
+				out := "```\n#    Total -  Command\n"
 				total := 0
 				for k, result := range results {
 					out += fmt.Sprintf("#%02d: %5d - %s\n", k+1, result.Count, result.Command)
@@ -114,7 +115,52 @@ var debugCommands = []commandsystem.CommandHandler{
 
 				cpm := float64(total) / float64(hours) / 60
 
-				out += fmt.Sprintf("\nTotal: %d, Commands per minute: %0.1f", total, cpm)
+				out += fmt.Sprintf("\nTotal: %d, Commands per minute: %.1f", total, cpm)
+				out += "\n```"
+
+				return out, nil
+			}),
+		},
+	},
+	&CustomCommand{
+		Cooldown:             2,
+		Category:             CategoryFun,
+		HideFromCommandsPage: true,
+		Command: &commandsystem.Command{
+			Name:         "topevents",
+			Description:  ";))",
+			HideFromHelp: true,
+			Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
+
+				bot.EventLogger.Lock()
+
+				sortable := make([]*DiscordEvtEntry, len(bot.EventLogger.Events))
+
+				i := 0
+				for k, v := range bot.EventLogger.Events {
+					sortable[i] = &DiscordEvtEntry{
+						Name:  k,
+						Count: v,
+					}
+					i++
+				}
+
+				bot.EventLogger.Unlock()
+
+				sort.Sort(DiscordEvtEntrySortable(sortable))
+
+				uptime := time.Since(bot.Started)
+
+				out := "```\n#   Total  -  Avg/m  - Event\n"
+				total := 0
+				for k, entry := range sortable {
+					out += fmt.Sprintf("#%-2d: %5d - %5.2f - %s\n", k+1, entry.Count, float64(entry.Count)/(uptime.Seconds()/60), entry.Name)
+					total += entry.Count
+				}
+
+				epm := float64(total) / (uptime.Seconds() / 60)
+
+				out += fmt.Sprintf("\nTotal: %d, Events per minute: %.1f", total, epm)
 				out += "\n```"
 
 				return out, nil
@@ -126,4 +172,25 @@ var debugCommands = []commandsystem.CommandHandler{
 type TopCommandsResult struct {
 	Command string
 	Count   int
+}
+
+type DiscordEvtEntry struct {
+	Name  string
+	Count int
+}
+
+type DiscordEvtEntrySortable []*DiscordEvtEntry
+
+func (d DiscordEvtEntrySortable) Len() int {
+	return len(d)
+}
+
+func (d DiscordEvtEntrySortable) Less(i, j int) bool {
+	return d[i].Count > d[j].Count
+}
+
+func (d DiscordEvtEntrySortable) Swap(i, j int) {
+	temp := d[i]
+	d[i] = d[j]
+	d[j] = temp
 }

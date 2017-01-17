@@ -23,6 +23,8 @@ func Setup() {
 	State = dstate.NewState()
 	AddHandler(HandleReady, EventReady)
 	AddHandler(StateHandler, EventAll)
+	AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), EventAll)
+
 	AddHandler(RedisWrapper(HandleGuildCreate), EventGuildCreate)
 	AddHandler(RedisWrapper(HandleGuildDelete), EventGuildDelete)
 
