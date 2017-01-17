@@ -20,9 +20,9 @@ func init() {
 }
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(HandleUsernameNicknameEvent, bot.EventGuildMemberUpdate)
-	bot.AddHandler(HandleUsernameNicknameEvent, bot.EventPresenceUpdate)
-	bot.AddHandler(HandleUsernameNicknameEvent, bot.EventGuildCreate)
+	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildMemberUpdate)
+	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventPresenceUpdate)
+	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildCreate)
 
 	commands.CommandSystem.RegisterCommands(cmds...)
 }

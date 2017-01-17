@@ -26,10 +26,10 @@ func StartServer() {
 	// Debug stuff
 	muxer.HandleFunc(pat.Get("/debug/pprof/*"), pprof.Index)
 	muxer.HandleFunc(pat.Get("/debug/pprof"), pprof.Index)
-	muxer.HandleFunc(pat.Get("/debug/pproff/cmdline"), pprof.Cmdline)
-	muxer.HandleFunc(pat.Get("/debug/pproff/profile"), pprof.Profile)
-	muxer.HandleFunc(pat.Get("/debug/pproff/symbol"), pprof.Symbol)
-	muxer.HandleFunc(pat.Get("/debug/pproff/trace"), pprof.Trace)
+	muxer.HandleFunc(pat.Get("/debug2/pproff/cmdline"), pprof.Cmdline)
+	muxer.HandleFunc(pat.Get("/debug2/pproff/profile"), pprof.Profile)
+	muxer.HandleFunc(pat.Get("/debug2/pproff/symbol"), pprof.Symbol)
+	muxer.HandleFunc(pat.Get("/debug2/pproff/trace"), pprof.Trace)
 
 	http.ListenAndServe(serverAddr, muxer)
 }
