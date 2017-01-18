@@ -59,6 +59,14 @@
                         <label>
                             <input type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
                             Log Unban events in the mod log channel<br/>
+                            A reason and author can be assigned to this entry through the <code>reason</code> command<br/>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="LogBans" {{if .ModConfig.LogBans}} checked{{end}}>
+                            Log Bans not made through the bot<br/>
+                            A reason and author can be assigned to this entry through the <code>reason</code> command<br/>
                         </label>
                     </div>
                 </div>

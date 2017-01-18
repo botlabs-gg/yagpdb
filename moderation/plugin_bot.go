@@ -27,26 +27,51 @@ const (
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(ModerationCommands...)
-	bot.AddHandler(HandleGuildBanRemove, bot.EventGuildBanRemove)
+	bot.AddHandler(HandleGuildBanAddRemove, bot.EventGuildBanRemove)
+	bot.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), bot.EventGuildBanAdd)
 	bot.AddHandler(bot.RedisWrapper(HandleMemberJoin), bot.EventGuildMemberAdd)
 }
 
-func HandleGuildBanRemove(ctx context.Context, evt interface{}) {
-	r := evt.(*discordgo.GuildBanRemove)
-	config, err := GetConfig(r.GuildID)
-	if err != nil {
-		logrus.WithError(err).Error("Failed retrieving config")
+func HandleGuildBanAddRemove(ctx context.Context, evt interface{}) {
+	var user *discordgo.User
+	guildID := ""
+	action := ""
+
+	switch t := evt.(type) {
+	case *discordgo.GuildBanAdd:
+
+		guildID = t.GuildID
+		user = t.User
+		action = ActionBanned
+		if i, _ := bot.ContextRedis(ctx).Cmd("GET", RedisKeyBannedUser(guildID, user.ID)).Int(); i > 0 {
+			bot.ContextRedis(ctx).Cmd("DEL", RedisKeyBannedUser(guildID, user.ID))
+			return
+		}
+	case *discordgo.GuildBanRemove:
+		action = ActionUnbanned
+		user = t.User
+		guildID = t.GuildID
+	default:
 		return
 	}
 
-	if !config.LogUnbans || config.ActionChannel == "" {
+	config, err := GetConfig(guildID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
 		return
 	}
 
-	embed := CreateModlogEmbed(nil, "Unbanned", r.User, "", "")
-	_, err = common.BotSession.ChannelMessageSendEmbed(config.ActionChannel, embed)
+	if config.ActionChannel == "" {
+		return
+	}
+
+	if (action == ActionUnbanned && !config.LogUnbans) || (action == ActionBanned && !config.LogBans) {
+		return
+	}
+
+	err = CreateModlogEmbed(config.ActionChannel, nil, action, user, "", "")
 	if err != nil {
-		logrus.WithError(err).Error("Failed sending unban log message")
+		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action + " log message")
 	}
 }
 
@@ -54,7 +79,7 @@ func HandleMemberJoin(ctx context.Context, evt interface{}) {
 	c := evt.(*discordgo.GuildMemberAdd)
 	client := bot.ContextRedis(ctx)
 
-	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.User.ID)).Int()
+	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.GuildID, c.User.ID)).Int()
 	if muteLeft < 10 {
 		return
 	}
@@ -82,6 +107,7 @@ const (
 	ModCmdUnMute
 	ModCmdClean
 	ModCmdReport
+	ModCmdReason
 )
 
 // ModBaseCmd is the base command for moderation commands, it makes sure proper permissions are there for the user invoking it
@@ -137,6 +163,9 @@ func ModBaseCmd(neededPerm, cmd int, inner commandsystem.RunFunc) commandsystem.
 		case ModCmdReport:
 			reasonOptional = true
 			enabled = config.ReportEnabled
+		case ModCmdReason:
+			reasonOptional = true
+			enabled = true
 		default:
 			panic("Unknown command")
 		}
@@ -175,7 +204,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 				target := parsed.Args[0].DiscordUser()
 
-				err := BanUser(config, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, target)
+				err := BanUser(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, target)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return cast.Message.Message, err
@@ -184,7 +213,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					}
 				}
 
-				return "", nil
+				return "👌", nil
 			}),
 		},
 	},
@@ -219,7 +248,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					}
 				}
 
-				return "", nil
+				return "👌", nil
 			}),
 		},
 	},
@@ -264,7 +293,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					}
 				}
 
-				return "", nil
+				return "👌", nil
 			}),
 		},
 	},
@@ -302,7 +331,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 					}
 				}
 
-				return "", nil
+				return "👌", nil
 			}),
 		},
 	},
@@ -347,7 +376,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				if channelID != parsed.Message.ChannelID {
 					return "User reported to the proper authorities", nil
 				}
-				return "", nil
+				return "👌", nil
 			}),
 		},
 	},
@@ -399,6 +428,50 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				numDeleted, err := DeleteMessages(parsed.Message.ChannelID, filter, num, limitFetch)
 
 				return commandsystem.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted)), err
+			}),
+		},
+	}, &commands.CustomCommand{
+		CustomEnabled: true,
+		Cooldown:      5,
+		Category:      commands.CategoryModeration,
+		Command: &commandsystem.Command{
+			Name:                  "Reason",
+			Description:           "Add/Edit a modlog reason",
+			RequiredArgs:          2,
+			UserArgRequireMention: true,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "ID", Type: commandsystem.ArgumentString},
+				&commandsystem.ArgDef{Name: "Reason", Description: "The new reason", Type: commandsystem.ArgumentString},
+			},
+			Run: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdReason, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				config := parsed.Context().Value(ContextKeyConfig).(*Config)
+				if config.ActionChannel == "" {
+					return "No mod log channel set up", nil
+				}
+				msg, err := common.BotSession.ChannelMessage(config.ActionChannel, parsed.Args[0].Str())
+				if err != nil {
+					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+						return "Failed retrieving the message: " + cast.Message.Message, nil
+					}
+					return "Failed retrieving the message", err
+				}
+
+				if msg.Author.ID != common.Conf.BotID {
+					return "I didn't make that message", nil
+				}
+
+				if len(msg.Embeds) < 1 {
+					return "This entry is either too old or you're trying to mess with me...", nil
+				}
+
+				embed := msg.Embeds[0]
+				updateEmbedReason(parsed.Message.Author, parsed.Args[1].Str(), embed)
+				_, err = common.BotSession.ChannelMessageEditEmbed(config.ActionChannel, msg.ID, embed)
+				if err != nil {
+					return "Failed updating the modlog entry", err
+				}
+
+				return "👌", nil
 			}),
 		},
 	},

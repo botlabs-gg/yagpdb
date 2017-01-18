@@ -12,9 +12,18 @@ import (
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+)
+
+const (
+	ActionMuted    = "Muted"
+	ActionUnMuted  = "Unmuted"
+	ActionKicked   = "Kicked"
+	ActionBanned   = "Banned"
+	ActionUnbanned = "Unbanned"
 )
 
 type Plugin struct{}
@@ -23,7 +32,13 @@ func (p *Plugin) Name() string {
 	return "Moderation"
 }
 
-func RedisKeyMutedUser(userID string) string { return "moderation_muted_user:" + userID }
+func RedisKeyMutedUser(guildID, userID string) string {
+	return "moderation_muted_user:" + guildID + ":" + userID
+}
+
+func RedisKeyBannedUser(guildID, userID string) string {
+	return "moderation_banned_user:" + guildID + ":" + userID
+}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
@@ -92,6 +107,7 @@ type Config struct {
 	ActionChannel string `valid:"channel,true"`
 	ReportChannel string `valid:"channel,true"`
 	LogUnbans     bool
+	LogBans       bool
 }
 
 func (c *Config) GetName() string {
@@ -127,8 +143,10 @@ const (
 	PunishmentBan
 )
 
-func CreateModlogEmbed(author *discordgo.User, action string, target *discordgo.User, reason, logLink string) *discordgo.MessageEmbed {
+func CreateModlogEmbed(channelID string, author *discordgo.User, action string, target *discordgo.User, reason, logLink string) error {
+	emptyAuthor := false
 	if author == nil {
+		emptyAuthor = true
 		author = &discordgo.User{
 			ID:            "??",
 			Username:      "Unknown",
@@ -147,21 +165,17 @@ func CreateModlogEmbed(author *discordgo.User, action string, target *discordgo.
 		},
 	}
 
-	if strings.HasPrefix(action, "Muted") {
+	if strings.HasPrefix(action, ActionMuted) {
 		embed.Color = 0x57728e
-		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hotwomen.png"
 		embed.Description = ":mute:" + embed.Description
-	} else if strings.HasPrefix(action, "Unmuted") || action == "Unbanned" {
-		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/spugahtt.png"
+	} else if strings.HasPrefix(action, ActionUnMuted) || action == ActionUnbanned {
 		embed.Description = ":speaker:" + embed.Description
 		embed.Color = 0x62c65f
-	} else if strings.HasPrefix(action, "Banned") {
-		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/hummur.png"
+	} else if strings.HasPrefix(action, ActionBanned) {
 		embed.Description = ":hammer:" + embed.Description
 		embed.Color = 0xd64848
 	} else {
 		// kick
-		// embed.Footer.IconURL = "https://" + common.Conf.Host + "/static/img/whodis.png"
 		embed.Description = ":boot:" + embed.Description
 		embed.Color = 0xf2a013
 	}
@@ -169,7 +183,43 @@ func CreateModlogEmbed(author *discordgo.User, action string, target *discordgo.
 	if logLink != "" {
 		embed.Description += " ([Logs](" + logLink + "))"
 	}
-	return embed
+
+	m, err := common.BotSession.ChannelMessageSendEmbed(channelID, embed)
+	if err != nil {
+		return err
+	}
+
+	if emptyAuthor {
+		placeholder := fmt.Sprintf("Asssign an author and reason to this using **'reason %s your-reason-here`**", m.ID)
+		updateEmbedReason(nil, placeholder, embed)
+		_, err = common.BotSession.ChannelMessageEditEmbed(channelID, m.ID, embed)
+	}
+	return err
+}
+
+var (
+	logsRegex = regexp.MustCompile(`\(\[Logs\]\(.*\)\)`)
+)
+
+func updateEmbedReason(author *discordgo.User, reason string, embed *discordgo.MessageEmbed) {
+	const checkStr = ":notepad_spiral:**Reason:**"
+	index := strings.Index(embed.Description, checkStr)
+	withoutReason := embed.Description[:index+len(checkStr)]
+
+	logsLink := logsRegex.FindString(embed.Description)
+	if logsLink != "" {
+		logsLink = " " + logsLink
+	}
+
+	embed.Description = withoutReason + " " + reason + logsLink
+
+	if author != nil {
+		embed.Author = &discordgo.MessageEmbedAuthor{
+			Name:    fmt.Sprintf("%s#%s (ID %s)", author.Username, author.Discriminator, author.ID),
+			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
+		}
+	}
+
 }
 
 // Kick or bans someone, uploading a hasebin log, and sending the report tmessage in the action channel
@@ -241,6 +291,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	case PunishmentKick:
 		err = common.BotSession.GuildMemberDelete(guildID, user.ID)
 	case PunishmentBan:
+
 		err = common.BotSession.GuildBanCreate(guildID, user.ID, 1)
 	}
 
@@ -250,8 +301,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	logrus.Println("MODERATION:", author.Username, actionStr, user.Username, "cause", reason)
 
-	embed := CreateModlogEmbed(author, actionStr, user, reason, logLink)
-	_, err = common.BotSession.ChannelMessageSendEmbed(actionChannel, embed)
+	err = CreateModlogEmbed(actionChannel, author, actionStr, user, reason, logLink)
 	if err != nil {
 		return err
 	}
@@ -321,7 +371,8 @@ func DeleteMessages(channelID string, filterUser string, deleteNum, fetchNum int
 	return len(toDelete), err
 }
 
-func BanUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
+func BanUser(client *redis.Client, config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
+	client.Cmd("SETEX", RedisKeyBannedUser(guildID, user.ID), 60, 1)
 	return punish(config, PunishmentBan, guildID, channelID, author, reason, user)
 }
 
@@ -379,7 +430,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	// Either remove the scheduled unmute or schedule an unmute in the future
 	if mute {
 		err = common.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
-		client.Cmd("SETEX", RedisKeyMutedUser(user.ID), duration*60, 1)
+		client.Cmd("SETEX", RedisKeyMutedUser(guildID, user.ID), duration*60, 1)
 	} else {
 		if client != nil {
 			err = common.RemoveScheduledEvent(client, "unmute", guildID+":"+user.ID)
@@ -415,9 +466,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	bot.SendDM(user.ID, dmMsg)
 
 	if logChannel != "" {
-		embed := CreateModlogEmbed(author, action, user, reason, logLink)
-		_, err := common.BotSession.ChannelMessageSendEmbed(logChannel, embed)
-		return err
+		return CreateModlogEmbed(logChannel, author, action, user, reason, logLink)
 	}
 
 	return nil
