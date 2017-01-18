@@ -16,14 +16,16 @@ import (
 )
 
 func init() {
+	// Discord epoch
 	snowflake.Epoch = 1420070400000
 }
 
 func (p *Plugin) InitBot() {
 	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildMemberUpdate)
-	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventPresenceUpdate)
+	// bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventPresenceUpdate)
 	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildCreate)
 
+	bot.AddHandlerBefore(HandlePresenceUpdate, bot.EventPresenceUpdate, bot.StateHandler)
 	commands.CommandSystem.RegisterCommands(cmds...)
 }
 
@@ -297,6 +299,34 @@ var cmds = []commandsystem.CommandHandler{
 			},
 		},
 	},
+}
+
+func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
+	pu := evt.(*discordgo.PresenceUpdate)
+	gs := bot.State.Guild(true, pu.GuildID)
+	ms := gs.Member(true, pu.User.ID)
+
+	if ms.Presence == nil || ms.Member == nil {
+		go func() { evtChan <- evt }()
+		return
+	}
+
+	gs.RLock()
+	defer gs.RUnlock()
+
+	if pu.User.Username != "" {
+		if pu.User.Username != ms.Member.User.Username {
+			go func() { evtChan <- evt }()
+			return
+		}
+	}
+
+	if pu.Nick != ms.Presence.Nick {
+		go func() { evtChan <- evt }()
+		return
+	}
+
+	logrus.Debug("Optimisation prevented usernane/nickname check")
 }
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
