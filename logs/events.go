@@ -325,8 +325,6 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 		go func() { evtChan <- evt }()
 		return
 	}
-
-	logrus.Debug("Optimisation prevented usernane/nickname check")
 }
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
