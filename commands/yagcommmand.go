@@ -240,14 +240,10 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *d
 		}
 	}
 
-	if cs.Key != "" || cs.CustomEnabled {
-		return true, false, nil
-	}
-
 	// Return from global settings then
 	for _, cmd := range config.Global {
 		if cmd.Cmd == cs.Name {
-			if cs.Key != "" {
+			if cs.Key != "" || cs.CustomEnabled {
 				return true, cmd.AutoDelete, nil
 			}
 
