@@ -251,6 +251,8 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *d
 		}
 	}
 
+	log.WithField("command", cs.Name).WithField("guild", gState.ID()).Error("Command not in global commands")
+
 	return false, false, nil
 }
 
