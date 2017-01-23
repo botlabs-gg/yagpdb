@@ -304,9 +304,11 @@ var cmds = []commandsystem.CommandHandler{
 func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 	pu := evt.(*discordgo.PresenceUpdate)
 	gs := bot.State.Guild(true, pu.GuildID)
+	if gs == nil {
+		go func() { evtChan <- evt }()
+	}
 	ms := gs.Member(true, pu.User.ID)
-
-	if ms.Presence == nil || ms.Member == nil {
+	if ms == nil || ms.Presence == nil || ms.Member == nil {
 		go func() { evtChan <- evt }()
 		return
 	}
