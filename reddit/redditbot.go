@@ -139,10 +139,12 @@ OUTER:
 	embed := CreatePostEmbed(post)
 
 	for _, channel := range channels {
-		_, err := common.BotSession.ChannelMessageSendEmbed(channel, embed)
-		if err != nil {
-			logrus.WithError(err).Error("Error posting message")
-		}
+		go func(c string) {
+			_, err := common.BotSession.ChannelMessageSendEmbed(c, embed)
+			if err != nil {
+				logrus.WithError(err).Error("Error posting message")
+			}
+		}(channel)
 	}
 
 	return nil

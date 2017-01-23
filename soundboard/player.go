@@ -119,9 +119,11 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 			}
 		}
 		numFrames++
+		timeOut := time.NewTimer(time.Second)
+		defer timeOut.Stop()
 		select {
 		case vc.OpusSend <- frame:
-		case <-time.After(time.Second):
+		case <-timeOut.C:
 			return vc, nil
 		}
 	}
