@@ -6,7 +6,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"go/parser"
+	"go/token"
+	"log"
 	"os"
+	"path/filepath"
+	"sort"
 	"text/template"
 )
 
@@ -71,41 +76,7 @@ type Event struct {
 	Discord bool
 }
 
-var Events = []Event{
-	Event{"ChannelCreate", true},
-	Event{"ChannelUpdate", true},
-	Event{"ChannelDelete", true},
-	Event{"ChannelPinsUpdate", true},
-	Event{"GuildCreate", true},
-	Event{"GuildUpdate", true},
-	Event{"GuildDelete", true},
-	Event{"GuildBanAdd", true},
-	Event{"GuildBanRemove", true},
-	Event{"GuildMemberAdd", true},
-	Event{"GuildMemberUpdate", true},
-	Event{"GuildMemberRemove", true},
-	Event{"GuildMembersChunk", true},
-	Event{"GuildRoleCreate", true},
-	Event{"GuildRoleUpdate", true},
-	Event{"GuildRoleDelete", true},
-	Event{"GuildIntegrationsUpdate", true},
-	Event{"GuildEmojisUpdate", true},
-	Event{"MessageAck", true},
-	Event{"MessageCreate", true},
-	Event{"MessageUpdate", true},
-	Event{"MessageDelete", true},
-	Event{"MessageDeleteBulk", true},
-	Event{"PresenceUpdate", true},
-	Event{"PresencesReplace", true},
-	Event{"Ready", true},
-	Event{"UserUpdate", true},
-	Event{"UserSettingsUpdate", true},
-	Event{"UserGuildSettingsUpdate", true},
-	Event{"TypingStart", true},
-	Event{"VoiceServerUpdate", true},
-	Event{"VoiceStateUpdate", true},
-	Event{"Resumed", true},
-
+var NonStandardEvents = []Event{
 	Event{"NewGuild", false},
 	Event{"All", false},
 	Event{"AllPre", false},
@@ -130,9 +101,36 @@ func CheckErr(errMsg string, err error) {
 }
 
 func main() {
+
+	fs := token.NewFileSet()
+	parsedFile, err := parser.ParseFile(fs, filepath.Join(os.Getenv("GOPATH"), "src/github.com/jonas747/discordgo/events.go"), nil, 0)
+	if err != nil {
+		log.Fatalf("warning: internal error: could not parse events.go: %s", err)
+		return
+	}
+
+	names := []string{}
+	for object := range parsedFile.Scope.Objects {
+		names = append(names, object)
+	}
+	sort.Strings(names)
+
+	// Create the combined event slice
+	events := make([]Event, len(names)+len(NonStandardEvents))
+	copy(events, NonStandardEvents)
+	i := len(NonStandardEvents)
+	for _, name := range names {
+		evt := Event{
+			Name:    name,
+			Discord: true,
+		}
+		events[i] = evt
+		i++
+	}
+
 	file, err := os.Create(flagOut)
 	CheckErr("Failed creating output file", err)
 	defer file.Close()
-	err = parsedTemplate.Execute(file, Events)
+	err = parsedTemplate.Execute(file, events)
 	CheckErr("Failed executing template", err)
 }

@@ -15,190 +15,230 @@ import (
 type Event int
 
 const (
-	
-	EventChannelCreate Event = 0
-	EventChannelUpdate Event = 1
-	EventChannelDelete Event = 2
-	EventChannelPinsUpdate Event = 3
-	EventGuildCreate Event = 4
-	EventGuildUpdate Event = 5
-	EventGuildDelete Event = 6
-	EventGuildBanAdd Event = 7
-	EventGuildBanRemove Event = 8
-	EventGuildMemberAdd Event = 9
-	EventGuildMemberUpdate Event = 10
-	EventGuildMemberRemove Event = 11
-	EventGuildMembersChunk Event = 12
-	EventGuildRoleCreate Event = 13
-	EventGuildRoleUpdate Event = 14
-	EventGuildRoleDelete Event = 15
+	EventNewGuild                Event = 0
+	EventAll                     Event = 1
+	EventAllPre                  Event = 2
+	EventAllPost                 Event = 3
+	EventChannelCreate           Event = 4
+	EventChannelDelete           Event = 5
+	EventChannelPinsUpdate       Event = 6
+	EventChannelUpdate           Event = 7
+	EventConnect                 Event = 8
+	EventDisconnect              Event = 9
+	EventEvent                   Event = 10
+	EventGuildBanAdd             Event = 11
+	EventGuildBanRemove          Event = 12
+	EventGuildCreate             Event = 13
+	EventGuildDelete             Event = 14
+	EventGuildEmojisUpdate       Event = 15
 	EventGuildIntegrationsUpdate Event = 16
-	EventGuildEmojisUpdate Event = 17
-	EventMessageAck Event = 18
-	EventMessageCreate Event = 19
-	EventMessageUpdate Event = 20
-	EventMessageDelete Event = 21
-	EventMessageDeleteBulk Event = 22
-	EventPresenceUpdate Event = 23
-	EventPresencesReplace Event = 24
-	EventReady Event = 25
-	EventUserUpdate Event = 26
-	EventUserSettingsUpdate Event = 27
-	EventUserGuildSettingsUpdate Event = 28
-	EventTypingStart Event = 29
-	EventVoiceServerUpdate Event = 30
-	EventVoiceStateUpdate Event = 31
-	EventResumed Event = 32
-	EventNewGuild Event = 33
-	EventAll Event = 34
-	EventAllPre Event = 35
-	EventAllPost Event = 36
+	EventGuildMemberAdd          Event = 17
+	EventGuildMemberRemove       Event = 18
+	EventGuildMemberUpdate       Event = 19
+	EventGuildMembersChunk       Event = 20
+	EventGuildRoleCreate         Event = 21
+	EventGuildRoleDelete         Event = 22
+	EventGuildRoleUpdate         Event = 23
+	EventGuildUpdate             Event = 24
+	EventMessageAck              Event = 25
+	EventMessageCreate           Event = 26
+	EventMessageDelete           Event = 27
+	EventMessageDeleteBulk       Event = 28
+	EventMessageReactionAdd      Event = 29
+	EventMessageReactionRemove   Event = 30
+	EventMessageUpdate           Event = 31
+	EventPresenceUpdate          Event = 32
+	EventPresencesReplace        Event = 33
+	EventRateLimit               Event = 34
+	EventReady                   Event = 35
+	EventRelationshipAdd         Event = 36
+	EventRelationshipRemove      Event = 37
+	EventResumed                 Event = 38
+	EventTypingStart             Event = 39
+	EventUserGuildSettingsUpdate Event = 40
+	EventUserSettingsUpdate      Event = 41
+	EventUserUpdate              Event = 42
+	EventVoiceServerUpdate       Event = 43
+	EventVoiceStateUpdate        Event = 44
 )
 
-var AllDiscordEvents = []Event{ 
+var AllDiscordEvents = []Event{
 	EventChannelCreate,
-	EventChannelUpdate,
 	EventChannelDelete,
 	EventChannelPinsUpdate,
-	EventGuildCreate,
-	EventGuildUpdate,
-	EventGuildDelete,
+	EventChannelUpdate,
+	EventConnect,
+	EventDisconnect,
+	EventEvent,
 	EventGuildBanAdd,
 	EventGuildBanRemove,
+	EventGuildCreate,
+	EventGuildDelete,
+	EventGuildEmojisUpdate,
+	EventGuildIntegrationsUpdate,
 	EventGuildMemberAdd,
-	EventGuildMemberUpdate,
 	EventGuildMemberRemove,
+	EventGuildMemberUpdate,
 	EventGuildMembersChunk,
 	EventGuildRoleCreate,
-	EventGuildRoleUpdate,
 	EventGuildRoleDelete,
-	EventGuildIntegrationsUpdate,
-	EventGuildEmojisUpdate,
+	EventGuildRoleUpdate,
+	EventGuildUpdate,
 	EventMessageAck,
 	EventMessageCreate,
-	EventMessageUpdate,
 	EventMessageDelete,
 	EventMessageDeleteBulk,
+	EventMessageReactionAdd,
+	EventMessageReactionRemove,
+	EventMessageUpdate,
 	EventPresenceUpdate,
 	EventPresencesReplace,
+	EventRateLimit,
 	EventReady,
-	EventUserUpdate,
-	EventUserSettingsUpdate,
-	EventUserGuildSettingsUpdate,
+	EventRelationshipAdd,
+	EventRelationshipRemove,
+	EventResumed,
 	EventTypingStart,
+	EventUserGuildSettingsUpdate,
+	EventUserSettingsUpdate,
+	EventUserUpdate,
 	EventVoiceServerUpdate,
 	EventVoiceStateUpdate,
-	EventResumed,
 }
 
 type Handler func(ctx context.Context, evt interface{})
-var handlers = make([][]*Handler, 37)
 
-func handleEvent(s *discordgo.Session, evt interface{}){
+var handlers = make([][]*Handler, 45)
+
+func handleEvent(s *discordgo.Session, evt interface{}) {
 
 	evtId := -10
 	name := ""
 
-	switch evt.(type){ 
+	switch evt.(type) {
 	case *discordgo.ChannelCreate:
-		evtId = 0
+		evtId = 4
 		name = "ChannelCreate"
-	case *discordgo.ChannelUpdate:
-		evtId = 1
-		name = "ChannelUpdate"
 	case *discordgo.ChannelDelete:
-		evtId = 2
+		evtId = 5
 		name = "ChannelDelete"
 	case *discordgo.ChannelPinsUpdate:
-		evtId = 3
-		name = "ChannelPinsUpdate"
-	case *discordgo.GuildCreate:
-		evtId = 4
-		name = "GuildCreate"
-	case *discordgo.GuildUpdate:
-		evtId = 5
-		name = "GuildUpdate"
-	case *discordgo.GuildDelete:
 		evtId = 6
-		name = "GuildDelete"
-	case *discordgo.GuildBanAdd:
+		name = "ChannelPinsUpdate"
+	case *discordgo.ChannelUpdate:
 		evtId = 7
+		name = "ChannelUpdate"
+	case *discordgo.Connect:
+		evtId = 8
+		name = "Connect"
+	case *discordgo.Disconnect:
+		evtId = 9
+		name = "Disconnect"
+	case *discordgo.Event:
+		evtId = 10
+		name = "Event"
+	case *discordgo.GuildBanAdd:
+		evtId = 11
 		name = "GuildBanAdd"
 	case *discordgo.GuildBanRemove:
-		evtId = 8
-		name = "GuildBanRemove"
-	case *discordgo.GuildMemberAdd:
-		evtId = 9
-		name = "GuildMemberAdd"
-	case *discordgo.GuildMemberUpdate:
-		evtId = 10
-		name = "GuildMemberUpdate"
-	case *discordgo.GuildMemberRemove:
-		evtId = 11
-		name = "GuildMemberRemove"
-	case *discordgo.GuildMembersChunk:
 		evtId = 12
-		name = "GuildMembersChunk"
-	case *discordgo.GuildRoleCreate:
+		name = "GuildBanRemove"
+	case *discordgo.GuildCreate:
 		evtId = 13
-		name = "GuildRoleCreate"
-	case *discordgo.GuildRoleUpdate:
+		name = "GuildCreate"
+	case *discordgo.GuildDelete:
 		evtId = 14
-		name = "GuildRoleUpdate"
-	case *discordgo.GuildRoleDelete:
+		name = "GuildDelete"
+	case *discordgo.GuildEmojisUpdate:
 		evtId = 15
-		name = "GuildRoleDelete"
+		name = "GuildEmojisUpdate"
 	case *discordgo.GuildIntegrationsUpdate:
 		evtId = 16
 		name = "GuildIntegrationsUpdate"
-	case *discordgo.GuildEmojisUpdate:
+	case *discordgo.GuildMemberAdd:
 		evtId = 17
-		name = "GuildEmojisUpdate"
-	case *discordgo.MessageAck:
+		name = "GuildMemberAdd"
+	case *discordgo.GuildMemberRemove:
 		evtId = 18
+		name = "GuildMemberRemove"
+	case *discordgo.GuildMemberUpdate:
+		evtId = 19
+		name = "GuildMemberUpdate"
+	case *discordgo.GuildMembersChunk:
+		evtId = 20
+		name = "GuildMembersChunk"
+	case *discordgo.GuildRoleCreate:
+		evtId = 21
+		name = "GuildRoleCreate"
+	case *discordgo.GuildRoleDelete:
+		evtId = 22
+		name = "GuildRoleDelete"
+	case *discordgo.GuildRoleUpdate:
+		evtId = 23
+		name = "GuildRoleUpdate"
+	case *discordgo.GuildUpdate:
+		evtId = 24
+		name = "GuildUpdate"
+	case *discordgo.MessageAck:
+		evtId = 25
 		name = "MessageAck"
 	case *discordgo.MessageCreate:
-		evtId = 19
+		evtId = 26
 		name = "MessageCreate"
-	case *discordgo.MessageUpdate:
-		evtId = 20
-		name = "MessageUpdate"
 	case *discordgo.MessageDelete:
-		evtId = 21
+		evtId = 27
 		name = "MessageDelete"
 	case *discordgo.MessageDeleteBulk:
-		evtId = 22
+		evtId = 28
 		name = "MessageDeleteBulk"
+	case *discordgo.MessageReactionAdd:
+		evtId = 29
+		name = "MessageReactionAdd"
+	case *discordgo.MessageReactionRemove:
+		evtId = 30
+		name = "MessageReactionRemove"
+	case *discordgo.MessageUpdate:
+		evtId = 31
+		name = "MessageUpdate"
 	case *discordgo.PresenceUpdate:
-		evtId = 23
+		evtId = 32
 		name = "PresenceUpdate"
 	case *discordgo.PresencesReplace:
-		evtId = 24
+		evtId = 33
 		name = "PresencesReplace"
+	case *discordgo.RateLimit:
+		evtId = 34
+		name = "RateLimit"
 	case *discordgo.Ready:
-		evtId = 25
+		evtId = 35
 		name = "Ready"
-	case *discordgo.UserUpdate:
-		evtId = 26
-		name = "UserUpdate"
-	case *discordgo.UserSettingsUpdate:
-		evtId = 27
-		name = "UserSettingsUpdate"
-	case *discordgo.UserGuildSettingsUpdate:
-		evtId = 28
-		name = "UserGuildSettingsUpdate"
+	case *discordgo.RelationshipAdd:
+		evtId = 36
+		name = "RelationshipAdd"
+	case *discordgo.RelationshipRemove:
+		evtId = 37
+		name = "RelationshipRemove"
+	case *discordgo.Resumed:
+		evtId = 38
+		name = "Resumed"
 	case *discordgo.TypingStart:
-		evtId = 29
+		evtId = 39
 		name = "TypingStart"
+	case *discordgo.UserGuildSettingsUpdate:
+		evtId = 40
+		name = "UserGuildSettingsUpdate"
+	case *discordgo.UserSettingsUpdate:
+		evtId = 41
+		name = "UserSettingsUpdate"
+	case *discordgo.UserUpdate:
+		evtId = 42
+		name = "UserUpdate"
 	case *discordgo.VoiceServerUpdate:
-		evtId = 30
+		evtId = 43
 		name = "VoiceServerUpdate"
 	case *discordgo.VoiceStateUpdate:
-		evtId = 31
+		evtId = 44
 		name = "VoiceStateUpdate"
-	case *discordgo.Resumed:
-		evtId = 32
-		name = "Resumed"
 	default:
 		return
 	}
