@@ -33,3 +33,32 @@ form table td{
 .form-inline .form-group, .form-inline .checkbox {
 	margin-right: 5px;
 }
+
+@media(max-width: 767px) {
+    .nav-button-desc {
+        display: none;
+    }
+
+    .nav > li.dropdown.open .dropdown-menu {
+        width: 100%;
+        /*text-align: center;*/
+        left: 0;
+        right: 0; 
+    }
+
+    .dropdown-menu>li { display: table-cell; }
+    .nav > li.dropdown.open { position: static; }
+
+    .nav .dropdown-menu {
+    	position: fixed;
+    	bottom: 0;
+    	top: 0;
+    	overflow-y: scroll;
+    }
+}
+
+@media(min-width: 768px) {
+	.dropdown-close{
+		display: none !important;
+	}
+}

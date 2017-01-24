@@ -649,3 +649,18 @@ func (g GuildsSortUsers) Swap(i, j int) {
 	g[i] = g[j]
 	g[j] = temp
 }
+
+type HIBPBread struct {
+	Name        string
+	Title       string
+	BreachDate  string
+	Description string
+	Domain      string
+	AddedDate   string
+	DataClasses []string
+	PwnCount    int
+	IsVerified  bool
+	IsSensitive bool
+	IsSpamList  bool
+	IsRetired   bool
+}

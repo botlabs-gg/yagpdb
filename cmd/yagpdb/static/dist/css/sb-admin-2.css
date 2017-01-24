@@ -25,9 +25,15 @@ body {
         padding: 0 30px;
         border-left: 1px solid #e7e7e7;
     }
+
+    #select-server-row {
+        padding-left: 100px;
+    }
 }
 
-@media (max-width: 768px) and (min-width: 650px) {
+
+
+@media (max-width: 930px) and (min-width: 650px) {
   #page-wrapper {
     margin-top: 75px;
   }
@@ -44,7 +50,6 @@ body {
     margin-top: 250px;
   }
 }
-
 
 .navbar-top-links {
     margin-right: 0;

@@ -1,4 +1,4 @@
-$(function(){
+	$(function(){
 	var forms = $("form");
 	
 	forms.each(function(i, elem){

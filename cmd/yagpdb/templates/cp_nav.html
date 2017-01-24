@@ -14,17 +14,18 @@
 <ul class="nav navbar-top-links navbar-right">
     <!-- /.dropdown -->
     <li>
-        <a href="https://discord.gg/0vYlUK2XBKldPSMY"><i class="fa fa-info-circle fa-fw"></i> YAGPDB Server</a>
+        <a href="https://discord.gg/0vYlUK2XBKldPSMY"><i class="fa fa-info-circle fa-fw"></i><span class="nav-button-desc">YAGPDB Server</span></a>
     </li>
     <li>
-        <a href="/cp"><i class="fa fa-newspaper-o fa-fw"></i> v{{.Version}}</a>
+        <a href="/cp"><i class="fa fa-newspaper-o fa-fw"></i><span class="nav-button-desc">v{{.Version}}</span></a>
     </li>
     {{if .ManagedGuilds}}
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-folder-open  fa-lg fa-fw"></i> {{if .ActiveGuild}}{{.ActiveGuild.Name}}{{else}}Select a server{{end}} <i class="fa fa-caret-down"></i>
+            <i class="fa fa-folder-open  fa-lg fa-fw"></i><span class="nav-button-desc">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{else}}Select a server{{end}}</span><i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">    
+            <li class="dropdown-close"><a href="#">Close dropdown</a></li>
             {{$clientid := .ClientID}}
             {{$host := .Host}}
             {{range $index, $element := .ManagedGuilds -}}
@@ -43,9 +44,10 @@
     {{if .User}}
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-user fa-fw"></i>{{adjective | title}} {{.User.Username}} <i class="fa fa-caret-down"></i>
+            <i class="fa fa-user fa-fw"></i><span class="nav-button-desc">{{adjective | title}} {{.User.Username}}</span><i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">
+            <li class="dropdown-close"><a href="#">Close dropdown</a></li>
             <li><a href=""><i class="fa fa-user fa-fw"></i> Flip a table</a>
             </li>
             <li><a href=""><i class="fa fa-gear fa-fw"></i> Smell</a>
@@ -58,7 +60,7 @@
     </li>
     {{else}}
     <li>
-        <a href="/login?goto={{urlquery .RequestURI}}"><i class="fa fa-user fa-fw"></i> Login you {{adjective}} goose.</a>
+        <a href="/login?goto={{urlquery .RequestURI}}"><i class="fa fa-user fa-fw"></i><span class="nav-button-desc"> Login you {{adjective}} goose.</span></a>
     </li>
     {{end}}
     <!-- /.dropdown -->
