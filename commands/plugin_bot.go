@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/justinian/dice"
 	"github.com/lunixbochs/vtclean"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
@@ -514,19 +515,30 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "Roll",
-			Description: "Roll a dice",
+			Description: "Roll dices, specify nothing for 6 sides, specify a number for max sides, or rpg dice syntax",
 			Arguments: []*commandsystem.ArgDef{
+				{Name: "Dice Desc", Type: commandsystem.ArgumentString},
 				{Name: "Sides", Type: commandsystem.ArgumentNumber},
 			},
-
+			ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				sides := 6
-				if data.Args[0] != nil && data.Args[0].Int() > 0 {
-					sides = data.Args[0].Int()
+				if data.Args[0] != nil {
+					// Special dice syntax if string
+					r, _, err := dice.Roll(data.Args[0].Str())
+					if err != nil {
+						return err.Error(), nil
+					}
+					return r.String(), nil
+				}
+
+				// normal, n sides dice rolling
+				sides := data.SafeArgInt(1)
+				if sides < 1 {
+					sides = 6
 				}
 
 				result := rand.Intn(sides)
-				return fmt.Sprintf(":game_die: %d", result+1), nil
+				return fmt.Sprintf(":game_die: %d (1 - %d)", result+1, sides), nil
 			},
 		},
 	},
