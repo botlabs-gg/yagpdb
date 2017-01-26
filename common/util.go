@@ -7,6 +7,8 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"math/rand"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"text/template"
 	"time"
@@ -344,4 +346,33 @@ var StringPerms = map[int]string{
 	discordgo.PermissionManageRoles:         "Manage Roles",
 	discordgo.PermissionManageChannels:      "Manage Channels",
 	discordgo.PermissionManageServer:        "Manage Server",
+}
+
+type WrappedError struct {
+	Inner   error
+	Message string
+}
+
+func (w *WrappedError) Cause() error {
+	if we, ok := w.Inner.(*WrappedError); ok {
+		return we.Cause()
+	}
+	return w.Inner
+}
+
+func (w *WrappedError) Error() string {
+	return w.Message + ": " + w.Inner.Error()
+}
+
+func ErrWithCaller(inner error) error {
+	pc, _, _, ok := runtime.Caller(1)
+	if !ok {
+		panic("No caller")
+	}
+
+	f := runtime.FuncForPC(pc)
+	return &WrappedError{
+		Inner:   inner,
+		Message: filepath.Base(f.Name()),
+	}
 }
