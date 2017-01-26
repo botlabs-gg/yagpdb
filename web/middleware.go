@@ -98,19 +98,13 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		cookie, err := r.Cookie("yagpdb-session")
+		cookie, err := r.Cookie("yagpdb-session2")
 		if err != nil {
 			// Cookie not present, skip retrieving session
 			return
 		}
 
-		redisClient := RedisClientFromContext(ctx)
-		if redisClient == nil {
-			// Serve without session
-			return
-		}
-
-		token, err := GetAuthToken(cookie.Value, redisClient)
+		token, err := AuthTokenFromB64(cookie.Value)
 		if err != nil {
 			// No valid session
 			// TODO: Should i check for json error?

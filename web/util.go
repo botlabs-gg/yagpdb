@@ -3,7 +3,6 @@ package web
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
@@ -11,48 +10,11 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"net/http"
 	"strings"
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
-
-// Retrives an oauth2 token for the session
-// Returns an error if expired
-func GetAuthToken(session string, redisClient *redis.Client) (t *oauth2.Token, err error) {
-	raw, err := redisClient.Cmd("GET", "discord_token:"+session).Bytes()
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(raw, &t)
-	if err != nil {
-		return nil, err
-	}
-
-	if !t.Valid() {
-		redisClient.Cmd("DEL", "discord_token:"+session)
-		err = ErrTokenExpired
-	}
-	return
-}
-
-// Puts an oauth2 token into redis and lets it expire after 24h cause
-// how i do permanananas storage?
-func SetAuthToken(token *oauth2.Token, session string, redisClient *redis.Client) error {
-	serialized, err := json.Marshal(token)
-	if err != nil {
-		return err
-	}
-
-	redisClient.Append("SET", "discord_token:"+session, serialized)
-	redisClient.Append("EXPIRE", "discord_token:"+session, 86400) // Expire after 24h
-
-	_, err = common.GetRedisReplies(redisClient, 2)
-
-	return err
-}
 
 func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
 	// Check for existing data

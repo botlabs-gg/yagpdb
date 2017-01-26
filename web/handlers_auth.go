@@ -1,11 +1,14 @@
 package web
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/oauth2"
 	"net/http"
+	"time"
 )
 
 var (
@@ -68,15 +71,14 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a new session cookie cause we can
-	sessionCookie := GenSessionCookie()
-	http.SetCookie(w, sessionCookie)
-
-	err = SetAuthToken(token, sessionCookie.Value, redisClient)
+	sessionCookie, err := CreateCookieSession(token, redisClient)
 	if err != nil {
 		log.WithError(err).Error("Failed setting auth token")
 		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}
+
+	http.SetCookie(w, sessionCookie)
 
 	redirUrl, err := redisClient.Cmd("GET", "csrf_redir:"+state).Str()
 	if err != nil {
@@ -106,7 +108,7 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Creates a csrf token and adds it the list
+// CreateCSRFToken creates a csrf token and adds it the list
 func CreateCSRFToken(client *redis.Client) (string, error) {
 	str := RandBase64(32)
 
@@ -117,11 +119,60 @@ func CreateCSRFToken(client *redis.Client) (string, error) {
 	return str, err
 }
 
-// Returns true if it matched and false if not, an error if something bad happened
+// CheckCSRFToken returns true if it matched and false if not, an error if something bad happened
 func CheckCSRFToken(client *redis.Client, token string) (bool, error) {
 	num, err := client.Cmd("LREM", "csrf", 1, token).Int()
 	if err != nil {
 		return false, err
 	}
 	return num > 0, nil
+}
+
+// AuthTokenFromB64 Retrives an oauth2 token from the base64 string
+// Returns an error if expired
+func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
+
+	decodedB64, err := base64.URLEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	}
+
+	err = json.Unmarshal(decodedB64, &t)
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	}
+
+	if !t.Valid() {
+		return nil, ErrTokenExpired
+	}
+
+	return
+}
+
+// CreateCookieSession creates a session cookie where the value is the access token itself,
+// this way we don't have to store it on our end anywhere.
+func CreateCookieSession(token *oauth2.Token, redisClient *redis.Client) (cookie *http.Cookie, err error) {
+	dataRaw, err := json.Marshal(token)
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	}
+
+	b64 := base64.URLEncoding.EncodeToString(dataRaw)
+
+	cookieExpirey := int(time.Hour * 48)
+	expiresFromNow := token.Expiry.Sub(time.Now())
+	if expiresFromNow < time.Hour*48 {
+		cookieExpirey = int(expiresFromNow)
+	}
+
+	cookie = &http.Cookie{
+		// The old cookie name can safely be used after the old format has been phased out (after a day in use)
+		// Name:   "yagpdb-session",
+		Name:   "yagpdb-session2",
+		Value:  b64,
+		MaxAge: cookieExpirey,
+		Path:   "/",
+	}
+
+	return cookie, nil
 }
