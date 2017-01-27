@@ -51,6 +51,12 @@ type GuildConfig interface {
 	GetName() string
 }
 
+type PostFetchHandler interface {
+	// Called after retrieving from underlying storage, before being put in cache
+	// use this for any post processing etc..
+	PostFetch()
+}
+
 type Storage interface {
 	// GetGuildConfig returns a GuildConfig item from db
 	GetGuildConfig(ctx context.Context, guildID string, dest GuildConfig) (err error)
@@ -59,7 +65,7 @@ type Storage interface {
 	SetGuildConfig(ctx context.Context, conf GuildConfig) error
 
 	// SetIfLatest saves it only if the passedLatest time is the latest version
-	SetIfLatest(ctx context.Context, conf GuildConfig) (updated bool, err error)
+	// SetIfLatest(ctx context.Context, conf GuildConfig) (updated bool, err error)
 }
 
 type CachedStorage struct {
@@ -89,6 +95,14 @@ func (c *CachedStorage) GetGuildConfig(ctx context.Context, guildID string, dest
 		if err == gorm.ErrRecordNotFound {
 			err = ErrNotFound
 		}
+
+		// Call the postfetchhandler
+		if err == nil {
+			if pfh, ok := dest.(PostFetchHandler); ok {
+				pfh.PostFetch()
+			}
+		}
+
 		return dest, err
 	})
 
