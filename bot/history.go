@@ -8,15 +8,20 @@ import (
 	"sort"
 )
 
+type WrappedMessage struct {
+	*discordgo.Message
+	Deleted bool
+}
+
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api
 // Puts the messages in the state aswell
-func GetMessages(channelID string, limit int, deleted bool) ([]*discordgo.Message, error) {
+func GetMessages(channelID string, limit int, deleted bool) ([]*WrappedMessage, error) {
 	if limit < 1 {
-		return []*discordgo.Message{}, nil
+		return []*WrappedMessage{}, nil
 	}
 
 	// check state
-	msgBuf := make([]*discordgo.Message, limit)
+	msgBuf := make([]*WrappedMessage, limit)
 
 	cs := State.Channel(true, channelID)
 
@@ -29,7 +34,11 @@ func GetMessages(channelID string, limit int, deleted bool) ([]*discordgo.Messag
 				continue
 			}
 		}
-		msgBuf[n] = cs.Messages[i].Copy(true)
+		m := cs.Messages[i].Copy(true)
+		msgBuf[n] = &WrappedMessage{Message: m}
+		if cs.Messages[i].Deleted {
+			msgBuf[n].Deleted = true
+		}
 		n--
 		if n < 0 {
 			break
@@ -71,7 +80,7 @@ func GetMessages(channelID string, limit int, deleted bool) ([]*discordgo.Messag
 
 		// Copy over to buffer
 		for k, m := range msgs {
-			msgBuf[n-k] = m
+			msgBuf[n-k] = &WrappedMessage{Message: m}
 		}
 
 		// Oldest message is last
@@ -93,7 +102,7 @@ func GetMessages(channelID string, limit int, deleted bool) ([]*discordgo.Messag
 	defer cs.Owner.Unlock()
 
 	for _, m := range msgBuf {
-		cs.MessageAddUpdate(false, m, -1, 0)
+		cs.MessageAddUpdate(false, m.Message, -1, 0)
 	}
 
 	sort.Sort(DiscordMessages(cs.Messages))

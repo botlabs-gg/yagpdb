@@ -24,6 +24,7 @@ func (p *Plugin) InitBot() {
 	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildMemberUpdate)
 	// bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventPresenceUpdate)
 	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildCreate)
+	bot.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), bot.EventMessageDelete)
 
 	bot.AddHandlerBefore(HandlePresenceUpdate, bot.EventPresenceUpdate, bot.StateHandler)
 	commands.CommandSystem.RegisterCommands(cmds...)
@@ -299,6 +300,12 @@ var cmds = []commandsystem.CommandHandler{
 			},
 		},
 	},
+}
+
+// Mark all log messages with this id as deleted
+func HandleMsgDelete(ctx context.Context, evt interface{}) {
+	del := evt.(*discordgo.MessageDelete)
+	common.SQL.Model(Message{}).Where("message_id = ?", del.ID).Update("deleted", true)
 }
 
 func HandlePresenceUpdate(ctx context.Context, evt interface{}) {

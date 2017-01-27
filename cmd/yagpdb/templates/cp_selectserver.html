@@ -18,7 +18,7 @@
                 {{else}}
                 <a calss="btn btn-primary" href="/login?goto={{urlquery "/cp/" .JoinedGuild.ID "/stats" }}">Click here to login and start managing it</a>
                 {{end}}
-                <p>For future reference, you can log in and access your server in the top right menu</p>
+                <p>For future reference, you can log in and access your server in the top right menu, if the server didnt show up as added in the menu above now, try refreshing the page and if it still dosen't show up as added</p>
             </div>
         </div>
         {{end}}
@@ -26,6 +26,8 @@
         <h3>Version 0.19 <small>?? Jan 2017</small></h3>
         <ul>
             <li>Dice command now also takes rpg dice syntax</li>
+            <li>Server stats can now ignore channels</li>
+            <li>Messages that gets deleted will now also be deleted in all logs they appear in, even after the logs was created</li>
         </ul>
         
         <h3>Information</h3>

@@ -126,6 +126,7 @@ func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLo
 			AuthorUsername: v.Author.Username,
 			AuthorDiscrim:  v.Author.Discriminator,
 			AuthorID:       v.Author.ID,
+			Deleted:        v.Deleted,
 		}
 	}
 

@@ -91,7 +91,7 @@ func (p *Plugin) InitBot() {
 						// log.Println(msg.ID, msg.ContentWithMentionsReplaced())
 						if msg.Author.ID == cmd.Message.Author.ID {
 							if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
-								toAnalyze = append(toAnalyze, msg)
+								toAnalyze = append(toAnalyze, msg.Message)
 								if len(toAnalyze) >= 5 {
 									break
 								}
