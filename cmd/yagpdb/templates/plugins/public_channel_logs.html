@@ -49,7 +49,7 @@
                     <td>{{.Timestamp}}</td>
                     <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
                     <td id="msg-cell-{{.ID}}" {{if .Deleted}}class="deleted-message"{{end}}>{{if or (not .Deleted) $IsAdmin}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
-                    <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
+                    <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
                 </tr>
                 {{end}}
             </table>
@@ -61,7 +61,7 @@
 <script>
 var logsID = {{.Logs.ID}};
 function deleteMessage(msg){
-    if(!confirm("Are you sure you want to delete this message?")){
+    if(!confirm("Are you sure you want to delete this message?\nYou should delete it in discord itself to make sure it's gone from all logs.")){
         return;
     }
 
