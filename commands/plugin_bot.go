@@ -175,8 +175,11 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				}
 
 				dutil.SplitSendMessagePS(common.BotSession, privateChannel.ID, help+"\n"+footer, "```ini\n", "```", false, false)
-				//dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
-				return "You've Got Mail!", nil
+				if data.Source != commandsystem.SourceDM {
+					return "You've Got Mail!", nil
+				} else {
+					return "", nil
+				}
 			},
 		},
 	},
@@ -265,7 +268,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Command: &commandsystem.Command{
 			Name:         "Reverse",
 			Aliases:      []string{"r", "rev"},
-			Description:  "Flips stuff",
+			Description:  "Reverses the text given",
 			RunInDm:      true,
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgDef{
@@ -288,13 +291,12 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Command: &commandsystem.Command{
 			Name:         "Weather",
 			Aliases:      []string{"w"},
-			Description:  "Shows the weather somewhere",
+			Description:  "Shows the weather somewhere (add ?m for metric: -w bergen?m)",
 			RunInDm:      true,
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentString},
 			},
-
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				where := data.Args[0].Str()
 
@@ -343,6 +345,22 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
+			},
+		},
+	},
+	&CustomCommand{
+		Category: CategoryGeneral,
+		Command: &commandsystem.Command{
+			Name:        "Info",
+			Description: "Responds with bot information",
+			RunInDm:     true,
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				const info = `**YAGPDB - Yet Another General Purpose Discord Bot**
+This bot focuses on being configurable and therefor is one of the more advanced bots.
+I can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and im configured through a web control panel.
+I'm currently being ran and developed by jonas747#3124 but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
+				`
+				return info, nil
 			},
 		},
 	},
