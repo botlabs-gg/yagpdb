@@ -136,6 +136,20 @@ Selected - id of the selected channel
 
 {{/*
 Argumens
+Channels - list of channels
+Selections - List of selections
+<li><input type="radio" id="ID" name="NAME" value="VALUE"><label for="ID">Label</label></li>
+*/}}
+{{define "channel_options_multi"}}
+    {{$selections := .Selections}}
+    {{$idPrefix := or .IDPrefix "a"}}
+    {{$name := or .Name "Channels"}}
+    {{range .Channels}}{{if eq .Type "text"}}<li><input type="checkbox" name="{{$name}}" value="{{.ID}}" id="{{$idPrefix}}{{.ID}}" {{if $selections}}{{if in $selections .ID}}checked {{end}}{{end}}><label for="{{$idPrefix}}{{.ID}}">#{{.Name}}</label></option>
+    {{end}}{{end}}
+{{end}}
+
+{{/*
+Argumens
 Roles - list of roles
 Selected - id of the selected channel
 Highest - the highest role the bot currently has, roles below this will be set to disabled

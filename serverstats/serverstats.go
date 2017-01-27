@@ -1,10 +1,12 @@
 package serverstats
 
 import (
+	"context"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
 	"strings"
 	"time"
@@ -20,6 +22,9 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
 	bot.RegisterPlugin(plugin)
+
+	common.SQL.AutoMigrate(&ServerStatsConfig{})
+	configstore.RegisterConfig(configstore.SQL, &ServerStatsConfig{})
 }
 
 func (p *Plugin) StartBot() {
@@ -205,4 +210,35 @@ func GetChannelMessageStats(client *redis.Client, raw []string, guildID string) 
 		}
 	}
 	return channelResult, nil
+}
+
+var _ configstore.PostFetchHandler = (*ServerStatsConfig)(nil)
+
+type ServerStatsConfig struct {
+	configstore.GuildConfigModel
+	Public         bool
+	IgnoreChannels string
+
+	ParsedChannels []string `gorm:"-"`
+}
+
+func (c *ServerStatsConfig) GetName() string {
+	return "server_stats_config"
+}
+
+func (s *ServerStatsConfig) PostFetch() {
+	s.ParsedChannels = strings.Split(s.IgnoreChannels, ",")
+}
+
+func GetConfig(ctx context.Context, GuildID string) (*ServerStatsConfig, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	var conf ServerStatsConfig
+	err := configstore.Cached.GetGuildConfig(ctx, GuildID, &conf)
+	if err != nil && err != configstore.ErrNotFound {
+		return &conf, err
+	}
+
+	return &conf, nil
 }

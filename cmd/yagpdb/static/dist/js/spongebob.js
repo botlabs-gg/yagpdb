@@ -2,7 +2,6 @@
 	var forms = $("form");
 	
 	forms.each(function(i, elem){
-		console.log(elem);
 		elem.onsubmit = submitform;
 	})
 

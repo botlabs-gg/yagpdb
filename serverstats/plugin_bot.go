@@ -23,13 +23,22 @@ func (p *Plugin) InitBot() {
 	bot.AddHandler(bot.RedisWrapper(HandleReady), bot.EventReady)
 
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
-		Key:      "stats_settings_public:",
-		Category: commands.CategoryTool,
-		Cooldown: 10,
+		CustomEnabled: true,
+		Category:      commands.CategoryTool,
+		Cooldown:      10,
 		Command: &commandsystem.Command{
 			Name:        "Stats",
 			Description: "Shows server stats (if public stats are enabled)",
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				config, err := GetConfig(data.Context(), data.Guild.ID())
+				if err != nil {
+					return "Failed retreiving guild config", err
+				}
+
+				if !config.Public {
+					return "Stats are set to private on this server, this can be changed in the control panel on <http://yagpdb.xyz>", nil
+				}
+
 				stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
 				if err != nil {
 					return "Error retrieving stats", err
@@ -142,10 +151,23 @@ func HandleMemberRemove(ctx context.Context, evt interface{}) {
 }
 
 func HandleMessageCreate(ctx context.Context, evt interface{}) {
+
 	m := evt.(*discordgo.MessageCreate)
 	client := bot.ContextRedis(ctx)
-
 	channel := bot.State.Channel(true, m.ChannelID)
+
+	config, err := GetConfig(ctx, channel.Guild.ID())
+	if err != nil {
+		log.WithError(err).WithField("guild", channel.Guild.ID()).Error("Failed retrieving config")
+		return
+	}
+
+	for _, v := range config.ParsedChannels {
+		if channel.ID() == v {
+			return
+		}
+	}
+
 	if channel == nil {
 		ch, err := common.BotSession.Channel(m.ChannelID)
 		if err != nil {
@@ -160,7 +182,7 @@ func HandleMessageCreate(ctx context.Context, evt interface{}) {
 		return
 	}
 
-	err := client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.Guild.ID(), time.Now().Unix(), channel.ID()+":"+m.ID+":"+m.Author.ID).Err
+	err = client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.Guild.ID(), time.Now().Unix(), channel.ID()+":"+m.ID+":"+m.Author.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}

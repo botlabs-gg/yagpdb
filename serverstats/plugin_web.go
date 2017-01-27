@@ -2,29 +2,38 @@ package serverstats
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strings"
 )
+
+type FormData struct {
+	Public         bool
+	IgnoreChannels []string `valid:"channel,false"`
+}
 
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/serverstats.html"))
-	web.CPMux.Handle(pat.Get("/stats"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
-	web.CPMux.Handle(pat.Get("/stats/"), web.RenderHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
 
-	web.CPMux.Handle(pat.Post("/stats/settings"), web.RenderHandler(HandleStatsSettings, "cp_serverstats"))
-	web.CPMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandler(HandleStatsJson, false)))
+	cpGetHandler := web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
+	web.CPMux.Handle(pat.Get("/stats"), cpGetHandler)
+
+	web.CPMux.Handle(pat.Post("/stats/settings"), web.RequireGuildChannelsMiddleware(web.ControllerPostHandler(HandleStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings")))
+	web.CPMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
 
 	// Public
-	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RenderHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats"))
-	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandler(HandleStatsJson, true)))
+	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
+	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, true)))
 }
 
-type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) interface{}
+type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)
 
-func publicHandler(inner publicHandlerFunc, public bool) web.CustomHandlerFunc {
-	mw := func(w http.ResponseWriter, r *http.Request) interface{} {
+func publicHandler(inner publicHandlerFunc, public bool) web.ControllerHandlerFunc {
+	mw := func(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 		return inner(w, r.WithContext(web.SetContextTemplateData(r.Context(), map[string]interface{}{"Public": public})), public)
 	}
 
@@ -32,36 +41,48 @@ func publicHandler(inner publicHandlerFunc, public bool) web.CustomHandlerFunc {
 }
 
 // Somewhat dirty - should clean up this mess sometime
-func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool) (web.TemplateData, error) {
+	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
-	publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
-
-	templateData["PublicEnabled"] = publicEnabled
-
-	return templateData
-}
-
-func HandleStatsSettings(w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
-
-	public := r.FormValue("public") == "on"
-
-	current, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
-	err := client.Cmd("SET", "stats_settings_public:"+activeGuild.ID, public).Err
-
-	if err != nil {
-		log.WithError(err).Error("Failed saving stats settings to redis")
-		templateData.AddAlerts(web.ErrorAlert("Failed saving setting..."))
-		templateData["PublicEnabled"] = current
-	} else {
-		templateData["PublicEnabled"] = public
+	var config ServerStatsConfig
+	err := configstore.Cached.GetGuildConfig(r.Context(), activeGuild.ID, &config)
+	if err != nil && err != configstore.ErrNotFound {
+		return templateData, common.ErrWithCaller(err)
 	}
 
-	templateData["GuildName"] = activeGuild.Name
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/stats/"
+	// publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
 
-	return templateData
+	templateData["Config"] = config
+
+	return templateData, nil
+}
+
+func HandleStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
+	log.Printf("%#v", formData)
+
+	newConf := &ServerStatsConfig{
+		GuildConfigModel: configstore.GuildConfigModel{
+			GuildID: common.MustParseInt(ag.ID),
+		},
+		Public:         formData.Public,
+		IgnoreChannels: strings.Join(formData.IgnoreChannels, ","),
+	}
+
+	err := configstore.SQL.SetGuildConfig(r.Context(), newConf)
+	return templateData, err
+}
+
+type publicHandlerFuncJson func(w http.ResponseWriter, r *http.Request, publicAccess bool) interface{}
+
+func publicHandlerJson(inner publicHandlerFuncJson, public bool) web.CustomHandlerFunc {
+	mw := func(w http.ResponseWriter, r *http.Request) interface{} {
+		return inner(w, r.WithContext(web.SetContextTemplateData(r.Context(), map[string]interface{}{"Public": public})), public)
+	}
+
+	return mw
 }
 
 func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
