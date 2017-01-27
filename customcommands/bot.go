@@ -225,11 +225,11 @@ func execCmd(dryRun bool, client *redis.Client, ctx *discordgo.User, s *discordg
 
 	switch v := resp.(type) {
 	case error:
-		return "Error: " + v.Error(), err
+		return "Error: " + v.Error(), nil
 	case string:
-		return v, err
+		return v, nil
 	case *discordgo.MessageEmbed:
-		return common.FallbackEmbed(v), err
+		return common.FallbackEmbed(v), nil
 	}
 
 	return "", err
