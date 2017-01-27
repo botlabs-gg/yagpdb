@@ -267,6 +267,9 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
 			Run: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdMute, func(parsed *commandsystem.ExecData) (interface{}, error) {
 				config := parsed.Context().Value(ContextKeyConfig).(*Config)
+				if config.MuteRole == "" {
+					return "No mute role set up, assign a mute role in the control panel", nil
+				}
 
 				reason := "(No reason specified)"
 				if parsed.Args[2] != nil && parsed.Args[2].Str() != "" {
@@ -311,6 +314,9 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			},
 			Run: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdUnMute, func(parsed *commandsystem.ExecData) (interface{}, error) {
 				config := parsed.Context().Value(ContextKeyConfig).(*Config)
+				if config.MuteRole == "" {
+					return "No mute role set up, assign a mute role in the control panel", nil
+				}
 
 				reason := "(No reason specified)"
 				if parsed.Args[1] != nil && parsed.Args[1].Str() != "" {

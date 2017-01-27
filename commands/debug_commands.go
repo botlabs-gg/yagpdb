@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"sort"
 	"time"
 )
