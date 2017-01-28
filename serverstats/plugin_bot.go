@@ -156,6 +156,10 @@ func HandleMessageCreate(ctx context.Context, evt interface{}) {
 	client := bot.ContextRedis(ctx)
 	channel := bot.State.Channel(true, m.ChannelID)
 
+	if channel.IsPrivate() {
+		return
+	}
+
 	config, err := GetConfig(ctx, channel.Guild.ID())
 	if err != nil {
 		log.WithError(err).WithField("guild", channel.Guild.ID()).Error("Failed retrieving config")
