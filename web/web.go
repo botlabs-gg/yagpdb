@@ -52,6 +52,7 @@ func init() {
 		"title":      strings.Title,
 		"hasPerm":    hasPerm,
 		"formatTime": prettyTime,
+		"plus1":      plus1,
 	})
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
 

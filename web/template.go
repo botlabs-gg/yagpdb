@@ -120,3 +120,7 @@ func hasPerm(botPerms int, checkPerm string) (bool, error) {
 
 	return botPerms&p != 0, nil
 }
+
+func plus1(x int) int {
+	return x + 1
+}

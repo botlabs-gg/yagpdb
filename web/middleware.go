@@ -327,6 +327,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
+		sort.Sort(Channels(channels))
 		guild.Channels = channels
 
 		newCtx := context.WithValue(ctx, common.ContextKeyGuildChannels, channels)
@@ -732,4 +733,19 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// Channels are a collection of Channels
+type Channels []*discordgo.Channel
+
+func (r Channels) Len() int {
+	return len(r)
+}
+
+func (r Channels) Less(i, j int) bool {
+	return r[i].Position < r[j].Position
+}
+
+func (r Channels) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
 }
