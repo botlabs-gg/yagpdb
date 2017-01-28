@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -352,6 +353,8 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 			http.Redirect(w, r, "/?err=errretrievingguild", http.StatusTemporaryRedirect)
 			return
 		}
+
+		sort.Sort(discordgo.Roles(fullGuild.Roles))
 
 		guild.Region = fullGuild.Region
 		guild.OwnerID = fullGuild.OwnerID
