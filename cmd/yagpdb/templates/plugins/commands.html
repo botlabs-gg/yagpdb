@@ -65,10 +65,12 @@
                             <tr>
                                 <th>Command</th>
                                 <th>Enabled</th>
+                                <th>Required Role</th>
                                 <th>Auto delete response and trigger (if any) after 10 seconds</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {{$roles := .ActiveGuild.Roles}}
                             {{range .CommandConfig.Global}}{{if not .Info.HideFromCommandsPage}}
                             <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
                                 <td>{{.Cmd}}</td>
@@ -80,6 +82,12 @@
                                         <input type="checkbox" class="global-enabled" name="global_enabled_{{.Cmd}}" {{if .CommandEnabled}} checked {{end}}> Enabled
                                     </label>
                                     {{end}}
+                                </td>
+                                <td>
+                                    <select class="form-control" name="global_required_role_{{.Cmd}}">
+                                        <option value="" {{if eq .RequiredRole ""}} selected{{end}}>None</option>
+                                        {{mTemplate "role_options" "Roles" $roles "Selected" .RequiredRole}}
+                                    </select>
                                 </td>
                                 <td>
                                     <label class="checkbox-inline">
@@ -104,8 +112,8 @@
                         <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('{{.Channel}}-enabled')">Disable All</button>
                         <button type="button" class="btn btn-success btn-sm" onclick="checkAll('{{.Channel}}-autodelete')">Autodelete All</button>
                         <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('{{.Channel}}-autodelete')">Autodelete None</button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="copy('{{.Channel}}-enabled','{{.Channel}}-autodelete')">Copy</button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="paste('{{.Channel}}-enabled','{{.Channel}}-autodelete')">Paste</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="copy('{{.Channel}}')">Copy</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="paste('{{.Channel}}')">Paste</button>
                     </div>
                     <h4 class="panel-title">
                         <label>
@@ -120,6 +128,7 @@
                             <tr>
                                 <th>Command</th>
                                 <th>Enabled</th>
+                                <th>Required Role</th>
                                 <th>Auto delete response and trigger (if any) after 10 seconds</th>
                             </tr>
                         </thead>
@@ -132,6 +141,12 @@
                                     <label class="checkbox-inline">
                                         <input type="checkbox" class="{{$Channel}}-enabled" name="{{$Channel}}_enabled_{{.Cmd}}" {{if .CommandEnabled}} checked {{end}}> Enabled
                                     </label>
+                                </td>
+                                <td>
+                                    <select class="form-control {{$Channel}}-role" name="{{$Channel}}_required_role_{{.Cmd}}">
+                                        <option value="" {{if eq .RequiredRole ""}} selected{{end}}>None</option>
+                                        {{mTemplate "role_options" "Roles" $roles "Selected" .RequiredRole}}
+                                    </select>
                                 </td>
                                 <td>
                                     <label class="checkbox-inline">
@@ -170,28 +185,36 @@
 
     var copybufEnable = null;
     var copybufAutoDel = null;
-    function copy(enable, autodel){
+    var copybufRole = null;
+    function copy(channel){
         copybufEnable = [];
         copybufAutoDel = [];
-        $("."+enable).each(function(i, item){
+        copybufRole = [];
+        $("."+channel+"-enabled").each(function(i, item){
             copybufEnable[i] = item.checked;
         })
-        $("."+autodel).each(function(i, item){
+        $("."+channel+"-autodelete").each(function(i, item){
             copybufAutoDel[i] = item.checked;
+        })
+        $("."+channel+"-role").each(function(i, item){
+            copybufRole[i] = $(item).val();
         })
     }
 
-    function paste(enable, autodel){
+    function paste(channel){
         if(copybufAutoDel == null){
             alert("Nothing is copied"); 
             return;
         }
 
-        $("."+enable).each(function(i, item){
+        $("."+channel+"-enabled").each(function(i, item){
             item.checked = copybufEnable[i];
         })
-        $("."+autodel).each(function(i, item){
+        $("."+channel+"-autodelete").each(function(i, item){
             item.checked = copybufAutoDel[i];
+        })
+        $("."+channel+"-role").each(function(i, item){
+            $(item).val(copybufRole[i]);
         })
     }
 </script>
