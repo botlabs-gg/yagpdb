@@ -146,12 +146,16 @@ func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
 	if !t.Valid() {
 		return nil, ErrTokenExpired
 	}
+
 	return
 }
 
 // CreateCookieSession creates a session cookie where the value is the access token itself,
 // this way we don't have to store it on our end anywhere.
 func CreateCookieSession(token *oauth2.Token, redisClient *redis.Client) (cookie *http.Cookie, err error) {
+
+	token.RefreshToken = ""
+
 	dataRaw, err := json.Marshal(token)
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
