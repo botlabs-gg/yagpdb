@@ -1,11 +1,13 @@
 {{define "cp_nav_top"}}
 <div class="navbar-header">
+    {{if .ActiveGuild}}
     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
         <span class="sr-only">Toggle navigation</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
+    {{end}}
     <a class="navbar-brand" {{if .ActiveGuild}} href="/cp/{{.ActiveGuild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small>{{if .ActiveGuild}}<b> {{.ActiveGuild.Name}}</b>{{end}}</a>
 
 </div>
@@ -103,14 +105,11 @@
                     <li>
                         <a href="/cp/{{.ActiveGuild.ID}}/streaming">Streaming</a>
                     </li>
-                    <li>
-                        <a href="/todo">More later... (rss, github etc)</a>
-                    </li>
                 </ul>
                 <!-- /.nav-second-level -->
             </li>
             <li>
-                <a href="#"><i class="fa fa-bolt fa-fw"></i> Tools &amp; Utilities <span class="label label-success">New!</span><span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-bolt fa-fw"></i> Tools &amp; Utilities<span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
                         <a href="/cp/{{.ActiveGuild.ID}}/moderation">Moderation</a>
@@ -122,19 +121,19 @@
                         <a href="/cp/{{.ActiveGuild.ID}}/autorole">Autorole &amp; role commands</a>
                     </li>
                     <li>
-                        <a href="/cp/{{.ActiveGuild.ID}}/logging/">Logging <span class="label label-success">Beta!</span></a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/logging/">Logging</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->
             </li>
             <li>
-                <a href="#"><i class="fa fa-trophy fa-fw"></i> Fun <span class="label label-success">New!</span><span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-trophy fa-fw"></i> Fun <span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
                         <a href="/cp/{{.ActiveGuild.ID}}/reputation">Reputation</a>
                     </li>
                     <li>
-                        <a href="/cp/{{.ActiveGuild.ID}}/soundboard/">Soundboard <span class="label label-success">Beta!</span></a>
+                        <a href="/cp/{{.ActiveGuild.ID}}/soundboard/">Soundboard</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->
@@ -149,7 +148,7 @@
 
 {{define "cp_nav"}}
 <!-- Navigation -->
-<nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
+<nav class="navbar navbar-default maybe-nav-fixed-top" role="navigation" style="margin-bottom: 0">
     {{template "cp_nav_top" .}}
     {{if and .ActiveGuild .User .IsAdmin}}{{template "cp_nav_sidebar" .}}{{end}}
 </nav>

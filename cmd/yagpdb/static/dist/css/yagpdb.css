@@ -12,13 +12,6 @@ textarea {
 	padding-top: 40px;
 }
 
-#sidebar-wrapper {
-	position: fixed;
-	overflow-y: auto;
-	top: 51px;
-	bottom: 0%;
-}
-
 form table td input{
 	display: block !important; 
 	padding: 2px !important; 
@@ -35,13 +28,9 @@ form table td{
 }
 
 @media(max-width: 767px) {
-    .nav-button-desc {
-        display: none;
-    }
 
     .nav > li.dropdown.open .dropdown-menu {
         width: 100%;
-        /*text-align: center;*/
         left: 0;
         right: 0; 
     }
@@ -55,10 +44,32 @@ form table td{
     	top: 0;
     	overflow-y: scroll;
     }
+
+   	/*
+    .nav-button-desc {
+        display: none;
+    }
+    }*/
 }
 
 @media(min-width: 768px) {
 	.dropdown-close{
 		display: none !important;
+	}
+
+	.maybe-nav-fixed-top {
+	    top: 0;
+	    border-width: 0 0 1px;
+	    position: fixed;
+	    right: 0;
+	    left: 0;
+	    z-index: 1030;
+	}
+
+	#sidebar-wrapper {
+		position: fixed;
+		overflow-y: auto;
+		top: 51px;
+		bottom: 0%;
 	}
 }
