@@ -3,6 +3,7 @@ package web
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
@@ -94,18 +95,13 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 
-	sessionCookie, err := r.Cookie("yagpdb-session")
+	sessionCookie, err := r.Cookie("yagpdb-session2")
 	if err != nil {
 		return
 	}
-	session := sessionCookie.Value
 
-	redisClient := r.Context().Value(common.ContextKeyRedis).(*redis.Client)
-
-	err = redisClient.Cmd("DEL", "discord_token:"+session).Err
-	if err != nil {
-		log.WithError(err).Error("Failed logging out")
-	}
+	sessionCookie.Value = "none"
+	http.SetCookie(w, sessionCookie)
 }
 
 // CreateCSRFToken creates a csrf token and adds it the list
@@ -128,9 +124,14 @@ func CheckCSRFToken(client *redis.Client, token string) (bool, error) {
 	return num > 0, nil
 }
 
+var ErrNotLoggedIn = errors.New("Not logged in")
+
 // AuthTokenFromB64 Retrives an oauth2 token from the base64 string
 // Returns an error if expired
 func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
+	if b64 == "none" {
+		return nil, ErrNotLoggedIn
+	}
 
 	decodedB64, err := base64.URLEncoding.DecodeString(b64)
 	if err != nil {
@@ -145,7 +146,6 @@ func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
 	if !t.Valid() {
 		return nil, ErrTokenExpired
 	}
-
 	return
 }
 
@@ -159,9 +159,9 @@ func CreateCookieSession(token *oauth2.Token, redisClient *redis.Client) (cookie
 
 	b64 := base64.URLEncoding.EncodeToString(dataRaw)
 
-	cookieExpirey := int(time.Hour * 48)
+	cookieExpirey := int(time.Hour * 24 * 7)
 	expiresFromNow := token.Expiry.Sub(time.Now())
-	if expiresFromNow < time.Hour*48 {
+	if expiresFromNow < time.Hour*24*7 {
 		cookieExpirey = int(expiresFromNow)
 	}
 
