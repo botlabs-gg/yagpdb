@@ -18,6 +18,8 @@ func (p *Plugin) InitBot() {
 
 }
 
+var _ bot.BotStarterHandler = (*Plugin)(nil)
+
 func (p *Plugin) StartBot() {
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }

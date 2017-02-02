@@ -21,14 +21,14 @@ func init() {
 }
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildMemberUpdate)
-	// bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventPresenceUpdate)
-	bot.AddHandler(bot.ConcurrentEventHandler(HandleUsernameNicknameEvent), bot.EventGuildCreate)
+	bot.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), bot.EventGuildMemberUpdate, bot.EventGuildMemberAdd, bot.EventGuildCreate)
 	bot.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), bot.EventMessageDelete)
 
 	bot.AddHandlerBefore(HandlePresenceUpdate, bot.EventPresenceUpdate, bot.StateHandler)
 	commands.CommandSystem.RegisterCommands(cmds...)
 }
+
+var _ bot.BotStarterHandler = (*Plugin)(nil)
 
 func (p *Plugin) StartBot() {
 	go EvtProcesser()
@@ -338,7 +338,7 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
 // Also check nickname incase the user came online
-func HandleUsernameNicknameEvent(ctx context.Context, evt interface{}) {
+func HandleQueueEvt(ctx context.Context, evt interface{}) {
 	evtChan <- evt
 }
 
@@ -462,6 +462,15 @@ func EvtProcesser() {
 			}
 			if conf.NicknameLoggingEnabled {
 				CheckNickname(t.User.ID, t.GuildID, t.Nick)
+			}
+		case *discordgo.GuildMemberAdd:
+			conf, err := GetConfig(t.GuildID)
+			if err != nil {
+				logrus.WithError(err).Error("Failed fetching config")
+				continue
+			}
+			if conf.UsernameLoggingEnabled {
+				CheckUsername(t.User)
 			}
 		}
 	}

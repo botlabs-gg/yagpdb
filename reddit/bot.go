@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/yagpdb/bot"
 )
 
 func (p *Plugin) InitBot() {}
+
+var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 
 func (p *Plugin) RemoveGuild(c *redis.Client, g string) error {
 	config, err := GetConfig(c, "guild_subreddit_watch:"+g)

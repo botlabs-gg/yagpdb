@@ -16,15 +16,16 @@ func EmitEvent(ctx context.Context, id Event, evt interface{}) {
 	}
 }
 
-func AddHandler(handler Handler, evt Event) {
-	if evt == EventAll {
-		for _, e := range AllDiscordEvents {
-			AddHandler(handler, e)
+func AddHandler(handler Handler, evts ...Event) {
+	for _, evt := range evts {
+		if evt == EventAll {
+			for _, e := range AllDiscordEvents {
+				AddHandler(handler, e)
+			}
+			return
 		}
-		return
+		handlers[evt] = append(handlers[evt], &handler)
 	}
-
-	handlers[evt] = append(handlers[evt], &handler)
 }
 func AddHandlerFirst(handler Handler, evt Event) {
 	if evt == EventAll {

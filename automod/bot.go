@@ -17,6 +17,8 @@ func (p *Plugin) InitBot() {
 	bot.AddHandler(bot.RedisWrapper(HandleMessageUpdate), bot.EventMessageUpdate)
 }
 
+var _ bot.BotStarterHandler = (*Plugin)(nil)
+
 func (p *Plugin) StartBot() {
 	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
 }

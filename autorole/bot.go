@@ -119,6 +119,8 @@ var roleCommands = []commandsystem.CommandHandler{
 	},
 }
 
+var _ bot.BotStarterHandler = (*Plugin)(nil)
+
 func (p *Plugin) StartBot() {
 	go runDurationChecker()
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutomodRules, nil)

@@ -4,6 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dca"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"io"
@@ -24,6 +25,9 @@ func init() {
 	cp := *dca.StdEncodeOptions
 	transcoderOptions = &cp
 }
+
+var _ bot.BotStarterHandler = (*Plugin)(nil)
+var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) StartBot() {
 	go transcoderLoop()
