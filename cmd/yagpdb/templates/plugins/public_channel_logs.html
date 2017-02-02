@@ -43,21 +43,26 @@
             <!-- /.panel-heading -->
 
             <div class="table-responsive">
-                <table class="table table-hover table-striped">
-                    <tr>
-                        <th id="time-col">Time (UTC)</th>
-                        <th id="author-col">Author</th>
-                        <th id="msg-col">Message</th>{{if .IsAdmin}}
-                        <th id="actions-col">Actions</th>{{end}}
-                    </tr>
-                    {{$IsAdmin := .IsAdmin}}
-                    {{range .Logs.Messages}}
-                    <tr class="popover-trigger" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID}} Message ID: {{.MessageID}}">
-                        <td>{{.Timestamp}}</td>
-                        <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
-                        <td id="msg-cell-{{.ID}}" {{if .Deleted}}class="deleted-message"{{end}}>{{if or (not .Deleted) $IsAdmin}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
-                        <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
-                    </tr>
+                <table class="table table-hover table-striped" id="log-table">
+                    <thead>
+                        <tr>
+                            <th id="time-col">Time (UTC) <i class="fa fa-caret-up"></i></th>
+                            <th id="author-col">Author</th>
+                            <th id="msg-col">Message</th>{{if .IsAdmin}}
+                            <th id="actions-col">Actions</th>{{end}}
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {{$IsAdmin := .IsAdmin}}
+                        {{range $i, $v := .Logs.Messages}}
+                        <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID}} Message ID: {{.MessageID}}">
+                            <td>{{.Timestamp}}</td>
+                            <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
+                            <td id="msg-cell-{{.ID}}" {{if .Deleted}}class="deleted-message"{{end}}>{{if or (not .Deleted) $IsAdmin}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
+                            <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
+                        </tr>
+                    </tbody>
                     {{end}}
                 </table>
             </div>
@@ -92,6 +97,43 @@ function deleteMessage(msg){
     data.set("MessageID", msg);
     req.send(data);
 }
+
+var caretUp = '<i class="fa fa-caret-up"></i>' 
+var caretDown = '<i class="fa fa-caret-down"></i>' 
+var timeBase = 'Time (UTC) '
+var sortedUpwards = true;
+$(function(){
+    $("#time-col").click(function(){
+        console.log("clicked");
+        
+        sortedUpwards = !sortedUpwards;
+
+        if (sortedUpwards) {
+            $("#time-col").html(timeBase + caretUp);
+            sortTable($("#log-table")[0], true)
+        }else{
+            $("#time-col").html(timeBase + caretDown);
+            sortTable($("#log-table")[0], false)
+        }
+    })
+})
+
+function sortTable(table, reverse) {
+    var tb = table.tBodies[0], // use `<tbody>` to ignore `<thead>` and `<tfoot>` rows
+        tr = Array.prototype.slice.call(tb.rows, 0), // put rows into array
+        i;
+    // reverse = -((+reverse) || -1);
+    tr = tr.sort(function (a, b) { // sort rows
+        var indexA = a.id.replace("log-row-", "");
+        var indexB = b.id.replace("log-row-", "");
+        var parsedA = parseInt(indexA);
+        var parsedB = parseInt(indexB);
+        console.log(parsedA, parsedB);
+        return reverse ? parsedA - parsedB : parsedB - parsedA;
+    });
+    for(i = 0; i < tr.length; ++i) tb.appendChild(tr[i]); // append each row in order
+}
+
 </script>
 {{template "cp_footer"}}
 
