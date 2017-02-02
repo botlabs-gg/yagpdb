@@ -48,8 +48,6 @@ var BuiltinSwearWords = map[string]bool{
 	"knobend":      true,
 	"knob end":     true,
 	"labia":        true,
-	"lmao":         true,
-	"lmfao":        true,
 	"muff":         true,
 	"nigger":       true,
 	"nigga":        true,
