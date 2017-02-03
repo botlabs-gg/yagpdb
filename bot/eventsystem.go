@@ -22,7 +22,7 @@ func AddHandler(handler Handler, evts ...Event) {
 			for _, e := range AllDiscordEvents {
 				AddHandler(handler, e)
 			}
-			return
+			break
 		}
 		handlers[evt] = append(handlers[evt], &handler)
 	}
