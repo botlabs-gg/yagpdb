@@ -7,6 +7,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -17,20 +18,38 @@ import (
 	"unicode/utf8"
 )
 
+func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID string, cState *dstate.ChannelState) bool {
+	if cState == nil {
+		log.Warn("Channel not found in state")
+		return true
+	}
+
+	if userID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate() {
+		return true
+	}
+
+	channelPerms, err := cState.Guild.MemberPermissions(true, cState.ID(), userID)
+	if err != nil {
+		log.WithFields(log.Fields{"guild": cState.Guild.ID(), "channel": cState.ID()}).WithError(err).Error("Failed checking channel perms")
+		return true
+	}
+
+	if channelPerms&discordgo.PermissionSendMessages == 0 {
+		return true
+	}
+
+	// Passed all checks, custom commands should not ignore this channel
+	return false
+}
+
 func HandleMessageCreate(ctx context.Context, e interface{}) {
 	evt := e.(*discordgo.MessageCreate)
 	client := bot.ContextRedis(ctx)
 
-	if bot.State.User(true).ID == evt.Author.ID {
-		return
-	}
-
-	if evt.Author.Bot {
-		return // ignore bots
-	}
-
+	botUser := bot.State.User(true)
 	cs := bot.State.Channel(true, evt.ChannelID)
-	if cs == nil || cs.IsPrivate() {
+
+	if shouldIgnoreChannel(evt, botUser.ID, cs) {
 		return
 	}
 
