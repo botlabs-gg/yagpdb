@@ -364,7 +364,7 @@ func (w *WrappedError) Error() string {
 	return w.Message + ": " + w.Inner.Error()
 }
 
-func ErrWithCaller(inner error) error {
+func ErrWithCaller(err error) error {
 	pc, _, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("No caller")
@@ -372,7 +372,15 @@ func ErrWithCaller(inner error) error {
 
 	f := runtime.FuncForPC(pc)
 	return &WrappedError{
-		Inner:   inner,
+		Inner:   err,
 		Message: filepath.Base(f.Name()),
 	}
+}
+
+func InnerError(err error) error {
+	if cast, ok := err.(*WrappedError); ok {
+		return cast.Inner
+	}
+
+	return err
 }

@@ -356,9 +356,9 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			RunInDm:     true,
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				const info = `**YAGPDB - Yet Another General Purpose Discord Bot**
-This bot focuses on being configurable and therefor is one of the more advanced bots.
-I can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and im configured through a web control panel.
-I'm currently being ran and developed by jonas747#3124 but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
+This bot focuses on being configurable and therefore is one of the more advanced bots.
+It can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.
+I'm currently being ran and developed by jonas747#3124 (105487308693757952) but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
 				`
 				return info, nil
 			},

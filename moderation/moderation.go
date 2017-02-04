@@ -24,6 +24,7 @@ const (
 	ActionKicked   = "Kicked"
 	ActionBanned   = "Banned"
 	ActionUnbanned = "Unbanned"
+	ActionWarned   = "Warned"
 )
 
 type Plugin struct{}
@@ -46,7 +47,7 @@ func RegisterPlugin() {
 	bot.RegisterPlugin(plugin)
 	common.RegisterScheduledEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
-	common.SQL.AutoMigrate(&Config{})
+	common.SQL.AutoMigrate(&Config{}, &WarningModel{})
 }
 
 func handleUnMute(data string) error {
@@ -100,6 +101,11 @@ type Config struct {
 	MuteRole             string `valid:"role,true"`
 	MuteReasonOptional   bool
 	UnmuteReasonOptional bool
+
+	// Warn
+	WarnCommandsEnabled    bool
+	WarnIncludeChannelLogs bool
+	WarnSendToModlog       bool
 
 	// Misc
 	CleanEnabled  bool
@@ -159,7 +165,7 @@ func CreateModlogEmbed(channelID string, author *discordgo.User, action string, 
 			Name:    fmt.Sprintf("%s#%s (ID %s)", author.Username, author.Discriminator, author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		},
-		Description: fmt.Sprintf("**%s %s**#%s *(ID %s)*\n:notepad_spiral:**Reason:** %s", action, target.Username, target.Discriminator, target.ID, reason),
+		Description: fmt.Sprintf("**%s %s**#%s *(ID %s)*\n📄**Reason:** %s", action, target.Username, target.Discriminator, target.ID, reason),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
 		},
@@ -167,17 +173,19 @@ func CreateModlogEmbed(channelID string, author *discordgo.User, action string, 
 
 	if strings.HasPrefix(action, ActionMuted) {
 		embed.Color = 0x57728e
-		embed.Description = ":mute:" + embed.Description
+		embed.Description = "🔇" + embed.Description
 	} else if strings.HasPrefix(action, ActionUnMuted) || action == ActionUnbanned {
-		embed.Description = ":speaker:" + embed.Description
+		embed.Description = "🔊" + embed.Description
 		embed.Color = 0x62c65f
 	} else if strings.HasPrefix(action, ActionBanned) {
-		embed.Description = ":hammer:" + embed.Description
+		embed.Description = "🔨" + embed.Description
 		embed.Color = 0xd64848
-	} else {
-		// kick
-		embed.Description = ":boot:" + embed.Description
+	} else if strings.HasPrefix(action, ActionKicked) {
+		embed.Description = "👢" + embed.Description
 		embed.Color = 0xf2a013
+	} else {
+		embed.Description = "⚠" + embed.Description
+		embed.Color = 0xfca253
 	}
 
 	if logLink != "" {
@@ -222,6 +230,18 @@ func updateEmbedReason(author *discordgo.User, reason string, embed *discordgo.M
 
 }
 
+func getConfig(guildID string, config *Config) (*Config, error) {
+	if config == nil {
+		var err error
+		config, err = GetConfig(guildID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return config, nil
+}
+
 // Kick or bans someone, uploading a hasebin log, and sending the report tmessage in the action channel
 func punish(config *Config, p Punishment, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
 	if author == nil {
@@ -232,12 +252,9 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 		}
 	}
 
-	if config == nil {
-		var err error
-		config, err = GetConfig(guildID)
-		if err != nil {
-			return err
-		}
+	config, err := getConfig(guildID, config)
+	if err != nil {
+		return common.ErrWithCaller(err)
 	}
 
 	actionStr := "Banned"
@@ -310,15 +327,12 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 }
 
 func KickUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
-	if config == nil {
-		var err error
-		config, err = GetConfig(guildID)
-		if err != nil {
-			return err
-		}
+	config, err := getConfig(guildID, config)
+	if err != nil {
+		return common.ErrWithCaller(err)
 	}
 
-	err := punish(config, PunishmentKick, guildID, channelID, author, reason, user)
+	err = punish(config, PunishmentKick, guildID, channelID, author, reason, user)
 	if err != nil {
 		return err
 	}
@@ -372,6 +386,7 @@ func DeleteMessages(channelID string, filterUser string, deleteNum, fetchNum int
 }
 
 func BanUser(client *redis.Client, config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
+	// Set a key in redis that marks that this user has appeared in the modlog already
 	client.Cmd("SETEX", RedisKeyBannedUser(guildID, user.ID), 60, 1)
 	return punish(config, PunishmentBan, guildID, channelID, author, reason, user)
 }
@@ -382,12 +397,9 @@ var (
 
 // Unmut or mute a user, ignore duration if unmuting
 func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, channelID string, author *discordgo.User, reason string, member *discordgo.Member, duration int) error {
-	if config == nil {
-		var err error
-		config, err = GetConfig(guildID)
-		if err != nil {
-			return err
-		}
+	config, err := getConfig(guildID, config)
+	if err != nil {
+		return common.ErrWithCaller(err)
 	}
 
 	if config.MuteRole == "" {
@@ -409,7 +421,6 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 		}
 	}
 
-	var err error
 	// Mute or unmute if needed
 	if mute && !isMuted {
 		// Mute
@@ -467,6 +478,70 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 
 	if logChannel != "" {
 		return CreateModlogEmbed(logChannel, author, action, user, reason, logLink)
+	}
+
+	return nil
+}
+
+type WarningModel struct {
+	common.SmallModel
+	GuildID  int64 `gorm:"index"`
+	UserID   string
+	AuthorID string
+
+	// Username and discrim for author incase he/she leaves
+	AuthorUsernameDiscrim string
+
+	Message  string
+	LogsLink string
+}
+
+func (w *WarningModel) TableName() string {
+	return "moderation_warnings"
+}
+
+func WarnUser(config *Config, guildID, channelID string, author *discordgo.User, target *discordgo.User, message string) error {
+	warning := &WarningModel{
+		GuildID:               common.MustParseInt(guildID),
+		UserID:                target.ID,
+		AuthorID:              author.ID,
+		AuthorUsernameDiscrim: author.Username + "#" + author.Discriminator,
+
+		Message: message,
+	}
+
+	config, err := getConfig(guildID, config)
+	if err != nil {
+		return common.ErrWithCaller(err)
+	}
+
+	if config.WarnIncludeChannelLogs {
+		logsObj, err := logs.CreateChannelLog(channelID, author.ID, author.Username, 100)
+		if err != nil {
+			logrus.WithError(err).Error("Failed creating channel logs")
+			warning.LogsLink = "(Failed creating logs)"
+		} else {
+			warning.LogsLink = logsObj.Link()
+		}
+	}
+
+	err = common.SQL.Create(warning).Error
+	if err != nil {
+		return common.ErrWithCaller(err)
+	}
+
+	gs := bot.State.Guild(true, guildID)
+	gs.RLock()
+	name := gs.Guild.Name
+	gs.RUnlock()
+
+	bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", name, message))
+
+	if config.WarnSendToModlog && config.ActionChannel != "" {
+		err = CreateModlogEmbed(channelID, author, ActionWarned, target, message, warning.LogsLink)
+		if err != nil {
+			return common.ErrWithCaller(err)
+		}
 	}
 
 	return nil

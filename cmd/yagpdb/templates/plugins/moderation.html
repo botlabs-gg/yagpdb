@@ -22,7 +22,7 @@
                 </div>
                 <div class="panel-body">
                     <div class="form-group">
-                        <label>Channel to announce bans and kicks through the bot in</label>
+                        <label>Channel to announce bans and kicks through the bot in (modlog)</label>
                         <select class="form-control" name="ActionChannel">
                         {{$selected := .ModConfig.ActionChannel}}
                         <option value="" {{if eq $selected ""}} selected{{end}}>Same as command was sent in</option>
@@ -69,19 +69,20 @@
                             A reason and author can be assigned to this entry through the <code>reason</code> command<br/>
                         </label>
                     </div>
+
                 </div>
             </div>
         </div>
         <div class="col-lg-6">
             <div class="panel {{if .ModConfig.MuteEnabled}}panel-green{{else}}panel-default{{end}}">
                 <div class="panel-heading">
-                    Mute/Unmute
+                    Mute/Unmute commands
                 </div>
                 <div class="panel-body">
                    <div class="checkbox">
                       <label>
                         <input type="checkbox" name="MuteEnabled" {{if .ModConfig.MuteEnabled}} checked{{end}}>
-                        Mute/Unmute<br/>
+                        Mute/Unmute commands enabled<br/>
                         <code>(mention or prefix) mute/unmute @user 10 some reason</code><br/>
                         Only users with kick permission can use this.<br/>
                         The mute command will assign the mute role to the user for the specified number of minutes (10m in the example above)
@@ -173,6 +174,40 @@
                         <label>Ban DM (Leave empty for default)</label>
                         <textarea class="form-control" rows="5" name="BanMessage">{{.ModConfig.BanMessage}}</textarea>
                         <p class="help-block">Available template data is {{template "template_helper_user"}} and <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel {{if .ModConfig.WarnCommandsEnabled}}panel-green{{else}}panel-default{{end}}">
+                <div class="panel-heading">
+                    Warn Commands
+                </div>
+                <div class="panel-body">
+                   <div class="checkbox">
+                      <label>
+                        <input type="checkbox" name="WarnCommandsEnabled" {{if .ModConfig.WarnCommandsEnabled}} checked{{end}}>
+                        Warn commands enabled<br/>
+                        Only users with manage messages permission can use this.<br/>
+                        <code>(mention or prefix) warn @user some reason</code><br/>
+                        Creates a new warning for the user<br/>
+                        <code>(mention or prefix) warnings @user</code><br/>
+                        Lists all warning of a user<br/>
+                      </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="WarnIncludeChannelLogs" {{if .ModConfig.WarnIncludeChannelLogs}} checked{{end}}>
+                            Create logs in channel command was ran in when user is warned
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="WarnSendToModlog" {{if .ModConfig.WarnSendToModlog}} checked{{end}}>
+                            Send warnings to the modlog
+                        </label>
                     </div>
                 </div>
             </div>

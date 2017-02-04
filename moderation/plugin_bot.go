@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
+	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
@@ -108,6 +109,7 @@ const (
 	ModCmdClean
 	ModCmdReport
 	ModCmdReason
+	ModCmdWarn
 )
 
 // ModBaseCmd is the base command for moderation commands, it makes sure proper permissions are there for the user invoking it
@@ -166,6 +168,9 @@ func ModBaseCmd(neededPerm, cmd int, inner commandsystem.RunFunc) commandsystem.
 		case ModCmdReason:
 			reasonOptional = true
 			enabled = true
+		case ModCmdWarn:
+			reasonOptional = true
+			enabled = config.WarnCommandsEnabled
 		default:
 			panic("Unknown command")
 		}
@@ -475,6 +480,92 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				_, err = common.BotSession.ChannelMessageEditEmbed(config.ActionChannel, msg.ID, embed)
 				if err != nil {
 					return "Failed updating the modlog entry", err
+				}
+
+				return "👌", nil
+			}),
+		},
+	},
+	&commands.CustomCommand{
+		CustomEnabled: true,
+		Cooldown:      5,
+		Category:      commands.CategoryModeration,
+		Command: &commandsystem.Command{
+			Name:                  "Warn",
+			Description:           "Warn a user, warning are saved.",
+			RequiredArgs:          2,
+			UserArgRequireMention: true,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
+				&commandsystem.ArgDef{Name: "Reason", Description: "Warn reason", Type: commandsystem.ArgumentString},
+			},
+			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				config := parsed.Context().Value(ContextKeyConfig).(*Config)
+
+				err := WarnUser(config, parsed.Guild.ID(), parsed.Channel.ID(), parsed.Message.Author, parsed.Args[0].DiscordUser(), parsed.Args[1].Str())
+				if err != nil {
+					return "Seomthing went wrong warning this user, make sure the bot has all the proper perms. (if you have the modlog enabled the bot need to be able to send messages in the modlog for example)", err
+				}
+
+				return "👌", nil
+			}),
+		},
+	},
+	&commands.CustomCommand{
+		CustomEnabled: true,
+		Cooldown:      5,
+		Category:      commands.CategoryModeration,
+		Command: &commandsystem.Command{
+			Name:                  "Warnings",
+			Description:           "Lists warning of a user.",
+			RequiredArgs:          1,
+			UserArgRequireMention: true,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
+			},
+			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
+				var result []*WarningModel
+				err := common.SQL.Where("user_id = ? AND guild_id = ?", parsed.Args[0].DiscordUser().ID, parsed.Guild.ID()).Order("id desc").Find(&result).Error
+				if err != nil && err != gorm.ErrRecordNotFound {
+					return "An error occured...", err
+				}
+
+				if len(result) < 1 {
+					return "This user has not received any warnings", nil
+				}
+
+				out := ""
+				for _, entry := range result {
+					out += fmt.Sprintf("#%d: %20s **%s** (%13s) - **%s**\n", entry.ID, entry.CreatedAt.Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
+					if entry.LogsLink != "" {
+						out += "^logs: <" + entry.LogsLink + ">\n"
+					}
+				}
+
+				return out, nil
+			}),
+		},
+	},
+	&commands.CustomCommand{
+		CustomEnabled: true,
+		Cooldown:      5,
+		Category:      commands.CategoryModeration,
+		Command: &commandsystem.Command{
+			Name:                  "EditWarning",
+			Description:           "Edit a warning, id is the first number of each warning from the warnings command",
+			RequiredArgs:          2,
+			UserArgRequireMention: true,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "Id", Type: commandsystem.ArgumentNumber},
+				&commandsystem.ArgDef{Name: "NewMessage", Type: commandsystem.ArgumentString},
+			},
+			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
+
+				rows := common.SQL.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.Guild.ID(), parsed.Args[0].Int()).Update(
+					"message", fmt.Sprintf("%s (updated by %s#%s (%s))", parsed.Args[1].Str(), parsed.Message.Author.Username, parsed.Message.Author.Discriminator, parsed.Message.Author.ID)).RowsAffected
+
+				if rows < 1 {
+					return "Failed updating, most likely couldn't find the warning", nil
 				}
 
 				return "👌", nil
