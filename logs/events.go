@@ -58,7 +58,7 @@ var cmds = []commandsystem.CommandHandler{
 					}
 				}
 
-				l, err := CreateChannelLog(cmd.Channel.ID(), cmd.Message.Author.ID, cmd.Message.Author.Username, num)
+				l, err := CreateChannelLog(cmd.Channel.ID(), cmd.Message.Author.Username, cmd.Message.Author.ID, num)
 				if err != nil {
 					return "An error occured", err
 				}
