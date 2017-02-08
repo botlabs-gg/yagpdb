@@ -3,6 +3,7 @@ package feeds
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
+	"strings"
 	"sync"
 )
 
@@ -27,8 +28,25 @@ func RegisterPlugin(plugin Plugin) {
 	common.AddPlugin(plugin)
 }
 
-func Run() {
+// Run runs the specified feeds
+func Run(which []string) {
 	for _, plugin := range Plugins {
+		if len(which) > 0 {
+			found := false
+
+			for _, feed := range which {
+				if strings.EqualFold(feed, plugin.Name()) {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				logrus.Info("Ignoring feed", plugin.Name())
+				continue
+			}
+		}
+
 		logrus.Info("Starting feed ", plugin.Name())
 		go plugin.StartFeed()
 	}
