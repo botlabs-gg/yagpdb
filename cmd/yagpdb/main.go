@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/yagpdb/youtube"
 	"github.com/shiena/ansicolor"
 	"os"
 	"os/signal"
@@ -107,6 +108,7 @@ func main() {
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
+	youtube.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")

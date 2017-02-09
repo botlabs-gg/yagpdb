@@ -14,7 +14,8 @@ type Plugin interface {
 }
 
 var (
-	Plugins []Plugin
+	Plugins        []Plugin
+	runningPlugins = make([]Plugin, 0)
 )
 
 // Register a plugin
@@ -49,11 +50,12 @@ func Run(which []string) {
 
 		logrus.Info("Starting feed ", plugin.Name())
 		go plugin.StartFeed()
+		runningPlugins = append(runningPlugins, plugin)
 	}
 }
 
 func Stop(wg *sync.WaitGroup) {
-	for _, plugin := range Plugins {
+	for _, plugin := range runningPlugins {
 		logrus.Info("Stopping feed ", plugin.Name())
 		wg.Add(1)
 		go plugin.StopFeed(wg)
