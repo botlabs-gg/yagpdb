@@ -32,9 +32,17 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
+		ctx := r.Context()
+
+		if r.FormValue("partial") != "" {
+			var tmplData TemplateData
+			ctx, tmplData = GetCreateTemplateData(ctx)
+			tmplData["PartialRequest"] = true
+		}
+
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
-		inner.ServeHTTP(w, r)
+		inner.ServeHTTP(w, r.WithContext(ctx))
 	}
 
 	return http.HandlerFunc(mw)
@@ -43,7 +51,6 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 // Will put a redis client in the context if available
 func RedisMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		//log.Println("redis middleware")
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
 			inner.ServeHTTP(w, r)
 			return
@@ -96,17 +103,20 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		}()
 
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
+			log.Println("static path")
 			return
 		}
 
 		cookie, err := r.Cookie("yagpdb-session2")
 		if err != nil {
 			// Cookie not present, skip retrieving session
+			log.Println("cookie not present")
 			return
 		}
 
 		token, err := AuthTokenFromB64(cookie.Value)
 		if err != nil {
+			log.Println("invalid session", err)
 			// No valid session
 			// TODO: Should i check for json error?
 			return
@@ -129,6 +139,13 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		session := DiscordSessionFromContext(r.Context())
 		if session == nil {
+			log.Println("No session in request?")
+			if r.FormValue("partial") != "" {
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte("Not logged in"))
+				return
+			}
+
 			values := url.Values{
 				"error": []string{"No session"},
 			}
@@ -451,8 +468,9 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 			log.WithError(err).Error("Failed executing template")
 			return
 		}
-
-		LogIgnoreErr(minifier.Minify("text/html", w, &buf))
+		w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+		buf.WriteTo(w)
+		// LogIgnoreErr(minifier.Minify("text/html", w, &buf))
 
 		// writer := minifier.Writer("text/html", w)
 		// defer writer.Close()

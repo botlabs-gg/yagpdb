@@ -119,6 +119,17 @@
 </div>
 <!-- /.row -->
 <script type="text/javascript">
+    // cause of the async partial loader, we need to manually clear the interval when we navigate
+    var firstStatsView;
+    var statsInterval;
+    if (!firstStatsView) {
+        firstStatsView = true;
+        window.addEventListener("customnavigate", function(e){
+            console.log("cleared interval");
+            window.clearInterval(statsInterval);
+        })
+    }
+
     $(function(){
         function createRequest(method, path, data, cb){
             var oReq = new XMLHttpRequest();
@@ -182,7 +193,7 @@
             createRequest("GET", "/cp/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
             {{end}}
         }
-        setInterval(fetchStats, 10000);
+        statsInterval = setInterval(fetchStats, 10000);
         fetchStats(); // Fetch the initial stats
     })
 </script>

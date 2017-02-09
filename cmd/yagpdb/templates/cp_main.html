@@ -1,4 +1,4 @@
-{{define "cp_head"}}
+{{define "cp_head"}}{{if not .PartialRequest}}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -60,9 +60,12 @@
 <body>
     <div id="wrapper">
     {{template "cp_nav" .}}
-{{end}}
+        <div id="main-content">
 
-{{define "cp_footer"}}
+{{end}}{{end}}
+
+{{define "cp_footer"}}{{if not .PartialRequest}}
+    </div>
     </div>
     </div>
     <script>
@@ -105,7 +108,7 @@
 </body>
 
 </html>
-{{end}}
+{{end}}{{end}}
 
 {{/*Displays alerts*/}}
 {{define "cp_alerts"}}
