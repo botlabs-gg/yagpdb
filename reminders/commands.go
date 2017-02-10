@@ -118,7 +118,7 @@ var cmds = []commandsystem.CommandHandler{
 			},
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
 
-				var reminder *Reminder
+				var reminder Reminder
 				err := common.SQL.Where(parsed.Args[0].Int()).First(&reminder).Error
 				if err != nil {
 					if err == gorm.ErrRecordNotFound {
