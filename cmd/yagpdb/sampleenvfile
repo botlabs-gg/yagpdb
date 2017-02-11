@@ -15,20 +15,23 @@ export YAGPDB_PQUSERNAME="postgres username"
 export YAGPDB_PQPASSWORD="postgres password"
 export YAGPDB_REDIS="redis address"
 
-#Logging, not required
+# Logging, not required
 # Send errors to a discord channel
 export YAGPDB_ERRORCHANNEL=""
 # Bot leaves joins to this channel
 export YAGPDB_BOTLEAVESJOINS=""
 
-#Plugins below, not required
+# Plugins below, not required
 
-#Aylien
+# Aylien
 export YAGPDB_AYLIENAPPID="aylien app id here"
 export YAGPDB_AYLIENAPPKEY="aylien app key here"
 
-#Reddit
+# Reddit
 export YAGPDB_REDDIT_CLIENTID="Reddit application clientid here"
 export YAGPDB_REDDIT_CLIENTSECRET="Reddit application client secret here"
 export YAGPDB_REDDIT_REDIRECT="Reddit redirect uri here"
 export YAGPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (duration=permanent)"
+
+# Youtube and other google apis credentials json file
+export GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"
