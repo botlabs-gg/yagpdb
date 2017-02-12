@@ -1,7 +1,6 @@
 package web
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -453,6 +452,8 @@ type CustomHandlerFunc func(w http.ResponseWriter, r *http.Request) interface{}
 // A helper wrapper that renders a template
 func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
 		var out interface{}
 		if inner != nil {
 			out = inner(w, r)
@@ -463,19 +464,11 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 				out = d
 			}
 		}
-		var buf bytes.Buffer
-		err := Templates.ExecuteTemplate(&buf, tmpl, out)
+		err := Templates.ExecuteTemplate(w, tmpl, out)
 		if err != nil {
 			log.WithError(err).Error("Failed executing template")
 			return
 		}
-		w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
-		buf.WriteTo(w)
-		// LogIgnoreErr(minifier.Minify("text/html", w, &buf))
-
-		// writer := minifier.Writer("text/html", w)
-		// defer writer.Close()
-		// LogIgnoreErr(Templates.ExecuteTemplate(writer, tmpl, out))
 	}
 	return http.HandlerFunc(mw)
 }
