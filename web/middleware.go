@@ -9,6 +9,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/miolini/datacounter"
@@ -344,7 +345,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		sort.Sort(Channels(channels))
+		sort.Sort(dutil.Channels(channels))
 		guild.Channels = channels
 
 		newCtx := context.WithValue(ctx, common.ContextKeyGuildChannels, channels)
@@ -372,7 +373,7 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		sort.Sort(discordgo.Roles(fullGuild.Roles))
+		sort.Sort(dutil.Roles(fullGuild.Roles))
 
 		guild.Region = fullGuild.Region
 		guild.OwnerID = fullGuild.OwnerID
@@ -435,7 +436,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			}
 
 			combinedPerms |= role.Permissions
-			if highest == nil || role.Position > highest.Position {
+			if highest == nil || dutil.IsRoleAbove(role, highest) {
 				highest = role
 			}
 		}
@@ -673,7 +674,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 		checkControllerError(g, data, err)
 
 		if err == nil {
-			data.AddAlerts(SucessAlert("Sucessfully saved! :')"))
+			data.AddAlerts(SucessAlert("Success!"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 			if ok {
 				go common.AddCPLogEntry(user, g.ID, logMsg)
@@ -751,19 +752,4 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-// Channels are a collection of Channels
-type Channels []*discordgo.Channel
-
-func (r Channels) Len() int {
-	return len(r)
-}
-
-func (r Channels) Less(i, j int) bool {
-	return r[i].Position < r[j].Position
-}
-
-func (r Channels) Swap(i, j int) {
-	r[i], r[j] = r[j], r[i]
 }

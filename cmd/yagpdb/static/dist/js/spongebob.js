@@ -4,22 +4,7 @@ $(function(){
 		window.history.pushState("", "", visibleURL);
 	}
 
-	////////////////////////////////////////
-	// Async partial page loading handling
-	///////////////////////////////////////
-	$( ".nav-link" ).click(function( event ) {
-		console.log("Clicked the link");
-		event.preventDefault();
-		
-	    if (currentlyLoading) {return;}
-			
-		var link = $(this);
-		
-		var url = link.attr("href");
-		navigate(url, "GET", null);
-
-		$("#main-content").html('<div class="loader">Loading...</div>');
-	});
+	
 
 	addListeners(false);
 })
@@ -92,17 +77,21 @@ function addListeners(partial){
 		selectorPrefix = "#main-content ";
 	}
 
+	////////////////////////////////////////
+	// Async partial page loading handling
+	///////////////////////////////////////
 	$( selectorPrefix + ".nav-link" ).click(function( event ) {
 		console.log("Clicked the link");
 		event.preventDefault();
+		
+	    if (currentlyLoading) {return;}
 			
 		var link = $(this);
 		
 		var url = link.attr("href");
 		navigate(url, "GET", null);
 
-		$("#main-content").html('<div class="loader">Loading...</div>'+
-			'<div class="progress"><div id="page-load-progress" class="progress-bar" role="progressbar" style="width: 0%;"><span class="sr-only"></span></div></div>')
+		$("#main-content").html('<div class="loader">Loading...</div>');
 	});
 
 	var forms = $(selectorPrefix + "form");

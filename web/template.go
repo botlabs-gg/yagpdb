@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
 	"html/template"
 	"reflect"
 	"strings"
@@ -123,4 +124,8 @@ func hasPerm(botPerms int, checkPerm string) (bool, error) {
 
 func plus1(x int) int {
 	return x + 1
+}
+
+func roleIsAbove(a, b *discordgo.Role) bool {
+	return dutil.IsRoleAbove(a, b)
 }
