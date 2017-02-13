@@ -274,7 +274,6 @@ var GlobalCommands = []commandsystem.CommandHandler{
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "What", Description: "To flip", Type: commandsystem.ArgumentString},
 			},
-
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				toFlip := data.Args[0].Str()
 
@@ -282,7 +281,8 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				for _, r := range toFlip {
 					out = string(r) + out
 				}
-				return out, nil
+
+				return ":upside_down: " + out, nil
 			},
 		},
 	},
