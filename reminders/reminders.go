@@ -40,7 +40,7 @@ type Reminder struct {
 func (r *Reminder) Trigger() error {
 	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message}).Info("Triggered reminder")
 
-	_, err := common.BotSession.ChannelMessageSend(r.ChannelID, "**Reminder** <@"+r.UserID+">: "+r.Message)
+	_, err := common.BotSession.ChannelMessageSend(r.ChannelID, common.EscapeEveryoneMention("**Reminder** <@"+r.UserID+">: "+r.Message))
 	if err != nil {
 		if _, ok := err.(*discordgo.RESTError); !ok {
 			// Reschedule if discord didnt respond with an error (i.e they being down or something)

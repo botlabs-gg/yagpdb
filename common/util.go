@@ -70,7 +70,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 
 // SendTempMessage sends a message that gets deleted after duration
 func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, msg string) {
-	m, err := BotSession.ChannelMessageSend(cID, msg)
+	m, err := BotSession.ChannelMessageSend(cID, EscapeEveryoneMention(msg))
 	if err != nil {
 		return
 	}
@@ -243,7 +243,7 @@ func SendEmbedWithFallback(s *discordgo.Session, channelID string, embed *discor
 		return s.ChannelMessageSendEmbed(channelID, embed)
 	}
 
-	return s.ChannelMessageSend(channelID, FallbackEmbed(embed))
+	return s.ChannelMessageSend(channelID, EscapeEveryoneMention(FallbackEmbed(embed)))
 }
 
 func FallbackEmbed(embed *discordgo.MessageEmbed) string {

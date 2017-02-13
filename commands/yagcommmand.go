@@ -124,7 +124,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 					name = required.Name
 				}
 				guild.RUnlock()
-				_, err := common.BotSession.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf("The **%s** role is required to use this command.", name))
+				_, err := common.BotSession.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf(common.EscapeEveryoneMention("The **%s** role is required to use this command."), name))
 				return nil, err
 			}
 		}

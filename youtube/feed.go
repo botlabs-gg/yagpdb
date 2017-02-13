@@ -180,15 +180,18 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 		}
 
 		for _, sub := range subs {
-			go p.sendNewVidMessage(sub.ChannelID, item)
+			go p.sendNewVidMessage(sub.ChannelID, item, false)
 		}
 	}
 
 	return
 }
 
-func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.PlaylistItem) {
-	content := fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", item.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+item.Snippet.ResourceId.VideoId)
+func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.PlaylistItem, mentionEveryone bool) {
+	content := common.EscapeEveryoneMention(fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", item.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+item.Snippet.ResourceId.VideoId))
+	if mentionEveryone {
+		content += " @everyone"
+	}
 	common.BotSession.ChannelMessageSend(discordChannel, content)
 }
 

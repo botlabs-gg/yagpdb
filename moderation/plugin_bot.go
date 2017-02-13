@@ -378,7 +378,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				reportBody := fmt.Sprintf("<@%s> Reported <@%s> in <#%s> For `%s`\nLast 100 messages from channel: <%s>", parsed.Message.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Message.ChannelID, parsed.Args[1].Str(), logLink)
 
-				_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
+				_, err = common.BotSession.ChannelMessageSend(channelID, common.EscapeEveryoneMention(reportBody))
 				if err != nil {
 					return "Failed sending report", err
 				}
