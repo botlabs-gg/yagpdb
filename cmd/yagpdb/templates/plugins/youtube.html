@@ -1,0 +1,86 @@
+{{define "cp_youtube"}}
+
+{{template "cp_head" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Youtube upload feeds</h1>
+        <p>Sends a message in discord when a subscribed channel uploads a new video</p>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Add new
+            </div>
+            <div class="panel-body">
+                <!-- <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter" -->
+                <form class="form-vertical" method="post" action="/cp/{{.ActiveGuild.ID}}/youtube">
+                    <p><b>Provide either channel ID OR username.</b> Only one of them, not both.<br>
+                    When you go to the channel page, if the address bar has for example <code>youtube.com/user/h3h3Productions</code> then the username is h3h3Productions<br>
+                    if it's <code>youtube.com/channel/UCt-ERbX-2yA6cAqfdKOlUwQ</code> then the id is <code>UCt-ERbX-2yA6cAqfdKOlUwQ</code><br>
+                    For any questions join the support server above</p>
+                    <div class="form-group">
+                        <label for="yt-channel-id">Youtube Channel ID</label>
+                        <input type="text" class="form-control" id="yt-channel-id" name="YoutubeChannelID">
+                    </div>
+                    <div class="form-group">
+                        <label for="yt-channel-user">Youtube Username</label>
+                        <input type="text" class="form-control" id="yt-channel-user" name="YoutubeChannelUser">
+                    </div>
+                    <div class="form-group">
+                        <label for="channel">Discord Channel</label>
+                        <select id="channel" class="form-control" name="DiscordChannel">
+                            {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" "0"}}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-default">Add</button>
+                </form>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Current subscribed channels
+            </div>
+            <div class="panel-body">
+                {{$guild := .ActiveGuild.ID}}
+                {{$channels := .ActiveGuild.Channels}}
+                {{range .Subs}}
+                <div class="well well-sm">
+                    <form class="form-inline" method="post" action="/cp/{{$guild}}/youtube/{{.ID}}/update">
+                        <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
+                        <div class="form-group">
+                            <div class="col-sm-10">
+                                <p class="form-control-static">{{.YoutubeChannelName}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-10">
+                                <p class="form-control-static">{{.YoutubeChannelID}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="channel">Discord Channel</label>
+                            <select id="channel" class="form-control" name="DiscordChannel">
+                                {{mTemplate "channel_options" "Channels" $channels "Selected" .ChannelID}}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success" formaction="/cp/{{$guild}}/youtube/{{.ID}}/update">Save</button>
+                        <button type="submit" class="btn btn-danger" formaction="/cp/{{$guild}}/youtube/{{.ID}}/delete">Delete</button>
+                    </form>
+                </div>
+                {{end}}
+            </div>
+        </div>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
+{{template "cp_footer" .}}
+
+{{end}}
