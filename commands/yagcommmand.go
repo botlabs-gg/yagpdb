@@ -138,7 +138,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 	}
 
 	if cdLeft > 0 {
-		trigger.Session.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", trigger.Message.Author.Username, cdLeft, cs.Name))
+		trigger.Session.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeEveryoneMention(trigger.Message.Author.Username), cdLeft, cs.Name))
 		return nil, nil
 	}
 

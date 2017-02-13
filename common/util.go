@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -383,4 +384,12 @@ func InnerError(err error) error {
 	}
 
 	return err
+}
+
+// EscapeEveryoneMention Escapes an everyone mention, adding a zero width space between the '@' and rest
+func EscapeEveryoneMention(in string) string {
+	const zeroSpace = "​" // <- Zero width space
+	s := strings.Replace(in, "@everyone", "@"+zeroSpace+"everyone", -1)
+	s = strings.Replace(s, "@here", "@"+zeroSpace+"here", -1)
+	return s
 }

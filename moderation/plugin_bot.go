@@ -438,7 +438,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				numDeleted, err := DeleteMessages(parsed.Message.ChannelID, filter, num, limitFetch)
 
-				return commandsystem.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted)), err
+				return commandsystem.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 			}),
 		},
 	}, &commands.CustomCommand{

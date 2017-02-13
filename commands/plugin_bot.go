@@ -596,6 +596,28 @@ I'm currently being ran and developed by jonas747#3124 (105487308693757952) but 
 			},
 		},
 	},
+	&CustomCommand{
+		Cooldown: 10,
+		Category: CategoryFun,
+		Command: &commandsystem.Command{
+			Name:         "CustomEmbed",
+			Aliases:      []string{"ce"},
+			Description:  "Creates an embed from what you give it in json form: https://discordapp.com/developers/docs/resources/channel#embed-object",
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "Json", Type: commandsystem.ArgumentString},
+			},
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				time.Sleep(time.Second * 5)
+				var parsed *discordgo.MessageEmbed
+				err := json.Unmarshal([]byte(data.SafeArgString(0)), &parsed)
+				if err != nil {
+					return "Failed parsing json: " + err.Error(), err
+				}
+				return parsed, nil
+			},
+		},
+	},
 }
 
 type AdviceSlip struct {
