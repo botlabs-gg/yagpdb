@@ -103,7 +103,6 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		}()
 
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			log.Println("static path")
 			return
 		}
 
@@ -389,7 +388,6 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 		if err != nil {
 			log.WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
 			member, err = common.BotSession.GuildMember(pat.Param(r, "server"), common.Conf.BotID)
-			log.Println(common.Conf.BotID)
 			if err != nil {
 				log.WithError(err).Error("Failed retrieving bot member")
 				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
@@ -645,7 +643,7 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 
 // Uses the FormParserMW to parse and validate the form, then saves it
 func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
-	return FormParserMW(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		_, g, templateData := GetBaseCPContextData(ctx)
 
@@ -655,9 +653,11 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 			}()
 		}
 
-		ok := ctx.Value(common.ContextKeyFormOk).(bool)
-		if !ok {
-			return
+		if formData != nil {
+			ok := ctx.Value(common.ContextKeyFormOk).(bool)
+			if !ok {
+				return
+			}
 		}
 
 		data, err := mainHandler(w, r)
@@ -673,7 +673,13 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 				go common.AddCPLogEntry(user, g.ID, logMsg)
 			}
 		}
-	}), formData)
+	})
+
+	if formData != nil {
+		return FormParserMW(handler, formData)
+	}
+
+	return handler
 }
 
 func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) {
@@ -684,7 +690,7 @@ func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) 
 	if cast, ok := err.(*PublicError); ok {
 		data.AddAlerts(ErrorAlert(cast.Error()))
 	} else {
-		data.AddAlerts(ErrorAlert("An error occured... Contact support."))
+		data.AddAlerts(ErrorAlert("An error occured... Contact support if you're having issues."))
 	}
 
 	entry := log.WithError(err)

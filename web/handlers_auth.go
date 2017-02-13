@@ -6,8 +6,8 @@ import (
 	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/oauth2"
 	"github.com/jonas747/yagpdb/common"
-	"golang.org/x/oauth2"
 	"net/http"
 	"time"
 )
