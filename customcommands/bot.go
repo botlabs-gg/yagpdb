@@ -99,7 +99,7 @@ func HandleMessageCreate(ctx context.Context, e interface{}) {
 	}
 
 	if out != "" {
-		_, err = common.BotSession.ChannelMessageSend(evt.ChannelID, out)
+		_, err = common.BotSession.ChannelMessageSend(evt.ChannelID, common.EscapeEveryoneMention(out))
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
 		}
