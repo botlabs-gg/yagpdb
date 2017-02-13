@@ -24,6 +24,7 @@ type Form struct {
 	YoutubeChannelUser string
 	DiscordChannel     string `valid:"channel,false`
 	ID                 uint
+	MentionEveryone    bool
 }
 
 func (p *Plugin) InitWeb() {
@@ -85,7 +86,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert("Neither channelid or username specified.")), errors.New("ChannelID and username not specified")
 	}
 
-	_, err := p.AddFeed(client, activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser)
+	_, err := p.AddFeed(client, activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser, data.MentionEveryone)
 	if err != nil {
 		if err == ErrNoChannel {
 			return templateData.AddAlerts(web.ErrorAlert("No channel by that id found")), errors.New("Channel not found")
@@ -95,51 +96,6 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	return templateData, nil
 }
-
-// func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
-// 	ctx := r.Context()
-// 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-// 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
-// 	templateData["RedditConfig"] = currentConfig
-
-// 	updated := ctx.Value(common.ContextKeyParsedForm).(*Form)
-// 	ok := ctx.Value(common.ContextKeyFormOk).(bool)
-// 	if !ok {
-// 		return templateData
-// 	}
-// 	updated.Subreddit = strings.TrimSpace(updated.Subreddit)
-
-// 	item := FindWatchItem(currentConfig, updated.ID)
-// 	if item == nil {
-// 		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
-// 	}
-
-// 	subIsNew := !strings.EqualFold(updated.Subreddit, item.Sub)
-// 	item.Channel = updated.Channel
-
-// 	var err error
-// 	if !subIsNew {
-// 		// Pretty simple then
-// 		err = item.Set(client)
-// 	} else {
-// 		err = item.Remove(client)
-// 		if err == nil {
-// 			item.Sub = strings.ToLower(r.FormValue("subreddit"))
-// 			err = item.Set(client)
-// 		}
-// 	}
-
-// 	if web.CheckErr(templateData, err, "Failed saving item :'(", log.Error) {
-// 		return templateData
-// 	}
-
-// 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
-
-// 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-// 	common.AddCPLogEntry(user, activeGuild.ID, "Modified a feed to /r/"+r.FormValue("subreddit"))
-// 	return templateData
-// }
 
 type ContextKey int
 
@@ -176,10 +132,12 @@ func HandleEdit(w http.ResponseWriter, r *http.Request) (templateData web.Templa
 	_, _, templateData = web.GetBaseCPContextData(ctx)
 
 	sub := ctx.Value(ContextKeySub).(*ChannelSubscription)
-
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
 
-	err = common.SQL.Model(sub).Update("channel_id", data.DiscordChannel).Error
+	sub.MentionEveryone = data.MentionEveryone
+	sub.ChannelID = data.DiscordChannel
+
+	err = common.SQL.Save(sub).Error
 	return
 }
 

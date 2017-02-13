@@ -180,7 +180,7 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 		}
 
 		for _, sub := range subs {
-			go p.sendNewVidMessage(sub.ChannelID, item, false)
+			go p.sendNewVidMessage(sub.ChannelID, item, sub.MentionEveryone)
 		}
 	}
 
@@ -239,10 +239,11 @@ var (
 	ErrNoChannel = errors.New("No channel with that id found")
 )
 
-func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtubeChannelID, youtubeUsername string) (*ChannelSubscription, error) {
+func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtubeChannelID, youtubeUsername string, mentionEveryone bool) (*ChannelSubscription, error) {
 	sub := &ChannelSubscription{
-		GuildID:   guildID,
-		ChannelID: discordChannelID,
+		GuildID:         guildID,
+		ChannelID:       discordChannelID,
+		MentionEveryone: mentionEveryone,
 	}
 
 	call := p.YTService.Channels.List("snippet")

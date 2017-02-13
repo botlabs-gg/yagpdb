@@ -37,6 +37,11 @@
                             {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" "0"}}
                         </select>
                     </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="MentionEveryone"> Mention everyone
+                        </label>
+                    </div>
                     <button type="submit" class="btn btn-default">Add</button>
                 </form>
             </div>
@@ -67,6 +72,11 @@
                             <select id="channel" class="form-control" name="DiscordChannel">
                                 {{mTemplate "channel_options" "Channels" $channels "Selected" .ChannelID}}
                             </select>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="MentionEveryone" {{if .MentionEveryone}} checked {{end}}> Mention everyone
+                            </label>
                         </div>
                         <button type="submit" class="btn btn-success" formaction="/cp/{{$guild}}/youtube/{{.ID}}/update">Save</button>
                         <button type="submit" class="btn btn-danger" formaction="/cp/{{$guild}}/youtube/{{.ID}}/delete">Delete</button>
