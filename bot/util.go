@@ -87,6 +87,7 @@ func GetMember(guildID, userID string) (*discordgo.Member, error) {
 	if err != nil {
 		return nil, err
 	}
+	member.GuildID = guildID
 
 	gs.MemberAddUpdate(true, member)
 

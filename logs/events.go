@@ -21,7 +21,7 @@ func init() {
 }
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), bot.EventGuildMemberUpdate, bot.EventGuildMemberAdd, bot.EventGuildCreate)
+	bot.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), bot.EventGuildMemberUpdate, bot.EventGuildMemberAdd, bot.EventGuildCreate, bot.EventMemberFetched)
 	bot.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), bot.EventMessageDelete)
 
 	bot.AddHandlerBefore(HandlePresenceUpdate, bot.EventPresenceUpdate, bot.StateHandler)
@@ -469,6 +469,21 @@ func EvtProcesser() {
 				logrus.WithError(err).Error("Failed fetching config")
 				continue
 			}
+			if conf.UsernameLoggingEnabled {
+				CheckUsername(t.User)
+			}
+		case *discordgo.Member:
+			logrus.Println("Checking member from fetched event")
+			conf, err := GetConfig(t.GuildID)
+			if err != nil {
+				logrus.WithError(err).Error("Failed fetching config")
+				continue
+			}
+
+			if conf.NicknameLoggingEnabled {
+				CheckNickname(t.User.ID, t.GuildID, t.Nick)
+			}
+
 			if conf.UsernameLoggingEnabled {
 				CheckUsername(t.User)
 			}

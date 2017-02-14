@@ -73,6 +73,7 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 	}
 
 	if err == nil {
+		member.GuildID = p.GuildID
 		gs.MemberAddUpdate(true, member)
 		go EmitEvent(context.Background(), EventMemberFetched, member)
 	}
