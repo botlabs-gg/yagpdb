@@ -11,10 +11,10 @@ import (
 
 const (
 	VERSIONNUMBER = "0.19"
-	VERSION       = VERSIONNUMBER + " Dev"
+	VERSION       = VERSIONNUMBER + " Hygienic"
 
-	// Testing = false // Disables stuff like command cooldowns
-	Testing = true // Disables stuff like command cooldowns
+	Testing = false // Disables stuff like command cooldowns
+	// Testing = true // Disables stuff like command cooldowns
 )
 
 var (
