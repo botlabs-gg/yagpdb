@@ -538,7 +538,7 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 	bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", name, message))
 
 	if config.WarnSendToModlog && config.ActionChannel != "" {
-		err = CreateModlogEmbed(channelID, author, ActionWarned, target, message, warning.LogsLink)
+		err = CreateModlogEmbed(config.ActionChannel, author, ActionWarned, target, message, warning.LogsLink)
 		if err != nil {
 			return common.ErrWithCaller(err)
 		}
