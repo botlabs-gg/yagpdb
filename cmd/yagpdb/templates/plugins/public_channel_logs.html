@@ -59,11 +59,11 @@
                         <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID}} Message ID: {{.MessageID}}">
                             <td>{{.Timestamp}}</td>
                             <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
-                            <td id="msg-cell-{{.ID}}" {{if .Deleted}}class="deleted-message"{{end}}>{{if or (not .Deleted) $IsAdmin}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
+                            <td id="msg-cell-{{.ID}}" {{if .Deleted}} class="deleted-message" {{end}}>{{if or (not .Deleted) $IsAdmin}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
                             <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
                         </tr>
+                        {{end}}
                     </tbody>
-                    {{end}}
                 </table>
             </div>
         </div>
@@ -122,13 +122,13 @@ function sortTable(table, reverse) {
     var tb = table.tBodies[0], // use `<tbody>` to ignore `<thead>` and `<tfoot>` rows
         tr = Array.prototype.slice.call(tb.rows, 0), // put rows into array
         i;
-    // reverse = -((+reverse) || -1);
+
     tr = tr.sort(function (a, b) { // sort rows
         var indexA = a.id.replace("log-row-", "");
         var indexB = b.id.replace("log-row-", "");
         var parsedA = parseInt(indexA);
         var parsedB = parseInt(indexB);
-        console.log(parsedA, parsedB);
+        
         return reverse ? parsedA - parsedB : parsedB - parsedA;
     });
     for(i = 0; i < tr.length; ++i) tb.appendChild(tr[i]); // append each row in order

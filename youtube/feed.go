@@ -60,10 +60,12 @@ func (p *Plugin) runFeed() {
 			wg.Done()
 			return
 		case <-ticker.C:
+			now := time.Now()
 			err := p.checkChannels(redisClient)
 			if err != nil {
 				logrus.WithError(err).Error("Failed checking youtube channels")
 			}
+			logrus.Info("Took", time.Since(now), "to check youtube feeds")
 		}
 	}
 }
@@ -75,7 +77,6 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 	}
 
 	for _, channel := range channels {
-		logrus.Debug(channel)
 		err = p.checkChannel(client, channel)
 		if err != nil {
 			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
@@ -95,7 +96,6 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	}
 
 	if len(subs) < 1 {
-		logrus.Info("No subs?")
 		time.AfterFunc(time.Second, func() {
 			maybeRemoveChannelWatch(channel)
 		})
@@ -170,7 +170,6 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListResponse, subs []*ChannelSubscription, lastProcessedVidTime time.Time, lastVidID string) (complete bool, err error) {
 	for _, item := range resp.Items {
 		parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
-		logrus.Debug(item.Id, item.Snippet.Title)
 		if err != nil {
 			logrus.WithError(err).Error("Failed parsing video time")
 			continue

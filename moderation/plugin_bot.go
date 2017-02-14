@@ -536,7 +536,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				out := ""
 				for _, entry := range result {
-					out += fmt.Sprintf("#%d: %20s **%s** (%13s) - **%s**\n", entry.ID, entry.CreatedAt.Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
+					out += fmt.Sprintf("#%d: `%20s` **%s** (%13s) - **%s**\n", entry.ID, entry.CreatedAt.Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
 					if entry.LogsLink != "" {
 						out += "^logs: <" + entry.LogsLink + ">\n"
 					}

@@ -74,6 +74,13 @@ form table td{
 	}
 }
 
+@media(max-width: 1000px) and (min-width: 768px){
+  #main-content{
+    margin-top: 25px;
+  }
+}
+
+
 .loader,
 .loader:after {
   border-radius: 50%;

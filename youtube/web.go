@@ -38,7 +38,7 @@ func (p *Plugin) InitWeb() {
 	ytMux.Use(web.RequireGuildChannelsMiddleware)
 	ytMux.Use(web.RequireFullGuildMW)
 	ytMux.Use(web.RequireBotMemberMW)
-	ytMux.Use(web.RequirePermMW(discordgo.PermissionEmbedLinks))
+	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
 
 	mainGetHandler := web.ControllerHandler(HandleYoutube, "cp_youtube")
 

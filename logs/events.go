@@ -473,7 +473,6 @@ func EvtProcesser() {
 				CheckUsername(t.User)
 			}
 		case *discordgo.Member:
-			logrus.Println("Checking member from fetched event")
 			conf, err := GetConfig(t.GuildID)
 			if err != nil {
 				logrus.WithError(err).Error("Failed fetching config")
