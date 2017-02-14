@@ -74,6 +74,7 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 
 	if err == nil {
 		gs.MemberAddUpdate(true, member)
+		go EmitEvent(context.Background(), EventMemberFetched, member)
 	}
 }
 

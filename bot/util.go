@@ -90,6 +90,8 @@ func GetMember(guildID, userID string) (*discordgo.Member, error) {
 
 	gs.MemberAddUpdate(true, member)
 
+	go EmitEvent(context.Background(), EventMemberFetched, member)
+
 	return member, nil
 }
 
