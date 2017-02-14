@@ -81,6 +81,7 @@ var NonStandardEvents = []Event{
 	Event{"All", false},
 	Event{"AllPre", false},
 	Event{"AllPost", false},
+	Event{"MemberFetched", false},
 }
 
 var (
