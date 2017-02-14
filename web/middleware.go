@@ -84,6 +84,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"ClientID":   common.Conf.ClientID,
 			"Host":       common.Conf.Host,
 			"Version":    common.VERSION,
+			"Testing":    common.Testing,
 			"BotRunning": botrest.BotIsRunning(),
 			"RequestURI": r.RequestURI,
 		}

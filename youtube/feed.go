@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	PollInterval = time.Second * 100
-	// PollInterval       = time.Second * 5 // <- used for debug purposes
+	PollInterval       = time.Second * 100
 	MaxChannelsPerPoll = 100 // Can probably be safely increased to 1000 when caches are hot
+	// PollInterval       = time.Second * 5 // <- used for debug purposes
 )
 
 func (p *Plugin) StartFeed() {
@@ -75,6 +75,7 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 	}
 
 	for _, channel := range channels {
+		logrus.Debug(channel)
 		err = p.checkChannel(client, channel)
 		if err != nil {
 			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
@@ -169,6 +170,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListResponse, subs []*ChannelSubscription, lastProcessedVidTime time.Time, lastVidID string) (complete bool, err error) {
 	for _, item := range resp.Items {
 		parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
+		logrus.Debug(item.Id, item.Snippet.Title)
 		if err != nil {
 			logrus.WithError(err).Error("Failed parsing video time")
 			continue
@@ -276,7 +278,7 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 		return nil, err
 	}
 
-	err = maybeAddChannelWatch(false, client, youtubeChannelID)
+	err = maybeAddChannelWatch(false, client, sub.YoutubeChannelID)
 	return sub, err
 }
 
@@ -332,6 +334,7 @@ func maybeAddChannelWatch(lock bool, client *redis.Client, channel string) error
 
 	if reply.Type != redis.NilReply {
 		// already added before, don't need to do anything
+		logrus.Info("Not nil reply", reply.String())
 		return nil
 	}
 

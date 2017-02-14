@@ -4,8 +4,6 @@ $(function(){
 		window.history.pushState("", "", visibleURL);
 	}
 
-	
-
 	addListeners(false);
 })
 
@@ -42,6 +40,10 @@ function navigate(url, method, data){
 			window.history.pushState("", "", shownURL);
 			updateSelectedMenuItem();
 			addListeners(true);
+			if (typeof ga !== 'undefined') {
+				ga('send', 'pageview', window.location.pathname);
+				console.log("Sent pageview")
+			}
         });
 
         req.addEventListener("error", function(){
