@@ -46,8 +46,7 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
 	ytMux.Handle(pat.Post(""), web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed"))
-	// ytMux.Handle(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandleNew, "cp_youtube"), Form{}))
-	// ytMux.Handle(pat.Post("/:item/update"), web.FormParserMW(web.RenderHandler(HandleModify, "cp_youtube"), Form{}))
+	ytMux.Handle(pat.Post("/"), web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed"))
 	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(HandleEdit), mainGetHandler, Form{}, "Updated a youtube feed"))
 	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
 }
@@ -89,7 +88,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	_, err := p.AddFeed(client, activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser, data.MentionEveryone)
 	if err != nil {
 		if err == ErrNoChannel {
-			return templateData.AddAlerts(web.ErrorAlert("No channel by that id found")), errors.New("Channel not found")
+			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("Channel not found")
 		}
 		return templateData, err
 	}
