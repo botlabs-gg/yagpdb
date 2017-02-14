@@ -175,8 +175,11 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				}
 
 				dutil.SplitSendMessagePS(common.BotSession, privateChannel.ID, help+"\n"+footer, "```ini\n", "```", false, false)
-				//dutil.SplitSendMessage(common.BotSession, privateChannel.ID, prefixStr+help)
-				return "You've Got Mail!", nil
+				if data.Source != commandsystem.SourceDM {
+					return "You've Got Mail!", nil
+				} else {
+					return "", nil
+				}
 			},
 		},
 	},
@@ -265,13 +268,12 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Command: &commandsystem.Command{
 			Name:         "Reverse",
 			Aliases:      []string{"r", "rev"},
-			Description:  "Flips stuff",
+			Description:  "Reverses the text given",
 			RunInDm:      true,
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "What", Description: "To flip", Type: commandsystem.ArgumentString},
 			},
-
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				toFlip := data.Args[0].Str()
 
@@ -279,7 +281,8 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				for _, r := range toFlip {
 					out = string(r) + out
 				}
-				return out, nil
+
+				return ":upside_down: " + out, nil
 			},
 		},
 	},
@@ -288,13 +291,12 @@ var GlobalCommands = []commandsystem.CommandHandler{
 		Command: &commandsystem.Command{
 			Name:         "Weather",
 			Aliases:      []string{"w"},
-			Description:  "Shows the weather somewhere",
+			Description:  "Shows the weather somewhere (add ?m for metric: -w bergen?m)",
 			RunInDm:      true,
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentString},
 			},
-
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				where := data.Args[0].Str()
 
@@ -343,6 +345,22 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
 				return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
+			},
+		},
+	},
+	&CustomCommand{
+		Category: CategoryGeneral,
+		Command: &commandsystem.Command{
+			Name:        "Info",
+			Description: "Responds with bot information",
+			RunInDm:     true,
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				const info = `**YAGPDB - Yet Another General Purpose Discord Bot**
+This bot focuses on being configurable and therefore is one of the more advanced bots.
+It can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.
+I'm currently being ran and developed by jonas747#3124 (105487308693757952) but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
+				`
+				return info, nil
 			},
 		},
 	},
@@ -575,6 +593,28 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
 				}
 				return out + "\n```", nil
+			},
+		},
+	},
+	&CustomCommand{
+		Cooldown: 10,
+		Category: CategoryFun,
+		Command: &commandsystem.Command{
+			Name:         "CustomEmbed",
+			Aliases:      []string{"ce"},
+			Description:  "Creates an embed from what you give it in json form: https://discordapp.com/developers/docs/resources/channel#embed-object",
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "Json", Type: commandsystem.ArgumentString},
+			},
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				time.Sleep(time.Second * 5)
+				var parsed *discordgo.MessageEmbed
+				err := json.Unmarshal([]byte(data.SafeArgString(0)), &parsed)
+				if err != nil {
+					return "Failed parsing json: " + err.Error(), err
+				}
+				return parsed, nil
 			},
 		},
 	},

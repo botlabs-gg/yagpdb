@@ -11,10 +11,12 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/yagpdb/youtube"
 	"github.com/shiena/ansicolor"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -41,7 +43,7 @@ import (
 var (
 	flagRunBot        bool
 	flagRunWeb        bool
-	flagRunFeeds      bool
+	flagRunFeeds      string
 	flagRunEverything bool
 	flagDryRun        bool
 
@@ -53,7 +55,7 @@ var (
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
-	flag.BoolVar(&flagRunFeeds, "feeds", false, "Set to run feeds")
+	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (currently reddit and youtube)")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 
@@ -74,7 +76,7 @@ func main() {
 		web.LogRequestTimestamps = true
 	}
 
-	if !flagRunBot && !flagRunWeb && !flagRunFeeds && !flagRunEverything && flagAction == "" && !flagDryRun {
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && flagAction == "" && !flagDryRun {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
@@ -106,6 +108,7 @@ func main() {
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
+	youtube.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
@@ -131,8 +134,8 @@ func main() {
 		go botrest.StartServer()
 	}
 
-	if flagRunFeeds || flagRunEverything {
-		go feeds.Run()
+	if flagRunFeeds != "" || flagRunEverything {
+		go feeds.Run(strings.Split(flagRunFeeds, ","))
 	}
 
 	go pubsub.PollEvents()
@@ -189,7 +192,7 @@ func listenSignal() {
 		shouldWait = true
 	}
 
-	if flagRunFeeds || flagRunEverything {
+	if flagRunFeeds != "" || flagRunEverything {
 		feeds.Stop(&wg)
 		shouldWait = true
 	}

@@ -3,13 +3,12 @@ package web
 import (
 	"crypto/tls"
 	"flag"
+	"github.com/NYTimes/gziphandler"
 	log "github.com/Sirupsen/logrus"
 	"github.com/golang/crypto/acme/autocert"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/natefinch/lumberjack"
-	"github.com/tdewolff/minify"
-	"github.com/tdewolff/minify/html"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -34,8 +33,6 @@ var (
 
 	properAddresses bool
 
-	minifier *minify.M
-
 	acceptingRequests *int32
 )
 
@@ -52,7 +49,10 @@ func init() {
 		"title":      strings.Title,
 		"hasPerm":    hasPerm,
 		"formatTime": prettyTime,
+		"plus1":      plus1,
+		"roleAbove":  roleIsAbove,
 	})
+
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
 
 	flag.BoolVar(&properAddresses, "pa", false, "Sets the listen addresses to 80 and 443")
@@ -66,9 +66,6 @@ func Run() {
 	}
 
 	log.Info("Starting yagpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
-
-	minifier = minify.New()
-	minifier.AddFunc("text/html", html.Minify)
 
 	InitOauth()
 	mux := setupRoutes()
@@ -134,6 +131,7 @@ func setupRoutes() *goji.Mux {
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 
 	// General middleware
+	mux.Use(gziphandler.GzipHandler)
 	mux.Use(MiscMiddleware)
 	mux.Use(RedisMiddleware)
 	mux.Use(BaseTemplateDataMiddleware)

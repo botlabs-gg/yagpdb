@@ -240,9 +240,9 @@ func parseDuration(numStr, modifierStr string) (time.Duration, error) {
 
 	parsedDur := time.Duration(parsedNum)
 
-	if modifierStr == "" || strings.HasPrefix(modifierStr, "s") {
+	if strings.HasPrefix(modifierStr, "s") {
 		parsedDur = parsedDur * time.Second
-	} else if strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o') {
+	} else if modifierStr == "" || (strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o')) {
 		parsedDur = parsedDur * time.Minute
 	} else if strings.HasPrefix(modifierStr, "h") {
 		parsedDur = parsedDur * time.Hour

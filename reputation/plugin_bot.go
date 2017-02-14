@@ -63,7 +63,7 @@ func handleMessageCreate(ctx context.Context, e interface{}) {
 	}
 
 	msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", who.Username, newScore)
-	common.BotSession.ChannelMessageSend(evt.ChannelID, msg)
+	common.BotSession.ChannelMessageSend(evt.ChannelID, common.EscapeEveryoneMention(msg))
 }
 
 func ModifyRep(client *redis.Client, amount int, sender, target *discordgo.User, guildID string) (int, error) {

@@ -1,7 +1,6 @@
 package web
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/miolini/datacounter"
@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -31,9 +32,17 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
+		ctx := r.Context()
+
+		if r.FormValue("partial") != "" {
+			var tmplData TemplateData
+			ctx, tmplData = GetCreateTemplateData(ctx)
+			tmplData["PartialRequest"] = true
+		}
+
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
-		inner.ServeHTTP(w, r)
+		inner.ServeHTTP(w, r.WithContext(ctx))
 	}
 
 	return http.HandlerFunc(mw)
@@ -42,7 +51,6 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 // Will put a redis client in the context if available
 func RedisMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		//log.Println("redis middleware")
 		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
 			inner.ServeHTTP(w, r)
 			return
@@ -76,6 +84,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"ClientID":   common.Conf.ClientID,
 			"Host":       common.Conf.Host,
 			"Version":    common.VERSION,
+			"Testing":    common.Testing,
 			"BotRunning": botrest.BotIsRunning(),
 			"RequestURI": r.RequestURI,
 		}
@@ -101,11 +110,13 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		cookie, err := r.Cookie("yagpdb-session2")
 		if err != nil {
 			// Cookie not present, skip retrieving session
+			log.Println("cookie not present")
 			return
 		}
 
 		token, err := AuthTokenFromB64(cookie.Value)
 		if err != nil {
+			log.Println("invalid session", err)
 			// No valid session
 			// TODO: Should i check for json error?
 			return
@@ -128,6 +139,13 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		session := DiscordSessionFromContext(r.Context())
 		if session == nil {
+			log.Println("No session in request?")
+			if r.FormValue("partial") != "" {
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte("Not logged in"))
+				return
+			}
+
 			values := url.Values{
 				"error": []string{"No session"},
 			}
@@ -326,6 +344,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
+		sort.Sort(dutil.Channels(channels))
 		guild.Channels = channels
 
 		newCtx := context.WithValue(ctx, common.ContextKeyGuildChannels, channels)
@@ -353,6 +372,8 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 			return
 		}
 
+		sort.Sort(dutil.Roles(fullGuild.Roles))
+
 		guild.Region = fullGuild.Region
 		guild.OwnerID = fullGuild.OwnerID
 		guild.Roles = fullGuild.Roles
@@ -368,7 +389,6 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 		if err != nil {
 			log.WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
 			member, err = common.BotSession.GuildMember(pat.Param(r, "server"), common.Conf.BotID)
-			log.Println(common.Conf.BotID)
 			if err != nil {
 				log.WithError(err).Error("Failed retrieving bot member")
 				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
@@ -414,7 +434,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			}
 
 			combinedPerms |= role.Permissions
-			if highest == nil || role.Position > highest.Position {
+			if highest == nil || dutil.IsRoleAbove(role, highest) {
 				highest = role
 			}
 		}
@@ -431,6 +451,8 @@ type CustomHandlerFunc func(w http.ResponseWriter, r *http.Request) interface{}
 // A helper wrapper that renders a template
 func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
 		var out interface{}
 		if inner != nil {
 			out = inner(w, r)
@@ -441,18 +463,11 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 				out = d
 			}
 		}
-		var buf bytes.Buffer
-		err := Templates.ExecuteTemplate(&buf, tmpl, out)
+		err := Templates.ExecuteTemplate(w, tmpl, out)
 		if err != nil {
 			log.WithError(err).Error("Failed executing template")
 			return
 		}
-
-		LogIgnoreErr(minifier.Minify("text/html", w, &buf))
-
-		// writer := minifier.Writer("text/html", w)
-		// defer writer.Close()
-		// LogIgnoreErr(Templates.ExecuteTemplate(writer, tmpl, out))
 	}
 	return http.HandlerFunc(mw)
 }
@@ -629,7 +644,7 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 
 // Uses the FormParserMW to parse and validate the form, then saves it
 func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
-	return FormParserMW(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		_, g, templateData := GetBaseCPContextData(ctx)
 
@@ -639,9 +654,11 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 			}()
 		}
 
-		ok := ctx.Value(common.ContextKeyFormOk).(bool)
-		if !ok {
-			return
+		if formData != nil {
+			ok := ctx.Value(common.ContextKeyFormOk).(bool)
+			if !ok {
+				return
+			}
 		}
 
 		data, err := mainHandler(w, r)
@@ -651,13 +668,19 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 		checkControllerError(g, data, err)
 
 		if err == nil {
-			data.AddAlerts(SucessAlert("Sucessfully saved! :')"))
+			data.AddAlerts(SucessAlert("Success!"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 			if ok {
 				go common.AddCPLogEntry(user, g.ID, logMsg)
 			}
 		}
-	}), formData)
+	})
+
+	if formData != nil {
+		return FormParserMW(handler, formData)
+	}
+
+	return handler
 }
 
 func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) {
@@ -668,7 +691,7 @@ func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) 
 	if cast, ok := err.(*PublicError); ok {
 		data.AddAlerts(ErrorAlert(cast.Error()))
 	} else {
-		data.AddAlerts(ErrorAlert("An error occured... Contact support."))
+		data.AddAlerts(ErrorAlert("An error occured... Contact support if you're having issues."))
 	}
 
 	entry := log.WithError(err)

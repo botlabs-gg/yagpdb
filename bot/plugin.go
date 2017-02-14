@@ -47,16 +47,6 @@ func RegisterPlugin(plugin Plugin) {
 		Plugins = append(Plugins, plugin)
 	}
 
-	if _, ok := plugin.(BotStarterHandler); ok {
-		logrus.Info(plugin.Name(), " is a BotStarter")
-	}
-	if _, ok := plugin.(BotStopperHandler); ok {
-		logrus.Info(plugin.Name(), " is a BotStopper")
-	}
-	if _, ok := plugin.(RemoveGuildHandler); ok {
-		logrus.Info(plugin.Name(), " is a RemoveGuildHandler")
-	}
-
 	common.AddPlugin(plugin)
 }
 

@@ -100,8 +100,13 @@ function newCommand(){
 
     var roleSelect = $("<select>").attr("name", "Commands."+id+".Role").addClass("form-control");
 
-    for (var i = roleIds.length - 1; i >= 0; i--) {
-        $("<option>").attr("value", roleIds[i]).text(roleNames[i]).appendTo(roleSelect);
+    if (roleIds.length < 1) {
+        $("<option disabled>").attr("value", "").text("The bot does not have enough permissions to assign any roles (bot is below all other roles, if it's not then contact support)").appendTo(roleSelect);
+        
+    }else{
+        for (var i = roleIds.length - 1; i >= 0; i--) {
+            $("<option>").attr("value", roleIds[i]).text(roleNames[i]).appendTo(roleSelect);
+        }
     }
 
     roleSelect.appendTo($('<div class="form-group">').appendTo($("<td>").appendTo(row)))
@@ -117,14 +122,15 @@ function remove(index){
     $("#role-cmd-"+index).remove();
 }
 
-var roleIds = [
-{{$highest := .HighestRole.Position}}
+{{$highest := .HighestRole}}
 {{$guildID := .ActiveGuild.ID}}
-{{range .ActiveGuild.Roles}}{{if and (gt $highest .Position) (ne .ID $guildID)}}
+
+var roleIds = [
+{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID)}}
 "{{.ID}}",{{end}}{{end}}
 ]
 var roleNames = [
-{{range .ActiveGuild.Roles}}{{if and (gt $highest .Position) (ne .ID $guildID)}}
+{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID)}}
 "{{.Name}}",
 {{end}}{{end}}
 ]

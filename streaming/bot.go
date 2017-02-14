@@ -18,6 +18,8 @@ func (p *Plugin) InitBot() {
 
 }
 
+var _ bot.BotStarterHandler = (*Plugin)(nil)
+
 func (p *Plugin) StartBot() {
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
@@ -262,7 +264,7 @@ func SendStreamingAnnouncement(config *Config, guild *discordgo.Guild, member *d
 		return
 	}
 
-	common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
+	common.BotSession.ChannelMessageSend(config.AnnounceChannel, common.EscapeEveryoneMention(out))
 }
 
 func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) {

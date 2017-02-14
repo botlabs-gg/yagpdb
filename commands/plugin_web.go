@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
@@ -14,10 +15,17 @@ import (
 func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/commands.html"))
 
-	web.CPMux.Handle(pat.Get("/commands/settings"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
-	web.CPMux.Handle(pat.Get("/commands/settings/"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandleCommands, "cp_commands")))
-	web.CPMux.Handle(pat.Post("/commands/settings/general"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostGeneral, "cp_commands")))
-	web.CPMux.Handle(pat.Post("/commands/settings/channels"), web.RequireGuildChannelsMiddleware(web.RenderHandler(HandlePostChannels, "cp_commands")))
+	subMux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/commands/settings"), subMux)
+	web.CPMux.Handle(pat.New("/commands/settings/*"), subMux)
+
+	subMux.Use(web.RequireGuildChannelsMiddleware)
+	subMux.Use(web.RequireFullGuildMW)
+
+	subMux.Handle(pat.Get(""), web.RenderHandler(HandleCommands, "cp_commands"))
+	subMux.Handle(pat.Get("/"), web.RenderHandler(HandleCommands, "cp_commands"))
+	subMux.Handle(pat.Post("/general"), web.RenderHandler(HandlePostGeneral, "cp_commands"))
+	subMux.Handle(pat.Post("/channels"), web.RenderHandler(HandlePostChannels, "cp_commands"))
 }
 
 // Servers the command page with current config
@@ -56,7 +64,7 @@ func HandlePostGeneral(w http.ResponseWriter, r *http.Request) interface{} {
 func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
+	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings"
 
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 
@@ -82,6 +90,7 @@ func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
 		for _, overrideCmd := range override.Settings {
 			overrideCmd.CommandEnabled = r.FormValue(channel.ID+"_enabled_"+overrideCmd.Cmd) == "on"
 			overrideCmd.AutoDelete = r.FormValue(channel.ID+"_autodelete_"+overrideCmd.Cmd) == "on"
+			overrideCmd.RequiredRole = r.FormValue(channel.ID + "_required_role_" + overrideCmd.Cmd)
 		}
 
 		override.OverrideEnabled = r.FormValue(channel.ID+"_override_enabled") == "on"
@@ -93,6 +102,7 @@ func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
 		if cmd.Info.Key == "" {
 			cmd.CommandEnabled = r.FormValue("global_enabled_"+cmd.Cmd) == "on"
 		}
+		cmd.RequiredRole = r.FormValue("global_required_role_" + cmd.Cmd)
 		cmd.AutoDelete = r.FormValue("global_autodelete_"+cmd.Cmd) == "on"
 	}
 

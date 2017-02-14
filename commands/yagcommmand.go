@@ -90,16 +90,43 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		logEntry.GuildID = guild.ID()
 
 		var enabled bool
+		var role string
 		// Check wether it's enabled or not
-		enabled, autodel, err = cs.Enabled(client, cState.ID(), guild)
+		enabled, role, autodel, err = cs.Enabled(client, cState.ID(), guild)
 		if err != nil {
-			trigger.Session.ChannelMessageSend(cState.ID(), "Bot is having issues... contact the bot author D:")
+			common.BotSession.ChannelMessageSend(cState.ID(), "Bot is having issues... contact the bot author D:")
 			return nil, err
 		}
 
 		if !enabled {
 			go common.SendTempMessage(trigger.Session, time.Second*10, trigger.Message.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host))
 			return nil, nil
+		}
+
+		if role != "" {
+			member, err := bot.GetMember(guild.ID(), trigger.Message.Author.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			found := false
+			for _, v := range member.Roles {
+				if v == role {
+					found = true
+				}
+			}
+
+			if !found {
+				guild.RLock()
+				required := guild.Role(false, role)
+				name := "Unknown?? (deleted maybe?)"
+				if required != nil {
+					name = required.Name
+				}
+				guild.RUnlock()
+				_, err := common.BotSession.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf(common.EscapeEveryoneMention("The **%s** role is required to use this command."), name))
+				return nil, err
+			}
 		}
 	}
 
@@ -111,7 +138,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 	}
 
 	if cdLeft > 0 {
-		trigger.Session.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", trigger.Message.Author.Username, cdLeft, cs.Name))
+		trigger.Session.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeEveryoneMention(trigger.Message.Author.Username), cdLeft, cs.Name))
 		return nil, nil
 	}
 
@@ -199,20 +226,20 @@ func (cs *CustomCommand) customEnabled(client *redis.Client, guildID string) (bo
 }
 
 // Enabled returns wether the command is enabled or not
-func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *dstate.GuildState) (enabled bool, autodel bool, err error) {
+func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *dstate.GuildState) (enabled bool, requiredRole string, autodel bool, err error) {
 	gState.RLock()
 	defer gState.RUnlock()
 
 	if cs.HideFromCommandsPage {
-		return true, false, nil
+		return true, "", false, nil
 	}
 
 	ce, err := cs.customEnabled(client, gState.ID())
 	if err != nil {
-		return false, false, err
+		return
 	}
 	if !ce {
-		return false, false, nil
+		return false, "", false, nil
 	}
 
 	channels := make([]*discordgo.Channel, len(gState.Channels))
@@ -231,7 +258,7 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *d
 				// Find settings for this command
 				for _, cmd := range override.Settings {
 					if cmd.Cmd == cs.Name {
-						return cmd.CommandEnabled, cmd.AutoDelete, nil
+						return cmd.CommandEnabled, cmd.RequiredRole, cmd.AutoDelete, nil
 					}
 				}
 
@@ -244,16 +271,16 @@ func (cs *CustomCommand) Enabled(client *redis.Client, channel string, gState *d
 	for _, cmd := range config.Global {
 		if cmd.Cmd == cs.Name {
 			if cs.Key != "" || cs.CustomEnabled {
-				return true, cmd.AutoDelete, nil
+				return true, cmd.RequiredRole, cmd.AutoDelete, nil
 			}
 
-			return cmd.CommandEnabled, cmd.AutoDelete, nil
+			return cmd.CommandEnabled, cmd.RequiredRole, cmd.AutoDelete, nil
 		}
 	}
 
 	log.WithField("command", cs.Name).WithField("guild", gState.ID()).Error("Command not in global commands")
 
-	return false, false, nil
+	return false, "", false, nil
 }
 
 // CooldownLeft returns the number of seconds before a command can be used again

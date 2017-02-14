@@ -1,11 +1,108 @@
-	$(function(){
-	var forms = $("form");
+$(function(){
+	if (visibleURL) {
+		console.log("Should navigate to", visibleURL);
+		window.history.pushState("", "", visibleURL);
+	}
+
+	addListeners(false);
+})
+
+var currentlyLoading = false;
+function navigate(url, method, data){
+	    if (currentlyLoading) {return;}
+	    currentlyLoading = true;
+	    var evt = new CustomEvent('customnavigate', { url: url });
+		window.dispatchEvent(evt);
+
+		if (url[0] !== "/") {
+			url = window.location.pathname + url;
+		}
+
+		console.log("Navigating to "+url);
+		var shownURL = url;
+		// Add the partial param
+		var index = url.indexOf("?")
+		if (index !== -1) {
+			url += "&partial=1"	
+		}else{
+			url += "?partial=1"	
+		}
+
+		var req = new XMLHttpRequest();
+        req.addEventListener("load", function(){
+        	currentlyLoading = false;
+			if (this.status != 200) {
+            	window.location.href = '/';
+            	return;
+			}
+
+			$("#main-content").html(this.responseText);
+			window.history.pushState("", "", shownURL);
+			updateSelectedMenuItem();
+			addListeners(true);
+			if (typeof ga !== 'undefined') {
+				ga('send', 'pageview', window.location.pathname);
+				console.log("Sent pageview")
+			}
+        });
+
+        req.addEventListener("error", function(){
+            window.location.href = '/';
+            currentlyLoading = false;
+        });
+
+        req.open(method, url);
+        
+        if (data) {
+            req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+            req.send(data);
+        }else{
+            req.send();
+        }
+	}
+
+
+function addAlert(kind, msg){
+	$("<div/>").addClass("row").append(
+		$("<div/>").addClass("col-lg-12").append(
+			$("<div/>").addClass("alert alert-"+kind).text(msg)
+		)
+	).appendTo("#alerts");
+}
+
+function clearAlerts(){
+	$("#alerts").empty();
+}
+function addListeners(partial){
+	var selectorPrefix = "";
+	if (partial) {
+		selectorPrefix = "#main-content ";
+	}
+
+	////////////////////////////////////////
+	// Async partial page loading handling
+	///////////////////////////////////////
+	$( selectorPrefix + ".nav-link" ).click(function( event ) {
+		console.log("Clicked the link");
+		event.preventDefault();
+		
+	    if (currentlyLoading) {return;}
+			
+		var link = $(this);
+		
+		var url = link.attr("href");
+		navigate(url, "GET", null);
+
+		$("#main-content").html('<div class="loader">Loading...</div>');
+	});
+
+	var forms = $(selectorPrefix + "form");
 	
 	forms.each(function(i, elem){
 		elem.onsubmit = submitform;
 	})
 
-	$(".btn-danger").click(function(evt){
+	$(selectorPrefix + ".btn-danger").click(function(evt){
 		var target = $(evt.target);
 		if(target.attr("noconfirm") !== undefined){
 			return;
@@ -24,8 +121,8 @@
 		// alert("aaa")
 	})
 
-	$('[data-toggle="popover"]').popover()
-	$('[data-toggle="popover"]').click(function(evt){
+	$(selectorPrefix + '[data-toggle="popover"]').popover()
+	$(selectorPrefix + '[data-toggle="popover"]').click(function(evt){
 		$('[data-toggle="popover"]').each(function(i, elem){
 			// console.log(elem, elem == evt.target);
 			if (evt.currentTarget == elem) {
@@ -34,8 +131,6 @@
 			$(elem).popover('hide');
 		})
 	})
-
-	console.log("aa");
 
 	function submitform(evt){
 
@@ -76,21 +171,4 @@
 		return Math.floor(Math.random() * (max - min)) + min;
 	}
 
-	if (visibleURL) {
-		console.log("Should navigate to", visibleURL);
-		window.history.pushState("", "", visibleURL);
-	}
-})
-
-
-function addAlert(kind, msg){
-	$("<div/>").addClass("row").append(
-		$("<div/>").addClass("col-lg-12").append(
-			$("<div/>").addClass("alert alert-"+kind).text(msg)
-		)
-	).appendTo("#alerts");
-}
-
-function clearAlerts(){
-	$("#alerts").empty();
 }

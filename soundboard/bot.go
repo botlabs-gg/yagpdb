@@ -64,7 +64,7 @@ func (p *Plugin) InitBot() {
 					return "You're not in a voice channel stopid.", nil
 				}
 
-				if RequestPlaySound(data.Guild.ID(), voiceChannel, sound.ID) {
+				if RequestPlaySound(data.Guild.ID(), voiceChannel, data.Message.ChannelID, sound.ID) {
 					return "Sure why not", nil
 				}
 

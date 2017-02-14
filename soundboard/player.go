@@ -12,9 +12,10 @@ import (
 )
 
 type PlayRequest struct {
-	ChannelID string
-	GuildID   string
-	Sound     uint
+	ChannelID      string
+	GuildID        string
+	CommandRanFrom string
+	Sound          uint
 }
 
 var (
@@ -23,11 +24,13 @@ var (
 	Silence         = []byte{0xF8, 0xFF, 0xFE}
 )
 
-func RequestPlaySound(guildID string, channelID string, soundID uint) (queued bool) {
+// RequestPlaySound either queues up a sound to be played in an existing player or creates a new one
+func RequestPlaySound(guildID string, channelID, channelRanFrom string, soundID uint) (queued bool) {
 	item := &PlayRequest{
-		ChannelID: channelID,
-		GuildID:   guildID,
-		Sound:     soundID,
+		ChannelID:      channelID,
+		GuildID:        guildID,
+		Sound:          soundID,
+		CommandRanFrom: channelRanFrom,
 	}
 
 	// If there is a queue setup there is alaso a player running, so just add it to the queue then
@@ -70,6 +73,9 @@ func runPlayer(guildID string) {
 		vc, err = playSound(vc, common.BotSession, item)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", guildID).Error("Failed playing sound")
+			if item.CommandRanFrom != "" {
+				common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Failed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
+			}
 		}
 		lastChannel = item.ChannelID
 	}

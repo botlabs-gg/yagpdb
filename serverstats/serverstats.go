@@ -27,6 +27,8 @@ func RegisterPlugin() {
 	configstore.RegisterConfig(configstore.SQL, &ServerStatsConfig{})
 }
 
+var _ bot.BotStarterHandler = (*Plugin)(nil)
+
 func (p *Plugin) StartBot() {
 	go UpdateStatsLoop()
 }

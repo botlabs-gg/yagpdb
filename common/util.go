@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -69,7 +70,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 
 // SendTempMessage sends a message that gets deleted after duration
 func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, msg string) {
-	m, err := BotSession.ChannelMessageSend(cID, msg)
+	m, err := BotSession.ChannelMessageSend(cID, EscapeEveryoneMention(msg))
 	if err != nil {
 		return
 	}
@@ -242,7 +243,7 @@ func SendEmbedWithFallback(s *discordgo.Session, channelID string, embed *discor
 		return s.ChannelMessageSendEmbed(channelID, embed)
 	}
 
-	return s.ChannelMessageSend(channelID, FallbackEmbed(embed))
+	return s.ChannelMessageSend(channelID, EscapeEveryoneMention(FallbackEmbed(embed)))
 }
 
 func FallbackEmbed(embed *discordgo.MessageEmbed) string {
@@ -364,7 +365,7 @@ func (w *WrappedError) Error() string {
 	return w.Message + ": " + w.Inner.Error()
 }
 
-func ErrWithCaller(inner error) error {
+func ErrWithCaller(err error) error {
 	pc, _, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("No caller")
@@ -372,7 +373,23 @@ func ErrWithCaller(inner error) error {
 
 	f := runtime.FuncForPC(pc)
 	return &WrappedError{
-		Inner:   inner,
+		Inner:   err,
 		Message: filepath.Base(f.Name()),
 	}
+}
+
+func InnerError(err error) error {
+	if cast, ok := err.(*WrappedError); ok {
+		return cast.Inner
+	}
+
+	return err
+}
+
+// EscapeEveryoneMention Escapes an everyone mention, adding a zero width space between the '@' and rest
+func EscapeEveryoneMention(in string) string {
+	const zeroSpace = "​" // <- Zero width space
+	s := strings.Replace(in, "@everyone", "@"+zeroSpace+"everyone", -1)
+	s = strings.Replace(s, "@here", "@"+zeroSpace+"here", -1)
+	return s
 }

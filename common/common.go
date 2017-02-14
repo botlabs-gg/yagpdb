@@ -11,8 +11,9 @@ import (
 
 const (
 	VERSIONNUMBER = "0.19"
-	VERSION       = VERSIONNUMBER + " H-something..."
+	VERSION       = VERSIONNUMBER + " Dev"
 
+	// Testing = false // Disables stuff like command cooldowns
 	Testing = true // Disables stuff like command cooldowns
 )
 

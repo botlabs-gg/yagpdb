@@ -81,6 +81,7 @@ var NonStandardEvents = []Event{
 	Event{"All", false},
 	Event{"AllPre", false},
 	Event{"AllPost", false},
+	Event{"MemberFetched", false},
 }
 
 var (
@@ -110,16 +111,19 @@ func main() {
 	}
 
 	names := []string{}
-	for object := range parsedFile.Scope.Objects {
-		names = append(names, object)
+	for name, _ := range parsedFile.Scope.Objects {
+		names = append(names, name)
 	}
 	sort.Strings(names)
 
 	// Create the combined event slice
-	events := make([]Event, len(names)+len(NonStandardEvents))
+	events := make([]Event, len(names)+len(NonStandardEvents)-1)
 	copy(events, NonStandardEvents)
 	i := len(NonStandardEvents)
 	for _, name := range names {
+		if name == "Event" {
+			continue
+		}
 		evt := Event{
 			Name:    name,
 			Discord: true,

@@ -52,7 +52,7 @@ func sendMergedBatch(channelID string, messages []string) {
 	// Strip newline
 	out = out[:len(out)-1]
 
-	_, err := dutil.SplitSendMessage(common.BotSession, channelID, out)
+	_, err := dutil.SplitSendMessage(common.BotSession, channelID, common.EscapeEveryoneMention(out))
 	if err != nil {
 		log.WithError(err).Error("Error sending messages")
 	}

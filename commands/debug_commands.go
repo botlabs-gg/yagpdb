@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"log"
 	"sort"
 	"time"
 )
@@ -98,15 +97,13 @@ var debugCommands = []commandsystem.CommandHandler{
 				hours := data.Args[0].Int()
 				within := time.Now().Add(time.Duration(-hours) * time.Hour)
 
-				log.Println(within.String())
-
 				var results []*TopCommandsResult
 				err := common.SQL.Table(LoggedExecutedCommand{}.TableName()).Select("command, COUNT(id)").Where("created_at > ?", within).Group("command").Order("count(id) desc").Scan(&results).Error
 				if err != nil {
 					return "Uh oh something bad happened", err
 				}
 
-				out := "```\n#    Total -  Command\n"
+				out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours)
 				total := 0
 				for k, result := range results {
 					out += fmt.Sprintf("#%02d: %5d - %s\n", k+1, result.Count, result.Command)

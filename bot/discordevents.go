@@ -47,7 +47,7 @@ func HandleGuildDelete(ctx context.Context, evt interface{}) {
 	go EmitGuildRemoved(client, g.ID)
 }
 
-// Makes the member is always in state when coming online
+// Makes sure the member is always in state when coming online
 func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 	p := evt.(*discordgo.PresenceUpdate)
 	if p.Status == discordgo.StatusOffline {
@@ -73,7 +73,9 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 	}
 
 	if err == nil {
+		member.GuildID = p.GuildID
 		gs.MemberAddUpdate(true, member)
+		go EmitEvent(context.Background(), EventMemberFetched, member)
 	}
 }
 

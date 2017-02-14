@@ -31,6 +31,17 @@ $(function() {
         $(this).tab('show')
     })
 
+    updateSelectedMenuItem();
+});
+
+function updateSelectedMenuItem(){
+    $("ul.nav a").each(function(i, v){
+        var elem = $(v).removeClass("active").parent().parent().removeClass("in").parent();
+        if(elem.is("li")){
+            elem.removeClass("active");
+        }
+    });
+
     var url = window.location;
     var element = $('ul.nav a').filter(function() {
         return this.href == url || url.href.indexOf(this.href) == 0;
@@ -38,4 +49,6 @@ $(function() {
     if (element.is('li')) {
         element.addClass('active');
     }
-});
+
+
+}

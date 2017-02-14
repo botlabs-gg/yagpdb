@@ -31,6 +31,7 @@ type ChannelCommandSetting struct {
 	Cmd            string         `json:"cmd"`
 	CommandEnabled bool           `json:"enabled"`
 	AutoDelete     bool           `json:"autodelete"`
+	RequiredRole   string         `json:"required_role"`
 }
 
 type ChannelOverride struct {

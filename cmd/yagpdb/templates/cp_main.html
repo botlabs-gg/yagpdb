@@ -1,4 +1,4 @@
-{{define "cp_head"}}
+{{define "cp_head"}}{{if not .PartialRequest}}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -60,9 +60,12 @@
 <body>
     <div id="wrapper">
     {{template "cp_nav" .}}
-{{end}}
+        <div id="main-content">
 
-{{define "cp_footer"}}
+{{end}}{{end}}
+
+{{define "cp_footer"}}{{if not .PartialRequest}}
+    </div>
     </div>
     </div>
     <script>
@@ -93,19 +96,11 @@
 
     <script type="text/javascript" src="/static/dist/js/dropdowns-enhanced.js"></script>
 
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-        ga('create', 'UA-63610773-2', 'auto');
-        ga('send', 'pageview');
-    </script>
+    {{template "googleAnalytics" .}}
 </body>
 
 </html>
-{{end}}
+{{end}}{{end}}
 
 {{/*Displays alerts*/}}
 {{define "cp_alerts"}}
@@ -156,8 +151,9 @@ Highest - the highest role the bot currently has, roles below this will be set t
 */}}
 {{define "role_options"}}
     {{$selected := or .Selected ""}}
-    {{$highest := or .Highest.Position 1000}}
-    {{range .Roles}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if le $highest .Position}} disabled> {{.Name}} (Role is above bot) {{else}}>{{.Name}}</option>{{end}}{{end}}
+    {{$highest := or .Highest}}
+    {{$n := len .Roles}}
+    {{range $i, $v := .Roles}}{{if ne (plus1 $i) $n}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if $highest}}{{if roleAbove $highest .}} >{{.Name}}{{else}} disabled> {{.Name}} (Role is above bot) {{end}}{{else}}>{{.Name}}{{end}}</option>{{end}}{{end}}
 {{end}}
 
 {{/*Help block for templating*/}}
