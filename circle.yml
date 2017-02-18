@@ -1,6 +1,8 @@
 general:
   build_dir: cmd/yagpdb
 dependencies:
-  post:
+  override:
+    - go get -t -d -v ./...
     - cd ${GOPATH}/src/github.com/jonas747/dutil && git checkout dgofork && cd -
     - cd ${GOPATH}/src/github.com/jonas747/discordgo && git checkout yagpdb && cd -
+    - go build -v
