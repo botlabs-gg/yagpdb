@@ -1,10 +1,12 @@
-# YAGPDB - Yet another general purpose discord bot
+YAGPDB  [![Circle CI](https://circleci.com/gh/jonas747/yagpdb.svg?style=svg)](https://circleci.com/gh/jonas747/yagpdb) 
+================
+    
 
 YAGPDB is a pineapple
 
 ### Project status
 
-YAGPDB is very much work in progress so i'm not actively advertising it. Although i do have it perform a lot of duties on a somewhat large server, but it's still in alpha so beware of bugs. If you do decide to use it and want to come in contact with me, look below for my discord server.
+YAGPDB is very much work in progress so I'm not actively advertising it. Although i do have it perform a lot of duties on a somewhat large server, but it's still in alpha so beware of bugs. If you do decide to use it and want to come in contact with me, look below for my discord server.
 
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
@@ -33,23 +35,24 @@ TODO information
 
 [See the trello for future plans](https://trello.com/b/kH5U2aSL/yagpdb)
 
-The naming styles of template information used to be in underscore but im in the process of changing it to the same as go's (CamelCase).  
-
 ### Core packages:
 
 - web: The core webserver package, in charge of authentication
 - bot: Core bot package, delegates events to plugins
 - common: Handles all the common stuff between web and bot, (config, discord session, redis pool etc)
+- feeds: Handles all feeds, personally i like to run each feed as it's own service, that way i can start and stop individual feed without taking everything down.
+- commands: Handles all commands, currently in the process of making a new command system based on interfaces instead.
 
 Currently YAGPDB builds everything into one executable and you run say the bot with the -bot switch, the webserver with the -web switch and so on (see -h for help)
 
 ### Databases
 
-yagpdb uses redis for light data and caching, by light data i mean configuration and whatnot.
+yagpdb uses redis for light data and caching.
 
-In the future yagpdb will use a relational database for heavier data such as logs
+I'm currently in the process of moving configuration over to postgres, about 1/3 of the configuration settings lives on postgres atm.
 
 ### Creating a new plugin
 
-See bot/plugin for info about bot plugins and web/plugin for web plugins. Expect the webserver instance to be seperated from the bot instance for reliability measures (ddos only being able to take out the webserver with bot still alive), 
-Stuff that requires their own goroutine running to for example check for stuff at intervals should be run in the bot process, launched from Plugin.StartBot() called by the bot when the bot is starting (BotInit is always called on both the webserver and the bot)
+See bot/plugin for info about bot plugins, web/plugin for web plugins and feeds/plugin for feeds.
+
+Expect web, bot and feed instances to be run separately and also expect there to be multiple web and bot instances. for reliability and scalability measures (splitting load across multiple machines in the future and such)
