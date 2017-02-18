@@ -5,7 +5,7 @@
     <div class="col-lg-12">
         <div class="page-header">
             <h1>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
-            {{if (not .PublicEnabled | and .Public) }}
+            {{if (not .Config.Public | and .Public) }}
             <h1>Public access has been disabled by the server admins.</h1>
             {{end}}
             {{if not .Public}}
