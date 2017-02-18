@@ -1,5 +1,5 @@
 general:
-	build_dir: cmd/yagpdb
+  build_dir: cmd/yagpdb
 dependencies:
-	- cd ${GOPATH}/src/github.com/jonas747/dutil && git checkout dgofork && cd -
-	- cd ${GOPATH}/src/github.com/jonas747/discordgo && git checkout yagpdb && cd -
+  - cd ${GOPATH}/src/github.com/jonas747/dutil && git checkout dgofork && cd -
+  - cd ${GOPATH}/src/github.com/jonas747/discordgo && git checkout yagpdb && cd -
