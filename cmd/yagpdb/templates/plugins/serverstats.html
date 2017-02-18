@@ -12,7 +12,7 @@
             <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse" aria-expanded="false" aria-controls="stats-settings-collapse">
             Stats Settings
             </button>
-            <a class="btn btn-primary" href="/public/{{.ActiveGuild.ID}}/stats">Public link (only works if stats are set to public)</a>
+            <a class="btn btn-primary" {{if .Config.Public}} href="/public/{{.ActiveGuild.ID}}/stats" {{else}} disabled {{end}}>Public link (only works if stats are set to public)</a>
             <div class="collapse" id="stats-settings-collapse">
                 <div class="well well-sm">
                     <form method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
