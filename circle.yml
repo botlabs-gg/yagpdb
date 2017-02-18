@@ -1,5 +1,10 @@
+machine:
+  environment:
+    GOPATH: "/home/ubuntu/.go_workspace"
+
 general:
   build_dir: cmd/yagpdb
+
 dependencies:
   override:
     - go get -t -d -v ./...
