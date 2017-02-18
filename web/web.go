@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -88,7 +89,12 @@ func IsAcceptingRequests() bool {
 func runServers(mainMuxer *goji.Mux) {
 	// launch the redir server
 	go func() {
-		err := http.ListenAndServe(ListenAddressHTTP, http.HandlerFunc(httpsRedirHandler))
+		unsafeHandler := &http.Server{
+			Addr:        ListenAddressHTTP,
+			Handler:     http.HandlerFunc(httpsRedirHandler),
+			IdleTimeout: time.Minute,
+		}
+		err := unsafeHandler.ListenAndServe()
 		if err != nil {
 			log.Error("Failed http ListenAndServe:", err)
 		}
@@ -104,8 +110,9 @@ func runServers(mainMuxer *goji.Mux) {
 	}
 
 	tlsServer := &http.Server{
-		Addr:    ListenAddressHTTPS,
-		Handler: mainMuxer,
+		Addr:        ListenAddressHTTPS,
+		Handler:     mainMuxer,
+		IdleTimeout: time.Minute,
 		TLSConfig: &tls.Config{
 			GetCertificate: certManager.GetCertificate,
 		},
