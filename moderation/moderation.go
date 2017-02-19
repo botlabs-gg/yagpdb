@@ -210,7 +210,7 @@ var (
 )
 
 func updateEmbedReason(author *discordgo.User, reason string, embed *discordgo.MessageEmbed) {
-	const checkStr = ":notepad_spiral:**Reason:**"
+	const checkStr = "📄**Reason:**"
 	index := strings.Index(embed.Description, checkStr)
 	withoutReason := embed.Description[:index+len(checkStr)]
 
