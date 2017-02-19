@@ -10,14 +10,18 @@ import (
 )
 
 const (
-	VERSIONNUMBER = "0.19"
-	VERSION       = VERSIONNUMBER + " Hygienic"
+	VERSIONMAJOR = 0
+	VERSIONMINOR = 20
+	VERSIONPATCH = 0
 
-	Testing = false // Disables stuff like command cooldowns
-	// Testing = true // Disables stuff like command cooldowns
+	// Testing = false // Disables stuff like command cooldowns
+	Testing = true // Disables stuff like command cooldowns
 )
 
 var (
+	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
+	VERSION       = VERSIONNUMBER + " testing"
+
 	SQL       *gorm.DB
 	RedisPool *pool.Pool
 
