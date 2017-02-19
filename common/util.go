@@ -393,3 +393,31 @@ func EscapeEveryoneMention(in string) string {
 	s = strings.Replace(s, "@here", "@"+zeroSpace+"here", -1)
 	return s
 }
+
+func RetrySendMessage(channel string, msg interface{}, maxTries int) error {
+	var err error
+	for currentTries := 0; currentTries < maxTries; currentTries++ {
+
+		switch t := msg.(type) {
+		case *discordgo.MessageEmbed:
+			_, err = BotSession.ChannelMessageSendEmbed(channel, t)
+		case string:
+			_, err = BotSession.ChannelMessageSend(channel, t)
+		default:
+			panic("Unknown message passed to RetrySendMessage")
+		}
+
+		if err == nil {
+			return nil
+		}
+
+		if e, ok := err.(*discordgo.RESTError); ok && e.Message != nil {
+			// Discord returned an actual error for us
+			return err
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return err
+}

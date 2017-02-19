@@ -140,7 +140,7 @@ OUTER:
 
 	for _, channel := range channels {
 		go func(c string) {
-			_, err := common.BotSession.ChannelMessageSendEmbed(c, embed)
+			err := common.RetrySendMessage(c, embed, 10)
 			if err != nil {
 				logrus.WithError(err).Error("Error posting message")
 			}
@@ -179,9 +179,9 @@ func CreatePostEmbed(post *reddit.Link) *discordgo.MessageEmbed {
 			embed.Video = &discordgo.MessageEmbedVideo{
 				URL: post.URL,
 			}
-			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-				URL: post.Thumbnail,
-			}
+			// embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+			// 	URL: post.Thumbnail,
+			// }
 		} else {
 			embed.Image = &discordgo.MessageEmbedImage{
 				URL: post.URL,

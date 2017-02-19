@@ -193,7 +193,7 @@ func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.Playlist
 	if mentionEveryone {
 		content += " @everyone"
 	}
-	common.BotSession.ChannelMessageSend(discordChannel, content)
+	common.RetrySendMessage(discordChannel, content, 10)
 }
 
 var (
