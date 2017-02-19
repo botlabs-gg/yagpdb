@@ -101,6 +101,7 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionCookie.Value = "none"
+	sessionCookie.Path = "/"
 	http.SetCookie(w, sessionCookie)
 }
 
@@ -163,10 +164,11 @@ func CreateCookieSession(token *oauth2.Token, redisClient *redis.Client) (cookie
 
 	b64 := base64.URLEncoding.EncodeToString(dataRaw)
 
-	cookieExpirey := int(time.Hour * 24 * 7)
+	// Either the cookie expires in 7 days, or however long the validity of the token is if that is smaller than 7 days
+	cookieExpirey := time.Hour * 24 * 7
 	expiresFromNow := token.Expiry.Sub(time.Now())
 	if expiresFromNow < time.Hour*24*7 {
-		cookieExpirey = int(expiresFromNow)
+		cookieExpirey = expiresFromNow
 	}
 
 	cookie = &http.Cookie{
@@ -174,7 +176,7 @@ func CreateCookieSession(token *oauth2.Token, redisClient *redis.Client) (cookie
 		// Name:   "yagpdb-session",
 		Name:   "yagpdb-session2",
 		Value:  b64,
-		MaxAge: cookieExpirey,
+		MaxAge: int(cookieExpirey.Seconds()),
 		Path:   "/",
 	}
 
