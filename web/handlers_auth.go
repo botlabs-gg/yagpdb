@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+const (
+	SessionCookieName = "yagpdb-session"
+)
+
 var (
 	oauthConf *oauth2.Config
 )
@@ -95,7 +99,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 
-	sessionCookie, err := r.Cookie("yagpdb-session2")
+	sessionCookie, err := r.Cookie(SessionCookieName)
 	if err != nil {
 		return
 	}
@@ -174,7 +178,7 @@ func CreateCookieSession(token *oauth2.Token, redisClient *redis.Client) (cookie
 	cookie = &http.Cookie{
 		// The old cookie name can safely be used after the old format has been phased out (after a day in use)
 		// Name:   "yagpdb-session",
-		Name:   "yagpdb-session2",
+		Name:   SessionCookieName,
 		Value:  b64,
 		MaxAge: int(cookieExpirey.Seconds()),
 		Path:   "/",

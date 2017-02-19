@@ -107,7 +107,7 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		cookie, err := r.Cookie("yagpdb-session2")
+		cookie, err := r.Cookie(SessionCookieName)
 		if err != nil {
 			// Cookie not present, skip retrieving session
 			log.Println("cookie not present")
