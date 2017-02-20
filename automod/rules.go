@@ -257,7 +257,7 @@ func (w *WordsRule) GetCompiled() map[string]bool {
 	w.compiledWords = make(map[string]bool)
 	fields := strings.Fields(w.BannedWords)
 	for _, word := range fields {
-		w.compiledWords[word] = true
+		w.compiledWords[strings.ToLower(word)] = true
 	}
 
 	return w.compiledWords
@@ -315,7 +315,7 @@ func (w *SitesRule) GetCompiled() map[string]bool {
 	w.compiledWebsites = make(map[string]bool)
 	fields := strings.Fields(w.BannedWebsites)
 	for _, field := range fields {
-		w.compiledWebsites[field] = true
+		w.compiledWebsites[strings.ToLower(field)] = true
 	}
 
 	return w.compiledWebsites
