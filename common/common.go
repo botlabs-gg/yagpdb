@@ -14,13 +14,13 @@ const (
 	VERSIONMINOR = 19
 	VERSIONPATCH = 1
 
-	// Testing = false // Disables stuff like command cooldowns
-	Testing = true // Disables stuff like command cooldowns
+	Testing = false // Disables stuff like command cooldowns
+	// Testing = true // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " testing"
+	VERSION       = VERSIONNUMBER + " Hygienic"
 
 	SQL       *gorm.DB
 	RedisPool *pool.Pool
