@@ -1,19 +1,39 @@
-package bot
+package eventsystem
+
+//go:generate go run gen/events_gen.go -o events.go
 
 import (
 	"context"
 )
 
-type ContextKey int
+type Handler func(evtData *EventData)
 
-const (
-	ContextKeySession ContextKey = iota
-)
+type EventData struct {
+	*EventDataContainer
+	EvtInterface interface{}
+	Type         Event
+	ctx          context.Context
+}
+
+func (e *EventData) Context() context.Context {
+	if e.ctx == nil {
+		return context.Background()
+	}
+
+	return e.ctx
+}
+
+func (e *EventData) WithContext(ctx context.Context) *EventData {
+	cop := new(EventData)
+	*cop = *e
+	cop.ctx = ctx
+	return cop
+}
 
 // EmitEvent emits an event
-func EmitEvent(ctx context.Context, id Event, evt interface{}) {
-	for _, v := range handlers[id] {
-		(*v)(ctx, evt)
+func EmitEvent(data *EventData, evt Event) {
+	for _, v := range handlers[evt] {
+		(*v)(data)
 	}
 }
 
@@ -69,4 +89,16 @@ func AddHandlerBefore(handler Handler, evt Event, before Handler) {
 
 	// Not found, just add to end
 	handlers[evt] = append(handlers[evt], &handler)
+}
+
+func NumHandlers(evt Event) int {
+	if evt != EventAll {
+		return len(handlers[evt])
+	}
+
+	total := 0
+	for _, v := range handlers {
+		total += len(v)
+	}
+	return total
 }

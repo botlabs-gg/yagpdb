@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"regexp"
@@ -42,14 +43,13 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID string, cState *ds
 	return false
 }
 
-func HandleMessageCreate(ctx context.Context, e interface{}) {
-	evt := e.(*discordgo.MessageCreate)
-	client := bot.ContextRedis(ctx)
+func HandleMessageCreate(evt *eventsystem.EventData) {
+	client := bot.ContextRedis(evt.Context())
 
 	botUser := bot.State.User(true)
-	cs := bot.State.Channel(true, evt.ChannelID)
+	cs := bot.State.Channel(true, evt.MessageCreate.ChannelID)
 
-	if shouldIgnoreChannel(evt, botUser.ID, cs) {
+	if shouldIgnoreChannel(evt.MessageCreate, botUser.ID, cs) {
 		return
 	}
 
@@ -71,7 +71,7 @@ func HandleMessageCreate(ctx context.Context, e interface{}) {
 
 	var matched *CustomCommand
 	for _, cmd := range cmds {
-		if CheckMatch(prefix, cmd, evt.Content) {
+		if CheckMatch(prefix, cmd, evt.MessageCreate.Content) {
 			matched = cmd
 			break
 		}
@@ -89,7 +89,7 @@ func HandleMessageCreate(ctx context.Context, e interface{}) {
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	out, err := ExecuteCustomCommand(matched, client, bot.ContextSession(ctx), evt)
+	out, err := ExecuteCustomCommand(matched, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
 	if err != nil {
 		if out == "" {
 			out += err.Error()
@@ -99,7 +99,7 @@ func HandleMessageCreate(ctx context.Context, e interface{}) {
 	}
 
 	if out != "" {
-		_, err = common.BotSession.ChannelMessageSend(evt.ChannelID, common.EscapeEveryoneMention(out))
+		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, common.EscapeEveryoneMention(out))
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
 		}

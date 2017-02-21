@@ -5,6 +5,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/web"
 	"sort"
 )
@@ -20,7 +21,7 @@ func RegisterPlugin() {
 }
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(bot.RedisWrapper(HandleMessageCreate), bot.EventMessageCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
 }
 
 func (p *Plugin) Name() string {

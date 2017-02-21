@@ -1,20 +1,20 @@
 package automod
 
 import (
-	"context"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 )
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(bot.RedisWrapper(HandleMessageCreate), bot.EventMessageCreate)
-	bot.AddHandler(bot.RedisWrapper(HandleMessageUpdate), bot.EventMessageUpdate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageUpdate), eventsystem.EventMessageUpdate)
 }
 
 var _ bot.BotStarterHandler = (*Plugin)(nil)
@@ -41,12 +41,12 @@ func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
 	return conf, err
 }
 
-func HandleMessageCreate(ctx context.Context, evt interface{}) {
-	CheckMessage(evt.(*discordgo.MessageCreate).Message, bot.ContextRedis(ctx))
+func HandleMessageCreate(evt *eventsystem.EventData) {
+	CheckMessage(evt.MessageCreate.Message, bot.ContextRedis(evt.Context()))
 }
 
-func HandleMessageUpdate(ctx context.Context, evt interface{}) {
-	CheckMessage(evt.(*discordgo.MessageUpdate).Message, bot.ContextRedis(ctx))
+func HandleMessageUpdate(evt *eventsystem.EventData) {
+	CheckMessage(evt.MessageUpdate.Message, bot.ContextRedis(evt.Context()))
 }
 
 func CheckMessage(m *discordgo.Message, client *redis.Client) {

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
@@ -12,6 +11,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/justinian/dice"
 	"github.com/lunixbochs/vtclean"
@@ -50,8 +50,8 @@ func (p *Plugin) InitBot() {
 	CommandSystem.RegisterCommands(GlobalCommands...)
 	CommandSystem.RegisterCommands(debugCommands...)
 
-	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
-	bot.AddHandler(HandleMessageCreate, bot.EventMessageCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
@@ -634,9 +634,9 @@ type SearchAdviceResp struct {
 	Slips        []*AdviceSlip `json:"slips"`
 }
 
-func HandleGuildCreate(ctx context.Context, evt interface{}) {
-	client := bot.ContextRedis(ctx)
-	g := evt.(*discordgo.GuildCreate)
+func HandleGuildCreate(evt *eventsystem.EventData) {
+	client := bot.ContextRedis(evt.Context())
+	g := evt.GuildCreate
 	prefixExists, err := client.Cmd("EXISTS", "command_prefix:"+g.ID).Bool()
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")
@@ -649,9 +649,9 @@ func HandleGuildCreate(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleMessageCreate(ctx context.Context, evt interface{}) {
-	m := evt.(*discordgo.MessageCreate)
-	CommandSystem.HandleMessageCreate(bot.ContextSession(ctx), m)
+func HandleMessageCreate(evt *eventsystem.EventData) {
+	m := evt.MessageCreate
+	CommandSystem.HandleMessageCreate(bot.ContextSession(evt.Context()), m)
 
 	if bot.State.User(true).ID != m.Author.ID {
 		return

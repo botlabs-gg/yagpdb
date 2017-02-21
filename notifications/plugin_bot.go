@@ -1,24 +1,23 @@
 package notifications
 
 import (
-	"context"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 )
 
-func HandleGuildMemberAdd(ctx context.Context, e interface{}) {
-	evt := e.(*discordgo.GuildMemberAdd)
-	config := GetConfig(evt.GuildID)
+func HandleGuildMemberAdd(evt *eventsystem.EventData) {
+	config := GetConfig(evt.GuildMemberAdd.GuildID)
 	if !config.JoinServerEnabled && !config.JoinDMEnabled {
 		return
 	}
 
-	gs := bot.State.Guild(true, evt.GuildID)
-	templateData := createTemplateData(gs, evt.User)
+	gs := bot.State.Guild(true, evt.GuildMemberAdd.GuildID)
+	templateData := createTemplateData(gs, evt.GuildMemberAdd.User)
 
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled {
@@ -27,7 +26,7 @@ func HandleGuildMemberAdd(ctx context.Context, e interface{}) {
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing dm template")
 		} else {
-			err = bot.SendDM(evt.User.ID, msg)
+			err = bot.SendDM(evt.GuildMemberAdd.User.ID, msg)
 			if err != nil {
 				log.WithError(err).WithField("guild", gs.ID()).Error("Failed sending join dm")
 			}
@@ -45,16 +44,15 @@ func HandleGuildMemberAdd(ctx context.Context, e interface{}) {
 	}
 }
 
-func HandleGuildMemberRemove(ctx context.Context, e interface{}) {
-	evt := e.(*discordgo.GuildMemberRemove)
-	config := GetConfig(evt.GuildID)
+func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+	config := GetConfig(evt.GuildMemberRemove.GuildID)
 	if !config.LeaveEnabled {
 		return
 	}
 
-	gs := bot.State.Guild(true, evt.GuildID)
+	gs := bot.State.Guild(true, evt.GuildMemberRemove.GuildID)
 
-	templateData := createTemplateData(gs, evt.User)
+	templateData := createTemplateData(gs, evt.GuildMemberRemove.User)
 	channel := GetChannel(gs, config.LeaveChannel)
 	msg, err := common.ParseExecuteTemplate(config.LeaveMsg, templateData)
 	if err != nil {
@@ -79,8 +77,8 @@ func createTemplateData(gs *dstate.GuildState, user *discordgo.User) map[string]
 	return templateData
 }
 
-func HandleChannelUpdate(ctx context.Context, evt interface{}) {
-	cu := evt.(*discordgo.ChannelUpdate)
+func HandleChannelUpdate(evt *eventsystem.EventData) {
+	cu := evt.ChannelUpdate
 
 	curChannel := bot.State.Channel(true, cu.ID)
 	curChannel.Owner.RLock()
