@@ -1,7 +1,6 @@
 package automod
 
 import (
-	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
@@ -148,14 +147,14 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		// Strip last newline
 		punishMsg = punishMsg[:len(punishMsg)-1]
 	}
-	gName := cs.Guild.Guild.Name
+
 	member := cs.Guild.MemberCopy(false, ms.ID(), true)
 	cs.Owner.RUnlock()
 	locked = false
 
 	switch highestPunish {
 	case PunishNone:
-		err = bot.SendDM(ms.Member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", gName, punishMsg))
+		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, member.User, "Automoderator: "+punishMsg)
 	case PunishMute:
 		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
