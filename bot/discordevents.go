@@ -91,7 +91,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 // StateHandler updates the world state
 // use AddHandlerBefore to add handler before this one, otherwise they will alwyas be after
 func StateHandler(evt *eventsystem.EventData) {
-	State.HandleEvent(ContextSession(evt.Context()), evt)
+	State.HandleEvent(ContextSession(evt.Context()), evt.EvtInterface)
 }
 
 func HandleGuildUpdate(evt *eventsystem.EventData) {

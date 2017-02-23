@@ -653,7 +653,12 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate
 	CommandSystem.HandleMessageCreate(bot.ContextSession(evt.Context()), m)
 
-	if bot.State.User(true).ID != m.Author.ID {
+	bUser := bot.State.User(true)
+	if bUser == nil {
+		return
+	}
+
+	if bUser.ID != m.Author.ID {
 		return
 	}
 

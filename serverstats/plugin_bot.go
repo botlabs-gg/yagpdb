@@ -156,6 +156,11 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
 	channel := bot.State.Channel(true, m.ChannelID)
 
+	if channel == nil {
+		log.WithField("channel", evt.MessageCreate.ChannelID).Warn("Channel not in state")
+		return
+	}
+
 	if channel.IsPrivate() {
 		return
 	}
