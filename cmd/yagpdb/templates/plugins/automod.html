@@ -71,7 +71,7 @@
             <li><b>Bad words/websites:</b> YAGPDB comes with a builtin list of bad sites and swear words you can use if you want, or you can define your own.</li>
         </ul>
         <p><b>TIP:</b> The ban and kick message from the moderation settings will be used when the bot kicks and bans</p>
-        <p>If you need any help setting up a rule, join the support server above. Keep in mind this feature is still in beta testing.</p>                
+        <p>If you need any help setting up a rule, join the support server above.</p>            
     </div>
 </div>
 {{end}}
@@ -180,7 +180,8 @@
 
         <div class="form-group">
             <label>User defined banned sites</label>
-            <p class="help-block"> Seperate entries by spaces or lines<br/>Only type the host, For example if you want to block google you would add "google.com", NOT "http://google.com"</p>
+            <p class="help-block"> Seperate entries by spaces or lines<br/>Only type the host, For example if you want to block google you would add "google.com", NOT "http://google.com"<br>
+            This will also ban all subdomains of the site, e.g. if you ban <code>example.com</code> then <code>fun.example.com</code> will also be banend</p>
             <textarea class="form-control" name="Sites.BannedWebsites" rows="10">{{.AutomodConfig.Sites.BannedWebsites}}</textarea>
         </div>
     </div>

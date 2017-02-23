@@ -17,9 +17,6 @@ func KeyViolations(gID, uID, violation string) string {
 	return "automod_words_violations_" + violation + ":" + gID + ":" + uID
 }
 
-// Local Bot Cache keys
-func KeyAllRules(gID string) string { return "automod_rules:" + gID }
-
 type Plugin struct{}
 
 func RegisterPlugin() {

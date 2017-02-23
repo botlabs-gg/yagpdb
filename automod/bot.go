@@ -10,6 +10,8 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
+	"github.com/karlseguin/ccache"
+	"time"
 )
 
 func (p *Plugin) InitBot() {
@@ -18,27 +20,41 @@ func (p *Plugin) InitBot() {
 }
 
 var _ bot.BotStarterHandler = (*Plugin)(nil)
+var (
+	// cache configs because they are used often
+	confCache *ccache.Cache
+)
 
 func (p *Plugin) StartBot() {
 	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
+	confCache = ccache.New(ccache.Configure().MaxSize(1000))
 }
 
 // Invalidate the cache when the rules have changed
 func HandleUpdateAutomodRules(event *pubsub.Event) {
-	bot.Cache.Delete(KeyAllRules(event.TargetGuild))
+	confCache.Delete(KeyConfig(event.TargetGuild))
 }
 
+// CachedGetConfig either retrieves from local application cache or redis
 func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
-	if config, ok := bot.Cache.Get(KeyConfig(gID)); ok {
-		return config.(*Config), nil
+	confItem, err := confCache.Fetch(KeyConfig(gID), time.Minute*5, func() (interface{}, error) {
+		c, err := GetConfig(client, gID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Compile sites and words
+		c.Sites.GetCompiled()
+		c.Words.GetCompiled()
+
+		return c, nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
-	conf, err := GetConfig(client, gID)
-	if err == nil {
-		// Compile the sites and word list
-		conf.Sites.GetCompiled()
-		conf.Words.GetCompiled()
-	}
-	return conf, err
+
+	return confItem.Value().(*Config), nil
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
