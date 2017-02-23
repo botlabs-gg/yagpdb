@@ -154,7 +154,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 				// Fetch the prefix if ther command was not run in a dm
 				footer := ""
-				if data.Source != commandsystem.SourceDM {
+				if data.Source != commandsystem.SourceDM && target == "" {
 					prefix, err := GetCommandPrefix(data.Context().Value(CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
 					if err != nil {
 						return "Error communicating with redis", err
@@ -165,17 +165,24 @@ var GlobalCommands = []commandsystem.CommandHandler{
 						footer = fmt.Sprintf("**Command prefix: %q**\n", prefix)
 					}
 				}
-				footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n"
 
-				help := GenerateHelp(target)
-
-				privateChannel, err := bot.GetCreatePrivateChannel(data.Message.Author.ID)
-				if err != nil {
-					return "", err
+				if target == "" {
+					footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n**Control Panel:** https://yagpdb.xyz/cp\n"
 				}
 
-				dutil.SplitSendMessagePS(common.BotSession, privateChannel.ID, help+"\n"+footer, "```ini\n", "```", false, false)
-				if data.Source != commandsystem.SourceDM {
+				channelId := data.Message.ChannelID
+
+				help := GenerateHelp(target)
+				if target == "" && data.Source != commandsystem.SourceDM {
+					privateChannel, err := bot.GetCreatePrivateChannel(data.Message.Author.ID)
+					if err != nil {
+						return "", err
+					}
+					channelId = privateChannel.ID
+				}
+
+				dutil.SplitSendMessagePS(common.BotSession, channelId, help+"\n"+footer, "```ini\n", "```", false, false)
+				if data.Source != commandsystem.SourceDM && target == "" {
 					return "You've Got Mail!", nil
 				} else {
 					return "", nil
@@ -359,6 +366,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 This bot focuses on being configurable and therefore is one of the more advanced bots.
 It can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.
 I'm currently being ran and developed by jonas747#3124 (105487308693757952) but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
+Control panel: <https://yagpdb.xyz/cp>
 				`
 				return info, nil
 			},
