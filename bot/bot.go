@@ -15,13 +15,15 @@ var (
 	Started = time.Now()
 	Running bool
 	State   *dstate.State
+
+	StateHandlerPtr *eventsystem.Handler
 )
 
 func Setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
-	eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
+	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
 	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
 

@@ -146,7 +146,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	member := gs.Member(true, p.User.ID)
 	if member == nil {
-		log.Error("Member not in state")
+		log.WithField("pres", p.Status).Error("Member not in state")
 		return
 	}
 

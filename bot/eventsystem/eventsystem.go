@@ -4,6 +4,7 @@ package eventsystem
 
 import (
 	"context"
+	"github.com/Sirupsen/logrus"
 )
 
 type Handler func(evtData *EventData)
@@ -38,57 +39,82 @@ func EmitEvent(data *EventData, evt Event) {
 }
 
 // AddHandler adds a event handler
-func AddHandler(handler Handler, evts ...Event) {
+func AddHandler(handler Handler, evts ...Event) *Handler {
+	hPtr := &handler
+
 	for _, evt := range evts {
 		if evt == EventAll {
 			for _, e := range AllDiscordEvents {
-				AddHandler(handler, e)
+				handlers[e] = append(handlers[e], hPtr)
 			}
 
 			// If one of the events is all, then there's not point in passing more
-			return
+			return hPtr
 		}
 	}
 
 	for _, evt := range evts {
-		handlers[evt] = append(handlers[evt], &handler)
+		handlers[evt] = append(handlers[evt], hPtr)
 	}
+
+	return hPtr
 }
 
 // AddHandlerFirst adds a handler first in the queue
-func AddHandlerFirst(handler Handler, evt Event) {
+func AddHandlerFirst(handler Handler, evt Event) *Handler {
+	hPtr := &handler
 	if evt == EventAll {
 		for _, e := range AllDiscordEvents {
-			AddHandlerFirst(handler, e)
+			handlers[e] = append([]*Handler{hPtr}, handlers[e]...)
 		}
-		return
+		return hPtr
 	}
 
-	handlers[evt] = append([]*Handler{&handler}, handlers[evt]...)
+	handlers[evt] = append([]*Handler{hPtr}, handlers[evt]...)
+	return hPtr
 }
 
 // AddHandlerBefore adds a handler to be called before another handler
-func AddHandlerBefore(handler Handler, evt Event, before Handler) {
+func AddHandlerBefore(handler Handler, evt Event, before *Handler) *Handler {
+	hPtr := &handler
 
+	addHandlerBefore(hPtr, evt, before)
+
+	return hPtr
+}
+
+func addHandlerBefore(handler *Handler, evt Event, before *Handler) {
 	if evt == EventAll {
 		for _, e := range AllDiscordEvents {
-			AddHandlerBefore(handler, e, before)
+			addHandlerBefore(handler, e, before)
 		}
 		return
 	}
 
-	hList := handlers[evt]
+	for k, v := range handlers[evt] {
+		if v == before {
+			// Make a copy with the first half in
+			handlersCop := make([]*Handler, len(handlers[evt])+1)
+			copy(handlersCop, handlers[evt][:k])
 
-	for k, v := range hList {
-		if v == &before {
-			handlers[evt] = append(hList[:k], &handler)
-			handlers[evt] = append(handlers[evt], hList[k:]...)
+			// insert the handler
+			handlersCop[k] = handler
+
+			// add the other half
+			for i := k; i < len(handlers[evt]); i++ {
+				handlersCop[i+1] = handlers[evt][i]
+			}
+
+			handlers[evt] = handlersCop
+
 			return
 		}
 	}
 
+	logrus.Error("Unable to add handler before other handler", handler, before)
+
 	// Not found, just add to end
-	handlers[evt] = append(handlers[evt], &handler)
+	handlers[evt] = append(handlers[evt], handler)
 }
 
 func NumHandlers(evt Event) int {
