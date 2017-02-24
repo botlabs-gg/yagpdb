@@ -1,20 +1,20 @@
 package streaming
 
 import (
-	"context"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
 func (p *Plugin) InitBot() {
 
-	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
-	bot.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), bot.EventPresenceUpdate)
-	bot.AddHandler(bot.RedisWrapper(HandleGuildMemberUpdate), bot.EventGuildMemberUpdate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
 }
 
@@ -62,9 +62,9 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 	}
 }
 
-func HandleGuildMemberUpdate(ctx context.Context, evt interface{}) {
-	client := bot.ContextRedis(ctx)
-	m := evt.(*discordgo.GuildMemberUpdate)
+func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
+	client := bot.ContextRedis(evt.Context())
+	m := evt.GuildMemberUpdate
 	config, err := GetConfig(client, m.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
@@ -97,9 +97,9 @@ func HandleGuildMemberUpdate(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleGuildCreate(ctx context.Context, evt interface{}) {
-	client := bot.ContextRedis(ctx)
-	g := evt.(*discordgo.GuildCreate)
+func HandleGuildCreate(evt *eventsystem.EventData) {
+	client := bot.ContextRedis(evt.Context())
+	g := evt.GuildCreate
 	config, err := GetConfig(client, g.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
@@ -129,9 +129,9 @@ func HandleGuildCreate(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
-	client := bot.ContextRedis(ctx)
-	p := evt.(*discordgo.PresenceUpdate)
+func HandlePresenceUpdate(evt *eventsystem.EventData) {
+	client := bot.ContextRedis(evt.Context())
+	p := evt.PresenceUpdate
 	config, err := GetConfig(client, p.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
@@ -146,7 +146,7 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 
 	member := gs.Member(true, p.User.ID)
 	if member == nil {
-		log.Error("Member not in state")
+		log.WithField("pres", p.Status).Error("Member not in state")
 		return
 	}
 

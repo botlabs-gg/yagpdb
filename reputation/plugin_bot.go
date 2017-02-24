@@ -1,13 +1,13 @@
 package reputation
 
 import (
-	"context"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"strconv"
@@ -17,36 +17,36 @@ import (
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(cmds...)
-	bot.AddHandler(bot.RedisWrapper(handleMessageCreate), bot.EventMessageCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(handleMessageCreate), eventsystem.EventMessageCreate)
 }
 
-func handleMessageCreate(ctx context.Context, e interface{}) {
-	evt := e.(*discordgo.MessageCreate)
-	client := bot.ContextRedis(ctx)
+func handleMessageCreate(evt *eventsystem.EventData) {
+	msg := evt.MessageCreate
+	client := bot.ContextRedis(evt.Context())
 
-	lower := strings.ToLower(evt.Content)
+	lower := strings.ToLower(msg.Content)
 	if strings.Index(lower, "thanks") != 0 {
 		return
 	}
 
-	if len(evt.Mentions) < 1 {
+	if len(msg.Mentions) < 1 {
 		return
 	}
 
-	who := evt.Mentions[0]
+	who := msg.Mentions[0]
 
-	if who.ID == evt.Author.ID {
+	if who.ID == msg.Author.ID {
 		return
 	}
 
-	cs := bot.State.Channel(true, evt.ChannelID)
+	cs := bot.State.Channel(true, msg.ChannelID)
 
 	enabled, _ := client.Cmd("GET", "reputation_enabled:"+cs.ID()).Bool()
 	if !enabled {
 		return
 	}
 
-	cooldown, err := CheckCooldown(client, cs.Guild.ID(), evt.Author.ID)
+	cooldown, err := CheckCooldown(client, cs.Guild.ID(), msg.Author.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed checking cooldown for reputation")
 		return
@@ -56,14 +56,14 @@ func handleMessageCreate(ctx context.Context, e interface{}) {
 		return
 	}
 
-	newScore, err := ModifyRep(client, 1, evt.Author, who, cs.Guild.ID())
+	newScore, err := ModifyRep(client, 1, msg.Author, who, cs.Guild.ID())
 	if err != nil {
 		log.WithError(err).Error("Failed giving rep")
 		return
 	}
 
-	msg := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", who.Username, newScore)
-	common.BotSession.ChannelMessageSend(evt.ChannelID, common.EscapeEveryoneMention(msg))
+	content := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", who.Username, newScore)
+	common.BotSession.ChannelMessageSend(msg.ChannelID, common.EscapeEveryoneMention(content))
 }
 
 func ModifyRep(client *redis.Client, amount int, sender, target *discordgo.User, guildID string) (int, error) {

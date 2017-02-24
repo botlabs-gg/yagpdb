@@ -3,6 +3,7 @@ package notifications
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -26,9 +27,9 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(HandleGuildMemberAdd, bot.EventGuildMemberAdd)
-	bot.AddHandler(HandleGuildMemberRemove, bot.EventGuildMemberRemove)
-	bot.AddHandlerBefore(HandleChannelUpdate, bot.EventChannelUpdate, bot.StateHandler)
+	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerBefore(HandleChannelUpdate, eventsystem.EventChannelUpdate, bot.StateHandlerPtr)
 }
 
 type Config struct {

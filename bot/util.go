@@ -6,6 +6,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/patrickmn/go-cache"
 	"time"
@@ -16,18 +17,18 @@ var (
 )
 
 func ContextSession(ctx context.Context) *discordgo.Session {
-	return ctx.Value(ContextKeySession).(*discordgo.Session)
+	return ctx.Value(common.ContextKeyDiscordSession).(*discordgo.Session)
 }
 
 func ContextRedis(ctx context.Context) *redis.Client {
 	return ctx.Value(common.ContextKeyRedis).(*redis.Client)
 }
 
-func RedisWrapper(inner Handler) Handler {
-	return func(ctx context.Context, evt interface{}) {
+func RedisWrapper(inner eventsystem.Handler) eventsystem.Handler {
+	return func(evt *eventsystem.EventData) {
 		r, err := common.RedisPool.Get()
 		if err != nil {
-			logrus.WithError(err).WithField("evt", "{{.}}").Error("Failed retrieving redis client")
+			logrus.WithError(err).WithField("evt", evt.Type.String()).Error("Failed retrieving redis client")
 			return
 		}
 
@@ -35,7 +36,7 @@ func RedisWrapper(inner Handler) Handler {
 			common.RedisPool.Put(r)
 		}()
 
-		inner(context.WithValue(ctx, common.ContextKeyRedis, r), evt)
+		inner(evt.WithContext(context.WithValue(evt.Context(), common.ContextKeyRedis, r)))
 	}
 }
 
@@ -91,7 +92,12 @@ func GetMember(guildID, userID string) (*discordgo.Member, error) {
 
 	gs.MemberAddUpdate(true, member)
 
-	go EmitEvent(context.Background(), EventMemberFetched, member)
+	go eventsystem.EmitEvent(&eventsystem.EventData{
+		EventDataContainer: &eventsystem.EventDataContainer{
+			GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
+		},
+		Type: eventsystem.EventMemberFetched,
+	}, eventsystem.EventMemberFetched)
 
 	return member, nil
 }

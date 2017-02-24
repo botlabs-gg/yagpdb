@@ -1,7 +1,6 @@
 package logs
 
 import (
-	"context"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/snowflake"
@@ -9,6 +8,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"strconv"
@@ -21,10 +21,10 @@ func init() {
 }
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), bot.EventGuildMemberUpdate, bot.EventGuildMemberAdd, bot.EventGuildCreate, bot.EventMemberFetched)
-	bot.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), bot.EventMessageDelete)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildCreate, eventsystem.EventMemberFetched)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete)
 
-	bot.AddHandlerBefore(HandlePresenceUpdate, bot.EventPresenceUpdate, bot.StateHandler)
+	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
 	commands.CommandSystem.RegisterCommands(cmds...)
 }
 
@@ -303,13 +303,12 @@ var cmds = []commandsystem.CommandHandler{
 }
 
 // Mark all log messages with this id as deleted
-func HandleMsgDelete(ctx context.Context, evt interface{}) {
-	del := evt.(*discordgo.MessageDelete)
-	common.SQL.Model(Message{}).Where("message_id = ?", del.ID).Update("deleted", true)
+func HandleMsgDelete(evt *eventsystem.EventData) {
+	common.SQL.Model(Message{}).Where("message_id = ?", evt.MessageDelete.ID).Update("deleted", true)
 }
 
-func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
-	pu := evt.(*discordgo.PresenceUpdate)
+func HandlePresenceUpdate(evt *eventsystem.EventData) {
+	pu := evt.PresenceUpdate
 	gs := bot.State.Guild(true, pu.GuildID)
 	if gs == nil {
 		go func() { evtChan <- evt }()
@@ -338,8 +337,8 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
 // Also check nickname incase the user came online
-func HandleQueueEvt(ctx context.Context, evt interface{}) {
-	evtChan <- evt
+func HandleQueueEvt(evt *eventsystem.EventData) {
+	evtChan <- evt.EvtInterface
 }
 
 type UsernameListing struct {

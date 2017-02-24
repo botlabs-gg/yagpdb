@@ -1,52 +1,67 @@
 package automod
 
 import (
-	"context"
-	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
+	"github.com/karlseguin/ccache"
+	"time"
 )
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(bot.RedisWrapper(HandleMessageCreate), bot.EventMessageCreate)
-	bot.AddHandler(bot.RedisWrapper(HandleMessageUpdate), bot.EventMessageUpdate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageUpdate), eventsystem.EventMessageUpdate)
 }
 
 var _ bot.BotStarterHandler = (*Plugin)(nil)
+var (
+	// cache configs because they are used often
+	confCache *ccache.Cache
+)
 
 func (p *Plugin) StartBot() {
 	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
+	confCache = ccache.New(ccache.Configure().MaxSize(1000))
 }
 
 // Invalidate the cache when the rules have changed
 func HandleUpdateAutomodRules(event *pubsub.Event) {
-	bot.Cache.Delete(KeyAllRules(event.TargetGuild))
+	confCache.Delete(KeyConfig(event.TargetGuild))
 }
 
+// CachedGetConfig either retrieves from local application cache or redis
 func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
-	if config, ok := bot.Cache.Get(KeyConfig(gID)); ok {
-		return config.(*Config), nil
+	confItem, err := confCache.Fetch(KeyConfig(gID), time.Minute*5, func() (interface{}, error) {
+		c, err := GetConfig(client, gID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Compile sites and words
+		c.Sites.GetCompiled()
+		c.Words.GetCompiled()
+
+		return c, nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
-	conf, err := GetConfig(client, gID)
-	if err == nil {
-		// Compile the sites and word list
-		conf.Sites.GetCompiled()
-		conf.Words.GetCompiled()
-	}
-	return conf, err
+
+	return confItem.Value().(*Config), nil
 }
 
-func HandleMessageCreate(ctx context.Context, evt interface{}) {
-	CheckMessage(evt.(*discordgo.MessageCreate).Message, bot.ContextRedis(ctx))
+func HandleMessageCreate(evt *eventsystem.EventData) {
+	CheckMessage(evt.MessageCreate.Message, bot.ContextRedis(evt.Context()))
 }
 
-func HandleMessageUpdate(ctx context.Context, evt interface{}) {
-	CheckMessage(evt.(*discordgo.MessageUpdate).Message, bot.ContextRedis(ctx))
+func HandleMessageUpdate(evt *eventsystem.EventData) {
+	CheckMessage(evt.MessageUpdate.Message, bot.ContextRedis(evt.Context()))
 }
 
 func CheckMessage(m *discordgo.Message, client *redis.Client) {
@@ -132,14 +147,14 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		// Strip last newline
 		punishMsg = punishMsg[:len(punishMsg)-1]
 	}
-	gName := cs.Guild.Guild.Name
+
 	member := cs.Guild.MemberCopy(false, ms.ID(), true)
 	cs.Owner.RUnlock()
 	locked = false
 
 	switch highestPunish {
 	case PunishNone:
-		err = bot.SendDM(ms.Member.User.ID, fmt.Sprintf("**Automoderator for %s, Rule violations:**\n%s\nRepeating this offence may cause you a kick, mute or ban.", gName, punishMsg))
+		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, member.User, "Automoderator: "+punishMsg)
 	case PunishMute:
 		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:

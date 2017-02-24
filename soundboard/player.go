@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/dca"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"sync"
@@ -92,45 +93,78 @@ func runPlayer(guildID string) {
 
 func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest) (*discordgo.VoiceConnection, error) {
 	logrus.Info("Playing sound ", req.Sound)
+
+	// Open the sound and create a new decoder
 	file, err := os.Open(SoundFilePath(req.Sound, TranscodingStatusReady))
 	if err != nil {
-		return vc, err
+		return vc, common.ErrWithCaller(err)
 	}
 	defer file.Close()
 	decoder := dca.NewDecoder(file)
 
+	// Either use the passed voice connection, or create a new one
 	if vc == nil || !vc.Ready {
 		vc, err = session.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
 		if err != nil {
-			return nil, err
+			return nil, common.ErrWithCaller(err)
 		}
 		<-vc.Connected
 		vc.Speaking(true)
 	}
 
-	numFrames := 0
+	// Start by sending some frames of silence
+	err = sendSilence(vc, 10)
+	if err != nil {
+		return vc, common.ErrWithCaller(err)
+	}
+
+	// Then play the actual sound
 	for {
-		var frame []byte
-		// Start with silence
-		if numFrames < 10 {
-			frame = Silence
-		} else {
-			var err error
-			frame, err = decoder.OpusFrame()
-			if err != nil {
-				if err != io.EOF {
-					return vc, err
-				}
-				return vc, nil
+		frame, err := decoder.OpusFrame()
+		if err != nil {
+			if err != io.EOF {
+				return vc, common.ErrWithCaller(err)
 			}
-		}
-		numFrames++
-		select {
-		case vc.OpusSend <- frame:
-		case <-time.After(time.Second):
 			return vc, nil
+		}
+
+		err = sendAudio(vc, frame)
+		if err != nil {
+			return vc, common.ErrWithCaller(err)
 		}
 	}
 
+	// And finally stop with another small number of silcece frame
+	err = sendSilence(vc, 5)
+	if err != nil {
+		return vc, common.ErrWithCaller(err)
+	}
+
 	return vc, nil
+}
+
+// Send n silence frames
+func sendSilence(vc *discordgo.VoiceConnection, n int) error {
+	for i := n - 1; i >= 0; i-- {
+		err := sendAudio(vc, Silence)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+var (
+	ErrVoiceSendTimeout = errors.New("Voice send timeout")
+)
+
+func sendAudio(vc *discordgo.VoiceConnection, frame []byte) error {
+	select {
+	case vc.OpusSend <- frame:
+	case <-time.After(time.Second):
+		return ErrVoiceSendTimeout
+	}
+
+	return nil
 }

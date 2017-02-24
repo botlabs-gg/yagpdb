@@ -1,11 +1,10 @@
 package bot
 
-//go:generate go run ../cmd/gen/events.go -o events.go
-
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"sync"
 	"time"
@@ -16,26 +15,28 @@ var (
 	Started = time.Now()
 	Running bool
 	State   *dstate.State
+
+	StateHandlerPtr *eventsystem.Handler
 )
 
 func Setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
-	AddHandler(HandleReady, EventReady)
-	AddHandler(StateHandler, EventAll)
-	AddHandler(HandlePresenceUpdate, EventPresenceUpdate)
-	AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), EventAll)
+	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
+	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
+	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
 
-	AddHandler(RedisWrapper(HandleGuildCreate), EventGuildCreate)
-	AddHandler(RedisWrapper(HandleGuildDelete), EventGuildDelete)
+	eventsystem.AddHandler(RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(RedisWrapper(HandleGuildDelete), eventsystem.EventGuildDelete)
 
-	AddHandler(RedisWrapper(HandleGuildUpdate), EventGuildUpdate)
-	AddHandler(RedisWrapper(HandleGuildRoleCreate), EventGuildRoleCreate)
-	AddHandler(RedisWrapper(HandleGuildRoleUpdate), EventGuildRoleUpdate)
-	AddHandler(RedisWrapper(HandleGuildRoleRemove), EventGuildRoleDelete)
-	AddHandler(RedisWrapper(HandleChannelCreate), EventChannelCreate)
-	AddHandler(RedisWrapper(HandleChannelUpdate), EventChannelUpdate)
-	AddHandler(RedisWrapper(HandleChannelDelete), EventChannelDelete)
+	eventsystem.AddHandler(RedisWrapper(HandleGuildUpdate), eventsystem.EventGuildUpdate)
+	eventsystem.AddHandler(RedisWrapper(HandleGuildRoleCreate), eventsystem.EventGuildRoleCreate)
+	eventsystem.AddHandler(RedisWrapper(HandleGuildRoleUpdate), eventsystem.EventGuildRoleUpdate)
+	eventsystem.AddHandler(RedisWrapper(HandleGuildRoleRemove), eventsystem.EventGuildRoleDelete)
+	eventsystem.AddHandler(RedisWrapper(HandleChannelCreate), eventsystem.EventChannelCreate)
+	eventsystem.AddHandler(RedisWrapper(HandleChannelUpdate), eventsystem.EventChannelUpdate)
+	eventsystem.AddHandler(RedisWrapper(HandleChannelDelete), eventsystem.EventChannelDelete)
 
 	log.Info("Initializing bot plugins")
 	for _, plugin := range Plugins {
@@ -43,14 +44,7 @@ func Setup() {
 		log.Info("Initialized bot plugin ", plugin.Name())
 	}
 
-	numHandlers := make([]int, len(handlers))
-	total := 0
-	for k, v := range handlers {
-		numHandlers[k] = len(v)
-		total += len(v)
-	}
-
-	log.Printf("Registered %d event handlers", total)
+	log.Printf("Registered %d event handlers", eventsystem.NumHandlers(eventsystem.EventAll))
 
 }
 
@@ -59,7 +53,7 @@ func Run() {
 	log.Println("Running bot")
 
 	// Only handler
-	common.BotSession.AddHandler(handleEvent)
+	common.BotSession.AddHandler(eventsystem.HandleEvent)
 
 	// common.BotSession.LogLevel = discordgo.LogDebug
 	// common.BotSession.Debug = true

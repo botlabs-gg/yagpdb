@@ -1,11 +1,11 @@
 package discordlogger
 
 import (
-	"context"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"os"
 	"time"
@@ -38,25 +38,24 @@ func Register() {
 type Plugin struct{}
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(EventHandler, bot.EventNewGuild)
-	bot.AddHandler(EventHandler, bot.EventGuildDelete)
+	eventsystem.AddHandler(EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
 }
 
-func EventHandler(ctx context.Context, evt interface{}) {
+func EventHandler(evt *eventsystem.EventData) {
 	bot.State.RLock()
 	count := len(bot.State.Guilds)
 	bot.State.RUnlock()
 
 	msg := ""
-	switch t := evt.(type) {
-	case *discordgo.GuildDelete:
-		msg = fmt.Sprintf(":x: Left guild **%s** :(", t.Guild.Name)
-	case *discordgo.GuildCreate:
-		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", t.Guild.Name)
+	switch evt.Type {
+	case eventsystem.EventGuildDelete:
+		msg = fmt.Sprintf(":x: Left guild **%s** :(", evt.GuildDelete.Guild.ID)
+	case eventsystem.EventNewGuild:
+		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", evt.GuildCreate.Guild.ID)
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
-	common.BotSession.ChannelMessageSend(BotLeavesJoins, msg)
+	common.BotSession.ChannelMessageSend(BotLeavesJoins, common.EscapeEveryoneMention(msg))
 }
 
 func (p *Plugin) Levels() []logrus.Level {

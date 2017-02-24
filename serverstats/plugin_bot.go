@@ -1,26 +1,26 @@
 package serverstats
 
 import (
-	"context"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"time"
 )
 
 func (p *Plugin) InitBot() {
-	bot.AddHandler(bot.RedisWrapper(HandleMemberAdd), bot.EventGuildMemberAdd)
-	bot.AddHandler(bot.RedisWrapper(HandleMemberRemove), bot.EventGuildMemberRemove)
-	bot.AddHandler(bot.RedisWrapper(HandleMessageCreate), bot.EventMessageCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberAdd), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberRemove), eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
 
-	bot.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), bot.EventPresenceUpdate)
-	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
-	bot.AddHandler(bot.RedisWrapper(HandleReady), bot.EventReady)
+	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleReady), eventsystem.EventReady)
 
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		CustomEnabled: true,
@@ -68,9 +68,9 @@ func (p *Plugin) InitBot() {
 
 }
 
-func HandleReady(ctx context.Context, evt interface{}) {
-	r := evt.(*discordgo.Ready)
-	client := bot.ContextRedis(ctx)
+func HandleReady(evt *eventsystem.EventData) {
+	r := evt.Ready
+	client := bot.ContextRedis(evt.Context())
 
 	for _, guild := range r.Guilds {
 		if guild.Unavailable {
@@ -84,9 +84,9 @@ func HandleReady(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleGuildCreate(ctx context.Context, evt interface{}) {
-	g := evt.(*discordgo.GuildCreate)
-	client := bot.ContextRedis(ctx)
+func HandleGuildCreate(evt *eventsystem.EventData) {
+	g := evt.GuildCreate
+	client := bot.ContextRedis(evt.Context())
 
 	err := client.Cmd("SET", "guild_stats_num_members:"+g.ID, g.MemberCount).Err
 	if err != nil {
@@ -100,9 +100,9 @@ func HandleGuildCreate(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleMemberAdd(ctx context.Context, evt interface{}) {
-	g := evt.(*discordgo.GuildMemberAdd)
-	client := bot.ContextRedis(ctx)
+func HandleMemberAdd(evt *eventsystem.EventData) {
+	g := evt.GuildMemberAdd
+	client := bot.ContextRedis(evt.Context())
 
 	err := client.Cmd("ZADD", "guild_stats_members_joined_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
 	if err != nil {
@@ -115,9 +115,9 @@ func HandleMemberAdd(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
-	p := evt.(*discordgo.PresenceUpdate)
-	client := bot.ContextRedis(ctx)
+func HandlePresenceUpdate(evt *eventsystem.EventData) {
+	p := evt.PresenceUpdate
+	client := bot.ContextRedis(evt.Context())
 
 	if p.Status == "" { // Not a status update
 		return
@@ -135,9 +135,9 @@ func HandlePresenceUpdate(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleMemberRemove(ctx context.Context, evt interface{}) {
-	g := evt.(*discordgo.GuildMemberRemove)
-	client := bot.ContextRedis(ctx)
+func HandleMemberRemove(evt *eventsystem.EventData) {
+	g := evt.GuildMemberRemove
+	client := bot.ContextRedis(evt.Context())
 
 	err := client.Cmd("ZADD", "guild_stats_members_left_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
 	if err != nil {
@@ -150,17 +150,22 @@ func HandleMemberRemove(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleMessageCreate(ctx context.Context, evt interface{}) {
+func HandleMessageCreate(evt *eventsystem.EventData) {
 
-	m := evt.(*discordgo.MessageCreate)
-	client := bot.ContextRedis(ctx)
+	m := evt.MessageCreate
+	client := bot.ContextRedis(evt.Context())
 	channel := bot.State.Channel(true, m.ChannelID)
+
+	if channel == nil {
+		log.WithField("channel", evt.MessageCreate.ChannelID).Warn("Channel not in state")
+		return
+	}
 
 	if channel.IsPrivate() {
 		return
 	}
 
-	config, err := GetConfig(ctx, channel.Guild.ID())
+	config, err := GetConfig(evt.Context(), channel.Guild.ID())
 	if err != nil {
 		log.WithError(err).WithField("guild", channel.Guild.ID()).Error("Failed retrieving config")
 		return

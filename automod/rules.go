@@ -1,6 +1,7 @@
 package automod
 
 import (
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
@@ -265,27 +266,8 @@ func (w *WordsRule) GetCompiled() map[string]bool {
 
 func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 
-	found := false
-
-	userBanned := w.GetCompiled()
-
-	lower := strings.ToLower(evt.Content)
-	messageWords := strings.Fields(lower)
-	for _, v := range messageWords {
-		if _, ok := userBanned[v]; ok {
-			found = true
-			break
-		}
-
-		if w.BuiltinSwearWords {
-			if _, ok := BuiltinSwearWords[v]; ok {
-				found = true
-				break
-			}
-		}
-	}
-
-	if !found {
+	word := w.CheckMessage(evt.Content)
+	if word == "" {
 		return
 	}
 
@@ -293,8 +275,28 @@ func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, clien
 	del = true
 	punishment, err = w.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badword"))
 
-	msg = "You triggered the word filter, watch your language."
+	msg = fmt.Sprintf("The word `%s` is banned, watch your language.", word)
 	return
+}
+
+func (w *WordsRule) CheckMessage(content string) (word string) {
+	userBanned := w.GetCompiled()
+
+	lower := strings.ToLower(content)
+	messageWords := strings.Fields(lower)
+	for _, v := range messageWords {
+		if _, ok := userBanned[v]; ok {
+			return v
+		}
+
+		if w.BuiltinSwearWords {
+			if _, ok := BuiltinSwearWords[v]; ok {
+				return v
+			}
+		}
+	}
+
+	return ""
 }
 
 type SitesRule struct {
@@ -304,47 +306,76 @@ type SitesRule struct {
 	BuiltinPornSites bool
 
 	BannedWebsites   string `valid:",10000"`
-	compiledWebsites map[string]bool
+	compiledWebsites []string
 }
 
-func (w *SitesRule) GetCompiled() map[string]bool {
+func (w *SitesRule) GetCompiled() []string {
 	if w.compiledWebsites != nil {
 		return w.compiledWebsites
 	}
 
-	w.compiledWebsites = make(map[string]bool)
 	fields := strings.Fields(w.BannedWebsites)
-	for _, field := range fields {
-		w.compiledWebsites[strings.ToLower(field)] = true
+
+	w.compiledWebsites = make([]string, len(fields))
+
+	for i, field := range fields {
+		w.compiledWebsites[i] = strings.ToLower(field)
 	}
 
 	return w.compiledWebsites
 }
 
 func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
-	matches := linkRegex.FindAllString(evt.Content, -1)
+	banned, item := s.checkMessage(evt.Content)
 
-	bannedLink := false
+	if !banned {
+		return
+	}
 
-	bannedLinks := s.GetCompiled()
+	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badlink"))
+	msg = fmt.Sprintf("The website `%s` is banned. Contact an admin if you think this was a mistake.", item)
+	del = true
+	return
+}
+
+func (s *SitesRule) checkMessage(message string) (banned bool, item string) {
+	matches := linkRegex.FindAllString(message, -1)
+
 	for _, v := range matches {
 		parsed, err := url.ParseRequestURI(v)
 		if err != nil {
 			logrus.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
 		} else {
-			if _, ok := bannedLinks[strings.ToLower(parsed.Host)]; ok {
-				bannedLink = true
-				break
+			if banned, item := s.isBanned(parsed.Host); banned {
+				return true, item
 			}
 		}
 	}
 
-	if !bannedLink {
-		return
+	return false, ""
+}
+
+func (s *SitesRule) isBanned(host string) (bool, string) {
+	if index := strings.Index(host, ":"); index > -1 {
+		host = host[:index]
 	}
 
-	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badlink"))
-	msg = "That website is banned. Contact an admin if you think this was a mistake."
-	del = true
-	return
+	host = strings.ToLower(host)
+
+	for _, v := range s.compiledWebsites {
+		if s.matchesItem(v, host) {
+			return true, v
+		}
+	}
+
+	return false, ""
+}
+
+func (s *SitesRule) matchesItem(filter, str string) bool {
+
+	if strings.HasSuffix(str, "."+filter) {
+		return true
+	}
+
+	return str == filter
 }

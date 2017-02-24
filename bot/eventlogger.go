@@ -1,9 +1,8 @@
 package bot
 
 import (
-	"context"
 	"github.com/Sirupsen/logrus"
-	"reflect"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"sync"
 )
 
@@ -16,8 +15,8 @@ type eventLogger struct {
 	Events map[string]int
 }
 
-func (e *eventLogger) handleEvent(ctx context.Context, evt interface{}) {
-	evtName := reflect.Indirect(reflect.ValueOf(evt)).Type().Name()
+func (e *eventLogger) handleEvent(evt *eventsystem.EventData) {
+	evtName := evt.Type.String()
 
 	if evtName == "" {
 		logrus.Error("Unknown event handled", evt)

@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs"
@@ -28,30 +29,30 @@ const (
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(ModerationCommands...)
-	bot.AddHandler(HandleGuildBanAddRemove, bot.EventGuildBanRemove)
-	bot.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), bot.EventGuildBanAdd)
-	bot.AddHandler(bot.RedisWrapper(HandleMemberJoin), bot.EventGuildMemberAdd)
+	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 }
 
-func HandleGuildBanAddRemove(ctx context.Context, evt interface{}) {
+func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
 	guildID := ""
 	action := ""
 
-	switch t := evt.(type) {
-	case *discordgo.GuildBanAdd:
+	switch evt.Type {
+	case eventsystem.EventGuildBanAdd:
 
-		guildID = t.GuildID
-		user = t.User
+		guildID = evt.GuildBanAdd.GuildID
+		user = evt.GuildBanAdd.User
 		action = ActionBanned
-		if i, _ := bot.ContextRedis(ctx).Cmd("GET", RedisKeyBannedUser(guildID, user.ID)).Int(); i > 0 {
-			bot.ContextRedis(ctx).Cmd("DEL", RedisKeyBannedUser(guildID, user.ID))
+		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyBannedUser(guildID, user.ID)).Int(); i > 0 {
+			bot.ContextRedis(evt.Context()).Cmd("DEL", RedisKeyBannedUser(guildID, user.ID))
 			return
 		}
-	case *discordgo.GuildBanRemove:
+	case eventsystem.EventGuildBanRemove:
 		action = ActionUnbanned
-		user = t.User
-		guildID = t.GuildID
+		user = evt.GuildBanRemove.User
+		guildID = evt.GuildBanRemove.GuildID
 	default:
 		return
 	}
@@ -76,9 +77,9 @@ func HandleGuildBanAddRemove(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleMemberJoin(ctx context.Context, evt interface{}) {
-	c := evt.(*discordgo.GuildMemberAdd)
-	client := bot.ContextRedis(ctx)
+func HandleMemberJoin(evt *eventsystem.EventData) {
+	c := evt.GuildMemberAdd
+	client := bot.ContextRedis(evt.Context())
 
 	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.GuildID, c.User.ID)).Int()
 	if muteLeft < 10 {

@@ -16,7 +16,7 @@
         <!-- Nav tabs -->
         <ul class="nav nav-tabs tabs" role="tablist">
             <li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">General</a></li>
-            <li role="presentation"><a href="#spam" aria-controls="spam" role="tab" data-toggle="tab">Spam/Slowmode</a></li>
+            <li role="presentation"><a href="#spam" aria-controls="spam" role="tab" data-toggle="tab">Slowmode</a></li>
             <li role="presentation"><a href="#mass-mention" aria-controls="mass-mention" role="tab" data-toggle="tab">Mass Mention</a></li>
             <li role="presentation"><a href="#invites" aria-controls="invites" role="tab" data-toggle="tab">Server Invites</a></li>
             <li role="presentation"><a href="#links" aria-controls="links" role="tab" data-toggle="tab">Links</a></li>
@@ -64,13 +64,14 @@
         <h2>Informaion</h2>
         <p>Automoderator helps performing mundane and repetetive duties on servers. Automoderator deals with the following cases:</p>
         <ul>
-            <li><b>Spam/slowmode:</b> You can set up a rule to only allow up to a certain amount of messages within a certain amount of seconds</li>
+            <li><b>Slowmode:</b> You can set up a rule to only allow up to a certain amount of messages within a certain amount of seconds</li>
             <li><b>Mass mentions:</b> You can set up a rule to detect messages which contains more than a certain amount of mentions in them</li>
             <li><b>Invite links:</b> You can set up a rule for invite links (for example delete every invite link if they don't have a certain role)</li>
+            <li><b>Links:</b> You can restrict posting any kind of link to a certain role</li>
             <li><b>Bad words/websites:</b> YAGPDB comes with a builtin list of bad sites and swear words you can use if you want, or you can define your own.</li>
         </ul>
         <p><b>TIP:</b> The ban and kick message from the moderation settings will be used when the bot kicks and bans</p>
-        <p>If you need any help setting up a rule, join the support server above. Keep in mind this feature is still in beta testing.</p>                
+        <p>If you need any help setting up a rule, join the support server above.</p>            
     </div>
 </div>
 {{end}}
@@ -88,8 +89,9 @@
     <div class="form-group">
         <label for="Within">Within (Seconds)</label>
         <input type="number" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
-        <p class="help-block">The timeframe to check messages from, good value for this is 10s, you can't go above 3600 (an hour)</p>
+        <p class="help-block">The timeframe to check messages from</p>
     </div>
+    <p>Something decent to just protect from raw spam could be 5 messages within 2 seconds. normal users wont come near that, and it would target spammers</p>
 </div>
 {{end}}
 
@@ -97,11 +99,12 @@
 {{define "automod_mention"}}
 <div class="col-lg-12">
     {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Mention "Name" "Mention"}}
-    
+
     <div class="form-group">
         <label for="Treshold">Mentions Treshold</label>
         <input type="number" class="form-control" name="Mention.Treshold" value="{{.AutomodConfig.Mention.Treshold}}"></input>
-        <p class="help-block">Number of mentions in a message for it to trigger</p>
+        <p class="help-block">Number of mentions in a message for it to trigger.<br>
+        Example: if it's set to 5, then someone mentioning 5 people would trigger this.</p>
     </div>
 
 </div>
@@ -129,13 +132,13 @@
         <p class="help-block">Built in lists</p>
         <div class="checkbox">
             <label>
-                <input type="checkbox" name="Words.BuiltinSwearWords" {{if .AutomodConfig.Words.BuiltinSwearWords }} checked{{end}}> Ban builtin swear words
+                <input type="checkbox" name="Words.BuiltinSwearWords" {{if .AutomodConfig.Words.BuiltinSwearWords }} checked{{end}}> Ban builtin swear words <a href="https://github.com/jonas747/yagpdb/blob/master/automod/swearwords.go"> (list of swear words here)</a>
             </label>
         </div>
         <br/>
         <div class="form-group">
             <label>Banned words</label>
-            <p class="help-block"> Seperate entries by spaces or lines</p>
+            <p class="help-block"> Seperate entries by spaces or lines, this is case insensitive and it only checks against words.</p>
             <textarea class="form-control" name="Words.BannedWords" rows="10">{{.AutomodConfig.Words.BannedWords}}</textarea>
         </div>
     </div>
@@ -153,8 +156,8 @@
             </label>
         </div> -->
 
-        <p><b>Google safe browsing integration <i>(Coming soon!)</i></b></p>
-        <div class="checkbox">
+        <!-- <p><b>Google safe browsing integration <i>(Coming soon!)</i></b></p> -->
+        <!-- <div class="checkbox">
             <label>
                 <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing malware site detection
             </label>
@@ -173,11 +176,12 @@
             <label>
                 <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing potentially harmfull application site detection
             </label>
-        </div>
+        </div> -->
 
         <div class="form-group">
             <label>User defined banned sites</label>
-            <p class="help-block"> Seperate entries by spaces or lines<br/>Only type the host, For example if you want to block google you would add "google.com", NOT "http://google.com"</p>
+            <p class="help-block"> Seperate entries by spaces or lines<br/>Only type the host, For example if you want to block google you would add "google.com", NOT "http://google.com"<br>
+            This will also ban all subdomains of the site, e.g. if you ban <code>example.com</code> then <code>fun.example.com</code> will also be banend</p>
             <textarea class="form-control" name="Sites.BannedWebsites" rows="10">{{.AutomodConfig.Sites.BannedWebsites}}</textarea>
         </div>
     </div>

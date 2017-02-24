@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
@@ -12,6 +11,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/justinian/dice"
 	"github.com/lunixbochs/vtclean"
@@ -50,8 +50,8 @@ func (p *Plugin) InitBot() {
 	CommandSystem.RegisterCommands(GlobalCommands...)
 	CommandSystem.RegisterCommands(debugCommands...)
 
-	bot.AddHandler(bot.RedisWrapper(HandleGuildCreate), bot.EventGuildCreate)
-	bot.AddHandler(HandleMessageCreate, bot.EventMessageCreate)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 func (p *Plugin) GetPrefix(s *discordgo.Session, m *discordgo.MessageCreate) string {
@@ -154,7 +154,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 
 				// Fetch the prefix if ther command was not run in a dm
 				footer := ""
-				if data.Source != commandsystem.SourceDM {
+				if data.Source != commandsystem.SourceDM && target == "" {
 					prefix, err := GetCommandPrefix(data.Context().Value(CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
 					if err != nil {
 						return "Error communicating with redis", err
@@ -165,17 +165,24 @@ var GlobalCommands = []commandsystem.CommandHandler{
 						footer = fmt.Sprintf("**Command prefix: %q**\n", prefix)
 					}
 				}
-				footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n"
 
-				help := GenerateHelp(target)
-
-				privateChannel, err := bot.GetCreatePrivateChannel(data.Message.Author.ID)
-				if err != nil {
-					return "", err
+				if target == "" {
+					footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n**Control Panel:** https://yagpdb.xyz/cp\n"
 				}
 
-				dutil.SplitSendMessagePS(common.BotSession, privateChannel.ID, help+"\n"+footer, "```ini\n", "```", false, false)
-				if data.Source != commandsystem.SourceDM {
+				channelId := data.Message.ChannelID
+
+				help := GenerateHelp(target)
+				if target == "" && data.Source != commandsystem.SourceDM {
+					privateChannel, err := bot.GetCreatePrivateChannel(data.Message.Author.ID)
+					if err != nil {
+						return "", err
+					}
+					channelId = privateChannel.ID
+				}
+
+				dutil.SplitSendMessagePS(common.BotSession, channelId, help+"\n"+footer, "```ini\n", "```", false, false)
+				if data.Source != commandsystem.SourceDM && target == "" {
 					return "You've Got Mail!", nil
 				} else {
 					return "", nil
@@ -359,6 +366,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 This bot focuses on being configurable and therefore is one of the more advanced bots.
 It can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.
 I'm currently being ran and developed by jonas747#3124 (105487308693757952) but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
+Control panel: <https://yagpdb.xyz/cp>
 				`
 				return info, nil
 			},
@@ -634,9 +642,9 @@ type SearchAdviceResp struct {
 	Slips        []*AdviceSlip `json:"slips"`
 }
 
-func HandleGuildCreate(ctx context.Context, evt interface{}) {
-	client := bot.ContextRedis(ctx)
-	g := evt.(*discordgo.GuildCreate)
+func HandleGuildCreate(evt *eventsystem.EventData) {
+	client := bot.ContextRedis(evt.Context())
+	g := evt.GuildCreate
 	prefixExists, err := client.Cmd("EXISTS", "command_prefix:"+g.ID).Bool()
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")
@@ -649,11 +657,16 @@ func HandleGuildCreate(ctx context.Context, evt interface{}) {
 	}
 }
 
-func HandleMessageCreate(ctx context.Context, evt interface{}) {
-	m := evt.(*discordgo.MessageCreate)
-	CommandSystem.HandleMessageCreate(bot.ContextSession(ctx), m)
+func HandleMessageCreate(evt *eventsystem.EventData) {
+	m := evt.MessageCreate
+	CommandSystem.HandleMessageCreate(bot.ContextSession(evt.Context()), m)
 
-	if bot.State.User(true).ID != m.Author.ID {
+	bUser := bot.State.User(true)
+	if bUser == nil {
+		return
+	}
+
+	if bUser.ID != m.Author.ID {
 		return
 	}
 
