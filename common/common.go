@@ -12,7 +12,7 @@ import (
 const (
 	VERSIONMAJOR = 0
 	VERSIONMINOR = 19
-	VERSIONPATCH = 2
+	VERSIONPATCH = 3
 
 	Testing = false // Disables stuff like command cooldowns
 	// Testing = true // Disables stuff like command cooldowns
@@ -78,7 +78,7 @@ func Init() error {
 }
 
 func connectRedis(addr string) (err error) {
-	RedisPool, err = pool.NewCustomPool("tcp", addr, 100, RedisDialFunc)
+	RedisPool, err = pool.NewCustomPool("tcp", addr, 25, RedisDialFunc)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}
@@ -89,7 +89,7 @@ func connectDB(user, pass string) error {
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=yagpdb sslmode=disable password=%s", user, pass))
 	SQL = db
 	if err == nil {
-		db.DB().SetMaxOpenConns(10)
+		db.DB().SetMaxOpenConns(5)
 	}
 
 	return err

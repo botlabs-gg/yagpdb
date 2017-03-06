@@ -1,14 +1,21 @@
 $(function(){
 	if (visibleURL) {
 		console.log("Should navigate to", visibleURL);
-		window.history.pushState("", "", visibleURL);
+		window.history.replaceState("", "", visibleURL);
 	}
 
 	addListeners(false);
+
+	window.onpopstate = function (evt, a) {
+       	$("#main-content").html('<div class="loader">Loading...</div>');
+		navigate(window.location.pathname, "GET", null, false)
+        // Handle the back (or forward) buttons here
+        // Will NOT handle refresh, use onbeforeunload for this.
+    };
 })
 
 var currentlyLoading = false;
-function navigate(url, method, data){
+function navigate(url, method, data, updateHistory){
 	    if (currentlyLoading) {return;}
 	    currentlyLoading = true;
 	    var evt = new CustomEvent('customnavigate', { url: url });
@@ -37,7 +44,9 @@ function navigate(url, method, data){
 			}
 
 			$("#main-content").html(this.responseText);
-			window.history.pushState("", "", shownURL);
+			if (updateHistory) {	
+				window.history.pushState("", "", shownURL);
+			}
 			updateSelectedMenuItem();
 			addListeners(true);
 			if (typeof ga !== 'undefined') {
@@ -91,7 +100,7 @@ function addListeners(partial){
 		var link = $(this);
 		
 		var url = link.attr("href");
-		navigate(url, "GET", null);
+		navigate(url, "GET", null, true);
 
 		$("#main-content").html('<div class="loader">Loading...</div>');
 	});
