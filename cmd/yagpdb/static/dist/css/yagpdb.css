@@ -29,27 +29,31 @@ form table td{
 
 @media(max-width: 767px) {
 
-    .nav > li.dropdown.open .dropdown-menu {
-        width: 100%;
-        left: 0;
-        right: 0; 
-    }
+  .nav > li.dropdown.open .dropdown-menu {
+      width: 100%;
+      left: 0;
+      right: 0; 
+  }
 
-    .dropdown-menu>li { display: table-cell; }
-    .nav > li.dropdown.open { position: static; }
+  .dropdown-menu>li { display: table-cell; }
+  .nav > li.dropdown.open { position: static; }
 
-    .nav .dropdown-menu {
-    	position: fixed;
-    	bottom: 0;
-    	top: 0;
-    	overflow-y: scroll;
-    }
+  .nav .dropdown-menu {
+  	position: fixed;
+  	bottom: 0;
+  	top: 0;
+  	overflow-y: scroll;
+  }
 
    	/*
     .nav-button-desc {
         display: none;
     }
     }*/
+
+  #nav-footer {
+    display: none;
+  }
 }
 
 @media(min-width: 768px) {
@@ -71,7 +75,9 @@ form table td{
 		overflow-y: auto;
 		top: 51px;
 		bottom: 0%;
-	}
+    margin-bottom: 100px;
+  }
+
 }
 
 @media(max-width: 1000px) and (min-width: 768px){
@@ -79,6 +85,16 @@ form table td{
     margin-top: 25px;
   }
 }
+
+#nav-footer {
+  position: fixed;
+  bottom: 0;
+  height: 100px;
+  width: 250px;
+  text-align: center;
+  border: 2px solid black;
+}
+
 
 
 .loader,
