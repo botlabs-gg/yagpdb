@@ -89,12 +89,15 @@ form table td{
 #nav-footer {
   position: fixed;
   bottom: 0;
-  height: 100px;
+  height: 200px;
   width: 250px;
   text-align: center;
   border: 2px solid black;
 }
 
+#nav-footer-img{
+  width: 100%;
+}
 
 
 .loader,
