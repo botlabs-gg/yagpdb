@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -9,7 +10,6 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"golang.org/x/net/context"
 	"net/http"
 	"strings"
 )
@@ -205,4 +205,12 @@ func IsAdminCtx(ctx context.Context) bool {
 
 type APIError struct {
 	Message string
+}
+
+func CtxLogger(ctx context.Context) *log.Entry {
+	if inter := ctx.Value(common.ContextKeyLogger); inter != nil {
+		return inter.(*log.Entry)
+	}
+
+	return log.NewEntry(log.StandardLogger())
 }

@@ -17,4 +17,5 @@ const (
 	ContextKeyBotMember
 	ContextKeyBotPermissions
 	ContextKeyHighestBotRole
+	ContextKeyLogger
 )

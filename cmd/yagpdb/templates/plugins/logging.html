@@ -19,7 +19,7 @@
             <div class="panel-body">
                 <form role="form" method="post">
                     <div class="row">
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
                                 <input type="checkbox" name="UsernameLoggingEnabled" {{if .Config.UsernameLoggingEnabled}} checked{{end}}>
@@ -29,7 +29,7 @@
                               </label>
                             </div>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
                                 <input type="checkbox" name="NicknameLoggingEnabled" {{if .Config.NicknameLoggingEnabled}} checked{{end}}>
@@ -37,6 +37,17 @@
                                 You can check a users logged nicknames with the whois command.<br/>
                               </label>
                             </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <!-- <div class="form-group"> -->
+                                <label>Blacklist channels from message logs</label>
+                                <div class="btn-group">
+                                  <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Blacklist channels from message logs channels<span class="caret"></span></button>
+                                    <ul class="dropdown-menu">
+                                        {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Name" "BlacklistedChannels" "Selections" .Config.ParsedBlacklistedchannels}}
+                                    </ul>
+                                </div>
+                            <!-- </div> -->
                         </div>
                     </div>
                     <div class="row">

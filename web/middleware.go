@@ -25,6 +25,7 @@ import (
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
 // And discards requests when shutting down
+// And a logger
 func MiscMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		if !IsAcceptingRequests() {
@@ -39,6 +40,11 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			ctx, tmplData = GetCreateTemplateData(ctx)
 			tmplData["PartialRequest"] = true
 		}
+
+		entry := log.WithFields(log.Fields{
+			"r": r.RemoteAddr,
+		})
+		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
@@ -227,10 +233,12 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			"Guilds":        wrapped,
 			"ManagedGuilds": managedGuilds,
 		}
-		newCtx := context.WithValue(SetContextTemplateData(ctx, templateData), common.ContextKeyUser, user)
-		newCtx = context.WithValue(newCtx, common.ContextKeyGuilds, guilds)
+		entry := CtxLogger(ctx).WithField("u", user.ID)
+		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
+		ctx = context.WithValue(SetContextTemplateData(ctx, templateData), common.ContextKeyUser, user)
+		ctx = context.WithValue(ctx, common.ContextKeyGuilds, guilds)
 
-		inner.ServeHTTP(w, r.WithContext(newCtx))
+		inner.ServeHTTP(w, r.WithContext(ctx))
 
 	}
 	return http.HandlerFunc(mw)
@@ -243,6 +251,8 @@ func setFullGuild(ctx context.Context, guildID string) (context.Context, error) 
 		return ctx, err
 	}
 
+	entry := CtxLogger(ctx).WithField("g", guildID)
+	ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 	ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
 	return context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild), nil
 }
@@ -264,6 +274,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			return
 		}
 
+		// Userguilds not available, fallback to full guild request
 		guilds, ok := ctx.Value(common.ContextKeyGuilds).([]*discordgo.UserGuild)
 		if !ok {
 			var err error
@@ -276,6 +287,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			return
 		}
 
+		// Look for current guild in userguilds
 		var userGuild *discordgo.UserGuild
 		for _, g := range guilds {
 			if g.ID == guildID {
@@ -284,6 +296,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			}
 		}
 
+		// Fallback to userguilds if not found
 		if userGuild == nil {
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
@@ -299,6 +312,9 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			ID:   userGuild.ID,
 			Name: userGuild.Name,
 		}
+
+		entry := CtxLogger(ctx).WithField("g", fullGuild.ID)
+		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentUserGuild, userGuild)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
 		isAdmin := IsAdminCtx(ctx)

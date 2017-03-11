@@ -35,7 +35,7 @@ form table td{
       right: 0; 
   }
 
-  .dropdown-menu>li { display: table-cell; }
+  /*.dropdown-menu>li { display: table-cell; }*/
   .nav > li.dropdown.open { position: static; }
 
   .nav .dropdown-menu {
