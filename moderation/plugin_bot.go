@@ -489,7 +489,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      5,
+		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Warn",
@@ -514,7 +514,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      5,
+		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Warnings",
@@ -549,7 +549,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      5,
+		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "EditWarning",
@@ -567,6 +567,29 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				if rows < 1 {
 					return "Failed updating, most likely couldn't find the warning", nil
+				}
+
+				return "👌", nil
+			}),
+		},
+	},
+	&commands.CustomCommand{
+		CustomEnabled: true,
+		Cooldown:      2,
+		Category:      commands.CategoryModeration,
+		Command: &commandsystem.Command{
+			Name:                  "DelWarning",
+			Description:           "Deletes a warning, id is the first number of each warning from the warnings command",
+			RequiredArgs:          1,
+			UserArgRequireMention: true,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "Id", Type: commandsystem.ArgumentNumber},
+			},
+			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
+
+				rows := common.SQL.Where("guild_id = ? AND id = ?", parsed.Guild.ID(), parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
+				if rows < 1 {
+					return "Failed deleting, most likely couldn't find the warning", nil
 				}
 
 				return "👌", nil
