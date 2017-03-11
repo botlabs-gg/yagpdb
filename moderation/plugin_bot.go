@@ -13,7 +13,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/logs"
 	"time"
 )
 
@@ -362,15 +361,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			Run: ModBaseCmd(0, ModCmdReport, func(parsed *commandsystem.ExecData) (interface{}, error) {
 				config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
-				logLink := ""
-
-				logs, err := logs.CreateChannelLog(parsed.Message.ChannelID, parsed.Message.Author.Username, parsed.Message.Author.ID, 100)
-				if err != nil {
-					logLink = "Log Creation failed"
-					logrus.WithError(err).Error("Log Creation failed")
-				} else {
-					logLink = logs.Link()
-				}
+				logLink := CreateLogs(parsed.Guild.ID(), parsed.Channel.ID(), parsed.Message.Author)
 
 				channelID := config.ReportChannel
 				if channelID == "" {
@@ -379,7 +370,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				reportBody := fmt.Sprintf("<@%s> Reported <@%s> in <#%s> For `%s`\nLast 100 messages from channel: <%s>", parsed.Message.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Message.ChannelID, parsed.Args[1].Str(), logLink)
 
-				_, err = common.BotSession.ChannelMessageSend(channelID, common.EscapeEveryoneMention(reportBody))
+				_, err := common.BotSession.ChannelMessageSend(channelID, common.EscapeEveryoneMention(reportBody))
 				if err != nil {
 					return "Failed sending report", err
 				}

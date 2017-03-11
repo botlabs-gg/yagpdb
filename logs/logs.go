@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/bot"
@@ -9,6 +10,11 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"strconv"
+	"strings"
+)
+
+var (
+	ErrChannelBlacklisted = errors.New("Channel blacklisted from creating message logs")
 )
 
 type Plugin struct{}
@@ -34,8 +40,14 @@ func InitPlugin() {
 
 type GuildLoggingConfig struct {
 	configstore.GuildConfigModel
-	UsernameLoggingEnabled bool
-	NicknameLoggingEnabled bool
+	UsernameLoggingEnabled    bool
+	NicknameLoggingEnabled    bool
+	BlacklistedChannels       string
+	ParsedBlacklistedchannels []string `gorm:"-"`
+}
+
+func (g *GuildLoggingConfig) PostFetch() {
+	g.ParsedBlacklistedchannels = strings.Split(g.BlacklistedChannels, ",")
 }
 
 func (g *GuildLoggingConfig) GetName() string {
@@ -89,7 +101,23 @@ type Message struct {
 	Deleted        bool
 }
 
-func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLog, error) {
+func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID, author, authorID string, count int) (*MessageLog, error) {
+	if config == nil {
+		var err error
+		config, err = GetConfig(guildID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(config.ParsedBlacklistedchannels) > 0 {
+		for _, v := range config.ParsedBlacklistedchannels {
+			if v == channelID {
+				return nil, ErrChannelBlacklisted
+			}
+		}
+	}
+
 	if count > 1000 {
 		panic("count > 1000")
 	}

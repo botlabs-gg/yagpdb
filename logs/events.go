@@ -58,8 +58,11 @@ var cmds = []commandsystem.CommandHandler{
 					}
 				}
 
-				l, err := CreateChannelLog(cmd.Channel.ID(), cmd.Message.Author.Username, cmd.Message.Author.ID, num)
+				l, err := CreateChannelLog(nil, cmd.Guild.ID(), cmd.Channel.ID(), cmd.Message.Author.Username, cmd.Message.Author.ID, num)
 				if err != nil {
+					if err == ErrChannelBlacklisted {
+						return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
+					}
 					return "An error occured", err
 				}
 

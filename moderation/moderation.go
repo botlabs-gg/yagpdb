@@ -295,20 +295,13 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	logLink := ""
 	if channelID != "" {
-		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
-		if err != nil {
-			logLink = "Log Creation failed"
-			logrus.WithError(err).Error("Log Creation failed")
-		} else {
-			logLink = logs.Link()
-		}
+		logLink = CreateLogs(guildID, channelID, author)
 	}
 
 	switch p {
 	case PunishmentKick:
 		err = common.BotSession.GuildMemberDelete(guildID, user.ID)
 	case PunishmentBan:
-
 		err = common.BotSession.GuildBanCreate(guildID, user.ID, 1)
 	}
 
@@ -454,13 +447,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	// Upload logs
 	logLink := ""
 	if channelID != "" && mute {
-		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
-		if err != nil {
-			logLink = "Log Creation failed"
-			logrus.WithError(err).Error("Log Creation failed")
-		} else {
-			logLink = logs.Link()
-		}
+		logLink = CreateLogs(guildID, channelID, author)
 	}
 
 	action := ""
@@ -516,13 +503,7 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 	}
 
 	if config.WarnIncludeChannelLogs {
-		logsObj, err := logs.CreateChannelLog(channelID, author.ID, author.Username, 100)
-		if err != nil {
-			logrus.WithError(err).Error("Failed creating channel logs")
-			warning.LogsLink = "(Failed creating logs)"
-		} else {
-			warning.LogsLink = logsObj.Link()
-		}
+		warning.LogsLink = CreateLogs(guildID, channelID, author)
 	}
 
 	err = common.SQL.Create(warning).Error
@@ -545,4 +526,16 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 	}
 
 	return nil
+}
+
+func CreateLogs(guildID, channelID string, user *discordgo.User) string {
+	lgs, err := logs.CreateChannelLog(nil, guildID, channelID, user.Username, user.ID, 100)
+	if err != nil {
+		if err == logs.ErrChannelBlacklisted {
+			return ""
+		}
+		logrus.WithError(err).Error("Log Creation failed")
+		return "Log Creation failed"
+	}
+	return lgs.Link()
 }

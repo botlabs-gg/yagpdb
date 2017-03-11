@@ -12,11 +12,18 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type DeleteData struct {
 	ID string
+}
+
+type GeneralFormData struct {
+	UsernameLoggingEnabled bool
+	NicknameLoggingEnabled bool
+	BlacklistedChannels    []string
 }
 
 func (lp *Plugin) InitWeb() {
@@ -30,11 +37,13 @@ func (lp *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/logging"), logCPMux)
 	web.CPMux.Handle(pat.New("/logging/*"), logCPMux)
 
+	logCPMux.Use(web.RequireGuildChannelsMiddleware)
+
 	cpGetHandler := web.ControllerHandler(HandleLogsCP, "cp_logging")
 	logCPMux.Handle(pat.Get("/"), cpGetHandler)
 	logCPMux.Handle(pat.Get(""), cpGetHandler)
 
-	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, GuildLoggingConfig{}, "Updated logging config")
+	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, GeneralFormData{}, "Updated logging config")
 	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
 	msgDeleteHandler := web.APIHandler(HandleDeleteMessageJson)
 
@@ -95,9 +104,17 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	ctx := r.Context()
 	_, g, tmpl := web.GetBaseCPContextData(ctx)
 
-	config := ctx.Value(common.ContextKeyParsedForm).(*GuildLoggingConfig)
-	parsed, _ := strconv.ParseInt(g.ID, 10, 64)
-	config.GuildID = parsed
+	form := ctx.Value(common.ContextKeyParsedForm).(*GeneralFormData)
+
+	config := &GuildLoggingConfig{
+		GuildConfigModel: configstore.GuildConfigModel{
+			GuildID: common.MustParseInt(g.ID),
+		},
+
+		NicknameLoggingEnabled: form.NicknameLoggingEnabled,
+		UsernameLoggingEnabled: form.UsernameLoggingEnabled,
+		BlacklistedChannels:    strings.Join(form.BlacklistedChannels, ","),
+	}
 
 	err := configstore.SQL.SetGuildConfig(ctx, config)
 	return tmpl, err
