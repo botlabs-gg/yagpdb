@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -46,7 +45,7 @@ func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		client, guild, tmpl := web.GetBaseCPContextData(r.Context())
 		config, err := GetConfig(client, guild.ID)
-		if web.CheckErr(tmpl, err, "Failed retrieving streaming config :'(", logrus.Error) {
+		if web.CheckErr(tmpl, err, "Failed retrieving streaming config :'(", web.CtxLogger(r.Context()).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_streaming", tmpl))
 			return
 		}
@@ -72,13 +71,13 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err := newConf.Save(client, guild.ID)
-	if web.CheckErr(tmpl, err, "Failed saving config :'(", logrus.Error) {
+	if web.CheckErr(tmpl, err, "Failed saving config :'(", web.CtxLogger(ctx).Error) {
 		return tmpl
 	}
 
 	err = pubsub.Publish(client, "update_streaming", guild.ID, nil)
 	if err != nil {
-		logrus.WithError(err).Error("Failed sending update streaming event")
+		web.CtxLogger(ctx).WithError(err).Error("Failed sending update streaming event")
 	}
 
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)

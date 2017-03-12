@@ -1,7 +1,6 @@
 package serverstats
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -61,7 +60,6 @@ func HandleStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	_, ag, templateData := web.GetBaseCPContextData(r.Context())
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
-	log.Printf("%#v", formData)
 
 	newConf := &ServerStatsConfig{
 		GuildConfigModel: configstore.GuildConfigModel{
@@ -95,7 +93,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 
 	stats, err := RetrieveFullStats(client, activeGuild.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving stats")
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}

@@ -42,7 +42,8 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 		}
 
 		entry := log.WithFields(log.Fields{
-			"r": r.RemoteAddr,
+			"ip":  r.RemoteAddr,
+			"url": r.URL.Path,
 		})
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 
@@ -64,7 +65,7 @@ func RedisMiddleware(inner http.Handler) http.Handler {
 
 		client, err := common.RedisPool.Get()
 		if err != nil {
-			log.WithError(err).Error("Failed retrieving client from redis pool")
+			CtxLogger(r.Context()).WithError(err).Error("Failed retrieving client from redis pool")
 			// Redis is unavailable, just server without then
 			inner.ServeHTTP(w, r)
 			return
@@ -130,7 +131,7 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 
 		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
 		if err != nil {
-			log.WithError(err).Error("Failed initializing discord session")
+			CtxLogger(r.Context()).WithError(err).Error("Failed initializing discord session")
 			return
 		}
 
@@ -192,7 +193,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			// nothing in cache...
 			user, err = session.User("@me")
 			if err != nil {
-				log.WithError(err).Error("Failed getting user info from discord")
+				CtxLogger(r.Context()).WithError(err).Error("Failed getting user info from discord")
 				HandleLogout(w, r)
 				return
 			}
@@ -206,7 +207,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 		if err != nil {
 			guilds, err = session.UserGuilds(100, "", "")
 			if err != nil {
-				log.WithError(err).Error("Failed getting user guilds")
+				CtxLogger(r.Context()).WithError(err).Error("Failed getting user guilds")
 				HandleLogout(w, r)
 				return
 			}
@@ -216,7 +217,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 
 		wrapped, err := common.GetWrapped(guilds, redisClient)
 		if err != nil {
-			log.WithError(err).Error("Failed wrapping guilds")
+			CtxLogger(r.Context()).WithError(err).Error("Failed wrapping guilds")
 			http.Redirect(w, r, "/?err=rediserr", http.StatusTemporaryRedirect)
 			return
 		}
@@ -247,7 +248,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 func setFullGuild(ctx context.Context, guildID string) (context.Context, error) {
 	fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guildID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving guild")
+		CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
 		return ctx, err
 	}
 
@@ -270,7 +271,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 
 		// Validate the id
 		if _, err := strconv.ParseInt(guildID, 10, 64); err != nil {
-			log.WithError(err).Error("GuilID is not a number")
+			CtxLogger(ctx).WithError(err).Error("GuilID is not a number")
 			return
 		}
 
@@ -280,7 +281,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
 			if err != nil {
-				log.WithError(err).Error("Failed setting full guild")
+				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
 			}
 			r = r.WithContext(ctx)
 			log.Info("No guilds, set full guild instead of userguild")
@@ -301,7 +302,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
 			if err != nil {
-				log.WithError(err).Error("Failed setting full guild")
+				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
 			}
 			r = r.WithContext(ctx)
 			log.Info("Userguild not found")
@@ -355,7 +356,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 
 		channels, err := common.GetGuildChannels(RedisClientFromContext(ctx), guild.ID)
 		if err != nil {
-			log.WithError(err).Error("Failed retrieving channels")
+			CtxLogger(ctx).WithError(err).Error("Failed retrieving channels")
 			http.Redirect(w, r, "/?err=retrievingchannels", http.StatusTemporaryRedirect)
 			return
 		}
@@ -383,7 +384,7 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 
 		fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guild.ID)
 		if err != nil {
-			log.WithError(err).Error("Failed retrieving guild")
+			CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
 			http.Redirect(w, r, "/?err=errretrievingguild", http.StatusTemporaryRedirect)
 			return
 		}
@@ -403,10 +404,10 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		member, err := botrest.GetBotMember(pat.Param(r, "server"))
 		if err != nil {
-			log.WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
+			CtxLogger(r.Context()).WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
 			member, err = common.BotSession.GuildMember(pat.Param(r, "server"), common.Conf.BotID)
 			if err != nil {
-				log.WithError(err).Error("Failed retrieving bot member")
+				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
 				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
 				return
 			}
@@ -479,9 +480,10 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 				out = d
 			}
 		}
+
 		err := Templates.ExecuteTemplate(w, tmpl, out)
 		if err != nil {
-			log.WithError(err).Error("Failed executing template")
+			CtxLogger(r.Context()).WithError(err).Error("Failed executing template")
 			return
 		}
 	}
@@ -500,7 +502,7 @@ func APIHandler(inner CustomHandlerFunc) http.Handler {
 				if public, ok := cast.(*PublicError); ok {
 					out = map[string]interface{}{"ok": false, "error": public.msg}
 				}
-				log.WithError(cast).WithField("req", r.URL.String()).Error("API Error")
+				CtxLogger(r.Context()).WithError(cast).Error("API Error")
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -575,7 +577,7 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 
 		ok := true
 		if err != nil {
-			log.WithError(err).Error("Failed decoding form")
+			CtxLogger(ctx).WithError(err).Error("Failed decoding form")
 			tmpl.AddAlerts(ErrorAlert("Failed parsing form"))
 			ok = false
 		} else {
@@ -644,14 +646,13 @@ type ControllerHandlerFuncJson func(w http.ResponseWriter, r *http.Request) (int
 func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handler {
 	return RenderHandler(func(w http.ResponseWriter, r *http.Request) interface{} {
 		ctx := r.Context()
-		guild, _ := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
 		data, err := f(w, r)
 		if data == nil {
 			ctx, data = GetCreateTemplateData(ctx)
 		}
 
-		checkControllerError(guild, data, err)
+		checkControllerError(ctx, data, err)
 
 		return data
 
@@ -681,7 +682,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 		if data == nil {
 			data = templateData
 		}
-		checkControllerError(g, data, err)
+		checkControllerError(ctx, data, err)
 
 		if err == nil {
 			data.AddAlerts(SucessAlert("Success!"))
@@ -699,7 +700,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 	return handler
 }
 
-func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) {
+func checkControllerError(ctx context.Context, data TemplateData, err error) {
 	if err == nil {
 		return
 	}
@@ -710,13 +711,7 @@ func checkControllerError(guild *discordgo.Guild, data TemplateData, err error) 
 		data.AddAlerts(ErrorAlert("An error occured... Contact support if you're having issues."))
 	}
 
-	entry := log.WithError(err)
-
-	if guild != nil {
-		entry = entry.WithField("guild", guild.ID)
-	}
-
-	entry.Error("Web handler reported error")
+	CtxLogger(ctx).WithError(err).Error("Web handler reported an error")
 }
 
 func RequirePermMW(perms ...int) func(http.Handler) http.Handler {

@@ -207,6 +207,7 @@ type APIError struct {
 	Message string
 }
 
+// CtxLogger Returns an always non nil entry either from the context or standard logger
 func CtxLogger(ctx context.Context) *log.Entry {
 	if inter := ctx.Value(common.ContextKeyLogger); inter != nil {
 		return inter.(*log.Entry)

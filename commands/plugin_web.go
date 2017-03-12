@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -45,11 +44,7 @@ func HandlePostGeneral(w http.ResponseWriter, r *http.Request) interface{} {
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 
 	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, strings.TrimSpace(r.FormValue("prefix"))).Err
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed saving config", err))
-	} else {
-		templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :o"))
-	}
+	web.CheckErr(templateData, err, "Failed saving", web.CtxLogger(r.Context()).Error)
 
 	config := GetConfig(client, activeGuild.ID, channels)
 	templateData["CommandConfig"] = config
@@ -107,7 +102,7 @@ func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err := common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
-	if web.CheckErr(templateData, err, "Failed saving item :'(", logrus.Error) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 

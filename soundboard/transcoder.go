@@ -105,7 +105,7 @@ func handleQueueItem(client *redis.Client, item string) error {
 	logrus.WithField("sound", sound.ID).Info("Handling queued sound ", sound.Name)
 	err = transcodeSound(&sound)
 	if err != nil {
-		logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcodiing sound")
+		logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
 		common.SQL.Model(&sound).Update("Status", TranscodingStatusFailedOther)
 		os.Remove(SoundFilePath(sound.ID, TranscodingStatusReady))
 	} else {

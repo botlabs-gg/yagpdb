@@ -1,7 +1,6 @@
 package autorole
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -69,11 +68,11 @@ func HandleAutoroles(w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
 	commands, err := GetCommands(client, activeGuild.ID)
-	web.CheckErr(tmpl, err, "Failed retrieving commands (contact support)", logrus.Error)
+	web.CheckErr(tmpl, err, "Failed retrieving commands (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["RoleCommands"] = commands
 
 	general, err := GetGeneralConfig(client, activeGuild.ID)
-	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", logrus.Error)
+	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
 	proc, _ := client.Cmd("GET", KeyProcessing(activeGuild.ID)).Int()

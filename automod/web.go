@@ -1,7 +1,6 @@
 package automod
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
@@ -48,7 +47,7 @@ func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
 	client, g, templateData := web.GetBaseCPContextData(r.Context())
 
 	config, err := GetConfig(client, g.ID)
-	web.CheckErr(templateData, err, "Failed retrieving rules", log.Error)
+	web.CheckErr(templateData, err, "Failed retrieving rules", web.CtxLogger(r.Context()).Error)
 
 	templateData["AutomodConfig"] = config
 	templateData["VisibleURL"] = "/cp/" + g.ID + "/automod/"

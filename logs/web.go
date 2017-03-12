@@ -82,7 +82,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	serverLogs, err := GetGuilLogs(g.ID, beforeID, afterID, 20)
-	web.CheckErr(tmpl, err, "Failed retrieving logs", logrus.Error)
+	web.CheckErr(tmpl, err, "Failed retrieving logs", web.CtxLogger(ctx).Error)
 	if err == nil {
 		tmpl["Logs"] = serverLogs
 		if len(serverLogs) > 0 {
@@ -155,7 +155,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	msgLogs, err := GetChannelLogs(parsed)
-	if web.CheckErr(tmpl, err, "Failed retrieving message logs", logrus.Error) {
+	if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {
 		return tmpl
 	}
 

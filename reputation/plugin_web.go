@@ -1,7 +1,6 @@
 package reputation
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"html/template"
@@ -22,7 +21,7 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 	client, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	settings, err := GetFullSettings(client, activeGuild.ID)
-	if !web.CheckErr(templateData, err, "Failed retrieving settings", logrus.Error) {
+	if !web.CheckErr(templateData, err, "Failed retrieving settings", web.CtxLogger(r.Context()).Error) {
 		templateData["RepSettings"] = settings
 	}
 	return templateData
@@ -33,7 +32,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reputation/"
 
 	currentSettings, err := GetFullSettings(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed retrieving settings", logrus.Error) {
+	if web.CheckErr(templateData, err, "Failed retrieving settings", web.CtxLogger(r.Context()).Error) {
 		return templateData
 	}
 
@@ -54,7 +53,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err = newSettings.Save(client, activeGuild.ID)
-	if web.CheckErr(templateData, err, "Failed saving settings", logrus.Error) {
+	if web.CheckErr(templateData, err, "Failed saving settings", web.CtxLogger(r.Context()).Error) {
 		return templateData
 	}
 

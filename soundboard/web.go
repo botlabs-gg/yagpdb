@@ -2,7 +2,6 @@ package soundboard
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -47,6 +46,7 @@ func HandleGetCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, erro
 	if err != nil {
 		return tmpl, err
 	}
+
 	tmpl["Config"] = config
 	return tmpl, nil
 }
@@ -128,10 +128,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 
 	tooBig := false
 	if file != nil {
-		logrus.Info("Download sound file from upload")
 		tooBig, err = DownloadNewSondFile(file, destFile, 10000000)
 	} else if r.FormValue("SoundURL") != "" {
-		logrus.Info("Download sound file from url")
 		var resp *http.Response
 		resp, err = http.Get(r.FormValue("SoundURL"))
 		if err != nil {
