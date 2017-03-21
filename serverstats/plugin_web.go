@@ -86,8 +86,14 @@ func publicHandlerJson(inner publicHandlerFuncJson, public bool) web.CustomHandl
 func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
 	client, activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
-	publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
-	if !publicEnabled && isPublicAccess {
+	conf, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving stats config")
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
+	}
+
+	if !conf.Public && isPublicAccess {
 		return nil
 	}
 
