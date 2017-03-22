@@ -17,7 +17,7 @@ func RegisterPlugin() {
 	bot.RegisterPlugin(plugin)
 	web.RegisterPlugin(plugin)
 
-	common.SQL.AutoMigrate(&Config{})
+	common.GORM.AutoMigrate(&Config{})
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 
 }

@@ -90,7 +90,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	now := time.Now()
 
 	var subs []*ChannelSubscription
-	err := common.SQL.Where("youtube_channel_id = ?", channel).Find(&subs).Error
+	err := common.GORM.Where("youtube_channel_id = ?", channel).Find(&subs).Error
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ var (
 func (p *Plugin) PlaylistID(channelID string) (string, error) {
 
 	var entry YoutubePlaylistID
-	err := common.SQL.Where("channel_id = ?", channelID).First(&entry).Error
+	err := common.GORM.Where("channel_id = ?", channelID).First(&entry).Error
 	if err == nil {
 		return entry.PlaylistID, nil
 	}
@@ -226,13 +226,13 @@ func (p *Plugin) PlaylistID(channelID string) (string, error) {
 	entry.ChannelID = channelID
 	entry.PlaylistID = id
 
-	common.SQL.Create(&entry)
+	common.GORM.Create(&entry)
 
 	return id, nil
 }
 
 func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
-	err = common.SQL.Where("youtube_channel_id = ?", channel).Find(&result).Error
+	err = common.GORM.Where("youtube_channel_id = ?", channel).Find(&result).Error
 	return
 }
 
@@ -272,7 +272,7 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 	}
 	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
 
-	err = common.SQL.Create(sub).Error
+	err = common.GORM.Create(sub).Error
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func maybeRemoveChannelWatch(channel string) {
 	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
 
 	var count int
-	err = common.SQL.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
+	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
 	if err != nil || count > 0 {
 		if err != nil {
 			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")

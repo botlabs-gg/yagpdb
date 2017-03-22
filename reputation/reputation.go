@@ -1,5 +1,7 @@
 package reputation
 
+//go:generate sqlboiler -w "reputation_settings,reputation_users,reputation_log" postgres
+
 import (
 	"errors"
 	"github.com/fzzy/radix/redis"

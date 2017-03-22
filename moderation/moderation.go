@@ -47,7 +47,7 @@ func RegisterPlugin() {
 	bot.RegisterPlugin(plugin)
 	common.RegisterScheduledEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
-	common.SQL.AutoMigrate(&Config{}, &WarningModel{})
+	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
 }
 
 func handleUnMute(data string) error {
@@ -506,7 +506,7 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 		warning.LogsLink = CreateLogs(guildID, channelID, author)
 	}
 
-	err = common.SQL.Create(warning).Error
+	err = common.GORM.Create(warning).Error
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}

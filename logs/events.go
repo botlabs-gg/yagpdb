@@ -307,7 +307,7 @@ var cmds = []commandsystem.CommandHandler{
 
 // Mark all log messages with this id as deleted
 func HandleMsgDelete(evt *eventsystem.EventData) {
-	common.SQL.Model(Message{}).Where("message_id = ?", evt.MessageDelete.ID).Update("deleted", true)
+	common.GORM.Model(Message{}).Where("message_id = ?", evt.MessageDelete.ID).Update("deleted", true)
 }
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
@@ -359,7 +359,7 @@ type NicknameListing struct {
 
 func CheckUsername(user *discordgo.User) {
 	var result UsernameListing
-	err := common.SQL.Model(&result).Where(UsernameListing{UserID: MustParseID(user.ID)}).Last(&result).Error
+	err := common.GORM.Model(&result).Where(UsernameListing{UserID: MustParseID(user.ID)}).Last(&result).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.WithError(err).Error("Failed checking username for changes")
 		return
@@ -376,7 +376,7 @@ func CheckUsername(user *discordgo.User) {
 		Username: user.Username,
 	}
 
-	err = common.SQL.Create(&listing).Error
+	err = common.GORM.Create(&listing).Error
 	if err != nil {
 		logrus.WithError(err).Error("Failed setting username")
 	}
@@ -384,7 +384,7 @@ func CheckUsername(user *discordgo.User) {
 
 func CheckNickname(userID, guildID, nickname string) {
 	var result NicknameListing
-	err := common.SQL.Model(&result).Where(NicknameListing{UserID: MustParseID(userID), GuildID: guildID}).Last(&result).Error
+	err := common.GORM.Model(&result).Where(NicknameListing{UserID: MustParseID(userID), GuildID: guildID}).Last(&result).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.WithError(err).Error("Failed checking nickname for changes")
 		return
@@ -407,7 +407,7 @@ func CheckNickname(userID, guildID, nickname string) {
 		Nickname: nickname,
 	}
 
-	err = common.SQL.Create(&listing).Error
+	err = common.GORM.Create(&listing).Error
 	if err != nil {
 		logrus.WithError(err).Error("Failed setting nickname")
 	}

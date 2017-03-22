@@ -12,7 +12,7 @@ func (p *Plugin) Status(client *redis.Client) (string, string) {
 	numUnique, _ := client.Cmd("ZCARD", "youtube_subbed_channels").Int()
 
 	var numChannels int
-	common.SQL.Model(&ChannelSubscription{}).Count(&numChannels)
+	common.GORM.Model(&ChannelSubscription{}).Count(&numChannels)
 
 	return "Youtube", fmt.Sprintf("%d/%d", numUnique, numChannels)
 }

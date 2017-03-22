@@ -82,7 +82,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	data.GuildID = common.MustParseInt(g.ID)
 
 	count := 0
-	err := common.SQL.Model(SoundboardSound{}).Where("guild_id = ? AND name = ?", g.ID, data.Name).Count(&count).Error
+	err := common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ?", g.ID, data.Name).Count(&count).Error
 	if err != nil {
 		return tmpl, err
 	}
@@ -92,7 +92,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		return tmpl, nil
 	}
 
-	err = common.SQL.Model(SoundboardSound{}).Where("guild_id = ?", g.ID).Count(&count).Error
+	err = common.GORM.Model(SoundboardSound{}).Where("guild_id = ?", g.ID).Count(&count).Error
 	if err != nil {
 		return tmpl, err
 	}
@@ -101,7 +101,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		return tmpl, nil
 	}
 
-	err = common.SQL.Create(data).Error
+	err = common.GORM.Create(data).Error
 	if err != nil {
 		return tmpl, err
 	}
@@ -150,7 +150,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		if tooBig {
 			tmpl.AddAlerts(web.ErrorAlert("Max 10MB files allowed"))
 		}
-		common.SQL.Delete(data)
+		common.GORM.Delete(data)
 		return tmpl, err
 	}
 
@@ -198,13 +198,13 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	data.GuildID = common.MustParseInt(g.ID)
 
 	count := 0
-	common.SQL.Model(SoundboardSound{}).Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID).Count(&count)
+	common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID).Count(&count)
 	if count > 0 {
 		tmpl.AddAlerts(web.ErrorAlert("Name already used"))
 		return tmpl, nil
 	}
 
-	err := common.SQL.Debug().Model(data).Updates(map[string]interface{}{"name": data.Name, "required_role": data.RequiredRole}).Error
+	err := common.GORM.Debug().Model(data).Updates(map[string]interface{}{"name": data.Name, "required_role": data.RequiredRole}).Error
 	configstore.InvalidateGuildCache(client, g.ID, &SoundboardConfig{})
 	return tmpl, err
 }
@@ -226,7 +226,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	defer common.UnlockRedisKey(client, KeySoundLock(data.ID))
 
 	var storedSound SoundboardSound
-	err = common.SQL.Where("guild_id = ? AND id = ?", g.ID, data.ID).First(&storedSound).Error
+	err = common.GORM.Where("guild_id = ? AND id = ?", g.ID, data.ID).First(&storedSound).Error
 	if err != nil {
 		return tmpl, nil
 	}
@@ -245,7 +245,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		}
 	}
 
-	err = common.SQL.Delete(storedSound).Error
+	err = common.GORM.Delete(storedSound).Error
 	configstore.InvalidateGuildCache(client, g.ID, &SoundboardConfig{})
 
 	return tmpl, err

@@ -1,12 +1,14 @@
 package common
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
+	"github.com/vattle/sqlboiler/boil"
 )
 
 const (
@@ -22,7 +24,8 @@ var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
 	VERSION       = VERSIONNUMBER + " testing"
 
-	SQL       *gorm.DB
+	GORM      *gorm.DB
+	PQ        *sql.DB
 	RedisPool *pool.Pool
 
 	BotSession *discordgo.Session
@@ -84,12 +87,13 @@ func connectRedis(addr string) (err error) {
 	}
 	return
 }
-
 func connectDB(user, pass string) error {
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=yagpdb sslmode=disable password=%s", user, pass))
-	SQL = db
+	GORM = db
+	PQ = db.DB()
+	boil.SetDB(PQ)
 	if err == nil {
-		db.DB().SetMaxOpenConns(5)
+		PQ.SetMaxOpenConns(5)
 	}
 
 	return err

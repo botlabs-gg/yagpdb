@@ -97,7 +97,7 @@ func handleQueueItem(client *redis.Client, item string) error {
 	defer common.UnlockRedisKey(client, KeySoundLock(uint(parsedId)))
 
 	var sound SoundboardSound
-	err = common.SQL.Where(uint(parsedId)).First(&sound).Error
+	err = common.GORM.Where(uint(parsedId)).First(&sound).Error
 	if err != nil {
 		return err
 	}
@@ -106,10 +106,10 @@ func handleQueueItem(client *redis.Client, item string) error {
 	err = transcodeSound(&sound)
 	if err != nil {
 		logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
-		common.SQL.Model(&sound).Update("Status", TranscodingStatusFailedOther)
+		common.GORM.Model(&sound).Update("Status", TranscodingStatusFailedOther)
 		os.Remove(SoundFilePath(sound.ID, TranscodingStatusReady))
 	} else {
-		common.SQL.Model(&sound).Update("Status", TranscodingStatusReady)
+		common.GORM.Model(&sound).Update("Status", TranscodingStatusReady)
 	}
 
 	configstore.InvalidateGuildCache(client, sound.GuildID, &SoundboardConfig{})

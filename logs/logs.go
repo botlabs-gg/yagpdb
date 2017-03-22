@@ -25,7 +25,7 @@ func (p *Plugin) Name() string {
 
 func InitPlugin() {
 	//p := &Plugin{}
-	err := common.SQL.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
+	err := common.GORM.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
 	if err != nil {
 		panic(err)
 	}
@@ -167,7 +167,7 @@ func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID, author, au
 		GuildID:     channel.GuildID,
 	}
 
-	err = common.SQL.Create(log).Error
+	err = common.GORM.Create(log).Error
 
 	return log, err
 	return nil, nil
@@ -176,14 +176,14 @@ func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID, author, au
 func GetChannelLogs(id int64) (*MessageLog, error) {
 
 	var result MessageLog
-	err := common.SQL.Where(id).First(&result).Error
+	err := common.GORM.Where(id).First(&result).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = common.SQL.Where("message_log_id = ?", result.ID).Order("id desc").Find(&result.Messages).Error
-	// err = common.SQL.Model(&result).Related(&result.Messages, "MessageLogID").Error
+	err = common.GORM.Where("message_log_id = ?", result.ID).Order("id desc").Find(&result.Messages).Error
+	// err = common.GORM.Model(&result).Related(&result.Messages, "MessageLogID").Error
 
 	return &result, err
 }
@@ -193,11 +193,11 @@ func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error
 	var result []*MessageLog
 	var q *gorm.DB
 	if before != 0 {
-		q = common.SQL.Where("guild_id = ? AND id < ?", guildID, before)
+		q = common.GORM.Where("guild_id = ? AND id < ?", guildID, before)
 	} else if after != 0 {
-		q = common.SQL.Where("guild_id = ? AND id > ?", guildID, after)
+		q = common.GORM.Where("guild_id = ? AND id > ?", guildID, after)
 	} else {
-		q = common.SQL.Where("guild_id = ?", guildID)
+		q = common.GORM.Where("guild_id = ?", guildID)
 	}
 
 	err := q.Order("id desc").Limit(limit).Find(&result).Error
@@ -214,13 +214,13 @@ func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error
 
 func GetUsernames(userID string, limit int) ([]UsernameListing, error) {
 	var listings []UsernameListing
-	err := common.SQL.Where(&UsernameListing{UserID: MustParseID(userID)}).Order("id desc").Limit(limit).Find(&listings).Error
+	err := common.GORM.Where(&UsernameListing{UserID: MustParseID(userID)}).Order("id desc").Limit(limit).Find(&listings).Error
 	return listings, err
 }
 
 func GetNicknames(userID, GuildID string, limit int) ([]NicknameListing, error) {
 	var listings []NicknameListing
-	err := common.SQL.Where(&NicknameListing{UserID: MustParseID(userID), GuildID: GuildID}).Order("id desc").Limit(limit).Find(&listings).Error
+	err := common.GORM.Where(&NicknameListing{UserID: MustParseID(userID), GuildID: GuildID}).Order("id desc").Limit(limit).Find(&listings).Error
 	return listings, err
 }
 

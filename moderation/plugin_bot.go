@@ -517,7 +517,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			},
 			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
 				var result []*WarningModel
-				err := common.SQL.Where("user_id = ? AND guild_id = ?", parsed.Args[0].DiscordUser().ID, parsed.Guild.ID()).Order("id desc").Find(&result).Error
+				err := common.GORM.Where("user_id = ? AND guild_id = ?", parsed.Args[0].DiscordUser().ID, parsed.Guild.ID()).Order("id desc").Find(&result).Error
 				if err != nil && err != gorm.ErrRecordNotFound {
 					return "An error occured...", err
 				}
@@ -553,7 +553,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			},
 			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
 
-				rows := common.SQL.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.Guild.ID(), parsed.Args[0].Int()).Update(
+				rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.Guild.ID(), parsed.Args[0].Int()).Update(
 					"message", fmt.Sprintf("%s (updated by %s#%s (%s))", parsed.Args[1].Str(), parsed.Message.Author.Username, parsed.Message.Author.Discriminator, parsed.Message.Author.ID)).RowsAffected
 
 				if rows < 1 {
@@ -578,7 +578,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 			},
 			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
 
-				rows := common.SQL.Where("guild_id = ? AND id = ?", parsed.Guild.ID(), parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
+				rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.Guild.ID(), parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
 				if rows < 1 {
 					return "Failed deleting, most likely couldn't find the warning", nil
 				}

@@ -119,7 +119,7 @@ var cmds = []commandsystem.CommandHandler{
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
 
 				var reminder Reminder
-				err := common.SQL.Where(parsed.Args[0].Int()).First(&reminder).Error
+				err := common.GORM.Where(parsed.Args[0].Int()).First(&reminder).Error
 				if err != nil {
 					if err == gorm.ErrRecordNotFound {
 						return "No reminder by that id found", nil
@@ -139,7 +139,7 @@ var cmds = []commandsystem.CommandHandler{
 				}
 
 				// Do the actual deletion
-				err = common.SQL.Delete(reminder).Error
+				err = common.GORM.Delete(reminder).Error
 
 				// Check if we should remove the scheduled event
 				currentReminders, err := GetUserReminders(reminder.UserID)

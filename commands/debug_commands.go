@@ -98,7 +98,7 @@ var debugCommands = []commandsystem.CommandHandler{
 				within := time.Now().Add(time.Duration(-hours) * time.Hour)
 
 				var results []*TopCommandsResult
-				err := common.SQL.Table(LoggedExecutedCommand{}.TableName()).Select("command, COUNT(id)").Where("created_at > ?", within).Group("command").Order("count(id) desc").Scan(&results).Error
+				err := common.GORM.Table(LoggedExecutedCommand{}.TableName()).Select("command, COUNT(id)").Where("created_at > ?", within).Group("command").Order("count(id) desc").Scan(&results).Error
 				if err != nil {
 					return "Uh oh something bad happened", err
 				}

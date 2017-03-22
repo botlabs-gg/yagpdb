@@ -129,7 +129,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 		return tmpl, errors.New("ID is blank!")
 	}
 
-	result := common.SQL.Where("id = ? AND guild_id = ?", data.ID, g.ID).Delete(MessageLog{})
+	result := common.GORM.Where("id = ? AND guild_id = ?", data.ID, g.ID).Delete(MessageLog{})
 	if result.Error != nil {
 		return tmpl, result.Error
 	}
@@ -140,7 +140,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	}
 	logrus.Println(result.RowsAffected)
 
-	err := common.SQL.Where("message_log_id = ?", data.ID).Delete(Message{}).Error
+	err := common.GORM.Where("message_log_id = ?", data.ID).Delete(Message{}).Error
 	return tmpl, err
 }
 
@@ -188,7 +188,7 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 	}
 
 	var logContainer MessageLog
-	err := common.SQL.Where("id = ?", logsId).First(&logContainer).Error
+	err := common.GORM.Where("id = ?", logsId).First(&logContainer).Error
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return err
 	}
 
-	err = common.SQL.Model(&Message{}).Where("message_log_id = ? AND id = ?", logsId, msgID).Update("deleted", true).Error
+	err = common.GORM.Model(&Message{}).Where("message_log_id = ? AND id = ?", logsId, msgID).Update("deleted", true).Error
 	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
 	return err

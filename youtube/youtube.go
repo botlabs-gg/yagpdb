@@ -35,7 +35,7 @@ func RegisterPlugin() {
 		return
 	}
 
-	common.SQL.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
+	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
 
 	web.RegisterPlugin(p)
 	feeds.RegisterPlugin(p)
