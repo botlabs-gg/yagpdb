@@ -88,7 +88,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 
 	conf, err := GetConfig(r.Context(), activeGuild.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving stats config")
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats config")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}
