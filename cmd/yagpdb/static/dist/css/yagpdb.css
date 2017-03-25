@@ -8,8 +8,12 @@ textarea {
 }
 
 #public-wrapper{
-	margin: 0 20px 0 20px;
+  padding-bottom: 400px;
+  padding-top: 40px;
+
+/*	margin: 0 20px 0 20px;
 	padding-top: 40px;
+*/
 }
 
 form table td input{

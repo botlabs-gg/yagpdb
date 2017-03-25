@@ -75,6 +75,7 @@
 <div class="navbar-default sidebar" id="nav-sidebar" role="navigation">
     <div class="sidebar-nav navbar-collapse">
         <ul class="nav" id="side-menu">
+            {{if and .ActiveGuild .IsAdmin}}
             <li>
                 <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/stats" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
             </li>
@@ -141,6 +142,9 @@
                 </ul>
                 <!-- /.nav-second-level -->
             </li>
+            {{end}}
+            <!-- Docs -->
+            {{template "docs-nav" .}}
         </ul>
     </div>
     <!-- /.sidebar-collapse -->
@@ -159,11 +163,11 @@
 <!-- Navigation -->
 <nav class="navbar navbar-default maybe-nav-fixed-top" role="navigation" style="margin-bottom: 0">
     {{template "cp_nav_top" .}}
-    {{if and .ActiveGuild .User .IsAdmin}}{{template "cp_nav_sidebar" .}}{{end}}
+    {{template "cp_nav_sidebar" .}}
 </nav>
-{{if and .ActiveGuild .User .IsAdmin}}
 <div id="page-wrapper">
+<!-- {{if and .ActiveGuild .User .IsAdmin}}
 {{else}}
+{{end}}
 <div id="public-wrapper">
-{{end}}
-{{end}}
+ -->{{end}}

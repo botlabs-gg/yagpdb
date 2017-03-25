@@ -35,6 +35,8 @@ var (
 	properAddresses bool
 
 	acceptingRequests *int32
+
+	globalTemplateData = TemplateData(make(map[string]interface{}))
 )
 
 func init() {
@@ -60,6 +62,11 @@ func init() {
 }
 
 func Run() {
+
+	AddGlobalTemplateData("ClientID", common.Conf.ClientID)
+	AddGlobalTemplateData("Host", common.Conf.Host)
+	AddGlobalTemplateData("Version", common.VERSION)
+	AddGlobalTemplateData("Testing", common.Testing)
 
 	if properAddresses {
 		ListenAddressHTTP = ":80"
@@ -186,4 +193,8 @@ func setupRoutes() *goji.Mux {
 
 func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
+}
+
+func AddGlobalTemplateData(key string, data interface{}) {
+	globalTemplateData[key] = data
 }

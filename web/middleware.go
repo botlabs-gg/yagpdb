@@ -88,13 +88,14 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 		}
 
 		baseData := map[string]interface{}{
-			"ClientID":   common.Conf.ClientID,
-			"Host":       common.Conf.Host,
-			"Version":    common.VERSION,
-			"Testing":    common.Testing,
 			"BotRunning": botrest.BotIsRunning(),
 			"RequestURI": r.RequestURI,
 		}
+
+		for k, v := range globalTemplateData {
+			baseData[k] = v
+		}
+
 		inner.ServeHTTP(w, r.WithContext(SetContextTemplateData(r.Context(), baseData)))
 	}
 

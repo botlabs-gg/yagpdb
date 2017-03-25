@@ -29,6 +29,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/discordlogger"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
@@ -109,6 +110,7 @@ func main() {
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
+	docs.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
