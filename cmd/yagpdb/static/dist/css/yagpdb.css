@@ -93,10 +93,14 @@ form table td{
 #nav-footer {
   position: fixed;
   bottom: 0;
-  height: 200px;
+  height: 225px;
   width: 250px;
   text-align: center;
   border: 2px solid black;
+}
+
+#nav-footer p {
+  margin-bottom: 1px;
 }
 
 #nav-footer-img{
