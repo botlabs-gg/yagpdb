@@ -6,12 +6,28 @@ $(function(){
 
 	addListeners(false);
 
+	var lastLoc = window.location.pathname;
+	var lastHash = window.location.hash;
 	window.onpopstate = function (evt, a) {
-       	$("#main-content").html('<div class="loader">Loading...</div>');
-		navigate(window.location.pathname, "GET", null, false)
+       	var shouldNav;
+       	if(window.location.pathname !== lastLoc){
+       		shouldNav = true;
+       	}else {
+       		shouldNav = false;
+       	}
+
+		console.log("Popped state", shouldNav, evt, evt.path);
+       	if (shouldNav) {
+	       	$("#main-content").html('<div class="loader">Loading...</div>');
+			navigate(window.location.pathname, "GET", null, false)
+       	}
         // Handle the back (or forward) buttons here
         // Will NOT handle refresh, use onbeforeunload for this.
     };
+
+    if(window.location.hash){
+    	navigateToAnchor(window.location.hash);
+    }
 })
 
 var currentlyLoading = false;
@@ -47,6 +63,10 @@ function navigate(url, method, data, updateHistory){
 			if (updateHistory) {	
 				window.history.pushState("", "", shownURL);
 			}
+				
+			lastLoc = window.location.pathname;
+			lastHash = window.location.hash;
+
 			updateSelectedMenuItem();
 			addListeners(true);
 			if (typeof ga !== 'undefined') {
@@ -82,6 +102,7 @@ function addAlert(kind, msg){
 function clearAlerts(){
 	$("#alerts").empty();
 }
+
 function addListeners(partial){
 	var selectorPrefix = "";
 	if (partial) {
@@ -180,4 +201,34 @@ function addListeners(partial){
 		return Math.floor(Math.random() * (max - min)) + min;
 	}
 
+	const $navbar = $('.navbar');
+	$(selectorPrefix + 'a[href^="#"]').on('click', function(e) {
+	    e.preventDefault();
+	    console.log(e);
+
+	    
+	    navigateToAnchor($.attr(this, "href"));
+ 
+	    // e.target.scrollIntoView({"behaviour": "smooth", "block": "end"});
+	    // const scrollTop =
+	    //     $(e).position().top -
+	    //     $navbar.outerHeight();
+
+	    // $('html, body').animate({ scrollTop });
+
+	})
+}
+
+function navigateToAnchor(name){
+	name = name.substring(1);
+
+	var elem = $("a[name=\""+name+"\"]");
+    $('html, body').animate({
+        scrollTop: elem.offset().top-60
+    }, 500);
+
+    var offset = elem.offset().top;
+    console.log(offset)
+
+    window.location.hash = "#"+name
 }

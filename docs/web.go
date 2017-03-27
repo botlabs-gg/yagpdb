@@ -1,9 +1,7 @@
 package docs
 
 import (
-	"bytes"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/russross/blackfriday"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
@@ -20,26 +18,25 @@ func (d *Plugin) InitWeb() {
 	web.RootMux.HandleFunc(pat.Get("/staticdocs/:page/*"), StaticHandler)
 }
 
-var (
-	renderer = blackfriday.HtmlRenderer(0, "Test", "")
-)
+// var (
+// 	renderer = blackfriday.HtmlRenderer(0, "Test", "")
+// )
 
 func PageHandler(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
-	page, ok := pages[pat.Param(r, "page")]
-	if !ok {
+	page := FindPage(pat.Param(r, "page"))
+	if page == nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Page not found"))
 		return
 	}
 
-	// first render the template
-	var buf bytes.Buffer
-	page.Tmpl.Execute(&buf, nil)
-
-	output := blackfriday.Markdown(buf.Bytes(), renderer, 0)
 	_, tmpl = web.GetCreateTemplateData(r.Context())
+
+	// first render the template
 	tmpl["CurrentDocPage"] = page
-	tmpl["DocContent"] = template.HTML(output)
+
+	renderd := page.Render()
+	tmpl["DocContent"] = template.HTML(renderd)
 
 	return nil, nil
 }
@@ -47,8 +44,8 @@ func PageHandler(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData,
 func StaticHandler(w http.ResponseWriter, r *http.Request) {
 	pageName := pat.Param(r, "page")
 
-	page, ok := pages[pageName]
-	if !ok {
+	page := FindPage(pageName)
+	if page == nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Page not found"))
 		return

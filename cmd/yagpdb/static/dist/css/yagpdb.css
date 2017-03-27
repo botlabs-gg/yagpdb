@@ -107,6 +107,53 @@ form table td{
   width: 100%;
 }
 
+.markdown-body .anchor {
+    /*position: absolute;*/
+    /*top: 10px;*/
+    bottom: 0;
+    left: 0;
+    display: block;
+    padding-right: 6px !important;
+    padding-left: 30px !important;
+    margin-left: -30px !important;
+    float: left;
+    background-color: #d3d3ff;
+}
+
+.markdown-body .anchor:focus {
+    outline: none
+}
+
+.markdown-body h1 .octicon-link,
+.markdown-body h2 .octicon-link,
+.markdown-body h3 .octicon-link,
+.markdown-body h4 .octicon-link,
+.markdown-body h5 .octicon-link,
+.markdown-body h6 .octicon-link {
+    display: none;
+    color: #000;
+    vertical-align: middle
+}
+.markdown-body h1:hover .anchor,
+.markdown-body h2:hover .anchor,
+.markdown-body h3:hover .anchor,
+.markdown-body h4:hover .anchor,
+.markdown-body h5:hover .anchor,
+.markdown-body h6:hover .anchor {
+    height: 1em;
+    padding-left: 8px;
+    margin-left: -30px;
+    line-height: 1;
+    text-decoration: none
+}
+.markdown-body h1:hover .anchor .octicon-link,
+.markdown-body h2:hover .anchor .octicon-link,
+.markdown-body h3:hover .anchor .octicon-link,
+.markdown-body h4:hover .anchor .octicon-link,
+.markdown-body h5:hover .anchor .octicon-link,
+.markdown-body h6:hover .anchor .octicon-link {
+    display: inline-block
+}
 
 .loader,
 .loader:after {

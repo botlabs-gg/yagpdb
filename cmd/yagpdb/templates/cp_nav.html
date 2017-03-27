@@ -1,13 +1,11 @@
 {{define "cp_nav_top"}}
 <div class="navbar-header">
-    {{if .ActiveGuild}}
     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
         <span class="sr-only">Toggle navigation</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    {{end}}
     <a class="navbar-brand" {{if .ActiveGuild}} href="/cp/{{.ActiveGuild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small>{{if .ActiveGuild}}<b> {{.ActiveGuild.Name}}</b>{{end}}</a>
 
 </div>
@@ -152,7 +150,7 @@
 <!-- /.navbar-static-side -->
 </div>
 <div id="nav-footer">
-    <p><a href="/docs/Helping%20Out">Buy this ad space for 1$/day</a></p>
+    <p><a href="/docs/Helping%20Out#buying-the-ad-space">Buy this ad space for 1$/day</a></p>
     <script data-cfasync='false' type='text/javascript' src='//p209229.clksite.com/adServe/banners?tid=209229_389421_0'></script>
     <!-- <p><i>(Image by the amazing Tashi)</i></p>
     <a href="https://www.youtube.com/watch?v=kxopViU98Xo" target="_blank"><img src="/static/img/ad_placeholder.png" id="nav-footer-img"></img></a>
