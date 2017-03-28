@@ -1,5 +1,7 @@
 package moderation
 
+//go:generate esc -o assets_gen.go -pkg moderation -ignore ".go" assets/
+
 import (
 	"errors"
 	"fmt"
@@ -9,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
@@ -48,6 +51,8 @@ func RegisterPlugin() {
 	common.RegisterScheduledEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
+
+	docs.AddPage("Moderation", FSMustString(false, "assets/help-page.md"), nil)
 }
 
 func handleUnMute(data string) error {

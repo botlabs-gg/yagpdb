@@ -28,7 +28,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/youtube.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "assets/youtube.html")))
 
 	ytMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/youtube/*"), ytMux)

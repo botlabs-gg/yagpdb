@@ -21,7 +21,7 @@ type GeneralForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/automod.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "assets/automod.html")))
 
 	autmodMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/automod/*"), autmodMux)

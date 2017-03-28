@@ -1,5 +1,7 @@
 package commands
 
+//go:generate esc -o assets_gen.go -pkg commands -ignore ".go" assets/
+
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
@@ -7,6 +9,7 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/web"
 )
 
@@ -20,6 +23,8 @@ func RegisterPlugin() {
 	if err != nil {
 		log.WithError(err).Error("Failed migrating database")
 	}
+
+	docs.AddPage("Commands", FSMustString(false, "assets/commands.html"), nil)
 }
 
 func (p *Plugin) Name() string {

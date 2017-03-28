@@ -1,9 +1,12 @@
 package automod
 
+//go:generate esc -o assets_gen.go -pkg automod -ignore ".go" assets/
+
 import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/web"
 )
 
@@ -24,6 +27,7 @@ func RegisterPlugin() {
 
 	web.RegisterPlugin(p)
 	bot.RegisterPlugin(p)
+	docs.AddPage("Automoderator", FSMustString(false, "assets/help-page.md"), nil)
 }
 
 func (p *Plugin) Name() string { return "Automod" }
