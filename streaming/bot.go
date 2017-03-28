@@ -4,6 +4,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -12,7 +13,7 @@ import (
 
 func (p *Plugin) InitBot() {
 
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(bot.RedisWrapper(HandleGuildCreate)), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
@@ -54,7 +55,7 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 			continue
 		}
 
-		err = CheckPresence(client, config, ms.Presence, ms.Member, gs.Guild)
+		err = CheckPresence(client, config, ms.Presence, ms.Member, gs)
 		if err != nil {
 			log.WithError(err).Error("Error checking presence")
 			continue
@@ -91,20 +92,31 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = CheckPresence(client, config, ms.Presence, m.Member, gs.Guild)
+	err = CheckPresence(client, config, ms.Presence, m.Member, gs)
 	if err != nil {
 		log.WithError(err).Error("Failed checking presence")
 	}
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
+
 	client := bot.ContextRedis(evt.Context())
 	g := evt.GuildCreate
+
 	config, err := GetConfig(client, g.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
+
+	gs := bot.State.Guild(true, g.ID)
+	if gs == nil {
+		log.WithField("guild", g.ID).Error("Guild not found in state")
+		return
+	}
+
+	gs.RLock()
+	defer gs.RUnlock()
 
 	for _, p := range g.Presences {
 
@@ -121,7 +133,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 			continue
 		}
 
-		err = CheckPresence(client, config, p, member, g.Guild)
+		err = CheckPresence(client, config, p, member, gs)
 
 		if err != nil {
 			log.WithError(err).Error("Failed checking presence")
@@ -153,13 +165,13 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	gs.RLock()
 	defer gs.RUnlock()
 
-	err = CheckPresence(client, config, &p.Presence, member.Member, gs.Guild)
+	err = CheckPresence(client, config, &p.Presence, member.Member, gs)
 	if err != nil {
 		log.WithError(err).WithField("guild", p.GuildID).Error("Failed checking presence")
 	}
 }
 
-func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, member *discordgo.Member, guild *discordgo.Guild) error {
+func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, member *discordgo.Member, gs *dstate.GuildState) error {
 
 	// Now the real fun starts
 	// Either add or remove the stream
@@ -169,7 +181,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 		// Only do these checks here to ensure we cleanup the user from the streaming set
 		// even if the plugin was disabled or the user ended up on the ignored roles
 		if !config.Enabled {
-			RemoveStreaming(client, config, guild.ID, p.User.ID, member)
+			RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
 			return nil
 		}
 
@@ -189,7 +201,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 
 			// Dosen't the required role
 			if !found {
-				RemoveStreaming(client, config, guild.ID, p.User.ID, member)
+				RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
 				return nil
 			}
 		}
@@ -198,29 +210,29 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 			for _, role := range member.Roles {
 				// We ignore people with this role.. :')
 				if role == config.IgnoreRole {
-					RemoveStreaming(client, config, guild.ID, p.User.ID, member)
+					RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
 					return nil
 				}
 			}
 		}
 
 		// Was already marked as streaming before if we added 0 elements
-		if num, _ := client.Cmd("SADD", "currenly_streaming:"+guild.ID, member.User.ID).Int(); num == 0 {
+		if num, _ := client.Cmd("SADD", "currenly_streaming:"+gs.ID(), member.User.ID).Int(); num == 0 {
 			return nil
 		}
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != "" && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(config, guild, member, p)
+			SendStreamingAnnouncement(config, gs, member, p)
 		}
 
 		if config.GiveRole != "" {
-			GiveStreamingRole(member, config.GiveRole, guild)
+			GiveStreamingRole(member, config.GiveRole, gs.Guild)
 		}
 
 	} else {
 		// Not streaming
-		RemoveStreaming(client, config, guild.ID, p.User.ID, member)
+		RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
 	}
 
 	return nil
@@ -237,23 +249,24 @@ func RemoveStreaming(client *redis.Client, config *Config, guildID string, userI
 	}
 }
 
-func SendStreamingAnnouncement(config *Config, guild *discordgo.Guild, member *discordgo.Member, p *discordgo.Presence) {
+func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, member *discordgo.Member, p *discordgo.Presence) {
 	foundChannel := false
 	for _, v := range guild.Channels {
-		if v.ID == config.AnnounceChannel {
+		if v.ID() == config.AnnounceChannel {
 			foundChannel = true
 		}
 	}
 
 	if !foundChannel {
+		log.WithField("guild", guild.ID()).WithField("channel", config.AnnounceChannel).Error("Channel not found in state")
 		return
 	}
 
 	templateData := map[string]interface{}{
 		"user":   member.User,
 		"User":   member.User,
-		"Server": guild,
-		"server": guild,
+		"Server": guild.Guild,
+		"server": guild.Guild,
 		"URL":    p.Game.URL,
 		"url":    p.Game.URL,
 	}
