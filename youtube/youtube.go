@@ -44,7 +44,7 @@ func RegisterPlugin() {
 	feeds.RegisterPlugin(p)
 	bot.RegisterPlugin(p)
 
-	docs.AddPage("Youtube Feeds", FSMustString(false, "assets/help-page.md"), nil)
+	docs.AddPage("Youtube Feeds", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 type ChannelSubscription struct {

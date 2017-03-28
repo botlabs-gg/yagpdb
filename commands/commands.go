@@ -24,7 +24,7 @@ func RegisterPlugin() {
 		log.WithError(err).Error("Failed migrating database")
 	}
 
-	docs.AddPage("Commands", FSMustString(false, "assets/commands.html"), nil)
+	docs.AddPage("Commands", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func (p *Plugin) Name() string {

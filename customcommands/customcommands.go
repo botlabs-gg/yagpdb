@@ -21,7 +21,7 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	web.RegisterPlugin(plugin)
 	bot.RegisterPlugin(plugin)
-	docs.AddPage("Custom Commands", FSMustString(false, "assets/help-page.md"), nil)
+	docs.AddPage("Custom Commands", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func (p *Plugin) InitBot() {

@@ -95,6 +95,7 @@ func main() {
 
 	// Setup plugins
 	discordlogger.Register()
+	docs.RegisterPlugin()
 	commands.RegisterPlugin()
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()
@@ -110,7 +111,6 @@ func main() {
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
-	docs.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")

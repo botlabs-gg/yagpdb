@@ -52,7 +52,7 @@ func RegisterPlugin() {
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
 
-	docs.AddPage("Moderation", FSMustString(false, "assets/help-page.md"), nil)
+	docs.AddPage("Moderation", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func handleUnMute(data string) error {

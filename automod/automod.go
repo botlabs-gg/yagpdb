@@ -27,7 +27,7 @@ func RegisterPlugin() {
 
 	web.RegisterPlugin(p)
 	bot.RegisterPlugin(p)
-	docs.AddPage("Automoderator", FSMustString(false, "assets/help-page.md"), nil)
+	docs.AddPage("Automoderator", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func (p *Plugin) Name() string { return "Automod" }

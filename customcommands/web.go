@@ -11,7 +11,7 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "assets/customcommands.html")))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/customcommands.html")))
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
 
