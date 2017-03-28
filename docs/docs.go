@@ -78,6 +78,7 @@ func staticContent(page string) func(string) string {
 func AddDefaultDoc() {
 	AddPage("Quickstart", FSMustString(false, "/templates/quickstart.md"), static.FS(false))
 	AddPage("Helping Out", FSMustString(false, "/templates/helping-out.md"), static.FS(false))
+	AddPage("Templates", FSMustString(false, "/templates/templates.md"), static.FS(false))
 }
 
 func (p *Page) Render() []byte {

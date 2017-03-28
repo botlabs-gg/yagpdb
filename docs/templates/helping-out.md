@@ -7,7 +7,7 @@ There is several ways you can help making YAGPDB better, you don't have to know 
  - Fix whatever typos and grammar error you find (there are many of them)
  - Buy the ad space
 
-### Writing Documentation
+### Writing this Documentation
 
 YAGPDB is definitely one of the more complicated bots out there, and the reason as stated before for that is i prefer combustibility and security over looks, therefor a lot of documentation is needed for people to fully utilize and understand the features the bot provides.
 
