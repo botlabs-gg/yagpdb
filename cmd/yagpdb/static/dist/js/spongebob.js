@@ -1,3 +1,5 @@
+lastLoc = window.location.pathname;
+lastHash = window.location.hash;
 $(function(){
 	if (visibleURL) {
 		console.log("Should navigate to", visibleURL);
@@ -6,10 +8,10 @@ $(function(){
 
 	addListeners(false);
 
-	var lastLoc = window.location.pathname;
-	var lastHash = window.location.hash;
 	window.onpopstate = function (evt, a) {
        	var shouldNav;
+       	console.log(window.location.pathname);
+       	console.log(lastLoc);
        	if(window.location.pathname !== lastLoc){
        		shouldNav = true;
        	}else {
@@ -63,9 +65,9 @@ function navigate(url, method, data, updateHistory){
 			if (updateHistory) {	
 				window.history.pushState("", "", shownURL);
 			}
-				
-			lastLoc = window.location.pathname;
+			lastLoc = shownURL;
 			lastHash = window.location.hash;
+				
 
 			updateSelectedMenuItem();
 			addListeners(true);

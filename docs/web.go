@@ -59,15 +59,16 @@ func StaticHandler(w http.ResponseWriter, r *http.Request) {
 
 	upath := r.URL.Path
 
-	toStrip := len("/staticdocs/Quickstart")
+	toStrip := len("/staticdocs/") + len(pageName) + 1
 	if !strings.HasPrefix(upath, "/") {
 		toStrip--
 	}
 	upath = upath[toStrip:]
+	upath = "/" + upath
 
 	f, err := page.Static.Open(path.Clean(upath))
 	if err != nil {
-		web.CtxLogger(r.Context()).WithError(err).Error("Failed serving file")
+		web.CtxLogger(r.Context()).WithError(err).WithField("sfile", path.Clean(upath)).WithField("nonclean", upath).Error("Failed serving file")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

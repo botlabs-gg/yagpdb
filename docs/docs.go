@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/docs/static"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/shurcooL/github_flavored_markdown"
+	"log"
 	"net/http"
 	"strings"
 	"text/template"
@@ -71,7 +72,7 @@ func staticContent(page string) func(string) string {
 			str = "/" + str
 		}
 
-		return prefix + str
+		return strings.Replace(prefix+str, " ", "%20", -1)
 	}
 }
 
