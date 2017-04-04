@@ -178,7 +178,11 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 			out += fmt.Sprintf("**%d**: <#%s>: %q - %s from now (%s)\n", v.ID, cs.ID(), v.Message, timeFromNow, tStr)
 		} else {
 			member := cs.Guild.MemberCopy(true, v.UserID, false)
-			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, member.User.Username, v.Message, timeFromNow, tStr)
+			username := "Unknown user"
+			if member != nil {
+				username = member.User.Username
+			}
+			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
 		}
 	}
 	return out
