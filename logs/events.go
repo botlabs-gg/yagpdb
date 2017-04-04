@@ -22,7 +22,7 @@ func init() {
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildCreate, eventsystem.EventMemberFetched)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
 	commands.CommandSystem.RegisterCommands(cmds...)
@@ -304,7 +304,24 @@ var cmds = []commandsystem.CommandHandler{
 
 // Mark all log messages with this id as deleted
 func HandleMsgDelete(evt *eventsystem.EventData) {
-	common.SQL.Model(Message{}).Where("message_id = ?", evt.MessageDelete.ID).Update("deleted", true)
+	if evt.MessageDelete != nil {
+		err := markLoggedMessageAsDeleted(evt.MessageDelete.ID)
+		if err != nil {
+			logrus.WithError(err).Error("Failed marking message as deleted")
+		}
+		return
+	}
+
+	for _, m := range evt.MessageDeleteBulk.Messages {
+		err := markLoggedMessageAsDeleted(m)
+		if err != nil {
+			logrus.WithError(err).Error("Failed marking message as deleted")
+		}
+	}
+}
+
+func markLoggedMessageAsDeleted(mID string) error {
+	return common.SQL.Model(Message{}).Where("message_id = ?", mID).Update("deleted", true).Error
 }
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
