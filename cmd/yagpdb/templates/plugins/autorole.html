@@ -126,11 +126,11 @@ function remove(index){
 {{$guildID := .ActiveGuild.ID}}
 
 var roleIds = [
-{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID)}}
+{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID) (not .Managed)}}
 "{{.ID}}",{{end}}{{end}}
 ]
 var roleNames = [
-{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID)}}
+{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID) (not .Managed)}}
 "{{.Name}}",
 {{end}}{{end}}
 ]
