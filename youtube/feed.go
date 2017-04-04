@@ -124,7 +124,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	first := true
 
 	for {
-		call := p.YTService.PlaylistItems.List("snippet").PlaylistId(playlistID)
+		call := p.YTService.PlaylistItems.List("snippet").PlaylistId(playlistID).MaxResults(50)
 		if nextPage != "" {
 			call = call.PageToken(nextPage)
 		}
@@ -140,9 +140,21 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 			first = false
 		}
 
-		done, err := p.handlePlaylistItemsResponse(resp, subs, lastProcessedVidTime, lastVidID)
+		lv, done, err := p.handlePlaylistItemsResponse(resp, subs, lastProcessedVidTime, lastVidID)
 		if err != nil {
 			return err
+		}
+		if lv != nil {
+			// Don't need to check this vids error since it was already checked
+			parsedPublishedAtLv, _ := time.Parse(time.RFC3339, lv.Snippet.PublishedAt)
+			parsedPublishedOld, err := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
+			if err != nil {
+				logrus.WithError(err).WithField("vid", latestVid.Id).Error("Failed parsing publishedat")
+			} else {
+				if parsedPublishedAtLv.After(parsedPublishedOld) {
+					latestVid = lv
+				}
+			}
 		}
 
 		if done {
@@ -167,7 +179,10 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	return nil
 }
 
-func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListResponse, subs []*ChannelSubscription, lastProcessedVidTime time.Time, lastVidID string) (complete bool, err error) {
+func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListResponse, subs []*ChannelSubscription, lastProcessedVidTime time.Time, lastVidID string) (latest *youtube.PlaylistItem, complete bool, err error) {
+
+	var latestTime time.Time
+
 	for _, item := range resp.Items {
 		parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 		if err != nil {
@@ -175,9 +190,16 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 			continue
 		}
 
+		// Video is published before the latest video we checked, mark as complete and do not post messages for
 		if lastProcessedVidTime.After(parsedPublishedAt) || item.Id == lastVidID {
 			complete = true
-			break
+			continue
+		}
+
+		// This is the new latest video
+		if parsedPublishedAt.After(latestTime) {
+			latestTime = parsedPublishedAt
+			latest = item
 		}
 
 		for _, sub := range subs {
