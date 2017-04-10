@@ -15,9 +15,9 @@ import (
 )
 
 const (
+	MaxChannelsPerPoll = 200 // Can probably be safely increased to 1000 when caches are hot
 	PollInterval       = time.Second * 100
-	MaxChannelsPerPoll = 100 // Can probably be safely increased to 1000 when caches are hot
-	// PollInterval       = time.Second * 5 // <- used for debug purposes
+	// PollInterval = time.Second * 5 // <- used for debug purposes
 )
 
 func (p *Plugin) StartFeed() {
@@ -170,10 +170,13 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 
 	client.Cmd("ZADD", "youtube_subbed_channels", now.Unix(), channel)
 
+	// Update the last vid id and time if needed
 	if latestVid != nil && lastVidID != latestVid.Id {
 		parsedTime, _ := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
-		client.Cmd("SET", KeyLastVidTime(channel), parsedTime.Unix())
-		client.Cmd("SET", KeyLastVidID(channel), latestVid.Id)
+		if !lastProcessedVidTime.Before(parsedTime) {
+			client.Cmd("SET", KeyLastVidTime(channel), parsedTime.Unix())
+			client.Cmd("SET", KeyLastVidID(channel), latestVid.Id)
+		}
 	}
 
 	return nil
