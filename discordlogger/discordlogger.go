@@ -27,6 +27,7 @@ func Register() {
 	if ErrorChannel != "" {
 		logrus.Info("Adding logrus hook")
 		logrus.AddHook(&Plugin{})
+		eventsystem.AddHandler(OnReady, eventsystem.EventReady)
 	}
 
 	if BotLeavesJoins != "" {
@@ -98,4 +99,8 @@ func (p *Plugin) Fire(entry *logrus.Entry) error {
 
 type Stringer interface {
 	String() string
+}
+
+func OnReady(evt *eventsystem.EventData) {
+	common.BotSession.ChannelMessageSend(ErrorChannel, "<@"+common.Conf.Owner+"> Ready!")
 }

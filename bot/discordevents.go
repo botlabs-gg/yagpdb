@@ -11,7 +11,9 @@ import (
 
 func HandleReady(evt *eventsystem.EventData) {
 	log.Info("Ready received!")
+	now := time.Now()
 	ContextSession(evt.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
+	log.Println("Took ", time.Since(now), " To set streaming status")
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
