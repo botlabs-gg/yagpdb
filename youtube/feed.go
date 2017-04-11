@@ -173,7 +173,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	// Update the last vid id and time if needed
 	if latestVid != nil && lastVidID != latestVid.Id {
 		parsedTime, _ := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
-		if !lastProcessedVidTime.Before(parsedTime) {
+		if !lastProcessedVidTime.After(parsedTime) {
 			client.Cmd("SET", KeyLastVidTime(channel), parsedTime.Unix())
 			client.Cmd("SET", KeyLastVidID(channel), latestVid.Id)
 		}
@@ -194,7 +194,7 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 		}
 
 		// Video is published before the latest video we checked, mark as complete and do not post messages for
-		if lastProcessedVidTime.After(parsedPublishedAt) || item.Id == lastVidID {
+		if !parsedPublishedAt.After(lastProcessedVidTime) || item.Id == lastVidID {
 			complete = true
 			continue
 		}
