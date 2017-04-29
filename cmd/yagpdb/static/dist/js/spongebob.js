@@ -234,3 +234,19 @@ function navigateToAnchor(name){
 
     window.location.hash = "#"+name
 }
+
+function createRequest(method, path, data, cb){
+    var oReq = new XMLHttpRequest();
+    oReq.addEventListener("load", cb);
+    oReq.addEventListener("error", function(){
+        window.location.href = '/';
+    });
+    oReq.open(method, path);
+    
+    if (data) {
+        oReq.setRequestHeader("content-type", "application/json");
+        oReq.send(JSON.stringify(data));
+    }else{
+        oReq.send();
+    }
+}

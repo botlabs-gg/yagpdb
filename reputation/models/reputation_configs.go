@@ -52,8 +52,6 @@ type (
 	// ReputationConfigSlice is an alias for a slice of pointers to ReputationConfig.
 	// This should generally be used opposed to []ReputationConfig.
 	ReputationConfigSlice []*ReputationConfig
-	// ReputationConfigHook is the signature for custom ReputationConfig hook methods
-	ReputationConfigHook func(boil.Executor, *ReputationConfig) error
 
 	reputationConfigQuery struct {
 		*queries.Query
@@ -79,139 +77,6 @@ var (
 	// Force bytes in case of primary key column that uses []byte (for relationship compares)
 	_ = bytes.MinRead
 )
-var reputationConfigBeforeInsertHooks []ReputationConfigHook
-var reputationConfigBeforeUpdateHooks []ReputationConfigHook
-var reputationConfigBeforeDeleteHooks []ReputationConfigHook
-var reputationConfigBeforeUpsertHooks []ReputationConfigHook
-
-var reputationConfigAfterInsertHooks []ReputationConfigHook
-var reputationConfigAfterSelectHooks []ReputationConfigHook
-var reputationConfigAfterUpdateHooks []ReputationConfigHook
-var reputationConfigAfterDeleteHooks []ReputationConfigHook
-var reputationConfigAfterUpsertHooks []ReputationConfigHook
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *ReputationConfig) doBeforeInsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigBeforeInsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *ReputationConfig) doBeforeUpdateHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigBeforeUpdateHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *ReputationConfig) doBeforeDeleteHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigBeforeDeleteHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *ReputationConfig) doBeforeUpsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigBeforeUpsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *ReputationConfig) doAfterInsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigAfterInsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *ReputationConfig) doAfterSelectHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigAfterSelectHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *ReputationConfig) doAfterUpdateHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigAfterUpdateHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *ReputationConfig) doAfterDeleteHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigAfterDeleteHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *ReputationConfig) doAfterUpsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationConfigAfterUpsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddReputationConfigHook registers your hook function for all future operations.
-func AddReputationConfigHook(hookPoint boil.HookPoint, reputationConfigHook ReputationConfigHook) {
-	switch hookPoint {
-	case boil.BeforeInsertHook:
-		reputationConfigBeforeInsertHooks = append(reputationConfigBeforeInsertHooks, reputationConfigHook)
-	case boil.BeforeUpdateHook:
-		reputationConfigBeforeUpdateHooks = append(reputationConfigBeforeUpdateHooks, reputationConfigHook)
-	case boil.BeforeDeleteHook:
-		reputationConfigBeforeDeleteHooks = append(reputationConfigBeforeDeleteHooks, reputationConfigHook)
-	case boil.BeforeUpsertHook:
-		reputationConfigBeforeUpsertHooks = append(reputationConfigBeforeUpsertHooks, reputationConfigHook)
-	case boil.AfterInsertHook:
-		reputationConfigAfterInsertHooks = append(reputationConfigAfterInsertHooks, reputationConfigHook)
-	case boil.AfterSelectHook:
-		reputationConfigAfterSelectHooks = append(reputationConfigAfterSelectHooks, reputationConfigHook)
-	case boil.AfterUpdateHook:
-		reputationConfigAfterUpdateHooks = append(reputationConfigAfterUpdateHooks, reputationConfigHook)
-	case boil.AfterDeleteHook:
-		reputationConfigAfterDeleteHooks = append(reputationConfigAfterDeleteHooks, reputationConfigHook)
-	case boil.AfterUpsertHook:
-		reputationConfigAfterUpsertHooks = append(reputationConfigAfterUpsertHooks, reputationConfigHook)
-	}
-}
 
 // OneP returns a single reputationConfig record from the query, and panics on error.
 func (q reputationConfigQuery) OneP() *ReputationConfig {
@@ -237,10 +102,6 @@ func (q reputationConfigQuery) One() (*ReputationConfig, error) {
 		return nil, errors.Wrap(err, "models: failed to execute a one query for reputation_configs")
 	}
 
-	if err := o.doAfterSelectHooks(queries.GetExecutor(q.Query)); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -261,14 +122,6 @@ func (q reputationConfigQuery) All() (ReputationConfigSlice, error) {
 	err := q.Bind(&o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to ReputationConfig slice")
-	}
-
-	if len(reputationConfigAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(queries.GetExecutor(q.Query)); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -419,10 +272,6 @@ func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error
 
 	var err error
 
-	if err := o.doBeforeInsertHooks(exec); err != nil {
-		return err
-	}
-
 	nzDefaults := queries.NonZeroDefaultSet(reputationConfigColumnsWithDefault, o)
 
 	key := makeCacheKey(whitelist, nzDefaults)
@@ -478,7 +327,7 @@ func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error
 		reputationConfigInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(exec)
+	return nil
 }
 
 // UpdateG a single ReputationConfig record. See Update for
@@ -514,9 +363,6 @@ func (o *ReputationConfig) UpdateP(exec boil.Executor, whitelist ...string) {
 // to refresh the records.
 func (o *ReputationConfig) Update(exec boil.Executor, whitelist ...string) error {
 	var err error
-	if err = o.doBeforeUpdateHooks(exec); err != nil {
-		return err
-	}
 	key := makeCacheKey(whitelist, nil)
 	reputationConfigUpdateCacheMut.RLock()
 	cache, cached := reputationConfigUpdateCache[key]
@@ -556,7 +402,7 @@ func (o *ReputationConfig) Update(exec boil.Executor, whitelist ...string) error
 		reputationConfigUpdateCacheMut.Unlock()
 	}
 
-	return o.doAfterUpdateHooks(exec)
+	return nil
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
@@ -669,10 +515,6 @@ func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, con
 		return errors.New("models: no reputation_configs provided for upsert")
 	}
 
-	if err := o.doBeforeUpsertHooks(exec); err != nil {
-		return err
-	}
-
 	nzDefaults := queries.NonZeroDefaultSet(reputationConfigColumnsWithDefault, o)
 
 	// Build cache key in-line uglily - mysql vs postgres problems
@@ -774,7 +616,7 @@ func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, con
 		reputationConfigUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(exec)
+	return nil
 }
 
 // DeleteP deletes a single ReputationConfig record with an executor.
@@ -812,10 +654,6 @@ func (o *ReputationConfig) Delete(exec boil.Executor) error {
 		return errors.New("models: no ReputationConfig provided for delete")
 	}
 
-	if err := o.doBeforeDeleteHooks(exec); err != nil {
-		return err
-	}
-
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), reputationConfigPrimaryKeyMapping)
 	sql := "DELETE FROM \"reputation_configs\" WHERE \"guild_id\"=$1"
 
@@ -827,10 +665,6 @@ func (o *ReputationConfig) Delete(exec boil.Executor) error {
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to delete from reputation_configs")
-	}
-
-	if err := o.doAfterDeleteHooks(exec); err != nil {
-		return err
 	}
 
 	return nil
@@ -891,14 +725,6 @@ func (o ReputationConfigSlice) DeleteAll(exec boil.Executor) error {
 		return nil
 	}
 
-	if len(reputationConfigBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(exec); err != nil {
-				return err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), reputationConfigPrimaryKeyMapping)
@@ -919,14 +745,6 @@ func (o ReputationConfigSlice) DeleteAll(exec boil.Executor) error {
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to delete all from reputationConfig slice")
-	}
-
-	if len(reputationConfigAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(exec); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package reputation
 
-//go:generate sqlboiler -w "reputation_configs,reputation_users,reputation_log" postgres
+//go:generate sqlboiler --no-hooks -w "reputation_configs,reputation_users,reputation_log" postgres
+//go:generate esc -o assets_gen.go -pkg reputation -ignore ".go" assets/
 
 import (
 	"database/sql"
@@ -46,18 +47,69 @@ var (
 	ErrUserNotFound = errors.New("User not found")
 )
 
-func GetUserStats(client *redis.Client, guildID, userID string) (score int64, rank int, err error) {
+func GetUserStats(guildID, userID string) (score int64, rank int, err error) {
 
-	user, err := models.FindReputationUserG(common.MustParseInt(userID), common.MustParseInt(guildID))
+	const query = `SELECT points, position FROM
+(
+	SELECT user_id, points,
+	DENSE_RANK() OVER(ORDER BY points DESC) AS position
+	FROM reputation_users WHERE guild_id = $1
+) AS w
+WHERE user_id = $2`
+
+	row := common.PQ.QueryRow(query, guildID, userID)
+	err = row.Scan(&score, &rank)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = ErrUserNotFound
 		}
-		return
+	}
+	return
+}
+
+type RankEntry struct {
+	Rank   int
+	UserID int64
+	Points int64
+}
+
+func TopUsers(guildID string, offset, limit int) ([]*RankEntry, error) {
+	const query = `SELECT points, position, user_id FROM
+(
+	SELECT user_id, points,
+	DENSE_RANK() OVER(ORDER BY points DESC) AS position
+	FROM reputation_users WHERE guild_id = $1
+) AS w
+ORDER BY points desc
+LIMIT $2 OFFSET $3`
+
+	rows, err := common.PQ.Query(query, guildID, limit, offset)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []*RankEntry{}, nil
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]*RankEntry, 0, limit)
+	for rows.Next() {
+		var rank int
+		var userID int64
+		var points int64
+		err = rows.Scan(&points, &rank, &userID)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, &RankEntry{
+			Rank:   rank,
+			UserID: userID,
+			Points: points,
+		})
 	}
 
-	score = user.Points
-	return
+	return result, nil
 }
 
 type UserError string
@@ -75,7 +127,7 @@ var (
 	ErrCooldown           = UserError("You're still on cooldown")
 )
 
-func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID string, sender, receiver *discordgo.Member, amount int64) (newAmount int64, err error) {
+func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID string, sender, receiver *discordgo.Member, amount int64) (err error) {
 	if conf == nil {
 		conf, err = GetConfig(guildID)
 		if err != nil {
@@ -103,7 +155,7 @@ func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID
 		return
 	}
 
-	newAmount, err = insertUpdateUser(common.MustParseInt(guildID), common.MustParseInt(receiver.User.ID), amount)
+	err = insertUpdateUserRep(common.MustParseInt(guildID), common.MustParseInt(receiver.User.ID), amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
 		ClearCooldown(redisClient, guildID, sender.User.ID)
@@ -118,15 +170,16 @@ func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID
 		SetFixedAmount: false,
 		Amount:         amount,
 	}
+
 	err = entry.InsertG()
 	if err != nil {
-		err = errors.WithMessage(err, "ModifyRep log entry.Isert")
+		err = errors.WithMessage(err, "ModifyRep log entry.Insert")
 	}
 
 	return
 }
 
-func insertUpdateUser(guildID, userID int64, amount int64) (newAmount int64, err error) {
+func insertUpdateUserRep(guildID, userID int64, amount int64) (err error) {
 
 	user := &models.ReputationUser{
 		GuildID: guildID,
@@ -138,7 +191,7 @@ func insertUpdateUser(guildID, userID int64, amount int64) (newAmount int64, err
 	err = user.InsertG()
 	if err == nil {
 		logrus.Debug("Inserted")
-		return amount, nil
+		return nil
 	}
 
 	// Update
@@ -200,7 +253,7 @@ func GetConfig(guildID string) (*models.ReputationConfig, error) {
 		if err == sql.ErrNoRows {
 			return DefaultConfig(guildID), nil
 		}
-		return nil, errors.Wrap(err, "GetConfig")
+		return nil, errors.Wrap(err, "Reputation.GetConfig")
 	}
 
 	return conf, nil

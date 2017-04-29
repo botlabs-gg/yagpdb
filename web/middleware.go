@@ -502,6 +502,8 @@ func APIHandler(inner CustomHandlerFunc) http.Handler {
 			} else {
 				if public, ok := cast.(*PublicError); ok {
 					out = map[string]interface{}{"ok": false, "error": public.msg}
+				} else {
+					out = map[string]interface{}{"ok": false}
 				}
 				CtxLogger(r.Context()).WithError(cast).Error("API Error")
 			}

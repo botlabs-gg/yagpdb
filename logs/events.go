@@ -324,7 +324,7 @@ func HandleMsgDelete(evt *eventsystem.EventData) {
 }
 
 func markLoggedMessageAsDeleted(mID string) error {
-	return common.SQL.Model(Message{}).Where("message_id = ?", mID).Update("deleted", true).Error
+	return common.GORM.Model(Message{}).Where("message_id = ?", mID).Update("deleted", true).Error
 }
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {

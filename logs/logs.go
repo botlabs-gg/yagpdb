@@ -91,7 +91,7 @@ type Message struct {
 	common.SmallModel
 	MessageLogID uint `gorm:"index"` // Foreign key, belongs to MessageLog
 
-	MessageID string
+	MessageID string `gorm:"index"`
 	Content   string `gorm:"size:2000"`
 	Timestamp string
 

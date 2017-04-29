@@ -1,0 +1,83 @@
+{{define "cp_reputation_leaderboard"}}
+
+{{template "cp_head" .}}
+<style type="text/css">
+    @media(min-width: 768px) {
+        table {
+            table-layout:fixed;
+            /*width:100%;*/
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        
+        #pos-col {width:100%; min-width: 100px;} 
+        #avatar-col {width:150px;}
+        #username-col {width:200px;}
+        #points-col {width:100px;}
+    }
+    
+    .deleted-message{
+        color: red;
+    }
+</style>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="page-header">
+            <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
+            <h1>Reputatoin Leaderboards for {{.ActiveGuild.Name}}</h1>
+        </div>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+
+{{if not .RepSettings.Enabled}}
+<h1>Reputation disabled on this server</h1>
+{{else}}
+{{template "cp_alerts" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            Leaderboards
+            </div>
+            <!-- /.panel-heading -->
+
+            <div class="table-responsive">
+                <table class="table table-hover table-striped" id="log-table">
+                    <thead>
+                        <tr>
+                            <th id="pos-col">Rank</th>
+                            <th id="avatar-col">Avatar</th>
+                            <th id="username-col">User</th>{{if .IsAdmin}}
+                            <th id="points-col">Points</th>{{end}}
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="reputationLoadMore()">Load more</button>
+        </div>
+        <!-- /.panel -->
+    </div>
+</div>
+<!-- /.row -->
+
+<script type="text/javascript">
+
+var repNumRows = 0;
+
+function reputationLoadMore(){
+    console.log("Loading more rows");
+}
+
+$(function(){
+    reputationLoadMore();
+})
+
+</script>
+{{end}}
+{{template "cp_footer"}}
+
+{{end}}

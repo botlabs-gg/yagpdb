@@ -48,8 +48,6 @@ type (
 	// ReputationLogSlice is an alias for a slice of pointers to ReputationLog.
 	// This should generally be used opposed to []ReputationLog.
 	ReputationLogSlice []*ReputationLog
-	// ReputationLogHook is the signature for custom ReputationLog hook methods
-	ReputationLogHook func(boil.Executor, *ReputationLog) error
 
 	reputationLogQuery struct {
 		*queries.Query
@@ -75,139 +73,6 @@ var (
 	// Force bytes in case of primary key column that uses []byte (for relationship compares)
 	_ = bytes.MinRead
 )
-var reputationLogBeforeInsertHooks []ReputationLogHook
-var reputationLogBeforeUpdateHooks []ReputationLogHook
-var reputationLogBeforeDeleteHooks []ReputationLogHook
-var reputationLogBeforeUpsertHooks []ReputationLogHook
-
-var reputationLogAfterInsertHooks []ReputationLogHook
-var reputationLogAfterSelectHooks []ReputationLogHook
-var reputationLogAfterUpdateHooks []ReputationLogHook
-var reputationLogAfterDeleteHooks []ReputationLogHook
-var reputationLogAfterUpsertHooks []ReputationLogHook
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *ReputationLog) doBeforeInsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogBeforeInsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *ReputationLog) doBeforeUpdateHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogBeforeUpdateHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *ReputationLog) doBeforeDeleteHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogBeforeDeleteHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *ReputationLog) doBeforeUpsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogBeforeUpsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *ReputationLog) doAfterInsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogAfterInsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *ReputationLog) doAfterSelectHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogAfterSelectHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *ReputationLog) doAfterUpdateHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogAfterUpdateHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *ReputationLog) doAfterDeleteHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogAfterDeleteHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *ReputationLog) doAfterUpsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range reputationLogAfterUpsertHooks {
-		if err := hook(exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddReputationLogHook registers your hook function for all future operations.
-func AddReputationLogHook(hookPoint boil.HookPoint, reputationLogHook ReputationLogHook) {
-	switch hookPoint {
-	case boil.BeforeInsertHook:
-		reputationLogBeforeInsertHooks = append(reputationLogBeforeInsertHooks, reputationLogHook)
-	case boil.BeforeUpdateHook:
-		reputationLogBeforeUpdateHooks = append(reputationLogBeforeUpdateHooks, reputationLogHook)
-	case boil.BeforeDeleteHook:
-		reputationLogBeforeDeleteHooks = append(reputationLogBeforeDeleteHooks, reputationLogHook)
-	case boil.BeforeUpsertHook:
-		reputationLogBeforeUpsertHooks = append(reputationLogBeforeUpsertHooks, reputationLogHook)
-	case boil.AfterInsertHook:
-		reputationLogAfterInsertHooks = append(reputationLogAfterInsertHooks, reputationLogHook)
-	case boil.AfterSelectHook:
-		reputationLogAfterSelectHooks = append(reputationLogAfterSelectHooks, reputationLogHook)
-	case boil.AfterUpdateHook:
-		reputationLogAfterUpdateHooks = append(reputationLogAfterUpdateHooks, reputationLogHook)
-	case boil.AfterDeleteHook:
-		reputationLogAfterDeleteHooks = append(reputationLogAfterDeleteHooks, reputationLogHook)
-	case boil.AfterUpsertHook:
-		reputationLogAfterUpsertHooks = append(reputationLogAfterUpsertHooks, reputationLogHook)
-	}
-}
 
 // OneP returns a single reputationLog record from the query, and panics on error.
 func (q reputationLogQuery) OneP() *ReputationLog {
@@ -233,10 +98,6 @@ func (q reputationLogQuery) One() (*ReputationLog, error) {
 		return nil, errors.Wrap(err, "models: failed to execute a one query for reputation_log")
 	}
 
-	if err := o.doAfterSelectHooks(queries.GetExecutor(q.Query)); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -257,14 +118,6 @@ func (q reputationLogQuery) All() (ReputationLogSlice, error) {
 	err := q.Bind(&o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to ReputationLog slice")
-	}
-
-	if len(reputationLogAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(queries.GetExecutor(q.Query)); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -420,10 +273,6 @@ func (o *ReputationLog) Insert(exec boil.Executor, whitelist ...string) error {
 		o.CreatedAt = currTime
 	}
 
-	if err := o.doBeforeInsertHooks(exec); err != nil {
-		return err
-	}
-
 	nzDefaults := queries.NonZeroDefaultSet(reputationLogColumnsWithDefault, o)
 
 	key := makeCacheKey(whitelist, nzDefaults)
@@ -479,7 +328,7 @@ func (o *ReputationLog) Insert(exec boil.Executor, whitelist ...string) error {
 		reputationLogInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(exec)
+	return nil
 }
 
 // UpdateG a single ReputationLog record. See Update for
@@ -515,9 +364,6 @@ func (o *ReputationLog) UpdateP(exec boil.Executor, whitelist ...string) {
 // to refresh the records.
 func (o *ReputationLog) Update(exec boil.Executor, whitelist ...string) error {
 	var err error
-	if err = o.doBeforeUpdateHooks(exec); err != nil {
-		return err
-	}
 	key := makeCacheKey(whitelist, nil)
 	reputationLogUpdateCacheMut.RLock()
 	cache, cached := reputationLogUpdateCache[key]
@@ -557,7 +403,7 @@ func (o *ReputationLog) Update(exec boil.Executor, whitelist ...string) error {
 		reputationLogUpdateCacheMut.Unlock()
 	}
 
-	return o.doAfterUpdateHooks(exec)
+	return nil
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
@@ -675,10 +521,6 @@ func (o *ReputationLog) Upsert(exec boil.Executor, updateOnConflict bool, confli
 		o.CreatedAt = currTime
 	}
 
-	if err := o.doBeforeUpsertHooks(exec); err != nil {
-		return err
-	}
-
 	nzDefaults := queries.NonZeroDefaultSet(reputationLogColumnsWithDefault, o)
 
 	// Build cache key in-line uglily - mysql vs postgres problems
@@ -780,7 +622,7 @@ func (o *ReputationLog) Upsert(exec boil.Executor, updateOnConflict bool, confli
 		reputationLogUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(exec)
+	return nil
 }
 
 // DeleteP deletes a single ReputationLog record with an executor.
@@ -818,10 +660,6 @@ func (o *ReputationLog) Delete(exec boil.Executor) error {
 		return errors.New("models: no ReputationLog provided for delete")
 	}
 
-	if err := o.doBeforeDeleteHooks(exec); err != nil {
-		return err
-	}
-
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), reputationLogPrimaryKeyMapping)
 	sql := "DELETE FROM \"reputation_log\" WHERE \"id\"=$1"
 
@@ -833,10 +671,6 @@ func (o *ReputationLog) Delete(exec boil.Executor) error {
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to delete from reputation_log")
-	}
-
-	if err := o.doAfterDeleteHooks(exec); err != nil {
-		return err
 	}
 
 	return nil
@@ -897,14 +731,6 @@ func (o ReputationLogSlice) DeleteAll(exec boil.Executor) error {
 		return nil
 	}
 
-	if len(reputationLogBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(exec); err != nil {
-				return err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), reputationLogPrimaryKeyMapping)
@@ -925,14 +751,6 @@ func (o ReputationLogSlice) DeleteAll(exec boil.Executor) error {
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to delete all from reputationLog slice")
-	}
-
-	if len(reputationLogAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(exec); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

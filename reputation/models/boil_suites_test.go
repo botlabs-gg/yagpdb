@@ -68,12 +68,6 @@ func TestCount(t *testing.T) {
 	t.Run("ReputationLogs", testReputationLogsCount)
 }
 
-func TestHooks(t *testing.T) {
-	t.Run("ReputationConfigs", testReputationConfigsHooks)
-	t.Run("ReputationUsers", testReputationUsersHooks)
-	t.Run("ReputationLogs", testReputationLogsHooks)
-}
-
 func TestInsert(t *testing.T) {
 	t.Run("ReputationConfigs", testReputationConfigsInsert)
 	t.Run("ReputationConfigs", testReputationConfigsInsertWhitelist)

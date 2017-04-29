@@ -1,4 +1,4 @@
-DROP TABLE reputation_configs;
+-- DROP TABLE IF EXISTS reputation_configs;
 
 CREATE TABLE IF NOT EXISTS reputation_configs (
 	guild_id        bigint PRIMARY KEY,
@@ -14,19 +14,19 @@ CREATE TABLE IF NOT EXISTS reputation_configs (
 	admin_role               varchar(30)
 );
 
-DROP TABLE reputation_users;
+-- DROP TABLE IF EXISTS reputation_users;
 
 CREATE TABLE IF NOT EXISTS reputation_users (
 	user_id  bigint NOT NULL,
 	guild_id bigint NOT NULL,
 
-	created_at	TIMESTAMP WITH TIME ZONE NOT NULL,
+	created_at  TIMESTAMP WITH TIME ZONE NOT NULL,
 	points 		bigint NOT NULL,
 
 	PRIMARY KEY(guild_id, user_id)
 );
 
-DROP TABLE reputation_log;
+-- DROP TABLE IF EXISTS reputation_log;
 
 CREATE TABLE IF NOT EXISTS reputation_log (
 	id bigserial 	 PRIMARY KEY,
@@ -41,4 +41,4 @@ CREATE TABLE IF NOT EXISTS reputation_log (
 
 CREATE INDEX ON reputation_log (guild_id);
 CREATE INDEX ON reputation_log (sender_id);
-CREATE INDEX ON reputation_log (receiver_id);
+CREATE INDEX ON reputation_log (receiver_id);	

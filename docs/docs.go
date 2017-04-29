@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/docs/static"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/shurcooL/github_flavored_markdown"
-	"log"
 	"net/http"
 	"strings"
 	"text/template"

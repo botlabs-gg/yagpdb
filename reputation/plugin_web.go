@@ -4,16 +4,18 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/jonas747/yagpdb/web"
+	"goji.io"
 	"goji.io/pat"
 	"gopkg.in/nullbio/null.v6"
 	"html/template"
 	"net/http"
+	"strconv"
 )
 
 type PostConfigForm struct {
-	PointsName             string `valid:",50"`
 	Enabled                bool
-	Cooldown               int `valid:"0,86401"` // One day
+	PointsName             string `valid:",50"`
+	Cooldown               int    `valid:"0,86401"` // One day
 	MaxGiveAmount          int64
 	RequiredGiveRole       string `valid:"role,true"`
 	RequiredReceiveRole    string `valid:"role,true"`
@@ -37,14 +39,24 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reputation.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/leaderboard.html")))
 
-	mainGetHandler := web.RenderHandler(HandleGetReputation, "cp_reputation")
+	subMux := goji.SubMux()
+	subMux.Use(web.RequireFullGuildMW)
 
-	web.CPMux.Handle(pat.Get("/reputation"), mainGetHandler)
-	web.CPMux.Handle(pat.Get("/reputation/"), mainGetHandler)
-	web.CPMux.Handle(pat.Post("/reputation"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputatoin config"))
-	web.CPMux.Handle(pat.Post("/reputation/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputatoin config"))
+	web.CPMux.Handle(pat.New("/reputation"), subMux)
+	web.CPMux.Handle(pat.New("/reputation/*"), subMux)
+
+	mainGetHandler := web.RenderHandler(HandleGetReputation, "cp_reputation_settings")
+
+	subMux.Handle(pat.Get(""), mainGetHandler)
+	subMux.Handle(pat.Get("/"), mainGetHandler)
+	subMux.Handle(pat.Post(""), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputatoin config"))
+	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputatoin config"))
+
+	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
+	web.ServerPublicMux.Handle(pat.Get("/api/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
 }
 
 func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
@@ -83,4 +95,48 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 	})
 
 	return
+}
+
+func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
+	_, activeGuild, _ := web.GetBaseCPContextData(r.Context())
+
+	conf, err := GetConfig(activeGuild.ID)
+	if err != nil {
+		return err
+	}
+
+	if !conf.Enabled {
+		return web.NewPublicError("Reputation not enabled")
+	}
+
+	query := r.URL.Query()
+
+	offsetStr := query.Get("offset")
+	offset := 0
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			web.CtxLogger(r.Context()).WithError(err).WithField("raw", offsetStr).Error("Failed parsing offset")
+		}
+	}
+
+	limitStr := query.Get("limit")
+	limit := 0
+	if limitStr != "" {
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil {
+			web.CtxLogger(r.Context()).WithError(err).WithField("raw", limitStr).Error("Failed parsing limit")
+		}
+	}
+
+	if limit > 100 || limit < 0 {
+		limit = 10
+	}
+
+	entries, err := TopUsers(activeGuild.ID, offset, limit)
+	if err != nil {
+		return err
+	}
+
+	return entries
 }

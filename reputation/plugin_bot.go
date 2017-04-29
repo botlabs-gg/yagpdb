@@ -18,7 +18,7 @@ func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(handleMessageCreate), eventsystem.EventMessageCreate)
 }
 
-var thanksRegex = regexp.MustCompile("(?i)^(thanks?|danks|ty)")
+var thanksRegex = regexp.MustCompile("(?i)^(thanks?|danks|ty|\\+rep)")
 
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate
@@ -70,13 +70,13 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	newScore, err := ModifyRep(conf, client, cs.Guild.ID(), sender, target, 1)
+	err = ModifyRep(conf, client, cs.Guild.ID(), sender, target, 1)
 	if err != nil {
 		logrus.WithError(err).Error("Failed giving rep")
 		return
 	}
 
-	content := fmt.Sprintf("Gave +1 rep to **%s** *(%d rep total)*", who.Username, newScore)
+	content := fmt.Sprintf("Gave +1 %s to **%s**", conf.PointsName, who.Username)
 	common.BotSession.ChannelMessageSend(msg.ChannelID, common.EscapeEveryoneMention(content))
 }
 
@@ -100,7 +100,7 @@ var cmds = []commandsystem.CommandHandler{
 					return "An error occured finding the server config", err
 				}
 
-				pointsName := conf.GetPointsName()
+				pointsName := conf.PointsName
 
 				if target.ID == parsed.Message.Author.ID {
 					return fmt.Sprintf("Can't give yourself %s... **Silly**", pointsName), nil
@@ -121,7 +121,7 @@ var cmds = []commandsystem.CommandHandler{
 				if parsed.Args[1] != nil {
 					amount = parsed.Args[1].Int()
 				}
-				newAmount, err := ModifyRep(conf, client, parsed.Guild.ID(), sender, receiver, int64(amount))
+				err = ModifyRep(conf, client, parsed.Guild.ID(), sender, receiver, int64(amount))
 				if err != nil {
 					if cast, ok := err.(UserError); ok {
 						return cast, nil
@@ -130,7 +130,7 @@ var cmds = []commandsystem.CommandHandler{
 					return "Failed modifying your " + pointsName, err
 				}
 
-				msg := fmt.Sprintf("Modified **%s's** %s *(%d %s total)*", target.Username, pointsName, newAmount, pointsName)
+				msg := fmt.Sprintf("Modified **%s's** %s by %d", target.Username, pointsName, amount)
 				return msg, nil
 			},
 		},
@@ -149,8 +149,12 @@ var cmds = []commandsystem.CommandHandler{
 					target = parsed.Args[0].DiscordUser()
 				}
 
-				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-				score, rank, err := GetUserStats(client, parsed.Guild.ID(), target.ID)
+				conf, err := GetConfig(parsed.Guild.ID())
+				if err != nil {
+					return "An error occured finding the server config", err
+				}
+
+				score, rank, err := GetUserStats(parsed.Guild.ID(), target.ID)
 
 				if err != nil {
 					if err == ErrUserNotFound {
@@ -160,12 +164,41 @@ var cmds = []commandsystem.CommandHandler{
 					}
 				}
 
-				rankStr := "∞"
+				rankStr := "#ω"
 				if rank != -1 {
-					rankStr = strconv.FormatInt(int64(rank)+1, 10)
+					rankStr = strconv.FormatInt(int64(rank), 10)
 				}
 
-				return fmt.Sprintf("**%s**: **%d** Rep (#**%s**)", target.Username, score, rankStr), nil
+				return fmt.Sprintf("**%s**: **%d** %s (#**%s**)", target.Username, score, conf.PointsName, rankStr), nil
+			},
+		},
+	},
+	&commands.CustomCommand{
+		Category: commands.CategoryFun,
+		Command: &commandsystem.Command{
+			Name:        "TopRep",
+			Description: "Shows top 15 rep on the server",
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "Offset", Type: commandsystem.ArgumentNumber},
+			},
+			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+				offset := 0
+				if parsed.Args[0] != nil {
+					offset = parsed.Args[0].Int()
+				}
+
+				entries, err := TopUsers(parsed.Guild.ID(), offset, 15)
+				if err != nil {
+					return "Something went wrong... i may hae had one too many alcohol", err
+				}
+
+				out := "```\n# -- Points -- User\n"
+				for _, v := range entries {
+					out += fmt.Sprintf("#%2d: %5d - %d\n", v.Rank, v.Points, v.UserID)
+				}
+				out += "```"
+
+				return out, nil
 			},
 		},
 	},
