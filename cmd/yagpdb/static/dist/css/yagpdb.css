@@ -104,7 +104,8 @@ form table td{
 }
 
 #nav-footer-img{
-  width: 100%;
+  max-width: 100%;
+  max-height: 150px;
 }
 
 .markdown-body .anchor {
