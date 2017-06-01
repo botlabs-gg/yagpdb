@@ -258,6 +258,14 @@ form table td{
     color: #428bca;
 }
 
+.bs-callout-warning {
+    border-left-color: #f0ad4e;
+    background-color: rgba(240,173,78, 0.1)
+}
+.bs-callout-warning h4 {
+    color: #f0ad4e;
+}
+
 @keyframes danger{
   0% {border-left-color: rgba(217,83,79, 0)}
   50% {border-left-color: rgba(217,83,79, 1)}
