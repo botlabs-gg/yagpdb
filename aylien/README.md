@@ -1,3 +1,3 @@
-# AYLIEN plugin
+# AYLIEN Plugin
 
-This plugin provides commands for interacting with the AYLIEN api
+This plugin provides commands for interacting with the AYLIEN API.
