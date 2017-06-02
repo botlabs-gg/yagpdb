@@ -1,11 +1,11 @@
 # Automod
 
-Automod provides some auto moderation faetures
+Automod provides some auto moderation features.
 
 Features:
 
  - Ban websites
  - Ban words
- - spam detection
- - ban invite links
- - mention spam detection
+ - Spam detection
+ - Ban invite links
+ - Mention spam detection
