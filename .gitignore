@@ -10,7 +10,7 @@ cmd/yagpdb/yagpdb
 
 # We don't want filthy pre-configured config files here ! >:O
 *.json
-# THe graw agent file
+# The raw agent file
 *.agent
 *.sh
 *.exe
