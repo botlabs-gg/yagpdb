@@ -56,7 +56,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputatoin config"))
 
 	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
-	web.ServerPublicMux.Handle(pat.Get("/api/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
+	web.ServerPubliAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
 }
 
 func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
@@ -133,7 +133,12 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 		limit = 10
 	}
 
-	entries, err := TopUsers(activeGuild.ID, offset, limit)
+	top, err := TopUsers(activeGuild.ID, offset, limit)
+	if err != nil {
+		return err
+	}
+
+	entries, err := ToLeaderboardEntries(top)
 	if err != nil {
 		return err
 	}

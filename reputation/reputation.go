@@ -68,9 +68,9 @@ WHERE user_id = $2`
 }
 
 type RankEntry struct {
-	Rank   int
-	UserID int64
-	Points int64
+	Rank   int   `json:"rank"`
+	UserID int64 `json:"user_id"`
+	Points int64 `json:"points"`
 }
 
 func TopUsers(guildID string, offset, limit int) ([]*RankEntry, error) {
@@ -227,6 +227,8 @@ func CanModifyRep(conf *models.ReputationConfig, sender, receiver *discordgo.Mem
 	return nil
 }
 
+// CheckSetCooldown checks and updates the reputation cooldown of a user,
+// it returns true if the user was not on cooldown
 func CheckSetCooldown(conf *models.ReputationConfig, redisClient *redis.Client, senderID string) (bool, error) {
 	if conf.Cooldown < 1 {
 		return true, nil
@@ -257,4 +259,64 @@ func GetConfig(guildID string) (*models.ReputationConfig, error) {
 	}
 
 	return conf, nil
+}
+
+type LeaderboardEntry struct {
+	*RankEntry
+	Username string `json:"username"`
+	Bot      bool   `json:"bot"`
+	Avatar   string `json:"avatar"`
+}
+
+func ToLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
+	if len(ranks) < 1 {
+		return []*LeaderboardEntry{}, nil
+	}
+
+	query := "SELECT id,username,bot,avatar FROM discord_users WHERE id in ("
+	args := make([]interface{}, len(ranks))
+
+	for i, v := range ranks {
+		if i != 0 {
+			query += ","
+		}
+
+		args[i] = v.UserID
+		query += "$" + strconv.Itoa(i+1)
+	}
+	query += ")"
+
+	result := make([]*LeaderboardEntry, len(ranks))
+	for i, v := range ranks {
+		result[i] = &LeaderboardEntry{
+			RankEntry: v,
+		}
+	}
+
+	rows, err := common.PQ.Query(query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "ToLeaderboardEntries")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var entry LeaderboardEntry
+		err = rows.Scan(&id, &entry.Username, &entry.Bot, &entry.Avatar)
+		if err != nil {
+			logrus.WithError(err).Error("Failed scanning row")
+			continue
+		}
+
+		for i, v := range result {
+			if v.UserID == id {
+				entry.RankEntry = v.RankEntry
+				result[i] = &entry
+				if entry.Avatar != "" {
+					result[i].Avatar = discordgo.EndpointUserAvatar(strconv.FormatInt(id, 10), entry.Avatar)
+				}
+			}
+		}
+	}
+
+	return result, nil
 }

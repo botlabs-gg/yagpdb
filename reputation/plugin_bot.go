@@ -18,7 +18,7 @@ func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(handleMessageCreate), eventsystem.EventMessageCreate)
 }
 
-var thanksRegex = regexp.MustCompile("(?i)^(thanks?|danks|ty|\\+rep)")
+var thanksRegex = regexp.MustCompile(`(?i)^(thanks?|danks|ty|thx|\+rep|\+\ ?\<\@)`)
 
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate
@@ -28,7 +28,10 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !thanksRegex.MatchString(evt.MessageCreate.Content) {
+	amount := 0
+	if thanksRegex.MatchString(evt.MessageCreate.Content) {
+		amount = 1
+	} else {
 		return
 	}
 
@@ -62,16 +65,12 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	ok, err := CheckSetCooldown(conf, client, sender.User.ID)
-	if !ok || err != nil {
-		if err != nil {
-			logrus.WithError(err).Error("Failed setting reputation cooldown")
-		}
-		return
-	}
-
 	err = ModifyRep(conf, client, cs.Guild.ID(), sender, target, 1)
 	if err != nil {
+		if err == ErrCooldown {
+			// Ignore this error silently
+			return
+		}
 		logrus.WithError(err).Error("Failed giving rep")
 		return
 	}

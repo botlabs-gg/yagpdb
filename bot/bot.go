@@ -55,18 +55,15 @@ func Run() {
 	// Only handler
 	common.BotSession.AddHandler(eventsystem.HandleEvent)
 
-	// common.BotSession.LogLevel = discordgo.LogDebug
-	// common.BotSession.Debug = true
-
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
 
 	common.BotSession.StateEnabled = false
 
-	// common.BotSession.LogLevel = discordgo.LogDebug
-	// common.BotSession.Debug = true
 	common.BotSession.LogLevel = discordgo.LogInformational
+	// common.BotSession.Debug = true
+	// common.BotSession.LogLevel = discordgo.LogDebug
 	err := common.BotSession.Open()
 	if err != nil {
 		panic(err)
