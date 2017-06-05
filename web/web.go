@@ -28,9 +28,11 @@ var (
 
 	LogRequestTimestamps bool
 
-	RootMux         *goji.Mux
-	CPMux           *goji.Mux
-	ServerPublicMux *goji.Mux
+	// Muxers
+	RootMux           *goji.Mux
+	CPMux             *goji.Mux
+	ServerPublicMux   *goji.Mux
+	ServerPubliAPIMux *goji.Mux
 
 	properAddresses bool
 
@@ -161,10 +163,14 @@ func setupRoutes() *goji.Mux {
 	// The public muxer, for public server stuff like stats and logs
 	serverPublicMux := goji.SubMux()
 	serverPublicMux.Use(ActiveServerMW)
-
 	mux.Handle(pat.Get("/public/:server"), serverPublicMux)
 	mux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
 	ServerPublicMux = serverPublicMux
+
+	ServerPubliAPIMux = goji.SubMux()
+	ServerPubliAPIMux.Use(ActiveServerMW)
+	mux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
+	mux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
 
 	// Server selection has it's own handler
 	mux.Handle(pat.Get("/cp"), RenderHandler(HandleSelectServer, "cp_selectserver"))
