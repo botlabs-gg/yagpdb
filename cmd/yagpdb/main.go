@@ -12,7 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/jonas747/yagpdb/youtube"
-	"github.com/shiena/ansicolor"
+	// "github.com/shiena/ansicolor"
 	"os"
 	"os/signal"
 	"strconv"
@@ -68,7 +68,7 @@ func main() {
 	flag.Parse()
 
 	log.AddHook(common.ContextHook{})
-	log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
+	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
 	stdlog.SetOutput(log.StandardLogger().Writer())
 	//log.AddHook(&journalhook.JournalHook{})
 	//journalhook.Enable()

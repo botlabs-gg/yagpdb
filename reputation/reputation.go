@@ -39,7 +39,7 @@ func DefaultConfig(guildID string) *models.ReputationConfig {
 		PointsName:    "Rep",
 		Enabled:       false,
 		Cooldown:      120,
-		MaxGiveAmount: 10,
+		MaxGiveAmount: 1,
 	}
 }
 
@@ -273,7 +273,7 @@ func ToLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
 		return []*LeaderboardEntry{}, nil
 	}
 
-	query := "SELECT id,username,bot,avatar FROM discord_users WHERE id in ("
+	query := "SELECT id,username,bot,avatar FROM d_users WHERE id in ("
 	args := make([]interface{}, len(ranks))
 
 	for i, v := range ranks {
@@ -295,7 +295,7 @@ func ToLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
 
 	rows, err := common.PQ.Query(query, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, "ToLeaderboardEntries")
+		return nil, errors.WithMessage(err, "ToLeaderboardEntries")
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -313,6 +313,8 @@ func ToLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
 				result[i] = &entry
 				if entry.Avatar != "" {
 					result[i].Avatar = discordgo.EndpointUserAvatar(strconv.FormatInt(id, 10), entry.Avatar)
+				} else {
+					result[i].Avatar = "/static/dist/img/unknown-user.png"
 				}
 			}
 		}

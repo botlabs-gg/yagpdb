@@ -28,10 +28,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	amount := 0
-	if thanksRegex.MatchString(evt.MessageCreate.Content) {
-		amount = 1
-	} else {
+	if !thanksRegex.MatchString(evt.MessageCreate.Content) {
 		return
 	}
 
@@ -191,11 +188,12 @@ var cmds = []commandsystem.CommandHandler{
 					return "Something went wrong... i may hae had one too many alcohol", err
 				}
 
+				leaderboardURL := "https://" + common.Conf.Host + "/public/" + parsed.Guild.ID() + "/reputation/leaderboard"
 				out := "```\n# -- Points -- User\n"
 				for _, v := range entries {
 					out += fmt.Sprintf("#%2d: %5d - %d\n", v.Rank, v.Points, v.UserID)
 				}
-				out += "```"
+				out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
 
 				return out, nil
 			},
