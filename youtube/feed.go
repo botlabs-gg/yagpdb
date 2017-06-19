@@ -9,6 +9,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
 	"sync"
 	"time"
@@ -79,7 +80,16 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 	for _, channel := range channels {
 		err = p.checkChannel(client, channel)
 		if err != nil {
-			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
+			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
+				logrus.WithError(err).WithField("yt_channel", channel).Warn("Removing non existant youtube channel")
+				err = common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
+				if err != nil && err != gorm.ErrRecordNotFound {
+					logrus.WithError(err).Error("Failed deleting nonexistant channel subs")
+				}
+				go maybeRemoveChannelWatch(channel)
+			} else {
+				logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
+			}
 		}
 	}
 
