@@ -1,7 +1,13 @@
 #page-wrapper{
 	padding-bottom: 400px;
-	padding-top: 40px;
+	padding-top: 60px;
 }
+
+
+.page-header{
+    margin-top: 10px !important;
+}
+
 
 textarea {
 	resize: vertical;
@@ -79,7 +85,7 @@ form table td{
 		overflow-y: auto;
 		top: 51px;
 		bottom: 0%;
-    margin-bottom: 200px;
+    margin-bottom: 225px;
   }
 
 }
@@ -270,4 +276,10 @@ form table td{
   0% {border-left-color: rgba(217,83,79, 0)}
   50% {border-left-color: rgba(217,83,79, 1)}
   100% {border-left-color: rgba(217,83,79, 0)}
+}
+
+.avatar {
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
 }
