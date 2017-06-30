@@ -1,7 +1,7 @@
 The go template engine is used for YAGPDB's custom commands.
 This page aims to help you to get the most out of the custom commands feature.
 
-Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}"}}`, for `<@.User.ID>` don't forget them aswell.
+Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}"}}`
 
 Available template data:
 
@@ -13,7 +13,7 @@ Available template data:
 * `.User.Discriminator` Outputs the user discriminator
 * `.User.Bot` Outputs true or false, if the user is a bot it will be `true` and if not then `false`
 
-> type Guild
+> type Guild/Server
 * `.Guild.ID` Outputs the guild ID
 * `.Guild.Name` Outputs the guild name
 * `.Guild.Icon` Outputs the guild icon
@@ -26,5 +26,5 @@ Available template data:
 * `.Guild.VerificationLevel` Outputs the requiered verification level for the guild
 * `.Guild.EmbedEnabled` Outputs if embeds are enabled or not, true/false
 
-> Other
-* `.Server.Name` Outputs the servername
+> Snippets
+* `<@{{"{{"}}.User.ID{{"}}"}}>` Outputs a mention to the user with the user ID, doesn't output an ID
