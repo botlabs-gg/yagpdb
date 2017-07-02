@@ -45,6 +45,9 @@ var cmds = []commandsystem.CommandHandler{
 					return err, err
 				}
 
+				timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
+				tStr := when.Format(time.RFC822)
+
 				if when.After(time.Now().Add(time.Hour * 24 * 366)) {
 					return "Can be max 365 days from now...", nil
 				}
@@ -54,9 +57,6 @@ var cmds = []commandsystem.CommandHandler{
 				if err != nil {
 					return err, err
 				}
-
-				timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
-				tStr := when.Format(time.RFC822)
 
 				return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 			},
