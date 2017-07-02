@@ -112,42 +112,51 @@ func (p *Plugin) handlePost(post *reddit.Link, redisClient *redis.Client) error 
 	}
 
 	// Get the channels that listens to this subreddit, if any
-	channels := make([]string, 0)
+
+	filteredItems := make([]*SubredditWatchItem, 0, len(config))
+
 OUTER:
 	for _, c := range config {
-		if c.Channel == "" {
-			c.Channel = c.Guild
-		}
-		for _, currentChannel := range channels {
-			if currentChannel == c.Channel {
+		for _, v := range filteredItems {
+			if v.Channel == c.Channel {
 				continue OUTER
 			}
 		}
-		channels = append(channels, c.Channel)
+
+		filteredItems = append(filteredItems, c)
 	}
 
 	// No channels nothing to do...
-	if len(channels) < 1 {
+	if len(filteredItems) < 1 {
 		return nil
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"num_channels": len(channels),
+		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
 	}).Info("Found matched reddit post")
 
 	embed := CreatePostEmbed(post)
 
-	for _, channel := range channels {
-		go func(c string) {
-			err := common.RetrySendMessage(c, embed, 10)
+	for _, item := range filteredItems {
+		go func(cpItem *SubredditWatchItem) {
+			err := common.RetrySendMessage(cpItem.Channel, embed, 10)
 			if err != nil {
-				logrus.WithError(err).Error("Error posting message")
+				checkSendError(cpItem, err)
 			}
-		}(channel)
+		}(item)
 	}
 
 	return nil
+}
+
+func checkSendError(item *SubredditWatchItem, err error) {
+	if rError, ok := err.(*discordgo.RESTError); ok && rError.Response.StatusCode == 404 {
+		item.Remove(common.MustGetRedisClient())
+		logrus.WithError(err).WithField("channel", item.Channel).WithField("guild", item.Guild).Info("Removed reddit feed to nonexistand discord channel")
+	} else {
+		logrus.WithError(err).WithField("channel", item.Channel).WithField("guild", item.Guild).Error("Error posting message")
+	}
 }
 
 func CreatePostEmbed(post *reddit.Link) *discordgo.MessageEmbed {
