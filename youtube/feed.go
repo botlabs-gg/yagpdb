@@ -7,6 +7,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
@@ -106,7 +107,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	}
 
 	if len(subs) < 1 {
-		time.AfterFunc(time.Second, func() {
+		time.AfterFunc(time.Second*10, func() {
 			maybeRemoveChannelWatch(channel)
 		})
 		return nil
@@ -228,7 +229,18 @@ func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.Playlist
 	if mentionEveryone {
 		content += " @everyone"
 	}
-	common.RetrySendMessage(discordChannel, content, 10)
+	err := common.RetrySendMessage(discordChannel, content, 50)
+	if err != nil {
+		if rError, ok := err.(*discordgo.RESTError); ok && rError.Response.StatusCode == 404 {
+			// Tried to send to nonexistant channel, remove all subs to this channel.
+			err = common.GORM.Where("channel_id = ?", discordChannel).Delete(ChannelSubscription{}).Error
+			if err != nil {
+				logrus.WithError(err).Error("failed removing nonexistant channel")
+			}
+		} else {
+			logrus.WithError(err).WithField("channel", discordChannel).Error("Failed sending youtube sub message")
+		}
+	}
 }
 
 var (
