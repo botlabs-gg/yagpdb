@@ -46,7 +46,7 @@ var cmds = []commandsystem.CommandHandler{
 				}
 
 				if when.After(time.Now().Add(time.Hour * 24 * 366)) {
-					return "Can be max 265 days from now...", nil
+					return "Can be max 365 days from now...", nil
 				}
 
 				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
