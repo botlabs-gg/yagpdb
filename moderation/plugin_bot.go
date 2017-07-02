@@ -570,6 +570,7 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "DelWarning",
+			Aliases:               []string{"dw"},
 			Description:           "Deletes a warning, id is the first number of each warning from the warnings command",
 			RequiredArgs:          1,
 			UserArgRequireMention: true,
@@ -584,6 +585,26 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				return "👌", nil
+			}),
+		},
+	},
+	&commands.CustomCommand{
+		CustomEnabled: true,
+		Cooldown:      2,
+		Category:      commands.CategoryModeration,
+		Command: &commandsystem.Command{
+			Name:                  "ClearWarnings",
+			Aliases:               []string{"clw"},
+			Description:           "Clears the warnings of a user",
+			RequiredArgs:          1,
+			UserArgRequireMention: true,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
+			},
+			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
+
+				rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.Guild.ID(), parsed.Args[0].DiscordUser().ID).Delete(WarningModel{}).RowsAffected
+				return fmt.Sprintf("Deleted %d warnings.", rows), nil
 			}),
 		},
 	},
