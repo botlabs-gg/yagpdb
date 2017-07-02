@@ -39,10 +39,12 @@
                     <li>An actual leaderboard</li>
                 </ul>
             </li>
-            <li>Added command to delete warnings: <code>delwarning (id)</code></li>
+            <li>Added command to delete warnings: <code>delwarning (id)</code> and <code>clearwarning @user</code></li>
             <li>Added ability to blacklist creation of logs from certain channels</li>
             <li>Added sharding, since were (somehow) nearing the 2.5k single shard limit.</li>
-            <li>Started first steps to transitioning towards another state tracker that might give more consisten results when you're interacting with the bot</li>
+            <li>Started first steps to transitioning towards another state tracker that might give more consistent results when you're interacting with the bot</li>
+            <li>Scheduled events now execute every 10 seconds (as opposed to 60) (means more responsive reminders and unmutes and shit)</li>
+            <li>Fixed reminders command displayed stuff like 1 hour and 59 minutes, the actual time was correct but it just showed the time wrong</li>
         </ul>
 
         <h3>Information</h3>
