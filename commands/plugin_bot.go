@@ -196,7 +196,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	// Status command shows the bot's status, stuff like version, conntected servers, uptime, memory used etc..
 	&CustomCommand{
 		Cooldown: 5,
-		Category: CategoryTool,
+		Category: CategoryDebug,
 		Command: &commandsystem.Command{
 			Name:        "Yagstatus",
 			Aliases:     []string{"Status"},
@@ -619,7 +619,6 @@ Control panel: <https://yagpdb.xyz/cp>
 				{Name: "Json", Type: commandsystem.ArgumentString},
 			},
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				time.Sleep(time.Second * 5)
 				var parsed *discordgo.MessageEmbed
 				err := json.Unmarshal([]byte(data.SafeArgString(0)), &parsed)
 				if err != nil {
