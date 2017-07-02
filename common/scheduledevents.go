@@ -50,7 +50,7 @@ func RunScheduledEvents() {
 		panic(err)
 	}
 
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Second * 10)
 	for {
 		select {
 		case wg := <-stopScheduledEventsChan:
