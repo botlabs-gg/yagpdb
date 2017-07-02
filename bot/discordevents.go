@@ -11,9 +11,17 @@ import (
 
 func HandleReady(evt *eventsystem.EventData) {
 	log.Info("Ready received!")
-	now := time.Now()
 	ContextSession(evt.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
-	log.Println("Took ", time.Since(now), " To set streaming status")
+
+	// We pass the common.Session to the command system and that needs the user from the state
+	common.BotSession.State.Lock()
+	ready := discordgo.Ready{
+		Version:   evt.Ready.Version,
+		SessionID: evt.Ready.SessionID,
+		User:      evt.Ready.User,
+	}
+	common.BotSession.State.Ready = ready
+	common.BotSession.State.Unlock()
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {

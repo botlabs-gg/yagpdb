@@ -390,7 +390,7 @@ func RetrySendMessage(channel string, msg interface{}, maxTries int) error {
 			return err
 		}
 
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 5)
 	}
 
 	return err

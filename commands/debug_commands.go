@@ -23,7 +23,7 @@ func requireOwner(inner commandsystem.RunFunc) commandsystem.RunFunc {
 var debugCommands = []commandsystem.CommandHandler{
 	&CustomCommand{
 		Cooldown:             2,
-		Category:             CategoryFun,
+		Category:             CategoryDebug,
 		HideFromCommandsPage: true,
 		Command: &commandsystem.Command{
 			Name:         "stateinfo",
@@ -71,7 +71,7 @@ var debugCommands = []commandsystem.CommandHandler{
 		},
 	}, &CustomCommand{
 		Cooldown:             2,
-		Category:             CategoryFun,
+		Category:             CategoryDebug,
 		HideFromCommandsPage: true,
 		Command: &commandsystem.Command{
 			Name:         "secretcommand",
@@ -84,7 +84,7 @@ var debugCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown:             2,
-		Category:             CategoryFun,
+		Category:             CategoryDebug,
 		HideFromCommandsPage: true,
 		Command: &commandsystem.Command{
 			Name:         "topcommands",
@@ -121,7 +121,7 @@ var debugCommands = []commandsystem.CommandHandler{
 	},
 	&CustomCommand{
 		Cooldown:             2,
-		Category:             CategoryFun,
+		Category:             CategoryDebug,
 		HideFromCommandsPage: true,
 		Command: &commandsystem.Command{
 			Name:         "topevents",
@@ -162,6 +162,19 @@ var debugCommands = []commandsystem.CommandHandler{
 
 				return out, nil
 			}),
+		},
+	},
+	&CustomCommand{
+		Category:             CategoryDebug,
+		HideFromCommandsPage: true,
+		Command: &commandsystem.Command{
+			Name:        "CurentShard",
+			Aliases:     []string{"cshard"},
+			Description: "Shows the current shard this server is on",
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				shard := bot.ShardManager.SessionForGuildS(data.Guild.ID())
+				return fmt.Sprintf("On shard %d out of total %d shards.", shard.ShardID+1, shard.ShardCount), nil
+			},
 		},
 	},
 }

@@ -114,6 +114,9 @@ Help        = {hlp}   (command)       : blablabla
 	out += "\n[Misc/Fun] # Fun commands for family and friends!"
 	out += generateComandsHelp(categories[CategoryFun]) + "\n"
 
+	out += "\n[Debug] # Commands to help debug issues."
+	out += generateComandsHelp(categories[CategoryDebug]) + "\n"
+
 	unknown, ok := categories[CommandCategory("")]
 	if ok && len(unknown) > 1 {
 		out += "\n[Unknown] # ??"
@@ -659,7 +662,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate
-	CommandSystem.HandleMessageCreate(bot.ContextSession(evt.Context()), m)
+	CommandSystem.HandleMessageCreate(common.BotSession, m)
 
 	bUser := bot.State.User(true)
 	if bUser == nil {

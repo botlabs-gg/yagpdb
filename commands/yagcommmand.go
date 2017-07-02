@@ -28,6 +28,7 @@ const (
 	CategoryTool       CommandCategory = "Tools"
 	CategoryModeration CommandCategory = "Moderation"
 	CategoryFun        CommandCategory = "Misc/Fun"
+	CategoryDebug      CommandCategory = "Debug"
 )
 
 var (

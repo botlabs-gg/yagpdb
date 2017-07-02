@@ -3,18 +3,22 @@ package bot
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dshardmanager"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 )
 
 var (
 	// When the bot was started
-	Started = time.Now()
-	Running bool
-	State   *dstate.State
+	Started      = time.Now()
+	Running      bool
+	State        *dstate.State
+	ShardManager *dshardmanager.Manager
 
 	StateHandlerPtr *eventsystem.Handler
 )
@@ -45,31 +49,40 @@ func Setup() {
 	}
 
 	log.Printf("Registered %d event handlers", eventsystem.NumHandlers(eventsystem.EventAll))
-
 }
 
 func Run() {
 
 	log.Println("Running bot")
 
+	// Set up shard manager
+	ShardManager = dshardmanager.New(common.Conf.BotToken)
+	ShardManager.LogChannel = os.Getenv("YAGPDB_CONNEVT_CHANNEL")
+	ShardManager.StatusMessageChannel = os.Getenv("YAGPDB_CONNSTATUS_CHANNEL")
+	ShardManager.Name = "YAGPDB"
+	ShardManager.GuildCountsFunc = GuildCountsFunc
+	ShardManager.SessionFunc = func(token string) (session *discordgo.Session, err error) {
+		session, err = discordgo.New(token)
+		if err != nil {
+			return
+		}
+
+		session.StateEnabled = false
+		session.LogLevel = discordgo.LogInformational
+
+		return
+	}
+
+	ShardManager.SetNumShards(4)
+
 	// Only handler
-	common.BotSession.AddHandler(eventsystem.HandleEvent)
+	ShardManager.AddHandler(eventsystem.HandleEvent)
 
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
-
-	common.BotSession.StateEnabled = false
-
-	common.BotSession.LogLevel = discordgo.LogInformational
-	// common.BotSession.Debug = true
-	// common.BotSession.LogLevel = discordgo.LogDebug
-	err := common.BotSession.Open()
-	if err != nil {
-		panic(err)
-	}
-
 	Running = true
+	go ShardManager.Start()
 
 	go mergedMessageSender()
 
@@ -150,4 +163,18 @@ OUTER:
 			log.WithField("guild", gID).Info("Removed from guild when offline")
 		}
 	}
+}
+
+func GuildCountsFunc() []int {
+	numShards := ShardManager.GetNumShards()
+	result := make([]int, numShards)
+	State.RLock()
+	for _, v := range State.Guilds {
+		parsed, _ := strconv.ParseInt(v.ID(), 10, 64)
+		shard := (parsed >> 22) % int64(numShards)
+		result[shard]++
+	}
+	State.RUnlock()
+
+	return result
 }
