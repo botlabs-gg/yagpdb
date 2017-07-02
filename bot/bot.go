@@ -43,9 +43,11 @@ func Setup() {
 	eventsystem.AddHandler(RedisWrapper(HandleChannelDelete), eventsystem.EventChannelDelete)
 
 	log.Info("Initializing bot plugins")
-	for _, plugin := range Plugins {
-		plugin.InitBot()
-		log.Info("Initialized bot plugin ", plugin.Name())
+	for _, plugin := range common.Plugins {
+		if botPlugin, ok := plugin.(Plugin); ok {
+			botPlugin.InitBot()
+			log.Info("Initialized bot plugin ", plugin.Name())
+		}
 	}
 
 	log.Printf("Registered %d event handlers", eventsystem.NumHandlers(eventsystem.EventAll))
@@ -73,7 +75,9 @@ func Run() {
 		return
 	}
 
-	ShardManager.SetNumShards(4)
+	if common.Testing {
+		// ShardManager.SetNumShards(4)
+	}
 
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
@@ -86,7 +90,7 @@ func Run() {
 
 	go mergedMessageSender()
 
-	for _, p := range Plugins {
+	for _, p := range common.Plugins {
 		starter, ok := p.(BotStarterHandler)
 		if ok {
 			starter.StartBot()
@@ -99,7 +103,7 @@ func Run() {
 
 func Stop(wg *sync.WaitGroup) {
 
-	for _, v := range Plugins {
+	for _, v := range common.Plugins {
 		stopper, ok := v.(BotStopperHandler)
 		if !ok {
 			continue

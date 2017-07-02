@@ -258,7 +258,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					},
 				}
 
-				for _, v := range common.AllPlugins {
+				for _, v := range common.Plugins {
 					if cast, ok := v.(PluginStatus); ok {
 						name, val := cast.Status(data.Context().Value(CtxKeyRedisClient).(*redis.Client))
 						if name == "" || val == "" {

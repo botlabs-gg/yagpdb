@@ -142,6 +142,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 
 		resp, err := call.Do()
 		if err != nil {
+
 			return err
 		}
 		if first {

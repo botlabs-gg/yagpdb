@@ -2,9 +2,7 @@ package autorole
 
 import (
 	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/web"
 )
 
 func KeyCommands(guildID string) string   { return "autorole:" + guildID + ":commands" }
@@ -19,9 +17,7 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	p := &Plugin{}
-
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 }
 
 type RoleCommand struct {

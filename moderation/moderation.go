@@ -13,7 +13,6 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"regexp"
 	"strconv"
@@ -46,8 +45,9 @@ func RedisKeyBannedUser(guildID, userID string) string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+
+	common.RegisterPlugin(plugin)
+
 	common.RegisterScheduledEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{})

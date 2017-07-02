@@ -4,11 +4,8 @@ package youtube
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/web"
 	"google.golang.org/api/youtube/v3"
 	"sync"
 	"time"
@@ -40,9 +37,7 @@ func RegisterPlugin() {
 
 	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
 
-	web.RegisterPlugin(p)
-	feeds.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 	docs.AddPage("Youtube Feeds", FSMustString(false, "/assets/help-page.md"), nil)
 }

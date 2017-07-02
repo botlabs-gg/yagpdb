@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -33,8 +32,7 @@ func InitPlugin() {
 	configstore.RegisterConfig(configstore.SQL, &GuildLoggingConfig{})
 
 	p := &Plugin{}
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 }
 

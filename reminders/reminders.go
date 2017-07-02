@@ -5,7 +5,6 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"strconv"
 	"strings"
@@ -22,7 +21,7 @@ func RegisterPlugin() {
 	}
 
 	p := &Plugin{}
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 }
 
 func (p *Plugin) Name() string {

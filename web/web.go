@@ -189,9 +189,11 @@ func setupRoutes() *goji.Mux {
 	serverCpMuxer.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	CPMux = serverCpMuxer
 
-	for _, plugin := range Plugins {
-		plugin.InitWeb()
-		log.Info("Initialized web plugin:", plugin.Name())
+	for _, plugin := range common.Plugins {
+		if webPlugin, ok := plugin.(Plugin); ok {
+			webPlugin.InitWeb()
+			log.Info("Initialized web plugin:", plugin.Name())
+		}
 	}
 
 	return mux

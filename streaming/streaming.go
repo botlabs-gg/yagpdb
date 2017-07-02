@@ -3,8 +3,7 @@ package streaming
 import (
 	"encoding/json"
 	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/yagpdb/common"
 )
 
 type Plugin struct{}
@@ -15,8 +14,7 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 }
 
 type Config struct {

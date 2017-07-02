@@ -7,18 +7,15 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/web"
 )
 
 type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 	err := common.GORM.AutoMigrate(&LoggedExecutedCommand{}).Error
 	if err != nil {
 		log.WithError(err).Error("Failed migrating database")

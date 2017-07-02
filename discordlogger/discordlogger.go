@@ -32,7 +32,7 @@ func Register() {
 
 	if BotLeavesJoins != "" {
 		logrus.Info("Listening for bot leaves and join")
-		bot.RegisterPlugin(&Plugin{})
+		common.RegisterPlugin(&Plugin{})
 	}
 }
 

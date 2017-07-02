@@ -4,10 +4,8 @@ package automod
 
 import (
 	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/web"
 )
 
 type Condition string
@@ -24,9 +22,7 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	p := &Plugin{}
-
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 	docs.AddPage("Automoderator", FSMustString(false, "/assets/help-page.md"), nil)
 }
 

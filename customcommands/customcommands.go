@@ -8,8 +8,8 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/web"
 	"sort"
 )
 
@@ -19,8 +19,7 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 	docs.AddPage("Custom Commands", FSMustString(false, "/assets/help-page.md"), nil)
 }
 

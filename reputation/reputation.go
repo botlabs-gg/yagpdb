@@ -9,10 +9,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
 	"strconv"
 )
@@ -25,8 +23,7 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	bot.RegisterPlugin(plugin)
-	web.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 }
 
 func (p *Plugin) Name() string {

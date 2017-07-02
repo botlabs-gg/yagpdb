@@ -41,7 +41,8 @@ func RegisterPlugin() {
 	p := &Plugin{
 		aylien: client,
 	}
-	bot.RegisterPlugin(p)
+
+	common.RegisterPlugin(p)
 }
 
 func (p *Plugin) Name() string {

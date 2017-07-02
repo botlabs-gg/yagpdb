@@ -224,24 +224,9 @@ type SQLMigrater interface {
 func migrate(client *redis.Client) error {
 	plugins := make([]SQLMigrater, 0)
 
-	for _, v := range bot.Plugins {
+	for _, v := range common.Plugins {
 		cast, ok := v.(SQLMigrater)
 		if ok {
-			plugins = append(plugins, cast)
-			log.Info("Migrating ", cast.Name())
-		}
-	}
-
-OUTER:
-	for _, v := range web.Plugins {
-		for _, p := range plugins {
-			if interface{}(v) == p {
-				log.Info("Found duplicate ", v.Name())
-				continue OUTER
-			}
-		}
-
-		if cast, ok := v.(SQLMigrater); ok {
 			plugins = append(plugins, cast)
 			log.Info("Migrating ", cast.Name())
 		}

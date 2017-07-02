@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs/static"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/shurcooL/github_flavored_markdown"
 	"net/http"
 	"strings"
@@ -21,7 +20,7 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	p := &Plugin{}
-	web.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 	AddDefaultDoc()
 }
