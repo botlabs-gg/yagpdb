@@ -293,7 +293,7 @@ func ToLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
 		}
 	}
 
-	rows, err := common.PQ.Query(query, args...)
+	rows, err := common.DSQLStateDB.Query(query, args...)
 	if err != nil {
 		return nil, errors.WithMessage(err, "ToLeaderboardEntries")
 	}

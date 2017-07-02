@@ -23,6 +23,12 @@ export YAGPDB_CONNSTATUS_CHANNEL=""
 # Bot leaves joins to this channel
 export YAGPDB_BOTLEAVESJOINS=""
 
+# specialised state db, currently only used in reputation, in testing phase
+export YAGPDB_SQLSTATE_ADDR=""
+export YAGPDB_SQLSTATE_USER=""
+export YAGPDB_SQLSTATE_PW=""
+export YAGPDB_SQLSTATE_DB=""
+
 # Plugins below, not required
 
 # Aylien
