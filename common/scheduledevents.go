@@ -62,7 +62,9 @@ func RunScheduledEvents() {
 			if err != nil {
 				logrus.WithError(err).Error("Failed checking scheduled events")
 			}
-			logrus.Infof("Handled %d scheduled events in %s", n, time.Since(started))
+			if n > 0 {
+				logrus.Infof("Handled %d scheduled events in %s", n, time.Since(started))
+			}
 		}
 	}
 }
