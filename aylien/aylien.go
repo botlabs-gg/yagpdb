@@ -124,7 +124,7 @@ func (p *Plugin) InitBot() {
 	},
 		// This is a fun little always positive 8ball
 		&commands.CustomCommand{
-			Cooldown: 5,
+			Cooldown: 2,
 			Category: commands.CategoryFun,
 			Command: &commandsystem.Command{
 				Name:        "8Ball",

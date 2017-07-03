@@ -506,7 +506,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 5,
 		Category: CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Ping",
@@ -518,7 +517,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 2,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "Throw",
@@ -540,7 +538,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 2,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "Roll",
@@ -572,7 +569,7 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 10,
+		Cooldown: 5,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "TopServers",
@@ -608,7 +605,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 10,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:         "CustomEmbed",

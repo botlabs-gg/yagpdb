@@ -36,7 +36,7 @@ func (p *Plugin) StartBot() {
 
 var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
-		Cooldown: 30,
+		Cooldown: 5,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Logs",
@@ -71,7 +71,6 @@ var cmds = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Cooldown: 10,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Whois",
@@ -218,7 +217,6 @@ var cmds = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Cooldown: 10,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Usernames",
@@ -261,7 +259,6 @@ var cmds = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Cooldown: 10,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Nicknames",

@@ -25,7 +25,7 @@ func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryTool,
-		Cooldown:      10,
+		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:        "Stats",
 			Description: "Shows server stats (if public stats are enabled)",

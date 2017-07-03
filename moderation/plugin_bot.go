@@ -225,7 +225,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryModeration,
-		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:         "Kick",
 			Description:  "Kicks a member",
@@ -260,7 +259,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryModeration,
-		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:        "Mute",
 			Description: "Mutes a member",
@@ -308,7 +306,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryModeration,
-		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:         "Unmute",
 			Description:  "unmutes a member",
@@ -385,7 +382,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      5,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Clean",
@@ -435,7 +431,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		},
 	}, &commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      5,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Reason",
@@ -480,7 +475,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Warn",
@@ -505,7 +499,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Warnings",
@@ -540,7 +533,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "EditWarning",
@@ -566,7 +558,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "DelWarning",
@@ -590,7 +581,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "ClearWarnings",
