@@ -191,7 +191,7 @@ var _escData = map[string]*_escFile{
 	"/doc-guide-1-fork.png": {
 		local:   "doc-guide-1-fork.png",
 		size:    6742,
-		modtime: 1490715974,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/5SZZzAcfBznNyJaRG/ROxEllkSJkoi2iE4IdhO9S1i9hQTRoy5hdVFXZ3VP1KxlldXL
 6i16r8vNc/fMzdyru3v5mfn/vy8/M5/5Repqqz0iYyYDAACPQOrK+gDAPR4AAPCWhAgAAOyWENQCAMxs
@@ -311,7 +311,7 @@ v7x2DgLVPCvcr8+A56DLtggvS0yAz47y+l5QYIF2nuyVlWKvCFRx9jkqBakD3C325J0SNCSEoWi18re0
 	"/doc-guide-2-branch-button.png": {
 		local:   "doc-guide-2-branch-button.png",
 		size:    6110,
-		modtime: 1490716992,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/5SYZ1AT0NfmAypKEWnSEREBEaQLhk6UUCQUkaDUAELoSJFO6ChoQECQjtIiUkLvEGmh
 E6T30GsQA4HQ2XHb7Lw785/dL/fDfe4953x6nt+caH1djZs0nDQAAOCmluazFwAABRUAAIi58e/UlFgR
@@ -419,7 +419,7 @@ KEg8OlZPp+2bHMzW1u/yTzfow8TFy3uPlK6IiNBSX+O7z35Hip1O/NytPZJBXfR/4jXfpTHoBlHf21v2
 	"/doc-guide-3-branch-create.png": {
 		local:   "doc-guide-3-branch-create.png",
 		size:    19703,
-		modtime: 1490717135,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/3S7dVAdT7AGeiC4w8Gd4B4cgjsHdwju7u4uwd3d3d3dNbhDcLfg+orfrVf31qt6f+1M
 VW9Pd39bM9+3vRsmLyuOCIcLBwAAEEESIooAAJgAAABYhoECAACWQb8PAABiAEhEUNlt7TzL2QtdHG+k
@@ -754,7 +754,7 @@ r2DrT7v4+POveTxl1knbra2tZfTo0fwPZR3vCTCJhmMAAAAASUVORK5CYIIBAAD//3U1aWb3TAAA
 	"/doc-guide-4-edit-button.png": {
 		local:   "doc-guide-4-edit-button.png",
 		size:    3331,
-		modtime: 1490717426,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/1zWeTQUit/H8UGKEkOyLxkaLZK1xETmMtK1DZkYstfIZCbr2KWQLNcWoSR7jCwNYx2M
 Cdm3O2Ro7CamMsZYszznnvM8z/nd37/v8znf77+vl1YWJqdPSp0EAACnTW8bWQMAXMIAAMCa7zgAAPC7
@@ -818,7 +818,7 @@ lJD40sYFVPlsPf7HcUEAAAAwNbYwqoS6PPufAAAA//+MwGgtAw0AAA==
 	"/doc-guide-5-commit-message.png": {
 		local:   "doc-guide-5-commit-message.png",
 		size:    64556,
-		modtime: 1490716231,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/2S6dVRb39I+HpwiQUpxh0KLQ4tDcCleoLhriwZ3l0CBAKVAKe5QHBrcLUjx4u7uFvy3
 eN/3/u73fu5a54+s7H3O3nNmnpnnmX0i1VTkcLHIsQAAAO4HeWl1AAAVAAAgs2GiAwAAu9z5CwCAFvBB
@@ -1851,7 +1851,7 @@ zwmXXf+4hlSR8lc2OX8FuvdfUumtUf/lkGTSE9avozukzLYETAAAAJCVUpQsETf6/n8FAAD//7ZMJoUs
 	"/doc-guide-6-changes.png": {
 		local:   "doc-guide-6-changes.png",
 		size:    11514,
-		modtime: 1490717650,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/5S6d1ST27c1HEXhIE1AmjRFem8GqZEuRZAiHUJHeu8lItJEeidAjqD0HulNagwQolJD
 C73X0EvgG57j/d0xvvcd4713/bXzZI615rOzs/fcY83YV1qqZPce3gMAAGRqL5R0AQCCbQAAAP6LEAAA
@@ -2045,7 +2045,7 @@ b4lXpQEAAICaspZSlYLlu/8vAAD//2s7UyL6LAAA
 	"/doc-guide-7-base-branch.png": {
 		local:   "doc-guide-7-base-branch.png",
 		size:    34296,
-		modtime: 1490717736,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/4y7dVDcTdP3CyHB3Z0Q3J3FCSS4u0OA4O4OCRJ0geCuwS3I4gvBWdzd3Z1FFjmV67rv
 55w69dZbz3/fqt6a7pnunv5N1WcjVZVlMFBJUeHg4DDkZD+rw8EhgODg4B6QEeHg4O5ZcDvh4N7DyX2W
