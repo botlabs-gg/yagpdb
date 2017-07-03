@@ -2,7 +2,6 @@ package reddit
 
 import (
 	"context"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -58,7 +57,7 @@ func baseData(inner http.Handler) http.Handler {
 		templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reddit/"
 
 		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+activeGuild.ID)
-		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", log.Error) {
+		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		}
 
@@ -112,7 +111,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err := watchItem.Set(client)
-	if web.CheckErr(templateData, err, "Failed saving item :'(", log.Error) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
@@ -160,7 +159,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 	}
 
-	if web.CheckErr(templateData, err, "Failed saving item :'(", log.Error) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
@@ -192,7 +191,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err = item.Remove(client)
-	if web.CheckErr(templateData, err, "Failed removing item :'(", log.Error) {
+	if web.CheckErr(templateData, err, "Failed removing item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 

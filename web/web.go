@@ -28,13 +28,17 @@ var (
 
 	LogRequestTimestamps bool
 
-	RootMux         *goji.Mux
-	CPMux           *goji.Mux
-	ServerPublicMux *goji.Mux
+	// Muxers
+	RootMux           *goji.Mux
+	CPMux             *goji.Mux
+	ServerPublicMux   *goji.Mux
+	ServerPubliAPIMux *goji.Mux
 
 	properAddresses bool
 
 	acceptingRequests *int32
+
+	globalTemplateData = TemplateData(make(map[string]interface{}))
 )
 
 func init() {
@@ -60,6 +64,11 @@ func init() {
 }
 
 func Run() {
+
+	AddGlobalTemplateData("ClientID", common.Conf.ClientID)
+	AddGlobalTemplateData("Host", common.Conf.Host)
+	AddGlobalTemplateData("Version", common.VERSION)
+	AddGlobalTemplateData("Testing", common.Testing)
 
 	if properAddresses {
 		ListenAddressHTTP = ":80"
@@ -154,10 +163,14 @@ func setupRoutes() *goji.Mux {
 	// The public muxer, for public server stuff like stats and logs
 	serverPublicMux := goji.SubMux()
 	serverPublicMux.Use(ActiveServerMW)
-
 	mux.Handle(pat.Get("/public/:server"), serverPublicMux)
 	mux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
 	ServerPublicMux = serverPublicMux
+
+	ServerPubliAPIMux = goji.SubMux()
+	ServerPubliAPIMux.Use(ActiveServerMW)
+	mux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
+	mux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
 
 	// Server selection has it's own handler
 	mux.Handle(pat.Get("/cp"), RenderHandler(HandleSelectServer, "cp_selectserver"))
@@ -176,9 +189,11 @@ func setupRoutes() *goji.Mux {
 	serverCpMuxer.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	CPMux = serverCpMuxer
 
-	for _, plugin := range Plugins {
-		plugin.InitWeb()
-		log.Info("Initialized web plugin:", plugin.Name())
+	for _, plugin := range common.Plugins {
+		if webPlugin, ok := plugin.(Plugin); ok {
+			webPlugin.InitWeb()
+			log.Info("Initialized web plugin:", plugin.Name())
+		}
 	}
 
 	return mux
@@ -186,4 +201,8 @@ func setupRoutes() *goji.Mux {
 
 func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
+}
+
+func AddGlobalTemplateData(key string, data interface{}) {
+	globalTemplateData[key] = data
 }

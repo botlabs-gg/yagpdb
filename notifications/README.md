@@ -1,8 +1,8 @@
 # Notifications
 
-Simple notifications plugin for yagpdb
+Simple notifications plugin for YAGPDB.
 
-Will provide general notifications in a server for the following events
+Will provide general notifications in a server for the following events:
 
  - User join
  - User leave

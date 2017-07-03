@@ -1,11 +1,11 @@
 package youtube
 
+//go:generate esc -o assets_gen.go -pkg youtube -ignore ".go" assets/
+
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/yagpdb/docs"
 	"google.golang.org/api/youtube/v3"
 	"sync"
 	"time"
@@ -35,11 +35,11 @@ func RegisterPlugin() {
 		return
 	}
 
-	common.SQL.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
+	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
 
-	web.RegisterPlugin(p)
-	feeds.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
+
+	docs.AddPage("Youtube Feeds", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 type ChannelSubscription struct {

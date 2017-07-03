@@ -12,7 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/jonas747/yagpdb/youtube"
-	"github.com/shiena/ansicolor"
+	// "github.com/shiena/ansicolor"
 	"os"
 	"os/signal"
 	"strconv"
@@ -29,6 +29,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/discordlogger"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
@@ -67,7 +68,7 @@ func main() {
 	flag.Parse()
 
 	log.AddHook(common.ContextHook{})
-	log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
+	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
 	stdlog.SetOutput(log.StandardLogger().Writer())
 	//log.AddHook(&journalhook.JournalHook{})
 	//journalhook.Enable()
@@ -94,6 +95,7 @@ func main() {
 
 	// Setup plugins
 	discordlogger.Register()
+	docs.RegisterPlugin()
 	commands.RegisterPlugin()
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()
@@ -222,24 +224,9 @@ type SQLMigrater interface {
 func migrate(client *redis.Client) error {
 	plugins := make([]SQLMigrater, 0)
 
-	for _, v := range bot.Plugins {
+	for _, v := range common.Plugins {
 		cast, ok := v.(SQLMigrater)
 		if ok {
-			plugins = append(plugins, cast)
-			log.Info("Migrating ", cast.Name())
-		}
-	}
-
-OUTER:
-	for _, v := range web.Plugins {
-		for _, p := range plugins {
-			if interface{}(v) == p {
-				log.Info("Found duplicate ", v.Name())
-				continue OUTER
-			}
-		}
-
-		if cast, ok := v.(SQLMigrater); ok {
 			plugins = append(plugins, cast)
 			log.Info("Migrating ", cast.Name())
 		}

@@ -24,15 +24,15 @@ func init() {
 }
 
 func Register() {
-	if ErrorChannel != "" {
-		logrus.Info("Adding logrus hook")
-		logrus.AddHook(&Plugin{})
-		eventsystem.AddHandler(OnReady, eventsystem.EventReady)
-	}
+	// if ErrorChannel != "" {
+	// 	logrus.Info("Adding logrus hook")
+	// 	// logrus.AddHook(&Plugin{})
+	// 	eventsystem.AddHandler(OnReady, eventsystem.EventReady)
+	// }
 
 	if BotLeavesJoins != "" {
 		logrus.Info("Listening for bot leaves and join")
-		bot.RegisterPlugin(&Plugin{})
+		common.RegisterPlugin(&Plugin{})
 	}
 }
 
@@ -102,5 +102,5 @@ type Stringer interface {
 }
 
 func OnReady(evt *eventsystem.EventData) {
-	common.BotSession.ChannelMessageSend(ErrorChannel, "<@"+common.Conf.Owner+"> Ready!")
+	// common.BotSession.ChannelMessageSend(ErrorChannel, "<@"+common.Conf.Owner+"> Ready!")
 }

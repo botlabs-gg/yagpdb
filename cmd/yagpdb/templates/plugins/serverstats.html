@@ -60,7 +60,7 @@
             <div class="panel-heading">
                 <div class="row">
                     <div class="col-xs-3">
-                        <i class="fa fa-users fa-5x"></i>
+                        <i class="fa fa-user-plus fa-5x"></i>
                     </div>
                     <div class="col-xs-9 text-right">
                         <div class="huge" id="members-changed-24h">...</div>
@@ -75,7 +75,7 @@
             <div class="panel-heading">
                 <div class="row">
                     <div class="col-xs-3">
-                        <i class="fa fa-trash fa-5x"></i>
+                        <i class="fa fa-user fa-5x"></i>
                     </div>
                     <div class="col-xs-9 text-right">
                         <div class="huge" id="online-members">...</div>
@@ -90,7 +90,7 @@
             <div class="panel-heading">
                 <div class="row">
                     <div class="col-xs-3">
-                        <i class="fa fa-trash fa-5x"></i>
+                        <i class="fa fa-users fa-5x"></i>
                     </div>
                     <div class="col-xs-9 text-right">
                         <div class="huge" id="total-members">...</div>
@@ -130,22 +130,7 @@
         })
     }
 
-    $(function(){
-        function createRequest(method, path, data, cb){
-            var oReq = new XMLHttpRequest();
-            oReq.addEventListener("load", cb);
-            oReq.addEventListener("error", function(){
-                window.location.href = '/';
-            });
-            oReq.open(method, path);
-            
-            if (data) {
-                oReq.setRequestHeader("content-type", "application/json");
-                oReq.send(JSON.stringify(data));
-            }else{
-                oReq.send();
-            }
-        }   
+    $(function(){        
         var chart = null;
         function statsCB(){
             try{

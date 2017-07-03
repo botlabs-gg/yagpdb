@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 )
 
@@ -14,10 +13,9 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	bot.RegisterPlugin(plugin)
-	web.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 
-	common.SQL.AutoMigrate(&Config{})
+	common.GORM.AutoMigrate(&Config{})
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 
 }

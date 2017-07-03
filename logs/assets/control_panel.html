@@ -19,22 +19,51 @@
             <div class="panel-body">
                 <form role="form" method="post">
                     <div class="row">
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
                                 <input type="checkbox" name="UsernameLoggingEnabled" {{if .Config.UsernameLoggingEnabled}} checked{{end}}>
                                 Enable/disable username logging<br/>
                                 You can check a users logged usernames with the whois command.<br/>
-                                <b>Note:</b> If users are on another server with the bot on with this enabled, then their usernames will be logged even if you disable it on your server.<br/>
+                                <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another server with the bot on with this enabled, then their usernames will be logged even if you disable it on your server.<br/></div>
                               </label>
                             </div>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
                                 <input type="checkbox" name="NicknameLoggingEnabled" {{if .Config.NicknameLoggingEnabled}} checked{{end}}>
                                 Enable/disable nickname logging<br/>
                                 You can check a users logged nicknames with the whois command.<br/>
+                              </label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <!-- <div class="form-group"> -->
+                                <label>Blacklist channels from message logs</label>
+                                <div class="btn-group">
+                                  <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Blacklist channels from message logs channels<span class="caret"></span></button>
+                                    <ul class="dropdown-menu">
+                                        {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Name" "BlacklistedChannels" "Selections" .Config.ParsedBlacklistedchannels}}
+                                    </ul>
+                                </div>
+                            <!-- </div> -->
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="ManageMessagesCanViewDeleted" {{if .Config.ManageMessagesCanViewDeleted}} checked{{end}}>
+                                Allow members with <code>Manage Messages</code> permissions to view deleted messages
+                              </label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="EveryoneCanViewDeleted" {{if .Config.EveryoneCanViewDeleted}} checked{{end}}>
+                                Allow everyone to view deleted messages
                               </label>
                             </div>
                         </div>

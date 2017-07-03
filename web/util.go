@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -9,7 +10,6 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"golang.org/x/net/context"
 	"net/http"
 	"strings"
 )
@@ -203,6 +203,28 @@ func IsAdminCtx(ctx context.Context) bool {
 	return false
 }
 
+func HasPermissionCTX(ctx context.Context, perms int) bool {
+	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
+
+		cast := v.(*discordgo.UserGuild)
+		// Require manageserver, ownership of guild or ownership of bot
+		if cast.Owner || cast.Permissions&discordgo.PermissionAdministrator != 0 || cast.Permissions&discordgo.PermissionManageServer != 0 || cast.Permissions&perms != 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
 type APIError struct {
 	Message string
+}
+
+// CtxLogger Returns an always non nil entry either from the context or standard logger
+func CtxLogger(ctx context.Context) *log.Entry {
+	if inter := ctx.Value(common.ContextKeyLogger); inter != nil {
+		return inter.(*log.Entry)
+	}
+
+	return log.NewEntry(log.StandardLogger())
 }

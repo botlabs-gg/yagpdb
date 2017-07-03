@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
 	"strings"
 	"time"
 )
@@ -20,10 +19,9 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 
-	common.SQL.AutoMigrate(&ServerStatsConfig{})
+	common.GORM.AutoMigrate(&ServerStatsConfig{})
 	configstore.RegisterConfig(configstore.SQL, &ServerStatsConfig{})
 }
 

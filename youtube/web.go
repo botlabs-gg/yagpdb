@@ -28,7 +28,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/youtube.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/youtube.html")))
 
 	ytMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/youtube/*"), ytMux)
@@ -56,7 +56,7 @@ func HandleYoutube(w http.ResponseWriter, r *http.Request) (web.TemplateData, er
 	_, ag, templateData := web.GetBaseCPContextData(ctx)
 
 	var subs []*ChannelSubscription
-	err := common.SQL.Where("guild_id = ?", ag.ID).Find(&subs).Error
+	err := common.GORM.Where("guild_id = ?", ag.ID).Find(&subs).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return templateData, err
 	}
@@ -73,7 +73,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	// limit it to max 25 feeds
 	var count int
-	common.SQL.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
+	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
 
 	if count > 24 {
 		return templateData.AddAlerts(web.ErrorAlert("Max 25 items allowed")), errors.New("Max limit reached")
@@ -111,7 +111,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 
 		// Get tha actual watch item from the config
 		var sub ChannelSubscription
-		err := common.SQL.Model(&ChannelSubscription{}).Where("id = ?", id).First(&sub).Error
+		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", id).First(&sub).Error
 		if err != nil {
 			return templateData.AddAlerts(web.ErrorAlert("Failed retrieving that feed item")), err
 		}
@@ -136,7 +136,7 @@ func HandleEdit(w http.ResponseWriter, r *http.Request) (templateData web.Templa
 	sub.MentionEveryone = data.MentionEveryone
 	sub.ChannelID = data.DiscordChannel
 
-	err = common.SQL.Save(sub).Error
+	err = common.GORM.Save(sub).Error
 	return
 }
 
@@ -145,7 +145,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) (templateData web.Temp
 	_, _, templateData = web.GetBaseCPContextData(ctx)
 
 	sub := ctx.Value(ContextKeySub).(*ChannelSubscription)
-	err = common.SQL.Delete(sub).Error
+	err = common.GORM.Delete(sub).Error
 	if err != nil {
 		return
 	}

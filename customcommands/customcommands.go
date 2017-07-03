@@ -1,12 +1,15 @@
 package customcommands
 
+//go:generate esc -o assets_gen.go -pkg customcommands -ignore ".go" assets/
+
 import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/docs"
 	"sort"
 )
 
@@ -16,8 +19,8 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
+	docs.AddPage("Custom Commands", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func (p *Plugin) InitBot() {

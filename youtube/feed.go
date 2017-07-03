@@ -7,8 +7,10 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
 	"sync"
 	"time"
@@ -79,7 +81,16 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 	for _, channel := range channels {
 		err = p.checkChannel(client, channel)
 		if err != nil {
-			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
+			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
+				logrus.WithError(err).WithField("yt_channel", channel).Warn("Removing non existant youtube channel")
+				err = common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
+				if err != nil && err != gorm.ErrRecordNotFound {
+					logrus.WithError(err).Error("Failed deleting nonexistant channel subs")
+				}
+				go maybeRemoveChannelWatch(channel)
+			} else {
+				logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
+			}
 		}
 	}
 
@@ -90,13 +101,13 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	now := time.Now()
 
 	var subs []*ChannelSubscription
-	err := common.SQL.Where("youtube_channel_id = ?", channel).Find(&subs).Error
+	err := common.GORM.Where("youtube_channel_id = ?", channel).Find(&subs).Error
 	if err != nil {
 		return err
 	}
 
 	if len(subs) < 1 {
-		time.AfterFunc(time.Second, func() {
+		time.AfterFunc(time.Second*10, func() {
 			maybeRemoveChannelWatch(channel)
 		})
 		return nil
@@ -131,6 +142,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 
 		resp, err := call.Do()
 		if err != nil {
+
 			return err
 		}
 		if first {
@@ -218,7 +230,18 @@ func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.Playlist
 	if mentionEveryone {
 		content += " @everyone"
 	}
-	common.RetrySendMessage(discordChannel, content, 10)
+	err := common.RetrySendMessage(discordChannel, content, 50)
+	if err != nil {
+		if rError, ok := err.(*discordgo.RESTError); ok && rError.Response.StatusCode == 404 {
+			// Tried to send to nonexistant channel, remove all subs to this channel.
+			err = common.GORM.Where("channel_id = ?", discordChannel).Delete(ChannelSubscription{}).Error
+			if err != nil {
+				logrus.WithError(err).Error("failed removing nonexistant channel")
+			}
+		} else {
+			logrus.WithError(err).WithField("channel", discordChannel).Error("Failed sending youtube sub message")
+		}
+	}
 }
 
 var (
@@ -228,7 +251,7 @@ var (
 func (p *Plugin) PlaylistID(channelID string) (string, error) {
 
 	var entry YoutubePlaylistID
-	err := common.SQL.Where("channel_id = ?", channelID).First(&entry).Error
+	err := common.GORM.Where("channel_id = ?", channelID).First(&entry).Error
 	if err == nil {
 		return entry.PlaylistID, nil
 	}
@@ -251,13 +274,13 @@ func (p *Plugin) PlaylistID(channelID string) (string, error) {
 	entry.ChannelID = channelID
 	entry.PlaylistID = id
 
-	common.SQL.Create(&entry)
+	common.GORM.Create(&entry)
 
 	return id, nil
 }
 
 func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
-	err = common.SQL.Where("youtube_channel_id = ?", channel).Find(&result).Error
+	err = common.GORM.Where("youtube_channel_id = ?", channel).Find(&result).Error
 	return
 }
 
@@ -297,7 +320,7 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 	}
 	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
 
-	err = common.SQL.Create(sub).Error
+	err = common.GORM.Create(sub).Error
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +344,7 @@ func maybeRemoveChannelWatch(channel string) {
 	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
 
 	var count int
-	err = common.SQL.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
+	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
 	if err != nil || count > 0 {
 		if err != nil {
 			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")

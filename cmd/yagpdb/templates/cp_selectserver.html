@@ -1,15 +1,15 @@
 {{define "cp_selectserver"}}
 
 {{template "cp_head" .}}
-<div class="row" id="select-server-row">
+<div class="row">
     <div class="col-lg-12">
         <h1 class="page-header">Welcome to YAGPDB.xyz!</h1>
         
         {{if .JoinedGuild}}
         <div class="panel panel-success">
-            <div class="panel-heading">
                 <h3 class="panel-title">Bot added to <b>{{.JoinedGuild.Name}}!</b></h3>
             </div>
+            <div class="panel-heading">
             <div class="panel-body">
                 <p>You manage this bot through a web control panel, if you need any help or want to contact the owner you can join the support server (There is a link above)</p>
                 <p>I'm working on adding proper documentation and guides but at this moment the documentation is very lacking, and it may seem a bit complicated. As as i said earlier, join the support server if you have any questions</p>
@@ -23,37 +23,30 @@
         </div>
         {{end}}
 
-        <h3>Version 0.19.2</h3>
-        <p>Bunch of small changes and tweaks <a href="https://github.com/jonas747/yagpdb/compare/0.19.1...0.19.2">Full changes</a></p>
+        <h3>Version 0.20.0 <small>19 jun 2018</small></h3>
+        <p>Reminder that if you want to be notified when a new update is pushed, then join the YAGPDB discord server (link above) and use the `-role updates` command to get pinged when updates are live</p>
+        <p>It's been a while since last update, reason for this is 1# i have had less motivation to work on this bot, 2# i've had very little time these last months with work and moving and shit, going forward i'll try to do more frequent smaller updates instead of focusing on big updates, also let me remind you that this is a project i develop in my spare time, and i only have so much spare time these days, and some days i wanna spend that time working on other fun projects, trying new things and playing games.</p>
+        <p>Also thanks to <b>Ryvid</b> for submitting a lot of small control panel improvements (fixing typos and such), he's the first contributor to YAGPDB! If you too wanna contribute anything from fixing typos, writing the documentation pages or programming the bot itself then go for it! I would be more than happy to answer questions to people wanting to help out with the project!</p>
         <ul>
-            <li>Cleaned up playSound, added silence frames at the end</li>
-            <li>Send targetted help in channel command was sent in</li>
-            <li>Added more help to automoderator</li>
-            <li>Banning websites will also ban all subdomains</li>
-            <li>Word and website filters will say which word/website triggered automod.</li>
-            <li>Automod uses warnings now</li>
-            <li>Fixed topic notifications</li>
-        </ul>
-
-        <h3>Version 0.19 <small>14 Feb 2017</small></h3>
-        <p>Youtube feeds and a bunch of small things that finally got fixed</p>
-        <ul>
-            <li><b>New Feed: Youtube video uploads </b>: Will post new videos from channels you specify in a discord channel
-            <li><b>Moderation: New command </b><code>Warn @user reason</code>: warns a user, all warnings are stored and can be viewed with the <code>warnings</code> command</li>
-            <li><b>Moderation: New command </b><code>Warnings @user</code>: lists a users warnings.</li>
-            <li><b>Moderation: New command </b><code>EditWarning @user</code>: Edits the warning of a user, this cannot be undone.</li>
-            <li><b>Control panel:</b> Major improvements to the site on mobile devices</li>
-            <li><b>Control panel:</b> Role and channel dropdowns are finally sorted, and you wont see that everyone role either anymore...</li>
-            <li><b>Control panel:</b> Major improvements to navigating the control panel in general</li>
-            <li><b>Control panel:</b> Logs can now be sorted by ascending or descending</li>
-            <li>Dice command now also takes some rpg dice syntax</li>
-            <li>Server stats can now ignore channels</li>
-            <li>Messages that gets deleted will now also be marked as deleted in all logs they appear in, even after the logs was created (admins can still see them)</li>
-            <li>When a command fails to parse, also print the help for that command</li>
-            <li>When exec fails in custom commands, they will not stop executing and instead return the error message the command returned</li>
-            <li>You can now restrict commands to roles on a per channel basis (in the command settings)</li>
-            <li>Preliminary @everyone filtering in commands and other places, i would wait a couple days first before giving it @everyone permissions to see if i forgot to filter some places</li> 
-            <li>More reliable username and nickname logging (users not in state coming online wouldn't get their nicknames/usernames checked)</li> 
+            <li><b>Redid Reputation:</b> As a result all reputation has been wiped, i'm sorry about this but the bot is in alpha. Heres a short breakdown of the features of the new reputation system:
+                <ul>
+                    <li>Reputation admins have full access to set anyones reputation to anything</li>
+                    <li>Users can give more than 1 rep</li>
+                    <li>The points can be renamed to whatever you want (for example, meatballs)</li>
+                    <li>You can set up: required give/receive and blacklisted give/receive roles</li>
+                    <li>Improved auto-detection, it will now catch thank(s) and ty, a mention is still required for it to trigger. This auto-detection can also be disabled now.</li>
+                    <li>An actual leaderboard</li>
+                </ul>
+            </li>
+            <li><b>Added doc pages.</b> There are only a limited amount of pages at this exact moment, but they will get written as time goes on</li>
+            <li>Added command to delete warnings: <code>delwarning (id)</code> and <code>clearwarning @user</code></li>
+            <li>Added ability to blacklist creation of logs from certain channels</li>
+            <li>Added sharding, since were (somehow) nearing the 2.5k single shard limit.</li>
+            <li>Started first steps to transitioning towards another state tracker that might give more consistent results when you're interacting with the bot</li>
+            <li>Scheduled events now execute every 10 seconds (as opposed to 60) (means more responsive reminders and unmutes and shit)</li>
+            <li>Fixed reminders command displayed stuff like 1 hour and 59 minutes, the actual time was correct but it just showed the time wrong</li>
+            <li>Added the ability for people with manage messages to view deleted messages, aswell as everyone (they are toggles)</li>
+            <li>Made things more reponsive in general to changes, in the past when giving someone a role that gives them acces to the control panel it could take up to a minute before that takes effect, now thats instant, although changing permissions on existing roles wont kick fully in within 10 seconds still (not sure if i want to disable caching completely on this part or not)</li>
         </ul>
 
         <h3>Information</h3>
@@ -84,6 +77,50 @@
 
 
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="heading11">
+                    <h4 class="panel-title">
+                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse11" aria-expanded=false aria-controls="collapse11">
+                            Version 0.19 <small>14 Feb 2017</small>
+                        </a>
+                    </h4>
+                </div>
+                <div id="collapse11" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading11">
+                    <div class="panel-body">
+                        <p>Youtube feeds and a bunch of small things that finally got fixed</p>
+                        <ul>
+                            <li><b>New Feed: Youtube video uploads </b>: Will post new videos from channels you specify in a discord channel
+                            <li><b>Moderation: New command </b><code>Warn @user reason</code>: warns a user, all warnings are stored and can be viewed with the <code>warnings</code> command</li>
+                            <li><b>Moderation: New command </b><code>Warnings @user</code>: lists a users warnings.</li>
+                            <li><b>Moderation: New command </b><code>EditWarning @user</code>: Edits the warning of a user, this cannot be undone.</li>
+                            <li><b>Control panel:</b> Major improvements to the site on mobile devices</li>
+                            <li><b>Control panel:</b> Role and channel dropdowns are finally sorted, and you wont see that everyone role either anymore...</li>
+                            <li><b>Control panel:</b> Major improvements to navigating the control panel in general</li>
+                            <li><b>Control panel:</b> Logs can now be sorted by ascending or descending</li>
+                            <li>Dice command now also takes some rpg dice syntax</li>
+                            <li>Server stats can now ignore channels</li>
+                            <li>Messages that gets deleted will now also be marked as deleted in all logs they appear in, even after the logs was created (admins can still see them)</li>
+                            <li>When a command fails to parse, also print the help for that command</li>
+                            <li>When exec fails in custom commands, they will not stop executing and instead return the error message the command returned</li>
+                            <li>You can now restrict commands to roles on a per channel basis (in the command settings)</li>
+                            <li>Preliminary @everyone filtering in commands and other places, i would wait a couple days first before giving it @everyone permissions to see if i forgot to filter some places</li> 
+                            <li>More reliable username and nickname logging (users not in state coming online wouldn't get their nicknames/usernames checked)</li> 
+                        </ul>
+
+                        <h3>Version 0.19.2</h3>
+                        <p>Bunch of small changes and tweaks <a href="https://github.com/jonas747/yagpdb/compare/0.19.1...0.19.2">Full changes</a></p>
+                        <ul>
+                            <li>Cleaned up playSound, added silence frames at the end</li>
+                            <li>Send targetted help in channel command was sent in</li>
+                            <li>Added more help to automoderator</li>
+                            <li>Banning websites will also ban all subdomains</li>
+                            <li>Word and website filters will say which word/website triggered automod.</li>
+                            <li>Automod uses warnings now</li>
+                            <li>Fixed topic notifications</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <div class="panel panel-default">
                 <div class="panel-heading" role="tab" id="heading11">
                     <h4 class="panel-title">

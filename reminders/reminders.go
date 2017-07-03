@@ -5,7 +5,6 @@ import (
 	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"strconv"
 	"strings"
@@ -16,13 +15,13 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	common.RegisterScheduledEventHandler("reminders_check_user", checkUserEvtHandler)
-	err := common.SQL.AutoMigrate(&Reminder{}).Error
+	err := common.GORM.AutoMigrate(&Reminder{}).Error
 	if err != nil {
 		panic(err)
 	}
 
 	p := &Plugin{}
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 }
 
 func (p *Plugin) Name() string {
@@ -53,12 +52,12 @@ func (r *Reminder) Trigger() error {
 	}
 
 	// remove the actual reminder
-	common.SQL.Delete(r)
+	common.GORM.Delete(r)
 	return nil
 }
 
 func GetUserReminders(userID string) (results []*Reminder, err error) {
-	err = common.SQL.Where(&Reminder{UserID: userID}).Find(&results).Error
+	err = common.GORM.Where(&Reminder{UserID: userID}).Find(&results).Error
 	if err == gorm.ErrRecordNotFound {
 		err = nil
 	}
@@ -66,7 +65,7 @@ func GetUserReminders(userID string) (results []*Reminder, err error) {
 }
 
 func GetChannelReminders(channel string) (results []*Reminder, err error) {
-	err = common.SQL.Where(&Reminder{ChannelID: channel}).Find(&results).Error
+	err = common.GORM.Where(&Reminder{ChannelID: channel}).Find(&results).Error
 	if err == gorm.ErrRecordNotFound {
 		err = nil
 	}
@@ -82,7 +81,7 @@ func NewReminder(client *redis.Client, userID string, channelID string, message 
 		When:      whenUnix,
 	}
 
-	err := common.SQL.Create(reminder).Error
+	err := common.GORM.Create(reminder).Error
 	if err != nil {
 		return nil, err
 	}

@@ -37,21 +37,8 @@ type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)
 }
 
-var Plugins []Plugin
-
-// Register a plugin, should only be called before webserver is started!!!
-func RegisterPlugin(plugin Plugin) {
-	if Plugins == nil {
-		Plugins = []Plugin{plugin}
-	} else {
-		Plugins = append(Plugins, plugin)
-	}
-
-	common.AddPlugin(plugin)
-}
-
 func EmitGuildRemoved(client *redis.Client, guildID string) {
-	for _, v := range Plugins {
+	for _, v := range common.Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(client, guildID)
 			if err != nil {

@@ -28,6 +28,7 @@ const (
 	CategoryTool       CommandCategory = "Tools"
 	CategoryModeration CommandCategory = "Moderation"
 	CategoryFun        CommandCategory = "Misc/Fun"
+	CategoryDebug      CommandCategory = "Debug"
 )
 
 var (
@@ -167,7 +168,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 	}
 
 	// Create command log entry
-	err = common.SQL.Create(logEntry).Error
+	err = common.GORM.Create(logEntry).Error
 	if err != nil {
 		log.WithError(err).Error("Failed creating command execution log")
 	}

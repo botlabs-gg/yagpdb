@@ -1,12 +1,15 @@
 package common
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
+	"github.com/vattle/sqlboiler/boil"
+	"os"
 )
 
 const (
@@ -22,32 +25,14 @@ var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
 	VERSION       = VERSIONNUMBER + " Hygienic"
 
-	SQL       *gorm.DB
-	RedisPool *pool.Pool
+	GORM        *gorm.DB
+	PQ          *sql.DB
+	RedisPool   *pool.Pool
+	DSQLStateDB *sql.DB
 
 	BotSession *discordgo.Session
 	Conf       *CoreConfig
-
-	AllPlugins []Plugin
 )
-
-func AddPlugin(p Plugin) {
-	if AllPlugins == nil {
-		AllPlugins = []Plugin{p}
-		return
-	}
-	// Check for dupes
-	for _, v := range AllPlugins {
-		if v == p {
-			return
-		}
-	}
-	AllPlugins = append(AllPlugins, p)
-}
-
-type Plugin interface {
-	Name() string
-}
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
@@ -84,12 +69,32 @@ func connectRedis(addr string) (err error) {
 	}
 	return
 }
-
 func connectDB(user, pass string) error {
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=yagpdb sslmode=disable password=%s", user, pass))
-	SQL = db
+	GORM = db
+	PQ = db.DB()
+	boil.SetDB(PQ)
 	if err == nil {
-		db.DB().SetMaxOpenConns(5)
+		PQ.SetMaxOpenConns(5)
+	}
+
+	if os.Getenv("YAGPDB_STATE_ADDR") != "" {
+		logrus.Info("Using special sql state db")
+		addr := os.Getenv("YAGPDB_SQLSTATE_ADDR")
+		user := os.Getenv("YAGPDB_SQLSTATE_USER")
+		pass := os.Getenv("YAGPDB_SQLSTATE_PW")
+		dbName := os.Getenv("YAGPDB_SQLSTATE_DB")
+
+		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", addr, user, dbName, pass))
+		if err != nil {
+			DSQLStateDB = PQ
+			return err
+		}
+
+		DSQLStateDB = db
+
+	} else {
+		DSQLStateDB = PQ
 	}
 
 	return err

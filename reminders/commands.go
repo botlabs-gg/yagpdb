@@ -45,8 +45,11 @@ var cmds = []commandsystem.CommandHandler{
 					return err, err
 				}
 
+				timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
+				tStr := when.Format(time.RFC822)
+
 				if when.After(time.Now().Add(time.Hour * 24 * 366)) {
-					return "Can be max 265 days from now...", nil
+					return "Can be max 365 days from now...", nil
 				}
 
 				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
@@ -54,9 +57,6 @@ var cmds = []commandsystem.CommandHandler{
 				if err != nil {
 					return err, err
 				}
-
-				timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
-				tStr := when.Format(time.RFC822)
 
 				return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 			},
@@ -119,7 +119,7 @@ var cmds = []commandsystem.CommandHandler{
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
 
 				var reminder Reminder
-				err := common.SQL.Where(parsed.Args[0].Int()).First(&reminder).Error
+				err := common.GORM.Where(parsed.Args[0].Int()).First(&reminder).Error
 				if err != nil {
 					if err == gorm.ErrRecordNotFound {
 						return "No reminder by that id found", nil
@@ -139,7 +139,7 @@ var cmds = []commandsystem.CommandHandler{
 				}
 
 				// Do the actual deletion
-				err = common.SQL.Delete(reminder).Error
+				err = common.GORM.Delete(reminder).Error
 
 				// Check if we should remove the scheduled event
 				currentReminders, err := GetUserReminders(reminder.UserID)

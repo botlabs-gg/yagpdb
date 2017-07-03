@@ -1,11 +1,13 @@
 package common
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/pkg/errors"
 	"math/rand"
 	"path/filepath"
 	"runtime"
@@ -349,22 +351,6 @@ var StringPerms = map[int]string{
 	discordgo.PermissionManageServer:        "Manage Server",
 }
 
-type WrappedError struct {
-	Inner   error
-	Message string
-}
-
-func (w *WrappedError) Cause() error {
-	if we, ok := w.Inner.(*WrappedError); ok {
-		return we.Cause()
-	}
-	return w.Inner
-}
-
-func (w *WrappedError) Error() string {
-	return w.Message + ": " + w.Inner.Error()
-}
-
 func ErrWithCaller(err error) error {
 	pc, _, _, ok := runtime.Caller(1)
 	if !ok {
@@ -372,18 +358,7 @@ func ErrWithCaller(err error) error {
 	}
 
 	f := runtime.FuncForPC(pc)
-	return &WrappedError{
-		Inner:   err,
-		Message: filepath.Base(f.Name()),
-	}
-}
-
-func InnerError(err error) error {
-	if cast, ok := err.(*WrappedError); ok {
-		return cast.Inner
-	}
-
-	return err
+	return errors.WithMessage(err, filepath.Base(f.Name()))
 }
 
 // EscapeEveryoneMention Escapes an everyone mention, adding a zero width space between the '@' and rest
@@ -416,8 +391,35 @@ func RetrySendMessage(channel string, msg interface{}, maxTries int) error {
 			return err
 		}
 
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 5)
 	}
 
 	return err
+}
+
+func FindStringSlice(strs []string, search string) bool {
+	for _, v := range strs {
+		if v == search {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ValidateSQLSchema does some simple security checks on a sql schema file
+// At the moment it only checks for drop table/index statements accidentally left in the schema file
+func ValidateSQLSchema(input string) {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	lineCount := 0
+	for scanner.Scan() {
+		lineCount++
+		trimmed := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(strings.ToLower(trimmed), "drop table") || strings.HasPrefix(strings.ToLower(trimmed), "drop index") {
+			panic(fmt.Errorf("Schema file L%d: starts with drop table/index.\n%s", lineCount, trimmed))
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("reading standard input:", err)
+	}
 }

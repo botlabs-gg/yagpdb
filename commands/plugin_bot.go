@@ -114,6 +114,9 @@ Help        = {hlp}   (command)       : blablabla
 	out += "\n[Misc/Fun] # Fun commands for family and friends!"
 	out += generateComandsHelp(categories[CategoryFun]) + "\n"
 
+	out += "\n[Debug] # Commands to help debug issues."
+	out += generateComandsHelp(categories[CategoryDebug]) + "\n"
+
 	unknown, ok := categories[CommandCategory("")]
 	if ok && len(unknown) > 1 {
 		out += "\n[Unknown] # ??"
@@ -193,7 +196,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 	// Status command shows the bot's status, stuff like version, conntected servers, uptime, memory used etc..
 	&CustomCommand{
 		Cooldown: 5,
-		Category: CategoryTool,
+		Category: CategoryDebug,
 		Command: &commandsystem.Command{
 			Name:        "Yagstatus",
 			Aliases:     []string{"Status"},
@@ -255,7 +258,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					},
 				}
 
-				for _, v := range common.AllPlugins {
+				for _, v := range common.Plugins {
 					if cast, ok := v.(PluginStatus); ok {
 						name, val := cast.Status(data.Context().Value(CtxKeyRedisClient).(*redis.Client))
 						if name == "" || val == "" {
@@ -503,7 +506,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 5,
 		Category: CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Ping",
@@ -515,7 +517,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 2,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "Throw",
@@ -537,7 +538,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 2,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "Roll",
@@ -569,7 +569,7 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 10,
+		Cooldown: 5,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "TopServers",
@@ -605,7 +605,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 10,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:         "CustomEmbed",
@@ -616,7 +615,6 @@ Control panel: <https://yagpdb.xyz/cp>
 				{Name: "Json", Type: commandsystem.ArgumentString},
 			},
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				time.Sleep(time.Second * 5)
 				var parsed *discordgo.MessageEmbed
 				err := json.Unmarshal([]byte(data.SafeArgString(0)), &parsed)
 				if err != nil {
@@ -659,7 +657,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate
-	CommandSystem.HandleMessageCreate(bot.ContextSession(evt.Context()), m)
+	CommandSystem.HandleMessageCreate(common.BotSession, m)
 
 	bUser := bot.State.User(true)
 	if bUser == nil {

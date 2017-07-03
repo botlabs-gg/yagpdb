@@ -50,7 +50,7 @@ func RunScheduledEvents() {
 		panic(err)
 	}
 
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Second * 10)
 	for {
 		select {
 		case wg := <-stopScheduledEventsChan:
@@ -62,7 +62,9 @@ func RunScheduledEvents() {
 			if err != nil {
 				logrus.WithError(err).Error("Failed checking scheduled events")
 			}
-			logrus.Infof("Handled %d scheduled events in %s", n, time.Since(started))
+			if n > 0 {
+				logrus.Infof("Handled %d scheduled events in %s", n, time.Since(started))
+			}
 		}
 	}
 }

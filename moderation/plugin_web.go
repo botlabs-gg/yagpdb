@@ -11,7 +11,7 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/moderation.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/moderation.html")))
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/moderation"), subMux)

@@ -1,13 +1,11 @@
 {{define "cp_nav_top"}}
 <div class="navbar-header">
-    {{if .ActiveGuild}}
     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
         <span class="sr-only">Toggle navigation</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    {{end}}
     <a class="navbar-brand" {{if .ActiveGuild}} href="/cp/{{.ActiveGuild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small>{{if .ActiveGuild}}<b> {{.ActiveGuild.Name}}</b>{{end}}</a>
 
 </div>
@@ -75,6 +73,7 @@
 <div class="navbar-default sidebar" id="nav-sidebar" role="navigation">
     <div class="sidebar-nav navbar-collapse">
         <ul class="nav" id="side-menu">
+            {{if and .ActiveGuild .IsAdmin}}
             <li>
                 <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/stats" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
             </li>
@@ -141,6 +140,9 @@
                 </ul>
                 <!-- /.nav-second-level -->
             </li>
+            {{end}}
+            <!-- Docs -->
+            {{template "docs-nav" .}}
         </ul>
     </div>
     <!-- /.sidebar-collapse -->
@@ -148,24 +150,25 @@
 <!-- /.navbar-static-side -->
 </div>
 <div id="nav-footer">
-    <!-- <p>Buy this space for 1$/day - <a href="mailto:jonasr747@gmail.com">jonasr747@gmail.com</a></p> -->
-    <!-- <p><i>(Image by the amazing Tashi)</i></p> -->
-    <!-- <a href="https://www.youtube.com/watch?v=kxopViU98Xo" target="_blank"><img src="/static/img/ad_placeholder.png" id="nav-footer-img"></img></a> -->
-    <p><i>(ad by br0wni3#6344)</i></p>
-    <img src="/static/img/ad_image.jpg" id="nav-footer-img"></img>
-<!--     <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSdWheZWEtyNBF8EZS8f-oH9RiuOw-WOoylFMJ4o0LuoGtUzJg/viewform?usp=sf_link">Would you be okay with an ad showing up here?</a></p>
- --></div>
+    <p>Buy this space for 1$/day (around 8k views weekly, increasing cost soon) - <a href="mailto:jonasr747@gmail.com">jonasr747@gmail.com</a></p>
+    <p><i>(Image by the amazing Tashi)</i></p>
+    <a href="https://www.youtube.com/watch?v=kxopViU98Xo" target="_blank"><img src="/static/img/ad_placeholder.png" id="nav-footer-img"></img></a>
+    <!-- <p><i>(ad by br0wni3#6344)</i></p> -->
+    <!-- <img src="/static/img/ad_image.jpg" id="nav-footer-img"></img> -->
+<!--     <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSdWheZWEtyNBF8EZS8f-oH9RiuOw-WOoylFMJ4o0LuoGtUzJg/viewform?usp=sf_link">Would you be okay with an ad showing up here?</a></p>
+ -->
+ </div>
 {{end}}
 
 {{define "cp_nav"}}
 <!-- Navigation -->
 <nav class="navbar navbar-default maybe-nav-fixed-top" role="navigation" style="margin-bottom: 0">
     {{template "cp_nav_top" .}}
-    {{if and .ActiveGuild .User .IsAdmin}}{{template "cp_nav_sidebar" .}}{{end}}
+    {{template "cp_nav_sidebar" .}}
 </nav>
-{{if and .ActiveGuild .User .IsAdmin}}
 <div id="page-wrapper">
+<!-- {{if and .ActiveGuild .User .IsAdmin}}
 {{else}}
+{{end}}
 <div id="public-wrapper">
-{{end}}
-{{end}}
+ -->{{end}}

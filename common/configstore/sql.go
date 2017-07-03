@@ -20,7 +20,7 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID string, conf Guil
 	currentRetries := 0
 	for {
 
-		err := common.SQL.Where("guild_id = ?", guildID).First(conf).Error
+		err := common.GORM.Where("guild_id = ?", guildID).First(conf).Error
 		if err == nil {
 			if currentRetries > 1 {
 				logrus.Info("Suceeded after ", currentRetries, " retries")
@@ -49,7 +49,7 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID string, conf Guil
 
 // conf is requried to be a pointer value
 func (p *Postgres) SetGuildConfig(ctx context.Context, conf GuildConfig) error {
-	err := common.SQL.Save(conf).Error
+	err := common.GORM.Save(conf).Error
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (p *Postgres) SetGuildConfig(ctx context.Context, conf GuildConfig) error {
 }
 
 func (p *Postgres) SetIfLatest(ctx context.Context, conf GuildConfig) (updated bool, err error) {
-	result := common.SQL.Where("updated_at = ?", conf.GetUpdatedAt()).Save(conf)
+	result := common.GORM.Where("updated_at = ?", conf.GetUpdatedAt()).Save(conf)
 	updated = result.RowsAffected > 0
 	err = result.Error
 

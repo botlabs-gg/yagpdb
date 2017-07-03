@@ -22,7 +22,6 @@ func (p *Plugin) InitBot() {
 
 var roleCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
-		Cooldown: 10,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Role",
@@ -105,11 +104,10 @@ var roleCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Cooldown: 10,
+		Category: commands.CategoryDebug,
 		Command: &commandsystem.Command{
-			Name:         "roledbg",
-			HideFromHelp: true,
-			Description:  "Debug debug debug autorole assignment",
+			Name:        "roledbg",
+			Description: "Debug debug debug autorole assignment",
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
 				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
 				processing, _ := client.Cmd("GET", KeyProcessing(parsed.Guild.ID())).Int()

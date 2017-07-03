@@ -1,5 +1,7 @@
 package moderation
 
+//go:generate esc -o assets_gen.go -pkg moderation -ignore ".go" assets/
+
 import (
 	"errors"
 	"fmt"
@@ -9,8 +11,8 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"regexp"
 	"strconv"
@@ -43,11 +45,14 @@ func RedisKeyBannedUser(guildID, userID string) string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+
+	common.RegisterPlugin(plugin)
+
 	common.RegisterScheduledEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
-	common.SQL.AutoMigrate(&Config{}, &WarningModel{})
+	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
+
+	docs.AddPage("Moderation", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func handleUnMute(data string) error {
@@ -295,21 +300,14 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	logLink := ""
 	if channelID != "" {
-		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
-		if err != nil {
-			logLink = "Log Creation failed"
-			logrus.WithError(err).Error("Log Creation failed")
-		} else {
-			logLink = logs.Link()
-		}
+		logLink = CreateLogs(guildID, channelID, author)
 	}
 
 	switch p {
 	case PunishmentKick:
-		err = common.BotSession.GuildMemberDelete(guildID, user.ID)
+		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason)
 	case PunishmentBan:
-
-		err = common.BotSession.GuildBanCreate(guildID, user.ID, 1)
+		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason, 1)
 	}
 
 	if err != nil {
@@ -454,13 +452,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	// Upload logs
 	logLink := ""
 	if channelID != "" && mute {
-		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
-		if err != nil {
-			logLink = "Log Creation failed"
-			logrus.WithError(err).Error("Log Creation failed")
-		} else {
-			logLink = logs.Link()
-		}
+		logLink = CreateLogs(guildID, channelID, author)
 	}
 
 	action := ""
@@ -516,16 +508,10 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 	}
 
 	if config.WarnIncludeChannelLogs {
-		logsObj, err := logs.CreateChannelLog(channelID, author.ID, author.Username, 100)
-		if err != nil {
-			logrus.WithError(err).Error("Failed creating channel logs")
-			warning.LogsLink = "(Failed creating logs)"
-		} else {
-			warning.LogsLink = logsObj.Link()
-		}
+		warning.LogsLink = CreateLogs(guildID, channelID, author)
 	}
 
-	err = common.SQL.Create(warning).Error
+	err = common.GORM.Create(warning).Error
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
@@ -545,4 +531,16 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 	}
 
 	return nil
+}
+
+func CreateLogs(guildID, channelID string, user *discordgo.User) string {
+	lgs, err := logs.CreateChannelLog(nil, guildID, channelID, user.Username, user.ID, 100)
+	if err != nil {
+		if err == logs.ErrChannelBlacklisted {
+			return ""
+		}
+		logrus.WithError(err).Error("Log Creation failed")
+		return "Log Creation failed"
+	}
+	return lgs.Link()
 }

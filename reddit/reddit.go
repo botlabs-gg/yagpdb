@@ -5,10 +5,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/web"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,9 +23,7 @@ func RegisterPlugin() {
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
-	feeds.RegisterPlugin(plugin)
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 }
 
 type SubredditWatchItem struct {
