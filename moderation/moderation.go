@@ -305,9 +305,9 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	switch p {
 	case PunishmentKick:
-		err = common.BotSession.GuildMemberDelete(guildID, user.ID)
+		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason)
 	case PunishmentBan:
-		err = common.BotSession.GuildBanCreate(guildID, user.ID, 1)
+		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason, 1)
 	}
 
 	if err != nil {
