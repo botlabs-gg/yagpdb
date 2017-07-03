@@ -346,12 +346,11 @@ func (p *Plugin) MigrateStorage(client *redis.Client, guildID string, guildIDInt
 		return errors.WithMessage(err, "Failed retrieving config")
 	}
 
-	enabled, _ := client.Cmd("GET", "reputation_enabled:"+guildID).Bool()
 	cooldown, _ := client.Cmd("GET", "reputation_cooldown:"+guildID).Int64()
 	if cooldown == 0 {
 		cooldown = 120
 	}
-	config.Enabled = enabled
+	config.Enabled = false
 	config.Cooldown = int(cooldown)
 
 	err = config.Upsert(common.PQ, true, []string{"guild_id"}, []string{"enabled", "cooldown"})
