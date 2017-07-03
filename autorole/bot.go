@@ -104,10 +104,10 @@ var roleCommands = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Category; commands.CategoryDebug
+		Category: commands.CategoryDebug,
 		Command: &commandsystem.Command{
-			Name:         "roledbg",
-			Description:  "Debug debug debug autorole assignment",
+			Name:        "roledbg",
+			Description: "Debug debug debug autorole assignment",
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
 				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
 				processing, _ := client.Cmd("GET", KeyProcessing(parsed.Guild.ID())).Int()
