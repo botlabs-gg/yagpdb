@@ -105,34 +105,43 @@ func StateHandler(evt *eventsystem.EventData) {
 }
 
 func HandleGuildUpdate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildUpdate.Guild.ID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildUpdate.Guild.ID, "")
 }
 
 func HandleGuildRoleUpdate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildRoleUpdate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleUpdate.GuildID, "")
 }
 
 func HandleGuildRoleCreate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildRoleCreate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleCreate.GuildID, "")
 }
 
 func HandleGuildRoleRemove(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildRoleDelete.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleDelete.GuildID, "")
 }
 
 func HandleChannelCreate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.ChannelCreate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelCreate.GuildID, "")
 }
 func HandleChannelUpdate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.ChannelUpdate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelUpdate.GuildID, "")
 }
 func HandleChannelDelete(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.ChannelDelete.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelDelete.GuildID, "")
 }
 
-func InvalidateGuildCache(client *redis.Client, guildID string) {
-	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))
-	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))
+func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
+	InvalidateCache(ContextRedis(evt.Context()), "", evt.GuildMemberUpdate.User.ID)
+}
+
+func InvalidateCache(client *redis.Client, guildID, userID string) {
+	if userID != "" {
+		client.Cmd("DEL", common.CacheKeyPrefix+userID+":guilds")
+	}
+	if guildID != "" {
+		client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))
+		client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))
+	}
 }
 
 func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {

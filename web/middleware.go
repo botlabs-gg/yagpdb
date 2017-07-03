@@ -205,7 +205,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 		}
 
 		var guilds []*discordgo.UserGuild
-		err = common.GetCacheDataJson(redisClient, session.Token+":guilds", &guilds)
+		err = common.GetCacheDataJson(redisClient, user.ID+":guilds", &guilds)
 		if err != nil {
 			guilds, err = session.UserGuilds(100, "", "")
 			if err != nil {
@@ -214,7 +214,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 				return
 			}
 
-			LogIgnoreErr(common.SetCacheDataJsonSimple(redisClient, session.Token+":guilds", guilds))
+			LogIgnoreErr(common.SetCacheDataJson(redisClient, user.ID+":guilds", 10, guilds))
 		}
 
 		wrapped, err := common.GetWrapped(guilds, redisClient)
