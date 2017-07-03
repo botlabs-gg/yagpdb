@@ -81,7 +81,7 @@ var cmds = []commandsystem.CommandHandler{
 		Category: commands.CategoryFun,
 		Command: &commandsystem.Command{
 			Name:         "GiveRep",
-			Aliases:      []string{"gr", "grep"},
+			Aliases:      []string{"+", "gr", "grep"},
 			Description:  "Gives or takes away rep from someone",
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgDef{
