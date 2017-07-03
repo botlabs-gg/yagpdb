@@ -55,11 +55,12 @@
 
                     <tbody>
                         {{$IsAdmin := .IsAdmin}}
+                        {{$CanViewDeleted := .CanViewDeleted}}
                         {{range $i, $v := .Logs.Messages}}
                         <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID}} Message ID: {{.MessageID}}">
                             <td>{{.Timestamp}}</td>
                             <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
-                            <td id="msg-cell-{{.ID}}" {{if .Deleted}} class="deleted-message" {{end}}>{{if or (not .Deleted) $IsAdmin}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
+                            <td id="msg-cell-{{.ID}}" {{if .Deleted}} class="deleted-message" {{end}}>{{if or (not .Deleted) $CanViewDeleted}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
                             <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
                         </tr>
                         {{end}}

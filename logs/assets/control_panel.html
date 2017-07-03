@@ -51,6 +51,24 @@
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="ManageMessagesCanViewDeleted" {{if .Config.ManageMessagesCanViewDeleted}} checked{{end}}>
+                                Allow members with <code>Manage Messages</code> permissions to view deleted messages
+                              </label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="EveryoneCanViewDeleted" {{if .Config.EveryoneCanViewDeleted}} checked{{end}}>
+                                Allow everyone to view deleted messages
+                              </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-lg-12">
                             <button type="submit" class="btn btn-success btn-lg btn-block" >Save All Settings</button>   
                         </div>

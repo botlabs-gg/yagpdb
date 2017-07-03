@@ -203,6 +203,19 @@ func IsAdminCtx(ctx context.Context) bool {
 	return false
 }
 
+func HasPermissionCTX(ctx context.Context, perms int) bool {
+	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
+
+		cast := v.(*discordgo.UserGuild)
+		// Require manageserver, ownership of guild or ownership of bot
+		if cast.Owner || cast.Permissions&discordgo.PermissionAdministrator != 0 || cast.Permissions&discordgo.PermissionManageServer != 0 || cast.Permissions&perms != 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
 type APIError struct {
 	Message string
 }

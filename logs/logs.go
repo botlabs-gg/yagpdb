@@ -1,5 +1,7 @@
 package logs
 
+//go:generate esc -o assets_gen.go -pkg logs -ignore ".go" assets/
+
 import (
 	"errors"
 	"fmt"
@@ -38,9 +40,13 @@ func InitPlugin() {
 
 type GuildLoggingConfig struct {
 	configstore.GuildConfigModel
-	UsernameLoggingEnabled    bool
-	NicknameLoggingEnabled    bool
-	BlacklistedChannels       string
+	UsernameLoggingEnabled bool
+	NicknameLoggingEnabled bool
+	BlacklistedChannels    string
+
+	ManageMessagesCanViewDeleted bool
+	EveryoneCanViewDeleted       bool
+
 	ParsedBlacklistedchannels []string `gorm:"-"`
 }
 
