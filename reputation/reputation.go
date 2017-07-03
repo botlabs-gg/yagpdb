@@ -23,6 +23,12 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
+	common.ValidateSQLSchema(FSMustString(false, "/assets/schema.sql"))
+	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
+	if err != nil {
+		panic(errors.WithMessage(err, "Failed upating reputation schema"))
+	}
+
 	common.RegisterPlugin(plugin)
 }
 
@@ -318,4 +324,36 @@ func ToLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
 	}
 
 	return result, nil
+}
+
+func (p *Plugin) MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error {
+	reply := client.Cmd("ZRANGE", "reputation_users:"+guildID, 0, -1, "WITHSCORES")
+	list, err := reply.List()
+	if err != nil {
+		return errors.WithMessage(err, "rep: Failed converting to list")
+	}
+
+	for i := 0; i < len(list); i += 2 {
+		key := list[i]
+		score := list[i+1]
+		id, _ := strconv.ParseInt(key, 10, 64)
+		scoreParsed, _ := strconv.ParseInt(score, 10, 64)
+		insertUpdateUserRep(guildIDInt, id, scoreParsed)
+	}
+
+	config, err := GetConfig(guildID)
+	if err != nil {
+		return errors.WithMessage(err, "Failed retrieving config")
+	}
+
+	enabled, _ := client.Cmd("GET", "reputation_enabled:"+guildID).Bool()
+	cooldown, _ := client.Cmd("GET", "reputation_cooldown:"+guildID).Int64()
+	if cooldown == 0 {
+		cooldown = 120
+	}
+	config.Enabled = enabled
+	config.Cooldown = int(cooldown)
+
+	err = config.Upsert(common.PQ, true, []string{"guild_id"}, []string{"enabled", "cooldown"})
+	return errors.WithMessage(err, "rep migrate upsert")
 }

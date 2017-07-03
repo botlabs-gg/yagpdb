@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
@@ -404,4 +405,21 @@ func FindStringSlice(strs []string, search string) bool {
 	}
 
 	return false
+}
+
+// ValidateSQLSchema does some simple security checks on a sql schema file
+// At the moment it only checks for drop table/index statements accidentally left in the schema file
+func ValidateSQLSchema(input string) {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	lineCount := 0
+	for scanner.Scan() {
+		lineCount++
+		trimmed := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(strings.ToLower(trimmed), "drop table") || strings.HasPrefix(strings.ToLower(trimmed), "drop index") {
+			panic(fmt.Errorf("Schema file L%d: starts with drop table/index.\n%s", lineCount, trimmed))
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("reading standard input:", err)
+	}
 }

@@ -191,7 +191,7 @@ var _escData = map[string]*_escFile{
 	"/assets/leaderboard.html": {
 		local:   "assets/leaderboard.html",
 		size:    2477,
-		modtime: 1497818729,
+		modtime: 1497883795,
 		compressed: `
 H4sIAAAAAAAA/5RWUZPbNBB+96/Y6g7Obs52wgOFS2wo0OnAlMJcyxPDdBRrnYiTJSMpyYWM/ztjyYmd
 NCm9PNiSdr9P8u63q+x2DEsuEUhRf9BYryy1XMkPAilDPVdUM9I0QbDbWaxqQa33XCJlBJKmCWbGbgWC
@@ -213,10 +213,26 @@ vMd/AQAA//9vp6r4rQkAAA==
 `,
 	},
 
+	"/assets/schema.sql": {
+		local:   "assets/schema.sql",
+		size:    1301,
+		modtime: 1499113534,
+		compressed: `
+H4sIAAAAAAAA/5STT4+bMBDFz/anmGOQWGmlqidOtOuqqAlEhKq7vSADXmrV2Ftjtvn4Ff+CCaQiOQXm
+5+d5b4aHB3iKoyMk/qc9geALkOfglJxAs7fGUMOVTHMlX3lZexh/jomfkIkNo+Q2DzuMyoaLIuUFDL+M
+l1waOMbBwY9f4Bt5cTF6U1yaOpW0Yh30TnX+i+rdx0enuyH8vt+7GDFJM8EuUpApJaY6wihXShTqrxyB
+9ibrfEXPacnfWUor1Ugz9jIRGGn2p+GaFT2nlWCD1NjSh0fHtTDNcmaTcywTNP8teG2uBW9jM8E5RouK
+S7snWPaGHQ/jDRNtaqa3z7Oj22m2f7phLqKbBr2Saq4Zbc1RA5AEB3JK/MMRfgTJ1+4RfkYhsbX6fQCE
+VrSszdmNd7owNLbZv1DlZvdCla333lrNNKcC0NUGTw5RN5INLq3IEFoJtGay6NNeLQ+L0gOrx036ys9t
+T8O2z74WjIbXaKnehThkE4RP5Pm/2aSjjTNE4SK3seh4dyherK9KXqp3aVp5rapadcdD/wIAAP//6j0o
+SRUFAAA=
+`,
+	},
+
 	"/assets/settings.html": {
 		local:   "assets/settings.html",
 		size:    5653,
-		modtime: 1493477088,
+		modtime: 1497883789,
 		compressed: `
 H4sIAAAAAAAA/9RYS2/jNhC+51dMeelJEtJDT7aA9IFFgW5QOL0HlDSSiPChpSjHhqD/XpCibNmRZXdr
 p8nJImc4j48fh/S0bYY5kwgkrZ41Vo2hhin5XKMxTBY16bq7u7Y1KCpOTa9WIs0IhF13t8jYGlJO63pJ
