@@ -165,7 +165,7 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			split := strings.SplitN(origin, ":", 3)
-			if len(split) < 3 || !strings.EqualFold("https://"+common.Conf.Host, split[0]+":"+split[1]) {
+			if len(split) < 2 || !strings.EqualFold("https://"+common.Conf.Host, split[0]+":"+split[1]) {
 				http.Redirect(w, r, "/?err=bad_origin", http.StatusTemporaryRedirect)
 				return
 			}
