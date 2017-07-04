@@ -69,7 +69,7 @@ var roleCommands = []commandsystem.CommandHandler{
 									out += "/"
 								}
 								first = false
-								out += "`" + r.Name + "` "
+								out += "`" + r2.Name + "` "
 							}
 						}
 
