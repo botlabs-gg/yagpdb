@@ -55,8 +55,25 @@ var roleCommands = []commandsystem.CommandHandler{
 						out = "Sorry " + common.RandomAdjective() + " person, i do not recognize that role (maybe your finger slipped?), heres a list of the roles you can assign yourself:"
 					}
 
+					usedCommands := make([]string, 0, len(roleCommands))
 					for _, r := range roleCommands {
-						out += "\n`" + r.Name + "`"
+						if common.FindStringSlice(usedCommands, r.Role) {
+							continue
+						}
+
+						out += "\n"
+						first := true
+						for _, r2 := range roleCommands {
+							if r2.Role == r.Role {
+								if !first {
+									out += "/"
+								}
+								first = false
+								out += "`" + r.Name + "` "
+							}
+						}
+
+						usedCommands = append(usedCommands, r.Role)
 					}
 
 					if len(roleCommands) < 1 {
