@@ -16,7 +16,9 @@ dependencies:
   cache_directories:
     - "~/download"
   override:
+    - go get github.com/jonas747/discordgo
+    - cd ${GOPATH}/src/github.com/jonas747/discordgo && git checkout yagpdb && cd -
     - go get -t -d -v ./...
     - cd ${GOPATH}/src/github.com/jonas747/dutil && git checkout dgofork && cd -
-    - cd ${GOPATH}/src/github.com/jonas747/discordgo && git checkout yagpdb && cd -
+    - cd ${GOPATH}/src/github.com/jonas747/dshardmanager && git checkout dgofork && cd -
     - go build -v
