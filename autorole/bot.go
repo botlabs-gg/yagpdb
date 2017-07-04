@@ -52,7 +52,7 @@ var roleCommands = []commandsystem.CommandHandler{
 					out := "Here is a list of roles you can assign yourself:"
 					if parsed.Args[0] != nil {
 						// We failed to find the proper role
-						out = "Sorry sir, i do not recognize that role (maybe your finger slipped?), heres a list of the roles you can assign yourself:"
+						out = "Sorry " + common.RandomAdjective() + " person, i do not recognize that role (maybe your finger slipped?), heres a list of the roles you can assign yourself:"
 					}
 
 					for _, r := range roleCommands {
