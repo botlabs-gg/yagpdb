@@ -330,6 +330,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	if gs == nil {
 		go func() { evtChan <- evt }()
 	}
+
 	ms := gs.Member(true, pu.User.ID)
 	if ms == nil || ms.Presence == nil || ms.Member == nil {
 		go func() { evtChan <- evt }()

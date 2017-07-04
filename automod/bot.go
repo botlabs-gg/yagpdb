@@ -90,6 +90,12 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		return
 	}
 
+	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", cs.Guild.ID()).Error("Member not found in state, automod ignoring")
+		return
+	}
+
 	locked := true
 	cs.Owner.RLock()
 	defer func() {
@@ -97,12 +103,6 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 			cs.Owner.RUnlock()
 		}
 	}()
-
-	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
-	if err != nil {
-		logrus.WithError(err).WithField("guild", cs.Guild.ID()).Error("Member not found in state, automod ignoring")
-		return
-	}
 
 	del := false // Set if a rule triggered a message delete
 	punishMsg := ""
