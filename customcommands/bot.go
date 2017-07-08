@@ -290,5 +290,5 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) bool {
 		return msg == trigger
 	}
 
-	return strings.Index(msg, startsWith+"") == 0
+	return strings.HasPrefix(msg, startsWith)
 }

@@ -68,5 +68,5 @@ func RunPinger() {
 func BotIsRunning() bool {
 	lastPingMutex.RLock()
 	defer lastPingMutex.RUnlock()
-	return time.Now().Sub(lastPing) < time.Second*5
+	return time.Since(lastPing) < time.Second*5
 }

@@ -170,7 +170,7 @@ func CreateCookieSession(token *oauth2.Token, redisClient *redis.Client) (cookie
 
 	// Either the cookie expires in 7 days, or however long the validity of the token is if that is smaller than 7 days
 	cookieExpirey := time.Hour * 24 * 7
-	expiresFromNow := token.Expiry.Sub(time.Now())
+	expiresFromNow := time.Until(token.Expiry)
 	if expiresFromNow < time.Hour*24*7 {
 		cookieExpirey = expiresFromNow
 	}

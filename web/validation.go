@@ -187,10 +187,7 @@ func ValidateRegexField(s string, max int) error {
 	}
 
 	_, err := regexp.Compile(s)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) error {

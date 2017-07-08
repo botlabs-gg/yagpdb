@@ -317,11 +317,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	logrus.Println("MODERATION:", author.Username, actionStr, user.Username, "cause", reason)
 
 	err = CreateModlogEmbed(actionChannel, author, actionStr, user, reason, logLink)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func KickUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {

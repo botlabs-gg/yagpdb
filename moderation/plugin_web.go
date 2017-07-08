@@ -57,9 +57,5 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	templateData["ModConfig"] = newConfig
 
 	err := newConfig.Save(client, activeGuild.ID)
-	if err != nil {
-		return templateData, err
-	}
-
-	return templateData, nil
+	return templateData, err
 }

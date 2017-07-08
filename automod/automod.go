@@ -62,8 +62,5 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 }
 
 func (c Config) Save(client *redis.Client, guildID string) error {
-	if err := common.SetRedisJson(client, KeyConfig(guildID), c); err != nil {
-		return err
-	}
-	return nil
+	return common.SetRedisJson(client, KeyConfig(guildID), c)
 }
