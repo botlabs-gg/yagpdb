@@ -140,6 +140,9 @@ var cmds = []commandsystem.CommandHandler{
 
 				// Do the actual deletion
 				err = common.GORM.Delete(reminder).Error
+				if err != nil {
+					return "Failed deleting reminder?", err
+				}
 
 				// Check if we should remove the scheduled event
 				currentReminders, err := GetUserReminders(reminder.UserID)

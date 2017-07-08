@@ -76,10 +76,6 @@ func Run() {
 		return
 	}
 
-	if common.Testing {
-		// ShardManager.SetNumShards(4)
-	}
-
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 

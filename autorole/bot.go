@@ -89,12 +89,10 @@ var roleCommands = []commandsystem.CommandHandler{
 				}
 
 				found := false
-				newRoles := make([]string, 0)
 				for _, v := range member.Roles {
 					if v == role {
 						found = true
-					} else {
-						newRoles = append(newRoles, v)
+						break
 					}
 				}
 

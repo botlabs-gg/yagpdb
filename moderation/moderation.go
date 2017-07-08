@@ -287,6 +287,10 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 		"User":   user,
 		"Reason": reason,
 	})
+	if err != nil {
+		logrus.WithError(err).Error("Failed executing pusnishment dm")
+		executed = "Failed executing template."
+	}
 
 	gs := bot.State.Guild(true, guildID)
 	gs.RLock()
