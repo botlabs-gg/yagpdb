@@ -78,7 +78,7 @@ func connectDB(user, pass string) error {
 		PQ.SetMaxOpenConns(5)
 	}
 
-	if os.Getenv("YAGPDB_STATE_ADDR") != "" {
+	if os.Getenv("YAGPDB_SQLSTATE_ADDR") != "" {
 		logrus.Info("Using special sql state db")
 		addr := os.Getenv("YAGPDB_SQLSTATE_ADDR")
 		user := os.Getenv("YAGPDB_SQLSTATE_USER")
