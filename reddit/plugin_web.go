@@ -99,8 +99,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 	}
 
-	if len(currentConfig) > 24 {
-		return templateData.AddAlerts(web.ErrorAlert("Max 25 items allowed"))
+	if len(currentConfig) >= GuildMaxFeeds {
+		return templateData.AddAlerts(web.ErrorAlert("Max " + strconv.Itoa(GuildMaxFeeds) + " items allowed"))
 	}
 
 	watchItem := &SubredditWatchItem{

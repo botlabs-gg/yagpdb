@@ -13,6 +13,7 @@ import (
 
 const (
 	RedisChannelsLockKey = "youtube_subbed_channel_lock"
+	GuildMaxFeeds        = 50
 )
 
 func KeyLastVidTime(channel string) string { return "youtube_last_video_time:" + channel }

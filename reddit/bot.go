@@ -7,6 +7,11 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 )
 
+const (
+	// Max feeds per guild
+	GuildMaxFeeds = 100
+)
+
 func (p *Plugin) InitBot() {}
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
