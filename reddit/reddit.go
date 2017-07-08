@@ -1,5 +1,7 @@
 package reddit
 
+//go:generate esc -o assets_gen.go -pkg reddit -ignore ".go" assets/
+
 import (
 	"encoding/json"
 	"fmt"

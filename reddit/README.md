@@ -1,6 +1,18 @@
 # Reddit plugin for YAGPDB
 
-Redis layout:
+### How the feed works
+
+Uses the same method mee6 uses for reliable cost effective scanning of all reddit posts.
+
+works by by manually checking 100 ids per couple of second via the `/api/info.json?id=t3_id1,t3_id2` etc route.
+
+It then updates the cursor to the highest returned post id, continuing from that next call.
+
+I don't believe this method has any bad parts at this moment, it seems to be more than enough even at a 5 second interval, unlike the polling of /all/new this does not appear to have any limitations on old posts and also shows absolutely all posts.
+
+### Redis layout:
+
+`reddit_last_post_id` id of last post processed
 
 **global_subreddit_watch:sub**
 Type: hash

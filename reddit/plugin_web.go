@@ -26,7 +26,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reddit.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
 
 	redditMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)

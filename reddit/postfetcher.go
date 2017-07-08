@@ -4,122 +4,110 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/go-reddit"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
+	"strconv"
 	"time"
 )
 
+var KeyLastScannedPostID = "reddit_last_post_id"
+
 type PostFetcher struct {
-	// postBuffer is a number of last posts, this is needed
-	// because when you do `before` a post that's deleted reddit will not show anything
-	// no error either (really why couldnt there be an error atleast, i mean comeon)
-	// We initially try to load it from redis from a previous session
-	postBuffer []string
+	LastID int64
 
-	// healthy id offset is the current healthy id, we normally fetch "before" -1 last post so that we will always get 1 result
-	// that way when we get 0 results either the post we have set our before to is deleted
-	// or the post after, so we move back the id buffer untill we find a post and then update it
-	// reddit api is the most complicated stupid thing ever made.
-	healthyIDOffset int
-
-	MaxPostBufferSize int
+	started     time.Time
+	hasCaughtUp bool
 
 	redditClient *reddit.Client
 	redisClient  *redis.Client
 }
 
-func NewPostFetcher(redditClient *reddit.Client, redisClient *redis.Client, postBuffer []string) *PostFetcher {
-	if postBuffer == nil {
-		postBuffer = make([]string, 0)
+func NewPostFetcher(redditClient *reddit.Client, redisClient *redis.Client) *PostFetcher {
+	return &PostFetcher{
+		redditClient: redditClient,
+		redisClient:  redisClient,
+	}
+}
+
+func (p *PostFetcher) InitCursor() (int64, error) {
+	storedId, err := p.redisClient.Cmd("GET", KeyLastScannedPostID).Int64()
+	if err != nil {
+		logrus.WithError(err).Error("Reddit plugin failed resuming, starting from the new position")
+	} else {
+		if storedId == 0 {
+			logrus.Error("Reddit plugin has 0 as cursor?, starting from the new position")
+		} else {
+			return storedId, nil
+		}
 	}
 
-	return &PostFetcher{
-		postBuffer:        postBuffer,
-		MaxPostBufferSize: 100,
-		redditClient:      redditClient,
-		redisClient:       redisClient,
+	// Start from new
+	newPosts, err := p.redditClient.GetNewLinks("all", "", "")
+	if err != nil {
+		return 0, err
 	}
+
+	if len(newPosts) < 1 {
+		return 0, errors.New("No posts")
+	}
+
+	stringID := newPosts[0].ID
+	parsed, err := strconv.ParseInt(stringID, 36, 64)
+	return parsed, err
 }
 
 func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 
-	before := ""
-
-	if len(p.postBuffer) > 1+p.healthyIDOffset {
-		before = p.postBuffer[1+p.healthyIDOffset]
-	} else if len(p.postBuffer) > 1 {
-		// ran out of id's, throw an error because this we can't recover from and we will lose posts
-		// and throw away the idbuffer
-		logrus.Error("Ran out of id's with id offset at ", p.healthyIDOffset)
-		p.healthyIDOffset = 0
-		p.postBuffer = make([]string, 0)
+	if p.started.IsZero() {
+		p.started = time.Now()
 	}
 
-	resp, err := p.redditClient.GetNewLinks("all", "t3_"+before, "")
+	if p.LastID == 0 {
+		lID, err := p.InitCursor()
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed initialising cursor")
+		}
+
+		p.LastID = lID
+		logrus.Info("Initialized reddit post cursor at ", lID)
+	}
+
+	toFetch := make([]string, 100)
+
+	for i := int64(0); i < 100; i++ {
+		toFetch[i] = "t3_" + strconv.FormatInt(p.LastID+i+1, 36)
+	}
+
+	resp, err := p.redditClient.LinksInfo(toFetch)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(resp) < 1 {
-		logrus.Warn("No posts in response, incementing id offset")
-		p.healthyIDOffset++
-		return nil, nil
-	}
-
-	filtered := p.HandleLinksResponse(resp)
-	p.SaveBuffer()
-	return filtered, nil
-}
-
-// Updates the postbuffer and filters out already handled posts
-func (p *PostFetcher) HandleLinksResponse(links []*reddit.Link) []*reddit.Link {
-
-	// Filter first so that it filters against all
-	filtered := make([]*reddit.Link, 0, len(links))
-OUTER:
-	for _, l := range links {
-		for _, existing := range p.postBuffer {
-			if l.ID == existing {
-				continue OUTER
-			}
+	highestID := int64(-1)
+	for _, v := range resp {
+		parsedId, err := strconv.ParseInt(v.ID, 36, 64)
+		if err != nil {
+			logrus.WithError(err).WithField("id", v.ID).Error("Failed parsing reddit post id")
+			continue
 		}
 
-		filtered = append(filtered, l)
-
-	}
-
-	// Then update the postbuffer
-	if p.healthyIDOffset != 0 {
-		p.postBuffer = p.postBuffer[p.healthyIDOffset:]
-		p.healthyIDOffset = 0
-	}
-
-	newBuffer := make([]string, 0, p.MaxPostBufferSize*2)
-OUTER2:
-	for _, l := range links {
-		for _, existing := range p.postBuffer {
-			if l.ID == existing {
-				continue OUTER2
-			}
+		if highestID < parsedId {
+			highestID = parsedId
 		}
-
-		newBuffer = append(newBuffer, l.ID)
 	}
 
-	newBuffer = append(newBuffer, p.postBuffer...)
-
-	// Resize it if it exceeds the limit
-	if len(newBuffer) > p.MaxPostBufferSize {
-		newBuffer = newBuffer[:p.MaxPostBufferSize]
+	if highestID != -1 {
+		p.LastID = highestID
+		p.redisClient.Cmd("SET", KeyLastScannedPostID, highestID)
 	}
-	p.postBuffer = newBuffer
 
-	return filtered
-}
-
-func (p *PostFetcher) SaveBuffer() {
-	err := common.SetRedisJson(p.redisClient, "reddit_last_links", p.postBuffer)
-	if err != nil {
-		logrus.WithError(err).Error("Failed saving post buffer")
+	if !p.hasCaughtUp {
+		logrus.Info("Redditfeed processed ", len(resp), " links")
 	}
-	p.redisClient.Cmd("SET", "reddit_last_link_time", time.Now().Unix())
+
+	if len(resp) < 50 && !p.hasCaughtUp {
+		logrus.Info("Reddit feed caught up in ", time.Since(p.started).String())
+		p.hasCaughtUp = true
+	}
+
+	return resp, nil
 }
