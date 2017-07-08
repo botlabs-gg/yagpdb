@@ -14,7 +14,7 @@ func (hook ContextHook) Levels() []logrus.Level {
 }
 
 func (hook ContextHook) Fire(entry *logrus.Entry) error {
-	pc := make([]uintptr, 3, 3)
+	pc := make([]uintptr, 3)
 	cnt := runtime.Callers(6, pc)
 
 	for i := 0; i < cnt; i++ {
@@ -29,4 +29,14 @@ func (hook ContextHook) Fire(entry *logrus.Entry) error {
 		}
 	}
 	return nil
+}
+
+type DGLogProxy struct{}
+
+func (p *DGLogProxy) Write(b []byte) (n int, err error) {
+	n = len(b)
+
+	logrus.Info(string(b))
+
+	return
 }

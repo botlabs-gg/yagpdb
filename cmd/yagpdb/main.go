@@ -69,7 +69,7 @@ func main() {
 
 	log.AddHook(common.ContextHook{})
 	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
-	stdlog.SetOutput(log.StandardLogger().Writer())
+	stdlog.SetOutput(&common.DGLogProxy{})
 	//log.AddHook(&journalhook.JournalHook{})
 	//journalhook.Enable()
 
