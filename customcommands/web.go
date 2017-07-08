@@ -7,6 +7,7 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strconv"
 	"unicode/utf8"
 )
 
@@ -53,7 +54,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if len(currentCommands) >= MaxCommands {
-		return templateData, web.NewPublicError("Max 50 custom commands allowed, if you need more ask on the support server")
+		return templateData, web.NewPublicError("Max " + strconv.Itoa(MaxCommands) + " custom commands allowed, if you need more ask on the support server")
 	}
 
 	templateData["CustomCommands"] = currentCommands
