@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -28,6 +29,10 @@ func (f Form) Save(client *redis.Client, guildID string) error {
 		}
 	}
 	f.Commands = realCommands
+
+	if len(realCommands) > 1000 {
+		return errors.New("Max 1000 autorole commands")
+	}
 
 	err := common.SetRedisJson(client, KeyGeneral(guildID), f.General)
 	if err != nil {
