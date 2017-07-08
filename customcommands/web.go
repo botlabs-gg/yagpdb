@@ -52,7 +52,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, err
 	}
 
-	if len(currentCommands) > 49 {
+	if len(currentCommands) >= MaxCommands {
 		return templateData, web.NewPublicError("Max 50 custom commands allowed, if you need more ask on the support server")
 	}
 

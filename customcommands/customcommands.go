@@ -13,6 +13,10 @@ import (
 	"sort"
 )
 
+const (
+	MaxCommands = 100
+)
+
 func KeyCommands(guildID string) string { return "custom_commands:" + guildID }
 
 type Plugin struct{}
