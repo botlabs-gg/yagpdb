@@ -23,30 +23,13 @@
         </div>
         {{end}}
 
-        <h3>Version 0.20.0 <small>4 jul 2018</small></h3>
-        <p>Reminder that if you want to be notified when a new update is pushed, then join the YAGPDB discord server (link above) and use the `-role updates` command to get pinged when updates are live</p>
-        <p>It's been a while since last update, reason for this is 1# i have had less motivation to work on this bot, 2# i've had very little time these last months with work and moving and shit, going forward i'll try to do more frequent smaller updates instead of focusing on big updates, also let me remind you that this is a project i develop in my spare time, and i only have so much spare time these days, and some days i wanna spend that time working on other fun projects, trying new things and playing games.</p>
-        <p>Also thanks to <b>Ryvid</b> for submitting a lot of small control panel improvements (fixing typos and such), he's the first contributor to YAGPDB! If you too wanna contribute anything from fixing typos, writing the documentation pages or programming the bot itself then go for it! I would be more than happy to answer questions to people wanting to help out with the project!</p>
+        <h3>Version 021 <small>?? jul 2018</small></h3>
+        <p>I've set up a patreon for the bot <a href="https://www.patreon.com/yagpdb">here</a> (yes that is me)</p>
+        <p>A mostly fix update which fixes most broken stuff in the bot and adds some fresh new functionality aswell</p>
         <ul>
-            <li><b>Redid Reputation:</b> As a result all reputation has been wiped, i'm sorry about this but the bot is in alpha. Heres a short breakdown of the features of the new reputation system:
-                <ul>
-                    <li>Reputation admins have full access to set anyones reputation to anything</li>
-                    <li>Users can give more than 1 rep</li>
-                    <li>The points can be renamed to whatever you want (for example, meatballs)</li>
-                    <li>You can set up: required give/receive and blacklisted give/receive roles</li>
-                    <li>Improved auto-detection, it will now catch thank(s) and ty, a mention is still required for it to trigger. This auto-detection can also be disabled now.</li>
-                    <li>An actual leaderboard</li>
-                </ul>
-            </li>
-            <li><b>Added doc pages.</b> There are only a limited amount of pages at this exact moment, but they will get written as time goes on</li>
-            <li>Added command to delete warnings: <code>delwarning (id)</code> and <code>clearwarning @user</code></li>
-            <li>Added ability to blacklist creation of logs from certain channels</li>
-            <li>Added sharding, since were (somehow) nearing the 2.5k single shard limit.</li>
-            <li>Started first steps to transitioning towards another state tracker that might give more consistent results when you're interacting with the bot</li>
-            <li>Scheduled events now execute every 10 seconds (as opposed to 60) (means more responsive reminders and unmutes and shit)</li>
-            <li>Fixed reminders command displayed stuff like 1 hour and 59 minutes, the actual time was correct but it just showed the time wrong</li>
-            <li>Added the ability for people with manage messages to view deleted messages, aswell as everyone (they are toggles)</li>
-            <li>Made things more reponsive in general to changes, in the past when giving someone a role that gives them acces to the control panel it could take up to a minute before that takes effect, now thats instant, although changing permissions on existing roles wont kick fully in within 10 seconds still (not sure if i want to disable caching completely on this part or not)</li>
+            <li>Reddit feed has been redone, will now work in subreddits that is hidden from the frontpage</li>
+            <li>Reputation leaderboard have been fixed</li>
+            <li>Added back - command to decrease rep</li>
         </ul>
 
         <h3>Information</h3>
@@ -78,14 +61,48 @@
 
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
             <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading11">
+                <div class="panel-heading" role="tab" id="heading13">
                     <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse11" aria-expanded=false aria-controls="collapse11">
+                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse13" aria-expanded=false aria-controls="collapse13">
+                            Version 0.20 <small>4 Jul 2017</small>
+                        </a>
+                    </h4>
+                </div>
+                <div id="collapse13" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading13">
+                    <div class="panel-body">
+                        <ul>
+                            <li><b>Redid Reputation:</b> As a result all reputation has been wiped, i'm sorry about this but the bot is in alpha. Heres a short breakdown of the features of the new reputation system:
+                                <ul>
+                                    <li>Reputation admins have full access to set anyones reputation to anything</li>
+                                    <li>Users can give more than 1 rep</li>
+                                    <li>The points can be renamed to whatever you want (for example, meatballs)</li>
+                                    <li>You can set up: required give/receive and blacklisted give/receive roles</li>
+                                    <li>Improved auto-detection, it will now catch thank(s) and ty, a mention is still required for it to trigger. This auto-detection can also be disabled now.</li>
+                                    <li>An actual leaderboard</li>
+                                </ul>
+                            </li>
+                            <li><b>Added doc pages.</b> There are only a limited amount of pages at this exact moment, but they will get written as time goes on</li>
+                            <li>Added command to delete warnings: <code>delwarning (id)</code> and <code>clearwarning @user</code></li>
+                            <li>Added ability to blacklist creation of logs from certain channels</li>
+                            <li>Added sharding, since were (somehow) nearing the 2.5k single shard limit.</li>
+                            <li>Started first steps to transitioning towards another state tracker that might give more consistent results when you're interacting with the bot</li>
+                            <li>Scheduled events now execute every 10 seconds (as opposed to 60) (means more responsive reminders and unmutes and shit)</li>
+                            <li>Fixed reminders command displayed stuff like 1 hour and 59 minutes, the actual time was correct but it just showed the time wrong</li>
+                            <li>Added the ability for people with manage messages to view deleted messages, aswell as everyone (they are toggles)</li>
+                            <li>Made things more reponsive in general to changes, in the past when giving someone a role that gives them acces to the control panel it could take up to a minute before that takes effect, now thats instant, although changing permissions on existing roles wont kick fully in within 10 seconds still (not sure if i want to disable caching completely on this part or not)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="heading12">
+                    <h4 class="panel-title">
+                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse12" aria-expanded=false aria-controls="collapse12">
                             Version 0.19 <small>14 Feb 2017</small>
                         </a>
                     </h4>
                 </div>
-                <div id="collapse11" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading11">
+                <div id="collapse12" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading12">
                     <div class="panel-body">
                         <p>Youtube feeds and a bunch of small things that finally got fixed</p>
                         <ul>
