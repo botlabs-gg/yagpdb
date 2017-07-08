@@ -271,7 +271,7 @@ type LeaderboardEntry struct {
 	Avatar   string `json:"avatar"`
 }
 
-func ToLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
+func DetailedLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
 	if len(ranks) < 1 {
 		return []*LeaderboardEntry{}, nil
 	}

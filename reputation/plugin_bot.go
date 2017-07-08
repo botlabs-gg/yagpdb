@@ -80,55 +80,32 @@ var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Category: commands.CategoryFun,
 		Command: &commandsystem.Command{
-			Name:         "GiveRep",
-			Aliases:      []string{"+", "gr", "grep"},
-			Description:  "Gives or takes away rep from someone",
+			Name:         "TakeRep",
+			Aliases:      []string{"-", "tr", "trep"},
+			Description:  "Takes away rep from someone",
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
-				&commandsystem.ArgDef{Name: "Num", Type: commandsystem.ArgumentNumber},
+				&commandsystem.ArgDef{Name: "Num", Type: commandsystem.ArgumentNumber, Default: float64(-1)},
 			},
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-				target := parsed.Args[0].DiscordUser()
-
-				conf, err := GetConfig(parsed.Guild.ID())
-				if err != nil {
-					return "An error occured finding the server config", err
-				}
-
-				pointsName := conf.PointsName
-
-				if target.ID == parsed.Message.Author.ID {
-					return fmt.Sprintf("Can't give yourself %s... **Silly**", pointsName), nil
-				}
-
-				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-
-				sender, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.Author.ID)
-				receiver, err2 := bot.GetMember(parsed.Guild.ID(), target.ID)
-				if err != nil || err2 != nil {
-					if err2 != nil {
-						err = err2
-					}
-
-					return "Failed retreiving members", err
-				}
-				amount := 1
-				if parsed.Args[1] != nil {
-					amount = parsed.Args[1].Int()
-				}
-				err = ModifyRep(conf, client, parsed.Guild.ID(), sender, receiver, int64(amount))
-				if err != nil {
-					if cast, ok := err.(UserError); ok {
-						return cast, nil
-					}
-
-					return "Failed modifying your " + pointsName, err
-				}
-
-				msg := fmt.Sprintf("Modified **%s's** %s by %d", target.Username, pointsName, amount)
-				return msg, nil
+				parsed.Args[1].Parsed = -parsed.Args[1].Parsed.(float64)
+				return CmdGiveRep(parsed)
 			},
+		},
+	},
+	&commands.CustomCommand{
+		Category: commands.CategoryFun,
+		Command: &commandsystem.Command{
+			Name:         "GiveRep",
+			Aliases:      []string{"+", "gr", "grep"},
+			Description:  "Gives rep to someone",
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
+				&commandsystem.ArgDef{Name: "Num", Type: commandsystem.ArgumentNumber, Default: float64(1)},
+			},
+			Run: CmdGiveRep,
 		},
 	},
 	&commands.CustomCommand{
@@ -188,10 +165,19 @@ var cmds = []commandsystem.CommandHandler{
 					return "Something went wrong... i may hae had one too many alcohol", err
 				}
 
+				detailed, err := DetailedLeaderboardEntries(entries)
+				if err != nil {
+					return "Failed filling in the detalis of the leaderboard entries", err
+				}
+
 				leaderboardURL := "https://" + common.Conf.Host + "/public/" + parsed.Guild.ID() + "/reputation/leaderboard"
 				out := "```\n# -- Points -- User\n"
-				for _, v := range entries {
-					out += fmt.Sprintf("#%2d: %5d - %d\n", v.Rank, v.Points, v.UserID)
+				for _, v := range detailed {
+					user := v.Username
+					if user == "" {
+						user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
+					}
+					out += fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user)
 				}
 				out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
 
@@ -199,4 +185,60 @@ var cmds = []commandsystem.CommandHandler{
 			},
 		},
 	},
+}
+
+func CmdGiveRep(parsed *commandsystem.ExecData) (interface{}, error) {
+	target := parsed.Args[0].DiscordUser()
+
+	conf, err := GetConfig(parsed.Guild.ID())
+	if err != nil {
+		return "An error occured finding the server config", err
+	}
+
+	pointsName := conf.PointsName
+
+	if target.ID == parsed.Message.Author.ID {
+		return fmt.Sprintf("Can't give yourself %s... **Silly**", pointsName), nil
+	}
+
+	client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+
+	sender, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.Author.ID)
+	receiver, err2 := bot.GetMember(parsed.Guild.ID(), target.ID)
+	if err != nil || err2 != nil {
+		if err2 != nil {
+			err = err2
+		}
+
+		return "Failed retreiving members", err
+	}
+
+	amount := parsed.Args[1].Int()
+
+	err = ModifyRep(conf, client, parsed.Guild.ID(), sender, receiver, int64(amount))
+	if err != nil {
+		if cast, ok := err.(UserError); ok {
+			return cast, nil
+		}
+
+		return "Failed modifying your " + pointsName, err
+	}
+
+	newScore, newRank, err := GetUserStats(parsed.Guild.ID(), target.ID)
+	if err != nil {
+		newScore = -1
+		newRank = -1
+		logrus.WithError(err).WithField("guild", parsed.Guild.ID()).Error("Failed getting user reputation stats")
+	}
+
+	actionStr := ""
+	if amount > 0 {
+		actionStr = "Gave"
+	} else {
+		actionStr = "Took away"
+		amount = -amount
+	}
+
+	msg := fmt.Sprintf("%s `%d` %s from **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, target.Username, newRank, newScore)
+	return msg, nil
 }
