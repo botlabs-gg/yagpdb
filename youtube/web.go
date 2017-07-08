@@ -11,6 +11,7 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strconv"
 )
 
 type CtxKey int
@@ -75,8 +76,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	var count int
 	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
 
-	if count > 24 {
-		return templateData.AddAlerts(web.ErrorAlert("Max 25 items allowed")), errors.New("Max limit reached")
+	if count > GuildMaxFeeds {
+		return templateData.AddAlerts(web.ErrorAlert("Max " + strconv.Atoi(GuildMaxFeeds) + " items allowed")), errors.New("Max limit reached")
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
