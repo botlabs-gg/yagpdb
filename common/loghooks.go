@@ -14,6 +14,11 @@ func (hook ContextHook) Levels() []logrus.Level {
 }
 
 func (hook ContextHook) Fire(entry *logrus.Entry) error {
+	// Skip if already provided
+	if _, ok := entry.Data["line"]; ok {
+		return nil
+	}
+
 	pc := make([]uintptr, 3)
 	cnt := runtime.Callers(6, pc)
 
@@ -36,7 +41,24 @@ type DGLogProxy struct{}
 func (p *DGLogProxy) Write(b []byte) (n int, err error) {
 	n = len(b)
 
-	logrus.Info(string(b))
+	pc := make([]uintptr, 3)
+	runtime.Callers(4, pc)
+
+	data := make(logrus.Fields)
+
+	fu := runtime.FuncForPC(pc[0] - 1)
+	name := fu.Name()
+	file, line := fu.FileLine(pc[0] - 1)
+	data["file"] = filepath.Base(file)
+	data["func"] = filepath.Base(name)
+	data["line"] = line
+
+	// for i := 0; i < cnt; i++ {
+	// if !strings.Contains(name, "github.com/Sirupsen/logrus") {
+	// }
+	// }
+
+	logrus.WithFields(data).Info(string(b))
 
 	return
 }
