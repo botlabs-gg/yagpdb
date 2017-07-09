@@ -36,9 +36,9 @@ func (hook ContextHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-type DGLogProxy struct{}
+type STDLogProxy struct{}
 
-func (p *DGLogProxy) Write(b []byte) (n int, err error) {
+func (p *STDLogProxy) Write(b []byte) (n int, err error) {
 	n = len(b)
 
 	pc := make([]uintptr, 3)
@@ -53,12 +53,12 @@ func (p *DGLogProxy) Write(b []byte) (n int, err error) {
 	data["func"] = filepath.Base(name)
 	data["line"] = line
 
-	// for i := 0; i < cnt; i++ {
-	// if !strings.Contains(name, "github.com/Sirupsen/logrus") {
-	// }
-	// }
+	logLine := string(b)
+	if strings.HasSuffix(logLine, "\n") {
+		logLine = strings.TrimSuffix(logLine, "\n")
+	}
 
-	logrus.WithFields(data).Info(string(b))
+	logrus.WithFields(data).Info(logLine)
 
 	return
 }

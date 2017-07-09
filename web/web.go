@@ -26,8 +26,6 @@ var (
 	ListenAddressHTTP  = ":5000"
 	ListenAddressHTTPS = ":5001"
 
-	LogRequestTimestamps bool
-
 	// Muxers
 	RootMux           *goji.Mux
 	CPMux             *goji.Mux

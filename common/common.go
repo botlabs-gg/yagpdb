@@ -9,6 +9,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
 	"github.com/vattle/sqlboiler/boil"
+	stdlog "log"
 	"os"
 )
 
@@ -37,6 +38,9 @@ var (
 // Initalizes all database connections, config loading and so on
 func Init() error {
 
+	stdlog.SetOutput(&STDLogProxy{})
+	stdlog.SetFlags(0)
+
 	if Testing {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
@@ -59,6 +63,7 @@ func Init() error {
 	}
 
 	err = connectDB(config.PQUsername, config.PQPassword)
+
 	return err
 }
 

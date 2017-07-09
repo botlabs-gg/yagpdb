@@ -21,7 +21,7 @@ import (
 	"syscall"
 	"time"
 	//"github.com/wercker/journalhook"
-	stdlog "log"
+
 	// Plugin imports
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
@@ -68,14 +68,14 @@ func main() {
 	flag.Parse()
 
 	log.AddHook(common.ContextHook{})
+
+	log.SetFormatter(&log.TextFormatter{
+		DisableTimestamp: !common.Testing,
+	})
+
 	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
-	stdlog.SetOutput(&common.DGLogProxy{})
 	//log.AddHook(&journalhook.JournalHook{})
 	//journalhook.Enable()
-
-	if flagLogTimestamp {
-		web.LogRequestTimestamps = true
-	}
 
 	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && flagAction == "" && !flagDryRun {
 		log.Error("Didnt specify what to run, see -h for more info")
