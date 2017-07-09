@@ -77,7 +77,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
 
 	if count > GuildMaxFeeds {
-		return templateData.AddAlerts(web.ErrorAlert("Max " + strconv.Atoi(GuildMaxFeeds) + " items allowed")), errors.New("Max limit reached")
+		return templateData.AddAlerts(web.ErrorAlert("Max " + strconv.Itoa(GuildMaxFeeds) + " items allowed")), errors.New("Max limit reached")
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
