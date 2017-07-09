@@ -1,5 +1,6 @@
-{{define "cp_moderation"}}
+{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Disciminator){{"}}"}}</code> - The author of the kick/ban{{end}}
 
+{{define "cp_moderation"}}
 {{template "cp_head" .}}
 <div class="row">
     <div class="col-lg-12">
@@ -144,7 +145,11 @@
                     <div class="form-group">
                         <label>Kick DM (Leave empty for default)</label>
                         <textarea class="form-control" rows="5" name="KickMessage">{{.ModConfig.KickMessage}}</textarea>
-                        <p class="help-block">Available template data is {{template "template_helper_user"}} and <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick</p>
+                        
+                        <p class="help-block">Available template data is<br/>
+                        {{template "template_helper_user"}} - The usser being banned/kicked<br/>
+                        <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
+                        {{template "template_helper_mod_author"}}</p>
                     </div>
                 </div>
             </div>
@@ -173,7 +178,10 @@
                     <div class="form-group">
                         <label>Ban DM (Leave empty for default)</label>
                         <textarea class="form-control" rows="5" name="BanMessage">{{.ModConfig.BanMessage}}</textarea>
-                        <p class="help-block">Available template data is {{template "template_helper_user"}} and <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick</p>
+                        <p class="help-block">Available template data is<br/>
+                        {{template "template_helper_user"}} - The usser being banned/kicked<br/>
+                        <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
+                        {{template "template_helper_mod_author"}}</p>
                     </div>
                 </div>
             </div>
