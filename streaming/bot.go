@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/templates"
 )
 
 func (p *Plugin) InitBot() {
@@ -223,7 +224,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != "" && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(config, gs, member, p)
+			SendStreamingAnnouncement(client, config, gs, member, p)
 		}
 
 		if config.GiveRole != "" {
@@ -249,7 +250,7 @@ func RemoveStreaming(client *redis.Client, config *Config, guildID string, userI
 	}
 }
 
-func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, member *discordgo.Member, p *discordgo.Presence) {
+func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dstate.GuildState, member *discordgo.Member, p *discordgo.Presence) {
 	foundChannel := false
 	for _, v := range guild.Channels {
 		if v.ID() == config.AnnounceChannel {
@@ -262,18 +263,13 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, member 
 		return
 	}
 
-	templateData := map[string]interface{}{
-		"user":   member.User,
-		"User":   member.User,
-		"Server": guild.Guild,
-		"server": guild.Guild,
-		"URL":    p.Game.URL,
-		"url":    p.Game.URL,
-	}
+	ctx := templates.NewContext(bot.State.User(true).User, guild, nil, member)
+	ctx.Data["URL"] = p.Game.URL
+	ctx.Data["url"] = p.Game.URL
 
-	out, err := common.ParseExecuteTemplate(config.AnnounceMessage, templateData)
+	out, err := ctx.Execute(client, config.AnnounceMessage)
 	if err != nil {
-		log.WithError(err).Error("Failed executing template")
+		log.WithError(err).WithField("guild", guild.ID()).Error("Failed executing template")
 		return
 	}
 

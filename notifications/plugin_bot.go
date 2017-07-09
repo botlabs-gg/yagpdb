@@ -3,11 +3,11 @@ package notifications
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/templates"
 )
 
 func HandleGuildMemberAdd(evt *eventsystem.EventData) {
@@ -17,12 +17,13 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 	}
 
 	gs := bot.State.Guild(true, evt.GuildMemberAdd.GuildID)
-	templateData := createTemplateData(gs, evt.GuildMemberAdd.User)
+
+	client := bot.ContextRedis(evt.Context())
 
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled {
 
-		msg, err := common.ParseExecuteTemplate(config.JoinDMMsg, templateData)
+		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinDMMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing dm template")
 		} else {
@@ -35,7 +36,7 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 
 	if config.JoinServerEnabled {
 		channel := GetChannel(gs, config.JoinServerChannel)
-		msg, err := common.ParseExecuteTemplate(config.JoinServerMsg, templateData)
+		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinServerMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing join template")
 		} else {
@@ -52,29 +53,16 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	gs := bot.State.Guild(true, evt.GuildMemberRemove.GuildID)
 
-	templateData := createTemplateData(gs, evt.GuildMemberRemove.User)
 	channel := GetChannel(gs, config.LeaveChannel)
-	msg, err := common.ParseExecuteTemplate(config.LeaveMsg, templateData)
+	client := bot.ContextRedis(evt.Context())
+
+	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberRemove.Member).Execute(client, config.LeaveMsg)
 	if err != nil {
 		log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing leave template")
 		return
 	}
 
 	bot.QueueMergedMessage(channel, msg)
-}
-
-func createTemplateData(gs *dstate.GuildState, user *discordgo.User) map[string]interface{} {
-	gCopy := gs.LightCopy(true)
-
-	templateData := map[string]interface{}{
-		"user":   user, // Deprecated
-		"User":   user,
-		"guild":  gCopy, // Deprecated
-		"Guild":  gCopy,
-		"Server": gCopy,
-	}
-
-	return templateData
 }
 
 func HandleChannelUpdate(evt *eventsystem.EventData) {

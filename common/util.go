@@ -13,7 +13,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 )
 
@@ -106,26 +105,6 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 	}
 
 	return
-}
-
-func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {
-	return ParseExecuteTemplateFM(tmplSource, data, nil)
-}
-
-func ParseExecuteTemplateFM(tmplSource string, data interface{}, f template.FuncMap) (string, error) {
-	tmpl := template.New("")
-	if f != nil {
-		tmpl.Funcs(f)
-	}
-
-	parsed, err := tmpl.Parse(tmplSource)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	err = parsed.Execute(&buf, data)
-	return buf.String(), err
 }
 
 func RandomAdjective() string {

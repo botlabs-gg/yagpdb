@@ -153,7 +153,7 @@ Highest - the highest role the bot currently has, roles below this will be set t
     {{$selected := or .Selected ""}}
     {{$highest := or .Highest}}
     {{$n := len .Roles}}
-    {{range $i, $v := .Roles}}{{if and (ne (plus1 $i) $n) (not .Managed)}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if $highest}}{{if roleAbove $highest .}} >{{.Name}}{{else}} disabled> {{.Name}} (Role is above bot) {{end}}{{else}}>{{.Name}}{{end}}</option>{{end}}{{end}}
+    {{range $i, $v := .Roles}}{{if and (ne (add $i 1) $n) (not .Managed)}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if $highest}}{{if roleAbove $highest .}} >{{.Name}}{{else}} disabled> {{.Name}} (Role is above bot) {{end}}{{else}}>{{.Name}}{{end}}</option>{{end}}{{end}}
 {{end}}
 
 {{/*Help block for templating*/}}

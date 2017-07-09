@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
 	"golang.org/x/net/context"
@@ -283,16 +284,23 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 		dmMsg = "You were " + actionStr + "\nReason: {{.Reason}}"
 	}
 
-	executed, err := common.ParseExecuteTemplate(dmMsg, map[string]interface{}{
-		"User":   user,
-		"Reason": reason,
-	})
+	gs := bot.State.Guild(true, guildID)
+
+	member, err := bot.GetMember(guildID, user.ID)
 	if err != nil {
-		logrus.WithError(err).Error("Failed executing pusnishment dm")
+		logrus.WithError(err).WithField("guild", gs.ID()).Info("Failed retrieving member")
+		member = &discordgo.Member{User: user}
+	}
+
+	ctx := templates.NewContext(bot.State.User(true).User, gs, nil, member)
+	ctx.Data["Reason"] = reason
+	ctx.Data["Author"] = author
+	executed, err := ctx.Execute(nil, dmMsg)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed executing pusnishment dm")
 		executed = "Failed executing template."
 	}
 
-	gs := bot.State.Guild(true, guildID)
 	gs.RLock()
 	gName := "**" + gs.Guild.Name + ":** "
 	gs.RUnlock()

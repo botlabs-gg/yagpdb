@@ -8,12 +8,12 @@ import (
 	"github.com/golang/crypto/acme/autocert"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	yagtmpl "github.com/jonas747/yagpdb/common/templates"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -47,16 +47,12 @@ func init() {
 
 	Templates = template.New("")
 	Templates = Templates.Funcs(template.FuncMap{
-		"dict":       dictionary,
 		"mTemplate":  mTemplate,
-		"in":         in,
-		"adjective":  common.RandomAdjective,
-		"title":      strings.Title,
 		"hasPerm":    hasPerm,
 		"formatTime": prettyTime,
-		"plus1":      plus1,
-		"roleAbove":  roleIsAbove,
 	})
+
+	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)
 
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
 

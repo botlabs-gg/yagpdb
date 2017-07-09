@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -257,8 +256,8 @@ func ValidateTemplateField(s string, max int) error {
 		return fmt.Errorf("Too long (max %d)", max)
 	}
 
-	_, err := common.ParseExecuteTemplate(s, nil)
-	return err
+	// _, err := common.ParseExecuteTemplate(s, nil)
+	return nil
 }
 
 func ValidateChannelField(s string, channels []*discordgo.Channel, allowEmpty bool) error {
