@@ -86,6 +86,7 @@ func Run() {
 	go ShardManager.Start()
 
 	go mergedMessageSender()
+	go MemberFetcher.Run()
 
 	for _, p := range common.Plugins {
 		starter, ok := p.(BotStarterHandler)

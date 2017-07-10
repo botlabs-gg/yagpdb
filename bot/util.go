@@ -73,35 +73,6 @@ var (
 	ErrGuildNotFound = errors.New("Guild not found")
 )
 
-func GetMember(guildID, userID string) (*discordgo.Member, error) {
-	gs := State.Guild(true, guildID)
-	if gs == nil {
-		return nil, ErrGuildNotFound
-	}
-
-	cop := gs.MemberCopy(true, userID, true)
-	if cop != nil {
-		return cop, nil
-	}
-
-	member, err := common.BotSession.GuildMember(guildID, userID)
-	if err != nil {
-		return nil, err
-	}
-	member.GuildID = guildID
-
-	gs.MemberAddUpdate(true, member)
-
-	go eventsystem.EmitEvent(&eventsystem.EventData{
-		EventDataContainer: &eventsystem.EventDataContainer{
-			GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
-		},
-		Type: eventsystem.EventMemberFetched,
-	}, eventsystem.EventMemberFetched)
-
-	return member, nil
-}
-
 func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
 	channel := State.Channel(true, channelID)
 	if channel == nil {

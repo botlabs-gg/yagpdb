@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"time"
 )
 
 func HandleReady(evt *eventsystem.EventData) {
@@ -78,24 +77,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	started := time.Now()
-	log.WithField("guild", p.GuildID).WithField("user", p.User.ID).Info("Querying api for guildmember")
-	member, err := common.BotSession.GuildMember(p.GuildID, p.User.ID)
-	elapsed := time.Since(started)
-	if elapsed > time.Second*3 {
-		log.WithField("guild", p.GuildID).WithField("user", p.User.ID).Error("LongGMQuery: Took " + elapsed.String() + ", to query guild member! maybe ratelimits?")
-	}
-
-	if err == nil {
-		member.GuildID = p.GuildID
-		gs.MemberAddUpdate(true, member)
-		go eventsystem.EmitEvent(&eventsystem.EventData{
-			EventDataContainer: &eventsystem.EventDataContainer{
-				GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
-			},
-			Type: eventsystem.EventMemberFetched,
-		}, eventsystem.EventMemberFetched)
-	}
+	GetMember(p.GuildID, p.User.ID)
 }
 
 // StateHandler updates the world state

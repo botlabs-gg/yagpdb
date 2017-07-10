@@ -177,6 +177,21 @@ var debugCommands = []commandsystem.CommandHandler{
 			},
 		},
 	},
+	&CustomCommand{
+		Category:             CategoryDebug,
+		HideFromCommandsPage: true,
+		Command: &commandsystem.Command{
+			Name:        "MemberFetcher",
+			Aliases:     []string{"memfetch"},
+			Description: "Shows the current status of the member fetcher",
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+
+				fetching, notFetching := bot.MemberFetcher.Status()
+				return fmt.Sprintf("Fetching: `%d`, Not fetching: `%d`", fetching, notFetching), nil
+
+			},
+		},
+	},
 }
 
 type TopCommandsResult struct {
