@@ -47,6 +47,11 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 }
 
 func HandleGuildDelete(evt *eventsystem.EventData) {
+	if evt.GuildDelete.Unavailable {
+		// Just a guild outage
+		return
+	}
+
 	log.WithFields(log.Fields{
 		"g_name": evt.GuildDelete.Name,
 	}).Info("Left guild")
