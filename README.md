@@ -29,17 +29,27 @@ Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfi
 
 **Standard plugins:**
 
-TODO information
+* Youtube-Feed
+* Streamannouncement
+* Soundboard
+* Serverstats
+* Reputation
+* Reminder
+* Reddit-Feed
+* Notifications
+* Moderation
+* Logs
+* Customcommands
 
 **Planned plugins**
 
-[See the Trello-Page for future plans](https://trello.com/b/kH5U2aSL/yagpdb)
+[See the Issues-Tab for more](https://github.com/jonas747/yagpdb/issues)
 
 ### Core packages:
 
-- Web: The core webserver package, in charge of authentication
-- Bot: Core bot package, delegates events to plugins
-- Common: Handles all the common stuff between web and bot, (config, discord session, redis pool etc)
+- Web: The core webserver package, in charge of authentication.
+- Bot: Core bot package, delegates events to plugins.
+- Common: Handles all the common stuff between web and bot (config, discord session, redis pool etc).
 - Feeds: Handles all feeds, personally I like to run each feed as its own service, that way I can start and stop individual feed without   taking everything down.
 - Commands: Handles all commands, currently in the process of making a new command system based on interfaces instead.
 
@@ -49,7 +59,7 @@ Currently YAGPDB builds everything into one executable and you run the bot with 
 
 YAGPDB uses redis for light data and caching.
 
-I'm currently in the process of moving configuration over to postgres, about 1/3 of the configuration settings lives on postgres atm.
+I'm currently in the process of moving configuration over to postgres, about 50% of the configuration settings lives on postgres atm.
 
 ### Creating a new plugin
 
