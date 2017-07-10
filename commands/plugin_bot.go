@@ -418,7 +418,6 @@ Control panel: <https://yagpdb.xyz/cp>
 		},
 	},
 	&CustomCommand{
-		Cooldown: 5,
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "CatFact",
@@ -426,28 +425,8 @@ Control panel: <https://yagpdb.xyz/cp>
 			Description: "Cat Facts",
 
 			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				resp, err := http.Get("http://catfacts-api.appspot.com/api/facts")
-				if err != nil {
-					return err, err
-				}
-
-				decoded := struct {
-					Facts   []string `json:"facts"`
-					Success string   `json:"success"`
-				}{}
-
-				err = json.NewDecoder(resp.Body).Decode(&decoded)
-				if err != nil {
-					return err, err
-				}
-
-				fact := "No catfact :'("
-
-				if decoded.Success == "true" && len(decoded.Facts) > 0 {
-					fact = decoded.Facts[0]
-				}
-
-				return fact, nil
+				cf := Catfacts[rand.Intn(len(Catfacts))]
+				return cf, nil
 			},
 		},
 	},
