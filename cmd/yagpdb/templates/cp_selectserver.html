@@ -23,23 +23,40 @@
         </div>
         {{end}}
 
-        <h3>Version 021 <small>?? jul 2018</small></h3>
-        <p>I've set up a patreon for the bot <a href="https://www.patreon.com/yagpdb">here</a> (yes that is me)</p>
+        <h3>Version 0.21 <small>11th jul 2018</small></h3>
         <p>A mostly fix update which fixes most broken stuff in the bot and adds some fresh new functionality aswell</p>
+        <p>I've set up a Patreon for the bot <a href="https://www.patreon.com/yagpdb">here</a> (yes that is me)</p>
+        <p>Again, thanks to <b>Ryvid</b> for his contributions, i am extremely happy to receive contributions even if it's only documentation, documentation is one thing this bot lacks a lot and I'm not very good with</p>
+        <p>If you find any issues, or want anything added, be sure to <a href="https://github.com/jonas747/yagpdb/issues">open a issue about it</a>, notifying me in works and all but i often forget about small things like typos.</p>
         <ul>
             <li>Reddit feed has been redone, will now work in subreddits that is hidden from the frontpage</li>
-            <li>Reputation leaderboard have been fixed</li>
+            <li>Reputation leader-board have been fixed</li>
+            <li>Fixed the catfact command</li>
             <li>Added back - command to decrease rep</li>
-            <li>Increase reddit feed limit to 100 from 50</li>
-            <li>Increase youtube feed limit to 50 from 25, the youtube api is a bit more expensive, and seems more popular so im still keeping it a little low still</li>
+            <li>Increased reddit feed limit to 100 from 50</li>
+            <li>Increased youtube feed limit to 50 from 25, the youtube api is a bit more expensive, and seems more popular so im still keeping it a little low still</li>
             <li>Increased custom commands limit to 100 from 50, might get decreased if performance problems show up</li>
             <li>Limit autorole commands to 1000, they previously had no limit (running out of memory is bad)</li>
+            <li>Several backend improvement to make it more resistant to discord having issues</li>
             <li>Extended the custom templating system that custom commands and such uses
                 <ul>
+                    <li>Member is now available most places</li>
                     <li>Commands can now be executed on users joining from templates</li>
                     <li>Server and member is now available in most places</li>
-                    <li>Added the adjective function that returns a random adjective</li>
-                    <li>TODO - WRITE ABOUT MORE OF THE STUFF</li>
+                    <li>New functions:
+                        <ul>
+                            <li><code>adjective</code>: Returns a random adjective</li>
+                            <li><code>dict key value key value...</code>: Creates a dictioncary</li>
+                            <li><code>in list value</code>: Returns true if value is in list</li>
+                            <li><code>title string</code>: Capitalises the first letter of each word in string</li>
+                            <li><code>add x y</code>: returns x + y</li>
+                            <li><code>seq start stop</code>: creates a new array of integers, starting from start and ending at stop</li>
+                            <li><code>shuffle list</code>: shuffles the list</li>
+                            <li><code>joinStr str1 str2 str3 etc..</code>: joins several strings into one, usfull for executing</li>
+                            <li><code>randInt (stop, or start stop)</code>: returns a random integer between 0 and stop or start - stop</li>
+                        </ul>
+                    </li>
+                    <li><a href="/docs/Templates">See the templates docs page for more info</a></li>
                 </ul>
             </li>
         </ul>
