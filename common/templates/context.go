@@ -72,15 +72,18 @@ func (c *Context) setupContextFuncs() {
 }
 
 func (c *Context) setupBaseData() {
+
 	if c.GS != nil {
-		c.Data["Guild"] = c.GS.Guild
-		c.Data["Server"] = c.GS.Guild
-		c.Data["server"] = c.GS.Guild
+		guild := c.GS.LightCopy(false)
+		c.Data["Guild"] = guild
+		c.Data["Server"] = guild
+		c.Data["server"] = guild
 	}
 
 	if c.CS != nil {
-		c.Data["Channel"] = c.CS.Channel
-		c.Data["channel"] = c.CS.Channel
+		channel := c.CS.Copy(false, false)
+		c.Data["Channel"] = channel
+		c.Data["channel"] = channel
 	}
 
 	if c.Member != nil {
@@ -100,10 +103,12 @@ func (c *Context) Execute(redisClient *redis.Client, source string) (string, err
 
 	if c.GS != nil {
 		c.GS.RLock()
-		defer c.GS.RUnlock()
+	}
+	c.setupBaseData()
+	if c.GS != nil {
+		c.GS.RUnlock()
 	}
 
-	c.setupBaseData()
 	c.Redis = redisClient
 
 	tmpl := template.New("")
