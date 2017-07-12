@@ -51,9 +51,9 @@ type MemberFetchRequest struct {
 
 func (req *MemberFetchRequest) sendResult(result MemberFetchResult) {
 	for _, ch := range req.WaitingChannels {
-		go func() {
-			ch <- result
-		}()
+		go func(channel chan MemberFetchResult) {
+			channel <- result
+		}(ch)
 	}
 }
 
@@ -183,7 +183,11 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 	}
 
 	elem.sendResult(result)
-	m.fetching[guildID] = m.fetching[guildID][1:]
+	if len(m.fetching[guildID]) > 0 {
+		m.fetching[guildID] = m.fetching[guildID][1:]
+	} else {
+		logrus.WithField("guild", guildID).Error("Fetching size is 0?!?!?!")
+	}
 	m.Unlock()
 	return true
 }
