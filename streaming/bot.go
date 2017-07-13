@@ -267,7 +267,9 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 	ctx.Data["URL"] = p.Game.URL
 	ctx.Data["url"] = p.Game.URL
 
+	guild.RUnlock()
 	out, err := ctx.Execute(client, config.AnnounceMessage)
+	guild.RLock()
 	if err != nil {
 		log.WithError(err).WithField("guild", guild.ID()).Error("Failed executing template")
 		return
