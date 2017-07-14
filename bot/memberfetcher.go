@@ -11,8 +11,8 @@ import (
 
 var (
 	MemberFetcher = &memberFetcher{
-		fetching:    make(map[string][]*MemberFetchRequest),
-		notFetching: make(map[string][]*MemberFetchRequest),
+		fetching:    make(map[string]*MemberFetchGuildQueue),
+		notFetching: make(map[string]*MemberFetchGuildQueue),
 	}
 )
 
@@ -31,16 +31,23 @@ func GetMember(guildID, userID string) (*discordgo.Member, error) {
 	return result.Member, result.Err
 }
 
+// memberFetcher handles a per guild queue for fetching members
+// This is probably overkill as the root cause for the flood of member requests (state being flushed upon guilds becoming unavailble) was fixed
+// But it's here, for better or for worse
 type memberFetcher struct {
 	sync.RWMutex
 
 	// Queue of guilds to user id's to fetch
-	fetching    map[string][]*MemberFetchRequest
-	notFetching map[string][]*MemberFetchRequest
+	fetching    map[string]*MemberFetchGuildQueue
+	notFetching map[string]*MemberFetchGuildQueue
 
 	// Signal to run immediately
 	RunChan chan bool
 	Stop    chan bool
+}
+
+type MemberFetchGuildQueue struct {
+	Queue []*MemberFetchRequest
 }
 
 type MemberFetchRequest struct {
@@ -66,31 +73,44 @@ func (m *memberFetcher) RequestMember(guildID, userID string) <-chan MemberFetch
 	m.Lock()
 
 	var req *MemberFetchRequest
-	var q []*MemberFetchRequest
+	var q *MemberFetchGuildQueue
 
-	// Check to see if this member is already requested
+	// Check to see if this guild is already in the queue
 	q, ok := m.notFetching[guildID]
 	if !ok {
 		q, ok = m.fetching[guildID]
 	}
 
 	if ok {
-		for _, elem := range q {
+		// The guild's queue already exist
+		for _, elem := range q.Queue {
 			if elem.Member == userID {
+				// The member is already queued up
 				req = elem
+				break
 			}
 		}
 	}
 
-	// Not requested already, queue it up
+	// Request is nil, member was not already requests before
 	if req == nil {
 		req = &MemberFetchRequest{
 			Member: userID,
 			Guild:  guildID,
 		}
-		m.notFetching[guildID] = append(m.notFetching[guildID], req)
+
+		if q == nil {
+			// Qeueu is nil, this guild does not currently have a queue, create one
+			q = &MemberFetchGuildQueue{
+				Queue: make([]*MemberFetchRequest, 0, 1),
+			}
+			m.notFetching[guildID] = q
+		}
+
+		q.Queue = append(q.Queue, req)
 	}
 
+	// Add the result channel to the request waiting channel
 	resultChan := make(chan MemberFetchResult)
 	req.WaitingChannels = append(req.WaitingChannels, resultChan)
 	m.Unlock()
@@ -132,14 +152,15 @@ func (m *memberFetcher) runGuild(guildID string) {
 func (m *memberFetcher) next(guildID string) (more bool) {
 	m.Lock()
 
-	if len(m.fetching[guildID]) < 1 {
+	if len(m.fetching[guildID].Queue) < 1 {
 		// Done processing this guild queue
 		delete(m.fetching, guildID)
 		m.Unlock()
 		return false
 	}
 
-	elem := m.fetching[guildID][0]
+	q := m.fetching[guildID]
+	elem := q.Queue[0]
 
 	m.Unlock()
 
@@ -154,7 +175,7 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 				Member: member,
 			}
 			elem.sendResult(result)
-			m.fetching[guildID] = m.fetching[guildID][1:]
+			q.Queue = q.Queue[1:]
 			m.Unlock()
 			return true
 		}
@@ -183,11 +204,8 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 	}
 
 	elem.sendResult(result)
-	if len(m.fetching[guildID]) > 0 {
-		m.fetching[guildID] = m.fetching[guildID][1:]
-	} else {
-		logrus.WithField("guild", guildID).Error("Fetching size is 0?!?!?!")
-	}
+	q.Queue = q.Queue[1:]
+
 	m.Unlock()
 	return true
 }
