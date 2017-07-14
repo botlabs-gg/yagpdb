@@ -68,8 +68,8 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 * `<@{{"{{"}}.User.ID{{"}}"}}>` Outputs a mention to the user with the user ID, doesn't output an ID
 * `{{"{{"}}if in .Member.Roles "12312"{{"}}"}} This will only show if the member has the role with id "12312"{{"{{"}}end{{"}}"}}`
 * `{{if gt (len .Args) 1}} {{index .Args 1}} {{end}}` Will display your first input if input was given 
-* `{{if eq .Channel.ID “#######”}}` Will only show if channel ID matches
-* `{{if nq  .User.ID “#######”}}` Will ignore if user ID ##### uses command
+* `{{if eq .Channel.ID “#######”}}` Will only show in Channel #####
+* `{{if ne  .User.ID “#######”}}` Will ignore if user ID ##### uses command
 * `{{$d := randInt 10}}` Store the random int into variable $d 
 
 ### How to get a role ID
