@@ -92,5 +92,28 @@
     <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
+<script>
+$(function(){
+    var idInput = $("#yt-channel-id");
+    var userInput = $("#yt-channel-user");
+
+    userInput.on("input", function(arg){
+        if (userInput.val().length > 0) {
+            idInput.attr("disabled", true);
+        }else{
+            idInput.attr("disabled", false);
+        }
+    })
+
+
+    idInput.on("input", function(arg){
+        if (idInput.val().length > 0) {
+            userInput.attr("disabled", true);
+        }else{
+            userInput.attr("disabled", false);
+        }
+    })
+})
+</script>
 {{template "cp_footer" .}}
 {{end}}
