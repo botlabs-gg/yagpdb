@@ -190,15 +190,15 @@ var _escData = map[string]*_escFile{
 
 	"/templates/docs.ghtml": {
 		local:   "templates/docs.ghtml",
-		size:    639,
-		modtime: 1499120953,
+		size:    683,
+		modtime: 1500392475,
 		compressed: `
-H4sIAAAAAAAA/1xQz46eIBA/16eY0jOSr2eXy+656Rs0UxmVLA4G0U1DfPcGPzTkOzEZ5vc3JUODZQJh
-fL9Kxl0cR9M5qxsAgA5hCjS8iR9CdxZ6h+v6JgaEAaXlwed3+BK6U1bDh++3mThitJ6hWxfkCoEh+PMy
-73WnsChs7jpi3IFxlyv1no10tJMTuvmWz1IKyCNB++H73zjSehwn/KS43N4LrCils/wpSgyVU6qU2l84
-03EIfY+3oZNAZcoiTGyKWPddSlDtq0eQsmRRm9PNE3zhmpeGFxwpV5xSpHlxGAlEv/yZCI2ANndv7H7Z
-Pxt7Ulfb3jvpRvn4KSrH0+P6zgoy81E4871vIRDHUtwdd3pU6Ip9xvBp/BfLv978qxRSyt2/e47EsW5f
-GbuXszKX5zXj4H2k8ExZ6vkfAAD//68Y2Bt/AgAA
+H4sIAAAAAAAA/1xRsY7cIBCt46+YkJpFm9pHc9ekia5LGc2ZwYuOHSyMvYqQ/z3CxpZvGxvBe2/ee5Oz
+IeuYQJjQjZJxFsvStN7pBgCgRbhFsi/ih9Ctg87jOL4Ii2BROrah/O1D6FY5DW+hm+7ECZMLDO04IO8M
+jx/kYf3KB0Z23Av959d7qwpKf8FaBIwxrKrbq8LqZvI7iHEGxlmO1AU20tNMXujmW4HlHJF7gstb6N6x
+p3FZVvoqsSc7LvAkKb3jT1Ejq9KIyvnyG++0LEIfx8PQKqCKZB1MbOqw9ruUoC7PHkHKmkVNXjcbeec1
+T9sYsKeyjpwT3QePiUB0w98boRFwKXsybt7tr41t0qfbLnjpe3n9KU6Ob9f9uUyQRY/imu91ipE41eKO
+uLfriX1Sv2P8NOHB8iOYf6cJOZfuXwMn4nRuXxk3V1g9199zRhtCorilrPX8DwAA//8f5cgSqwIAAA==
 `,
 	},
 
@@ -252,7 +252,7 @@ AytOTwIAAA==
 	"/templates/templates.md": {
 		local:   "templates/templates.md",
 		size:    3665,
-		modtime: 1500392200,
+		modtime: 1500392276,
 		compressed: `
 H4sIAAAAAAAA/5RX23LbNhB951ecsTMTu7WVSG5fMm0msuWkanOb2G2nM30wTKxIxCQgA6Bk1dJMPqT9
 uXxJZwFSomg7bfwg0dw9B2cXi8XqPCdkBp7KaSE8gXSmNEE5VI4kJsbij+Gr96Pjxw5p5bwpkZqyFFo6
