@@ -34,7 +34,7 @@ vid3 was published after the latest vidoe but still appears at the bottom. this 
 
 In the future i'll do a hybrid mode with search, those super late published videos however will show up in discord super late, i cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind. 
 
-###Storage layout:
+### Storage layout:
 
 Postgres tables: 
 youtube_guild_subs - postgres
