@@ -114,6 +114,11 @@ form table td{
   max-height: 150px;
 }
 
+#nav-footer-overlay{
+  position: fixed;
+  bottom: 200px;
+  left: 5px;
+}
 
 .markdown-body .anchor {
     /*position: absolute;*/
