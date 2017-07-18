@@ -86,7 +86,7 @@ var cmds = []commandsystem.CommandHandler{
 			RequiredArgs: 1,
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
-				&commandsystem.ArgDef{Name: "Num", Type: commandsystem.ArgumentNumber, Default: float64(-1)},
+				&commandsystem.ArgDef{Name: "Num", Type: commandsystem.ArgumentNumber, Default: float64(1)},
 			},
 			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
 				parsed.Args[1].Parsed = -parsed.Args[1].Parsed.(float64)
@@ -232,13 +232,15 @@ func CmdGiveRep(parsed *commandsystem.ExecData) (interface{}, error) {
 	}
 
 	actionStr := ""
+	targetStr := "to"
 	if amount > 0 {
 		actionStr = "Gave"
 	} else {
 		actionStr = "Took away"
 		amount = -amount
+		targetStr = "from"
 	}
 
-	msg := fmt.Sprintf("%s `%d` %s from **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, target.Username, newRank, newScore)
+	msg := fmt.Sprintf("%s `%d` %s %s **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, targetStr, target.Username, newRank, newScore)
 	return msg, nil
 }
