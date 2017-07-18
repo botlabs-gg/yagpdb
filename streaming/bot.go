@@ -12,6 +12,8 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 )
 
+func KeyCurrentlyStreaming(gID string) string { return "currently_streaming:" + gID }
+
 func (p *Plugin) InitBot() {
 
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(bot.RedisWrapper(HandleGuildCreate)), eventsystem.EventGuildCreate)
@@ -218,7 +220,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 		}
 
 		// Was already marked as streaming before if we added 0 elements
-		if num, _ := client.Cmd("SADD", "currenly_streaming:"+gs.ID(), member.User.ID).Int(); num == 0 {
+		if num, _ := client.Cmd("SADD", KeyCurrentlyStreaming(gs.ID()), member.User.ID).Int(); num == 0 {
 			return nil
 		}
 
@@ -228,7 +230,11 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 		}
 
 		if config.GiveRole != "" {
-			GiveStreamingRole(member, config.GiveRole, gs.Guild)
+			err := GiveStreamingRole(member, config.GiveRole, gs.Guild)
+			if err != nil {
+				log.WithError(err).WithField("guild", gs.ID()).WithField("user", member.User.ID).Error("Failed adding streaming role")
+				client.Cmd("SREM", KeyCurrentlyStreaming(gs.ID()), member.User.ID)
+			}
 		}
 
 	} else {
@@ -241,7 +247,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 
 func RemoveStreaming(client *redis.Client, config *Config, guildID string, userID string, member *discordgo.Member) {
 	// Was not streaming before if we removed 0 elements
-	if num, _ := client.Cmd("SREM", "currenly_streaming:"+guildID, userID).Int(); num == 0 {
+	if num, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); num == 0 {
 		return
 	}
 
@@ -278,7 +284,7 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 	common.BotSession.ChannelMessageSend(config.AnnounceChannel, common.EscapeEveryoneMention(out))
 }
 
-func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) {
+func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) error {
 	// Ensure the role exists
 	found := false
 	for _, v := range guild.Roles {
@@ -288,13 +294,11 @@ func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.G
 		}
 	}
 	if !found {
-		return
+		return nil
 	}
 
 	err := common.AddRole(member, role, guild.ID)
-	if err != nil {
-		log.WithError(err).WithField("guild", guild.ID).WithField("user", member.User.ID).Error("Failed adding streaming role")
-	}
+	return err
 }
 
 func RemoveStreamingRole(member *discordgo.Member, role string, guildID string) {
