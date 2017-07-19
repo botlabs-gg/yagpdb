@@ -9,6 +9,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/pkg/errors"
@@ -228,6 +229,47 @@ func CanModifyRep(conf *models.ReputationConfig, sender, receiver *discordgo.Mem
 	}
 
 	return nil
+}
+
+func IsAdmin(gs *dstate.GuildState, member *discordgo.Member, config *models.ReputationConfig) bool {
+	memberPerms, _ := gs.MemberPermissions(false, gs.ID(), member.User.ID)
+
+	if memberPerms&discordgo.PermissionManageServer != 0 {
+		return true
+	}
+
+	if config.AdminRole.String != "" {
+		if common.FindStringSlice(member.Roles, config.AdminRole.String) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func SetRep(gid int64, senderID, userID int64, points int64) error {
+	user := &models.ReputationUser{
+		GuildID: gid,
+		UserID:  userID,
+		Points:  points,
+	}
+
+	err := user.UpsertG(true, []string{"guild_id", "user_id"}, []string{"points"})
+	if err != nil {
+		return err
+	}
+
+	// Insert log entry
+	entry := &models.ReputationLog{
+		GuildID:        gid,
+		SenderID:       senderID,
+		ReceiverID:     userID,
+		SetFixedAmount: true,
+		Amount:         points,
+	}
+
+	err = entry.InsertG()
+	return errors.WithMessage(err, "SetRep log entry.Insert")
 }
 
 // CheckSetCooldown checks and updates the reputation cooldown of a user,

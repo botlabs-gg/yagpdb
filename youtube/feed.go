@@ -130,6 +130,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 
 	lastVidID, _ := client.Cmd("GET", KeyLastVidID(channel)).Str()
 
+	// latestVid is used to set the last vid id and time
 	var latestVid *youtube.PlaylistItem
 
 	first := true
@@ -157,7 +158,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 			return err
 		}
 		if lv != nil {
-			// Don't need to check this vids error since it was already checked
+			// compare lv, the latest video in the response, and latestVid, the current latest video tracked for this channel
 			parsedPublishedAtLv, _ := time.Parse(time.RFC3339, lv.Snippet.PublishedAt)
 			parsedPublishedOld, err := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
 			if err != nil {

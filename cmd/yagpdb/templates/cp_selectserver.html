@@ -23,11 +23,26 @@
         </div>
         {{end}}
 
-        <h3>Version 0.21 <small>11th jul 2018</small></h3>
+        <h3>Version 0.21.0->0.21.5 <small>19th jul 2017</small></h3>
+        <p>I've pushed a couple bugfix updates to the bot since the last major update</p>
+        <p>If you come across any weird behaviour or issues please let me know as soon as possible by joining the support server above or <a href="https://github.com/jonas747/yagpdb/issues">opening an issue.</a></p>
+        <ul>
+            <li>Fix deadlocks resulting form the new member fetching queue, if your control panel was inaccessible and some bot funcionality was not working this may have been the cause</li>
+            <li>Fix deadlocks resulting from new central templating system, if your custom command used exec or you used the streaming notifications plugin you may have been affected and you may have been unable to access the control panel and certain commands</li>
+            <li>Fix the new member fetcher sometimes attempting to fetch the same member twice</li> 
+            <li><b>0.21.4</b>: Fix some wrong behaviour in reputation, the takerep command specifically</li> 
+            <li><b>0.21.4</b>: More updates to the documentation pages, thanks <b>Ryvid</b> and <b>timcampy118</b> for the contributions</li> 
+            <li><b>0.21.4</b>: Made the youtube page slightly more user friendly</li> 
+            <li><b>0.21.4</b>: Fixed a bug in the streaming plugin where it wouldn't retry giving the streaming role after the first error</li> 
+            <li><b>0.21.5</b>: Added <code>setrep</code> command which i forgot about last update.</li> 
+        </ul>
+
+        <h3>Version 0.21 <small>11th jul 2017</small></h3>
         <p>A mostly fix update which fixes most broken stuff in the bot and adds some fresh new functionality aswell</p>
         <p>I've set up a Patreon for the bot <a href="https://www.patreon.com/yagpdb">here</a> (yes that is me)</p>
-        <p>Again, thanks to <b>Ryvid</b> for his contributions, i am extremely happy to receive contributions even if it's only documentation, documentation is one thing this bot lacks a lot and I'm not very good with</p>
-        <p>If you find any issues, or want anything added, be sure to <a href="https://github.com/jonas747/yagpdb/issues">open a issue about it</a>, notifying me in works and all but i often forget about small things like typos.</p>
+        <p>Again, thanks to <b>Ryvid</b> for his contributions, i am extremely happy to receive contributions even if it's only documentation, documentation is one thing that this bot lacks a lot and that I'm not very good at</p>
+        <p>If you find any issues, or want anything added, be sure to <a href="https://github.com/jonas747/yagpdb/issues">open a issue about it</a>, notifying me in person works and all but i often forget about small things like typos.</p>
+        <p>Changelog:</p>
         <ul>
             <li>Reddit feed has been redone, will now work in subreddits that is hidden from the frontpage</li>
             <li>Reputation leader-board have been fixed</li>

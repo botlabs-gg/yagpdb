@@ -25,11 +25,17 @@
                     For any questions join the support server above</p>
                     <div class="form-group">
                         <label for="yt-channel-id">Youtube Channel ID</label>
-                        <input type="text" class="form-control" id="yt-channel-id" name="YoutubeChannelID">
+                        <div class="input-group">
+                            <span class="input-group-addon">youtube.com/channel/</span>
+                            <input type="text" class="form-control" id="yt-channel-id" name="YoutubeChannelID">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="yt-channel-user">Youtube Username</label>
-                        <input type="text" class="form-control" id="yt-channel-user" name="YoutubeChannelUser">
+                        <div class="input-group">
+                            <span class="input-group-addon">youtube.com/user/</span>
+                            <input type="text" class="form-control" id="yt-channel-user" name="YoutubeChannelUser">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="channel">Discord Channel</label>
@@ -86,7 +92,28 @@
     <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
+<script>
+$(function(){
+    var idInput = $("#yt-channel-id");
+    var userInput = $("#yt-channel-user");
 
+    userInput.on("input", function(arg){
+        if (userInput.val().length > 0) {
+            idInput.attr("disabled", true);
+        }else{
+            idInput.attr("disabled", false);
+        }
+    })
+
+
+    idInput.on("input", function(arg){
+        if (idInput.val().length > 0) {
+            userInput.attr("disabled", true);
+        }else{
+            userInput.attr("disabled", false);
+        }
+    })
+})
+</script>
 {{template "cp_footer" .}}
-
 {{end}}

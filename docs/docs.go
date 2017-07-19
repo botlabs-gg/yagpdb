@@ -85,5 +85,6 @@ func (p *Page) Render() []byte {
 	p.Tmpl.Execute(&buf, nil)
 
 	output := github_flavored_markdown.Markdown(buf.Bytes())
+	output = []byte(strings.Replace(string(output), "<table>", "<table class='table table-striped table-hover'>", -1))
 	return output
 }
