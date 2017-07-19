@@ -111,6 +111,40 @@ var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		Category: commands.CategoryFun,
 		Command: &commandsystem.Command{
+			Name:         "SetRep",
+			Description:  "Sets someone's rep, this is an admin command and bypasses cooldowns and other restrictions.",
+			RequiredArgs: 2,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
+				&commandsystem.ArgDef{Name: "Num", Type: commandsystem.ArgumentNumber},
+			},
+			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+				conf, err := GetConfig(parsed.Guild.ID())
+				if err != nil {
+					return "An error occured while finding the server config", err
+				}
+
+				parsed.Guild.RLock()
+				member := parsed.Guild.Member(false, parsed.Message.Author.ID)
+
+				if !IsAdmin(parsed.Guild, member.Member, conf) {
+					parsed.Guild.RUnlock()
+					return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
+				}
+				parsed.Guild.RUnlock()
+
+				err = SetRep(common.MustParseInt(parsed.Guild.ID()), common.MustParseInt(member.ID()), common.MustParseInt(parsed.Args[0].DiscordUser().ID), int64(parsed.Args[1].Int()))
+				if err != nil {
+					return "Failed setting rep, contact bot owner", err
+				}
+
+				return fmt.Sprintf("Set **%s** %s to `%d`", parsed.Args[0].DiscordUser().Username, conf.PointsName, parsed.Args[1].Int()), nil
+			},
+		},
+	},
+	&commands.CustomCommand{
+		Category: commands.CategoryFun,
+		Command: &commandsystem.Command{
 			Name:        "Rep",
 			Description: "Shows yours or the specified users current rep and rank",
 			Arguments: []*commandsystem.ArgDef{
