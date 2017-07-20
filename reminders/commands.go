@@ -178,7 +178,11 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
 		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
-			out += fmt.Sprintf("**%d**: <#%s>: %q - %s from now (%s)\n", v.ID, cs.ID(), v.Message, timeFromNow, tStr)
+			channel := "Unknown channel"
+			if cs != nil {
+				channel = "<#" + cs.ID() + ">"
+			}
+			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
 			member := cs.Guild.MemberCopy(true, v.UserID, false)
 			username := "Unknown user"
