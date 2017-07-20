@@ -46,9 +46,10 @@ func init() {
 
 	Templates = template.New("")
 	Templates = Templates.Funcs(template.FuncMap{
-		"mTemplate":  mTemplate,
-		"hasPerm":    hasPerm,
-		"formatTime": prettyTime,
+		"mTemplate":   mTemplate,
+		"hasPerm":     hasPerm,
+		"formatTime":  prettyTime,
+		"roleOptions": tmplRoleDropdown,
 	})
 
 	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)

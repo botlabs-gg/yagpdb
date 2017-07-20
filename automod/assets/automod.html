@@ -228,12 +228,10 @@
 <p class="help-block">A warning and message deletion will always be issued if the rule is broken.</p>
 
 
-{{$ignoreRole := or .Rule.IgnoreRole ""}}
 <div class="form-group">
     <label for="IgnoreRole">Ignore role</label>
     <select id="channel" class="form-control" name="{{.Name}}.IgnoreRole">
-        <option value="" {{if eq $ignoreRole ""}} selected{{end}}>None</option>
-        {{mTemplate "role_options" "Roles" .Guild.Roles "Selected" $ignoreRole}}
+        {{roleOptions .Guild.Roles nil .Rule.IgnoreRole "None"}}
     </select>
 </div>
 

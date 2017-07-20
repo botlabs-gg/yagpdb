@@ -143,19 +143,6 @@ Selections - List of selections
     {{end}}{{end}}
 {{end}}
 
-{{/*
-Argumens
-Roles - list of roles
-Selected - id of the selected channel
-Highest - the highest role the bot currently has, roles below this will be set to disabled
-*/}}
-{{define "role_options"}}
-    {{$selected := or .Selected ""}}
-    {{$highest := or .Highest}}
-    {{$n := len .Roles}}
-    {{range $i, $v := .Roles}}{{if and (ne (add $i 1) $n) (not .Managed)}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if $highest}}{{if roleAbove $highest .}} >{{.Name}}{{else}} disabled> {{.Name}} (Role is above bot) {{end}}{{else}}>{{.Name}}{{end}}</option>{{end}}{{end}}
-{{end}}
-
 {{/*Help block for templating*/}}
 {{define "template_help"}}
 <p>To include the user or server in the message you can use the template data included, the templating engine used is go's text/template<br/>

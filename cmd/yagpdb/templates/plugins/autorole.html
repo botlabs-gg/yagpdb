@@ -22,8 +22,7 @@
                     <div class="form-group">
                         <label for="autorole-role">Automatically assign members this role</label>
                         <select id="autorole-role" class="form-control" name="General.Role">
-                            <option value="" {{if eq .Autorole.Role ""}} selected{{end}}>None (Disabled)</option>
-                            {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" .Autorole.Role "Highest" .HighestRole}}
+                            {{roleOptions .ActiveGuild.Roles .HighestRole .Autorole.Role "None (disabled)"}}
                         </select>
                     </div>
                     <div class="form-group">
@@ -58,7 +57,7 @@
                             <td>
                                 <div class="form-group">
                                     <select class="form-control" name="Commands.{{$k}}.Role">
-                                        {{mTemplate "role_options" "Roles" $roles "Selected" .Role "Highest" $highest}}
+                                        {{roleOptions $roles $highest .Role "None (disabled)"}}
                                     </select>
                                 </div>
                             </td> 
