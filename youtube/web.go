@@ -63,7 +63,7 @@ func HandleYoutube(w http.ResponseWriter, r *http.Request) (web.TemplateData, er
 	}
 
 	templateData["Subs"] = subs
-	templateData["VisibleURL"] = "/cp/" + ag.ID + "/youtube"
+	templateData["VisibleURL"] = "/manage/" + ag.ID + "/youtube"
 
 	return templateData, nil
 }

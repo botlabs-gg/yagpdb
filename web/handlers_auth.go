@@ -87,7 +87,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 
 	redirUrl, err := redisClient.Cmd("GET", "csrf_redir:"+state).Str()
 	if err != nil {
-		redirUrl = "/cp"
+		redirUrl = "/manage"
 	} else {
 		redisClient.Cmd("DEL", "csrf_redir:"+state)
 	}

@@ -24,7 +24,7 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="page-header">
-            <form action="/cp/{{.ActiveGuild.ID}}/logging/fulldelete" method="post">
+            <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete" method="post">
                 <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
                 <h1>Channel logs {{.ActiveGuild.Name}} <small><a href="/">by YAGPDB.xyz</a></small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h1>
             </form>
@@ -91,7 +91,7 @@ function deleteMessage(msg){
     req.addEventListener("error", function(){
         alert("An error occured");
     });
-    req.open("POST", "https://{{.Host}}/cp/{{.ActiveGuild.ID}}/logging/msgdelete");
+    req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete");
 
     var data = new FormData();
     data.set("LogID", logsID);

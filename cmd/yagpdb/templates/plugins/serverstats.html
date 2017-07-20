@@ -15,7 +15,7 @@
             <a class="btn btn-primary" {{if .Config.Public}} href="/public/{{.ActiveGuild.ID}}/stats" {{else}} disabled {{end}}>Public link (only works if stats are set to public)</a>
             <div class="collapse" id="stats-settings-collapse">
                 <div class="well well-sm">
-                    <form method="post" action="/cp/{{.ActiveGuild.ID}}/stats/settings">
+                    <form method="post" action="/manage/{{.ActiveGuild.ID}}/stats/settings">
                         <div class="checkbox">
                             <label>
                                 <input type="checkbox" name="Public" {{if .Config.Public}} checked{{end}}> Publicly accessible
@@ -175,7 +175,7 @@
             {{if .Public}}
             createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
             {{else}}
-            createRequest("GET", "/cp/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
+            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
             {{end}}
         }
         statsInterval = setInterval(fetchStats, 10000);

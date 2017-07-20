@@ -191,7 +191,7 @@ var _escData = map[string]*_escFile{
 	"/templates/docs.ghtml": {
 		local:   "templates/docs.ghtml",
 		size:    683,
-		modtime: 1500392475,
+		modtime: 1500480479,
 		compressed: `
 H4sIAAAAAAAA/1xRsY7cIBCt46+YkJpFm9pHc9ekia5LGc2ZwYuOHSyMvYqQ/z3CxpZvGxvBe2/ee5Oz
 IeuYQJjQjZJxFsvStN7pBgCgRbhFsi/ih9Ctg87jOL4Ii2BROrah/O1D6FY5DW+hm+7ECZMLDO04IO8M
@@ -252,7 +252,7 @@ AytOTwIAAA==
 	"/templates/templates.md": {
 		local:   "templates/templates.md",
 		size:    3665,
-		modtime: 1500392276,
+		modtime: 1500480479,
 		compressed: `
 H4sIAAAAAAAA/5RX23LbNhB951ecsTMTu7WVSG5fMm0msuWkanOb2G2nM30wTKxIxCQgA6Bk1dJMPqT9
 uXxJZwFSomg7bfwg0dw9B2cXi8XqPCdkBp7KaSE8gXSmNEE5VI4kJsbij+Gr96Pjxw5p5bwpkZqyFFo6

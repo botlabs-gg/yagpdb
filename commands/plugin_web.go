@@ -40,7 +40,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) interface{} {
 func HandlePostGeneral(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/commands/settings/"
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 
 	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, strings.TrimSpace(r.FormValue("prefix"))).Err
@@ -59,7 +59,7 @@ func HandlePostGeneral(w http.ResponseWriter, r *http.Request) interface{} {
 func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/commands/settings"
 
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 

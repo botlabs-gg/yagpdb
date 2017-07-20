@@ -19,7 +19,7 @@
             </div>
             <div class="panel-body">
                 <div class="col-lg-12">
-                    <form class="form-horizontal" method="post" action="/cp/{{.ActiveGuild.ID}}/customcommands">
+                    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands">
                         <div class="form-group">
                             <label for="trigger_type">Trigger type</label>
                             <select id="trigger_type" class="form-control" name="type">
@@ -54,11 +54,11 @@
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
             {{$guild := .ActiveGuild.ID}}
             {{range .CustomCommands}}
-            <form class="form-horizontal" method="post" action="/cp/{{$guild}}/customcommands/{{.ID}}/update">
+            <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update">
                 <div class="panel panel-default">
                     <div class="panel-heading clearfix" role="tab" id="headingOne">
                         <div class="pull-right">
-                            <button type="submit" class="btn btn-danger btn-sm" formaction="/cp/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
+                            <button type="submit" class="btn btn-danger btn-sm" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
                         </div>
                         <h4 class="panel-title">
 
@@ -98,7 +98,7 @@
                                 </div>
                             </div>
                                 <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
-                            <button type="submit" class="btn btn-success" formaction="/cp/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
+                            <button type="submit" class="btn btn-success" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
                         </div>
                     </div>
                     </div>

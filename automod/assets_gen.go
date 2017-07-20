@@ -191,7 +191,7 @@ var _escData = map[string]*_escFile{
 	"/assets/automod.html": {
 		local:   "assets/automod.html",
 		size:    12849,
-		modtime: 1490711686,
+		modtime: 1499120956,
 		compressed: `
 H4sIAAAAAAAA/+xab2/bOJN/n08xj7bAkwKx/aTXxQKFIyBps0WwSVrU2S3uVUFJY4sbitSRVNzA8Hc/
 DEnJkiW7+dP2gMPmRWyTQ84fcmZ+M9JqleGcS4QoLb+wyqpCZdF6fXCwWlksSsGsn8qRZRGM1+uDacbv
@@ -252,7 +252,7 @@ vTMZ1vDtK+F41sVVl7h6yFtqvbpsuPr63wAAAP//0zibOzEyAAA=
 	"/assets/help-page.md": {
 		local:   "assets/help-page.md",
 		size:    9,
-		modtime: 1490711730,
+		modtime: 1499120952,
 		compressed: `
 H4sIAAAAAAAA/9JVCPF38VfQVQAEAAD//zTsWAgJAAAA
 `,

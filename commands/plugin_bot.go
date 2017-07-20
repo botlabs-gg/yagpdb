@@ -170,7 +170,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				}
 
 				if target == "" {
-					footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n**Control Panel:** https://yagpdb.xyz/cp\n"
+					footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n**Control Panel:** https://yagpdb.xyz/manage\n"
 				}
 
 				channelId := data.Message.ChannelID
@@ -369,7 +369,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 This bot focuses on being configurable and therefore is one of the more advanced bots.
 It can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.
 I'm currently being ran and developed by jonas747#3124 (105487308693757952) but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
-Control panel: <https://yagpdb.xyz/cp>
+Control panel: <https://yagpdb.xyz/manage>
 				`
 				return info, nil
 			},

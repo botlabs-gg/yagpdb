@@ -191,7 +191,7 @@ var _escData = map[string]*_escFile{
 	"/assets/leaderboard.html": {
 		local:   "assets/leaderboard.html",
 		size:    2477,
-		modtime: 1497883795,
+		modtime: 1499541168,
 		compressed: `
 H4sIAAAAAAAA/5RWUZPbNBB+96/Y6g7Obs52wgOFS2wo0OnAlMJcyxPDdBRrnYiTJSMpyYWM/ztjyYmd
 NCm9PNiSdr9P8u63q+x2DEsuEUhRf9BYryy1XMkPAilDPVdUM9I0QbDbWaxqQa33XCJlBJKmCWbGbgWC
@@ -216,7 +216,7 @@ vMd/AQAA//9vp6r4rQkAAA==
 	"/assets/schema.sql": {
 		local:   "assets/schema.sql",
 		size:    1301,
-		modtime: 1499113534,
+		modtime: 1500479242,
 		compressed: `
 H4sIAAAAAAAA/5STT4+bMBDFz/anmGOQWGmlqidOtOuqqAlEhKq7vSADXmrV2Ftjtvn4Ff+CCaQiOQXm
 5+d5b4aHB3iKoyMk/qc9geALkOfglJxAs7fGUMOVTHMlX3lZexh/jomfkIkNo+Q2DzuMyoaLIuUFDL+M
@@ -232,7 +232,7 @@ SRUFAAA=
 	"/assets/settings.html": {
 		local:   "assets/settings.html",
 		size:    5653,
-		modtime: 1497883789,
+		modtime: 1499120954,
 		compressed: `
 H4sIAAAAAAAA/9RYS2/jNhC+51dMeelJEtJDT7aA9IFFgW5QOL0HlDSSiPChpSjHhqD/XpCibNmRZXdr
 p8nJImc4j48fh/S0bYY5kwgkrZ41Vo2hhin5XKMxTBY16bq7u7Y1KCpOTa9WIs0IhF13t8jYGlJO63pJ

@@ -19,7 +19,7 @@
             </div>
             <div class="panel-body">
                 <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter"
-                <form class="form-inline" method="post" action="/cp/{{.ActiveGuild.ID}}/reddit">
+                <form class="form-inline" method="post" action="/manage/{{.ActiveGuild.ID}}/reddit">
                     <div class="form-group">
                         <label for="subreddit">Subreddit</label>
                         <input type="text" class="form-control" id="subreddit" name="subreddit" placeholder="howdoismell">
@@ -43,7 +43,7 @@
                 {{$channels := .ActiveGuild.Channels}}
                 {{range .RedditConfig}}
                 <div class="well well-sm">
-                    <form class="form-inline" method="post" action="/cp/{{$guild}}/reddit/{{.ID}}/update">
+                    <form class="form-inline" method="post" action="/manage/{{$guild}}/reddit/{{.ID}}/update">
                         <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
                         <div class="form-group">
                             <label for="subreddit">Subreddit</label>
@@ -57,8 +57,8 @@
                             </select>
                         </div>
                         <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
-                        <button type="submit" class="btn btn-success" formaction="/cp/{{$guild}}/reddit/{{.ID}}/update">Save</button>
-                        <button type="submit" class="btn btn-danger" formaction="/cp/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                        <button type="submit" class="btn btn-success" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update">Save</button>
+                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
                     </form>
                 </div>
                 {{end}}

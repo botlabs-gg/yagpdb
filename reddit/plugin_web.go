@@ -54,7 +54,7 @@ func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-		templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reddit/"
+		templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/reddit/"
 
 		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+activeGuild.ID)
 		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
