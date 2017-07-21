@@ -222,7 +222,7 @@ NUbBnwEAAP//MPcbGHUYAAA=
 	"/assets/log_view.html": {
 		local:   "assets/log_view.html",
 		size:    5244,
-		modtime: 1500566394,
+		modtime: 1500574201,
 		compressed: `
 H4sIAAAAAAAA/6xYeW/cuBX/fz7FC+PCUmJJ4xS9PMfWR7trINsumqToYrtIOOKThghFaklqxl5B370g
 dYxGsR23aP7IUHwHH3/vpOuaYcYlAimrjeDpR4N6h/qjULkhTTOb1bXFohTUIpC0/LhFygjETTNbGnsv

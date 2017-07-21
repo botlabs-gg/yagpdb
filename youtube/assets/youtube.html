@@ -40,7 +40,7 @@
                     <div class="form-group">
                         <label for="channel">Discord Channel</label>
                         <select id="channel" class="form-control" name="DiscordChannel">
-                            {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" "0"}}
+                            {{textChannelOptions .ActiveGuild.Channels}}
                         </select>
                     </div>
                     <div class="checkbox">
@@ -72,7 +72,7 @@
                         <div class="form-group">
                             <label for="channel">Discord Channel</label>
                             <select id="channel" class="form-control" name="DiscordChannel">
-                                {{mTemplate "channel_options" "Channels" $channels "Selected" .ChannelID}}
+                                {{textChannelOptions $channels .ChannelID}}
                             </select>
                         </div>
                         <div class="checkbox">

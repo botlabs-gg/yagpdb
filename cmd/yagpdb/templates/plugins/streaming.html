@@ -30,9 +30,7 @@
                             <div class="form-group">
                                 <label>Announce Channel</label>
                                 <select class="form-control" name="announce_channel">
-                                    {{$selected := .StreamingConfig.AnnounceChannel}}
-                                    <option value="" {{if eq $selected ""}} selected{{end}}>None (Disable announcements)</option>
-                                    {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
+                                    {{textChannelOptions .ActiveGuild.Channels .StreamingConfig.AnnounceChannel "None (disable announcements)"}}
                                 </select>
                             </div>
                             <div class="form-group">

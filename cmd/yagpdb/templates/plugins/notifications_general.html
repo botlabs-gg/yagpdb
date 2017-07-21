@@ -26,9 +26,7 @@
                             <div class="form-group">
                                 <label>Channel</label>
                                 <select class="form-control" name="join_server_channel">
-                                    {{$selected := .NotifyConfig.JoinServerChannel}}
-                                    <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                    {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
+                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.JoinServerChannel "Default channel"}}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -52,9 +50,7 @@
                             <div class="form-group">
                                 <label>Channel</label>
                                 <select class="form-control" name="leave_channel">
-                                    {{$selected := .NotifyConfig.LeaveChannel}}
-                                    <option value="" {{if eq $selected ""}} selected{{end}}>Default Channel</option>
-                                    {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
+                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.LeaveChannel "Default channel"}}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -102,9 +98,7 @@
                             <div class="form-group">
                                 <label>Channel</label>
                                 <select class="form-control" name="topic_channel">
-                                    {{$selected := .NotifyConfig.TopicChannel}}
-                                    <option value="" {{if eq $selected ""}} selected{{end}}>Channel event occured in</option>
-                                    {{mTemplate "channel_options" "Channels" .ActiveGuild.Channels "Selected" $selected}}
+                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.TopicChannel "Channel topic was changed in"}}
                                 </select>
                             </div>
                         </div>

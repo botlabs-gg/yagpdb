@@ -48,10 +48,12 @@ func hasPerm(botPerms int, checkPerm string) (bool, error) {
 }
 
 // tmplRoleDropdown is a template function for generating role dropdown options
+// roles: slice of roles to display options for
+// highestBotRole: the bot's highest role, if not nil will disable roles above this one.
 // args are optinal and in this order:
-// current selected roleid
-// default empty display name
-// default unknown display name
+// 1. current selected roleid
+// 2. default empty display name
+// 3. default unknown display name
 func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, args ...string) template.HTML {
 	hasCurrentSelected := len(args) > 0
 	currentSelected := ""
@@ -111,4 +113,67 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 	}
 
 	return template.HTML(output)
+}
+
+// tmplChannelDropdown is a template function for generating channel dropdown options
+// channels: slice of channels to display options for
+// args are optinal and in this order:
+// 1. current selected channelID
+// 2. default empty display name
+// 3. default unknown display name
+func tmplChannelDropdown(channelType string) func(channels []*discordgo.Channel, args ...string) template.HTML {
+	if channelType != "text" && channelType != "voice" {
+		panic("Unkown dropdown channel type: " + channelType)
+	}
+
+	return func(channels []*discordgo.Channel, args ...string) template.HTML {
+		hasCurrentSelected := len(args) > 0
+		currentSelected := ""
+		if hasCurrentSelected {
+			currentSelected = args[0]
+		}
+
+		hasEmptyName := len(args) > 1
+		emptyName := ""
+		if hasEmptyName {
+			emptyName = args[1]
+		}
+
+		hasUnknownName := len(args) > 2
+		unknownName := "Unknown channel (deleted most likely)"
+		if hasUnknownName {
+			emptyName = args[2]
+		}
+
+		output := ""
+		if hasEmptyName {
+			output += `<option value=""`
+			if currentSelected == "" {
+				output += `selected`
+			}
+			output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
+		}
+
+		found := false
+		for _, channel := range channels {
+			if channel.Type != channelType {
+				continue
+			}
+
+			output += `<option value="` + channel.ID + `"`
+			if channel.ID == currentSelected {
+				output += " selected"
+				found = true
+			}
+
+			optName := template.HTMLEscapeString(channel.Name)
+			output += ">#" + optName + "</option>\n"
+		}
+
+		if !found && currentSelected != "" {
+			output += `<option value="` + currentSelected + `" selected>` + unknownName + "</option>\n"
+		}
+
+		return template.HTML(output)
+	}
 }
