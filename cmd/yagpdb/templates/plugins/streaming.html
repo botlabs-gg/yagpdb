@@ -45,7 +45,6 @@
                             <div class="form-group">
                                 <label>Currently Streaming Role</label>
                                 <select class="form-control" name="give_role">
-                                    {{$selected := .StreamingConfig.GiveRole}}
                                     {{roleOptions .ActiveGuild.Roles .HighestRole .StreamingConfig.GiveRole "None (disable give role)"}}
                                 </select>
                                 <p class="help-block">Assign a role to people currently streaming, so you can for example hoist it up where people can see</p>
