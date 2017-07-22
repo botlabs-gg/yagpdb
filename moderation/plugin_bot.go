@@ -288,9 +288,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				target := parsed.Args[0].DiscordUser()
-				member := parsed.Guild.MemberCopy(true, target.ID, true)
+				member, err := bot.GetMember(parsed.Guild.ID(), target.ID)
+				if err != nil || member == nil {
+					return "Member not found", err
+				}
 
-				err := MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, muteDuration)
+				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, muteDuration)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return "API Error: " + cast.Message.Message, err
@@ -328,9 +331,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				target := parsed.Args[0].DiscordUser()
-				member := parsed.Guild.MemberCopy(true, target.ID, true)
+				member, err := bot.GetMember(parsed.Guild.ID(), target.ID)
+				if err != nil || member == nil {
+					return "Member not found", err
+				}
 
-				err := MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, 0)
+				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, 0)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return "API Error: " + cast.Message.Message, err
