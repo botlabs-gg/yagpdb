@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
@@ -12,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/jonas747/yagpdb/youtube"
+	"github.com/mediocregopher/radix.v2/redis"
 	// "github.com/shiena/ansicolor"
 	"os"
 	"os/signal"
@@ -152,7 +152,7 @@ func runAction(str string) {
 		log.WithError(err).Error("Failed to get redis connection")
 		return
 	}
-	defer common.RedisPool.CarefullyPut(client, &err)
+	defer common.RedisPool.Put(client)
 
 	switch str {
 	case "connected":

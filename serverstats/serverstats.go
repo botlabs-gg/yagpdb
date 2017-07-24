@@ -3,10 +3,10 @@ package serverstats
 import (
 	"context"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strings"
 	"time"
 )
@@ -87,9 +87,9 @@ func UpdateStats(client *redis.Client, guildID string) error {
 	yesterday := now.Add(time.Hour * -24)
 	unixYesterday := yesterday.Unix()
 
-	client.Append("ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, "-inf", unixYesterday)
-	client.Append("ZREMRANGEBYSCORE", "guild_stats_members_joined_day:"+guildID, "-inf", unixYesterday)
-	client.Append("ZREMRANGEBYSCORE", "guild_stats_members_left_day:"+guildID, "-inf", unixYesterday)
+	client.PipeAppend("ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, "-inf", unixYesterday)
+	client.PipeAppend("ZREMRANGEBYSCORE", "guild_stats_members_joined_day:"+guildID, "-inf", unixYesterday)
+	client.PipeAppend("ZREMRANGEBYSCORE", "guild_stats_members_left_day:"+guildID, "-inf", unixYesterday)
 
 	_, err := common.GetRedisReplies(client, 3)
 	return err
@@ -113,10 +113,10 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 	yesterday := now.Add(time.Hour * -24)
 	unixYesterday := yesterday.Unix()
 
-	client.Append("ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, unixYesterday, "+inf")
-	client.Append("ZCOUNT", "guild_stats_members_joined_day:"+guildID, unixYesterday, "+inf")
-	client.Append("ZCOUNT", "guild_stats_members_left_day:"+guildID, unixYesterday, "+inf")
-	client.Append("SCARD", "guild_stats_online:"+guildID)
+	client.PipeAppend("ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, unixYesterday, "+inf")
+	client.PipeAppend("ZCOUNT", "guild_stats_members_joined_day:"+guildID, unixYesterday, "+inf")
+	client.PipeAppend("ZCOUNT", "guild_stats_members_left_day:"+guildID, unixYesterday, "+inf")
+	client.PipeAppend("SCARD", "guild_stats_online:"+guildID)
 
 	replies, err := common.GetRedisReplies(client, 4)
 	if err != nil {
@@ -150,7 +150,7 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 
 	members := 0
 	reply := client.Cmd("GET", "guild_stats_num_members:"+guildID)
-	if reply.Type != redis.NilReply {
+	if !reply.IsType(redis.Nil) {
 		var err error
 		members, err = reply.Int()
 		if err != nil {

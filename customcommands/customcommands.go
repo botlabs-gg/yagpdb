@@ -5,11 +5,11 @@ package customcommands
 import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
+	"github.com/mediocregopher/radix.v2/redis"
 	"sort"
 )
 
@@ -65,15 +65,9 @@ func (cc *CustomCommand) Save(client *redis.Client, guildID string) error {
 }
 
 func GetCommands(client *redis.Client, guild string) ([]*CustomCommand, int, error) {
-	hash, err := client.Cmd("HGETALL", "custom_commands:"+guild).Hash()
+	hash, err := client.Cmd("HGETALL", "custom_commands:"+guild).Map()
 	if err != nil {
-		// Check if the error was that it didnt exist, if so return an empty slice
-		// If not, there was an actual error
-		if _, ok := err.(*redis.CmdError); ok {
-			return []*CustomCommand{}, 0, nil
-		} else {
-			return nil, 0, err
-		}
+		return nil, 0, err
 	}
 
 	highest := 0

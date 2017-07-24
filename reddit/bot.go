@@ -3,8 +3,8 @@ package reddit
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 const (
@@ -39,19 +39,25 @@ func (p *Plugin) Status(client *redis.Client) (string, string) {
 			break
 		}
 
-		if len(reply.Elems) < 2 {
+		elems, err := reply.Array()
+		if err != nil {
+			logrus.WithError(err).Error("Error reading reply")
+			break
+		}
+
+		if len(elems) < 2 {
 			logrus.Error("Invalid scan")
 			break
 		}
 
-		newCursor, err := reply.Elems[0].Str()
+		newCursor, err := elems[0].Str()
 		if err != nil {
 			logrus.WithError(err).Error("Failed retrieving new cursor")
 			break
 		}
 		cursor = newCursor
 
-		list, err := reply.Elems[1].List()
+		list, err := elems[1].List()
 		if err != nil {
 			logrus.WithError(err).Error("Failed retrieving list")
 			break

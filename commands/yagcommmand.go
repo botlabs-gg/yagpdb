@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strings"
 	"time"
 )
@@ -213,7 +213,7 @@ func (cs *CustomCommand) customEnabled(client *redis.Client, guildID string) (bo
 		return false, reply.Err
 	}
 
-	enabled, _ := reply.Bool()
+	enabled, _ := common.RedisBool(reply)
 
 	if cs.Default {
 		enabled = !enabled
@@ -304,8 +304,8 @@ func (cs *CustomCommand) SetCooldown(client *redis.Client, userID string) error 
 		return nil
 	}
 	now := time.Now().Unix()
-	client.Append("SET", RKeyCommandCooldown(userID, cs.Name), now)
-	client.Append("EXPIRE", RKeyCommandCooldown(userID, cs.Name), cs.Cooldown)
+	client.PipeAppend("SET", RKeyCommandCooldown(userID, cs.Name), now)
+	client.PipeAppend("EXPIRE", RKeyCommandCooldown(userID, cs.Name), cs.Cooldown)
 	_, err := common.GetRedisReplies(client, 2)
 	return err
 }

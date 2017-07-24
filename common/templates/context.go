@@ -2,10 +2,10 @@ package templates
 
 import (
 	"bytes"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	"strings"
 	"text/template"

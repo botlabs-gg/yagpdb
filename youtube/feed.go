@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
@@ -380,7 +380,7 @@ func maybeAddChannelWatch(lock bool, client *redis.Client, channel string) error
 		return common.ErrWithCaller(reply.Err)
 	}
 
-	if reply.Type != redis.NilReply {
+	if !reply.IsType(redis.Nil) {
 		// already added before, don't need to do anything
 		logrus.Info("Not nil reply", reply.String())
 		return nil

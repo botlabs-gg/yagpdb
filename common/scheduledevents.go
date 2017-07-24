@@ -9,7 +9,7 @@ package common
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strings"
 	"sync"
 	"time"

@@ -191,7 +191,7 @@ var _escData = map[string]*_escFile{
 	"/assets/customcommands.html": {
 		local:   "assets/customcommands.html",
 		size:    7487,
-		modtime: 1500565956,
+		modtime: 1500915450,
 		compressed: `
 H4sIAAAAAAAA/7xZTW/jONK+51dUs1/g3QXaUqendw8N20DQ0zsYYIEFNnPegBLLEicUqSGpxF7B/31R
 pCR/RLbldHpyiCWRrI+Hxap6pLYVuJIageX1Q944b6qH3FQV18Kx7fbmpm09VrXiPk4pkQsGyXZ7Mxfy

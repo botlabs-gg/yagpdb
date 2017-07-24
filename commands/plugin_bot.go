@@ -6,7 +6,6 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/Sirupsen/logrus"
 	"github.com/alfredxing/calc/compute"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
@@ -15,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/lunixbochs/vtclean"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 	"io/ioutil"
@@ -622,7 +622,7 @@ type SearchAdviceResp struct {
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
 	g := evt.GuildCreate
-	prefixExists, err := client.Cmd("EXISTS", "command_prefix:"+g.ID).Bool()
+	prefixExists, err := common.RedisBool(client.Cmd("EXISTS", "command_prefix:"+g.ID))
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")
 		return

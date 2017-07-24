@@ -4,11 +4,11 @@ package commands
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 type Plugin struct{}
@@ -190,7 +190,7 @@ func GetCommandPrefix(client *redis.Client, guild string) (string, error) {
 	if reply.Err != nil {
 		return "", reply.Err
 	}
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return "", nil
 	}
 

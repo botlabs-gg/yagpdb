@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/mediocregopher/radix.v2/redis"
 	"time"
 )
 
@@ -38,8 +38,8 @@ func AddCPLogEntry(user *discordgo.User, guild string, args ...interface{}) {
 		return
 	}
 
-	client.Append("LPUSH", "cp_logs:"+guild, serialized)
-	client.Append("LTRIM", "cp_logs:"+guild, 0, 100)
+	client.PipeAppend("LPUSH", "cp_logs:"+guild, serialized)
+	client.PipeAppend("LTRIM", "cp_logs:"+guild, 0, 100)
 
 	_, err = GetRedisReplies(client, 2)
 	if err != nil {

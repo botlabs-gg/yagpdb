@@ -79,7 +79,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
 	// Validate that they haven't messed with the id
-	exists, _ := client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID).Bool()
+	exists, _ := common.RedisBool(client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID))
 	if !exists {
 		return templateData, web.NewPublicError("That command dosen't exist?")
 	}

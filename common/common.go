@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/extra/pool"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
+	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/vattle/sqlboiler/boil"
 	stdlog "log"
 	"os"
@@ -68,7 +68,8 @@ func Init() error {
 }
 
 func connectRedis(addr string) (err error) {
-	RedisPool, err = pool.NewCustomPool("tcp", addr, 25, RedisDialFunc)
+	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
+	RedisPool, err = pool.NewCustom("tcp", addr, 25, RedisDialFunc)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}
