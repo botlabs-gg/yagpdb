@@ -64,10 +64,10 @@ func Publish(client *redis.Client, evt string, target string, data interface{}) 
 }
 
 func PollEvents() {
-	client, err := common.RedisPool.Get()
+	// Create a new client for pubsub
+	client, err := redis.Dial("tcp", common.Conf.Redis)
 	if err != nil {
 		panic(err)
-
 	}
 
 	subClient := pubsub.NewSubClient(client)
@@ -79,7 +79,7 @@ func PollEvents() {
 	for {
 		reply := subClient.Receive()
 		if reply.Err != nil {
-			logrus.WithError(err).Error("PubSub Error")
+			logrus.WithError(reply.Err).Error("PubSub Error")
 			continue
 		}
 
