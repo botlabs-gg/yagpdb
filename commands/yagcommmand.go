@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fzzy/radix/redis"
@@ -11,6 +10,7 @@ import (
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 	"strings"
 	"time"
 )
@@ -77,85 +77,41 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		TimeStamp:  time.Now(),
 	}
 
-	// Check guild specific settings if not triggered from a DM
-	var guild *dstate.GuildState
-	var autodel bool
-
-	if trigger.Source != commandsystem.SourceDM {
-
-		guild = cState.Guild
-		if guild == nil {
-			return nil, errors.New("Guild not found")
-		}
-
-		logEntry.GuildID = guild.ID()
-
-		var enabled bool
-		var role string
-		// Check wether it's enabled or not
-		enabled, role, autodel, err = cs.Enabled(client, cState.ID(), guild)
-		if err != nil {
-			common.BotSession.ChannelMessageSend(cState.ID(), "Bot is having issues... contact the bot author D:")
-			return nil, err
-		}
-
-		if !enabled {
-			go common.SendTempMessage(trigger.Session, time.Second*10, trigger.Message.ChannelID, fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host))
-			return nil, nil
-		}
-
-		if role != "" {
-			member, err := bot.GetMember(guild.ID(), trigger.Message.Author.ID)
-			if err != nil {
-				return nil, err
-			}
-
-			found := false
-			for _, v := range member.Roles {
-				if v == role {
-					found = true
-				}
-			}
-
-			if !found {
-				guild.RLock()
-				required := guild.Role(false, role)
-				name := "Unknown?? (deleted maybe?)"
-				if required != nil {
-					name = required.Name
-				}
-				guild.RUnlock()
-				_, err := common.BotSession.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf(common.EscapeEveryoneMention("The **%s** role is required to use this command."), name))
-				return nil, err
-			}
-		}
+	if cState.Guild != nil {
+		logEntry.GuildID = cState.Guild.ID()
 	}
 
-	// Check the command cooldown
-	cdLeft, err := cs.CooldownLeft(client, trigger.Message.Author.ID)
-	if err != nil {
-		// Just pretend the cooldown is off...
-		log.WithError(err).Error("Failed checking command cooldown")
+	resp, autoDel := cs.checkCanExecuteCommand(trigger, client, cState)
+	if resp != "" {
+		m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
+		if m != nil {
+			return []*discordgo.Message{m}, err
+		}
+		return nil, err
 	}
 
-	if cdLeft > 0 {
-		trigger.Session.ChannelMessageSend(trigger.Message.ChannelID, fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeEveryoneMention(trigger.Message.Author.Username), cdLeft, cs.Name))
-		return nil, nil
-	}
+	log.WithField("channel", cState.ID()).WithField("author", trigger.Message.Author.ID).Info("Handling command: " + raw)
+
+	runCtx, cancelExec := context.WithTimeout(ctx, time.Minute)
+	defer cancelExec()
 
 	// Run the command
-	replies, err := cs.Command.HandleCommand(raw, trigger, context.WithValue(ctx, CtxKeyRedisClient, client))
+	replies, err := cs.Command.HandleCommand(raw, trigger, context.WithValue(runCtx, CtxKeyRedisClient, client))
 
 	if err != nil {
-		logEntry.Error = err.Error()
-		log.WithError(err).WithField("channel", cState.ID()).Error(cs.Name, ": failed handling command")
+		if errors.Cause(err) == context.Canceled || errors.Cause(err) == context.DeadlineExceeded {
+			common.BotSession.ChannelMessageSend(cState.Channel.ID, "Took longer than a minute to handle command: `"+common.EscapeEveryoneMention(raw)+"`, Cancelled the command.")
+		} else {
+			logEntry.Error = err.Error()
+			log.WithError(err).WithField("channel", cState.ID()).Error(cs.Name, ": failed handling command")
+		}
 	}
 
 	logEntry.ResponseTime = int64(time.Since(started))
 
-	if len(replies) > 0 && autodel {
+	if len(replies) > 0 && autoDel {
 		go cs.deleteResponse(append(replies, trigger.Message))
-	} else if autodel {
+	} else if autoDel {
 		go cs.deleteResponse([]*discordgo.Message{trigger.Message})
 	}
 
@@ -174,6 +130,72 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 	}
 
 	return replies, err
+}
+
+// checkCanExecuteCommand returns a non empty string if this user cannot execute this command
+func (cs *CustomCommand) checkCanExecuteCommand(trigger *commandsystem.TriggerData, client *redis.Client, cState *dstate.ChannelState) (resp string, autoDel bool) {
+	// Check guild specific settings if not triggered from a DM
+	var guild *dstate.GuildState
+
+	if trigger.Source != commandsystem.SourceDM {
+
+		guild = cState.Guild
+		if guild == nil {
+			return "You're not on a server?", false
+		}
+
+		var enabled bool
+		var err error
+		var role string
+		// Check wether it's enabled or not
+		enabled, role, autoDel, err = cs.Enabled(client, cState.ID(), guild)
+		if err != nil {
+			return "Bot is having isssues, contact the bot owner.", false
+		}
+
+		if !enabled {
+			return fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host), false
+		}
+
+		if role != "" {
+			member, err := bot.GetMember(guild.ID(), trigger.Message.Author.ID)
+			if err != nil {
+				log.WithError(err).WithField("user", trigger.Message.Author.ID).WithField("guild", guild.ID()).Error("Failed fetchign guild member")
+				return "Bot is having issues retrieving your member state", false
+			}
+
+			found := false
+			for _, v := range member.Roles {
+				if v == role {
+					found = true
+				}
+			}
+
+			if !found {
+				guild.RLock()
+				required := guild.Role(false, role)
+				name := "Unknown?? (deleted maybe?)"
+				if required != nil {
+					name = required.Name
+				}
+				guild.RUnlock()
+				return common.EscapeEveryoneMention(fmt.Sprintf("The **%s** role is required to use this command.", name)), false
+			}
+		}
+	}
+
+	// Check the command cooldown
+	cdLeft, err := cs.CooldownLeft(client, trigger.Message.Author.ID)
+	if err != nil {
+		// Just pretend the cooldown is off...
+		log.WithError(err).WithField("author", trigger.Message.Author.ID).Error("Failed checking command cooldown")
+	}
+
+	if cdLeft > 0 {
+		return fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeEveryoneMention(trigger.Message.Author.Username), cdLeft, cs.Name), false
+	}
+
+	return
 }
 
 func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
