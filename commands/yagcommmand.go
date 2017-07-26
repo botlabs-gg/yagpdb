@@ -33,6 +33,9 @@ const (
 
 var (
 	RKeyCommandCooldown = func(uID, cmd string) string { return "cmd_cd:" + uID + ":" + cmd }
+	RKeyCommandLock     = func(uID, cmd string) string { return "cmd_lock:" + uID + ":" + cmd }
+
+	CommandExecTimeout = time.Minute
 )
 
 // Slight extension to the simplecommand, it will check if the command is enabled in the HandleCommand func
@@ -48,6 +51,7 @@ type CustomCommand struct {
 }
 
 func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.TriggerData, ctx context.Context) ([]*discordgo.Message, error) {
+
 	// Track how long execution of a command took
 	started := time.Now()
 	defer func() {
@@ -61,6 +65,12 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 		return nil, errors.New("Failed retrieving redis client")
 	}
 	defer common.RedisPool.Put(client)
+
+	err = common.BlockingLockRedisKey(client, RKeyCommandLock(trigger.Message.Author.ID, cs.Name), CommandExecTimeout*2, int((CommandExecTimeout + time.Second).Seconds()))
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed locking command")
+	}
+	defer common.UnlockRedisKey(client, RKeyCommandLock(trigger.Message.Author.ID, cs.Name))
 
 	cState := bot.State.Channel(true, trigger.Message.ChannelID)
 	if cState == nil {
@@ -92,7 +102,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 
 	log.WithField("channel", cState.ID()).WithField("author", trigger.Message.Author.ID).Info("Handling command: " + raw)
 
-	runCtx, cancelExec := context.WithTimeout(ctx, time.Minute)
+	runCtx, cancelExec := context.WithTimeout(ctx, CommandExecTimeout)
 	defer cancelExec()
 
 	// Run the command
@@ -100,7 +110,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 
 	if err != nil {
 		if errors.Cause(err) == context.Canceled || errors.Cause(err) == context.DeadlineExceeded {
-			common.BotSession.ChannelMessageSend(cState.Channel.ID, "Took longer than a minute to handle command: `"+common.EscapeEveryoneMention(raw)+"`, Cancelled the command.")
+			common.BotSession.ChannelMessageSend(cState.Channel.ID, "Took longer than "+CommandExecTimeout.String()+" to handle command: `"+common.EscapeEveryoneMention(raw)+"`, Cancelled the command.")
 		} else {
 			logEntry.Error = err.Error()
 			log.WithError(err).WithField("channel", cState.ID()).Error(cs.Name, ": failed handling command")

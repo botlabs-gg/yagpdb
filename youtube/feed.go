@@ -315,7 +315,7 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 	sub.YoutubeChannelName = cResp.Items[0].Snippet.Title
 	sub.YoutubeChannelID = cResp.Items[0].Id
 
-	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 5)
+	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func maybeRemoveChannelWatch(channel string) {
 	}
 	defer common.RedisPool.Put(client)
 
-	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 5)
+	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		return
 	}
@@ -366,7 +366,7 @@ func maybeRemoveChannelWatch(channel string) {
 // maybeAddChannelWatch adds a channel watch to redis, if there wasnt one before
 func maybeAddChannelWatch(lock bool, client *redis.Client, channel string) error {
 	if lock {
-		err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 5)
+		err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
 		if err != nil {
 			return common.ErrWithCaller(err)
 		}
