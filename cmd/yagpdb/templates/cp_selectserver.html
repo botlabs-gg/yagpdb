@@ -27,7 +27,7 @@
         <p>It's around one year since i started the development of YAGPDB and it's been neat. I decided to make a survey to give you the ability to leave some feedback!</p>
         <a class="btn btn-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSf6BYGCJBC05bYH4e7s3YARDbm1Xfr4or2ll5anwXjMkWQjog/viewform?usp=sf_link">Take survery</a>
 
-        <h3>Version 0.21.0->0.21.5 <small>19th jul 2017</small></h3>
+        <h3>Version 0.21.0->0.21.5 <small>0.21.6: 26th jul 2017</small></h3>
         <p>I've pushed a couple bugfix updates to the bot since the last major update</p>
         <p>If you come across any weird behaviour or issues please let me know as soon as possible by joining the support server above or <a href="https://github.com/jonas747/yagpdb/issues">opening an issue.</a></p>
         <ul>
@@ -39,6 +39,8 @@
             <li><b>0.21.4</b>: Made the youtube page slightly more user friendly</li> 
             <li><b>0.21.4</b>: Fixed a bug in the streaming plugin where it wouldn't retry giving the streaming role after the first error</li> 
             <li><b>0.21.5</b>: Added <code>setrep</code> command which i forgot about last update.</li> 
+            <li><b>0.21.6</b>: Commands are now limited to 1m of execution time, this is mostly in regarding to commands that sends huge responses, if they go on for more than 1 minute.</li> 
+            <li><b>0.21.6</b>: You can now only execute 1 instance of a command at once, it will queue up and start executing the command after the other one finishes if you try to do them both at once, this and the above change was introduced because it was a target for attackers making the bot crash.</li> 
         </ul>
 
         <h3>Version 0.21 <small>11th jul 2017</small></h3>
