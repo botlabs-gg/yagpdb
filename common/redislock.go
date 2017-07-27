@@ -24,6 +24,8 @@ var (
 // BlockingLockRedisKey blocks until it suceeded to lock the key
 func BlockingLockRedisKey(client *redis.Client, key string, maxTryDuration time.Duration, maxLockDur int) error {
 	started := time.Now()
+	sleepDur := time.Millisecond * 100
+	maxSleep := time.Second
 	for {
 		if maxTryDuration != 0 && time.Since(started) > maxTryDuration {
 			return ErrMaxLockAttemptsExceeded
@@ -38,7 +40,11 @@ func BlockingLockRedisKey(client *redis.Client, key string, maxTryDuration time.
 			return nil
 		}
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(sleepDur)
+		sleepDur *= 2
+		if sleepDur > maxSleep {
+			sleepDur = maxSleep
+		}
 	}
 }
 
