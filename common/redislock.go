@@ -10,11 +10,11 @@ import (
 // So that if someting went wrong its not locked forever
 func TryLockRedisKey(client *redis.Client, key string, maxDur int) (bool, error) {
 	reply := client.Cmd("SET", key, true, "NX", "EX", maxDur)
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return false, nil
 	}
 
-	return reply.Bool()
+	return RedisBool(reply)
 }
 
 var (

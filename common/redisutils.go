@@ -138,7 +138,7 @@ func RedisBool(resp *redis.Resp) (b bool, err error) {
 
 	if resp.IsType(redis.Str) {
 		s, err := resp.Str()
-		return (s != "" && s != "false"), err
+		return (s != "" && s != "false" && s != "0"), err
 	}
 
 	panic("Unknown redis reply type")
