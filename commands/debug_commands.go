@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
@@ -79,6 +80,77 @@ var debugCommands = []commandsystem.CommandHandler{
 			HideFromHelp: true,
 			Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
 				return "<@" + common.Conf.Owner + "> Is my owner", nil
+			}),
+		},
+	}, &CustomCommand{
+		Cooldown:             2,
+		Category:             CategoryDebug,
+		HideFromCommandsPage: true,
+		Command: &commandsystem.Command{
+			Name:         "leaveserver",
+			Description:  ";))",
+			HideFromHelp: true,
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "server", Type: commandsystem.ArgumentString},
+			},
+			Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
+				err := common.BotSession.GuildLeave(data.Args[0].Str())
+				if err == nil {
+					return "Left " + data.Args[0].Str(), nil
+				}
+				return err, err
+			}),
+		},
+	},
+	&CustomCommand{
+		Cooldown:             2,
+		Category:             CategoryDebug,
+		HideFromCommandsPage: true,
+		Command: &commandsystem.Command{
+			Name:         "banserver",
+			Description:  ";))",
+			HideFromHelp: true,
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "server", Type: commandsystem.ArgumentString},
+			},
+			Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
+				err := common.BotSession.GuildLeave(data.Args[0].Str())
+				if err == nil {
+					client := data.Context().Value(CtxKeyRedisClient).(*redis.Client)
+					client.Cmd("SADD", "banned_servers", data.Args[0].Str())
+
+					return "Banned " + data.Args[0].Str(), nil
+				}
+				return err, err
+			}),
+		},
+	},
+	&CustomCommand{
+		Cooldown:             2,
+		Category:             CategoryDebug,
+		HideFromCommandsPage: true,
+		Command: &commandsystem.Command{
+			Name:         "unbanserver",
+			Description:  ";))",
+			HideFromHelp: true,
+			RequiredArgs: 1,
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "server", Type: commandsystem.ArgumentString},
+			},
+			Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
+				client := data.Context().Value(CtxKeyRedisClient).(*redis.Client)
+				unbanned, err := client.Cmd("SREM", "banned_servers", data.Args[0].Str()).Bool()
+				if err != nil {
+					return err, err
+				}
+
+				if !unbanned {
+					return "Server wasnt banned", nil
+				}
+
+				return "Unbanned server", nil
 			}),
 		},
 	},
