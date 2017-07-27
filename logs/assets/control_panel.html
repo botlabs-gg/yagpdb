@@ -39,15 +39,15 @@
                             </div>
                         </div>
                         <div class="col-lg-4">
-                            <!-- <div class="form-group"> -->
-                                <label>Blacklist channels from message logs</label>
+                            <div class="form-group">
+                                <label>Blacklist channels from message logs</label><br/>
                                 <div class="btn-group">
                                   <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Blacklist channels from message logs channels<span class="caret"></span></button>
                                     <ul class="dropdown-menu">
                                         {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Name" "BlacklistedChannels" "Selections" .Config.ParsedBlacklistedchannels}}
                                     </ul>
                                 </div>
-                            <!-- </div> -->
+                            </div>
                         </div>
                     </div>
                     <div class="row">
