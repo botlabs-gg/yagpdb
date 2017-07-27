@@ -23,6 +23,7 @@ var (
 		"shuffle":   shuffle,
 		"seq":       sequence,
 		"joinStr":   joinStrings,
+		"lower":     strings.ToLower,
 	}
 
 	contextSetupFuncs []ContextSetupFunc
