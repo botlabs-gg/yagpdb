@@ -16,7 +16,7 @@ import (
 const (
 	VERSIONMAJOR = 0
 	VERSIONMINOR = 21
-	VERSIONPATCH = 6
+	VERSIONPATCH = 7
 
 	Testing = false // Disables stuff like command cooldowns
 	// Testing = true // Disables stuff like command cooldowns
