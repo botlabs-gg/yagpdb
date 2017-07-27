@@ -112,12 +112,12 @@ OUTER:
 	embed := CreatePostEmbed(post)
 
 	for _, item := range filteredItems {
-		go func(cpItem *SubredditWatchItem) {
-			err := common.RetrySendMessage(cpItem.Channel, embed, 10)
+		go func(cpItem *SubredditWatchItem, e *discordgo.MessageEmbed) {
+			err := common.RetrySendMessage(cpItem.Channel, e, 10)
 			if err != nil {
 				checkSendError(cpItem, err)
 			}
-		}(item)
+		}(item, embed)
 	}
 
 	return nil
