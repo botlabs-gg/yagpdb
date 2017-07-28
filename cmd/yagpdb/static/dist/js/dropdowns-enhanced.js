@@ -232,7 +232,6 @@
 
     $.fn.dropdownUpdate = function () {
         return this.each(function () {
-            console.log(this);
             proto.change.call($(this));
         })
     };

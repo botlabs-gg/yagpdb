@@ -218,9 +218,7 @@ function formSubmissionEvents(selectorPrefix){
 	const $navbar = $('.navbar');
 	$(selectorPrefix + 'a[href^="#"]').on('click', function(e) {
 	    e.preventDefault();
-	    console.log(e);
-
-	    
+    
 	    navigateToAnchor($.attr(this, "href"));
  
 	    // e.target.scrollIntoView({"behaviour": "smooth", "block": "end"});
@@ -236,6 +234,10 @@ function navigateToAnchor(name){
 	name = name.substring(1);
 
 	var elem = $("a[name=\""+name+"\"]");
+	if(elem.length < 1){
+		return;
+	}
+
     $('html, body').animate({
         scrollTop: elem.offset().top-60
     }, 500);
