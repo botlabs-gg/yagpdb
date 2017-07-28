@@ -17,6 +17,7 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/tkuchiki/go-timezone"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -600,6 +601,47 @@ Control panel: <https://yagpdb.xyz/manage>
 					return "Failed parsing json: " + err.Error(), err
 				}
 				return parsed, nil
+			},
+		},
+	},
+	&CustomCommand{
+		Category: CategoryTool,
+		Command: &commandsystem.Command{
+			Name:           "CurrentTime",
+			Aliases:        []string{"ctime", "gettime"},
+			Description:    "Shows current time in different timezones",
+			ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "Zone", Type: commandsystem.ArgumentString},
+				{Name: "Offset", Type: commandsystem.ArgumentNumber},
+			},
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
+
+				now := time.Now()
+				if data.Args[0] != nil {
+					tzName := data.Args[0].Str()
+					names, err := timezone.GetTimezones(strings.ToUpper(data.Args[0].Str()))
+					if err == nil && len(names) > 0 {
+						tzName = names[0]
+					}
+
+					location, err := time.LoadLocation(tzName)
+					if err != nil {
+						if offset, ok := customTZOffsets[strings.ToUpper(tzName)]; ok {
+							location = time.FixedZone(tzName, int(offset*60*60))
+						} else {
+							return err, err
+						}
+					}
+					return now.In(location).Format(format), nil
+				} else if data.Args[1] != nil {
+					location := time.FixedZone("", data.Args[1].Int()*60*60)
+					return now.In(location).Format(format), nil
+				}
+
+				// No offset of zone specified, just return the bots location
+				return now.Format(format), nil
 			},
 		},
 	},
