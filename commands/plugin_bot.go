@@ -395,7 +395,7 @@ Control panel: <https://yagpdb.xyz/manage>
 					return err, err
 				}
 
-				return fmt.Sprintf("Result: `%G`", result), nil
+				return fmt.Sprintf("Result: `%f`", result), nil
 			},
 		},
 	},
