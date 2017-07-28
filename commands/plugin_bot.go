@@ -647,6 +647,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	// ping pong
 	split := strings.Split(m.Content, ";")
 	if split[0] != ":PONG" || len(split) < 2 {
 		return
@@ -658,7 +659,12 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	taken := time.Duration(time.Now().UnixNano() - parsed)
-	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Received pong, took: "+taken.String())
+
+	started := time.Now()
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Gatway (http send -> gateway receive time): "+taken.String())
+	httpPing := time.Since(started)
+
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGatway: "+taken.String())
 }
 
 type GuildsSortUsers []*discordgo.Guild
