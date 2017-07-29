@@ -45,7 +45,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		}, eventsystem.EventNewGuild)
 	}
 
-	banned, _ := ContextRedis(evt.Context()).Cmd("SISMEMBER", "banned_servers", g.ID).Bool()
+	banned, _ := common.RedisBool(ContextRedis(evt.Context()).Cmd("SISMEMBER", "banned_servers", g.ID))
 	if banned {
 		log.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
