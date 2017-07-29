@@ -15,7 +15,7 @@ type PluginWithErrorHandler interface {
 }
 
 var (
-	sources  map[string]PluginWithErrorHandler
+	sources  = make(map[string]PluginWithErrorHandler)
 	stopChan = make(chan *sync.WaitGroup)
 
 	currentlyProcessing     = make([]int64, 0)
