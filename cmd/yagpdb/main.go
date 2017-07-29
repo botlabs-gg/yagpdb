@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
@@ -119,6 +120,7 @@ func main() {
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()
+	mqueue.InitStores()
 
 	// RUN FORREST RUN
 	if flagAction != "" {
@@ -134,6 +136,7 @@ func main() {
 		go bot.Run()
 		go common.RunScheduledEvents()
 		go botrest.StartServer()
+		go mqueue.StartPolling()
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
@@ -190,6 +193,7 @@ func listenSignal() {
 
 		go bot.Stop(&wg)
 		go common.StopSheduledEvents(&wg)
+		go mqueue.Stop(&wg)
 
 		shouldWait = true
 	}

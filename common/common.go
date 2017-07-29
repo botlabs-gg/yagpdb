@@ -61,9 +61,21 @@ func Init() error {
 		return err
 	}
 
-	err = connectDB(config.PQUsername, config.PQPassword)
+	err = connectDB(config.PQUsername, config.PQPassword, "yagpdb")
 
 	return err
+}
+
+func InitTest() {
+	testDB := os.Getenv("YAGPDB_TEST_DB")
+	if testDB == "" {
+		return
+	}
+
+	err := connectDB("postgres", "123", testDB)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func connectRedis(addr string) (err error) {
@@ -74,8 +86,9 @@ func connectRedis(addr string) (err error) {
 	}
 	return
 }
-func connectDB(user, pass string) error {
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=yagpdb sslmode=disable password=%s", user, pass))
+
+func connectDB(user, pass, dbName string) error {
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=%s sslmode=disable password=%s", user, dbName, pass))
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)
