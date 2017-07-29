@@ -6,7 +6,6 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/Sirupsen/logrus"
 	"github.com/alfredxing/calc/compute"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
@@ -15,8 +14,10 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/lunixbochs/vtclean"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/tkuchiki/go-timezone"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -170,7 +171,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 				}
 
 				if target == "" {
-					footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n**Control Panel:** https://yagpdb.xyz/cp\n"
+					footer += "**Support server:** https://discord.gg/0vYlUK2XBKldPSMY\n**Control Panel:** https://yagpdb.xyz/manage\n"
 				}
 
 				channelId := data.Message.ChannelID
@@ -369,7 +370,7 @@ var GlobalCommands = []commandsystem.CommandHandler{
 This bot focuses on being configurable and therefore is one of the more advanced bots.
 It can perform a range of general purpose functionality (reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.
 I'm currently being ran and developed by jonas747#3124 (105487308693757952) but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know go and want to make some contributions, DM me.
-Control panel: <https://yagpdb.xyz/cp>
+Control panel: <https://yagpdb.xyz/manage>
 				`
 				return info, nil
 			},
@@ -395,7 +396,7 @@ Control panel: <https://yagpdb.xyz/cp>
 					return err, err
 				}
 
-				return fmt.Sprintf("Result: `%G`", result), nil
+				return fmt.Sprintf("Result: `%f`", result), nil
 			},
 		},
 	},
@@ -603,6 +604,47 @@ Control panel: <https://yagpdb.xyz/cp>
 			},
 		},
 	},
+	&CustomCommand{
+		Category: CategoryTool,
+		Command: &commandsystem.Command{
+			Name:           "CurrentTime",
+			Aliases:        []string{"ctime", "gettime"},
+			Description:    "Shows current time in different timezones",
+			ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+			Arguments: []*commandsystem.ArgDef{
+				{Name: "Zone", Type: commandsystem.ArgumentString},
+				{Name: "Offset", Type: commandsystem.ArgumentNumber},
+			},
+			Run: func(data *commandsystem.ExecData) (interface{}, error) {
+				const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
+
+				now := time.Now()
+				if data.Args[0] != nil {
+					tzName := data.Args[0].Str()
+					names, err := timezone.GetTimezones(strings.ToUpper(data.Args[0].Str()))
+					if err == nil && len(names) > 0 {
+						tzName = names[0]
+					}
+
+					location, err := time.LoadLocation(tzName)
+					if err != nil {
+						if offset, ok := customTZOffsets[strings.ToUpper(tzName)]; ok {
+							location = time.FixedZone(tzName, int(offset*60*60))
+						} else {
+							return err, err
+						}
+					}
+					return now.In(location).Format(format), nil
+				} else if data.Args[1] != nil {
+					location := time.FixedZone("", data.Args[1].Int()*60*60)
+					return now.In(location).Format(format), nil
+				}
+
+				// No offset of zone specified, just return the bots location
+				return now.Format(format), nil
+			},
+		},
+	},
 }
 
 type AdviceSlip struct {
@@ -622,7 +664,7 @@ type SearchAdviceResp struct {
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
 	g := evt.GuildCreate
-	prefixExists, err := client.Cmd("EXISTS", "command_prefix:"+g.ID).Bool()
+	prefixExists, err := common.RedisBool(client.Cmd("EXISTS", "command_prefix:"+g.ID))
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")
 		return
@@ -647,6 +689,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	// ping pong
 	split := strings.Split(m.Content, ";")
 	if split[0] != ":PONG" || len(split) < 2 {
 		return
@@ -658,7 +701,12 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	taken := time.Duration(time.Now().UnixNano() - parsed)
-	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Received pong, took: "+taken.String())
+
+	started := time.Now()
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Gatway (http send -> gateway receive time): "+taken.String())
+	httpPing := time.Since(started)
+
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGatway: "+taken.String())
 }
 
 type GuildsSortUsers []*discordgo.Guild

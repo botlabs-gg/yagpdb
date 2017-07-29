@@ -15,13 +15,27 @@
     <div class="col-lg-12">
         <!-- Nav tabs -->
         <ul class="nav nav-tabs tabs" role="tablist">
-            <li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">General</a></li>
-            <li role="presentation"><a href="#spam" aria-controls="spam" role="tab" data-toggle="tab">Slowmode</a></li>
-            <li role="presentation"><a href="#mass-mention" aria-controls="mass-mention" role="tab" data-toggle="tab">Mass Mention</a></li>
-            <li role="presentation"><a href="#invites" aria-controls="invites" role="tab" data-toggle="tab">Server Invites</a></li>
-            <li role="presentation"><a href="#links" aria-controls="links" role="tab" data-toggle="tab">Links</a></li>
-            <li role="presentation"><a href="#banned-words" aria-controls="banned-words" role="tab" data-toggle="tab">Banned words</a></li>
-            <li role="presentation"><a href="#banned-websites" aria-controls="banned-websites" role="tab" data-toggle="tab">Banned websites</a></li>
+            <li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">
+                General 
+            </a></li>
+            <li role="presentation"><a href="#spam" aria-controls="spam" role="tab" data-toggle="tab">
+                Slowmode <span class="label {{if .AutomodConfig.Spam.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#mass-mention" aria-controls="mass-mention" role="tab" data-toggle="tab">
+                Mass Mention <span class="label {{if .AutomodConfig.Mention.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#invites" aria-controls="invites" role="tab" data-toggle="tab">
+                Server Invites <span class="label {{if .AutomodConfig.Invite.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#links" aria-controls="links" role="tab" data-toggle="tab">
+                Links <span class="label {{if .AutomodConfig.Links.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#banned-words" aria-controls="banned-words" role="tab" data-toggle="tab">
+                Banned words <span class="label {{if .AutomodConfig.Words.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#banned-websites" aria-controls="banned-websites" role="tab" data-toggle="tab">
+                Banned websites <span class="label {{if .AutomodConfig.Sites.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
         </ul>
 
         <!-- Tab panesy -->
@@ -228,39 +242,20 @@
 <p class="help-block">A warning and message deletion will always be issued if the rule is broken.</p>
 
 
-{{$ignoreRole := or .Rule.IgnoreRole ""}}
 <div class="form-group">
     <label for="IgnoreRole">Ignore role</label>
     <select id="channel" class="form-control" name="{{.Name}}.IgnoreRole">
-        <option value="" {{if eq $ignoreRole ""}} selected{{end}}>None</option>
-        {{mTemplate "role_options" "Roles" .Guild.Roles "Selected" $ignoreRole}}
+        {{roleOptions .Guild.Roles nil .Rule.IgnoreRole "None"}}
     </select>
 </div>
 
-<div class="panel-group" id="rule-channel-ignore-accordion-{{.Name}}" role="tablist" aria-multiselectable="true">
-    <div class="panel panel-default">
-        <div class="panel-heading" role="tab" >
-            <h4 class="panel-title">
-                <a role="button" data-toggle="collapse" data-parent="#rule-channel-ignore-accordion-{{.Name}}" href="#collapse-{{.Name}}" aria-expanded="true" aria-controls="collapse-{{.Name}}">
-                    Ignore channels
-                </a>
-            </h4>
-        </div>
-        <div id="collapse-{{.Name}}" class="panel-collapse collapse" role="tabpanel">
-            <ul class="list-group">
-            {{$ingoredChannels := .Rule.IgnoreChannels}}
-            {{$ruleName := .Name}}
-            {{range $k, $v := .Guild.Channels}}{{if eq .Type "text"}}
-                <li class="list-group-item">
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" name="{{$ruleName}}.IgnoreChannels" value="{{$v.ID}}" {{if in $ingoredChannels $v.ID}} checked{{end}}> #{{$v.Name}}
-                        </label>
-                    </div>
-                </li>
-            {{end}}{{end}}
-            </ul>
-        </div>
+<div class="form-group">
+    <label for="IgnoreChannels">Ignore channels</label>
+    <div class="btn-group">
+      <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Ignore channels <span class="caret"></span></button>
+        <ul class="dropdown-menu">
+            {{mTemplate "channel_options_multi" "Channels" .Guild.Channels "Name" (joinStr "" .Name ".IgnoreChannels") "Selections" .Rule.IgnoreChannels}}
+        </ul>
     </div>
 </div>
 {{end}}

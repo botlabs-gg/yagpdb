@@ -5,17 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/miolini/datacounter"
 	"goji.io/pat"
 	"io"
 	"net/http"
-	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
@@ -147,18 +146,7 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		session := DiscordSessionFromContext(r.Context())
 		if session == nil {
-			log.Println("No session in request?")
-			if r.FormValue("partial") != "" {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Not logged in"))
-				return
-			}
-
-			values := url.Values{
-				"error": []string{"No session"},
-			}
-			urlStr := values.Encode()
-			http.Redirect(w, r, "/?"+urlStr, http.StatusTemporaryRedirect)
+			WriteErrorResponse(w, r, "No session or session expired", http.StatusUnauthorized)
 			return
 		}
 
@@ -166,7 +154,7 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 		if origin != "" {
 			split := strings.SplitN(origin, ":", 3)
 			if len(split) < 2 || !strings.EqualFold("https://"+common.Conf.Host, split[0]+":"+split[1]) {
-				http.Redirect(w, r, "/?err=bad_origin", http.StatusTemporaryRedirect)
+				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
 				return
 			}
 		}

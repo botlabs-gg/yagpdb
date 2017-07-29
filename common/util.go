@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	"math/rand"
 	"path/filepath"
@@ -37,7 +37,7 @@ func GetWrapped(in []*discordgo.UserGuild, client *redis.Client) ([]*WrappedGuil
 	}
 
 	for _, g := range in {
-		client.Append("SISMEMBER", "connected_guilds", g.ID)
+		client.PipeAppend("SISMEMBER", "connected_guilds", g.ID)
 	}
 
 	replies, err := GetRedisReplies(client, len(in))
@@ -47,7 +47,7 @@ func GetWrapped(in []*discordgo.UserGuild, client *redis.Client) ([]*WrappedGuil
 
 	out := make([]*WrappedGuild, len(in))
 	for k, g := range in {
-		isConnected, err := replies[k].Bool()
+		isConnected, err := RedisBool(replies[k])
 		if err != nil {
 			return nil, err
 		}

@@ -3,7 +3,6 @@ package autorole
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
@@ -11,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strings"
 	"sync"
 	"time"

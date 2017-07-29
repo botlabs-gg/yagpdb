@@ -7,11 +7,11 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	"strconv"
 )
@@ -280,7 +280,7 @@ func CheckSetCooldown(conf *models.ReputationConfig, redisClient *redis.Client, 
 	}
 
 	reply := redisClient.Cmd("SET", KeyCooldown(strconv.FormatInt(conf.GuildID, 10), senderID), true, "EX", conf.Cooldown, "NX")
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return false, nil
 	}
 	if reply.Err != nil {

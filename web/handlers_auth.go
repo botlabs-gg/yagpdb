@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/oauth2"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"net/http"
 	"time"
 )
@@ -87,7 +87,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 
 	redirUrl, err := redisClient.Cmd("GET", "csrf_redir:"+state).Str()
 	if err != nil {
-		redirUrl = "/cp"
+		redirUrl = "/manage"
 	} else {
 		redisClient.Cmd("DEL", "csrf_redir:"+state)
 	}
@@ -113,8 +113,8 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 func CreateCSRFToken(client *redis.Client) (string, error) {
 	str := RandBase64(32)
 
-	client.Append("LPUSH", "csrf", str)
-	client.Append("LTRIM", "csrf", 0, 99) // Store only 100 crsf tokens, might need to be increased later
+	client.PipeAppend("LPUSH", "csrf", str)
+	client.PipeAppend("LTRIM", "csrf", 0, 99) // Store only 100 crsf tokens, might need to be increased later
 
 	_, err := common.GetRedisReplies(client, 2)
 	return str, err

@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
@@ -65,9 +64,9 @@ func (p *Plugin) runFeed() {
 			now := time.Now()
 			err := p.checkChannels(redisClient)
 			if err != nil {
-				logrus.WithError(err).Error("Failed checking youtube channels")
+				p.Entry.WithError(err).Error("Failed checking youtube channels")
 			}
-			logrus.Info("Took", time.Since(now), "to check youtube feeds")
+			p.Entry.Info("Took", time.Since(now), "to check youtube feeds")
 		}
 	}
 }
@@ -82,14 +81,14 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 		err = p.checkChannel(client, channel)
 		if err != nil {
 			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
-				logrus.WithError(err).WithField("yt_channel", channel).Warn("Removing non existant youtube channel")
+				p.Entry.WithError(err).WithField("yt_channel", channel).Warn("Removing non existant youtube channel")
 				err = common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
 				if err != nil && err != gorm.ErrRecordNotFound {
-					logrus.WithError(err).Error("Failed deleting nonexistant channel subs")
+					p.Entry.WithError(err).Error("Failed deleting nonexistant channel subs")
 				}
-				go maybeRemoveChannelWatch(channel)
+				go p.MaybeRemoveChannelWatch(channel)
 			} else {
-				logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
+				p.Entry.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
 			}
 		}
 	}
@@ -108,7 +107,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 
 	if len(subs) < 1 {
 		time.AfterFunc(time.Second*10, func() {
-			maybeRemoveChannelWatch(channel)
+			p.MaybeRemoveChannelWatch(channel)
 		})
 		return nil
 	}
@@ -122,7 +121,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	seconds, err := client.Cmd("GET", KeyLastVidTime(channel)).Int64()
 	var lastProcessedVidTime time.Time
 	if err != nil {
-		logrus.WithError(err).Error("Failed retrieving last processed vid time, falling back to this time")
+		p.Entry.WithError(err).Error("Failed retrieving last processed vid time, falling back to this time")
 		lastProcessedVidTime = time.Now()
 	} else {
 		lastProcessedVidTime = time.Unix(seconds, 0)
@@ -162,7 +161,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 			parsedPublishedAtLv, _ := time.Parse(time.RFC3339, lv.Snippet.PublishedAt)
 			parsedPublishedOld, err := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
 			if err != nil {
-				logrus.WithError(err).WithField("vid", latestVid.Id).Error("Failed parsing publishedat")
+				p.Entry.WithError(err).WithField("vid", latestVid.Id).Error("Failed parsing publishedat")
 			} else {
 				if parsedPublishedAtLv.After(parsedPublishedOld) {
 					latestVid = lv
@@ -174,7 +173,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 			break
 		}
 
-		logrus.Debug("next", resp.NextPageToken)
+		p.Entry.Debug("next", resp.NextPageToken)
 		if resp.NextPageToken == "" {
 			break // Reached end
 		}
@@ -202,7 +201,7 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 	for _, item := range resp.Items {
 		parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 		if err != nil {
-			logrus.WithError(err).Error("Failed parsing video time")
+			p.Entry.WithError(err).Error("Failed parsing video time")
 			continue
 		}
 
@@ -237,10 +236,10 @@ func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.Playlist
 			// Tried to send to nonexistant channel, remove all subs to this channel.
 			err = common.GORM.Where("channel_id = ?", discordChannel).Delete(ChannelSubscription{}).Error
 			if err != nil {
-				logrus.WithError(err).Error("failed removing nonexistant channel")
+				p.Entry.WithError(err).Error("failed removing nonexistant channel")
 			}
 		} else {
-			logrus.WithError(err).WithField("channel", discordChannel).Error("Failed sending youtube sub message")
+			p.Entry.WithError(err).WithField("channel", discordChannel).Error("Failed sending youtube sub message")
 		}
 	}
 }
@@ -326,12 +325,12 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 		return nil, err
 	}
 
-	err = maybeAddChannelWatch(false, client, sub.YoutubeChannelID)
+	err = p.MaybeAddChannelWatch(false, client, sub.YoutubeChannelID)
 	return sub, err
 }
 
 // maybeRemoveChannelWatch checks the channel for subs, if it has none then it removes it from the watchlist in redis.
-func maybeRemoveChannelWatch(channel string) {
+func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	client, err := common.RedisPool.Get()
 	if err != nil {
 		return
@@ -348,7 +347,7 @@ func maybeRemoveChannelWatch(channel string) {
 	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
 	if err != nil || count > 0 {
 		if err != nil {
-			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")
+			p.Entry.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")
 		}
 		return
 	}
@@ -360,11 +359,11 @@ func maybeRemoveChannelWatch(channel string) {
 		return
 	}
 
-	logrus.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
+	p.Entry.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
 }
 
 // maybeAddChannelWatch adds a channel watch to redis, if there wasnt one before
-func maybeAddChannelWatch(lock bool, client *redis.Client, channel string) error {
+func (p *Plugin) MaybeAddChannelWatch(lock bool, client *redis.Client, channel string) error {
 	if lock {
 		err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
 		if err != nil {
@@ -380,14 +379,14 @@ func maybeAddChannelWatch(lock bool, client *redis.Client, channel string) error
 		return common.ErrWithCaller(reply.Err)
 	}
 
-	if reply.Type != redis.NilReply {
+	if !reply.IsType(redis.Nil) {
 		// already added before, don't need to do anything
-		logrus.Info("Not nil reply", reply.String())
+		p.Entry.Info("Not nil reply", reply.String())
 		return nil
 	}
 
 	client.Cmd("ZADD", "youtube_subbed_channels", now, channel)
 	client.Cmd("SET", KeyLastVidTime(channel), now)
-	logrus.WithField("yt_channel", channel).Info("Added new youtube channel watch")
+	p.Entry.WithField("yt_channel", channel).Info("Added new youtube channel watch")
 	return nil
 }

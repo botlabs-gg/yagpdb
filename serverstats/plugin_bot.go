@@ -3,13 +3,13 @@ package serverstats
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"time"
 )
 
@@ -198,14 +198,14 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 }
 
 func ApplyPresences(client *redis.Client, guildID string, presences []*discordgo.Presence) error {
-	client.Append("DEL", "guild_stats_online:"+guildID)
+	client.PipeAppend("DEL", "guild_stats_online:"+guildID)
 	count := 1
 	for _, p := range presences {
 		if p.Status == "offline" {
 			continue
 		}
 		count++
-		client.Append("SADD", "guild_stats_online:"+guildID, p.User.ID)
+		client.PipeAppend("SADD", "guild_stats_online:"+guildID, p.User.ID)
 	}
 
 	_, err := common.GetRedisReplies(client, count)

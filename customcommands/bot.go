@@ -2,7 +2,6 @@ package customcommands
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
@@ -11,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/mediocregopher/radix.v2/redis"
 	"regexp"
 	"strings"
 	"unicode/utf8"

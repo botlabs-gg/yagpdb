@@ -6,7 +6,7 @@ There is several ways you can help making YAGPDB better, you don't have to know 
  - Writing code.
  - Helping out other people in discord.
  - Fix whatever typos and grammar error you find (there are many of them)
- - Buy the ad space
+ - [Buy the ad space](/docs/ads)
 
 ### Writing this Documentation
 

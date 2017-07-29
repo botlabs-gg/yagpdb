@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"strings"
 	"sync"
@@ -72,7 +72,7 @@ func (item *SubredditWatchItem) Remove(client *redis.Client) error {
 }
 
 func GetConfig(client *redis.Client, key string) ([]*SubredditWatchItem, error) {
-	rawItems, err := client.Cmd("HGETALL", key).Hash()
+	rawItems, err := client.Cmd("HGETALL", key).Map()
 	if err != nil {
 		return nil, err
 	}

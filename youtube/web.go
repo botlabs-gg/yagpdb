@@ -41,18 +41,18 @@ func (p *Plugin) InitWeb() {
 	ytMux.Use(web.RequireBotMemberMW)
 	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
 
-	mainGetHandler := web.ControllerHandler(HandleYoutube, "cp_youtube")
+	mainGetHandler := web.ControllerHandler(p.HandleYoutube, "cp_youtube")
 
 	ytMux.Handle(pat.Get("/"), mainGetHandler)
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
 	ytMux.Handle(pat.Post(""), web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed"))
 	ytMux.Handle(pat.Post("/"), web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed"))
-	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(HandleEdit), mainGetHandler, Form{}, "Updated a youtube feed"))
-	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
+	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, Form{}, "Updated a youtube feed"))
+	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
 }
 
-func HandleYoutube(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	_, ag, templateData := web.GetBaseCPContextData(ctx)
 
@@ -63,7 +63,7 @@ func HandleYoutube(w http.ResponseWriter, r *http.Request) (web.TemplateData, er
 	}
 
 	templateData["Subs"] = subs
-	templateData["VisibleURL"] = "/cp/" + ag.ID + "/youtube"
+	templateData["VisibleURL"] = "/manage/" + ag.ID + "/youtube"
 
 	return templateData, nil
 }
@@ -127,7 +127,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 	}
 }
 
-func HandleEdit(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
 	ctx := r.Context()
 	_, _, templateData = web.GetBaseCPContextData(ctx)
 
@@ -141,7 +141,7 @@ func HandleEdit(w http.ResponseWriter, r *http.Request) (templateData web.Templa
 	return
 }
 
-func HandleRemove(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
 	ctx := r.Context()
 	_, _, templateData = web.GetBaseCPContextData(ctx)
 
@@ -151,6 +151,6 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) (templateData web.Temp
 		return
 	}
 
-	maybeRemoveChannelWatch(sub.YoutubeChannelID)
+	p.MaybeRemoveChannelWatch(sub.YoutubeChannelID)
 	return
 }

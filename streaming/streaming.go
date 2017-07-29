@@ -2,8 +2,8 @@ package streaming
 
 import (
 	"encoding/json"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 type Plugin struct{}
@@ -50,7 +50,7 @@ var DefaultConfig = &Config{
 // Returns he guild's conifg, or the defaul one if not set
 func GetConfig(client *redis.Client, guildID string) (*Config, error) {
 	reply := client.Cmd("GET", "streaming_config:"+guildID)
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return DefaultConfig, nil
 	}
 

@@ -2,8 +2,8 @@ package reddit
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/go-reddit"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	"strconv"
 	"time"

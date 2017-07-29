@@ -7,10 +7,11 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -227,4 +228,16 @@ func CtxLogger(ctx context.Context) *log.Entry {
 	}
 
 	return log.NewEntry(log.StandardLogger())
+}
+
+func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, statusCode int) {
+	if r.FormValue("partial") != "" {
+		w.WriteHeader(statusCode)
+		w.Write([]byte(`{"error": "` + err + `"}`))
+		return
+	}
+
+	http.Redirect(w, r, "/?error="+url.QueryEscape(err), http.StatusTemporaryRedirect)
+	return
+
 }

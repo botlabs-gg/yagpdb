@@ -1,11 +1,11 @@
 package autorole
 
 import (
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"

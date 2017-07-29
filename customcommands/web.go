@@ -44,7 +44,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
 
 	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
@@ -74,12 +74,12 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
 
 	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
 	// Validate that they haven't messed with the id
-	exists, _ := client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID).Bool()
+	exists, _ := common.RedisBool(client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID))
 	if !exists {
 		return templateData, web.NewPublicError("That command dosen't exist?")
 	}
@@ -94,7 +94,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
 
 	cmdIndex := pat.Param(r, "cmd")
 

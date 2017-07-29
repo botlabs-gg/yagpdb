@@ -74,7 +74,7 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
 	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reputation"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/reputation"
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*PostConfigForm)
 	conf := form.RepConfig()

@@ -2,9 +2,9 @@ package configstore
 
 import (
 	"encoding/json"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/net/context"
 	"strconv"
 )
@@ -27,7 +27,7 @@ func (r *redisDatabase) GetGuildConfig(ctx context.Context, guildID string, conf
 	}
 
 	reply := client.Cmd("GET", KeyGuildConfig(guildID, conf.GetName()))
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return ErrNotFound
 	}
 

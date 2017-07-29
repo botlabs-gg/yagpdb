@@ -1,8 +1,8 @@
 package autorole
 
 import (
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 func KeyCommands(guildID string) string   { return "autorole:" + guildID + ":commands" }

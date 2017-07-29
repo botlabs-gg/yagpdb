@@ -20,6 +20,7 @@ func KeyLastVidTime(channel string) string { return "youtube_last_video_time:" +
 func KeyLastVidID(channel string) string   { return "youtube_last_video_id:" + channel }
 
 type Plugin struct {
+	common.BasePlugin
 	YTService *youtube.Service
 	Stop      chan *sync.WaitGroup
 }
@@ -38,7 +39,7 @@ func RegisterPlugin() {
 
 	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
 
-	common.RegisterPlugin(p)
+	common.RegisterPluginL(p)
 
 	docs.AddPage("Youtube Feeds", FSMustString(false, "/assets/help-page.md"), nil)
 }

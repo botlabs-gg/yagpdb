@@ -122,16 +122,6 @@
 {{/*
 Argumens
 Channels - list of channels
-Selected - id of the selected channel
-*/}}
-{{define "channel_options"}}
-    {{$selected := or .Selected ""}}
-    {{range .Channels}}{{if eq .Type "text"}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}}>#{{.Name}}</option>{{end}}{{end}}    
-{{end}}
-
-{{/*
-Argumens
-Channels - list of channels
 Selections - List of selections
 <li><input type="radio" id="ID" name="NAME" value="VALUE"><label for="ID">Label</label></li>
 */}}
@@ -141,19 +131,6 @@ Selections - List of selections
     {{$name := or .Name "Channels"}}
     {{range .Channels}}{{if eq .Type "text"}}<li><input type="checkbox" name="{{$name}}" value="{{.ID}}" id="{{$idPrefix}}{{.ID}}" {{if $selections}}{{if in $selections .ID}}checked {{end}}{{end}}><label for="{{$idPrefix}}{{.ID}}">#{{.Name}}</label></option>
     {{end}}{{end}}
-{{end}}
-
-{{/*
-Argumens
-Roles - list of roles
-Selected - id of the selected channel
-Highest - the highest role the bot currently has, roles below this will be set to disabled
-*/}}
-{{define "role_options"}}
-    {{$selected := or .Selected ""}}
-    {{$highest := or .Highest}}
-    {{$n := len .Roles}}
-    {{range $i, $v := .Roles}}{{if and (ne (add $i 1) $n) (not .Managed)}}<option value="{{.ID}}" {{if eq .ID $selected}} selected{{end}} {{if $highest}}{{if roleAbove $highest .}} >{{.Name}}{{else}} disabled> {{.Name}} (Role is above bot) {{end}}{{else}}>{{.Name}}{{end}}</option>{{end}}{{end}}
 {{end}}
 
 {{/*Help block for templating*/}}

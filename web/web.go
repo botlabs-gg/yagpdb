@@ -14,6 +14,7 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -45,9 +46,12 @@ func init() {
 
 	Templates = template.New("")
 	Templates = Templates.Funcs(template.FuncMap{
-		"mTemplate":  mTemplate,
-		"hasPerm":    hasPerm,
-		"formatTime": prettyTime,
+		"mTemplate":           mTemplate,
+		"hasPerm":             hasPerm,
+		"formatTime":          prettyTime,
+		"roleOptions":         tmplRoleDropdown,
+		"textChannelOptions":  tmplChannelDropdown("text"),
+		"voiceChannelOptions": tmplChannelDropdown("text"),
 	})
 
 	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)
@@ -167,8 +171,11 @@ func setupRoutes() *goji.Mux {
 	mux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
 
 	// Server selection has it's own handler
-	mux.Handle(pat.Get("/cp"), RenderHandler(HandleSelectServer, "cp_selectserver"))
-	mux.Handle(pat.Get("/cp/"), RenderHandler(HandleSelectServer, "cp_selectserver"))
+	mux.Handle(pat.Get("/manage"), RenderHandler(HandleSelectServer, "cp_selectserver"))
+	mux.Handle(pat.Get("/manage/"), RenderHandler(HandleSelectServer, "cp_selectserver"))
+
+	mux.HandleFunc(pat.Get("/cp"), legacyCPRedirHandler)
+	mux.HandleFunc(pat.Get("/cp/*"), legacyCPRedirHandler)
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	serverCpMuxer := goji.SubMux()
@@ -176,8 +183,8 @@ func setupRoutes() *goji.Mux {
 	serverCpMuxer.Use(ActiveServerMW)
 	serverCpMuxer.Use(RequireServerAdminMiddleware)
 
-	mux.Handle(pat.New("/cp/:server"), serverCpMuxer)
-	mux.Handle(pat.New("/cp/:server/*"), serverCpMuxer)
+	mux.Handle(pat.New("/manage/:server"), serverCpMuxer)
+	mux.Handle(pat.New("/manage/:server/*"), serverCpMuxer)
 
 	serverCpMuxer.Handle(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	serverCpMuxer.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
@@ -199,4 +206,10 @@ func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
 
 func AddGlobalTemplateData(key string, data interface{}) {
 	globalTemplateData[key] = data
+}
+
+func legacyCPRedirHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit cp path: ", r.RequestURI)
+	trimmed := strings.TrimPrefix(r.RequestURI, "/cp")
+	http.Redirect(w, r, "/manage"+trimmed, http.StatusMovedPermanently)
 }

@@ -40,7 +40,7 @@
                                 <label>Admin role</label>
                                 <select class="form-control" name="AdminRole">
                                     <option value="" {{if eq .RepSettings.AdminRole.String ""}} selected{{end}}>None</option>
-                                    {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" .RepSettings.AdminRole.String}}
+                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.AdminRole.String "None"}}
                                 </select>
                                 <p class="help-block">Admins can freely change anyone's points to any number</p>
                             </div>
@@ -49,29 +49,25 @@
                             <div class="form-group">
                                 <label>Required role to give/remove points</label>
                                 <select class="form-control" name="RequiredGiveRole">
-                                    <option value="" {{if eq .RepSettings.RequiredGiveRole.String ""}} selected{{end}}>None</option>
-                                    {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" .RepSettings.RequiredGiveRole.String}}
+                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.RequiredGiveRole.String "None"}}
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Required role to receive/being taken away points from</label>
                                 <select class="form-control" name="RequiredReceiveRole">
-                                    <option value="" {{if eq .RepSettings.RequiredReceiveRole.String ""}} selected{{end}}>None</option>
-                                    {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" .RepSettings.RequiredReceiveRole.String}}
+                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.RequiredReceiveRole.String "None"}}
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Blacklisted role for giving/taking away points</label>
                                 <select class="form-control" name="BlacklistedGiveRole">
-                                    <option value="" {{if eq .RepSettings.BlacklistedGiveRole.String ""}} selected{{end}}>None</option>
-                                    {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" .RepSettings.BlacklistedGiveRole.String}}
+                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.BlacklistedGiveRole.String "None"}}
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Blacklisted role for receiving/being taken away points from</label>
                                 <select class="form-control" name="BlacklistedReceiveRole">
-                                    <option value="" {{if eq .RepSettings.BlacklistedReceiveRole.String ""}} selected{{end}}>None</option>
-                                    {{mTemplate "role_options" "Roles" .ActiveGuild.Roles "Selected" .RepSettings.BlacklistedReceiveRole.String}}
+                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.BlacklistedReceiveRole.String "None"}}
                                 </select>
                             </div>
                         </div>

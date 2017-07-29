@@ -4,7 +4,7 @@
     <ul class="nav nav-second-level">
 	    {{range .DocPages}}
         <li>
-            <a class="nav-link" href="/docs/{{.Name}}">{{.Name}}</a>
+            <a class="nav-link" href="/docs/{{lower .Name}}">{{.Name}}</a>
         </li>
 	    {{end}}
     <!-- /.nav-second-level -->

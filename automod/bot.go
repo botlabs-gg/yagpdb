@@ -2,7 +2,6 @@ package automod
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -10,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
+	"github.com/mediocregopher/radix.v2/redis"
 	"time"
 )
 

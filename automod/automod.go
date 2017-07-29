@@ -3,9 +3,9 @@ package automod
 //go:generate esc -o assets_gen.go -pkg automod -ignore ".go" assets/
 
 import (
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 type Condition string

@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/extra/pool"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
+	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/vattle/sqlboiler/boil"
 	stdlog "log"
 	"os"
@@ -15,8 +15,8 @@ import (
 
 const (
 	VERSIONMAJOR = 0
-	VERSIONMINOR = 21
-	VERSIONPATCH = 7
+	VERSIONMINOR = 22
+	VERSIONPATCH = 0
 
 	Testing = false // Disables stuff like command cooldowns
 	// Testing = true // Disables stuff like command cooldowns
@@ -24,7 +24,7 @@ const (
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Jazzy"
+	VERSION       = VERSIONNUMBER + " Dev"
 
 	GORM        *gorm.DB
 	PQ          *sql.DB
@@ -68,7 +68,8 @@ func Init() error {
 }
 
 func connectRedis(addr string) (err error) {
-	RedisPool, err = pool.NewCustomPool("tcp", addr, 25, RedisDialFunc)
+	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
+	RedisPool, err = pool.NewCustom("tcp", addr, 25, RedisDialFunc)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}

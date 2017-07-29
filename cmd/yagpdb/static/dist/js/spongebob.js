@@ -30,6 +30,9 @@ $(function(){
     if(window.location.hash){
     	navigateToAnchor(window.location.hash);
     }
+
+   	// Update all dropdowns
+	$(".btn-group .dropdown-menu").dropdownUpdate();
 })
 
 var currentlyLoading = false;
@@ -71,6 +74,10 @@ function navigate(url, method, data, updateHistory){
 
 			updateSelectedMenuItem();
 			addListeners(true);
+
+			// Update all dropdowns
+			$(".btn-group .dropdown-menu").dropdownUpdate();
+
 			if (typeof ga !== 'undefined') {
 				ga('send', 'pageview', window.location.pathname);
 				console.log("Sent pageview")
@@ -128,6 +135,11 @@ function addListeners(partial){
 		$("#main-content").html('<div class="loader">Loading...</div>');
 	});
 
+	formSubmissionEvents(selectorPrefix);
+}
+
+function formSubmissionEvents(selectorPrefix){
+	// Form submission fuckery
 	var forms = $(selectorPrefix + "form");
 	
 	forms.each(function(i, elem){
@@ -206,9 +218,7 @@ function addListeners(partial){
 	const $navbar = $('.navbar');
 	$(selectorPrefix + 'a[href^="#"]').on('click', function(e) {
 	    e.preventDefault();
-	    console.log(e);
-
-	    
+    
 	    navigateToAnchor($.attr(this, "href"));
  
 	    // e.target.scrollIntoView({"behaviour": "smooth", "block": "end"});
@@ -217,7 +227,6 @@ function addListeners(partial){
 	    //     $navbar.outerHeight();
 
 	    // $('html, body').animate({ scrollTop });
-
 	})
 }
 
@@ -225,6 +234,10 @@ function navigateToAnchor(name){
 	name = name.substring(1);
 
 	var elem = $("a[name=\""+name+"\"]");
+	if(elem.length < 1){
+		return;
+	}
+
     $('html, body').animate({
         scrollTop: elem.offset().top-60
     }, 500);

@@ -16,51 +16,53 @@ import (
 type Event int
 
 const (
-	EventNewGuild                Event = 0
-	EventAll                     Event = 1
-	EventAllPre                  Event = 2
-	EventAllPost                 Event = 3
-	EventMemberFetched           Event = 4
-	EventChannelCreate           Event = 5
-	EventChannelDelete           Event = 6
-	EventChannelPinsUpdate       Event = 7
-	EventChannelUpdate           Event = 8
-	EventConnect                 Event = 9
-	EventDisconnect              Event = 10
-	EventGuildBanAdd             Event = 11
-	EventGuildBanRemove          Event = 12
-	EventGuildCreate             Event = 13
-	EventGuildDelete             Event = 14
-	EventGuildEmojisUpdate       Event = 15
-	EventGuildIntegrationsUpdate Event = 16
-	EventGuildMemberAdd          Event = 17
-	EventGuildMemberRemove       Event = 18
-	EventGuildMemberUpdate       Event = 19
-	EventGuildMembersChunk       Event = 20
-	EventGuildRoleCreate         Event = 21
-	EventGuildRoleDelete         Event = 22
-	EventGuildRoleUpdate         Event = 23
-	EventGuildUpdate             Event = 24
-	EventMessageAck              Event = 25
-	EventMessageCreate           Event = 26
-	EventMessageDelete           Event = 27
-	EventMessageDeleteBulk       Event = 28
-	EventMessageReactionAdd      Event = 29
-	EventMessageReactionRemove   Event = 30
-	EventMessageUpdate           Event = 31
-	EventPresenceUpdate          Event = 32
-	EventPresencesReplace        Event = 33
-	EventRateLimit               Event = 34
-	EventReady                   Event = 35
-	EventRelationshipAdd         Event = 36
-	EventRelationshipRemove      Event = 37
-	EventResumed                 Event = 38
-	EventTypingStart             Event = 39
-	EventUserGuildSettingsUpdate Event = 40
-	EventUserSettingsUpdate      Event = 41
-	EventUserUpdate              Event = 42
-	EventVoiceServerUpdate       Event = 43
-	EventVoiceStateUpdate        Event = 44
+	EventNewGuild                 Event = 0
+	EventAll                      Event = 1
+	EventAllPre                   Event = 2
+	EventAllPost                  Event = 3
+	EventMemberFetched            Event = 4
+	EventChannelCreate            Event = 5
+	EventChannelDelete            Event = 6
+	EventChannelPinsUpdate        Event = 7
+	EventChannelUpdate            Event = 8
+	EventConnect                  Event = 9
+	EventDisconnect               Event = 10
+	EventGuildBanAdd              Event = 11
+	EventGuildBanRemove           Event = 12
+	EventGuildCreate              Event = 13
+	EventGuildDelete              Event = 14
+	EventGuildEmojisUpdate        Event = 15
+	EventGuildIntegrationsUpdate  Event = 16
+	EventGuildMemberAdd           Event = 17
+	EventGuildMemberRemove        Event = 18
+	EventGuildMemberUpdate        Event = 19
+	EventGuildMembersChunk        Event = 20
+	EventGuildRoleCreate          Event = 21
+	EventGuildRoleDelete          Event = 22
+	EventGuildRoleUpdate          Event = 23
+	EventGuildUpdate              Event = 24
+	EventMessageAck               Event = 25
+	EventMessageCreate            Event = 26
+	EventMessageDelete            Event = 27
+	EventMessageDeleteBulk        Event = 28
+	EventMessageReactionAdd       Event = 29
+	EventMessageReactionRemove    Event = 30
+	EventMessageReactionRemoveAll Event = 31
+	EventMessageUpdate            Event = 32
+	EventPresenceUpdate           Event = 33
+	EventPresencesReplace         Event = 34
+	EventRateLimit                Event = 35
+	EventReady                    Event = 36
+	EventRelationshipAdd          Event = 37
+	EventRelationshipRemove       Event = 38
+	EventResumed                  Event = 39
+	EventTypingStart              Event = 40
+	EventUserGuildSettingsUpdate  Event = 41
+	EventUserNoteUpdate           Event = 42
+	EventUserSettingsUpdate       Event = 43
+	EventUserUpdate               Event = 44
+	EventVoiceServerUpdate        Event = 45
+	EventVoiceStateUpdate         Event = 46
 )
 
 var EventNames = []string{
@@ -95,6 +97,7 @@ var EventNames = []string{
 	"MessageDeleteBulk",
 	"MessageReactionAdd",
 	"MessageReactionRemove",
+	"MessageReactionRemoveAll",
 	"MessageUpdate",
 	"PresenceUpdate",
 	"PresencesReplace",
@@ -105,6 +108,7 @@ var EventNames = []string{
 	"Resumed",
 	"TypingStart",
 	"UserGuildSettingsUpdate",
+	"UserNoteUpdate",
 	"UserSettingsUpdate",
 	"UserUpdate",
 	"VoiceServerUpdate",
@@ -142,6 +146,7 @@ var AllDiscordEvents = []Event{
 	EventMessageDeleteBulk,
 	EventMessageReactionAdd,
 	EventMessageReactionRemove,
+	EventMessageReactionRemoveAll,
 	EventMessageUpdate,
 	EventPresenceUpdate,
 	EventPresencesReplace,
@@ -152,55 +157,58 @@ var AllDiscordEvents = []Event{
 	EventResumed,
 	EventTypingStart,
 	EventUserGuildSettingsUpdate,
+	EventUserNoteUpdate,
 	EventUserSettingsUpdate,
 	EventUserUpdate,
 	EventVoiceServerUpdate,
 	EventVoiceStateUpdate,
 }
 
-var handlers = make([][]*Handler, 45)
+var handlers = make([][]*Handler, 47)
 
 type EventDataContainer struct {
-	ChannelCreate           *discordgo.ChannelCreate
-	ChannelDelete           *discordgo.ChannelDelete
-	ChannelPinsUpdate       *discordgo.ChannelPinsUpdate
-	ChannelUpdate           *discordgo.ChannelUpdate
-	Connect                 *discordgo.Connect
-	Disconnect              *discordgo.Disconnect
-	GuildBanAdd             *discordgo.GuildBanAdd
-	GuildBanRemove          *discordgo.GuildBanRemove
-	GuildCreate             *discordgo.GuildCreate
-	GuildDelete             *discordgo.GuildDelete
-	GuildEmojisUpdate       *discordgo.GuildEmojisUpdate
-	GuildIntegrationsUpdate *discordgo.GuildIntegrationsUpdate
-	GuildMemberAdd          *discordgo.GuildMemberAdd
-	GuildMemberRemove       *discordgo.GuildMemberRemove
-	GuildMemberUpdate       *discordgo.GuildMemberUpdate
-	GuildMembersChunk       *discordgo.GuildMembersChunk
-	GuildRoleCreate         *discordgo.GuildRoleCreate
-	GuildRoleDelete         *discordgo.GuildRoleDelete
-	GuildRoleUpdate         *discordgo.GuildRoleUpdate
-	GuildUpdate             *discordgo.GuildUpdate
-	MessageAck              *discordgo.MessageAck
-	MessageCreate           *discordgo.MessageCreate
-	MessageDelete           *discordgo.MessageDelete
-	MessageDeleteBulk       *discordgo.MessageDeleteBulk
-	MessageReactionAdd      *discordgo.MessageReactionAdd
-	MessageReactionRemove   *discordgo.MessageReactionRemove
-	MessageUpdate           *discordgo.MessageUpdate
-	PresenceUpdate          *discordgo.PresenceUpdate
-	PresencesReplace        *discordgo.PresencesReplace
-	RateLimit               *discordgo.RateLimit
-	Ready                   *discordgo.Ready
-	RelationshipAdd         *discordgo.RelationshipAdd
-	RelationshipRemove      *discordgo.RelationshipRemove
-	Resumed                 *discordgo.Resumed
-	TypingStart             *discordgo.TypingStart
-	UserGuildSettingsUpdate *discordgo.UserGuildSettingsUpdate
-	UserSettingsUpdate      *discordgo.UserSettingsUpdate
-	UserUpdate              *discordgo.UserUpdate
-	VoiceServerUpdate       *discordgo.VoiceServerUpdate
-	VoiceStateUpdate        *discordgo.VoiceStateUpdate
+	ChannelCreate            *discordgo.ChannelCreate
+	ChannelDelete            *discordgo.ChannelDelete
+	ChannelPinsUpdate        *discordgo.ChannelPinsUpdate
+	ChannelUpdate            *discordgo.ChannelUpdate
+	Connect                  *discordgo.Connect
+	Disconnect               *discordgo.Disconnect
+	GuildBanAdd              *discordgo.GuildBanAdd
+	GuildBanRemove           *discordgo.GuildBanRemove
+	GuildCreate              *discordgo.GuildCreate
+	GuildDelete              *discordgo.GuildDelete
+	GuildEmojisUpdate        *discordgo.GuildEmojisUpdate
+	GuildIntegrationsUpdate  *discordgo.GuildIntegrationsUpdate
+	GuildMemberAdd           *discordgo.GuildMemberAdd
+	GuildMemberRemove        *discordgo.GuildMemberRemove
+	GuildMemberUpdate        *discordgo.GuildMemberUpdate
+	GuildMembersChunk        *discordgo.GuildMembersChunk
+	GuildRoleCreate          *discordgo.GuildRoleCreate
+	GuildRoleDelete          *discordgo.GuildRoleDelete
+	GuildRoleUpdate          *discordgo.GuildRoleUpdate
+	GuildUpdate              *discordgo.GuildUpdate
+	MessageAck               *discordgo.MessageAck
+	MessageCreate            *discordgo.MessageCreate
+	MessageDelete            *discordgo.MessageDelete
+	MessageDeleteBulk        *discordgo.MessageDeleteBulk
+	MessageReactionAdd       *discordgo.MessageReactionAdd
+	MessageReactionRemove    *discordgo.MessageReactionRemove
+	MessageReactionRemoveAll *discordgo.MessageReactionRemoveAll
+	MessageUpdate            *discordgo.MessageUpdate
+	PresenceUpdate           *discordgo.PresenceUpdate
+	PresencesReplace         *discordgo.PresencesReplace
+	RateLimit                *discordgo.RateLimit
+	Ready                    *discordgo.Ready
+	RelationshipAdd          *discordgo.RelationshipAdd
+	RelationshipRemove       *discordgo.RelationshipRemove
+	Resumed                  *discordgo.Resumed
+	TypingStart              *discordgo.TypingStart
+	UserGuildSettingsUpdate  *discordgo.UserGuildSettingsUpdate
+	UserNoteUpdate           *discordgo.UserNoteUpdate
+	UserSettingsUpdate       *discordgo.UserSettingsUpdate
+	UserUpdate               *discordgo.UserUpdate
+	VoiceServerUpdate        *discordgo.VoiceServerUpdate
+	VoiceStateUpdate         *discordgo.VoiceStateUpdate
 }
 
 func HandleEvent(s *discordgo.Session, evt interface{}) {
@@ -289,48 +297,54 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 	case *discordgo.MessageReactionRemove:
 		evtData.MessageReactionRemove = t
 		evtData.Type = Event(30)
+	case *discordgo.MessageReactionRemoveAll:
+		evtData.MessageReactionRemoveAll = t
+		evtData.Type = Event(31)
 	case *discordgo.MessageUpdate:
 		evtData.MessageUpdate = t
-		evtData.Type = Event(31)
+		evtData.Type = Event(32)
 	case *discordgo.PresenceUpdate:
 		evtData.PresenceUpdate = t
-		evtData.Type = Event(32)
+		evtData.Type = Event(33)
 	case *discordgo.PresencesReplace:
 		evtData.PresencesReplace = t
-		evtData.Type = Event(33)
+		evtData.Type = Event(34)
 	case *discordgo.RateLimit:
 		evtData.RateLimit = t
-		evtData.Type = Event(34)
+		evtData.Type = Event(35)
 	case *discordgo.Ready:
 		evtData.Ready = t
-		evtData.Type = Event(35)
+		evtData.Type = Event(36)
 	case *discordgo.RelationshipAdd:
 		evtData.RelationshipAdd = t
-		evtData.Type = Event(36)
+		evtData.Type = Event(37)
 	case *discordgo.RelationshipRemove:
 		evtData.RelationshipRemove = t
-		evtData.Type = Event(37)
+		evtData.Type = Event(38)
 	case *discordgo.Resumed:
 		evtData.Resumed = t
-		evtData.Type = Event(38)
+		evtData.Type = Event(39)
 	case *discordgo.TypingStart:
 		evtData.TypingStart = t
-		evtData.Type = Event(39)
+		evtData.Type = Event(40)
 	case *discordgo.UserGuildSettingsUpdate:
 		evtData.UserGuildSettingsUpdate = t
-		evtData.Type = Event(40)
+		evtData.Type = Event(41)
+	case *discordgo.UserNoteUpdate:
+		evtData.UserNoteUpdate = t
+		evtData.Type = Event(42)
 	case *discordgo.UserSettingsUpdate:
 		evtData.UserSettingsUpdate = t
-		evtData.Type = Event(41)
+		evtData.Type = Event(43)
 	case *discordgo.UserUpdate:
 		evtData.UserUpdate = t
-		evtData.Type = Event(42)
+		evtData.Type = Event(44)
 	case *discordgo.VoiceServerUpdate:
 		evtData.VoiceServerUpdate = t
-		evtData.Type = Event(43)
+		evtData.Type = Event(45)
 	case *discordgo.VoiceStateUpdate:
 		evtData.VoiceStateUpdate = t
-		evtData.Type = Event(44)
+		evtData.Type = Event(46)
 	default:
 		return
 	}

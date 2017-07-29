@@ -25,8 +25,7 @@
                     <div class="form-group">
                         <label>Required Role</label>
                         <select class="form-control" name="RequiredRole">
-                            <option {{if not .RequiredRole}}selected{{end}} value="">None</option>
-                            {{mTemplate "role_options" "Roles" .ActiveGuild.Roles}}
+                            {{roleOptions .ActiveGuild.Roles nil "" "None"}}
                         </select>
                     </div>
 
@@ -71,8 +70,7 @@
                         <div class="form-group">
                             <label>Required Role</label>
                             <select class="form-control" name="RequiredRole">
-                                <option {{if not .RequiredRole}}selected{{end}} value="">None</option>
-                                {{mTemplate "role_options" "Roles" $roles "Selected" .RequiredRole}}
+                                {{roleOptions $roles nil .RequiredRole "None"}}
                             </select>
                         </div>
 
