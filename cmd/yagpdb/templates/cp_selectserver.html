@@ -23,64 +23,28 @@
         </div>
         {{end}}
 
-        <h3>One year! <small>21st jul 2012</small></h3>
-        <p>It's around one year since i started the development of YAGPDB and it's been neat. I decided to make a survey to give you the ability to leave some feedback!</p>
-        <a class="btn btn-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSf6BYGCJBC05bYH4e7s3YARDbm1Xfr4or2ll5anwXjMkWQjog/viewform?usp=sf_link">Take survery</a>
-
-        <h3>Version 0.21.0->0.21.5 <small>0.21.6: 26th jul 2017</small></h3>
-        <p>I've pushed a couple bugfix updates to the bot since the last major update</p>
+        <h3>Version 0.22 <small>29th jul 2017</small></h3>
+        <p>It's update time again, this update is rather small, except for a few relatively big changes, mostly because i've been also patching stuff on the last version while also working on this verison. But it does contain some control panel improvements, and various other improvements you may or may not notice.</p>
         <p>If you come across any weird behaviour or issues please let me know as soon as possible by joining the support server above or <a href="https://github.com/jonas747/yagpdb/issues">opening an issue.</a></p>
         <ul>
-            <li>Fix deadlocks resulting form the new member fetching queue, if your control panel was inaccessible and some bot funcionality was not working this may have been the cause</li>
-            <li>Fix deadlocks resulting from new central templating system, if your custom command used exec or you used the streaming notifications plugin you may have been affected and you may have been unable to access the control panel and certain commands</li>
-            <li>Fix the new member fetcher sometimes attempting to fetch the same member twice</li> 
-            <li><b>0.21.4</b>: Fix some wrong behaviour in reputation, the takerep command specifically</li> 
-            <li><b>0.21.4</b>: More updates to the documentation pages, thanks <b>Ryvid</b> and <b>timcampy118</b> for the contributions</li> 
-            <li><b>0.21.4</b>: Made the youtube page slightly more user friendly</li> 
-            <li><b>0.21.4</b>: Fixed a bug in the streaming plugin where it wouldn't retry giving the streaming role after the first error</li> 
-            <li><b>0.21.5</b>: Added <code>setrep</code> command which i forgot about last update.</li> 
-            <li><b>0.21.6</b>: Commands are now limited to 1m of execution time, this is mostly in regarding to commands that sends huge responses, if they go on for more than 1 minute.</li> 
-            <li><b>0.21.6</b>: You can now only execute 1 instance of a command at once, it will queue up and start executing the command after the other one finishes if you try to do them both at once, this and the above change was introduced because it was a target for attackers making the bot crash.</li> 
-        </ul>
-
-        <h3>Version 0.21 <small>11th jul 2017</small></h3>
-        <p>A mostly fix update which fixes most broken stuff in the bot and adds some fresh new functionality aswell</p>
-        <p>I've set up a Patreon for the bot <a href="https://www.patreon.com/yagpdb">here</a> (yes that is me)</p>
-        <p>Again, thanks to <b>Ryvid</b> for his contributions, i am extremely happy to receive contributions even if it's only documentation, documentation is one thing that this bot lacks a lot and that I'm not very good at</p>
-        <p>If you find any issues, or want anything added, be sure to <a href="https://github.com/jonas747/yagpdb/issues">open a issue about it</a>, notifying me in person works and all but i often forget about small things like typos.</p>
-        <p>Changelog:</p>
-        <ul>
-            <li>Reddit feed has been redone, will now work in subreddits that is hidden from the frontpage</li>
-            <li>Reputation leader-board have been fixed</li>
-            <li>Fixed the catfact command</li>
-            <li>Added back - command to decrease rep</li>
-            <li>Increased reddit feed limit to 100 from 50</li>
-            <li>Increased youtube feed limit to 50 from 25, the youtube api is a bit more expensive, and seems more popular so im still keeping it a little low still</li>
-            <li>Increased custom commands limit to 100 from 50, might get decreased if performance problems show up</li>
-            <li>Limit autorole commands to 1000, they previously had no limit (running out of memory is bad)</li>
-            <li>Several backend improvement to make it more resistant to discord having issues</li>
-            <li>Extended the custom templating system that custom commands and such uses
+            <li><b>Added <code>CurrentTime/ctime/gettime</code></b> command for getting the current time in various timezones and offsets
                 <ul>
-                    <li>Member is now available most places</li>
-                    <li>Commands can now be executed on users joining from templates</li>
-                    <li>Server and member is now available in most places</li>
-                    <li>New functions:
-                        <ul>
-                            <li><code>adjective</code>: Returns a random adjective</li>
-                            <li><code>dict key value key value...</code>: Creates a dictioncary</li>
-                            <li><code>in list value</code>: Returns true if value is in list</li>
-                            <li><code>title string</code>: Capitalises the first letter of each word in string</li>
-                            <li><code>add x y</code>: returns x + y</li>
-                            <li><code>seq start stop</code>: creates a new array of integers, starting from start and ending at stop</li>
-                            <li><code>shuffle list</code>: shuffles the list</li>
-                            <li><code>joinStr str1 str2 str3 etc..</code>: joins several strings into one, usfull for executing</li>
-                            <li><code>randInt (stop, or start stop)</code>: returns a random integer between 0 and stop or start - stop</li>
-                        </ul>
-                    </li>
-                    <li><a href="/docs/Templates">See the templates docs page for more info</a></li>
+                    <li>Example: <code>-ctime CET</code> -> <code>Sat Jul 29 01:33:23 (UTC +01:00)</code>
+                    <li>Example: <code>-ctime -5</code> -> <code>Fri Jul 28 19:37:34 (UTC -05:00)</code>
                 </ul>
             </li>
+            <li><b>Renamed the /cp/... urls to /manage/...</b> reason being, i just felt like it, old routes will redirect</li>
+            <li>Control panel: channel and role dropdowns will no longer show a random channel/role as selected if the selected one was deleted</li>
+            <li>Automoderator: Updated the contorl panel page a little</li>
+            <li>Ping command: Small update, shows http api latency aswell</li>
+            <li>Reminders: Reminders triggered on the same interval will no longer cause spam</li>
+            <li>Docs: Urls are in lowercase now</li>
+            <li>Docs: Added some more pages, and actually wrote one of the existing ones. <small>i really don't like writing docs please help me</small></li>
         </ul>
+
+        <h3>One year! <small>21st jul 2017</small></h3>
+        <p>It's around one year since i started the development of YAGPDB and it's been neat. I decided to make a survey to give you the ability to leave some feedback!</p>
+        <a class="btn btn-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSf6BYGCJBC05bYH4e7s3YARDbm1Xfr4or2ll5anwXjMkWQjog/viewform?usp=sf_link">Take survery</a>
 
         <h3>Information</h3>
 
@@ -110,6 +74,65 @@
 
 
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+             <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="heading14">
+                    <h4 class="panel-title">
+                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse14" aria-expanded=false aria-controls="collapse14">
+                            Version 0.21 <small>11th jul 2017</small>
+                        </a>
+                    </h4>
+                </div>
+                <div id="collapse14" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading14">
+                    <div class="panel-body">
+                        <ul>
+                            <li>Reddit feed has been redone, will now work in subreddits that is hidden from the frontpage</li>
+                            <li>Reputation leader-board have been fixed</li>
+                            <li>Fixed the catfact command</li>
+                            <li>Added back - command to decrease rep</li>
+                            <li>Increased reddit feed limit to 100 from 50</li>
+                            <li>Increased youtube feed limit to 50 from 25, the youtube api is a bit more expensive, and seems more popular so im still keeping it a little low still</li>
+                            <li>Increased custom commands limit to 100 from 50, might get decreased if performance problems show up</li>
+                            <li>Limit autorole commands to 1000, they previously had no limit (running out of memory is bad)</li>
+                            <li>Several backend improvement to make it more resistant to discord having issues</li>
+                            <li>Extended the custom templating system that custom commands and such uses
+                                <ul>
+                                    <li>Member is now available most places</li>
+                                    <li>Commands can now be executed on users joining from templates</li>
+                                    <li>Server and member is now available in most places</li>
+                                    <li>New functions:
+                                        <ul>
+                                            <li><code>adjective</code>: Returns a random adjective</li>
+                                            <li><code>dict key value key value...</code>: Creates a dictioncary</li>
+                                            <li><code>in list value</code>: Returns true if value is in list</li>
+                                            <li><code>title string</code>: Capitalises the first letter of each word in string</li>
+                                            <li><code>add x y</code>: returns x + y</li>
+                                            <li><code>seq start stop</code>: creates a new array of integers, starting from start and ending at stop</li>
+                                            <li><code>shuffle list</code>: shuffles the list</li>
+                                            <li><code>joinStr str1 str2 str3 etc..</code>: joins several strings into one, usfull for executing</li>
+                                            <li><code>randInt (stop, or start stop)</code>: returns a random integer between 0 and stop or start - stop</li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/docs/Templates">See the templates docs page for more info</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <h4>Version 0.21.0->0.21.6 <small>0.21.6: 26th jul 2017</small></h4>
+                        <ul>
+                            <li>Fix deadlocks resulting form the new member fetching queue, if your control panel was inaccessible and some bot funcionality was not working this may have been the cause</li>
+                            <li>Fix deadlocks resulting from new central templating system, if your custom command used exec or you used the streaming notifications plugin you may have been affected and you may have been unable to access the control panel and certain commands</li>
+                            <li>Fix the new member fetcher sometimes attempting to fetch the same member twice</li> 
+                            <li><b>0.21.4</b>: Fix some wrong behaviour in reputation, the takerep command specifically</li> 
+                            <li><b>0.21.4</b>: More updates to the documentation pages, thanks <b>Ryvid</b> and <b>timcampy118</b> for the contributions</li> 
+                            <li><b>0.21.4</b>: Made the youtube page slightly more user friendly</li> 
+                            <li><b>0.21.4</b>: Fixed a bug in the streaming plugin where it wouldn't retry giving the streaming role after the first error</li> 
+                            <li><b>0.21.5</b>: Added <code>setrep</code> command which i forgot about last update.</li> 
+                            <li><b>0.21.6</b>: Commands are now limited to 1m of execution time, this is mostly in regarding to commands that sends huge responses, if they go on for more than 1 minute.</li> 
+                            <li><b>0.21.6</b>: You can now only execute 1 instance of a command at once, it will queue up and start executing the command after the other one finishes if you try to do them both at once, this and the above change was introduced because it was a target for attackers making the bot crash.</li> 
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <div class="panel panel-default">
                 <div class="panel-heading" role="tab" id="heading13">
                     <h4 class="panel-title">
