@@ -28,6 +28,16 @@ var (
 )
 
 func InitStores() {
+	common.PQ.Exec(`CREATE TABLE IF NOT EXISTS mqueue (
+	id serial NOT NULL PRIMARY KEY,
+	source text NOT NULL,
+	source_id text NOT NULL,
+	message_str text NOT NULL,
+	message_embed text NOT NULL,
+	channel text NOT NULL,
+	processed boolean NOT NULL
+);`)
+
 	store = NewQueuedElementStore(common.PQ)
 }
 
@@ -109,6 +119,7 @@ func Stop(wg *sync.WaitGroup) {
 }
 
 func poll() {
+
 	currentlyProcessingLock.RLock()
 	processing := make([]int64, len(currentlyProcessing))
 	copy(processing, currentlyProcessing)
