@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/oauth2"
 	"os"
@@ -112,24 +113,10 @@ OUTER:
 	embed := CreatePostEmbed(post)
 
 	for _, item := range filteredItems {
-		go func(cpItem *SubredditWatchItem, e *discordgo.MessageEmbed) {
-			err := common.RetrySendMessage(cpItem.Channel, e, 10)
-			if err != nil {
-				checkSendError(cpItem, err)
-			}
-		}(item, embed)
+		mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, embed)
 	}
 
 	return nil
-}
-
-func checkSendError(item *SubredditWatchItem, err error) {
-	if rError, ok := err.(*discordgo.RESTError); ok && rError.Response.StatusCode == 404 {
-		item.Remove(common.MustGetRedisClient())
-		logrus.WithError(err).WithField("channel", item.Channel).WithField("guild", item.Guild).Info("Removed reddit feed to nonexistand discord channel")
-	} else {
-		logrus.WithError(err).WithField("channel", item.Channel).WithField("guild", item.Guild).Error("Error posting message")
-	}
 }
 
 func CreatePostEmbed(post *reddit.Link) *discordgo.MessageEmbed {

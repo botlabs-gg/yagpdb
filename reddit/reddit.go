@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"strings"
@@ -21,11 +23,53 @@ func (p *Plugin) Name() string {
 	return "Reddit"
 }
 
+func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
+	if rError, ok := err.(*discordgo.RESTError); ok && rError.Response.StatusCode == 404 {
+		log.WithError(err).WithField("channel", elem.Channel).Info("Removing reddit feed to nonexistant discord channel")
+	} else {
+		log.WithError(err).WithField("channel", elem.Channel).Error("Error posting message")
+		return
+	}
+
+	split := strings.Split(elem.SourceID, ":")
+	if len(split) < 2 {
+		log.Error("Invalid queued item: ", elem.ID)
+		return
+	}
+	guildID := split[0]
+	itemID := split[1]
+
+	client, err := common.RedisPool.Get()
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving redis client from pool")
+		return
+	}
+
+	currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+guildID)
+	if err != nil {
+		log.WithError(err).Error("Failed fetching config to remove")
+		return
+	}
+
+	parsed, err := strconv.Atoi(itemID)
+	if err != nil {
+		log.WithError(err).WithField("mq_id", elem.ID).Error("Failed parsing item id")
+	}
+	for _, v := range currentConfig {
+		if v.ID == parsed {
+			v.Remove(client)
+			common.AddCPLogEntry(common.BotUser, guildID, "Removed reddit feed from "+v.Sub+", Channel does not exist")
+			break
+		}
+	}
+}
+
 func RegisterPlugin() {
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
 	common.RegisterPlugin(plugin)
+	mqueue.RegisterSource("reddit", plugin)
 }
 
 type SubredditWatchItem struct {

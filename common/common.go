@@ -31,6 +31,7 @@ var (
 	DSQLStateDB *sql.DB
 
 	BotSession *discordgo.Session
+	BotUser    *discordgo.User
 	Conf       *CoreConfig
 )
 
@@ -62,6 +63,11 @@ func Init() error {
 	}
 
 	err = connectDB(config.PQUsername, config.PQPassword, "yagpdb")
+
+	BotUser, err = BotSession.User("@me")
+	if err != nil {
+		panic(err)
+	}
 
 	return err
 }
