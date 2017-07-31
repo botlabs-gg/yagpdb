@@ -23,6 +23,7 @@ func (p *Plugin) Name() string {
 	return "Reddit"
 }
 
+// Remove feeds if they don't point to a proper channel
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	if rError, ok := err.(*discordgo.RESTError); ok && rError.Response.StatusCode == 404 {
 		log.WithError(err).WithField("channel", elem.Channel).Info("Removing reddit feed to nonexistant discord channel")
@@ -31,11 +32,13 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 		return
 	}
 
+	// channelid:feed-id
 	split := strings.Split(elem.SourceID, ":")
 	if len(split) < 2 {
 		log.Error("Invalid queued item: ", elem.ID)
 		return
 	}
+
 	guildID := split[0]
 	itemID := split[1]
 
