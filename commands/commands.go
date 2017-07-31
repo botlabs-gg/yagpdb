@@ -64,7 +64,7 @@ func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
 
 ROOT:
 	for _, channel := range channels {
-		if channel.Type != "text" {
+		if channel.Type != discordgo.ChannelTypeGuildText {
 			continue
 		}
 
@@ -96,7 +96,7 @@ ROOT:
 	// Check for removed channels
 	for _, override := range conf.ChannelOverrides {
 		for _, channel := range channels {
-			if channel.Type != "text" {
+			if channel.Type != discordgo.ChannelTypeGuildText {
 				continue
 			}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	log "github.com/Sirupsen/logrus"
 	"github.com/golang/crypto/acme/autocert"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
@@ -50,8 +51,9 @@ func init() {
 		"hasPerm":             hasPerm,
 		"formatTime":          prettyTime,
 		"roleOptions":         tmplRoleDropdown,
-		"textChannelOptions":  tmplChannelDropdown("text"),
-		"voiceChannelOptions": tmplChannelDropdown("text"),
+		"textChannelOptions":  tmplChannelDropdown(discordgo.ChannelTypeGuildText),
+		"voiceChannelOptions": tmplChannelDropdown(discordgo.ChannelTypeGuildVoice),
+		"catChannelOptions":   tmplChannelDropdown(discordgo.ChannelTypeGuildCategory),
 	})
 
 	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)

@@ -121,10 +121,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 // 1. current selected channelID
 // 2. default empty display name
 // 3. default unknown display name
-func tmplChannelDropdown(channelType string) func(channels []*discordgo.Channel, args ...string) template.HTML {
-	if channelType != "text" && channelType != "voice" {
-		panic("Unkown dropdown channel type: " + channelType)
-	}
+func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*discordgo.Channel, args ...string) template.HTML {
 
 	return func(channels []*discordgo.Channel, args ...string) template.HTML {
 		hasCurrentSelected := len(args) > 0
