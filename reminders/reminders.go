@@ -3,8 +3,8 @@ package reminders
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"strings"
@@ -45,19 +45,7 @@ func (r *Reminder) Trigger() error {
 
 	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message}).Info("Triggered reminder")
 
-	_, err := common.BotSession.ChannelMessageSend(r.ChannelID, common.EscapeEveryoneMention("**Reminder** <@"+r.UserID+">: "+r.Message))
-	if err != nil {
-		if cast, ok := err.(*discordgo.RESTError); !ok || cast.Message == nil || cast.Message.Code == 0 {
-			// Reschedule if discord didnt respond with an error (i.e they being down or something)
-			r.DeletedAt = &time.Time{}
-			common.GORM.Update(r)
-			return err
-		} else {
-			// Don't reschedule the event incase it was sent in a channel with no bot perms, or channel was deleted
-			logrus.WithError(err).WithField("channel", r.ChannelID).WithField("user", r.UserID).Warn("Discord wouldnt let us send a message in this channel to remind")
-			return nil
-		}
-	}
+	mqueue.QueueMessageString("reminder", "", r.ChannelID, common.EscapeEveryoneMention("**Reminder** <@"+r.UserID+">: "+r.Message))
 	return nil
 }
 
