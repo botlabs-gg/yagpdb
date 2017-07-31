@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
@@ -230,18 +230,8 @@ func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.Playlist
 	if mentionEveryone {
 		content += " @everyone"
 	}
-	err := common.RetrySendMessage(discordChannel, content, 50)
-	if err != nil {
-		if rError, ok := err.(*discordgo.RESTError); ok && rError.Response.StatusCode == 404 {
-			// Tried to send to nonexistant channel, remove all subs to this channel.
-			err = common.GORM.Where("channel_id = ?", discordChannel).Delete(ChannelSubscription{}).Error
-			if err != nil {
-				p.Entry.WithError(err).Error("failed removing nonexistant channel")
-			}
-		} else {
-			p.Entry.WithError(err).WithField("channel", discordChannel).Error("Failed sending youtube sub message")
-		}
-	}
+
+	mqueue.QueueMessageString("youtube", "", discordChannel, content)
 }
 
 var (

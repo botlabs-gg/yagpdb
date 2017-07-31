@@ -402,3 +402,12 @@ func ValidateSQLSchema(input string) {
 		fmt.Println("reading standard input:", err)
 	}
 }
+
+// DiscordError extracts the errorcode discord sent us
+func DiscordError(err error) (code int, msg string) {
+	if rError, ok := err.(*discordgo.RESTError); ok && rError.Message != nil {
+		return rError.Message.Code, rError.Message.Message
+	}
+
+	return 0, ""
+}
