@@ -55,7 +55,7 @@
                     Menu <i class="fa fa-bars"></i>
                 </button>
                 <a class="navbar-brand page-scroll" href="#page-top">
-                    <i class="fa fa-play-circle"></i> <span class="light">YAGPDB</span>: Yet another general purpose discord bot
+                    <i class="fa fa-play-circle"></i> <span class="light">YAGPDB</span>
                 </a>
             </div>
 
@@ -68,6 +68,9 @@
                     </li>
                     <li>
                         <a class="page-scroll" href="#about">About</a>
+                    </li>
+                    <li>
+                        <a href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=bot&permissions=535948311&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
                     </li>
                     <li>
                         <a href="/manage">Control panel</a>
@@ -90,11 +93,19 @@
             <div class="container">
                 <div class="row">
                     <div class="col-md-8 col-md-offset-2">
-                        <h1 class="brand-heading"><br/>YAGPDB - THE BEST FREAKING DISCORD BOT OUT THERE HAVE YOU NOT HEARD!?</h1>
-                        <p class="intro-text">Yet another general purpose discord bot. Because 1000 wasn't enough</p>
+                        <h1 class="brand-heading"><br/>YAGPDB</h1>
+                        <p class="intro-text">Yet another general purpose discord bot</p>
                         <a href="#about" class="btn btn-circle page-scroll">
                             <i class="fa fa-angle-double-down animated"></i>
                         </a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-md-offset-2">
+                        <p class="intro-text">Joined Servers: {{.JoinedServers}}</p> 
+                    </div>
+                    <div class="col-md-4">
+                        <p class="intro-text">Commands ran today: {{.Commands}}</p>
                     </div>
                 </div>
             </div>
@@ -106,7 +117,8 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2">
                 <h2>About YAGPDB</h2>
-                <p>Not much to say, it does some neat stuff and has a neat interface and works, pretty boring.</p>
+                <p>YAGPDB is a project of mine that i've worked on for quite some time now. What does it do? Well it does a bunch of stuff right now, the best way to figure out what it does is to try it out by adding it onto a testing server and see what it provides for yourself.</p>
+                <p><b>Who am i?</b> I go by the name jonas747 online and (unsuprisingly) my real name is also jonas, although not 747, I'm not a plane. YAGPDB is a project that i have been developing in my spare time for roughly a year now, it started out because mee6 (which i was currently using for my server) where lacking a lot of stuff that i wanted, so i decided to make my own bot, and here i am.</p>
             </div>
         </div>
     </section>
@@ -114,7 +126,7 @@
     <!-- Footer -->
     <footer>
         <div class="container text-center">
-            <p>Copyright &copy; Your face 2016</p>
+            <!-- <p>Copyright &copy; Your face 2016</p> -->
         </div>
     </footer>
 

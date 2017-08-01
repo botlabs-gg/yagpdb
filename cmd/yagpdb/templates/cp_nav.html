@@ -33,7 +33,7 @@
                 {{if $element.Connected -}}
                 <a href="/manage/{{$element.ID}}/stats"><i class="fa fa-magic fa-fw"></i>{{$element.Name}}</a>
                 {{- else -}}
-                <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{urlquery "https://"}}{{$host}}{{urlquery "/manage"}}"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
+                <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" $host "/manage")}}"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
                 {{- end}}
             </li>
             {{- end}}

@@ -4,6 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
 	"net/http"
+	"time"
 )
 
 func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
@@ -35,4 +36,28 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 	// tmpl["JoinedGuild"] = g
 
 	return tmpl
+}
+
+func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	_, tmpl := GetCreateTemplateData(r.Context())
+	redis := RedisClientFromContext(r.Context())
+
+	joinedServers, _ := redis.Cmd("SCARD", "connected_guilds").Int()
+
+	tmpl["JoinedServers"] = joinedServers
+
+	// Command stats
+	within := time.Now().Add(-24 * time.Hour)
+
+	var result struct {
+		Count int64
+	}
+	err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("COUNT(*)").Where("created_at > ?", within).Scan(&result).Error
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl["Commands"] = result.Count
+
+	return tmpl, nil
 }

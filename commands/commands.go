@@ -16,7 +16,7 @@ type Plugin struct{}
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
-	err := common.GORM.AutoMigrate(&LoggedExecutedCommand{}).Error
+	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
 	if err != nil {
 		log.WithError(err).Error("Failed migrating database")
 	}

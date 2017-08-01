@@ -78,7 +78,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 	}
 
 	// Set up log entry for later use
-	logEntry := &LoggedExecutedCommand{
+	logEntry := &common.LoggedExecutedCommand{
 		UserID:    trigger.Message.Author.ID,
 		ChannelID: cState.ID(),
 
