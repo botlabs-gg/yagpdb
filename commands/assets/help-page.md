@@ -43,6 +43,7 @@ Command | Aliases | Requiered Args | Optional Args | Description
 reverse | r, rev | (text) | N/A | Reverse the text given.
 weather | w | (location) | N/A | Show the weather for the given location. Add ?m after the location for metric. Example: `w bergen?m`.
 topic | N/A | N/A | N/A | Generates a chat topic.
+currenttime | ctime, gettime | N/A | (timezone) (delta time in hours) | Shows UTC time.
 catfact | cf, cat, catfacts | N/A | N/A | Catfacts. What else?!
 advice | N/A | N/A | (for?) | Get an advice.
 throw | N/A | N/A | (username) | Throws random stuff at nearby people or at the given member.
