@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
+	"github.com/jonas747/yagpdb/web/blog"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
@@ -82,6 +83,11 @@ func Run() {
 
 	// Start monitoring the bot
 	go botrest.RunPinger()
+
+	err := blog.LoadPosts()
+	if err != nil {
+		log.WithError(err).Error("Web: Failed loading blog posts")
+	}
 
 	log.Info("Running webservers")
 	runServers(mux)

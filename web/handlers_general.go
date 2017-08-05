@@ -3,7 +3,9 @@ package web
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/web/blog"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -30,6 +32,35 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 
 		tmpl["JoinedGuild"] = guild
+	}
+
+	offset := 0
+	if r.FormValue("offset") != "" {
+		offset, _ = strconv.Atoi(r.FormValue("offset"))
+	}
+
+	if r.FormValue("post_id") != "" {
+		id, _ := strconv.Atoi(r.FormValue("post_id"))
+		p := blog.GetPost(id)
+		if p != nil {
+			tmpl["Posts"] = []*blog.Post{p}
+		} else {
+			tmpl.AddAlerts(ErrorAlert("Post not found"))
+		}
+	} else {
+		posts := blog.GetPostsNewest(5, offset)
+		tmpl["Posts"] = posts
+		if len(posts) > 4 {
+			tmpl["NextPostsOffset"] = offset + 5
+		}
+		if offset != 0 {
+			tmpl["CurrentPostsOffset"] = offset
+			previous := offset - 5
+			if previous < 0 {
+				previous = 0
+			}
+			tmpl["PreviousPostsOffset"] = previous
+		}
 	}
 
 	// g, _ := common.BotSession.Guild("140847179043569664")
