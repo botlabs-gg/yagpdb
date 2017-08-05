@@ -36,6 +36,9 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 
 	if config.JoinServerEnabled {
 		channel := GetChannel(gs, config.JoinServerChannel)
+		if channel == "" {
+			return
+		}
 		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinServerMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing join template")
@@ -52,8 +55,15 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 	}
 
 	gs := bot.State.Guild(true, evt.GuildMemberRemove.GuildID)
+	if gs == nil {
+		return
+	}
 
 	channel := GetChannel(gs, config.LeaveChannel)
+	if channel == "" {
+		return
+	}
+
 	client := bot.ContextRedis(evt.Context())
 
 	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberRemove.Member).Execute(client, config.LeaveMsg)
@@ -96,11 +106,11 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	}
 }
 
-// GetChannel makes sure the channel is in the guild, if not it returns the default channel (same as guildid)
+// GetChannel makes sure the channel is in the guild, if not it returns no channel
 func GetChannel(guild *dstate.GuildState, channel string) string {
 	c := guild.Channel(true, channel)
 	if c == nil {
-		return guild.ID()
+		return ""
 	}
 
 	return c.ID()
