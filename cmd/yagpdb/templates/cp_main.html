@@ -129,7 +129,7 @@ Selections - List of selections
     {{$selections := .Selections}}
     {{$idPrefix := or .IDPrefix "a"}}
     {{$name := or .Name "Channels"}}
-    {{range .Channels}}{{if eq .Type "text"}}<li><input type="checkbox" name="{{$name}}" value="{{.ID}}" id="{{$idPrefix}}{{.ID}}" {{if $selections}}{{if in $selections .ID}}checked {{end}}{{end}}><label for="{{$idPrefix}}{{.ID}}">#{{.Name}}</label></option>
+    {{range .Channels}}{{if eq .Type 0}}<li><input type="checkbox" name="{{$name}}" value="{{.ID}}" id="{{$idPrefix}}{{.ID}}" {{if $selections}}{{if in $selections .ID}}checked {{end}}{{end}}><label for="{{$idPrefix}}{{.ID}}">#{{.Name}}</label></option>
     {{end}}{{end}}
 {{end}}
 
