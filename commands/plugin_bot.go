@@ -185,6 +185,10 @@ var GlobalCommands = []commandsystem.CommandHandler{
 					channelId = privateChannel.ID
 				}
 
+				if help == "" {
+					help = "Command not found"
+				}
+
 				dutil.SplitSendMessagePS(common.BotSession, channelId, help+"\n"+footer, "```ini\n", "```", false, false)
 				if data.Source != commandsystem.SourceDM && target == "" {
 					return "You've Got Mail!", nil
