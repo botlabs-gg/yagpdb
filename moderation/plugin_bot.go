@@ -368,14 +368,14 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				channelID := config.ReportChannel
 				if channelID == "" {
-					channelID = parsed.Guild.ID()
+					return "No report channel set up", nil
 				}
 
 				reportBody := fmt.Sprintf("<@%s> Reported <@%s> in <#%s> For `%s`\nLast 100 messages from channel: <%s>", parsed.Message.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Message.ChannelID, parsed.Args[1].Str(), logLink)
 
 				_, err := common.BotSession.ChannelMessageSend(channelID, common.EscapeEveryoneMention(reportBody))
 				if err != nil {
-					return "Failed sending report", err
+					return "Failed sending report, check perms for report channel", err
 				}
 
 				// don't bother sending confirmation if it's in the same channel

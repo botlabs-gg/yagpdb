@@ -31,7 +31,7 @@
                     <div class="form-group">
                         <label>Channel to send messages for the mods/admins in (reports and such)</label>
                         <select class="form-control" name="ReportChannel" data-requireperms-send>
-                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel "Default channel"}}
+                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel "None"}}
                         </select>
                     </div>
                     <div class="checkbox">
