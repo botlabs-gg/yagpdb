@@ -47,6 +47,12 @@ func (p *Plugin) InitBot() {
 	CommandSystem.CensorError = CensorError
 	CommandSystem.State = bot.State
 
+	CommandSystem.DefaultDMHandler = &commandsystem.Command{
+		Run: func(data *commandsystem.ExecData) (interface{}, error) {
+			return "Unknwon command, only a subset of commands are available in dms.", nil
+		},
+	}
+
 	CommandSystem.Prefix = p
 	CommandSystem.RegisterCommands(GlobalCommands...)
 	CommandSystem.RegisterCommands(debugCommands...)
