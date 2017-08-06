@@ -112,7 +112,7 @@ var cmds = []commandsystem.CommandHandler{
 		Category: commands.CategoryFun,
 		Command: &commandsystem.Command{
 			Name:         "SetRep",
-			Description:  "Sets someone's rep, this is an admin command and bypasses cooldowns and other restrictions.",
+			Description:  "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
 			RequiredArgs: 2,
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
