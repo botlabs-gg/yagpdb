@@ -2,8 +2,12 @@ package web
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web/blog"
+	"github.com/pkg/errors"
+	"goji.io/pat"
 	"net/http"
 	"strconv"
 	"time"
@@ -91,4 +95,19 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	tmpl["Commands"] = result.Count
 
 	return tmpl, nil
+}
+
+func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
+	if !botrest.BotIsRunning() {
+		return errors.New("Bot is not responding")
+	}
+
+	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	c := pat.Param(r, "channel")
+	perms, err := botrest.GetChannelPermissions(g.ID, c)
+	if err != nil {
+		return err
+	}
+
+	return perms
 }

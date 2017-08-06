@@ -178,6 +178,8 @@ func setupRoutes() *goji.Mux {
 	mux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
 	mux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
 
+	ServerPubliAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChanenlPermissions)))
+
 	// Server selection has it's own handler
 	mux.Handle(pat.Get("/manage"), RenderHandler(HandleSelectServer, "cp_selectserver"))
 	mux.Handle(pat.Get("/manage/"), RenderHandler(HandleSelectServer, "cp_selectserver"))

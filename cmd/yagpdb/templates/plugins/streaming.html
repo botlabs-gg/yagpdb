@@ -29,7 +29,7 @@
                         <div class="col-lg-6">
                             <div class="form-group">
                                 <label>Announce Channel</label>
-                                <select class="form-control" name="announce_channel">
+                                <select class="form-control" name="announce_channel" data-requireperms-send>
                                     {{textChannelOptions .ActiveGuild.Channels .StreamingConfig.AnnounceChannel "None (disable announcements)"}}
                                 </select>
                             </div>

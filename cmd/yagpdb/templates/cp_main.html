@@ -71,6 +71,9 @@
     <script>
     var visibleURL;
     {{if .VisibleURL }}visibleURL = {{.VisibleURL}};{{end}}
+    {{if .ActiveGuild}}
+    var CURRENT_GUILDID={{.ActiveGuild.ID}};
+    {{end}}
     </script>
 
     <!-- Bootstrap Core JavaScript -->

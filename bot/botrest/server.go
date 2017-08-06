@@ -2,10 +2,11 @@ package botrest
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
 	"net/http"
@@ -21,6 +22,7 @@ func StartServer() {
 
 	muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
 	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
+	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
 	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
 	// Debug stuff
@@ -47,8 +49,10 @@ func ServerError(w http.ResponseWriter, r *http.Request, err error) bool {
 		return false
 	}
 
+	encodedErr, _ := json.Marshal(err.Error())
+
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Write(nil)
+	w.Write(encodedErr)
 	return true
 }
 
@@ -103,6 +107,25 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ServeJson(w, r, member)
+}
+
+func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
+	gId := pat.Param(r, "guild")
+	cId := pat.Param(r, "channel")
+	guild := bot.State.Guild(true, gId)
+	if guild == nil {
+		ServerError(w, r, errors.New("Guild not found"))
+		return
+	}
+
+	perms, err := guild.MemberPermissions(true, cId, common.BotUser.ID)
+
+	if err != nil {
+		ServerError(w, r, errors.WithMessage(err, "Error calculating perms"))
+		return
+	}
+
+	ServeJson(w, r, perms)
 }
 
 func HandlePing(w http.ResponseWriter, r *http.Request) {

@@ -136,6 +136,120 @@ function addListeners(partial){
 	});
 
 	formSubmissionEvents(selectorPrefix);
+	channelRequirepermsDropdown(selectorPrefix);
+}
+
+var discordPermissions = {
+	read: {
+		name: "Read Messages",
+		perm: 0x400
+	},
+	send: {
+		name: "Send Messages",
+		perm: 0x800
+	},
+	embed: {
+		name: "Embed Links",
+		perm: 0x4000
+	},
+}
+var cachedChannelPerms = {};
+function channelRequirepermsDropdown(prefix){
+	var dropdowns = $(prefix + "select[data-requireperms-send]");
+	dropdowns.each(function(i, rawElem){
+		trackChannelDropdown($(rawElem), [discordPermissions.read, discordPermissions.send]);
+	});
+
+	var dropdownsLinks = $(prefix + "select[data-requireperms-embed]");
+	dropdownsLinks.each(function(i, rawElem){
+		trackChannelDropdown($(rawElem), [discordPermissions.read, discordPermissions.send, discordPermissions.embed]);
+	});
+}
+
+function trackChannelDropdown(dropdown, perms){
+	var currentElem = $('<div class="form-group"><p class="text-danger form-control-static">Checking...</p></div>');
+	dropdown.parent().after(currentElem);
+
+	dropdown.on("change", function(){
+		check();
+	})
+
+	function check(){
+		currentElem.text("Checking...");
+		var currentSelected = dropdown.val();
+		if(!currentSelected){
+			currentElem.text("");
+		}else{
+			validateChannelDropdown(dropdown, currentElem, currentSelected, perms);
+		}
+	}
+	check();
+}
+
+function validateChannelDropdown(dropdown, currentElem, channel, perms){
+	// Expire after 5 seconds
+	if(cachedChannelPerms[channel] && (!cachedChannelPerms[channel].lastChecked || Date.now() - cachedChannelPerms[channel].lastChecked < 5000)){
+		var obj = cachedChannelPerms[channel];
+		if(obj.fetching){
+			window.setTimeout(function(){
+				validateChannelDropdown(dropdown, currentElem, channel, perms);
+			}, 1000)
+		}else{
+			check(cachedChannelPerms[channel].perms);
+		}
+	}else{
+		cachedChannelPerms[channel] = {fetching: true};
+		createRequest("GET", "/api/"+CURRENT_GUILDID+"/channelperms/"+channel, null, function(){
+			console.log(this);
+			cachedChannelPerms[channel].fetching = false;
+			if(this.status != 200){
+				currentElem.addClass("text-danger");
+				currentElem.removeClass("text-success");
+
+				if(this.responseText){
+					var decoded = JSON.parse(this.responseText);
+					if(decoded.message){
+						currentElem.text(decoded.message);
+					}else{
+						currentElem.text("Something went wrong");
+					}
+				}else{
+					currentElem.text("Something went wrong");
+				}
+				cachedChannelPerms[channel] = null;
+				return;
+			}
+
+			var channelPerms = parseInt(this.responseText);
+			cachedChannelPerms[channel].perms = channelPerms;
+			cachedChannelPerms[channel].lastChecked = Date.now();
+
+			check(channelPerms);
+		})
+	}
+
+	function check(channelPerms){
+		var missing = [];
+		for(var i in perms){
+			var p = perms[i];
+			if((channelPerms&p.perm) != p.perm){
+				missing.push(p.name);
+			}
+		}
+
+		// console.log(missing.join(", "));
+		if(missing.length < 1){
+			// Has perms
+			currentElem.removeClass("text-danger");
+			currentElem.addClass("text-success");
+			currentElem.text("OK Perms");
+		}else{
+			currentElem.addClass("text-danger");
+			currentElem.removeClass("text-success");
+
+			currentElem.text("Missing "+missing.join(", "));
+		}
+	}
 }
 
 function formSubmissionEvents(selectorPrefix){
