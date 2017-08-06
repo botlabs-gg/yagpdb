@@ -3,6 +3,7 @@ package youtube
 import (
 	"context"
 	"errors"
+	"github.com/didip/tollbooth"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -12,6 +13,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type CtxKey int
@@ -46,8 +48,13 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Get("/"), mainGetHandler)
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
-	ytMux.Handle(pat.Post(""), web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed"))
-	ytMux.Handle(pat.Post("/"), web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed"))
+	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed")
+	limiter := tollbooth.NewLimiterExpiringBuckets(10, time.Second*60, time.Hour, time.Minute*10)
+	limiter.Message = "You're doing that too much, wait a minute and try again"
+	addHandler = tollbooth.LimitHandler(limiter, addHandler)
+
+	ytMux.Handle(pat.Post(""), addHandler)
+	ytMux.Handle(pat.Post("/"), addHandler)
 	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, Form{}, "Updated a youtube feed"))
 	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
 }
