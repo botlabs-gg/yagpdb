@@ -45,7 +45,7 @@ func GetCreatePrivateChannel(user string) (*discordgo.Channel, error) {
 	State.RLock()
 	defer State.RUnlock()
 	for _, c := range State.PrivateChannels {
-		if c.Recipient().ID == user {
+		if c.Recipient() != nil && c.Recipient().ID == user {
 			return c.Copy(true, false), nil
 		}
 	}
