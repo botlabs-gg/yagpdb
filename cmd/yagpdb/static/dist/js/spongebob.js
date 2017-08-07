@@ -32,7 +32,7 @@ $(function(){
     }
 
    	// Update all dropdowns
-	$(".btn-group .dropdown-menu").dropdownUpdate();
+	// $(".btn-group .dropdown-menu").dropdownUpdate();
 })
 
 var currentlyLoading = false;
@@ -74,10 +74,7 @@ function navigate(url, method, data, updateHistory){
 
 			updateSelectedMenuItem();
 			addListeners(true);
-
-			// Update all dropdowns
-			$(".btn-group .dropdown-menu").dropdownUpdate();
-
+			
 			if (typeof ga !== 'undefined') {
 				ga('send', 'pageview', window.location.pathname);
 				console.log("Sent pageview")
@@ -135,6 +132,7 @@ function addListeners(partial){
 		$("#main-content").html('<div class="loader">Loading...</div>');
 	});
 
+	initializeMultiselect(selectorPrefix);
 	formSubmissionEvents(selectorPrefix);
 	channelRequirepermsDropdown(selectorPrefix);
 }
@@ -250,6 +248,10 @@ function validateChannelDropdown(dropdown, currentElem, channel, perms){
 			currentElem.text("Missing "+missing.join(", "));
 		}
 	}
+}
+
+function initializeMultiselect(selectorPrefix){
+	$(selectorPrefix+".multiselect").multiselect();
 }
 
 function formSubmissionEvents(selectorPrefix){

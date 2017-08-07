@@ -251,12 +251,9 @@
 
 <div class="form-group">
     <label for="IgnoreChannels">Ignore channels</label>
-    <div class="btn-group">
-      <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Ignore channels <span class="caret"></span></button>
-        <ul class="dropdown-menu">
-            {{mTemplate "channel_options_multi" "Channels" .Guild.Channels "Name" (joinStr "" .Name ".IgnoreChannels") "Selections" .Rule.IgnoreChannels}}
-        </ul>
-    </div>
+    <select name="{{.Name}}.IgnoreChannels" class="multiselect" multiple="multiple" id="{{.Name}}">
+        {{mTemplate "channel_options_multi" "Channels" .Guild.Channels "Selections" .Rule.IgnoreChannels}}
+    </select>
 </div>
 {{end}}
 <!-- END COMMON RULE FIELDS -->

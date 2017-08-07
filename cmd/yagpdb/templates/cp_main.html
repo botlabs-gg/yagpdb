@@ -44,7 +44,7 @@
     <!-- Morris Charts CSS -->
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
     
-    <link rel="stylesheet" href="/static/dist/css/dropdowns-enhanced.min.css"></script>
+    <link rel="stylesheet" href="/static/dist/css/bootstrap-multiselect.css"></script>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
@@ -97,7 +97,7 @@
     <!-- Custom Fonts -->
     <script src="https://use.fontawesome.com/e3f4515047.js"></script>
 
-    <script type="text/javascript" src="/static/dist/js/dropdowns-enhanced.js"></script>
+    <script type="text/javascript" src="/static/dist/js/bootstrap-multiselect.js"></script>
 
     {{template "googleAnalytics" .}}
 </body>
@@ -130,9 +130,7 @@ Selections - List of selections
 */}}
 {{define "channel_options_multi"}}
     {{$selections := .Selections}}
-    {{$idPrefix := or .IDPrefix "a"}}
-    {{$name := or .Name "Channels"}}
-    {{range .Channels}}{{if eq .Type 0}}<li><input type="checkbox" name="{{$name}}" value="{{.ID}}" id="{{$idPrefix}}{{.ID}}" {{if $selections}}{{if in $selections .ID}}checked {{end}}{{end}}><label for="{{$idPrefix}}{{.ID}}">#{{.Name}}</label></option>
+    {{range .Channels}}{{if eq .Type 0}}<option value="{{.ID}}" {{if $selections}}{{if in $selections .ID}}selected {{end}}{{end}}>#{{.Name}}</option>
     {{end}}{{end}}
 {{end}}
 

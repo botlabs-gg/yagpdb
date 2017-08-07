@@ -23,12 +23,9 @@
                         </div>
                         <label>Ignore channels</label>
                         <div class="form-group">
-                            <div class="btn-group">
-                              <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Ignore channels <span class="caret"></span></button>
-                                <ul class="dropdown-menu">
-                                    {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Name" "IgnoreChannels" "Selections" .Config.ParsedChannels}}
-                                </ul>
-                            </div>
+                            <select class="multiselect" name="IgnoreChannels" id="IgnoreChannels" multiple="multiple">
+                                {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Selections" .Config.ParsedChannels}}
+                            </select>
                         </div>
                         <button type="submit" class="btn btn-success btn-sm">Save</button>
                     </form>

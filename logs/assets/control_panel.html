@@ -41,12 +41,9 @@
                         <div class="col-lg-4">
                             <div class="form-group">
                                 <label>Blacklist channels from message logs</label><br/>
-                                <div class="btn-group">
-                                  <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Blacklist channels from message logs channels<span class="caret"></span></button>
-                                    <ul class="dropdown-menu">
-                                        {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Name" "BlacklistedChannels" "Selections" .Config.ParsedBlacklistedchannels}}
-                                    </ul>
-                                </div>
+                                <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels" multiple="multiple">
+                                    {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Selections" .Config.ParsedBlacklistedchannels}}
+                                </select>
                             </div>
                         </div>
                     </div>
