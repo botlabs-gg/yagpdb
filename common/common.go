@@ -18,12 +18,12 @@ const (
 	VERSIONMINOR = 23
 	VERSIONPATCH = 0
 
-	Testing = true // Disables stuff like command cooldowns
+	Testing = false // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Dev"
+	VERSION       = VERSIONNUMBER + " Lawless"
 
 	GORM        *gorm.DB
 	PQ          *sql.DB
