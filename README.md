@@ -14,11 +14,23 @@ YAGPDB is very much work in progress so I'm not actively advertising it. Althoug
 
 ### Running YAGPDB yourself
 
-Currently i do not provide precompiled binaries so you will have to compile it yourself, if you do not understand the following steps then I advice you not to run it.
+**Running YAGPDB on your own you can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
+
+**IF YOU DO NOT UNDERSTAND THESE STEPS THEN DON'T BOTHER TRYING TO RUN THIS, Please dont waste my time by ignoring this warning**
+
+Required databases: 
+ - PostgresSQL
+     + requires a db named yagpdb, this is currently hardcoded in.
+     + The user and password is configurable through env variables.
+ - Redis
+
+First step is to get all the deps, change to proper branches and build it.
 
 1. `go get github.com/jonas747/yagpdb/cmd/yagpdb`
 2. go into `$GOPATH/src/github.com/jonas747/discordgo` and change the git branch to `yagpdb`
 2. go into `$GOPATH/src/github.com/jonas747/dutil` and change the git branch to `dgofork`
+3. cd `${GOPATH}/src/github.com/jonas747/dshardmanager && git checkout dgofork`
+
 
 You can now build it and run `$GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb`
 
