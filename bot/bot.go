@@ -111,7 +111,7 @@ func Stop(wg *sync.WaitGroup) {
 		go stopper.StopBot(wg)
 	}
 
-	common.BotSession.Close()
+	ShardManager.StopAll()
 	wg.Done()
 }
 
