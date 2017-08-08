@@ -57,7 +57,7 @@ var roleCommands = []commandsystem.CommandHandler{
 
 					usedCommands := make([]string, 0, len(roleCommands))
 					for _, r := range roleCommands {
-						if common.FindStringSlice(usedCommands, r.Role) {
+						if common.ContainsStringSlice(usedCommands, r.Role) {
 							continue
 						}
 

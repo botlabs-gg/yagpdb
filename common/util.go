@@ -376,8 +376,18 @@ func RetrySendMessage(channel string, msg interface{}, maxTries int) error {
 	return err
 }
 
-func FindStringSlice(strs []string, search string) bool {
+func ContainsStringSlice(strs []string, search string) bool {
 	for _, v := range strs {
+		if v == search {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ContainsInt64Slice(slice []int64, search int64) bool {
+	for _, v := range slice {
 		if v == search {
 			return true
 		}
