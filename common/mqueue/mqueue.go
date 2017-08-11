@@ -188,7 +188,7 @@ func process(elem *QueuedElement) {
 			break
 		}
 
-		if e, ok := err.(*discordgo.RESTError); ok && e.Message != nil {
+		if e, ok := err.(*discordgo.RESTError); ok && e.Message != nil && e.Message.Code != 0 {
 			if source, ok := sources[elem.Source]; ok {
 				source.HandleMQueueError(elem, err)
 			}
