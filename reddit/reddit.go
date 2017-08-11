@@ -29,7 +29,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	if code != discordgo.ErrCodeUnknownChannel {
 		l := log.WithError(err).WithField("channel", elem.Channel)
 		if code != discordgo.ErrCodeMissingPermissions && code != discordgo.ErrCodeMissingAccess {
-			l = l.WithField("msg", elem.MessageEmbed)
+			l = l.WithField("s_msg", elem.MessageEmbed)
 		}
 		l.Error("Error posting reddit message")
 		return
