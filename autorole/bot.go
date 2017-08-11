@@ -201,8 +201,8 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 
 	logger := logrus.WithField("guild", gs.ID())
 
-	perms, err := gs.MemberPermissions(false, gs.ID(), bot.State.User(true).ID)
-	if err != nil {
+	perms, err := gs.MemberPermissions(false, "", bot.State.User(true).ID)
+	if err != nil && err != dstate.ErrChannelNotFound {
 		logger.WithError(err).Error("Error checking perms")
 		return
 	}
