@@ -188,11 +188,13 @@ func process(elem *QueuedElement) {
 			break
 		}
 
-		if e, ok := err.(*discordgo.RESTError); ok && e.Message != nil && e.Message.Code != 0 {
-			if source, ok := sources[elem.Source]; ok {
-				source.HandleMQueueError(elem, err)
+		if e, ok := err.(*discordgo.RESTError); ok {
+			if (e.Response != nil && e.Response.StatusCode >= 400 && e.Response.StatusCode < 500) || (e.Message != nil && e.Message.Code != 0) {
+				if source, ok := sources[elem.Source]; ok {
+					source.HandleMQueueError(elem, err)
+				}
+				break
 			}
-			break
 		}
 
 		queueLogger.Warn("MQueue: Non-discord related error when sending message, retrying. ", err)
