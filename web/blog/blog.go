@@ -126,6 +126,10 @@ func GetPostsNewest(limit, offset int) []*Post {
 	result := make([]*Post, 0, limit)
 
 	i := len(posts) - (offset + 1)
+	if i >= len(posts) {
+		i = len(posts) - 1
+	}
+
 	for i >= 0 {
 		p := GetPost(i)
 		if p != nil {
