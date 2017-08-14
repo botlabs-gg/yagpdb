@@ -37,6 +37,7 @@ import (
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
+	"github.com/jonas747/yagpdb/rolecommands"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/streaming"
@@ -112,6 +113,7 @@ func main() {
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
+	rolecommands.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
