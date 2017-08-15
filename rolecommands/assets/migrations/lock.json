@@ -1,0 +1,136 @@
+{
+  "Tables": [
+    {
+      "Name": "role_commands",
+      "Columns": [
+        {
+          "Name": "id",
+          "Type": "serial",
+          "PrimaryKey": true,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "guild_id",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "names",
+          "Type": "text[]",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "role_group_id",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": {
+            "Table": "role_groups",
+            "Column": "id"
+          },
+          "NotNull": false
+        },
+        {
+          "Name": "role",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "require_roles",
+          "Type": "bigint[]",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "ignore_roles",
+          "Type": "bigint[]",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        }
+      ]
+    },
+    {
+      "Name": "role_groups",
+      "Columns": [
+        {
+          "Name": "id",
+          "Type": "serial",
+          "PrimaryKey": true,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "guild_id",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "name",
+          "Type": "text",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "require_roles",
+          "Type": "bigint[]",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "ignore_roles",
+          "Type": "bigint[]",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "mode",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "multiple_max",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "multiple_min",
+          "Type": "bigint",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "single_auto_toggle_off",
+          "Type": "boolean",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "single_require_one",
+          "Type": "boolean",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        }
+      ]
+    }
+  ]
+}
