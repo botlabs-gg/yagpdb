@@ -2,6 +2,7 @@
 package rolecommands
 
 import (
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -42,6 +43,8 @@ func RegisterPlugin() {
 		logrus.WithError(err).Fatal("Failed initializing db schema")
 	}
 
+	groupStore = NewRoleGroupStore(common.PQ)
+	cmdStore = NewRoleCommandStore(common.PQ)
 }
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
@@ -53,7 +56,8 @@ func AssignRole(guildID string, member *discordgo.Member, name string) (gaveRole
 	for i, v := range member.Roles {
 		parsedRoles[i], _ = strconv.ParseInt(v, 10, 64)
 	}
-	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByNames(strings.ToLower(name)).WithGroup())
+
+	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByName(strings.ToLower(name)).WithGroup())
 	if err != nil {
 		return false, err
 	}
@@ -164,6 +168,23 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 	}
 
 	return ToggleRole(guildID, member, parsedRoles, targetRole.Role)
+}
+
+func (r *RoleCommand) CanAssignTo(memberRoles []int64) error {
+
+	if len(r.RequireRoles) > 0 {
+		if err := CheckRequiredRoles(r.RequireRoles, memberRoles); err != nil {
+			return err
+		}
+	}
+
+	if len(r.IgnoreRoles) > 0 {
+		if err := CheckIgnoredRoles(r.IgnoreRoles, memberRoles); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func CheckRequiredRoles(requireOneOf []int64, has []int64) error {

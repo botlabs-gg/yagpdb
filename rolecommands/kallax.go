@@ -17,7 +17,7 @@ var _ fmt.Formatter
 
 // NewRoleCommand returns a new instance of RoleCommand.
 func NewRoleCommand() (record *RoleCommand) {
-	return new(RoleCommand)
+	return newRoleCommand()
 }
 
 // GetID returns the primary key of the model.
@@ -32,8 +32,8 @@ func (r *RoleCommand) ColumnAddress(col string) (interface{}, error) {
 		return (*kallax.NumericID)(&r.ID), nil
 	case "guild_id":
 		return &r.GuildID, nil
-	case "names":
-		return types.Slice(&r.Names), nil
+	case "name":
+		return &r.Name, nil
 	case "role_group_id":
 		return types.Nullable(kallax.VirtualColumn("role_group_id", r, new(kallax.NumericID))), nil
 	case "role":
@@ -55,8 +55,8 @@ func (r *RoleCommand) Value(col string) (interface{}, error) {
 		return r.ID, nil
 	case "guild_id":
 		return r.GuildID, nil
-	case "names":
-		return types.Slice(r.Names), nil
+	case "name":
+		return r.Name, nil
 	case "role_group_id":
 		return r.Model.VirtualColumn(col), nil
 	case "role":
@@ -432,18 +432,10 @@ func (q *RoleCommandQuery) FindByGuildID(cond kallax.ScalarCond, v int64) *RoleC
 	return q.Where(cond(Schema.RoleCommand.GuildID, v))
 }
 
-// FindByNames adds a new filter to the query that will require that
-// the Names property contains all the passed values; if no passed values,
-// it will do nothing.
-func (q *RoleCommandQuery) FindByNames(v ...string) *RoleCommandQuery {
-	if len(v) == 0 {
-		return q
-	}
-	values := make([]interface{}, len(v))
-	for i, val := range v {
-		values[i] = val
-	}
-	return q.Where(kallax.ArrayContains(Schema.RoleCommand.Names, values...))
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value.
+func (q *RoleCommandQuery) FindByName(v string) *RoleCommandQuery {
+	return q.Where(kallax.Eq(Schema.RoleCommand.Name, v))
 }
 
 // FindByGroup adds a new filter to the query that will require that
@@ -1106,7 +1098,7 @@ type schemaRoleCommand struct {
 	*kallax.BaseSchema
 	ID           kallax.SchemaField
 	GuildID      kallax.SchemaField
-	Names        kallax.SchemaField
+	Name         kallax.SchemaField
 	GroupFK      kallax.SchemaField
 	Role         kallax.SchemaField
 	RequireRoles kallax.SchemaField
@@ -1142,7 +1134,7 @@ var Schema = &schema{
 			true,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("guild_id"),
-			kallax.NewSchemaField("names"),
+			kallax.NewSchemaField("name"),
 			kallax.NewSchemaField("role_group_id"),
 			kallax.NewSchemaField("role"),
 			kallax.NewSchemaField("require_roles"),
@@ -1150,7 +1142,7 @@ var Schema = &schema{
 		),
 		ID:           kallax.NewSchemaField("id"),
 		GuildID:      kallax.NewSchemaField("guild_id"),
-		Names:        kallax.NewSchemaField("names"),
+		Name:         kallax.NewSchemaField("name"),
 		GroupFK:      kallax.NewSchemaField("role_group_id"),
 		Role:         kallax.NewSchemaField("role"),
 		RequireRoles: kallax.NewSchemaField("require_roles"),

@@ -3,7 +3,6 @@ package rolecommands
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -62,16 +61,34 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/remove_group"), web.ControllerPostHandler(HandleRemoveGroup, indexHandler, FormGroup{}, "Removed a role command group"))
 }
 
-func HandleSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+func HandleSettings(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	_, _, tmpl = web.GetBaseCPContextData(r.Context())
 	parsedGID := common.MustParseInt(g.ID)
 
-	// groups, err := groupStore.FindAll(NewRoleGroupQuery().FindByGuildID(kallax.Eq, parsedGID))
-	// if err != nil && err != kallax.ErrNotFound {
-	// 	return tmpl, err
-	// }
+	group := NewRoleGroup()
+	err = groupStore.Insert(group)
+	if err != nil {
+		logrus.WithError(err).Error("Failed inserting cmd")
+		return
+	}
 
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().FindByGuildID(kallax.Eq, parsedGID))
+	cmd := NewRoleCommand()
+	cmd.Group = group
+	err = cmdStore.Insert(cmd)
+	if err != nil {
+		logrus.WithError(err).Error("Failed inserting cmd")
+		return
+	}
+
+	cmd2 := NewRoleCommand()
+	cmdStore.Insert(cmd2)
+
+	groups, err := groupStore.FindAll(NewRoleGroupQuery().FindByGuildID(kallax.Eq, parsedGID))
+	if err != nil && err != kallax.ErrNotFound {
+		return tmpl, err
+	}
+
+	commands, err := cmdStore.FindAll(NewRoleCommandQuery())
 	if err != nil && err != kallax.ErrNotFound {
 		return tmpl, err
 	}

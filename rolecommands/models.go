@@ -3,10 +3,7 @@ package rolecommands
 //go:generate kallax gen -e "kallax.go" -e "rolecommands.go" -e "web.go"
 
 import (
-	"fmt"
-	"github.com/jonas747/yagpdb/common"
 	"gopkg.in/src-d/go-kallax.v1"
-	"strconv"
 )
 
 type RoleCommand struct {
@@ -14,28 +11,18 @@ type RoleCommand struct {
 	ID           int64
 	GuildID      int64
 
-	Names        []string
+	Name         string
 	Group        *RoleGroup `fk:",inverse"`
 	Role         int64
 	RequireRoles []int64
 	IgnoreRoles  []int64
 }
 
-func (r *RoleCommand) CanAssignTo(memberRoles []int64) error {
-
-	if len(r.RequireRoles) > 0 {
-		if err := CheckRequiredRoles(r.RequireRoles, memberRoles); err != nil {
-			return err
-		}
+func newRoleCommand() *RoleCommand {
+	return &RoleCommand{
+		RequireRoles: []int64{},
+		IgnoreRoles:  []int64{},
 	}
-
-	if len(r.IgnoreRoles) > 0 {
-		if err := CheckIgnoredRoles(r.IgnoreRoles, memberRoles); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 type GroupMode int
