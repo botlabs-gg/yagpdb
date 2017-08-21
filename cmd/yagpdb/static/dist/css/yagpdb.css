@@ -74,14 +74,14 @@ form table td{
 	.maybe-nav-fixed-top {
 	    top: 0;
 	    border-width: 0 0 1px;
-	    position: fixed;
+	    position: fixed !important;
 	    right: 0;
 	    left: 0;
 	    z-index: 1030;
 	}
 
 	#sidebar-wrapper {
-		position: fixed;
+		position: fixed !important;
 		overflow-y: auto;
 		top: 51px;
 		bottom: 0%;
