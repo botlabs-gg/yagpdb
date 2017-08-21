@@ -6,6 +6,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/web"
 	"strconv"
 	"strings"
@@ -38,13 +39,15 @@ func RegisterPlugin() {
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
-	_, err := common.PQ.Exec(FSMustString(false, "/assets/migrations/1502731768_initial.up.sql"))
+	_, err := common.PQ.Exec(FSMustString(false, "/assets/migrations/current_absolute.sql"))
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initializing db schema")
 	}
 
 	groupStore = NewRoleGroupStore(common.PQ)
 	cmdStore = NewRoleCommandStore(common.PQ)
+
+	docs.AddPage("Role Commands", FSMustString(false, "/assets/help.md"), nil)
 }
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists

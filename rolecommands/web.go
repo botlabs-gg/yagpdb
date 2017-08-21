@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
 	"gopkg.in/src-d/go-kallax.v1"
@@ -57,6 +58,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/new_cmd"), web.ControllerPostHandler(HandleNewCommand, indexHandler, FormCommand{}, "Added a new role command"))
 	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, indexHandler, FormCommand{}, "Updated a role command"))
 	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, indexHandler, nil, "Removed a role command"))
+	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HanldeMoveCommand, indexHandler, nil, "Moved a role command"))
 
 	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, indexHandler, FormGroup{}, "Added a new role command group"))
 	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, indexHandler, FormGroup{}, "Updated a role command group"))
@@ -145,6 +147,41 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 }
 
 func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	return nil, nil
+}
+
+func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	commands, err := cmdStore.FindAll(NewRoleCommandQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).WithGroup())
+	if err != nil {
+		return tmpl, err
+	}
+
+	tID, err := strconv.ParseInt(r.FormValue("ID"), 10, 32)
+	if err != nil {
+		return tmpl, err
+	}
+
+	var targetCmd *RoleCommand
+	for _, v := range commands {
+		if v.ID == tID {
+			targetCmd = v
+			break
+		}
+	}
+
+	if targetCmd == nil {
+		return tmpl, errors.New("RoleCommand not found")
+	}
+
+	commandsInGroup := make([]*RoleCommand, 0, len(commands))
+
+	for _, v := range commands {
+		if (targetCmd.Group == nil && v.Group == nil) || (targetCmd.Group != nil && v.Group != nil && targetCmd.Group.ID == v.Group.ID) {
+			commandsInGroup = append(commandsInGroup, v)
+		}
+	}
+
 	return nil, nil
 }
 

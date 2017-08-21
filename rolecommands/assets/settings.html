@@ -296,10 +296,14 @@ $(function(){
                     </select>
                 </div>
                 <div class="form-group col-lg-2">
-                    <button type="submit" class="btn btn-success" formaction="/manage/{{$ag.ID}}/rolecommands/update_cmd">Save</button>
-                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/remove_cmd">Delete</button>
-                    <button type="submit" class="btn btn-default" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=1">Move Up</button>
-                    <button type="submit" class="btn btn-default" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=-1">Move Down</button>
+                    <div class="row">
+                        <button type="submit" class="btn btn-success" formaction="/manage/{{$ag.ID}}/rolecommands/update_cmd">Save</button>
+                        <button type="submit" class="btn btn-default" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=1">Move Up</button>
+                    </div>
+                    <div class="row">
+                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/remove_cmd">Delete</button>
+                        <button type="submit" class="btn btn-default" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=-1">Move Down</button>
+                    </div>
                 </div>
             </form>
         </div>

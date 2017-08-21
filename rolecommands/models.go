@@ -16,6 +16,8 @@ type RoleCommand struct {
 	Role         int64
 	RequireRoles []int64
 	IgnoreRoles  []int64
+
+	Position int
 }
 
 func newRoleCommand() *RoleCommand {

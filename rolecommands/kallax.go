@@ -42,6 +42,8 @@ func (r *RoleCommand) ColumnAddress(col string) (interface{}, error) {
 		return types.Slice(&r.RequireRoles), nil
 	case "ignore_roles":
 		return types.Slice(&r.IgnoreRoles), nil
+	case "position":
+		return &r.Position, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in RoleCommand: %s", col)
@@ -65,6 +67,8 @@ func (r *RoleCommand) Value(col string) (interface{}, error) {
 		return types.Slice(r.RequireRoles), nil
 	case "ignore_roles":
 		return types.Slice(r.IgnoreRoles), nil
+	case "position":
+		return r.Position, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in RoleCommand: %s", col)
@@ -476,6 +480,12 @@ func (q *RoleCommandQuery) FindByIgnoreRoles(v ...int64) *RoleCommandQuery {
 		values[i] = val
 	}
 	return q.Where(kallax.ArrayContains(Schema.RoleCommand.IgnoreRoles, values...))
+}
+
+// FindByPosition adds a new filter to the query that will require that
+// the Position property is equal to the passed value.
+func (q *RoleCommandQuery) FindByPosition(cond kallax.ScalarCond, v int) *RoleCommandQuery {
+	return q.Where(cond(Schema.RoleCommand.Position, v))
 }
 
 // RoleCommandResultSet is the set of results returned by a query to the
@@ -1103,6 +1113,7 @@ type schemaRoleCommand struct {
 	Role         kallax.SchemaField
 	RequireRoles kallax.SchemaField
 	IgnoreRoles  kallax.SchemaField
+	Position     kallax.SchemaField
 }
 
 type schemaRoleGroup struct {
@@ -1139,6 +1150,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("role"),
 			kallax.NewSchemaField("require_roles"),
 			kallax.NewSchemaField("ignore_roles"),
+			kallax.NewSchemaField("position"),
 		),
 		ID:           kallax.NewSchemaField("id"),
 		GuildID:      kallax.NewSchemaField("guild_id"),
@@ -1147,6 +1159,7 @@ var Schema = &schema{
 		Role:         kallax.NewSchemaField("role"),
 		RequireRoles: kallax.NewSchemaField("require_roles"),
 		IgnoreRoles:  kallax.NewSchemaField("ignore_roles"),
+		Position:     kallax.NewSchemaField("position"),
 	},
 	RoleGroup: &schemaRoleGroup{
 		BaseSchema: kallax.NewBaseSchema(
