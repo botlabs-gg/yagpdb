@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS role_commands (
 	id serial NOT NULL PRIMARY KEY,
 	guild_id bigint NOT NULL,
 	name text NOT NULL,
-	role_group_id bigint REFERENCES role_groups(id),
+	role_group_id bigint REFERENCES role_groups(id) ON DELETE SET NULL,
 	role bigint NOT NULL,
 	require_roles bigint[],
 	ignore_roles bigint[]
