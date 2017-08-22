@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	MaxChannelsPerPoll = 200 // Can probably be safely increased to 1000 when caches are hot
+	MaxChannelsPerPoll = 300 // Can probably be safely increased to 1000 when caches are hot
 	PollInterval       = time.Second * 100
 	// PollInterval = time.Second * 5 // <- used for debug purposes
 )
