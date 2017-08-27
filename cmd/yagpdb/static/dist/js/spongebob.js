@@ -262,7 +262,7 @@ function formSubmissionEvents(selectorPrefix){
 		elem.onsubmit = submitform;
 	})
 
-	$(selectorPrefix + ".btn-danger").click(function(evt){
+	function dangerButtonClick(evt){
 		var target = $(evt.target);
 		if(target.attr("noconfirm") !== undefined){
 			return;
@@ -279,7 +279,10 @@ function formSubmissionEvents(selectorPrefix){
 			evt.stopPropagation();
 		}
 		// alert("aaa")
-	})
+	} 
+
+	$(selectorPrefix + ".btn-danger").click(dangerButtonClick)
+	$(selectorPrefix + ".delete-button").click(dangerButtonClick)
 
 	$(selectorPrefix + '[data-toggle="popover"]').popover()
 	$(selectorPrefix + '[data-toggle="popover"]').click(function(evt){

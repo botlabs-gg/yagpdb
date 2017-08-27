@@ -7,6 +7,7 @@ package rolecommands
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"gopkg.in/src-d/go-kallax.v1"
 	"gopkg.in/src-d/go-kallax.v1/types"
@@ -30,6 +31,10 @@ func (r *RoleCommand) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return (*kallax.NumericID)(&r.ID), nil
+	case "created_at":
+		return &r.Timestamps.CreatedAt, nil
+	case "updated_at":
+		return &r.Timestamps.UpdatedAt, nil
 	case "guild_id":
 		return &r.GuildID, nil
 	case "name":
@@ -55,6 +60,10 @@ func (r *RoleCommand) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.ID, nil
+	case "created_at":
+		return r.Timestamps.CreatedAt, nil
+	case "updated_at":
+		return r.Timestamps.UpdatedAt, nil
 	case "guild_id":
 		return r.GuildID, nil
 	case "name":
@@ -156,6 +165,13 @@ func (s *RoleCommandStore) inverseRecords(record *RoleCommand) []kallax.RecordWi
 // Insert inserts a RoleCommand in the database. A non-persisted object is
 // required for this operation.
 func (s *RoleCommandStore) Insert(record *RoleCommand) error {
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
+	if err := record.BeforeSave(); err != nil {
+		return err
+	}
+
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
@@ -193,6 +209,13 @@ func (s *RoleCommandStore) Insert(record *RoleCommand) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *RoleCommandStore) Update(record *RoleCommand, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+
+	if err := record.BeforeSave(); err != nil {
+		return 0, err
+	}
+
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
@@ -428,6 +451,18 @@ func (q *RoleCommandQuery) FindByID(v ...int64) *RoleCommandQuery {
 		values[i] = val
 	}
 	return q.Where(kallax.In(Schema.RoleCommand.ID, values...))
+}
+
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value.
+func (q *RoleCommandQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *RoleCommandQuery {
+	return q.Where(cond(Schema.RoleCommand.CreatedAt, v))
+}
+
+// FindByUpdatedAt adds a new filter to the query that will require that
+// the UpdatedAt property is equal to the passed value.
+func (q *RoleCommandQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *RoleCommandQuery {
+	return q.Where(cond(Schema.RoleCommand.UpdatedAt, v))
 }
 
 // FindByGuildID adds a new filter to the query that will require that
@@ -1107,6 +1142,8 @@ type schema struct {
 type schemaRoleCommand struct {
 	*kallax.BaseSchema
 	ID           kallax.SchemaField
+	CreatedAt    kallax.SchemaField
+	UpdatedAt    kallax.SchemaField
 	GuildID      kallax.SchemaField
 	Name         kallax.SchemaField
 	GroupFK      kallax.SchemaField
@@ -1144,6 +1181,8 @@ var Schema = &schema{
 			},
 			true,
 			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("created_at"),
+			kallax.NewSchemaField("updated_at"),
 			kallax.NewSchemaField("guild_id"),
 			kallax.NewSchemaField("name"),
 			kallax.NewSchemaField("role_group_id"),
@@ -1153,6 +1192,8 @@ var Schema = &schema{
 			kallax.NewSchemaField("position"),
 		),
 		ID:           kallax.NewSchemaField("id"),
+		CreatedAt:    kallax.NewSchemaField("created_at"),
+		UpdatedAt:    kallax.NewSchemaField("updated_at"),
 		GuildID:      kallax.NewSchemaField("guild_id"),
 		Name:         kallax.NewSchemaField("name"),
 		GroupFK:      kallax.NewSchemaField("role_group_id"),

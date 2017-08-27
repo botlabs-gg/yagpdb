@@ -253,3 +253,18 @@ func IsRoleCommandError(err error) bool {
 		return false
 	}
 }
+
+func RoleCommandsLessFunc(slice []*RoleCommand) func(int, int) bool {
+	return func(i, j int) bool {
+		// Compare timestamps if positions are equal, for deterministic output
+		if slice[i].Position == slice[0].Position {
+			return slice[i].CreatedAt.After(slice[j].CreatedAt)
+		}
+
+		if slice[i].Position > slice[j].Position {
+			return false
+		}
+
+		return true
+	}
+}

@@ -11,6 +11,20 @@
           "NotNull": true
         },
         {
+          "Name": "created_at",
+          "Type": "timestamptz",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "updated_at",
+          "Type": "timestamptz",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
           "Name": "guild_id",
           "Type": "bigint",
           "PrimaryKey": false,
@@ -18,8 +32,8 @@
           "NotNull": true
         },
         {
-          "Name": "names",
-          "Type": "text[]",
+          "Name": "name",
+          "Type": "text",
           "PrimaryKey": false,
           "Reference": null,
           "NotNull": true
@@ -51,6 +65,13 @@
         {
           "Name": "ignore_roles",
           "Type": "bigint[]",
+          "PrimaryKey": false,
+          "Reference": null,
+          "NotNull": true
+        },
+        {
+          "Name": "position",
+          "Type": "bigint",
           "PrimaryKey": false,
           "Reference": null,
           "NotNull": true

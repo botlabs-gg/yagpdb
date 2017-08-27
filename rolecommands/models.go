@@ -8,8 +8,10 @@ import (
 
 type RoleCommand struct {
 	kallax.Model `table:"role_commands" pk:"id,autoincr"`
-	ID           int64
-	GuildID      int64
+	kallax.Timestamps
+
+	ID      int64
+	GuildID int64
 
 	Name         string
 	Group        *RoleGroup `fk:",inverse"`

@@ -10,13 +10,14 @@ import (
 	"gopkg.in/src-d/go-kallax.v1"
 	"html/template"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 )
 
 type FormCommand struct {
 	ID           int64
-	Name         string `valid:"1,100,trimspace"`
+	Name         string `valid:",1,100,trimspace"`
 	Role         int64  `valid:"role,false`
 	Group        int64
 	RequireRoles []int64 `valid:"role,true"`
@@ -25,11 +26,11 @@ type FormCommand struct {
 
 type FormGroup struct {
 	ID           int64
-	Name         string  `valid:"1,100,trimspace"`
+	Name         string  `valid:",1,100,trimspace"`
 	RequireRoles []int64 `valid:"role,true"`
 	IgnoreRoles  []int64 `valid:"role,true"`
 
-	Mode int
+	Mode GroupMode
 
 	MultipleMax int
 	MultipleMin int
@@ -58,7 +59,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/new_cmd"), web.ControllerPostHandler(HandleNewCommand, indexHandler, FormCommand{}, "Added a new role command"))
 	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, indexHandler, FormCommand{}, "Updated a role command"))
 	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, indexHandler, nil, "Removed a role command"))
-	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HanldeMoveCommand, indexHandler, nil, "Moved a role command"))
+	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HandleMoveCommand, indexHandler, nil, "Moved a role command"))
 
 	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, indexHandler, FormGroup{}, "Added a new role command group"))
 	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, indexHandler, FormGroup{}, "Updated a role command group"))
@@ -89,6 +90,8 @@ func HandleSettings(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateDa
 				sortedCommands[group] = append(sortedCommands[group], cmd)
 			}
 		}
+
+		sort.Slice(sortedCommands[group], RoleCommandsLessFunc(sortedCommands[group]))
 	}
 
 	tmpl["SortedCommands"] = sortedCommands
@@ -99,6 +102,7 @@ func HandleSettings(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateDa
 			loneCommands = append(loneCommands, cmd)
 		}
 	}
+	sort.Slice(loneCommands, RoleCommandsLessFunc(loneCommands))
 	tmpl["LoneCommands"] = loneCommands
 
 	return tmpl, nil
@@ -146,8 +150,33 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	return tmpl, nil
 }
 
-func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	return nil, nil
+func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	formCmd := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
+
+	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).FindByID(formCmd.ID))
+	if err != nil {
+		return
+	}
+
+	cmd.Name = formCmd.Name
+	cmd.Role = formCmd.Role
+	cmd.IgnoreRoles = formCmd.IgnoreRoles
+	cmd.RequireRoles = formCmd.RequireRoles
+
+	if formCmd.Group != 0 {
+		group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, cmd.GuildID).FindByID(formCmd.Group))
+		if err != nil && err != kallax.ErrNotFound {
+			return tmpl, err
+		}
+		cmd.Group = group
+	} else {
+		cmd.Group = nil
+	}
+
+	_, err = cmdStore.Update(cmd)
+	return
 }
 
 func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -176,13 +205,51 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 
 	commandsInGroup := make([]*RoleCommand, 0, len(commands))
 
+	// Sort all relevant commands
 	for _, v := range commands {
 		if (targetCmd.Group == nil && v.Group == nil) || (targetCmd.Group != nil && v.Group != nil && targetCmd.Group.ID == v.Group.ID) {
 			commandsInGroup = append(commandsInGroup, v)
 		}
 	}
 
-	return nil, nil
+	sort.Slice(commandsInGroup, RoleCommandsLessFunc(commandsInGroup))
+
+	isUp := r.FormValue("dir") == "1"
+
+	// Move the position
+	for i := 0; i < len(commandsInGroup); i++ {
+		v := commandsInGroup[i]
+
+		v.Position = i
+		if v.ID == tID {
+			if isUp {
+				if i == 0 {
+					// Can't move further up
+					continue
+				}
+
+				v.Position--
+				commandsInGroup[i-1].Position = i
+			} else {
+				if i == len(commandsInGroup)-1 {
+					// Can't move further down
+					continue
+				}
+				v.Position++
+				commandsInGroup[i+1].Position = i
+				i++
+			}
+		}
+	}
+
+	for _, v := range commandsInGroup {
+		_, lErr := cmdStore.Update(v, Schema.RoleCommand.Position)
+		if lErr != nil {
+			err = lErr
+		}
+	}
+
+	return tmpl, err
 }
 
 func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -220,6 +287,12 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 		RequireRoles: form.RequireRoles,
 		IgnoreRoles:  form.IgnoreRoles,
+		Mode:         form.Mode,
+
+		MultipleMax:         form.MultipleMax,
+		MultipleMin:         form.MultipleMin,
+		SingleRequireOne:    form.SingleRequireOne,
+		SingleAutoToggleOff: form.SingleAutoToggleOff,
 	}
 	err := groupStore.Insert(model)
 	if err != nil {
@@ -229,8 +302,27 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	return tmpl, nil
 }
 
-func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	return nil, nil
+func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	formGroup := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
+
+	group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).FindByID(formGroup.ID))
+	if err != nil {
+		return
+	}
+
+	group.Name = formGroup.Name
+	group.IgnoreRoles = formGroup.IgnoreRoles
+	group.RequireRoles = formGroup.RequireRoles
+	group.SingleRequireOne = formGroup.SingleRequireOne
+	group.SingleAutoToggleOff = formGroup.SingleAutoToggleOff
+	group.MultipleMax = formGroup.MultipleMax
+	group.MultipleMin = formGroup.MultipleMin
+	group.Mode = formGroup.Mode
+
+	_, err = groupStore.Update(group)
+	return
 }
 
 func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {

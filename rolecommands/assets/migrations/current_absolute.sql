@@ -16,16 +16,16 @@ CREATE TABLE IF NOT EXISTS role_groups (
 
 CREATE TABLE IF NOT EXISTS role_commands (
 	id serial NOT NULL PRIMARY KEY,
+	created_at timestamptz NOT NULL,
+	updated_at timestamptz NOT NULL,
 	guild_id bigint NOT NULL,
 	name text NOT NULL,
 	role_group_id bigint REFERENCES role_groups(id) ON DELETE SET NULL,
 	role bigint NOT NULL,
 	require_roles bigint[],
 	ignore_roles bigint[],
-	position int,
+	position bigint NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS role_commands_gidx ON role_commands(guild_id);
-CREATE INDEX IF NOT EXISTS role_groups_gidx ON role_groups(guild_id);
 
 COMMIT;
