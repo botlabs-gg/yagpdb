@@ -11,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v2/redis"
-	"strings"
 	"sync"
 	"time"
 )
@@ -21,103 +20,6 @@ func (p *Plugin) InitBot() {
 }
 
 var roleCommands = []commandsystem.CommandHandler{
-	&commands.CustomCommand{
-		Category: commands.CategoryTool,
-		Command: &commandsystem.Command{
-			Name:        "Role",
-			Description: "Give yourself a role or list all available roles",
-			Arguments: []*commandsystem.ArgDef{
-				&commandsystem.ArgDef{Name: "Role", Type: commandsystem.ArgumentString},
-			},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-				roleCommands, err := GetCommands(client, parsed.Guild.ID())
-				if err != nil {
-					return "Failed retrieving roles, contact support", err
-				}
-
-				role := ""
-				if parsed.Args[0] != nil {
-					for _, v := range roleCommands {
-						if strings.EqualFold(v.Name, parsed.Args[0].Str()) {
-							role = v.Role
-							break
-						}
-					}
-				}
-
-				// If no role
-				if parsed.Args[0] == nil || role == "" {
-
-					out := "Here is a list of roles you can assign yourself:"
-					if parsed.Args[0] != nil {
-						// We failed to find the proper role
-						out = "Sorry " + common.RandomAdjective() + " person, i do not recognize that role (maybe your finger slipped?), heres a list of the roles you can assign yourself:"
-					}
-
-					usedCommands := make([]string, 0, len(roleCommands))
-					for _, r := range roleCommands {
-						if common.ContainsStringSlice(usedCommands, r.Role) {
-							continue
-						}
-
-						out += "\n"
-						first := true
-						for _, r2 := range roleCommands {
-							if r2.Role == r.Role {
-								if !first {
-									out += "/"
-								}
-								first = false
-								out += "`" + r2.Name + "` "
-							}
-						}
-
-						usedCommands = append(usedCommands, r.Role)
-					}
-
-					if len(roleCommands) < 1 {
-						out += "\nNo self assignable roles set up. Server admins can set them up in the control panel."
-					}
-
-					return out, nil
-				}
-
-				member, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.Author.ID)
-				if err != nil {
-					return "Failed assigning role, contact bot support (bot error, not permissions)", err
-				}
-
-				found := false
-				for _, v := range member.Roles {
-					if v == role {
-						found = true
-						break
-					}
-				}
-
-				if found {
-					err = common.RemoveRole(member, role, parsed.Guild.ID())
-				} else {
-					err = common.AddRole(member, role, parsed.Guild.ID())
-				}
-
-				if err != nil {
-					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-						return "API error, Discord said: " + cast.Message.Message, err
-					}
-
-					return "Something went wrong :upside_down: ", err
-				}
-
-				if found {
-					return "Took away your role!", nil
-				}
-
-				return "Gave you the role!", nil
-			},
-		},
-	},
 	&commands.CustomCommand{
 		Category: commands.CategoryDebug,
 		Command: &commandsystem.Command{

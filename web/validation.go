@@ -6,9 +6,9 @@ package web
 //
 // struct: `valid:"traverse"`
 //	  - Validates the struct
-// float/int: `valid:"{min],{max}"`
+// float/int: `valid:"{min],{max}"` or (for int64's) `valid:"role/channel,{allowEmpty}}"
 //    - Makes sure the float/int is whitin min and max
-// normal string: `valid:",{minLen},{maxLen}"` or `valid:",{maxLen}"`
+// normal string: `valid:",{minLen},{maxLen},opts..."` or `valid:",{maxLen},opts..."`
 //    - Makes sure the string is shorter than maxLen and bigger than minLen
 // regex string: `valid:"regex,{maxLen}"`
 //    - Makes sure the string is shorter than maxLen
@@ -20,7 +20,8 @@ package web
 //    - Makes sure the channel is part of the guild
 // role string:  `valid:"role,{allowEmpty}"`
 //    - Makes sure the role is part of the guild
-
+//
+// []int64 and []string applies the validation tags on the individual elements
 import (
 	"errors"
 	"fmt"
@@ -103,7 +104,9 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 		switch cv := vField.Interface().(type) {
 		case int:
 			min, max := readMinMax(validationTag)
-			err = ValidateIntField(int64(cv), int64(min), int64(max))
+			err = ValidateIntMinMaxField(int64(cv), int64(min), int64(max))
+		case int64:
+			err = ValidateIntField(cv, validationTag, guild)
 		case float64:
 			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(cv, min, max)
@@ -111,10 +114,23 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(float64(cv), min, max)
 		case string:
-			err = ValidateStringField(cv, validationTag, guild)
+			var newS string
+			newS, err = ValidateStringField(cv, validationTag, guild)
+			if err == nil {
+				vField.SetString(newS)
+			}
 		case []string:
-			for _, s := range cv {
-				e := ValidateStringField(s, validationTag, guild)
+			for i, s := range cv {
+				newS, e := ValidateStringField(s, validationTag, guild)
+				if e != nil {
+					err = e
+					break
+				}
+				cv[i] = newS
+			}
+		case []int64:
+			for _, integer := range cv {
+				e := ValidateIntField(integer, validationTag, guild)
 				if e != nil {
 					err = e
 					break
@@ -162,7 +178,43 @@ func readMinMax(valid *ValidationTag) (float64, float64) {
 	return min, max
 }
 
-func ValidateIntField(i int64, min, max int64) error {
+func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) error {
+	kind, _ := tags.Str(0)
+
+	if kind != "role" && kind != "channel" {
+		// Treat as min max
+		min, max := readMinMax(tags)
+		return ValidateIntMinMaxField(i, int64(min), int64(max))
+	}
+
+	if kind == "" {
+		return nil
+	}
+
+	// Treat any non empty and non-"false" true
+	allowEmpty := false
+	if allow, ok := tags.Str(1); ok {
+		if strings.ToLower(allow) != "false" && allow != "-" && allow != "" {
+			allowEmpty = true
+		}
+	}
+
+	// Check what kind of string field it is, and perform the needed vliadation depending on type
+	var err error
+	switch kind {
+	case "role":
+		err = ValidateRoleField(strconv.FormatInt(i, 10), guild.Roles, allowEmpty)
+	case "channel":
+		err = ValidateChannelField(strconv.FormatInt(i, 10), guild.Channels, allowEmpty)
+	default:
+		logrus.WithField("kind", kind).Error("UNKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
+	}
+
+	return err
+
+}
+
+func ValidateIntMinMaxField(i int64, min, max int64) error {
 
 	if min != max && (i < min || i > max) {
 		return fmt.Errorf("Out of range (%d - %d)", min, max)
@@ -189,8 +241,10 @@ func ValidateRegexField(s string, max int) error {
 	return err
 }
 
-func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) error {
+func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) (str string, err error) {
 	maxLen := 2000
+
+	str = s
 
 	kind, _ := tags.Str(0)
 
@@ -212,7 +266,6 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 	}
 
 	// Check what kind of string field it is, and perform the needed vliadation depending on type
-	var err error
 	switch kind {
 	case "template":
 		err = ValidateTemplateField(s, maxLen)
@@ -224,10 +277,24 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 		err = ValidateChannelField(s, guild.Channels, allowEmpty)
 	case "":
 		min := -1
+
+		startIndex := 2
 		// If only 1 argument provided, its max, if 2 then it's min,max
 		if newMax, ok := tags.Int(2); ok {
 			min = maxLen
 			maxLen = newMax
+			startIndex = 3
+		}
+
+		for i := startIndex; i < len(tags.values); i++ {
+			t, ok := tags.Str(i)
+			if !ok {
+				return str, errors.New("Failed reading tag: " + str)
+			}
+			switch t {
+			case "trimspace":
+				str = strings.TrimSpace(str)
+			}
 		}
 
 		err = ValidateNormalStringField(s, min, maxLen)
@@ -235,7 +302,7 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 		logrus.WithField("kind", kind).Error("UNKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
 	}
 
-	return err
+	return str, err
 }
 
 func ValidateNormalStringField(s string, min, max int) error {

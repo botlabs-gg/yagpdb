@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"math/rand"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -162,4 +163,15 @@ func shuffle(seq interface{}) (interface{}, error) {
 	}
 
 	return shuffled.Interface(), nil
+}
+
+func str(arg interface{}) string {
+	switch v := arg.(type) {
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case int:
+		return strconv.FormatInt(int64(v), 10)
+	}
+
+	return ""
 }

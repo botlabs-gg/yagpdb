@@ -52,6 +52,7 @@ func init() {
 		"hasPerm":             hasPerm,
 		"formatTime":          prettyTime,
 		"roleOptions":         tmplRoleDropdown,
+		"roleOptionsMulti":    tmplRoleDropdownMutli,
 		"textChannelOptions":  tmplChannelDropdown(discordgo.ChannelTypeGuildText),
 		"voiceChannelOptions": tmplChannelDropdown(discordgo.ChannelTypeGuildVoice),
 		"catChannelOptions":   tmplChannelDropdown(discordgo.ChannelTypeGuildCategory),
