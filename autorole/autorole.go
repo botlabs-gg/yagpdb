@@ -35,8 +35,3 @@ func GetGeneralConfig(client *redis.Client, guildID string) (*GeneralConfig, err
 	err := common.GetRedisJson(client, KeyGeneral(guildID), conf)
 	return conf, err
 }
-
-func GetCommands(client *redis.Client, guildID string) (roles []*RoleCommand, err error) {
-	err = common.GetRedisJson(client, KeyCommands(guildID), &roles)
-	return
-}
