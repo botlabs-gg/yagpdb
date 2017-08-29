@@ -4,7 +4,7 @@
 <div class="row">
     <div class="col-lg-12">
         <h1 class="page-header">Autorole</h1>
-        <p>Give out roles automatically for new members and make members able to give themselves certain roles</p>
+        <p>Give out roles automatically for members</p>
     </div>
     <!-- /.col-lg-12 -->
 </div>
@@ -32,42 +32,6 @@
                         
                     <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA: <code>{{.ProcessingETA}}</code>minutes (May take up to a minute before the bot starts assigning roles)</p>
                     <p>To stop set the role to "None"</p>
-                    </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    Role commands
-                </div>
-                <div class="panel-body">
-                    <div class="col-lg-12">
-                    <button type="button" class="btn btn-default" onclick="newCommand()">Add</button>
-                    <table class="table" id="role-commands">
-                        <tr>
-                            <th>Role</th>
-                            <th>Name</th>
-                            <th>Remove</th>
-                        </tr>
-
-                        {{$guild := .ActiveGuild.ID}}
-                        {{$roles := .ActiveGuild.Roles}}
-                        {{$highest := .HighestRole}}
-
-                        {{range $k, $v := .RoleCommands}}
-                        <tr id="role-cmd-{{$k}}" class="role-cmd">
-                            <td>
-                                <div class="form-group">
-                                    <select class="form-control" name="Commands.{{$k}}.Role">
-                                        {{roleOptions $roles $highest .Role "None (disabled)"}}
-                                    </select>
-                                </div>
-                            </td> 
-
-                            <td> <div class="form-group"><input type="text" name="Commands.{{$k}}.Name" value="{{.Name}}"></div></td>
-                            <td> <div class="form-group"><button type="button" noconfirm class="btn btn-danger" onclick="remove({{$k}})">Remove</button></div></td>
-                        </tr>
-                        {{end}}
-                    </table>
-                    </div>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary btn-lg btn-block" >Save</button>   
@@ -77,65 +41,6 @@
     </div>
     <!-- /.row -->            
 </form>
-<script type="text/javascript">
-function newCommand(){
-    // Get highest id
-    var highest = 0;
-    $(".role-cmd").each(function(i, v){
-        console.log(i, v);
-        id = $(v).attr("id");
-        var numStr = id.split("-")[2];
-        var num = parseInt(numStr, 10);
-        if (num > highest) {
-            highest = num
-        }
-    })
-
-    var id = highest+1;
-
-    var row = $("<tr>")
-    row.attr("id", "role-cmd-"+id);
-    row.addClass("role-cmd");
-
-    var roleSelect = $("<select>").attr("name", "Commands."+id+".Role").addClass("form-control");
-
-    if (roleIds.length < 1) {
-        $("<option disabled>").attr("value", "").text("The bot does not have enough permissions to assign any roles (bot is below all other roles, if it's not then contact support)").appendTo(roleSelect);
-        
-    }else{
-        for (var i = roleIds.length - 1; i >= 0; i--) {
-            $("<option>").attr("value", roleIds[i]).text(roleNames[i]).appendTo(roleSelect);
-        }
-    }
-
-    roleSelect.appendTo($('<div class="form-group">').appendTo($("<td>").appendTo(row)))
-    
-    $("<td>").append($("<div class=\"form-group\">").append($('<input type="text" name="Commands.'+id+'.Name">'))).appendTo(row);
-
-    var button = $('<button type="button" class="btn btn-danger" onclick="remove('+id+")\">").text("Remove!");
-    button.appendTo($('<div class="form-group">').appendTo($('<td>').appendTo(row)))
-    row.appendTo($("#role-commands"));
-}
-
-function remove(index){
-    $("#role-cmd-"+index).remove();
-}
-
-{{$highest := .HighestRole}}
-{{$guildID := .ActiveGuild.ID}}
-
-var roleIds = [
-{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID) (not .Managed)}}
-"{{.ID}}",{{end}}{{end}}
-]
-var roleNames = [
-{{range .ActiveGuild.Roles}}{{if and (roleAbove $highest .) (ne .ID $guildID) (not .Managed)}}
-"{{.Name}}",
-{{end}}{{end}}
-]
-
-</script>
-
 {{template "cp_footer" .}}
 
 {{end}}

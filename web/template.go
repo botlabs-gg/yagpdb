@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"html/template"
 	"time"
@@ -110,6 +111,44 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 
 	if !found && currentSelected != "" {
 		output += `<option value="` + currentSelected + `" selected>` + unknownName + "</option>\n"
+	}
+
+	return template.HTML(output)
+}
+
+// Same as tmplRoleDropdown but supports multiple selections
+func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Role, selections []int64) template.HTML {
+
+	parsedIds := make([]int64, len(roles))
+	for i, r := range roles {
+		parsedIds[i] = common.MustParseInt(r.ID)
+	}
+
+	output := ""
+	for k, role := range roles {
+		// Skip the everyone role
+		if k == len(roles)-1 {
+			break
+		}
+		if role.Managed {
+			continue
+		}
+
+		output += `<option value="` + role.ID + `"`
+		for _, selected := range selections {
+			if selected == parsedIds[k] {
+				output += " selected"
+			}
+		}
+
+		optName := template.HTMLEscapeString(role.Name)
+		if highestBotRole != nil {
+			if dutil.IsRoleAbove(role, highestBotRole) {
+				output += " disabled"
+				optName += " (role is above bot)"
+			}
+		}
+		output += ">" + optName + "</option>\n"
 	}
 
 	return template.HTML(output)

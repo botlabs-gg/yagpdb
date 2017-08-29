@@ -72,10 +72,6 @@ func HandleAutoroles(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
-	commands, err := GetCommands(client, activeGuild.ID)
-	web.CheckErr(tmpl, err, "Failed retrieving commands (contact support)", web.CtxLogger(r.Context()).Error)
-	tmpl["RoleCommands"] = commands
-
 	general, err := GetGeneralConfig(client, activeGuild.ID)
 	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general

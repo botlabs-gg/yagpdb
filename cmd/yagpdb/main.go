@@ -37,6 +37,7 @@ import (
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
+	"github.com/jonas747/yagpdb/rolecommands"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/streaming"
@@ -112,6 +113,7 @@ func main() {
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
+	rolecommands.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
@@ -221,7 +223,7 @@ func listenSignal() {
 }
 
 type SQLMigrater interface {
-	MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error
+	MigrateStorage(client *redis.Client, guildIDInt int64) error
 	Name() string
 }
 
@@ -250,7 +252,7 @@ func migrate(client *redis.Client) error {
 		}
 
 		for _, p := range plugins {
-			err = p.MigrateStorage(client, g, parsed)
+			err = p.MigrateStorage(client, parsed)
 			if err != nil {
 				log.WithError(err).Error("Error migrating ", p.Name())
 			}
