@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/web"
+	"gopkg.in/src-d/go-kallax.v1"
+	"sort"
 	"strconv"
-	"strings"
 )
 
 //go:generate esc -o assets_gen.go -pkg rolecommands -ignore ".go" assets/
@@ -33,6 +35,7 @@ func (p *Plugin) Name() string {
 var (
 	_ common.Plugin = (*Plugin)(nil)
 	_ web.Plugin    = (*Plugin)(nil)
+	_ bot.Plugin    = (*Plugin)(nil)
 )
 
 func RegisterPlugin() {
@@ -60,7 +63,7 @@ func AssignRole(guildID string, member *discordgo.Member, name string) (gaveRole
 		parsedRoles[i], _ = strconv.ParseInt(v, 10, 64)
 	}
 
-	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByName(strings.ToLower(name)).WithGroup())
+	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByGuildID(kallax.Eq, parsedGuildID).Where(kallax.Ilike(Schema.RoleCommand.Name, name)).WithGroup())
 	if err != nil {
 		return false, err
 	}
@@ -128,9 +131,9 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 			return
 		}
 
-		// Check if the user has any other commands in this group
+		// Check if the user has any other role commands in this group
 		for _, v := range commands {
-			if common.ContainsInt64Slice(parsedRoles, v.ID) {
+			if common.ContainsInt64Slice(parsedRoles, v.Role) {
 				if rg.SingleAutoToggleOff {
 					common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(v.Role, 10))
 				} else {
@@ -140,7 +143,7 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 		}
 		// Finally give the role
 		err = common.BotSession.GuildMemberRoleAdd(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(targetRole.Role, 10))
-		return
+		return true, err
 	}
 
 	// Handle multiple mode
@@ -192,7 +195,7 @@ func (r *RoleCommand) CanAssignTo(memberRoles []int64) error {
 
 func CheckRequiredRoles(requireOneOf []int64, has []int64) error {
 	for _, r := range requireOneOf {
-		if common.ContainsInt64Slice(has, r) {
+		if !common.ContainsInt64Slice(has, r) {
 			return NewRoleError("Missing required role", r)
 		}
 	}
@@ -267,4 +270,39 @@ func RoleCommandsLessFunc(slice []*RoleCommand) func(int, int) bool {
 
 		return true
 	}
+}
+
+func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*RoleGroup][]*RoleCommand, unGrouped []*RoleCommand, err error) {
+	commands, err := cmdStore.FindAll(NewRoleCommandQuery().WithGroup().FindByGuildID(kallax.Eq, guildID))
+	if err != nil && err != kallax.ErrNotFound {
+		return
+	}
+
+	groups, err = groupStore.FindAll(NewRoleGroupQuery().FindByGuildID(kallax.Eq, guildID))
+	if err != nil && err != kallax.ErrNotFound {
+		return
+	}
+
+	grouped = make(map[*RoleGroup][]*RoleCommand)
+	for _, group := range groups {
+		grouped[group] = make([]*RoleCommand, 0, 10)
+		for _, cmd := range commands {
+			if cmd.Group != nil && cmd.Group.ID == group.ID {
+				grouped[group] = append(grouped[group], cmd)
+			}
+		}
+
+		sort.Slice(grouped[group], RoleCommandsLessFunc(grouped[group]))
+	}
+
+	unGrouped = make([]*RoleCommand, 0, 10)
+	for _, cmd := range commands {
+		if cmd.Group == nil {
+			unGrouped = append(unGrouped, cmd)
+		}
+	}
+	sort.Slice(unGrouped, RoleCommandsLessFunc(unGrouped))
+
+	err = nil
+	return
 }

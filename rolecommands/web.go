@@ -70,40 +70,11 @@ func HandleSettings(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateDa
 	_, g, tmpl := web.GetBaseCPContextData(r.Context())
 	parsedGID := common.MustParseInt(g.ID)
 
-	groups, err := groupStore.FindAll(NewRoleGroupQuery().FindByGuildID(kallax.Eq, parsedGID))
-	if err != nil && err != kallax.ErrNotFound {
-		return tmpl, err
-	}
+	groups, groupedCommands, ungroupedCommands, err := GetAllRoleCommandsSorted(parsedGID)
 
 	tmpl["Groups"] = groups
-
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().WithGroup())
-	if err != nil && err != kallax.ErrNotFound {
-		return tmpl, err
-	}
-
-	sortedCommands := make(map[*RoleGroup][]*RoleCommand, len(groups))
-	for _, group := range groups {
-		sortedCommands[group] = make([]*RoleCommand, 0, 10)
-		for _, cmd := range commands {
-			if cmd.Group != nil && cmd.Group.ID == group.ID {
-				sortedCommands[group] = append(sortedCommands[group], cmd)
-			}
-		}
-
-		sort.Slice(sortedCommands[group], RoleCommandsLessFunc(sortedCommands[group]))
-	}
-
-	tmpl["SortedCommands"] = sortedCommands
-
-	loneCommands := make([]*RoleCommand, 0, 10)
-	for _, cmd := range commands {
-		if cmd.Group == nil {
-			loneCommands = append(loneCommands, cmd)
-		}
-	}
-	sort.Slice(loneCommands, RoleCommandsLessFunc(loneCommands))
-	tmpl["LoneCommands"] = loneCommands
+	tmpl["SortedCommands"] = groupedCommands
+	tmpl["LoneCommands"] = ungroupedCommands
 
 	return tmpl, nil
 }

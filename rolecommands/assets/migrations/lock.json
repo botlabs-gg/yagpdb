@@ -60,14 +60,14 @@
           "Type": "bigint[]",
           "PrimaryKey": false,
           "Reference": null,
-          "NotNull": true
+          "NotNull": false
         },
         {
           "Name": "ignore_roles",
           "Type": "bigint[]",
           "PrimaryKey": false,
           "Reference": null,
-          "NotNull": true
+          "NotNull": false
         },
         {
           "Name": "position",
@@ -107,14 +107,14 @@
           "Type": "bigint[]",
           "PrimaryKey": false,
           "Reference": null,
-          "NotNull": true
+          "NotNull": false
         },
         {
           "Name": "ignore_roles",
           "Type": "bigint[]",
           "PrimaryKey": false,
           "Reference": null,
-          "NotNull": true
+          "NotNull": false
         },
         {
           "Name": "mode",

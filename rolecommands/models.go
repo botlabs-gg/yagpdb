@@ -1,6 +1,6 @@
 package rolecommands
 
-//go:generate kallax gen -e "kallax.go" -e "rolecommands.go" -e "web.go"
+//go:generate kallax gen -e "kallax.go" -e "rolecommands.go" -e "web.go" -e "commands.go"
 
 import (
 	"gopkg.in/src-d/go-kallax.v1"
