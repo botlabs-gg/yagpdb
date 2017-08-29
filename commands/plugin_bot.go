@@ -446,7 +446,7 @@ Control panel: <https://yagpdb.xyz/manage>
 		Category: CategoryFun,
 		Command: &commandsystem.Command{
 			Name:        "Advice",
-			Description: "Get a advice",
+			Description: "Get advice",
 			Arguments: []*commandsystem.ArgDef{
 				&commandsystem.ArgDef{Name: "What", Description: "What to get advice on", Type: commandsystem.ArgumentString},
 			},

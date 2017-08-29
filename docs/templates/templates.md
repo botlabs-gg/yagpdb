@@ -9,11 +9,11 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 
 | Field | Description |
 | --- | --- |
-| `.User.Username` | The users username |
-| `.User.ID` | The users id |
+| `.User.Username` | The user's username |
+| `.User.ID` | The user's id |
 | `<@.User.ID>` | Example of creating a mention of the user |
-| `.User.Discriminator` | The users discriminator | 
-| `.User.Avatar` | The users avatar id |
+| `.User.Discriminator` | The user's discriminator | 
+| `.User.Avatar` | The user's avatar id |
 | `.User.Bot` | True if the user is a bot | 
 
 ### Guild/Server
