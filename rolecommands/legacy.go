@@ -25,7 +25,7 @@ func (p *Plugin) MigrateStorage(client *redis.Client, guildID int64) error {
 		return err
 	}
 
-	for _, cmd := range legacyCommands {
+	for k, cmd := range legacyCommands {
 
 		parsedRole, err := strconv.ParseInt(cmd.Role, 10, 64)
 		if err != nil {
@@ -34,8 +34,10 @@ func (p *Plugin) MigrateStorage(client *redis.Client, guildID int64) error {
 		}
 
 		newCommand := &RoleCommand{
-			Name: cmd.Name,
-			Role: parsedRole,
+			GuildID:  guildID,
+			Name:     cmd.Name,
+			Role:     parsedRole,
+			Position: k,
 		}
 
 		err = cmdStore.Insert(newCommand)
