@@ -28,7 +28,7 @@ func (c *CustomDiscordHTTPTransport) RoundTrip(r *http.Request) (resp *http.Resp
 			return resp, err
 		}
 
-		logrus.WithField("uri", r.URL.String()).Error("Request failed, retrying")
+		logrus.WithError(err).WithField("uri", r.URL.String()).Error("Request failed, retrying")
 		currentSleep *= 2
 		if currentSleep >= maxSleep {
 			currentSleep = maxSleep
@@ -38,6 +38,6 @@ func (c *CustomDiscordHTTPTransport) RoundTrip(r *http.Request) (resp *http.Resp
 		continue
 	}
 
-	logrus.WithField("uri", r.URL.String()).Error("Request exceeded 1000 retries")
+	logrus.WithError(err).WithField("uri", r.URL.String()).Error("Request exceeded 1000 retries")
 	return
 }
