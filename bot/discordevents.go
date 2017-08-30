@@ -9,7 +9,6 @@ import (
 )
 
 func HandleReady(evt *eventsystem.EventData) {
-	log.Info("Ready received!")
 	ContextSession(evt.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
 
 	// We pass the common.Session to the command system and that needs the user from the state

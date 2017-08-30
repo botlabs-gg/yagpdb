@@ -92,7 +92,6 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
 	}
-	log.WithField("guild", g.ID).WithField("g_name", g.Name).WithField("member_count", g.MemberCount).Info("Set member count")
 
 	err = ApplyPresences(client, g.ID, g.Presences)
 	if err != nil {

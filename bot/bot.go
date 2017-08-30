@@ -92,7 +92,7 @@ func Run() {
 		starter, ok := p.(BotStarterHandler)
 		if ok {
 			starter.StartBot()
-			log.Info("Ran StartBot for ", p.Name())
+			log.Debug("Ran StartBot for ", p.Name())
 		}
 	}
 
@@ -107,7 +107,7 @@ func Stop(wg *sync.WaitGroup) {
 			continue
 		}
 		wg.Add(1)
-		log.Info("Sending stop event to stopper: ", v.Name())
+		log.Debug("Sending stop event to stopper: ", v.Name())
 		go stopper.StopBot(wg)
 	}
 
