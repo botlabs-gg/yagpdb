@@ -47,6 +47,12 @@ func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
 		}
 
 		if IsRoleCommandError(err) {
+			if roleError, ok := err.(*RoleError); ok {
+				parsed.Guild.RLock()
+				defer parsed.Guild.RUnlock()
+
+				return roleError.PrettyError(parsed.Guild.Guild.Roles), nil
+			}
 			return err.Error(), nil
 		}
 
@@ -103,18 +109,18 @@ func CmdFuncListCommands(parsed *commandsystem.ExecData) (interface{}, error) {
 func StringCommands(cmds []*RoleCommand) string {
 	stringedCommands := make([]int64, 0, len(cmds))
 
-	output := ""
+	output := "```\n"
 
 	for _, cmd := range cmds {
 		if common.ContainsInt64Slice(stringedCommands, cmd.Role) {
 			continue
 		}
 
-		output += "`" + cmd.Name + "`"
+		output += cmd.Name
 		// Check for duplicate roles
 		for _, cmd2 := range cmds {
 			if cmd.Role == cmd2.Role && cmd.Name != cmd2.Name {
-				output += "/`" + cmd2.Name + "`"
+				output += "/ " + cmd2.Name
 			}
 		}
 		output += "\n"
@@ -122,5 +128,5 @@ func StringCommands(cmds []*RoleCommand) string {
 		stringedCommands = append(stringedCommands, cmd.Role)
 	}
 
-	return output
+	return output + "```\n"
 }

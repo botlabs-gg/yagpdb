@@ -17,10 +17,6 @@ import (
 //go:generate esc -o assets_gen.go -pkg rolecommands -ignore ".go" assets/
 
 var (
-	ErrOneRequiredGroup = NewRoleError("Need atleast one role in this group", 0)
-	ErrMaxOneRole       = NewRoleError("Max 1 role in this group is allowed", 0)
-	ErrCantRemove       = NewRoleError("Cannot remove this role", 0)
-
 	groupStore *RoleGroupStore
 	cmdStore   *RoleCommandStore
 )
@@ -124,7 +120,7 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 		// If user already has role it's attempting to give itself
 		if common.ContainsInt64Slice(parsedRoles, targetRole.Role) {
 			if rg.SingleRequireOne {
-				return false, ErrOneRequiredGroup
+				return false, NewGroupError("Need atleast one role in group **%s**", rg)
 			}
 			err = common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(targetRole.Role, 10))
 			gaveRole = false
@@ -137,7 +133,7 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 				if rg.SingleAutoToggleOff {
 					common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(v.Role, 10))
 				} else {
-					return false, ErrMaxOneRole
+					return false, NewGroupError("Max 1 role in group **%s** is allowed", rg)
 				}
 			}
 		}
@@ -163,12 +159,12 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 
 	if hasTargetRole {
 		if hasRoles-1 < rg.MultipleMin {
-			err = NewLmitError("Minimum of %d roles required in this group", rg.MultipleMin)
+			err = NewLmitError("Minimum of `%d` roles required in this group", rg.MultipleMin)
 			return
 		}
 	} else {
 		if hasRoles+1 > rg.MultipleMax {
-			err = NewLmitError("Maximum of %d roles allowed in this group", rg.MultipleMax)
+			err = NewLmitError("Maximum of `%d` roles allowed in this group", rg.MultipleMax)
 			return
 		}
 	}
@@ -232,6 +228,30 @@ func (r *RoleError) Error() string {
 	return r.Message + ": " + strconv.FormatInt(r.Role, 10)
 }
 
+// Uses the role name from one of the passed roles with matching id instead of the id
+func (r *RoleError) PrettyError(roles []*discordgo.Role) string {
+	if r.Role == 0 {
+		return r.Message
+	}
+
+	idStr := strconv.FormatInt(r.Role, 10)
+
+	roleStr := ""
+
+	for _, v := range roles {
+		if v.ID == idStr {
+			roleStr = "**" + v.Name + "**"
+			break
+		}
+	}
+
+	if roleStr == "" {
+		roleStr = "(unknown role " + idStr + ")"
+	}
+
+	return r.Message + ": " + roleStr
+}
+
 type LmitError struct {
 	Limit   int
 	Message string
@@ -248,9 +268,25 @@ func (r *LmitError) Error() string {
 	return fmt.Sprintf(r.Message, r.Limit)
 }
 
+type GroupError struct {
+	Group   *RoleGroup
+	Message string
+}
+
+func NewGroupError(msg string, group *RoleGroup) error {
+	return &GroupError{
+		Group:   group,
+		Message: msg,
+	}
+}
+
+func (r *GroupError) Error() string {
+	return fmt.Sprintf(r.Message, r.Group.Name)
+}
+
 func IsRoleCommandError(err error) bool {
 	switch err.(type) {
-	case *LmitError, *RoleError:
+	case *LmitError, *RoleError, *GroupError:
 		return true
 	default:
 		return false
