@@ -63,7 +63,7 @@ func init() {
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
-	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected")
+	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected, migrate")
 }
 
 func main() {
@@ -218,6 +218,12 @@ func listenSignal() {
 
 	log.Info("Sleeping for a second to allow work to finish")
 	time.Sleep(time.Second)
+
+	if !common.Testing {
+		log.Info("Sleeping a little longer")
+		time.Sleep(time.Second * 5)
+	}
+
 	log.Info("Bye..")
 	os.Exit(0)
 }
