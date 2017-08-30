@@ -57,6 +57,10 @@ func Init() error {
 	}
 	BotSession.MaxRestRetries = 3
 
+	if os.Getenv("YAGPDB_NO_CUSTOM_TRANSPORT") == "" {
+		BotSession.Client.Transport = NewCustomDiscordHTTPTransport()
+	}
+
 	err = connectRedis(config.Redis)
 	if err != nil {
 		return err
