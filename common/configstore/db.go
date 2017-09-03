@@ -74,7 +74,7 @@ type CachedStorage struct {
 
 func NewCached() *CachedStorage {
 	return &CachedStorage{
-		cache: ccache.New(ccache.Configure()),
+		cache: ccache.New(ccache.Configure().MaxSize(25000)),
 	}
 }
 
