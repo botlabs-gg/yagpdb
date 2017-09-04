@@ -176,7 +176,7 @@ func ModBaseCmd(neededPerm, cmd int, inner commandsystem.RunFunc) commandsystem.
 		}
 
 		if !enabled {
-			return fmt.Sprintf("The **%s** command is disabled on this server. Enable it in the control panel", cmdName), nil
+			return fmt.Sprintf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName), nil
 		}
 
 		if !reasonOptional && reason == "" {
