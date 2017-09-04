@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -18,6 +19,7 @@ import (
 
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(roleCommands...)
+	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
 }
 
 var roleCommands = []commandsystem.CommandHandler{
@@ -344,5 +346,19 @@ func saveGeneral(client *redis.Client, guildID string, config *GeneralConfig) {
 	err := common.SetRedisJson(client, KeyGeneral(guildID), config)
 	if err != nil {
 		logrus.WithError(err).Error("Failed saving autorole config")
+	}
+}
+
+func OnMemberJoin(evt *eventsystem.EventData) {
+	addEvt := evt.GuildMemberAdd
+
+	client := bot.ContextRedis(evt.Context())
+	config, err := GetGeneralConfig(client, addEvt.GuildID)
+	if err != nil {
+		return
+	}
+
+	if config.Role != "" && config.RequiredDuration < 1 {
+		common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
 	}
 }
