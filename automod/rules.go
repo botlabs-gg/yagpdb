@@ -35,8 +35,8 @@ type BaseRule struct {
 	ViolationsExpire int `valid:"0,44640"`
 
 	// Execute these punishments after certain number of repeated violaions
-	MuteAfter    int `valid:"0,44640"`
-	MuteDuration int `valid:"0,100"`
+	MuteAfter    int `valid:"0,100"`
+	MuteDuration int `valid:"0,44640"`
 	KickAfter    int `valid:"0,100"`
 	BanAfter     int `valid:"0,100"`
 
