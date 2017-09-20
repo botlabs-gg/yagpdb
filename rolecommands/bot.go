@@ -3,7 +3,9 @@ package rolecommands
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"gopkg.in/src-d/go-kallax.v1"
@@ -21,8 +23,21 @@ func (p *Plugin) InitBot() {
 				},
 				Run: CmdFuncRole,
 			},
+		}, &commands.CustomCommand{
+			Category: commands.CategoryTool,
+			Command: &commandsystem.Command{
+				Name:         "RoleMenu",
+				Description:  "Set up a role menu",
+				RequiredArgs: 1,
+				Arguments: []*commandsystem.ArgDef{
+					&commandsystem.ArgDef{Name: "Group", Type: commandsystem.ArgumentString},
+				},
+				Run: CmdFuncRoleMenu,
+			},
 		},
 	)
+
+	eventsystem.AddHandler(handleReactionAdd, eventsystem.EventMessageReactionAdd)
 }
 
 func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
@@ -35,7 +50,7 @@ func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
 		return "Failed retrieving you?", err
 	}
 
-	given, err := AssignRole(parsed.Guild.ID(), member, parsed.Args[0].Str())
+	given, err := FindAssignRole(parsed.Guild.ID(), member, parsed.Args[0].Str())
 	if err != nil {
 		if err == kallax.ErrNotFound {
 			resp, err := CmdFuncListCommands(parsed)
@@ -46,23 +61,7 @@ func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
 			return resp, err
 		}
 
-		if IsRoleCommandError(err) {
-			if roleError, ok := err.(*RoleError); ok {
-				parsed.Guild.RLock()
-				defer parsed.Guild.RUnlock()
-
-				return roleError.PrettyError(parsed.Guild.Guild.Roles), nil
-			}
-			return err.Error(), nil
-		}
-
-		if code, _ := common.DiscordError(err); code != 0 {
-			if code == discordgo.ErrCodeMissingPermissions {
-				return "Bot does not have enough permissions to assign you this role", nil
-			}
-		}
-
-		return "Failed Assigning the role", err
+		return HumanizeAssignError(parsed.Guild, err), err
 	}
 
 	if given {
@@ -70,6 +69,27 @@ func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
 	}
 
 	return "Took away your role!", nil
+}
+
+func HumanizeAssignError(guild *dstate.GuildState, err error) string {
+	if IsRoleCommandError(err) {
+		if roleError, ok := err.(*RoleError); ok {
+			guild.RLock()
+			defer guild.RUnlock()
+
+			return roleError.PrettyError(guild.Guild.Roles)
+		}
+		return err.Error()
+	}
+
+	if code, _ := common.DiscordError(err); code != 0 {
+		if code == discordgo.ErrCodeMissingPermissions {
+			return "Bot does not have enough permissions to assign you this role"
+		}
+	}
+
+	return "An error occured assignign the role"
+
 }
 
 func CmdFuncListCommands(parsed *commandsystem.ExecData) (interface{}, error) {
@@ -106,6 +126,7 @@ func CmdFuncListCommands(parsed *commandsystem.ExecData) (interface{}, error) {
 	return output, nil
 }
 
+// StringCommands pretty formats a bunch of commands into  a string
 func StringCommands(cmds []*RoleCommand) string {
 	stringedCommands := make([]int64, 0, len(cmds))
 
