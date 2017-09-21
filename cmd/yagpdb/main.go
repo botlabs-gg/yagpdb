@@ -3,6 +3,16 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
+	"github.com/mediocregopher/radix.v2/redis"
+	"os"
+	"os/signal"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+
+	// Core yagpdb packages
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
@@ -11,17 +21,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/jonas747/yagpdb/youtube"
-	"github.com/mediocregopher/radix.v2/redis"
-	// "github.com/shiena/ansicolor"
-	"os"
-	"os/signal"
-	"strconv"
-	"strings"
-	"sync"
-	"syscall"
-	"time"
-	//"github.com/wercker/journalhook"
 
 	// Plugin imports
 	"github.com/jonas747/yagpdb/automod"
@@ -40,7 +39,9 @@ import (
 	"github.com/jonas747/yagpdb/rolecommands"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
+	"github.com/jonas747/yagpdb/stdcommands"
 	"github.com/jonas747/yagpdb/streaming"
+	"github.com/jonas747/yagpdb/youtube"
 )
 
 var (
@@ -99,6 +100,7 @@ func main() {
 	discordlogger.Register()
 	docs.RegisterPlugin()
 	commands.RegisterPlugin()
+	stdcommands.RegisterPlugin()
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()
 	customcommands.RegisterPlugin()
