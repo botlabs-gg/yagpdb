@@ -190,20 +190,20 @@ var _escData = map[string]*_escFile{
 
 	"/assets/schema.sql": {
 		local:   "assets/schema.sql",
-		size:    441,
-		modtime: 1506092866,
+		size:    376,
+		modtime: 1506183719,
 		compressed: `
-H4sIAAAAAAAA/4TQz0rDQBAG8PPOU8yxhbxBT1FXCMYoaYT2tKzdoQ6km7AzK+LTS03aelB7/fgxf77b
-1padxa68qS1W99g8dWg31bpbo1B6pyTqVdxIiYcguADDAV95L5TY99+8ealrfG6rx7Ld4oPdFmB2ibxS
-cF5R+UCi/jDq51kXYPIYrggwoj4pBfwpCjAhJ688xOMZHLUAMPvMfXAcEM+hyUJpii7Z7s3HSL2bfpiz
-IUfFC4PlCmCupWru7OZ6Le60/wOH+BtYnMBy9e/o6WH355gZHC/8CgAA///WLxfXuQEAAA==
+H4sIAAAAAAAA/3yPwUrDQBCGzztPMccW8gY9RV0hGKOkEdrTsrpDHUh3y86siE8vNalFqL1+fPwz321v
+68HiUN+0Fpt77J4GtJtmPaxRKH9QdqJexR0ocwqCCzAc8JV3Qpn9+ON3L22Lz33zWPdbfLDbCgwYUZ+V
+AqLynkT9/qBfFZhQsldO8TjBUSsAsys8BscB8ReaIpQndGZv7z5GGt10f2apRMWzBssVwNzUdHd2c7Hp
+T5I73f/EFC9GL07GcnV1eyp2/+/MxvHH7wAAAP//TnSGKXgBAAA=
 `,
 	},
 
 	"/assets/serverstats.html": {
 		local:   "assets/serverstats.html",
 		size:    7161,
-		modtime: 1506092940,
+		modtime: 1506183349,
 		compressed: `
 H4sIAAAAAAAA/9RZb2/bONJ/708xVReIjUZSku0u8CRRgG27T6+Ha3dxKQ44FEVASyOLCUXqSMq21qfv
 fiApyZYsx+neYZHti1QifzOcPz8Nh/Rmk2BKOYIXF3cK5RKl0kQrr64nk81GY14wot10hiTxIKjryXVC

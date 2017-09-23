@@ -1,7 +1,5 @@
-CREATE TABLE IF NOT EXISTS serverstats_periods (
+CREATE TABLE IF NOT EXISTS server_stats_periods (
 	id bigserial NOT NULL PRIMARY KEY,
-	created_at timestamptz NOT NULL,
-	updated_at timestamptz NOT NULL,
 	
 	started  timestamptz,
 	duration bigint,
@@ -12,6 +10,6 @@ CREATE TABLE IF NOT EXISTS serverstats_periods (
 	count     bigint
 );
 
-CREATE INDEX IF NOT EXISTS serverstats_periods_guild_idx on serverstats_periods(guild_id);
-CREATE INDEX IF NOT EXISTS started_x on serverstats_periods(started);
+CREATE INDEX IF NOT EXISTS serverstats_periods_guild_idx on server_stats_periods(guild_id);
+CREATE INDEX IF NOT EXISTS started_x on server_stats_periods(started);
 

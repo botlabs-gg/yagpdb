@@ -16,6 +16,8 @@ import (
 var _ types.SQLType
 var _ fmt.Formatter
 
+type modelSaveFunc func(*kallax.Store) error
+
 // NewStatsPeriod returns a new instance of StatsPeriod.
 func NewStatsPeriod() (record *StatsPeriod) {
 	return new(StatsPeriod)
@@ -120,6 +122,9 @@ func (s *StatsPeriodStore) DebugWith(logger kallax.LoggerFunc) *StatsPeriodStore
 // Insert inserts a StatsPeriod in the database. A non-persisted object is
 // required for this operation.
 func (s *StatsPeriodStore) Insert(record *StatsPeriod) error {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	record.Started = record.Started.Truncate(time.Microsecond)
 
 	return s.Store.Insert(Schema.StatsPeriod.BaseSchema, record)
@@ -133,6 +138,9 @@ func (s *StatsPeriodStore) Insert(record *StatsPeriod) error {
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *StatsPeriodStore) Update(record *StatsPeriod, cols ...kallax.SchemaField) (updated int64, err error) {
 	record.Started = record.Started.Truncate(time.Microsecond)
+
+	record.SetSaving(true)
+	defer record.SetSaving(false)
 
 	return s.Store.Update(Schema.StatsPeriod.BaseSchema, record, cols...)
 }
@@ -495,7 +503,7 @@ type schemaStatsPeriod struct {
 var Schema = &schema{
 	StatsPeriod: &schemaStatsPeriod{
 		BaseSchema: kallax.NewBaseSchema(
-			"serverstats_periods",
+			"server_stats_periods",
 			"__statsperiod",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},

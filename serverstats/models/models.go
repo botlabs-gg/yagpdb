@@ -8,7 +8,7 @@ import (
 )
 
 type StatsPeriod struct {
-	kallax.Model `table:"serverstats_periods" pk:"id,autoincr"`
+	kallax.Model `table:"server_stats_periods" pk:"id,autoincr"`
 
 	Started  time.Time
 	Duration time.Duration

@@ -33,6 +33,10 @@ func RegisterPlugin() {
 	common.GORM.AutoMigrate(&ServerStatsConfig{})
 	configstore.RegisterConfig(configstore.SQL, &ServerStatsConfig{})
 	ServerStatsPeriodStore = models.NewStatsPeriodStore(common.PQ)
+	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
+	if err != nil {
+		panic("Failed initializing db schema: " + err.Error())
+	}
 }
 
 var _ bot.BotStarterHandler = (*Plugin)(nil)
@@ -42,13 +46,17 @@ func (p *Plugin) StartBot() {
 }
 
 func UpdateStatsLoop() {
+
+	ProcessTempStats(true)
+	UpdateOldStats()
+
 	tempTicker := time.NewTicker(time.Minute)
 	longTicker := time.NewTicker(time.Hour)
 
 	for {
 		select {
 		case <-tempTicker.C:
-			ProcessTempStats()
+			ProcessTempStats(false)
 		case <-longTicker.C:
 			go UpdateOldStats()
 		}
@@ -56,7 +64,7 @@ func UpdateStatsLoop() {
 }
 
 // ProcessTempStats moves stats from redis to postgres batched up
-func ProcessTempStats() {
+func ProcessTempStats(full bool) {
 	client := common.MustGetRedisClient()
 
 	started := time.Now()
@@ -65,6 +73,13 @@ func ProcessTempStats() {
 	guilds := guildsToCheck
 	guildsToCheck = make([]string, 0, len(guilds))
 	guildsToCheckMU.Unlock()
+	if full {
+		var err error
+		guilds, err = client.Cmd("SMEMBERS", "connected_guilds").List()
+		if err != nil {
+			log.WithError(err).Error("Failed retrieving connected guilds", err)
+		}
+	}
 
 	if len(guilds) < 1 {
 		log.Info("Skipped updating stats, no activity")
@@ -153,7 +168,7 @@ func UpdateGuildStats(client *redis.Client, guildID string) error {
 
 func UpdateOldStats() {
 	started := time.Now()
-	del, err := ServerStatsPeriodStore.RawExec("DELETE FROM serverstats_periods WHERE started < NOW() - INTERVAL '2 days'")
+	del, err := ServerStatsPeriodStore.RawExec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '2 days'")
 	log.Infof("ServerStats: Deleted %d records in %s", del, time.Since(started))
 	if err != nil {
 		log.WithError(err).Error("ServerStats: Failed deleting old stats")
