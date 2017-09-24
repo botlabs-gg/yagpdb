@@ -17,8 +17,10 @@ import (
 //go:generate esc -o assets_gen.go -pkg rolecommands -ignore ".go" assets/
 
 var (
-	groupStore *RoleGroupStore
-	cmdStore   *RoleCommandStore
+	groupStore          *RoleGroupStore
+	cmdStore            *RoleCommandStore
+	roleMenuStore       *RoleMenuStore
+	roleMenuOptionStore *RoleMenuOptionStore
 )
 
 type Plugin struct {
@@ -38,30 +40,36 @@ func RegisterPlugin() {
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
-	_, err := common.PQ.Exec(FSMustString(false, "/assets/migrations/current_absolute.sql"))
+	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initializing db schema")
 	}
 
 	groupStore = NewRoleGroupStore(common.PQ)
 	cmdStore = NewRoleCommandStore(common.PQ)
+	roleMenuStore = NewRoleMenuStore(common.PQ)
+	roleMenuOptionStore = NewRoleMenuOptionStore(common.PQ)
 
 	docs.AddPage("Role Commands", FSMustString(false, "/assets/help.md"), nil)
 }
 
-// AssignRole attempts to assign the given role command, returns an error if the role does not exists
-// or is unable to receie said role
-func AssignRole(guildID string, member *discordgo.Member, name string) (gaveRole bool, err error) {
-	// We word with int64's internally
+func FindAssignRole(guildID string, member *discordgo.Member, name string) (gaveRole bool, err error) {
 	parsedGuildID := common.MustParseInt(guildID)
-	parsedRoles := make([]int64, len(member.Roles))
-	for i, v := range member.Roles {
-		parsedRoles[i], _ = strconv.ParseInt(v, 10, 64)
-	}
-
 	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByGuildID(kallax.Eq, parsedGuildID).Where(kallax.Ilike(Schema.RoleCommand.Name, name)).WithGroup())
 	if err != nil {
 		return false, err
+	}
+
+	return AssignRole(parsedGuildID, member, cmd)
+}
+
+// AssignRole attempts to assign the given role command, returns an error if the role does not exists
+// or is unable to receie said role
+func AssignRole(guildID int64, member *discordgo.Member, cmd *RoleCommand) (gaveRole bool, err error) {
+	// We work with int64's internally
+	parsedRoles := make([]int64, len(member.Roles))
+	for i, v := range member.Roles {
+		parsedRoles[i], _ = strconv.ParseInt(v, 10, 64)
 	}
 
 	if err := cmd.CanAssignTo(parsedRoles); err != nil {
@@ -70,11 +78,11 @@ func AssignRole(guildID string, member *discordgo.Member, name string) (gaveRole
 
 	// This command belongs to a group, let the group handle it
 	if cmd.Group != nil {
-		return cmd.Group.AssignRoleToMember(parsedGuildID, member, parsedRoles, cmd)
+		return cmd.Group.AssignRoleToMember(guildID, member, parsedRoles, cmd)
 	}
 
 	// This is a single command, just toggle it
-	return ToggleRole(parsedGuildID, member, parsedRoles, cmd.Role)
+	return ToggleRole(guildID, member, parsedRoles, cmd.Role)
 }
 
 // ToggleRole toggles the role of a guildmember, adding it if the member does not have the role and removing it if they do
@@ -341,4 +349,8 @@ func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*
 
 	err = nil
 	return
+}
+
+func kallaxDebugger(message string, args ...interface{}) {
+	logrus.Debugf("%s, args: %v", message, args)
 }
