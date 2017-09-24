@@ -5,10 +5,12 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"gopkg.in/src-d/go-kallax.v1"
+	"sort"
 	"strconv"
 )
 
@@ -62,20 +64,22 @@ func CmdFuncRoleMenu(parsed *commandsystem.ExecData) (interface{}, error) {
 		return "Failed setting up menu", err
 	}
 
-	resp, err := model.NextSetupStep()
+	resp, err := model.NextSetupStep(true)
 
 	content := msg.Content + "\n" + resp
 	_, err = common.BotSession.ChannelMessageEdit(parsed.Channel.ID(), msg.ID, content)
 	return "", err
 }
 
-func (rm *RoleMenu) NextSetupStep() (resp string, err error) {
+func (rm *RoleMenu) NextSetupStep(first bool) (resp string, err error) {
 	commands, err := cmdStore.FindAll(NewRoleCommandQuery().FindByGroup(rm.Group.ID).Order(kallax.Desc(Schema.RoleCommand.ID)))
 	if err != nil {
 		return "Failed fetching commands for role group", err
 	}
 
 	var nextCmd *RoleCommand
+
+	sort.Slice(commands, RoleCommandsLessFunc(commands))
 
 OUTER:
 	for _, cmd := range commands {
@@ -87,7 +91,10 @@ OUTER:
 
 		// New command is cmd
 		nextCmd = cmd
+		break
 	}
+
+	rm.Options = nil
 
 	if nextCmd == nil {
 		rm.State = RoleMenuStateDone
@@ -96,33 +103,40 @@ OUTER:
 	}
 
 	rm.NextRoleCommand = nextCmd
-	rm.Options = nil
 	roleMenuStore.Debug().Update(rm, Schema.RoleMenu.NextRoleCommandFK)
-
-	return "Continue setup: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message", nil
+	if first {
+		return "**Start setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the this message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
+	}
+	return "**Continue setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
 }
 
 func (rm *RoleMenu) UpdateMenuMessage() error {
-	newMsg := "Role Menu\n\n"
-	for k, v := range rm.Options {
+	newMsg := "**Role Menu**: react to give yourself a role\n\n"
+
+	for _, option := range rm.Options {
 		// Fetch the roel command if missing
-		if v.RoleCmd == nil {
-			cmdId, err := v.Value("role_command_id")
+		if option.RoleCmd == nil {
+			cmdId, err := option.Value("role_command_id")
 			if err != nil {
 				return err
 			}
-			cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByID(cmdId.(int64)))
+			// Not very pretty, but a limitation of kallax atm...
+			cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByID(int64(*(cmdId.(*kallax.NumericID)))))
 			if err != nil {
 				return err
 			}
-			v.RoleCmd = cmd
+			option.RoleCmd = cmd
 		}
-		logrus.Println(k, v.RoleCmd)
-		emoji := v.UnicodeEmoji
-		if v.EmojiID != 0 {
-			emoji = fmt.Sprintf("<:a:%d>", v.EmojiID)
+	}
+
+	sort.Slice(rm.Options, RoleMenuOptionLessFunc(rm.Options))
+
+	for _, option := range rm.Options {
+		emoji := option.UnicodeEmoji
+		if option.EmojiID != 0 {
+			emoji = fmt.Sprintf("<:yagpdb:%d>", option.EmojiID)
 		}
-		newMsg += fmt.Sprintf("%s: `%s`\n", emoji, v.RoleCmd.Name)
+		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, option.RoleCmd.Name)
 	}
 
 	_, err := common.BotSession.ChannelMessageEdit(strconv.FormatInt(rm.ChannelID, 10), strconv.FormatInt(rm.MessageID, 10), newMsg)
@@ -131,8 +145,10 @@ func (rm *RoleMenu) UpdateMenuMessage() error {
 
 func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string, err error) {
 	if common.MustParseInt(ra.UserID) != rm.OwnerID {
-		return "You're not the owner of this menu", nil
+		common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
+		return "This menu is still being set up, wait until the owner of this menu is done.", nil
 	}
+
 	parsedID := int64(0)
 	if ra.Emoji.ID != "" {
 		parsedID = common.MustParseInt(ra.Emoji.ID)
@@ -151,7 +167,6 @@ func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string
 		}
 	}
 
-	logrus.Info("NexT: ", rm.NextRoleCommand)
 	model := &RoleMenuOption{
 		Menu:    rm,
 		RoleCmd: rm.NextRoleCommand,
@@ -162,9 +177,14 @@ func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string
 		model.UnicodeEmoji = ra.Emoji.Name
 	}
 
-	err = roleMenuOptionStore.DebugWith(kallaxDebugger).Insert(model)
+	err = roleMenuOptionStore.Insert(model)
 	if err != nil {
 		return "Failed inserting option", err
+	}
+
+	err = common.BotSession.MessageReactionAdd(ra.ChannelID, ra.MessageID, ra.Emoji.APIName())
+	if err != nil {
+		logrus.WithError(err).WithField("emoji", ra.Emoji.APIName()).Error("Failed reacting")
 	}
 
 	rm.Options = append(rm.Options, model)
@@ -173,11 +193,14 @@ func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string
 		return "Failed updating", err
 	}
 
-	return rm.NextSetupStep()
+	return rm.NextSetupStep(false)
 }
 
 func handleReactionAdd(evt *eventsystem.EventData) {
 	ra := evt.MessageReactionAdd
+	if ra.UserID == common.BotUser.ID {
+		return
+	}
 
 	menu, err := roleMenuStore.FindOne(NewRoleMenuQuery().FindByMessageID(common.MustParseInt(ra.MessageID)).WithOptions(nil).WithNextRoleCommand().WithGroup())
 	if err != nil {
@@ -225,7 +248,81 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 		return
 	}
 
-	logrus.Println(option)
-	logrus.Println(option.RoleCmd)
-	logrus.Println(option.VirtualColumn("role_cmd_id"))
+	gs := bot.State.Guild(true, strconv.FormatInt(menu.GuildID, 10))
+	gs.RLock()
+	name := gs.Guild.Name
+	gs.RUnlock()
+
+	resp, err := menu.MemberChooseOption(ra, gs, option)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
+	}
+	if resp != "" {
+		bot.SendDM(ra.UserID, "**"+name+"**: "+resp)
+	}
+}
+
+func (rm *RoleMenu) MemberChooseOption(ra *discordgo.MessageReactionAdd, gs *dstate.GuildState, option *RoleMenuOption) (resp string, err error) {
+	cmdId, err := option.Value("role_command_id")
+	if err != nil {
+		return "An error occured giving you the role", err
+	}
+
+	// Not very pretty, but a limitation of kallax atm...
+	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByID(int64(*(cmdId.(*kallax.NumericID)))).WithGroup())
+	if err != nil {
+		return "An error occured giving you the role", err
+	}
+
+	member, err := bot.GetMember(gs.ID(), ra.UserID)
+	if err != nil {
+		return "An error occured giving you the role", err
+	}
+
+	given, err := AssignRole(rm.GuildID, member, cmd)
+	if err != nil {
+		return HumanizeAssignError(gs, err)
+	}
+
+	if given {
+		return "Gave you the role!", nil
+	}
+
+	return "Took away your role!", nil
+}
+
+func RoleMenuOptionLessFunc(slice []*RoleMenuOption) func(int, int) bool {
+	return func(i, j int) bool {
+		// Compare timestamps if positions are equal, for deterministic output
+		if slice[i].RoleCmd.Position == slice[0].RoleCmd.Position {
+			return slice[i].RoleCmd.CreatedAt.After(slice[j].RoleCmd.CreatedAt)
+		}
+
+		if slice[i].RoleCmd.Position > slice[j].RoleCmd.Position {
+			return false
+		}
+
+		return true
+	}
+}
+
+func handleMessageRemove(evt *eventsystem.EventData) {
+	if evt.MessageDelete != nil {
+		messageRemoved(evt.MessageDelete.Message.ID)
+	} else if evt.MessageDeleteBulk != nil {
+		for _, v := range evt.MessageDeleteBulk.Messages {
+			messageRemoved(v)
+		}
+	}
+}
+
+func messageRemoved(id string) {
+	result, err := roleMenuStore.RawExec("DELETE FROM role_menus WHERE message_id=$1", id)
+	if err != nil {
+		logrus.WithError(err).Error("Failed removing old role menus")
+	}
+
+	if result > 0 {
+		logrus.Infof("Deleetd %d role menus", result)
+	}
 }

@@ -38,6 +38,7 @@ func (p *Plugin) InitBot() {
 	)
 
 	eventsystem.AddHandler(handleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 }
 
 func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
@@ -61,7 +62,7 @@ func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
 			return resp, err
 		}
 
-		return HumanizeAssignError(parsed.Guild, err), err
+		return HumanizeAssignError(parsed.Guild, err)
 	}
 
 	if given {
@@ -71,24 +72,24 @@ func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
 	return "Took away your role!", nil
 }
 
-func HumanizeAssignError(guild *dstate.GuildState, err error) string {
+func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 	if IsRoleCommandError(err) {
 		if roleError, ok := err.(*RoleError); ok {
 			guild.RLock()
 			defer guild.RUnlock()
 
-			return roleError.PrettyError(guild.Guild.Roles)
+			return roleError.PrettyError(guild.Guild.Roles), nil
 		}
-		return err.Error()
+		return err.Error(), nil
 	}
 
 	if code, _ := common.DiscordError(err); code != 0 {
 		if code == discordgo.ErrCodeMissingPermissions {
-			return "Bot does not have enough permissions to assign you this role"
+			return "Bot does not have enough permissions to assign you this role", err
 		}
 	}
 
-	return "An error occured assignign the role"
+	return "An error occured assignign the role", err
 
 }
 

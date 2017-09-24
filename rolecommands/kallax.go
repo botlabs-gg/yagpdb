@@ -16,6 +16,8 @@ import (
 var _ types.SQLType
 var _ fmt.Formatter
 
+type modelSaveFunc func(*kallax.Store) error
+
 // NewRoleCommand returns a new instance of RoleCommand.
 func NewRoleCommand() (record *RoleCommand) {
 	return new(RoleCommand)
@@ -69,7 +71,11 @@ func (r *RoleCommand) Value(col string) (interface{}, error) {
 	case "name":
 		return r.Name, nil
 	case "role_group_id":
-		return r.Model.VirtualColumn(col), nil
+		v := r.Model.VirtualColumn(col)
+		if v == nil {
+			return nil, kallax.ErrEmptyVirtualColumn
+		}
+		return v, nil
 	case "role":
 		return r.Role, nil
 	case "require_roles":
@@ -147,24 +153,26 @@ func (s *RoleCommandStore) DebugWith(logger kallax.LoggerFunc) *RoleCommandStore
 	return &RoleCommandStore{s.Store.DebugWith(logger)}
 }
 
-func (s *RoleCommandStore) inverseRecords(record *RoleCommand) []kallax.RecordWithSchema {
-	record.ClearVirtualColumns()
-	var records []kallax.RecordWithSchema
+func (s *RoleCommandStore) inverseRecords(record *RoleCommand) []modelSaveFunc {
+	var result []modelSaveFunc
 
-	if record.Group != nil {
+	if record.Group != nil && !record.Group.IsSaving() {
 		record.AddVirtualColumn("role_group_id", record.Group.GetID())
-		records = append(records, kallax.RecordWithSchema{
-			Schema: Schema.RoleGroup.BaseSchema,
-			Record: record.Group,
+		result = append(result, func(store *kallax.Store) error {
+			_, err := (&RoleGroupStore{store}).Save(record.Group)
+			return err
 		})
 	}
 
-	return records
+	return result
 }
 
 // Insert inserts a RoleCommand in the database. A non-persisted object is
 // required for this operation.
 func (s *RoleCommandStore) Insert(record *RoleCommand) error {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
 	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
 
@@ -177,16 +185,7 @@ func (s *RoleCommandStore) Insert(record *RoleCommand) error {
 	if len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
 			for _, r := range inverseRecords {
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+				if err := r(s); err != nil {
 					return err
 				}
 			}
@@ -212,6 +211,9 @@ func (s *RoleCommandStore) Update(record *RoleCommand, cols ...kallax.SchemaFiel
 	record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
 	record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
 
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	if err := record.BeforeSave(); err != nil {
 		return 0, err
 	}
@@ -221,16 +223,7 @@ func (s *RoleCommandStore) Update(record *RoleCommand, cols ...kallax.SchemaFiel
 	if len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
 			for _, r := range inverseRecords {
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+				if err := r(s); err != nil {
 					return err
 				}
 			}
@@ -747,6 +740,9 @@ func (s *RoleGroupStore) DebugWith(logger kallax.LoggerFunc) *RoleGroupStore {
 // Insert inserts a RoleGroup in the database. A non-persisted object is
 // required for this operation.
 func (s *RoleGroupStore) Insert(record *RoleGroup) error {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	return s.Store.Insert(Schema.RoleGroup.BaseSchema, record)
 }
 
@@ -757,6 +753,9 @@ func (s *RoleGroupStore) Insert(record *RoleGroup) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *RoleGroupStore) Update(record *RoleGroup, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	return s.Store.Update(Schema.RoleGroup.BaseSchema, record, cols...)
 }
 
@@ -1185,9 +1184,17 @@ func (r *RoleMenu) Value(col string) (interface{}, error) {
 	case "state":
 		return (int)(r.State), nil
 	case "next_role_command_id":
-		return r.Model.VirtualColumn(col), nil
+		v := r.Model.VirtualColumn(col)
+		if v == nil {
+			return nil, kallax.ErrEmptyVirtualColumn
+		}
+		return v, nil
 	case "role_group_id":
-		return r.Model.VirtualColumn(col), nil
+		v := r.Model.VirtualColumn(col)
+		if v == nil {
+			return nil, kallax.ErrEmptyVirtualColumn
+		}
+		return v, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in RoleMenu: %s", col)
@@ -1286,64 +1293,59 @@ func (s *RoleMenuStore) DebugWith(logger kallax.LoggerFunc) *RoleMenuStore {
 	return &RoleMenuStore{s.Store.DebugWith(logger)}
 }
 
-func (s *RoleMenuStore) relationshipRecords(record *RoleMenu) []kallax.RecordWithSchema {
-	var records []kallax.RecordWithSchema
+func (s *RoleMenuStore) relationshipRecords(record *RoleMenu) []modelSaveFunc {
+	var result []modelSaveFunc
 
 	for i := range record.Options {
-		record.Options[i].ClearVirtualColumns()
-		record.Options[i].AddVirtualColumn("role_menu_id", record.GetID())
-		records = append(records, kallax.RecordWithSchema{
-			Schema: Schema.RoleMenuOption.BaseSchema,
-			Record: record.Options[i],
-		})
+		r := record.Options[i]
+		if !r.IsSaving() {
+			r.AddVirtualColumn("role_menu_id", record.GetID())
+			result = append(result, func(store *kallax.Store) error {
+				_, err := (&RoleMenuOptionStore{store}).Save(r)
+				return err
+			})
+		}
 	}
 
-	return records
+	return result
 }
 
-func (s *RoleMenuStore) inverseRecords(record *RoleMenu) []kallax.RecordWithSchema {
-	record.ClearVirtualColumns()
-	var records []kallax.RecordWithSchema
+func (s *RoleMenuStore) inverseRecords(record *RoleMenu) []modelSaveFunc {
+	var result []modelSaveFunc
 
-	if record.NextRoleCommand != nil {
+	if record.NextRoleCommand != nil && !record.NextRoleCommand.IsSaving() {
 		record.AddVirtualColumn("next_role_command_id", record.NextRoleCommand.GetID())
-		records = append(records, kallax.RecordWithSchema{
-			Schema: Schema.RoleCommand.BaseSchema,
-			Record: record.NextRoleCommand,
+		result = append(result, func(store *kallax.Store) error {
+			_, err := (&RoleCommandStore{store}).Save(record.NextRoleCommand)
+			return err
 		})
 	}
 
-	if record.Group != nil {
+	if record.Group != nil && !record.Group.IsSaving() {
 		record.AddVirtualColumn("role_group_id", record.Group.GetID())
-		records = append(records, kallax.RecordWithSchema{
-			Schema: Schema.RoleGroup.BaseSchema,
-			Record: record.Group,
+		result = append(result, func(store *kallax.Store) error {
+			_, err := (&RoleGroupStore{store}).Save(record.Group)
+			return err
 		})
 	}
 
-	return records
+	return result
 }
 
 // Insert inserts a RoleMenu in the database. A non-persisted object is
 // required for this operation.
 func (s *RoleMenuStore) Insert(record *RoleMenu) error {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	records := s.relationshipRecords(record)
 
 	inverseRecords := s.inverseRecords(record)
 
-	if len(records) > 0 && len(inverseRecords) > 0 {
+	if len(records) > 0 || len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
 			for _, r := range inverseRecords {
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+				if err := r(s); err != nil {
 					return err
 				}
 			}
@@ -1353,16 +1355,7 @@ func (s *RoleMenuStore) Insert(record *RoleMenu) error {
 			}
 
 			for _, r := range records {
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+				if err := r(s); err != nil {
 					return err
 				}
 			}
@@ -1381,23 +1374,17 @@ func (s *RoleMenuStore) Insert(record *RoleMenu) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *RoleMenuStore) Update(record *RoleMenu, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	records := s.relationshipRecords(record)
 
 	inverseRecords := s.inverseRecords(record)
 
-	if len(records) > 0 && len(inverseRecords) > 0 {
+	if len(records) > 0 || len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
 			for _, r := range inverseRecords {
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+				if err := r(s); err != nil {
 					return err
 				}
 			}
@@ -1408,16 +1395,7 @@ func (s *RoleMenuStore) Update(record *RoleMenu, cols ...kallax.SchemaField) (up
 			}
 
 			for _, r := range records {
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+				if err := r(s); err != nil {
 					return err
 				}
 			}
@@ -1922,9 +1900,17 @@ func (r *RoleMenuOption) Value(col string) (interface{}, error) {
 	case "id":
 		return r.ID, nil
 	case "role_command_id":
-		return r.Model.VirtualColumn(col), nil
+		v := r.Model.VirtualColumn(col)
+		if v == nil {
+			return nil, kallax.ErrEmptyVirtualColumn
+		}
+		return v, nil
 	case "role_menu_id":
-		return r.Model.VirtualColumn(col), nil
+		v := r.Model.VirtualColumn(col)
+		if v == nil {
+			return nil, kallax.ErrEmptyVirtualColumn
+		}
+		return v, nil
 	case "emoji_id":
 		return r.EmojiID, nil
 	case "unicode_emoji":
@@ -2010,66 +1996,50 @@ func (s *RoleMenuOptionStore) DebugWith(logger kallax.LoggerFunc) *RoleMenuOptio
 	return &RoleMenuOptionStore{s.Store.DebugWith(logger)}
 }
 
-func (s *RoleMenuOptionStore) inverseRecords(record *RoleMenuOption) []kallax.RecordWithSchema {
-	record.ClearVirtualColumns()
-	var records []kallax.RecordWithSchema
+func (s *RoleMenuOptionStore) inverseRecords(record *RoleMenuOption) []modelSaveFunc {
+	var result []modelSaveFunc
 
-	if record.RoleCmd != nil {
+	if record.RoleCmd != nil && !record.RoleCmd.IsSaving() {
 		record.AddVirtualColumn("role_command_id", record.RoleCmd.GetID())
-		records = append(records, kallax.RecordWithSchema{
-			Schema: Schema.RoleCommand.BaseSchema,
-			Record: record.RoleCmd,
+		result = append(result, func(store *kallax.Store) error {
+			_, err := (&RoleCommandStore{store}).Save(record.RoleCmd)
+			return err
 		})
 	}
 
-	if record.Menu != nil {
+	if record.Menu != nil && !record.Menu.IsSaving() {
 		record.AddVirtualColumn("role_menu_id", record.Menu.GetID())
-		records = append(records, kallax.RecordWithSchema{
-			Schema: Schema.RoleMenu.BaseSchema,
-			Record: record.Menu,
+		result = append(result, func(store *kallax.Store) error {
+			_, err := (&RoleMenuStore{store}).Save(record.Menu)
+			return err
 		})
 	}
 
-	return records
+	return result
 }
 
 // Insert inserts a RoleMenuOption in the database. A non-persisted object is
 // required for this operation.
 func (s *RoleMenuOptionStore) Insert(record *RoleMenuOption) error {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	inverseRecords := s.inverseRecords(record)
-	fmt.Println("aaaa")
 
 	if len(inverseRecords) > 0 {
-		return s.Store.Debug().Transaction(func(s *kallax.Store) error {
-			fmt.Println("bbb")
+		return s.Store.Transaction(func(s *kallax.Store) error {
 			for _, r := range inverseRecords {
-				fmt.Println("ccc")
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					fmt.Println("ddd")
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					fmt.Println("eee")
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
-					fmt.Println("fff")
+				if err := r(s); err != nil {
 					return err
 				}
 			}
 
-			if err := s.Debug().Insert(Schema.RoleMenuOption.BaseSchema, record); err != nil {
-				fmt.Println("ggg")
+			if err := s.Insert(Schema.RoleMenuOption.BaseSchema, record); err != nil {
 				return err
 			}
-			fmt.Println("hhh")
 
 			return nil
 		})
-		fmt.Println("iii")
 	}
 
 	return s.Store.Insert(Schema.RoleMenuOption.BaseSchema, record)
@@ -2082,21 +2052,15 @@ func (s *RoleMenuOptionStore) Insert(record *RoleMenuOption) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *RoleMenuOptionStore) Update(record *RoleMenuOption, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.SetSaving(true)
+	defer record.SetSaving(false)
+
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
 			for _, r := range inverseRecords {
-				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-					return err
-				}
-				persisted := r.Record.IsPersisted()
-
-				if _, err := s.Save(r.Schema, r.Record); err != nil {
-					return err
-				}
-
-				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+				if err := r(s); err != nil {
 					return err
 				}
 			}

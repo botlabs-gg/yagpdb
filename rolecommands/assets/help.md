@@ -20,3 +20,15 @@ Now everyone can assign themselves a faction! There is a couple issues with this
  2. People can freely jump between factions
 
 To fix these problems we can create a new Group with the mode `Single` and assign the previous role commands to that group. Great! Now we can only have 1 faction! How can we solve jumping between factions then? You can enable the `Require 1 role in group` setting, now they can't remove roles in the group, and they can have max 1 role in the group, So they can't jump around anymore! 
+
+## Role Menu
+
+The role menu makes it possible to have people assign roles by adding reactions to a message.
+
+To set up a role menu, the related roles has to be added to a group, then you invoke the command `rolemenu the-group-name-here`
+
+After which you will be taken through the setup process.
+
+The bot requires manage messages perms and send messages perms in the channel to do this, atleast for the setup, after of which it will only need read messages perms.
+
+The group mode and other restrictions still apply to the roles in the role menu.
