@@ -296,6 +296,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	ctx := templates.NewContext(bot.State.User(true).User, gs, nil, member)
 	ctx.Data["Reason"] = reason
 	ctx.Data["Author"] = author
+	ctx.SentDM = true
 	executed, err := ctx.Execute(nil, dmMsg)
 	if err != nil {
 		logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed executing pusnishment dm")

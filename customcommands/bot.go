@@ -166,15 +166,13 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	out, err := ExecuteCustomCommand(matched, stripped, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
 	if err != nil {
-		if out == "" {
-			out += err.Error()
-		}
 		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
-		out += "\nAn error caused the execution of the custom command template to stop"
+		out += "\nAn error caused the execution of the custom command template to stop:\n"
+		out += common.EscapeSpecialMentions(err.Error())
 	}
 
 	if out != "" {
-		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, common.EscapeSpecialMentions(out))
+		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, out)
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
 		}

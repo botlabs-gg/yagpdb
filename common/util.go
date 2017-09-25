@@ -397,6 +397,16 @@ func ContainsStringSlice(strs []string, search string) bool {
 	return false
 }
 
+func ContainsStringSliceFold(strs []string, search string) bool {
+	for _, v := range strs {
+		if strings.EqualFold(v, search) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func ContainsInt64Slice(slice []int64, search int64) bool {
 	for _, v := range slice {
 		if v == search {

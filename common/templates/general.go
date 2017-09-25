@@ -175,3 +175,62 @@ func str(arg interface{}) string {
 
 	return ""
 }
+
+func tmplToInt(from interface{}) int {
+	switch t := from.(type) {
+	case int:
+		return t
+	case int32:
+		return int(t)
+	case int64:
+		return int(t)
+	case float32:
+		return int(t)
+	case float64:
+		return int(t)
+	case string:
+		parsed, _ := strconv.ParseInt(t, 10, 64)
+		return int(parsed)
+	default:
+		return 0
+	}
+}
+
+func tmplToInt64(from interface{}) int64 {
+	switch t := from.(type) {
+	case int:
+		return int64(t)
+	case int32:
+		return int64(t)
+	case int64:
+		return int64(t)
+	case float32:
+		return int64(t)
+	case float64:
+		return int64(t)
+	case string:
+		parsed, _ := strconv.ParseInt(t, 10, 64)
+		return parsed
+	default:
+		return 0
+	}
+}
+
+func tmplToString(from interface{}) string {
+	switch t := from.(type) {
+	case int:
+		return strconv.Itoa(t)
+	case int32:
+		return strconv.FormatInt(int64(t), 10)
+	case int64:
+		return strconv.FormatInt(t, 10)
+	case float32:
+		return strconv.FormatFloat(float64(t), 'E', -1, 32)
+	case float64:
+		return strconv.FormatFloat(t, 'E', -1, 64)
+	case string:
+		return t
+	default:
+		return ""
+	}
+}
