@@ -7,6 +7,7 @@ import (
 	"github.com/alfredxing/calc/compute"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -19,6 +20,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -47,6 +49,7 @@ var generalCommands = []commandsystem.CommandHandler{
 	cmdCustomEmbed,
 	cmdCurrentTime,
 	cmdMentionRole,
+	cmdListRoles,
 }
 
 var cmdReverse = &commands.CustomCommand{
@@ -416,6 +419,30 @@ func cmdFuncMentionRole(data *commandsystem.ExecData) (interface{}, error) {
 
 	common.BotSession.GuildRoleEdit(data.Guild.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
 	return "", err
+}
+
+var cmdListRoles = &commands.CustomCommand{
+	Category: commands.CategoryTool,
+	Command: &commandsystem.Command{
+		Name:        "ListRoles",
+		Description: "List roles and their id's, and some other stuff on the server",
+
+		Run: func(data *commandsystem.ExecData) (interface{}, error) {
+			out := ""
+
+			data.Guild.Lock()
+			defer data.Guild.Unlock()
+
+			sort.Sort(dutil.Roles(data.Guild.Guild.Roles))
+
+			for _, r := range data.Guild.Guild.Roles {
+				me := r.Permissions&discordgo.PermissionAdministrator != 0 || r.Permissions&discordgo.PermissionMentionEveryone != 0
+				out += fmt.Sprintf("`%-25s: %-19s #%-6x  ME:%5t`\n", r.Name, r.ID, r.Color, me)
+			}
+
+			return out, nil
+		},
+	},
 }
 
 type AdviceSlip struct {
