@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
@@ -49,7 +50,7 @@ func RegisterPlugin() {
 
 	common.RegisterPlugin(plugin)
 
-	common.RegisterScheduledEventHandler("unmute", handleUnMute)
+	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
 
@@ -446,11 +447,11 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 
 	// Either remove the scheduled unmute or schedule an unmute in the future
 	if mute {
-		err = common.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
+		err = scheduledevents.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
 		client.Cmd("SETEX", RedisKeyMutedUser(guildID, user.ID), duration*60, 1)
 	} else {
 		if client != nil {
-			err = common.RemoveScheduledEvent(client, "unmute", guildID+":"+user.ID)
+			err = scheduledevents.RemoveEvent(client, "unmute", guildID+":"+user.ID)
 		}
 	}
 	if err != nil {

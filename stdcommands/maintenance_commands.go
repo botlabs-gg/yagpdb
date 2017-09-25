@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
@@ -341,7 +342,7 @@ func cmdFuncYagStatus(data *commandsystem.ExecData) (interface{}, error) {
 
 	numGoroutines := runtime.NumGoroutine()
 
-	numScheduledEvent, _ := common.NumScheduledEvents(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client))
+	numScheduledEvent, _ := scheduledevents.NumScheduledEvents(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client))
 
 	botUser := bot.State.User(true)
 

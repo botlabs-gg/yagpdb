@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"strings"
@@ -161,7 +162,7 @@ var cmds = []commandsystem.CommandHandler{
 
 				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
 				// No other reminder for this user at this timestamp, remove the scheduled event
-				common.RemoveScheduledEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
+				scheduledevents.RemoveEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
 
 				return delMsg, nil
 			},

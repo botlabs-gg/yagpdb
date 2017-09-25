@@ -19,6 +19,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 
@@ -138,7 +139,7 @@ func main() {
 
 	if flagRunBot || flagRunEverything {
 		go bot.Run()
-		go common.RunScheduledEvents()
+		go scheduledevents.Run()
 		go botrest.StartServer()
 		go mqueue.StartPolling()
 	}
@@ -196,8 +197,8 @@ func listenSignal() {
 		wg.Add(2)
 
 		go bot.Stop(&wg)
-		go common.StopSheduledEvents(&wg)
-		go mqueue.Stop(&wg)
+		go scheduledevents.Stop(&wg)
+		mqueue.Stop(&wg)
 
 		shouldWait = true
 	}
