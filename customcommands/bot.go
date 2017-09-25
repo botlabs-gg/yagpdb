@@ -98,7 +98,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	if out != "" {
-		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, common.EscapeEveryoneMention(out))
+		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, common.EscapeSpecialMentions(out))
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
 		}

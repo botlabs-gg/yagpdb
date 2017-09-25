@@ -281,7 +281,7 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 		return
 	}
 
-	common.BotSession.ChannelMessageSend(config.AnnounceChannel, common.EscapeEveryoneMention(out))
+	common.BotSession.ChannelMessageSend(config.AnnounceChannel, common.EscapeSpecialMentions(out))
 }
 
 func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) error {

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"math/rand"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -71,7 +72,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 
 // SendTempMessage sends a message that gets deleted after duration
 func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, msg string) {
-	m, err := BotSession.ChannelMessageSend(cID, EscapeEveryoneMention(msg))
+	m, err := BotSession.ChannelMessageSend(cID, EscapeSpecialMentions(msg))
 	if err != nil {
 		return
 	}
@@ -224,7 +225,7 @@ func SendEmbedWithFallback(s *discordgo.Session, channelID string, embed *discor
 		return s.ChannelMessageSendEmbed(channelID, embed)
 	}
 
-	return s.ChannelMessageSend(channelID, EscapeEveryoneMention(FallbackEmbed(embed)))
+	return s.ChannelMessageSend(channelID, EscapeSpecialMentions(FallbackEmbed(embed)))
 }
 
 func FallbackEmbed(embed *discordgo.MessageEmbed) string {
@@ -340,11 +341,21 @@ func ErrWithCaller(err error) error {
 	return errors.WithMessage(err, filepath.Base(f.Name()))
 }
 
-// EscapeEveryoneMention Escapes an everyone mention, adding a zero width space between the '@' and rest
-func EscapeEveryoneMention(in string) string {
-	const zeroSpace = "​" // <- Zero width space
-	s := strings.Replace(in, "@everyone", "@"+zeroSpace+"everyone", -1)
-	s = strings.Replace(s, "@here", "@"+zeroSpace+"here", -1)
+const zeroWidthSpace = "​"
+
+var (
+	everyoneReplacer    = strings.NewReplacer("@everyone", "@"+zeroWidthSpace+"everyone", "@here", "@"+zeroWidthSpace+"here")
+	patternRoleMentions = regexp.MustCompile("<@&[0-9]*>")
+)
+
+// EscapeSpecialMentions Escapes an everyone mention, adding a zero width space between the '@' and rest
+func EscapeSpecialMentions(in string) string {
+	s := everyoneReplacer.Replace(in)
+
+	s = patternRoleMentions.ReplaceAllStringFunc(s, func(x string) string {
+		return x[:2] + zeroWidthSpace + x[2:]
+	})
+
 	return s
 }
 
