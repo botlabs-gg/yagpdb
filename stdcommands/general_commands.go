@@ -46,6 +46,7 @@ var generalCommands = []commandsystem.CommandHandler{
 	cmdRoll,
 	cmdCustomEmbed,
 	cmdCurrentTime,
+	cmdMentionRole,
 }
 
 var cmdReverse = &commands.CustomCommand{
@@ -333,35 +334,88 @@ var cmdCurrentTime = &commands.CustomCommand{
 			{Name: "Zone", Type: commandsystem.ArgumentString},
 			{Name: "Offset", Type: commandsystem.ArgumentNumber},
 		},
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
-
-			now := time.Now()
-			if data.Args[0] != nil {
-				tzName := data.Args[0].Str()
-				names, err := timezone.GetTimezones(strings.ToUpper(data.Args[0].Str()))
-				if err == nil && len(names) > 0 {
-					tzName = names[0]
-				}
-
-				location, err := time.LoadLocation(tzName)
-				if err != nil {
-					if offset, ok := customTZOffsets[strings.ToUpper(tzName)]; ok {
-						location = time.FixedZone(tzName, int(offset*60*60))
-					} else {
-						return err, err
-					}
-				}
-				return now.In(location).Format(format), nil
-			} else if data.Args[1] != nil {
-				location := time.FixedZone("", data.Args[1].Int()*60*60)
-				return now.In(location).Format(format), nil
-			}
-
-			// No offset of zone specified, just return the bots location
-			return now.Format(format), nil
-		},
+		Run: cmdFuncCurrentTime,
 	},
+}
+
+func cmdFuncCurrentTime(data *commandsystem.ExecData) (interface{}, error) {
+	const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
+
+	now := time.Now()
+	if data.Args[0] != nil {
+		tzName := data.Args[0].Str()
+		names, err := timezone.GetTimezones(strings.ToUpper(data.Args[0].Str()))
+		if err == nil && len(names) > 0 {
+			tzName = names[0]
+		}
+
+		location, err := time.LoadLocation(tzName)
+		if err != nil {
+			if offset, ok := customTZOffsets[strings.ToUpper(tzName)]; ok {
+				location = time.FixedZone(tzName, int(offset*60*60))
+			} else {
+				return err, err
+			}
+		}
+		return now.In(location).Format(format), nil
+	} else if data.Args[1] != nil {
+		location := time.FixedZone("", data.Args[1].Int()*60*60)
+		return now.In(location).Format(format), nil
+	}
+
+	// No offset of zone specified, just return the bots location
+	return now.Format(format), nil
+}
+
+var cmdMentionRole = &commands.CustomCommand{
+	Category: commands.CategoryTool,
+	Command: &commandsystem.Command{
+		Name:            "MentionRole",
+		Aliases:         []string{"mrole"},
+		Description:     "Sets a role to mentionable, mentions the role, and then sets it back",
+		LongDescription: "Requires the manage roles permission and the bot being above the mentioned role",
+		RequiredArgs:    1,
+		Arguments: []*commandsystem.ArgDef{
+			{Name: "Role", Type: commandsystem.ArgumentString},
+		},
+		Run: cmdFuncMentionRole,
+	},
+}
+
+func cmdFuncMentionRole(data *commandsystem.ExecData) (interface{}, error) {
+	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, data.Message.Author.ID, data.Channel.ID()); err != nil {
+		return "Failed checking perms", err
+	} else if !ok {
+		return "You need manage server perms to use this commmand", nil
+	}
+
+	var role *discordgo.Role
+	data.Guild.RLock()
+	defer data.Guild.RUnlock()
+	for _, r := range data.Guild.Guild.Roles {
+		if strings.EqualFold(r.Name, data.Args[0].Str()) {
+			role = r
+			break
+		}
+	}
+
+	if role == nil {
+		return "No role with the name `" + data.Args[0].Str() + "` found", nil
+	}
+
+	_, err := common.BotSession.GuildRoleEdit(data.Guild.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
+	if err != nil {
+		if _, dErr := common.DiscordError(err); dErr != "" {
+			return "Failed updating role, discord responded with: " + dErr, err
+		} else {
+			return "An unknown error occured updating the role", err
+		}
+	}
+
+	_, err = common.BotSession.ChannelMessageSend(data.Channel.ID(), "<@&"+role.ID+">")
+
+	common.BotSession.GuildRoleEdit(data.Guild.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
+	return "", err
 }
 
 type AdviceSlip struct {
