@@ -28,7 +28,8 @@ var (
 )
 
 func InitStores() {
-	common.PQ.Exec(`CREATE TABLE IF NOT EXISTS mqueue (
+	// Init table
+	_, err := common.PQ.Exec(`CREATE TABLE IF NOT EXISTS mqueue (
 	id serial NOT NULL PRIMARY KEY,
 	source text NOT NULL,
 	source_id text NOT NULL,
@@ -36,7 +37,13 @@ func InitStores() {
 	message_embed text NOT NULL,
 	channel text NOT NULL,
 	processed boolean NOT NULL
-);`)
+);
+
+CREATE INDEX IF NOT EXISTS mqueue_processed_x ON mqueue(processed);
+`)
+	if err != nil {
+		panic("mqueue: " + err.Error())
+	}
 
 	store = NewQueuedElementStore(common.PQ)
 }
