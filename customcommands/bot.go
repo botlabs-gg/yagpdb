@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
@@ -15,6 +16,81 @@ import (
 	"strings"
 	"unicode/utf8"
 )
+
+var cmdListCommands = &commands.CustomCommand{
+	Category: commands.CategoryFun,
+	Command: &commandsystem.Command{
+		Name:           "CustomCommands",
+		Aliases:        []string{"cc"},
+		Description:    "Shows a custom command specified by id or trigger, or lists them all",
+		ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
+		Arguments: []*commandsystem.ArgDef{
+			&commandsystem.ArgDef{Name: "ID", Type: commandsystem.ArgumentNumber},
+			&commandsystem.ArgDef{Name: "Trigger", Type: commandsystem.ArgumentString},
+		},
+		Run: func(data *commandsystem.ExecData) (interface{}, error) {
+			ccs, _, err := GetCommands(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
+			if err != nil {
+				return "Failed retrieving custom commands", err
+			}
+
+			foundCCS, provided := FindCommands(ccs, data)
+			if len(foundCCS) < 1 {
+				list := StringCommands(ccs)
+				if provided {
+					return "No command by that name or id found, here is a list of them all:\n" + list, nil
+				} else {
+					return "No id or trigger provided, here is a list of all server commands:\n" + list, nil
+				}
+			}
+
+			if len(foundCCS) > 1 {
+				return "More than 1 matched command\n" + StringCommands(foundCCS), nil
+			}
+
+			cc := foundCCS[0]
+
+			return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, cc.Response), nil
+
+		},
+	},
+}
+
+func FindCommands(ccs []*CustomCommand, data *commandsystem.ExecData) (foundCCS []*CustomCommand, provided bool) {
+	foundCCS = make([]*CustomCommand, 0, len(ccs))
+
+	provided = true
+	if data.Args[0] != nil {
+		// Find by ID
+		id := data.Args[0].Int()
+		for _, v := range ccs {
+			if v.ID == id {
+				foundCCS = append(foundCCS, v)
+			}
+		}
+	} else if data.Args[1] != nil {
+		// Find by name
+		name := data.Args[1].Str()
+		for _, v := range ccs {
+			if strings.EqualFold(name, v.Trigger) {
+				foundCCS = append(foundCCS, v)
+			}
+		}
+	} else {
+		provided = false
+	}
+
+	return
+}
+
+func StringCommands(ccs []*CustomCommand) string {
+	out := ""
+	for _, cc := range ccs {
+		out += fmt.Sprintf("%s: `%s`\n", cc.Trigger, cc.TriggerType.String())
+	}
+
+	return out
+}
 
 func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID string, cState *dstate.ChannelState) bool {
 	if cState == nil {
