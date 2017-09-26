@@ -55,11 +55,10 @@ form table td{
   	overflow-y: scroll;
   }
 
-   	/*
-    .nav-button-desc {
-        display: none;
-    }
-    }*/
+
+  .nav-button-desc {
+    display: none;
+  }
 
   #nav-footer {
     display: none;
@@ -293,4 +292,8 @@ form table td{
 .intro-text {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
+}
+
+.panel-body > .form-horizontal {
+  margin: 0px 10px 0px 10px;
 }

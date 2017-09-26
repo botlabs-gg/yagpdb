@@ -10,14 +10,14 @@
 </div>
 {{template "cp_alerts" .}}
 <!-- /.row -->
-<div class="row">
-    <div class="col-lg-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                General settings
-            </div>
-            <div class="panel-body">
-                <form role="form" method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/general">
+<form role="form" method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    General settings
+                </div>
+                <div class="panel-body">
                     <div class="row">
                         <div class="col-lg-6">
                             <div class="form-group">
@@ -31,18 +31,16 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary btn-lg btn-block" >Save General Settings</button>   
+                            <button type="submit" class="btn btn-primary btn-lg btn-block" >Save all Settings</button>   
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
+            <!-- /.panel -->
         </div>
-        <!-- /.panel -->
+        <!-- /.col-lg-12 -->
     </div>
-    <!-- /.col-lg-12 -->
-</div>
-<div class="row">
-    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channels">
+    <div class="row">
         <!-- The global command settings -->
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
             <div class="panel panel-default">
@@ -55,7 +53,7 @@
                     </div>
                     <h4 class="panel-title">
                         <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd_global" aria-expanded="false" aria-controls="collapse_cmd_global">
-                            Global server-wide settings
+                            Global server-wide settings <small>(click to drop-down)</small>
                         </a>
                     </h4>
                 </div>
@@ -118,7 +116,7 @@
                         <label>
                             <input type="checkbox" name="{{.Channel}}_override_enabled" {{if .OverrideEnabled}} checked{{end}}>
                         </label>
-                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd_{{.Channel}}" aria-expanded="false" aria-controls="collapse_cmd_{{.Channel}}">Override Settings #{{.ChannelName}}</a>
+                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd_{{.Channel}}" aria-expanded="false" aria-controls="collapse_cmd_{{.Channel}}">Override Settings #{{.ChannelName}} <small>(click to drop-down)</small></a>
                     </h4>
                 </div>
                 <div id="collapse_cmd_{{.Channel}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby=".Channel">
@@ -161,11 +159,11 @@
         </div>
         <div class="row">
             <div class="col-lg-12">
-                <button type="submit" class="btn btn-primary btn-lg btn-block">Save advanced command settings</button>   
+                <button type="submit" class="btn btn-primary btn-lg btn-block">Save all command settings</button>   
             </div>
         </div>
-    </form>
-</div>
+    </div>
+</form>
 <!-- /.row -->            
 <script type="text/javascript">
     function checkAll(what){

@@ -45,7 +45,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 	}
 
 	eventHandlers = append(eventHandlers, handler)
-	logrus.WithField("evt", evt).Info("Added event handler")
+	logrus.WithField("evt", evt).Debug("Added event handler")
 }
 
 // PublishEvent publishes the specified event

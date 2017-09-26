@@ -10,8 +10,22 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
+	"sync"
 	"time"
 )
+
+var (
+	guildsToCheck   = make([]string, 0)
+	guildsToCheckMU sync.Mutex
+)
+
+func MarkGuildAsToBeChecked(guildID string) {
+	guildsToCheckMU.Lock()
+	if !common.ContainsStringSlice(guildsToCheck, guildID) {
+		guildsToCheck = append(guildsToCheck, guildID)
+	}
+	guildsToCheckMU.Unlock()
+}
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberAdd), eventsystem.EventGuildMemberAdd)
@@ -44,7 +58,7 @@ func (p *Plugin) InitBot() {
 					return "Error retrieving stats", err
 				}
 
-				total := 0
+				total := int64(0)
 				for _, c := range stats.ChannelsHour {
 					total += c.Count
 				}
@@ -92,7 +106,6 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
 	}
-	log.WithField("guild", g.ID).WithField("g_name", g.Name).WithField("member_count", g.MemberCount).Info("Set member count")
 
 	err = ApplyPresences(client, g.ID, g.Presences)
 	if err != nil {
@@ -195,6 +208,8 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
+
+	MarkGuildAsToBeChecked(channel.Guild.ID())
 }
 
 func ApplyPresences(client *redis.Client, guildID string, presences []*discordgo.Presence) error {

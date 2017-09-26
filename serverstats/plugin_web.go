@@ -16,7 +16,7 @@ type FormData struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/serverstats.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/serverstats.html")))
 
 	cpGetHandler := web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
 	web.CPMux.Handle(pat.Get("/stats"), cpGetHandler)

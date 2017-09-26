@@ -73,7 +73,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	content := fmt.Sprintf("Gave +1 %s to **%s**", conf.PointsName, who.Username)
-	common.BotSession.ChannelMessageSend(msg.ChannelID, common.EscapeEveryoneMention(content))
+	common.BotSession.ChannelMessageSend(msg.ChannelID, common.EscapeSpecialMentions(content))
 }
 
 var cmds = []commandsystem.CommandHandler{

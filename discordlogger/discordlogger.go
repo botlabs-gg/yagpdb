@@ -60,7 +60,7 @@ func EventHandler(evt *eventsystem.EventData) {
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
-	common.BotSession.ChannelMessageSend(BotLeavesJoins, common.EscapeEveryoneMention(msg))
+	common.BotSession.ChannelMessageSend(BotLeavesJoins, common.EscapeSpecialMentions(msg))
 }
 
 func (p *Plugin) Levels() []logrus.Level {

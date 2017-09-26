@@ -100,7 +100,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 		}
 	}
 
-	_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeEveryoneMention(fmt.Sprintf("Topic in channel <#%s> changed to **%s**", cu.ID, cu.Topic)))
+	_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%s> changed to **%s**", cu.ID, cu.Topic)))
 	if err != nil {
 		log.WithError(err).WithField("guild", cu.GuildID).Error("Failed sending topic change message")
 	}

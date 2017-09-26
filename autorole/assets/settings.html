@@ -1,0 +1,62 @@
+{{define "cp_autorole"}}
+
+{{template "cp_head" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Autorole</h1>
+        <p>Give out roles automatically for members</p>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<form method="post" action="/manage/{{.ActiveGuild.ID}}/autorole">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <p>Changes may take up to a minute before they have any effect</p>
+                    <div class="form-group">
+                        <label for="autorole-role">Automatically assign members this role</label>
+                        <select id="autorole-role" class="form-control" name="Role">
+                            {{roleOptions .ActiveGuild.Roles .HighestRole .Autorole.Role "None (disabled)"}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="autorole-duration">Minutes of membership required for role</label>
+                        <input type="number" class="form-control" id="autorole-duration" name="RequiredDuration" placeholder="" value="{{.Autorole.RequiredDuration}}">
+                    </div>
+                    <div class="form-group">
+                        <label>Require one of these roles to be present on the member</label><br/>
+                        <select name="RequiredRoles" class="multiselect form-control" multiple="multiple" id="require-roles">
+                            {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.RequiredRoles}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ignore people with the follwing roles</label><br/>
+                        <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple" id="ignore-roles">
+                            {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.IgnoreRoles}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="OnlyOnJoin" {{if .Autorole.OnlyOnJoin}}checked{{end}}> Only assign role when they join, do not give it back it it's removed from them afterwards
+                            </label>
+                        </div>
+                    </div>
+
+                    <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA: <code>{{.ProcessingETA}}</code>minutes (May take up to a minute before the bot starts assigning roles)</p>
+                    <p>To stop set the role to "None"</p>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block" >Save</button>   
+            <!-- /.panel -->
+        </div>
+        <!-- /.col-lg-12 -->
+    </div>
+    <!-- /.row -->            
+</form>
+{{template "cp_footer" .}}
+
+{{end}}

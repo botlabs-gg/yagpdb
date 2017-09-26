@@ -226,7 +226,7 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 }
 
 func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.PlaylistItem, mentionEveryone bool) {
-	content := common.EscapeEveryoneMention(fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", item.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+item.Snippet.ResourceId.VideoId))
+	content := common.EscapeSpecialMentions(fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", item.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+item.Snippet.ResourceId.VideoId))
 	if mentionEveryone {
 		content += " @everyone"
 	}

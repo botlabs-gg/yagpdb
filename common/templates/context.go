@@ -23,11 +23,19 @@ var (
 		"shuffle":   shuffle,
 		"seq":       sequence,
 		"joinStr":   joinStrings,
+		"str":       str,
 		"lower":     strings.ToLower,
+		"toString":  tmplToString,
+		"toInt":     tmplToInt,
+		"toInt64":   tmplToInt64,
 	}
 
-	contextSetupFuncs []ContextSetupFunc
+	contextSetupFuncs = []ContextSetupFunc{
+		baseContextFuncs,
+	}
 )
+
+func TODO() {}
 
 type ContextSetupFunc func(ctx *Context)
 
@@ -47,6 +55,13 @@ type Context struct {
 	ContextFuncs map[string]interface{}
 	Data         map[string]interface{}
 	Redis        *redis.Client
+
+	MentionEveryone  bool
+	MentionHere      bool
+	MentionRoles     []string
+	MentionRoleNames []string
+
+	SentDM bool
 }
 
 func NewContext(botUser *discordgo.User, gs *dstate.GuildState, cs *dstate.ChannelState, member *discordgo.Member) *Context {
@@ -123,5 +138,41 @@ func (c *Context) Execute(redisClient *redis.Client, source string) (string, err
 
 	var buf bytes.Buffer
 	err = parsed.Execute(&buf, c.Data)
-	return buf.String(), errors.WithMessage(err, "Failed execuing template")
+
+	result := common.EscapeSpecialMentions(buf.String())
+	if err != nil {
+		return result, errors.WithMessage(err, "Failed execuing template")
+	}
+
+	return c.ApplyPostResponseModifications(result), nil
+}
+
+func (c *Context) ApplyPostResponseModifications(resp string) string {
+	resp += "\n"
+	if c.MentionEveryone {
+		resp += "@everyone "
+	}
+	if c.MentionHere {
+		resp += "@here "
+	}
+
+	c.GS.RLock()
+	for _, role := range c.GS.Guild.Roles {
+		if common.ContainsStringSliceFold(c.MentionRoleNames, role.Name) || common.ContainsStringSlice(c.MentionRoles, role.ID) {
+			resp += "<@&" + role.ID + "> "
+		}
+	}
+
+	c.GS.RUnlock()
+	return resp
+}
+
+func baseContextFuncs(c *Context) {
+	c.ContextFuncs["sendDM"] = tmplSendDM(c)
+	c.ContextFuncs["mentionEveryone"] = tmplMentionEveryone(c)
+	c.ContextFuncs["mentionHere"] = tmplMentionHere(c)
+	c.ContextFuncs["mentionRoleName"] = tmplMentionRoleName(c)
+	c.ContextFuncs["mentionRoleID"] = tmplMentionRoleID(c)
+	c.ContextFuncs["hasRoleName"] = tmplHasRoleName(c)
+	c.ContextFuncs["hasRoleID"] = tmplHasRoleID(c)
 }

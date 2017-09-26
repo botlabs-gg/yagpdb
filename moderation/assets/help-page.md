@@ -1,4 +1,4 @@
-The moderation features yagpdb provides is:
+The moderation features yagpdb provides are:
 
  - Modlog that logs all the moderation actions the bot takes 
     + this may be removed in the future in favor of audit log mirroring+filtering

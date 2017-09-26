@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"strings"
@@ -14,7 +15,7 @@ import (
 type Plugin struct{}
 
 func RegisterPlugin() {
-	common.RegisterScheduledEventHandler("reminders_check_user", checkUserEvtHandler)
+	scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandler)
 	err := common.GORM.AutoMigrate(&Reminder{}).Error
 	if err != nil {
 		panic(err)
@@ -45,7 +46,7 @@ func (r *Reminder) Trigger() error {
 
 	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message}).Info("Triggered reminder")
 
-	mqueue.QueueMessageString("reminder", "", r.ChannelID, common.EscapeEveryoneMention("**Reminder** <@"+r.UserID+">: "+r.Message))
+	mqueue.QueueMessageString("reminder", "", r.ChannelID, common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
 	return nil
 }
 
@@ -79,7 +80,7 @@ func NewReminder(client *redis.Client, userID string, channelID string, message 
 		return nil, err
 	}
 
-	err = common.ScheduleEvent(client, "reminders_check_user:"+strconv.FormatInt(whenUnix, 10), userID, when)
+	err = scheduledevents.ScheduleEvent(client, "reminders_check_user:"+strconv.FormatInt(whenUnix, 10), userID, when)
 	return reminder, err
 }
 

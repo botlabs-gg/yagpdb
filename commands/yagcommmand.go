@@ -110,7 +110,7 @@ func (cs *CustomCommand) HandleCommand(raw string, trigger *commandsystem.Trigge
 
 	if err != nil {
 		if errors.Cause(err) == context.Canceled || errors.Cause(err) == context.DeadlineExceeded {
-			common.BotSession.ChannelMessageSend(cState.Channel.ID, "Took longer than "+CommandExecTimeout.String()+" to handle command: `"+common.EscapeEveryoneMention(raw)+"`, Cancelled the command.")
+			common.BotSession.ChannelMessageSend(cState.Channel.ID, "Took longer than "+CommandExecTimeout.String()+" to handle command: `"+common.EscapeSpecialMentions(raw)+"`, Cancelled the command.")
 		} else {
 			logEntry.Error = err.Error()
 			log.WithError(err).WithField("channel", cState.ID()).Error(cs.Name, ": failed handling command")
@@ -189,7 +189,7 @@ func (cs *CustomCommand) checkCanExecuteCommand(trigger *commandsystem.TriggerDa
 					name = required.Name
 				}
 				guild.RUnlock()
-				return common.EscapeEveryoneMention(fmt.Sprintf("The **%s** role is required to use this command.", name)), false
+				return common.EscapeSpecialMentions(fmt.Sprintf("The **%s** role is required to use this command.", name)), false
 			}
 		}
 	}
@@ -202,7 +202,7 @@ func (cs *CustomCommand) checkCanExecuteCommand(trigger *commandsystem.TriggerDa
 	}
 
 	if cdLeft > 0 {
-		return fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeEveryoneMention(trigger.Message.Author.Username), cdLeft, cs.Name), false
+		return fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeSpecialMentions(trigger.Message.Author.Username), cdLeft, cs.Name), false
 	}
 
 	return

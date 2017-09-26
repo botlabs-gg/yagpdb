@@ -1,4 +1,4 @@
-package commands
+package stdcommands
 
 var (
 	customTZOffsets = map[string]float32{

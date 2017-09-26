@@ -208,23 +208,23 @@ func insertUpdateUserRep(guildID, userID int64, amount int64) (err error) {
 // Returns a user error if the sender can not modify the rep of receiver
 // Admins are always able to modify the rep of everyone
 func CanModifyRep(conf *models.ReputationConfig, sender, receiver *discordgo.Member) error {
-	if conf.AdminRole.String != "" && common.FindStringSlice(sender.Roles, conf.AdminRole.String) {
+	if conf.AdminRole.String != "" && common.ContainsStringSlice(sender.Roles, conf.AdminRole.String) {
 		return nil
 	}
 
-	if conf.RequiredGiveRole.String != "" && !common.FindStringSlice(sender.Roles, conf.RequiredGiveRole.String) {
+	if conf.RequiredGiveRole.String != "" && !common.ContainsStringSlice(sender.Roles, conf.RequiredGiveRole.String) {
 		return ErrMissingRequiredGiveRole
 	}
 
-	if conf.RequiredReceiveRole.String != "" && !common.FindStringSlice(receiver.Roles, conf.RequiredReceiveRole.String) {
+	if conf.RequiredReceiveRole.String != "" && !common.ContainsStringSlice(receiver.Roles, conf.RequiredReceiveRole.String) {
 		return ErrMissingRequiredReceiveRole
 	}
 
-	if conf.BlacklistedGiveRole.String != "" && common.FindStringSlice(sender.Roles, conf.BlacklistedGiveRole.String) {
+	if conf.BlacklistedGiveRole.String != "" && common.ContainsStringSlice(sender.Roles, conf.BlacklistedGiveRole.String) {
 		return ErrBlacklistedGive
 	}
 
-	if conf.BlacklistedReceiveRole.String != "" && common.FindStringSlice(sender.Roles, conf.BlacklistedReceiveRole.String) {
+	if conf.BlacklistedReceiveRole.String != "" && common.ContainsStringSlice(sender.Roles, conf.BlacklistedReceiveRole.String) {
 		return ErrBlacklistedReceive
 	}
 
@@ -239,7 +239,7 @@ func IsAdmin(gs *dstate.GuildState, member *discordgo.Member, config *models.Rep
 	}
 
 	if config.AdminRole.String != "" {
-		if common.FindStringSlice(member.Roles, config.AdminRole.String) {
+		if common.ContainsStringSlice(member.Roles, config.AdminRole.String) {
 			return true
 		}
 	}

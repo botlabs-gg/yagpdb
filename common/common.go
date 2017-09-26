@@ -15,15 +15,15 @@ import (
 
 const (
 	VERSIONMAJOR = 0
-	VERSIONMINOR = 23
-	VERSIONPATCH = 2
+	VERSIONMINOR = 24
+	VERSIONPATCH = 0
 
 	Testing = false // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Lawless"
+	VERSION       = VERSIONNUMBER + " RC-1"
 
 	GORM        *gorm.DB
 	PQ          *sql.DB
@@ -56,6 +56,10 @@ func Init() error {
 		return err
 	}
 	BotSession.MaxRestRetries = 3
+
+	if os.Getenv("YAGPDB_NO_CUSTOM_TRANSPORT") == "" {
+		BotSession.Client.Transport = NewCustomDiscordHTTPTransport()
+	}
 
 	err = connectRedis(config.Redis)
 	if err != nil {

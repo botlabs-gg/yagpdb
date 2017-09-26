@@ -45,7 +45,7 @@ weather | w | (location) | N/A | Show the weather for the given location. Add ?m
 topic | N/A | N/A | N/A | Generates a chat topic.
 currenttime | ctime, gettime | N/A | (timezone) (delta time in hours) | Shows UTC time.
 catfact | cf, cat, catfacts | N/A | N/A | Catfacts. What else?!
-advice | N/A | N/A | (for?) | Get an advice.
+advice | N/A | N/A | (for?) | Get a advice.
 throw | N/A | N/A | (username) | Throws random stuff at nearby people or at the given member.
 roll | N/A | N/A | (number of sides) | Roll a dice. Specify nothing for 6 siddes, or specify a number for max. sides.
 topservers | N/A | N/A | N/A | Responds with the top 10 servers the bot is on.

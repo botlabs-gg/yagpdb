@@ -52,6 +52,7 @@ func init() {
 		"hasPerm":             hasPerm,
 		"formatTime":          prettyTime,
 		"roleOptions":         tmplRoleDropdown,
+		"roleOptionsMulti":    tmplRoleDropdownMutli,
 		"textChannelOptions":  tmplChannelDropdown(discordgo.ChannelTypeGuildText),
 		"voiceChannelOptions": tmplChannelDropdown(discordgo.ChannelTypeGuildVoice),
 		"catChannelOptions":   tmplChannelDropdown(discordgo.ChannelTypeGuildCategory),
@@ -59,12 +60,15 @@ func init() {
 
 	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)
 
-	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
-
 	flag.BoolVar(&properAddresses, "pa", false, "Sets the listen addresses to 80 and 443")
 }
 
+func LoadTemplates() {
+	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
+}
+
 func Run() {
+	LoadTemplates()
 
 	AddGlobalTemplateData("ClientID", common.Conf.ClientID)
 	AddGlobalTemplateData("Host", common.Conf.Host)

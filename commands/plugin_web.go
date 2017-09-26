@@ -23,8 +23,7 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Handle(pat.Get(""), web.RenderHandler(HandleCommands, "cp_commands"))
 	subMux.Handle(pat.Get("/"), web.RenderHandler(HandleCommands, "cp_commands"))
-	subMux.Handle(pat.Post("/general"), web.RenderHandler(HandlePostGeneral, "cp_commands"))
-	subMux.Handle(pat.Post("/channels"), web.RenderHandler(HandlePostChannels, "cp_commands"))
+	subMux.Handle(pat.Post("/"), web.RenderHandler(HandlePostCommands, "cp_commands"))
 }
 
 // Servers the command page with current config
@@ -36,30 +35,19 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) interface{} {
 	return templateData
 }
 
-// Handles more general command settings (prefix)
-func HandlePostGeneral(w http.ResponseWriter, r *http.Request) interface{} {
-	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/commands/settings/"
-	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
-
-	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, strings.TrimSpace(r.FormValue("prefix"))).Err
-	web.CheckErr(templateData, err, "Failed saving", web.CtxLogger(r.Context()).Error)
-
-	config := GetConfig(client, activeGuild.ID, channels)
-	templateData["CommandConfig"] = config
-
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Updated general command settings")
-
-	return templateData
-}
-
 // Handles the updating of global and per channel command settings
-func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
+func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/commands/settings"
+
+	newPrefix := strings.TrimSpace(r.FormValue("prefix"))
+	if len(newPrefix) > 100 {
+		return templateData.AddAlerts(web.ErrorAlert("Command prefix is too long (max 100)"))
+	}
+
+	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, newPrefix).Err
+	web.CheckErr(templateData, err, "Failed saving prefix", web.CtxLogger(r.Context()).Error)
 
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 
@@ -101,13 +89,13 @@ func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
 		cmd.AutoDelete = r.FormValue("global_autodelete_"+cmd.Cmd) == "on"
 	}
 
-	err := common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
+	err = common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Updated advanced command settings")
+	go common.AddCPLogEntry(user, activeGuild.ID, "Updated command settings")
 
 	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)
 

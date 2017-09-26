@@ -1,4 +1,4 @@
-package commands
+package stdcommands
 
 // Cat facts collected from vaious sources since the api i used shut down
 

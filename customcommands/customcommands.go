@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -29,6 +30,7 @@ func RegisterPlugin() {
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+	commands.CommandSystem.RegisterCommands(cmdListCommands)
 }
 
 func (p *Plugin) Name() string {
@@ -45,11 +47,25 @@ const (
 	CommandTriggerExact
 )
 
+var (
+	triggerStrings = map[CommandTriggerType]string{
+		CommandTriggerCommand:    "Command",
+		CommandTriggerStartsWith: "StartsWith",
+		CommandTriggerContains:   "Contains",
+		CommandTriggerRegex:      "Regex",
+		CommandTriggerExact:      "Exact",
+	}
+)
+
+func (t CommandTriggerType) String() string {
+	return triggerStrings[t]
+}
+
 type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
 	TriggerTypeForm string             `json:"-" schema:"type"`
-	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,2000"`
-	Response        string             `json:"response" schema:"response" valid:",2000"`
+	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,1000"`
+	Response        string             `json:"response" schema:"response" valid:",3000"`
 	CaseSensitive   bool               `json:"case_sensitive" schema:"case_sensitive"`
 	ID              int                `json:"id"`
 }

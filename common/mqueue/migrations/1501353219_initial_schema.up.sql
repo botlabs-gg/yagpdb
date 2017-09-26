@@ -10,5 +10,6 @@ CREATE TABLE mqueue (
 	processed boolean NOT NULL
 );
 
+CREATE INDEX mqueue_processed_x ON mqueue(processed);
 
 COMMIT;
