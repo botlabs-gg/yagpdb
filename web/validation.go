@@ -140,7 +140,8 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			// Recurse if it's another struct
 			switch tField.Type.Kind() {
 			case reflect.Struct, reflect.Ptr:
-				innerOk := ValidateForm(guild, tmpl, vField.Interface())
+				addr := vField.Addr()
+				innerOk := ValidateForm(guild, tmpl, addr.Interface())
 				if !innerOk {
 					ok = false
 				}
