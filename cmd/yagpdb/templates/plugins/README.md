@@ -1,1 +1,1 @@
-The templates in this folder is in process of being moved to the proper plugin's folder, and embedding them into the packages.
+The templates in this folder is in process of being moved to the proper plugin's folder, and embedding them into the packages. A better solution may be used in the future

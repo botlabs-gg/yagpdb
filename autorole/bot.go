@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v2/redis"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -120,7 +121,7 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 		return
 	}
 
-	if conf.Role == "" {
+	if conf.Role == "" || conf.OnlyOnJoin {
 		return
 	}
 
@@ -181,7 +182,7 @@ OUTER:
 			continue
 		}
 
-		if now.Sub(parsedJoined) > time.Duration(config.RequiredDuration)*time.Minute {
+		if now.Sub(parsedJoined) > time.Duration(config.RequiredDuration)*time.Minute && config.CanAssignTo(ms.Member) {
 			for _, r := range ms.Member.Roles {
 				if r == config.Role {
 					continue OUTER
@@ -247,4 +248,35 @@ func saveGeneral(client *redis.Client, guildID string, config *GeneralConfig) {
 	if err != nil {
 		logrus.WithError(err).Error("Failed saving autorole config")
 	}
+}
+
+func (conf *GeneralConfig) CanAssignTo(member *discordgo.Member) bool {
+	if len(conf.IgnoreRoles) < 1 && len(conf.RequiredRoles) < 1 {
+		return true
+	}
+
+	parsedMemberRoles := make([]int64, len(member.Roles))
+	for i, v := range member.Roles {
+		p, _ := strconv.ParseInt(v, 10, 64)
+		parsedMemberRoles[i] = p
+	}
+
+	for _, ignoreRole := range conf.IgnoreRoles {
+		if common.ContainsInt64Slice(parsedMemberRoles, ignoreRole) {
+			return false
+		}
+	}
+
+	// If require roles are set up, make sure the member has one of them
+	if len(conf.RequiredRoles) > 0 {
+		for _, reqRole := range conf.RequiredRoles {
+			if common.ContainsInt64Slice(parsedMemberRoles, reqRole) {
+				return true
+			}
+		}
+		return false
+	}
+
+	return true
+
 }
