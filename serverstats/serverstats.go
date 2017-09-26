@@ -108,7 +108,7 @@ func UpdateGuildStats(client *redis.Client, guildID string) error {
 	minAgo := now.Add(time.Minute)
 	unixminAgo := minAgo.Unix()
 
-	yesterday := now.Add(24 * time.Hour)
+	yesterday := now.Add(24 * -time.Hour)
 	unixYesterday := yesterday.Unix()
 
 	client.PipeAppend("ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, "-inf", unixminAgo)
