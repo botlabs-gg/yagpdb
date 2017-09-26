@@ -50,7 +50,7 @@ func RegisterPlugin() {
 	roleMenuStore = NewRoleMenuStore(common.PQ)
 	roleMenuOptionStore = NewRoleMenuOptionStore(common.PQ)
 
-	docs.AddPage("Role Commands", FSMustString(false, "/assets/help.md"), nil)
+	docs.AddPage("Role Commands / Self assignable roles", FSMustString(false, "/assets/help.md"), nil)
 }
 
 func FindAssignRole(guildID string, member *discordgo.Member, name string) (gaveRole bool, err error) {

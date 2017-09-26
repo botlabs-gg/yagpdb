@@ -50,6 +50,17 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 | `shuffle list` | returns a shuffled version of list |
 | `joinStr str1 str2 str3` | Joins several strings into 1, useful for executing commands in templates |
 | `randInt (stop, or start stop)` | Returns a random integer between 0 and stop, or start - stop if 2 args provided.  |
+| `toString` | Converts something to a string |
+| `toInt` | Converts something to a int |
+| `toInt64` | Converts something to a int64 |
+| `exec command command_args` | Executes a command in the users context, max 3 commands can be executed per template |
+| `sendDM "message_here"` | Sends the user a DM, only 1 DM can be sent per template |
+| `mentionEveryone` | Mentions everyone |
+| `MentionHere` | Mentions here |
+| `MentionRoleName "rolename"` | Mentions the first role found with the provided name (case insensitive) |
+| `MentionRoleID roleid` | Mentions the role with the provided ID (use the listroles command for a list of role) |
+| `hasRoleName "rolename"` | Returns true if the user has the role with the specified name (case insensitive) |
+| `hasRoleID roleid` | Returns true if the user has the role with the specified ID (use the listroles command for a list of role) |
 
 ### Branching
 | Case | Example |
@@ -67,7 +78,7 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 
 ### Snippets
 * `<@{{"{{"}}.User.ID{{"}}"}}>` Outputs a mention to the user with the user ID, doesn't output an ID
-* `{{"{{"}}if in .Member.Roles "12312"{{"}}"}} This will only show if the member has the role with id "12312" {{"{{"}}end{{"}}"}}`
+* `{{"{{"}}if hasRoleName "funrole"{{"}}"}} This will only show if the member has a role with name "funrole" {{"{{"}}end{{"}}"}}`
 * `{{"{{"}}if gt (len .Args) 1{{"}}"}} {{"{{"}}index .Args 1{{"}}"}} {{"{{"}}end{{"}}"}}` Will display your first input if input was given 
 * `{{"{{"}}if eq .Channel.ID “#######”{{"}}"}}` Will only show in Channel #####
 * `{{"{{"}}if ne  .User.ID “#######”{{"}}"}}` Will ignore if user ID ##### uses command
