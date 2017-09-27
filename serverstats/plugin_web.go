@@ -22,11 +22,11 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.Get("/stats"), cpGetHandler)
 
 	web.CPMux.Handle(pat.Post("/stats/settings"), web.RequireGuildChannelsMiddleware(web.ControllerPostHandler(HandleStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings")))
-	web.CPMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
+	web.CPMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, false))))
 
 	// Public
 	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
-	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, true)))
+	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
 }
 
 type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)
@@ -102,6 +102,15 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
+	}
+
+	for _, cs := range stats.ChannelsHour {
+		for _, channel := range activeGuild.Channels {
+			if channel.ID == cs.Name {
+				cs.Name = channel.Name
+				break
+			}
+		}
 	}
 
 	return stats

@@ -212,7 +212,7 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 			st.Count += period.Count
 		} else {
 			stats.ChannelsHour[stringedChannel] = &ChannelStats{
-				Name:  "???",
+				Name:  stringedChannel,
 				Count: period.Count,
 			}
 		}
@@ -284,10 +284,6 @@ func RetrieveRedisStats(client *redis.Client, guildID string) (*FullStats, error
 }
 
 func GetChannelMessageStats(client *redis.Client, raw []string, guildID string) (map[string]*ChannelStats, error) {
-	channels, err := common.GetGuildChannels(client, guildID)
-	if err != nil {
-		return nil, err
-	}
 
 	channelResult := make(map[string]*ChannelStats)
 	for _, result := range raw {
@@ -308,14 +304,6 @@ func GetChannelMessageStats(client *redis.Client, raw []string, guildID string) 
 			stats.Count++
 		} else {
 			name := channelID
-			// Make it human readable
-			for _, c := range channels {
-				if c.ID == channelID {
-					name = c.Name
-					break
-				}
-			}
-
 			channelResult[channelID] = &ChannelStats{
 				Name:  name,
 				Count: 1,
