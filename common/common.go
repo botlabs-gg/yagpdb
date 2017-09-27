@@ -16,7 +16,7 @@ import (
 const (
 	VERSIONMAJOR = 0
 	VERSIONMINOR = 24
-	VERSIONPATCH = 0
+	VERSIONPATCH = 1
 
 	Testing = false // Disables stuff like command cooldowns
 )
@@ -56,10 +56,6 @@ func Init() error {
 		return err
 	}
 	BotSession.MaxRestRetries = 3
-
-	if os.Getenv("YAGPDB_NO_CUSTOM_TRANSPORT") == "" {
-		BotSession.Client.Transport = NewCustomDiscordHTTPTransport()
-	}
 
 	err = connectRedis(config.Redis)
 	if err != nil {
