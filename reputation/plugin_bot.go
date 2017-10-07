@@ -18,7 +18,7 @@ func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(handleMessageCreate), eventsystem.EventMessageCreate)
 }
 
-var thanksRegex = regexp.MustCompile(`(?i)^(thanks?|danks|ty|thx|\+rep|\+\ ?\<\@)`)
+var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?|danks|ty|thx|\+rep|\+\ ?\<\@)( |\n|$)`)
 
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate
