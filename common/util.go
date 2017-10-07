@@ -344,15 +344,38 @@ func ErrWithCaller(err error) error {
 const zeroWidthSpace = "​"
 
 var (
-	everyoneReplacer    = strings.NewReplacer("@everyone", "@"+zeroWidthSpace+"everyone", "@here", "@"+zeroWidthSpace+"here")
+	everyoneReplacer    = strings.NewReplacer("@everyone", "@"+zeroWidthSpace+"everyone")
+	hereReplacer        = strings.NewReplacer("@here", "@"+zeroWidthSpace+"here")
 	patternRoleMentions = regexp.MustCompile("<@&[0-9]*>")
 )
 
 // EscapeSpecialMentions Escapes an everyone mention, adding a zero width space between the '@' and rest
 func EscapeSpecialMentions(in string) string {
-	s := everyoneReplacer.Replace(in)
+	return EscapeSpecialMentionsConditional(in, false, false, nil)
+}
+
+// EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
+func EscapeSpecialMentionsConditional(s string, allowEveryone, allowHere bool, allowRoles []string) string {
+	if !allowEveryone {
+		s = everyoneReplacer.Replace(s)
+	}
+
+	if !allowHere {
+		s = hereReplacer.Replace(s)
+	}
 
 	s = patternRoleMentions.ReplaceAllStringFunc(s, func(x string) string {
+		if len(x) < 4 {
+			return x
+		}
+
+		id := x[3 : len(x)-1]
+		if ContainsStringSlice(allowRoles, id) {
+			// This role is allowed to be mentioned
+			return x
+		}
+
+		// Not allowed
 		return x[:2] + zeroWidthSpace + x[2:]
 	})
 

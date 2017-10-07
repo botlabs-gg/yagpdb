@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"strconv"
@@ -30,19 +31,24 @@ func tmplSendDM(c *Context) interface{} {
 func tmplMentionEveryone(c *Context) interface{} {
 	return func() string {
 		c.MentionEveryone = true
-		return ""
+		return " @everyone "
 	}
 }
 
 func tmplMentionHere(c *Context) interface{} {
 	return func() string {
 		c.MentionHere = true
-		return ""
+		return " @here "
 	}
 }
 
 func tmplMentionRoleID(c *Context) interface{} {
+	numCalls := 0
 	return func(roleID interface{}) string {
+		if numCalls >= 50 {
+			return ""
+		}
+
 		if len(c.MentionRoles) > 50 {
 			return ""
 		}
@@ -61,24 +67,57 @@ func tmplMentionRoleID(c *Context) interface{} {
 			return ""
 		}
 
+		r := c.GS.Role(true, role)
+		if r == nil {
+			return "(role not found)"
+		}
+
+		if common.ContainsStringSlice(c.MentionRoles, role) {
+			return "<@&" + role + ">"
+		}
+
 		c.MentionRoles = append(c.MentionRoles, role)
-		return ""
+		return " <@&" + role + "> "
 	}
 }
 
 func tmplMentionRoleName(c *Context) interface{} {
+	numCalls := 0
 	return func(role string) string {
-		if len(c.MentionRoleNames) > 50 {
+		if numCalls >= 50 {
 			return ""
 		}
 
-		c.MentionRoleNames = append(c.MentionRoleNames, role)
-		return ""
+		if len(c.MentionRoles) > 50 {
+			return ""
+		}
+
+		var found *discordgo.Role
+		c.GS.RLock()
+		for _, r := range c.GS.Guild.Roles {
+			if r.Name == role {
+				if !common.ContainsStringSlice(c.MentionRoles, r.ID) {
+					c.MentionRoles = append(c.MentionRoles, r.ID)
+					found = r
+				}
+			}
+		}
+		c.GS.RUnlock()
+		if found == nil {
+			return "(role not found)"
+		}
+
+		return " <@&" + found.ID + "> "
 	}
 }
 
 func tmplHasRoleID(c *Context) interface{} {
+	numCalls := 0
 	return func(roleID interface{}) bool {
+		if numCalls >= 100 {
+			return false
+		}
+
 		role := ""
 		switch r := roleID.(type) {
 		case int64:
@@ -101,7 +140,12 @@ func tmplHasRoleID(c *Context) interface{} {
 }
 
 func tmplHasRoleName(c *Context) interface{} {
+	numCalls := 0
 	return func(name string) bool {
+		if numCalls >= 100 {
+			return false
+		}
+
 		c.GS.RLock()
 
 		for _, r := range c.GS.Guild.Roles {

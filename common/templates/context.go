@@ -139,32 +139,12 @@ func (c *Context) Execute(redisClient *redis.Client, source string) (string, err
 	var buf bytes.Buffer
 	err = parsed.Execute(&buf, c.Data)
 
-	result := common.EscapeSpecialMentions(buf.String())
+	result := common.EscapeSpecialMentionsConditional(buf.String(), c.MentionEveryone, c.MentionHere, c.MentionRoles)
 	if err != nil {
 		return result, errors.WithMessage(err, "Failed execuing template")
 	}
 
-	return c.ApplyPostResponseModifications(result), nil
-}
-
-func (c *Context) ApplyPostResponseModifications(resp string) string {
-	resp += "\n"
-	if c.MentionEveryone {
-		resp += "@everyone "
-	}
-	if c.MentionHere {
-		resp += "@here "
-	}
-
-	c.GS.RLock()
-	for _, role := range c.GS.Guild.Roles {
-		if common.ContainsStringSliceFold(c.MentionRoleNames, role.Name) || common.ContainsStringSlice(c.MentionRoles, role.ID) {
-			resp += "<@&" + role.ID + "> "
-		}
-	}
-
-	c.GS.RUnlock()
-	return resp
+	return result, nil
 }
 
 func baseContextFuncs(c *Context) {
