@@ -270,8 +270,8 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 	}
 
 	ctx := templates.NewContext(bot.State.User(true).User, guild, nil, member)
-	ctx.Data["URL"] = p.Game.URL
-	ctx.Data["url"] = p.Game.URL
+	ctx.Data["URL"] = common.EscapeSpecialMentions(p.Game.URL)
+	ctx.Data["url"] = common.EscapeSpecialMentions(p.Game.URL)
 
 	guild.RUnlock()
 	out, err := ctx.Execute(client, config.AnnounceMessage)
@@ -281,7 +281,7 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 		return
 	}
 
-	common.BotSession.ChannelMessageSend(config.AnnounceChannel, common.EscapeSpecialMentions(out))
+	common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
 }
 
 func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) error {
