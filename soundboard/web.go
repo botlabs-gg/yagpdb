@@ -96,8 +96,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	if err != nil {
 		return tmpl, err
 	}
-	if count > 14 {
-		tmpl.AddAlerts(web.ErrorAlert("You can have a maximum amount of 15 sounds"))
+	if count > 49 {
+		tmpl.AddAlerts(web.ErrorAlert("You can have a maximum amount of 50 sounds"))
 		return tmpl, nil
 	}
 
