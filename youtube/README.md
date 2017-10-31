@@ -63,3 +63,9 @@ Holds the time of the last video in that channel we processed, all videos before
 `youtube_last_video_id:{channel}` - string
 
 Holds the last video id for a channel, it will stop processing videos when it hits this video.
+
+`youtube_push_registrations` - sorted set
+
+Key is the channel id, value is the time it expires
+
+`youtube_currently_adding:{channelid}` - set, set when this channel is being added
