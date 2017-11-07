@@ -213,9 +213,14 @@ func (cs *CustomCommand) logExecutionTime(dur time.Duration, raw string, sender 
 }
 
 func (cs *CustomCommand) deleteResponse(msgs []*discordgo.Message) {
-	ids := make([]string, len(msgs))
-	for k, msg := range msgs {
-		ids[k] = msg.ID
+	ids := make([]string, 0, len(msgs))
+	cID := ""
+	for _, msg := range msgs {
+		if msg == nil {
+			continue
+		}
+		cID = msg.ChannelID
+		ids = append(ids, msg.ID)
 	}
 
 	if len(ids) < 1 {
@@ -226,9 +231,9 @@ func (cs *CustomCommand) deleteResponse(msgs []*discordgo.Message) {
 
 	// Either do a bulk delete or single delete depending on how big the response was
 	if len(ids) > 1 {
-		common.BotSession.ChannelMessagesBulkDelete(msgs[0].ChannelID, ids)
+		common.BotSession.ChannelMessagesBulkDelete(cID, ids)
 	} else {
-		common.BotSession.ChannelMessageDelete(msgs[0].ChannelID, msgs[0].ID)
+		common.BotSession.ChannelMessageDelete(cID, ids[0])
 	}
 }
 
