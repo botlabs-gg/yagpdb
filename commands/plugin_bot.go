@@ -25,7 +25,7 @@ func (p *Plugin) InitBot() {
 
 	CommandSystem.DefaultDMHandler = &commandsystem.Command{
 		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			return "Unknwon command, only a subset of commands are available in dms.", nil
+			return "Unknown command, only a subset of commands are available in dms.", nil
 		},
 	}
 
