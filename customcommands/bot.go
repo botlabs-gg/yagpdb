@@ -182,8 +182,12 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (string, error) {
 
 	cs := bot.State.Channel(true, m.ChannelID)
-	ms := cs.Guild.Member(true, m.Author.ID)
-	tmplCtx := templates.NewContext(bot.State.User(true).User, cs.Guild, cs, ms.Member)
+	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
+	if err != nil {
+		return "", err
+	}
+
+	tmplCtx := templates.NewContext(bot.State.User(true).User, cs.Guild, cs, member)
 	tmplCtx.Redis = client
 	tmplCtx.Msg = m.Message
 

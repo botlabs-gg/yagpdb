@@ -190,17 +190,22 @@ var _escData = map[string]*_escFile{
 
 	"/assets/help-page.md": {
 		local:   "assets/help-page.md",
-		size:    9,
-		modtime: 1499120954,
+		size:    547,
+		modtime: 1515026406,
 		compressed: `
-H4sIAAAAAAAA/9JVCPF38VfQVQAEAAD//zTsWAgJAAAA
+H4sIAAAAAAAA/2yRvY7TQBSF+3mKs0oDCJyCn2I7lAW0aIXAIkUUUUw81/ZVxvda8+Pgt1/FcYpEbo/m
+fufTmdVqhd8aU4Ro4porm1glgmtYCJ0wsCNFHbRDagkNDySoWitCHhyRe6/WkSuM+atoKN2BpkuLUXPK
+B7pevkfkrvcjWPqcQJxaClPB8xM0YFu+gGUKavVeTywNaibv4qMx77CbcZtZ5PnJPOzvOsDu35s2pf5x
+veaCuyaHotJu3dpSfn5yRS/N2yXWtnxZgOXgF2mbj99+/ZEfM22nGZW9DNTQ5H8FpNamKbjdxwZCrzGR
+Q1IMbKc3Lmjv9CQfOpJszMP+Giw6fP9Sbuznr3cO1kdFR3LuAQ0URhXCYUTluTqeB73oUXU86H9kcfMX
+3JQX5jUAAP//vwYksiMCAAA=
 `,
 	},
 
 	"/assets/youtube.html": {
 		local:   "assets/youtube.html",
 		size:    5468,
-		modtime: 1501987148,
+		modtime: 1502705244,
 		compressed: `
 H4sIAAAAAAAA/8xYTY/bNhO++1fMyzdAbWAlNQnQQ2IbWOymxaJoN026aHsqKHFsMaVIhaS8awj67wUp
 +luW7TRpswdHEefjmWdGMyPVNcMZlwgkK/9cqspWKZKmGQzq2mJRCmrboxwpIxA3zWDM+AIyQY2ZEK0e

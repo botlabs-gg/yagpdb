@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix.v2/redis"
+	"sync"
 )
 
 func KeyCurrentlyStreaming(gID string) string { return "currently_streaming:" + gID }
@@ -50,9 +51,38 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 	}
 
 	gs.RLock()
-	defer gs.RUnlock()
 
+	var wg sync.WaitGroup
+
+	slowCheck := make([]*dstate.MemberState, 0, len(gs.Members))
 	for _, ms := range gs.Members {
+
+		if ms.Member == nil || ms.Presence == nil {
+			if ms.Presence != nil {
+				slowCheck = append(slowCheck, ms)
+				wg.Add(1)
+				go func(gID, uID string) {
+					bot.GetMember(gID, uID)
+					wg.Done()
+				}(gs.ID(), ms.ID())
+			}
+			continue
+		}
+
+		err = CheckPresence(client, config, ms.Presence, ms.Member, gs)
+		if err != nil {
+			log.WithError(err).Error("Error checking presence")
+			continue
+		}
+	}
+
+	gs.RUnlock()
+
+	wg.Wait()
+
+	log.WithField("guild", gs.ID()).Info("Starting slowcheck")
+	gs.RLock()
+	for _, ms := range slowCheck {
 
 		if ms.Member == nil || ms.Presence == nil {
 			continue
@@ -64,6 +94,8 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 			continue
 		}
 	}
+	gs.RUnlock()
+	log.WithField("guild", gs.ID()).Info("Done slowcheck")
 }
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
@@ -159,16 +191,19 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	member := gs.Member(true, p.User.ID)
-	if member == nil {
-		log.WithField("pres", p.Status).Error("Member not in state")
-		return
-	}
+	// member, _ := bot.GetMember(gs.ID(), p.User.ID)
 
 	gs.RLock()
 	defer gs.RUnlock()
 
-	err = CheckPresence(client, config, &p.Presence, member.Member, gs)
+	ms := gs.Member(false, p.User.ID)
+
+	var member *discordgo.Member
+	if ms != nil {
+		member = ms.Member
+	}
+
+	err = CheckPresence(client, config, &p.Presence, member, gs)
 	if err != nil {
 		log.WithError(err).WithField("guild", p.GuildID).Error("Failed checking presence")
 	}
@@ -190,7 +225,13 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 
 		if member == nil {
 			// Member is required from on here
-			return nil
+			var err error
+			gs.RUnlock()
+			member, err = bot.GetMember(gs.ID(), p.User.ID)
+			gs.RLock()
+			if err != nil {
+				return err
+			}
 		}
 
 		if config.RequireRole != "" {
@@ -253,6 +294,8 @@ func RemoveStreaming(client *redis.Client, config *Config, guildID string, userI
 
 	if member != nil {
 		RemoveStreamingRole(member, config.GiveRole, guildID)
+	} else {
+		common.BotSession.GuildMemberRoleRemove(guildID, userID, config.GiveRole)
 	}
 }
 

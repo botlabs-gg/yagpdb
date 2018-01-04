@@ -20,6 +20,7 @@ import (
 func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(roleCommands...)
 	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
 }
 
 var roleCommands = []commandsystem.CommandHandler{
@@ -47,6 +48,41 @@ func (p *Plugin) StartBot() {
 // Stop updating
 func HandleUpdateAutomodRules(event *pubsub.Event) {
 	stopProcessing(event.TargetGuild)
+}
+
+// HandlePresenceUpdate makes sure the member with joined_at is available for the relevant guilds
+// TODO: Figure out a solution that scales better
+func HandlePresenceUpdate(evt *eventsystem.EventData) {
+	p := evt.PresenceUpdate
+	if p.Status == discordgo.StatusOffline {
+		return
+	}
+
+	gs := bot.State.Guild(true, p.GuildID)
+	if gs == nil {
+		return
+	}
+	gs.RLock()
+	m := gs.Member(false, p.User.ID)
+	if m != nil && m.Member != nil {
+		gs.RUnlock()
+		return
+	}
+	gs.RUnlock()
+
+	client, err := common.RedisPool.Get()
+	if err != nil {
+		return
+	}
+
+	config, err := GetGeneralConfig(client, gs.ID())
+	if err != nil {
+		return
+	}
+
+	if !config.OnlyOnJoin && config.Role != "" {
+		bot.GetMember(gs.ID(), p.User.ID)
+	}
 }
 
 var (

@@ -124,16 +124,17 @@ var cmds = []commandsystem.CommandHandler{
 					return "An error occured while finding the server config", err
 				}
 
-				parsed.Guild.RLock()
-				member := parsed.Guild.Member(false, parsed.Message.Author.ID)
+				member, _ := bot.GetMember(parsed.Guild.ID(), parsed.Message.Author.ID)
 
-				if !IsAdmin(parsed.Guild, member.Member, conf) {
+				parsed.Guild.RLock()
+
+				if !IsAdmin(parsed.Guild, member, conf) {
 					parsed.Guild.RUnlock()
 					return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 				}
 				parsed.Guild.RUnlock()
 
-				err = SetRep(common.MustParseInt(parsed.Guild.ID()), common.MustParseInt(member.ID()), common.MustParseInt(parsed.Args[0].DiscordUser().ID), int64(parsed.Args[1].Int()))
+				err = SetRep(common.MustParseInt(parsed.Guild.ID()), common.MustParseInt(member.User.ID), common.MustParseInt(parsed.Args[0].DiscordUser().ID), int64(parsed.Args[1].Int()))
 				if err != nil {
 					return "Failed setting rep, contact bot owner", err
 				}
