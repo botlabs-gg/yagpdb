@@ -102,7 +102,8 @@ func ToggleRole(guildID int64, member *discordgo.Member, parsedMemberRoles []int
 // to the member
 func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member, parsedRoles []int64, targetRole *RoleCommand) (gaveRole bool, err error) {
 	if len(rg.RequireRoles) > 0 {
-		if err = CheckRequiredRoles(rg.RequireRoles, parsedRoles); err != nil {
+		if !CheckRequiredRoles(rg.RequireRoles, parsedRoles) {
+			err = NewSimpleError("Missing a required role")
 			return
 		}
 	}
@@ -183,8 +184,8 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 func (r *RoleCommand) CanAssignTo(memberRoles []int64) error {
 
 	if len(r.RequireRoles) > 0 {
-		if err := CheckRequiredRoles(r.RequireRoles, memberRoles); err != nil {
-			return err
+		if !CheckRequiredRoles(r.RequireRoles, memberRoles) {
+			return NewSimpleError("Missing a required role")
 		}
 	}
 
@@ -197,14 +198,15 @@ func (r *RoleCommand) CanAssignTo(memberRoles []int64) error {
 	return nil
 }
 
-func CheckRequiredRoles(requireOneOf []int64, has []int64) error {
+func CheckRequiredRoles(requireOneOf []int64, has []int64) bool {
 	for _, r := range requireOneOf {
-		if !common.ContainsInt64Slice(has, r) {
-			return NewRoleError("Missing required role", r)
+		if common.ContainsInt64Slice(has, r) {
+			// Only 1 role required
+			return true
 		}
 	}
 
-	return nil
+	return false
 }
 
 func CheckIgnoredRoles(ignore []int64, has []int64) error {
@@ -215,6 +217,17 @@ func CheckIgnoredRoles(ignore []int64, has []int64) error {
 	}
 
 	return nil
+}
+
+// Just a simple type but distinguishable from errors.Error
+type SimpleError string
+
+func (s SimpleError) Error() string {
+	return string(s)
+}
+
+func NewSimpleError(format string, args ...interface{}) error {
+	return SimpleError(fmt.Sprintf(format, args...))
 }
 
 type RoleError struct {
@@ -294,7 +307,7 @@ func (r *GroupError) Error() string {
 
 func IsRoleCommandError(err error) bool {
 	switch err.(type) {
-	case *LmitError, *RoleError, *GroupError:
+	case *LmitError, *RoleError, *GroupError, SimpleError, *SimpleError:
 		return true
 	default:
 		return false
