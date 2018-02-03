@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -19,153 +19,145 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	commands.CommandSystem.RegisterCommands(cmds...)
+	commands.AddRootCommands(cmds...)
 }
 
 // Reminder management commands
-var cmds = []commandsystem.CommandHandler{
-	&commands.CustomCommand{
-		Category: commands.CategoryTool,
-		Command: &commandsystem.Command{
-			Name:         "Remindme",
-			Description:  "Schedules a reminder, example: 'remindme 1h30min are you alive still?'",
-			Aliases:      []string{"remind"},
-			RequiredArgs: 2,
-			Arguments: []*commandsystem.ArgDef{
-				&commandsystem.ArgDef{Name: "Time", Type: commandsystem.ArgumentString},
-				&commandsystem.ArgDef{Name: "Message", Type: commandsystem.ArgumentString},
-			},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-				currentReminders, _ := GetUserReminders(parsed.Message.Author.ID)
-				if len(currentReminders) >= 25 {
-					return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
-				}
+var cmds = []*commands.YAGCommand{
+	&commands.YAGCommand{
+		CmdCategory:  commands.CategoryTool,
+		Name:         "Remindme",
+		Description:  "Schedules a reminder, example: 'remindme 1h30min are you alive still?'",
+		Aliases:      []string{"remind"},
+		RequiredArgs: 2,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Time", Type: dcmd.String},
+			&dcmd.ArgDef{Name: "Message", Type: dcmd.String},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			currentReminders, _ := GetUserReminders(parsed.Msg.Author.ID)
+			if len(currentReminders) >= 25 {
+				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
+			}
 
-				when, err := parseReminderTime(parsed.Args[0].Str())
-				if err != nil {
-					return err, err
-				}
+			when, err := parseReminderTime(parsed.Args[0].Str())
+			if err != nil {
+				return err, err
+			}
 
-				timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
-				tStr := when.Format(time.RFC822)
+			timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
+			tStr := when.Format(time.RFC822)
 
-				if when.After(time.Now().Add(time.Hour * 24 * 366)) {
-					return "Can be max 365 days from now...", nil
-				}
+			if when.After(time.Now().Add(time.Hour * 24 * 366)) {
+				return "Can be max 365 days from now...", nil
+			}
 
-				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-				_, err = NewReminder(client, parsed.Message.Author.ID, parsed.Channel.ID(), parsed.Args[1].Str(), when)
-				if err != nil {
-					return err, err
-				}
+			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+			_, err = NewReminder(client, parsed.Msg.Author.ID, parsed.CS.ID(), parsed.Args[1].Str(), when)
+			if err != nil {
+				return err, err
+			}
 
-				return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
-			},
+			return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 		},
 	},
-	&commands.CustomCommand{
-		Category: commands.CategoryTool,
-		Command: &commandsystem.Command{
-			Name:        "Reminders",
-			Description: "Lists your active reminders",
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-				currentReminders, err := GetUserReminders(parsed.Message.Author.ID)
-				if err != nil {
-					return "Failed fetching your reminders, contact bot owner", err
-				}
+	&commands.YAGCommand{
+		CmdCategory: commands.CategoryTool,
+		Name:        "Reminders",
+		Description: "Lists your active reminders",
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			currentReminders, err := GetUserReminders(parsed.Msg.Author.ID)
+			if err != nil {
+				return "Failed fetching your reminders, contact bot owner", err
+			}
 
-				out := "Your reminders:\n"
-				out += stringReminders(currentReminders, false)
-				out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
-				return out, nil
-			},
+			out := "Your reminders:\n"
+			out += stringReminders(currentReminders, false)
+			out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
+			return out, nil
 		},
 	},
-	&commands.CustomCommand{
-		Category: commands.CategoryTool,
-		Command: &commandsystem.Command{
-			Name:        "CReminders",
-			Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Message.Author.ID, parsed.Channel.ID())
+	&commands.YAGCommand{
+		CmdCategory: commands.CategoryTool,
+		Name:        "CReminders",
+		Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, parsed.CS.ID())
+			if err != nil {
+				return "An eror occured checkign for perms", err
+			}
+			if !ok {
+				return "You do not have access to this command (requires manage channel permission)", nil
+			}
+
+			currentReminders, err := GetChannelReminders(parsed.CS.ID())
+			if err != nil {
+				return "Failed fetching reminders, contact bot owner", err
+			}
+
+			out := "Reminders in this channel:\n"
+			out += stringReminders(currentReminders, true)
+			out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
+			return out, nil
+		},
+	},
+	&commands.YAGCommand{
+		CmdCategory:  commands.CategoryTool,
+		Name:         "Delreminder",
+		Aliases:      []string{"rmreminder"},
+		Description:  "Deletes a reminder.",
+		RequiredArgs: 1,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "ID", Type: dcmd.Int},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+
+			var reminder Reminder
+			err := common.GORM.Where(parsed.Args[0].Int()).First(&reminder).Error
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return "No reminder by that id found", nil
+				}
+				return "Error retrieving reminder", err
+			}
+
+			// Check perms
+			if reminder.UserID != parsed.Msg.Author.ID {
+				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, reminder.ChannelID)
 				if err != nil {
 					return "An eror occured checkign for perms", err
 				}
 				if !ok {
-					return "You do not have access to this command (requires manage channel permission)", nil
+					return "You need manage channel permission in the channel the reminder is in to delete reminders that are not your own", nil
 				}
+			}
 
-				currentReminders, err := GetChannelReminders(parsed.Channel.ID())
-				if err != nil {
-					return "Failed fetching reminders, contact bot owner", err
+			// Do the actual deletion
+			err = common.GORM.Delete(reminder).Error
+			if err != nil {
+				return "Failed deleting reminder?", err
+			}
+
+			// Check if we should remove the scheduled event
+			currentReminders, err := GetUserReminders(reminder.UserID)
+			if err != nil {
+				return "Failed fetching reminders, contact bot owner", err
+			}
+
+			delMsg := fmt.Sprintf("Deleted reminder **#%d**: %q", reminder.ID, reminder.Message)
+
+			// If there is another reminder with the same timestamp, do not remove the scheduled event
+			for _, v := range currentReminders {
+				if v.When == reminder.When {
+					return delMsg, nil
 				}
+			}
 
-				out := "Reminders in this channel:\n"
-				out += stringReminders(currentReminders, true)
-				out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
-				return out, nil
-			},
-		},
-	},
-	&commands.CustomCommand{
-		Category: commands.CategoryTool,
-		Command: &commandsystem.Command{
-			Name:         "Delreminder",
-			Aliases:      []string{"rmreminder"},
-			Description:  "Deletes a reminder.",
-			RequiredArgs: 1,
-			Arguments: []*commandsystem.ArgDef{
-				{Name: "ID", Type: commandsystem.ArgumentNumber},
-			},
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
+			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+			// No other reminder for this user at this timestamp, remove the scheduled event
+			scheduledevents.RemoveEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
 
-				var reminder Reminder
-				err := common.GORM.Where(parsed.Args[0].Int()).First(&reminder).Error
-				if err != nil {
-					if err == gorm.ErrRecordNotFound {
-						return "No reminder by that id found", nil
-					}
-					return "Error retrieving reminder", err
-				}
-
-				// Check perms
-				if reminder.UserID != parsed.Message.Author.ID {
-					ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Message.Author.ID, reminder.ChannelID)
-					if err != nil {
-						return "An eror occured checkign for perms", err
-					}
-					if !ok {
-						return "You need manage channel permission in the channel the reminder is in to delete reminders that are not your own", nil
-					}
-				}
-
-				// Do the actual deletion
-				err = common.GORM.Delete(reminder).Error
-				if err != nil {
-					return "Failed deleting reminder?", err
-				}
-
-				// Check if we should remove the scheduled event
-				currentReminders, err := GetUserReminders(reminder.UserID)
-				if err != nil {
-					return "Failed fetching reminders, contact bot owner", err
-				}
-
-				delMsg := fmt.Sprintf("Deleted reminder **#%d**: %q", reminder.ID, reminder.Message)
-
-				// If there is another reminder with the same timestamp, do not remove the scheduled event
-				for _, v := range currentReminders {
-					if v.When == reminder.When {
-						return delMsg, nil
-					}
-				}
-
-				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-				// No other reminder for this user at this timestamp, remove the scheduled event
-				scheduledevents.RemoveEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
-
-				return delMsg, nil
-			},
+			return delMsg, nil
 		},
 	},
 }

@@ -191,7 +191,7 @@ var _escData = map[string]*_escFile{
 	"/assets/help-page.md": {
 		local:   "assets/help-page.md",
 		size:    996,
-		modtime: 1504009933,
+		modtime: 1506449968,
 		compressed: `
 H4sIAAAAAAAA/3RTTW/TQBC991e8I6gpLdeeqJDggLggJIQQUifesb3qesfamU3if49m7USkgks+7J33
 NW+/j4xJAheyKBk9k9XCioWGOewxFznEwAoq/Hhzgzt8lZBkgI1kSDIoKCXYNQp1/qXt8V4MRi+suAGA

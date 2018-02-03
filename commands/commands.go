@@ -4,8 +4,8 @@ package commands
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -29,11 +29,11 @@ func (p *Plugin) Name() string {
 }
 
 type ChannelCommandSetting struct {
-	Info           *CustomCommand `json:"-"` // Used for template info
-	Cmd            string         `json:"cmd"`
-	CommandEnabled bool           `json:"enabled"`
-	AutoDelete     bool           `json:"autodelete"`
-	RequiredRole   string         `json:"required_role"`
+	Info           *YAGCommand `json:"-"` // Used for template info
+	Cmd            string      `json:"cmd"`
+	CommandEnabled bool        `json:"enabled"`
+	AutoDelete     bool        `json:"autodelete"`
+	RequiredRole   string      `json:"required_role"`
 }
 
 type ChannelOverride struct {
@@ -52,7 +52,8 @@ type CommandsConfig struct {
 
 // Fills in the defaults for missing data, for when users create channels or commands are added
 func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
-	commands := CommandSystem.Commands
+
+	commands := CommandSystem.Root.Commands
 
 	if conf.Global == nil {
 		conf.Global = []*ChannelCommandSetting{}
@@ -113,11 +114,11 @@ ROOT:
 }
 
 // Checks a single list of ChannelCommandSettings and applies defaults if not found
-func checkCommandSettings(settings []*ChannelCommandSetting, commands []commandsystem.CommandHandler, defaultEnabled bool) []*ChannelCommandSetting {
+func checkCommandSettings(settings []*ChannelCommandSetting, commands []*dcmd.RegisteredCommand, defaultEnabled bool) []*ChannelCommandSetting {
 
 ROOT:
-	for _, cmdDef := range commands {
-		cast, ok := cmdDef.(*CustomCommand)
+	for _, registeredCmd := range commands {
+		cast, ok := registeredCmd.Command.(*YAGCommand)
 		if !ok {
 			continue
 		}
@@ -144,8 +145,8 @@ ROOT:
 
 	// Check for commands that have been removed (e.g the config contains commands from an older version)
 	for _, settingsCmd := range settings {
-		for _, cmdDef := range commands {
-			cast, ok := cmdDef.(*CustomCommand)
+		for _, registeredCmd := range commands {
+			cast, ok := registeredCmd.Command.(*YAGCommand)
 			if !ok {
 				continue
 			}

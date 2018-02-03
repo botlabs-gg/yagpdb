@@ -1,8 +1,8 @@
 package rolecommands
 
 import (
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -12,28 +12,24 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	commands.CommandSystem.RegisterCommands(
-		&commands.CustomCommand{
-			Category: commands.CategoryTool,
-			Command: &commandsystem.Command{
-				Name:        "Role",
-				Description: "Give yourself a role or list all available roles",
-				Arguments: []*commandsystem.ArgDef{
-					&commandsystem.ArgDef{Name: "Role", Type: commandsystem.ArgumentString},
-				},
-				Run: CmdFuncRole,
+	commands.AddRootCommands(
+		&commands.YAGCommand{
+			CmdCategory: commands.CategoryTool,
+			Name:        "Role",
+			Description: "Give yourself a role or list all available roles",
+			Arguments: []*dcmd.ArgDef{
+				&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
 			},
-		}, &commands.CustomCommand{
-			Category: commands.CategoryTool,
-			Command: &commandsystem.Command{
-				Name:         "RoleMenu",
-				Description:  "Set up a role menu",
-				RequiredArgs: 1,
-				Arguments: []*commandsystem.ArgDef{
-					&commandsystem.ArgDef{Name: "Group", Type: commandsystem.ArgumentString},
-				},
-				Run: CmdFuncRoleMenu,
+			RunFunc: CmdFuncRole,
+		}, &commands.YAGCommand{
+			CmdCategory:  commands.CategoryTool,
+			Name:         "RoleMenu",
+			Description:  "Set up a role menu",
+			RequiredArgs: 1,
+			Arguments: []*dcmd.ArgDef{
+				&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
 			},
+			RunFunc: CmdFuncRoleMenu,
 		},
 	)
 
@@ -41,17 +37,17 @@ func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 }
 
-func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
-	if parsed.Args[0] == nil {
+func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
+	if parsed.Args[0].Value == nil {
 		return CmdFuncListCommands(parsed)
 	}
 
-	member, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.Author.ID)
+	member, err := bot.GetMember(parsed.GS.ID(), parsed.Msg.Author.ID)
 	if err != nil {
 		return "Failed retrieving you?", err
 	}
 
-	given, err := FindAssignRole(parsed.Guild.ID(), member, parsed.Args[0].Str())
+	given, err := FindAssignRole(parsed.GS.ID(), member, parsed.Args[0].Str())
 	if err != nil {
 		if err == kallax.ErrNotFound {
 			resp, err := CmdFuncListCommands(parsed)
@@ -62,7 +58,7 @@ func CmdFuncRole(parsed *commandsystem.ExecData) (interface{}, error) {
 			return resp, err
 		}
 
-		return HumanizeAssignError(parsed.Guild, err)
+		return HumanizeAssignError(parsed.GS, err)
 	}
 
 	if given {
@@ -93,8 +89,8 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 
 }
 
-func CmdFuncListCommands(parsed *commandsystem.ExecData) (interface{}, error) {
-	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(common.MustParseInt(parsed.Guild.ID()))
+func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
+	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(common.MustParseInt(parsed.GS.ID()))
 	if err != nil {
 		return "Failed retrieving role commands", err
 	}

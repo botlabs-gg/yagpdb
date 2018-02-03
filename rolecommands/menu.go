@@ -3,8 +3,8 @@ package rolecommands
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -14,13 +14,13 @@ import (
 	"strconv"
 )
 
-func CmdFuncRoleMenu(parsed *commandsystem.ExecData) (interface{}, error) {
-	member, err := bot.GetMember(parsed.Guild.ID(), parsed.Message.Author.ID)
+func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
+	member, err := bot.GetMember(parsed.GS.ID(), parsed.Msg.Author.ID)
 	if err != nil {
 		return "Failed retrieving member", err
 	}
 
-	ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, member.User.ID, parsed.Channel.ID())
+	ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, member.User.ID, parsed.CS.ID())
 	if err != nil {
 		return "Failed checkign your perms", err
 	}
@@ -29,7 +29,7 @@ func CmdFuncRoleMenu(parsed *commandsystem.ExecData) (interface{}, error) {
 		return "You do not have the proper permissions (Manage Server) to create a role menu", nil
 	}
 
-	group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, common.MustParseInt(parsed.Guild.ID())).Where(kallax.Ilike(Schema.RoleGroup.Name, parsed.Args[0].Str())))
+	group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, common.MustParseInt(parsed.GS.ID())).Where(kallax.Ilike(Schema.RoleGroup.Name, parsed.Args[0].Str())))
 	if err != nil {
 		if err == kallax.ErrNotFound {
 			return "Did not find the role command group specified, make sure you types it right", nil
@@ -39,7 +39,7 @@ func CmdFuncRoleMenu(parsed *commandsystem.ExecData) (interface{}, error) {
 	}
 
 	// set up the message if not provided
-	msg, err := common.BotSession.ChannelMessageSend(parsed.Channel.ID(), "Role menu\nSetting up...")
+	msg, err := common.BotSession.ChannelMessageSend(parsed.CS.ID(), "Role menu\nSetting up...")
 	if err != nil {
 		_, dErr := common.DiscordError(err)
 		errStr := "Failed creating the menu message, check the permissions on the channel"
@@ -51,9 +51,9 @@ func CmdFuncRoleMenu(parsed *commandsystem.ExecData) (interface{}, error) {
 
 	model := &RoleMenu{
 		MessageID: common.MustParseInt(msg.ID),
-		GuildID:   common.MustParseInt(parsed.Guild.ID()),
-		OwnerID:   common.MustParseInt(parsed.Message.Author.ID),
-		ChannelID: common.MustParseInt(parsed.Message.ChannelID),
+		GuildID:   common.MustParseInt(parsed.GS.ID()),
+		OwnerID:   common.MustParseInt(parsed.Msg.Author.ID),
+		ChannelID: common.MustParseInt(parsed.Msg.ChannelID),
 
 		OwnMessage: true,
 		Group:      group,
@@ -67,7 +67,7 @@ func CmdFuncRoleMenu(parsed *commandsystem.ExecData) (interface{}, error) {
 	resp, err := model.NextSetupStep(true)
 
 	content := msg.Content + "\n" + resp
-	_, err = common.BotSession.ChannelMessageEdit(parsed.Channel.ID(), msg.ID, content)
+	_, err = common.BotSession.ChannelMessageEdit(parsed.CS.ID(), msg.ID, content)
 	return "", err
 }
 

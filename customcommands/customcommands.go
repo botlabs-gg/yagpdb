@@ -30,7 +30,7 @@ func RegisterPlugin() {
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
-	commands.CommandSystem.RegisterCommands(cmdListCommands)
+	commands.AddRootCommands(cmdListCommands)
 }
 
 func (p *Plugin) Name() string {

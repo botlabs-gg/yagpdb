@@ -3,8 +3,8 @@ package stdcommands
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -17,9 +17,9 @@ import (
 	"time"
 )
 
-func requireOwner(inner commandsystem.RunFunc) commandsystem.RunFunc {
-	return func(data *commandsystem.ExecData) (interface{}, error) {
-		if data.Message.Author.ID != common.Conf.Owner {
+func requireOwner(inner dcmd.RunFunc) dcmd.RunFunc {
+	return func(data *dcmd.Data) (interface{}, error) {
+		if data.Msg.Author.ID != common.Conf.Owner {
 			return "", nil
 		}
 
@@ -27,7 +27,7 @@ func requireOwner(inner commandsystem.RunFunc) commandsystem.RunFunc {
 	}
 }
 
-var maintenanceCommands = []commandsystem.CommandHandler{
+var maintenanceCommands = []*commands.YAGCommand{
 	cmdStateInfo,
 	cmdSecretCommand,
 	cmdLeaveServer,
@@ -41,19 +41,17 @@ var maintenanceCommands = []commandsystem.CommandHandler{
 	cmdYagStatus,
 }
 
-var cmdStateInfo = &commands.CustomCommand{
+var cmdStateInfo = &commands.YAGCommand{
 	Cooldown:             2,
-	Category:             commands.CategoryDebug,
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:         "stateinfo",
-		Description:  "Responds with state debug info",
-		HideFromHelp: true,
-		Run:          cmdFuncStateInfo,
-	},
+	Name:                 "stateinfo",
+	Description:          "Responds with state debug info",
+	HideFromHelp:         true,
+	RunFunc:              cmdFuncStateInfo,
 }
 
-func cmdFuncStateInfo(data *commandsystem.ExecData) (interface{}, error) {
+func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 	totalGuilds := 0
 	totalMembers := 0
 	totalChannels := 0
@@ -93,110 +91,100 @@ func cmdFuncStateInfo(data *commandsystem.ExecData) (interface{}, error) {
 	return embed, nil
 }
 
-var cmdSecretCommand = &commands.CustomCommand{
+var cmdSecretCommand = &commands.YAGCommand{
 	Cooldown:             2,
-	Category:             commands.CategoryDebug,
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:         "secretcommand",
-		Description:  ";))",
-		HideFromHelp: true,
-		Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
-			return "<@" + common.Conf.Owner + "> Is my owner", nil
-		}),
-	},
+	Name:                 "secretcommand",
+	Description:          ";))",
+	HideFromHelp:         true,
+	RunFunc: requireOwner(func(data *dcmd.Data) (interface{}, error) {
+		return "<@" + common.Conf.Owner + "> Is my owner", nil
+	}),
 }
 
-var cmdLeaveServer = &commands.CustomCommand{
+var cmdLeaveServer = &commands.YAGCommand{
 	Cooldown:             2,
-	Category:             commands.CategoryDebug,
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:         "leaveserver",
-		Description:  ";))",
-		HideFromHelp: true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "server", Type: commandsystem.ArgumentString},
-		},
-		Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
-			err := common.BotSession.GuildLeave(data.Args[0].Str())
-			if err == nil {
-				return "Left " + data.Args[0].Str(), nil
-			}
-			return err, err
-		}),
+	Name:                 "leaveserver",
+	Description:          ";))",
+	HideFromHelp:         true,
+	RequiredArgs:         1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "server", Type: dcmd.String},
 	},
+	RunFunc: requireOwner(func(data *dcmd.Data) (interface{}, error) {
+		err := common.BotSession.GuildLeave(data.Args[0].Str())
+		if err == nil {
+			return "Left " + data.Args[0].Str(), nil
+		}
+		return err, err
+	}),
 }
-var cmdBanServer = &commands.CustomCommand{
+var cmdBanServer = &commands.YAGCommand{
 	Cooldown:             2,
-	Category:             commands.CategoryDebug,
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:         "banserver",
-		Description:  ";))",
-		HideFromHelp: true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "server", Type: commandsystem.ArgumentString},
-		},
-		Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
-			err := common.BotSession.GuildLeave(data.Args[0].Str())
-			if err == nil {
-				client := data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-				client.Cmd("SADD", "banned_servers", data.Args[0].Str())
-
-				return "Banned " + data.Args[0].Str(), nil
-			}
-			return err, err
-		}),
+	Name:                 "banserver",
+	Description:          ";))",
+	HideFromHelp:         true,
+	RequiredArgs:         1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "server", Type: dcmd.String},
 	},
-}
-
-var cmdUnbanServer = &commands.CustomCommand{
-	Cooldown:             2,
-	Category:             commands.CategoryDebug,
-	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:         "unbanserver",
-		Description:  ";))",
-		HideFromHelp: true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "server", Type: commandsystem.ArgumentString},
-		},
-		Run: requireOwner(func(data *commandsystem.ExecData) (interface{}, error) {
+	RunFunc: requireOwner(func(data *dcmd.Data) (interface{}, error) {
+		err := common.BotSession.GuildLeave(data.Args[0].Str())
+		if err == nil {
 			client := data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-			unbanned, err := client.Cmd("SREM", "banned_servers", data.Args[0].Str()).Int()
-			if err != nil {
-				return err, err
-			}
+			client.Cmd("SADD", "banned_servers", data.Args[0].Str())
 
-			if unbanned < 1 {
-				return "Server wasnt banned", nil
-			}
-
-			return "Unbanned server", nil
-		}),
-	},
+			return "Banned " + data.Args[0].Str(), nil
+		}
+		return err, err
+	}),
 }
 
-var cmdTopCommands = &commands.CustomCommand{
+var cmdUnbanServer = &commands.YAGCommand{
 	Cooldown:             2,
-	Category:             commands.CategoryDebug,
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:         "topcommands",
-		Description:  "Shows command usage stats",
-		HideFromHelp: true,
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "hours", Type: commandsystem.ArgumentNumber, Default: float64(1)},
-		},
-		Run: cmdFuncTopCommands,
+	Name:                 "unbanserver",
+	Description:          ";))",
+	HideFromHelp:         true,
+	RequiredArgs:         1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "server", Type: dcmd.String},
 	},
+	RunFunc: requireOwner(func(data *dcmd.Data) (interface{}, error) {
+		client := data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+		unbanned, err := client.Cmd("SREM", "banned_servers", data.Args[0].Str()).Int()
+		if err != nil {
+			return err, err
+		}
+
+		if unbanned < 1 {
+			return "Server wasnt banned", nil
+		}
+
+		return "Unbanned server", nil
+	}),
 }
 
-func cmdFuncTopCommands(data *commandsystem.ExecData) (interface{}, error) {
+var cmdTopCommands = &commands.YAGCommand{
+	Cooldown:             2,
+	CmdCategory:          commands.CategoryDebug,
+	HideFromCommandsPage: true,
+	Name:                 "topcommands",
+	Description:          "Shows command usage stats",
+	HideFromHelp:         true,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "hours", Type: dcmd.Int, Default: 1},
+	},
+	RunFunc: cmdFuncTopCommands,
+}
+
+func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	hours := data.Args[0].Int()
 	within := time.Now().Add(time.Duration(-hours) * time.Hour)
 
@@ -221,19 +209,17 @@ func cmdFuncTopCommands(data *commandsystem.ExecData) (interface{}, error) {
 	return out, nil
 }
 
-var cmdTopEvents = &commands.CustomCommand{
+var cmdTopEvents = &commands.YAGCommand{
 	Cooldown:             2,
-	Category:             commands.CategoryDebug,
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:         "topevents",
-		Description:  "Shows gateway event processing stats",
-		HideFromHelp: true,
-		Run:          cmdFuncTopEvents,
-	},
+	Name:                 "topevents",
+	Description:          "Shows gateway event processing stats",
+	HideFromHelp:         true,
+	RunFunc:              cmdFuncTopEvents,
 }
 
-func cmdFuncTopEvents(data *commandsystem.ExecData) (interface{}, error) {
+func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 
 	bot.EventLogger.Lock()
 
@@ -269,48 +255,41 @@ func cmdFuncTopEvents(data *commandsystem.ExecData) (interface{}, error) {
 	return out, nil
 }
 
-var cmdCurrentShard = &commands.CustomCommand{
-	Category:             commands.CategoryDebug,
+var cmdCurrentShard = &commands.YAGCommand{
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:        "CurentShard",
-		Aliases:     []string{"cshard"},
-		Description: "Shows the current shard this server is on",
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			shard := bot.ShardManager.SessionForGuildS(data.Guild.ID())
-			return fmt.Sprintf("On shard %d out of total %d shards.", shard.ShardID+1, shard.ShardCount), nil
-		},
+	Name:                 "CurentShard",
+	Aliases:              []string{"cshard"},
+	Description:          "Shows the current shard this server is on",
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		shard := bot.ShardManager.SessionForGuildS(data.GS.ID())
+		return fmt.Sprintf("On shard %d out of total %d shards.", shard.ShardID+1, shard.ShardCount), nil
 	},
 }
 
-var cmdMemberFetcher = &commands.CustomCommand{
-	Category:             commands.CategoryDebug,
+var cmdMemberFetcher = &commands.YAGCommand{
+	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Command: &commandsystem.Command{
-		Name:        "MemberFetcher",
-		Aliases:     []string{"memfetch"},
-		Description: "Shows the current status of the member fetcher",
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			fetching, notFetching := bot.MemberFetcher.Status()
-			return fmt.Sprintf("Fetching: `%d`, Not fetching: `%d`", fetching, notFetching), nil
-
-		},
+	Name:                 "MemberFetcher",
+	Aliases:              []string{"memfetch"},
+	Description:          "Shows the current status of the member fetcher",
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		fetching, notFetching := bot.MemberFetcher.Status()
+		return fmt.Sprintf("Fetching: `%d`, Not fetching: `%d`", fetching, notFetching), nil
 	},
 }
 
-var cmdYagStatus = &commands.CustomCommand{
-	Cooldown: 5,
-	Category: commands.CategoryDebug,
-	Command: &commandsystem.Command{
-		Name:        "Yagstatus",
-		Aliases:     []string{"Status"},
-		Description: "Shows yagpdb status, version, uptime, memory stats and so on",
-		RunInDm:     true,
-		Run:         cmdFuncYagStatus,
-	},
+var cmdYagStatus = &commands.YAGCommand{
+	Cooldown:    5,
+	CmdCategory: commands.CategoryDebug,
+	Name:        "Yagstatus",
+	Aliases:     []string{"status"},
+	Description: "Shows yagpdb status, version, uptime, memory stats and so on",
+	RunInDM:     true,
+	RunFunc:     cmdFuncYagStatus,
 }
 
-func cmdFuncYagStatus(data *commandsystem.ExecData) (interface{}, error) {
+func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -375,43 +354,42 @@ func cmdFuncYagStatus(data *commandsystem.ExecData) (interface{}, error) {
 		}
 	}
 
-	return &commandsystem.FallbackEmebd{embed}, nil
+	return embed, nil
+	// return &commandsystem.FallbackEmebd{embed}, nil
 }
 
-var cmdTopServers = &commands.CustomCommand{
-	Cooldown: 5,
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:        "TopServers",
-		Description: "Responds with the top 15 servers im on",
+var cmdTopServers = &commands.YAGCommand{
+	Cooldown:    5,
+	CmdCategory: commands.CategoryFun,
+	Name:        "TopServers",
+	Description: "Responds with the top 15 servers im on",
 
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			state := bot.State
-			state.RLock()
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		state := bot.State
+		state.RLock()
 
-			guilds := make([]*discordgo.Guild, len(state.Guilds))
-			i := 0
-			for _, v := range state.Guilds {
-				state.RUnlock()
-				guilds[i] = v.LightCopy(true)
-				state.RLock()
-				i++
-			}
+		guilds := make([]*discordgo.Guild, len(state.Guilds))
+		i := 0
+		for _, v := range state.Guilds {
 			state.RUnlock()
+			guilds[i] = v.LightCopy(true)
+			state.RLock()
+			i++
+		}
+		state.RUnlock()
 
-			sortable := GuildsSortUsers(guilds)
-			sort.Sort(sortable)
+		sortable := GuildsSortUsers(guilds)
+		sort.Sort(sortable)
 
-			out := "```"
-			for k, v := range sortable {
-				if k > 14 {
-					break
-				}
-
-				out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
+		out := "```"
+		for k, v := range sortable {
+			if k > 14 {
+				break
 			}
-			return "Top servers the bot is on (membercount):\n" + out + "\n```", nil
-		},
+
+			out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
+		}
+		return "Top servers the bot is on (membercount):\n" + out + "\n```", nil
 	},
 }
 

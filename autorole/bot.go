@@ -3,8 +3,8 @@ package autorole
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -18,22 +18,20 @@ import (
 )
 
 func (p *Plugin) InitBot() {
-	commands.CommandSystem.RegisterCommands(roleCommands...)
+	commands.AddRootCommands(roleCommands...)
 	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
 }
 
-var roleCommands = []commandsystem.CommandHandler{
-	&commands.CustomCommand{
-		Category: commands.CategoryDebug,
-		Command: &commandsystem.Command{
-			Name:        "roledbg",
-			Description: "Debug debug debug autorole assignment",
-			Run: func(parsed *commandsystem.ExecData) (interface{}, error) {
-				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-				processing, _ := client.Cmd("GET", KeyProcessing(parsed.Guild.ID())).Int()
-				return fmt.Sprintf("Processing %d users.", processing), nil
-			},
+var roleCommands = []*commands.YAGCommand{
+	&commands.YAGCommand{
+		CmdCategory: commands.CategoryDebug,
+		Name:        "roledbg",
+		Description: "Debug debug debug autorole assignment",
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
+			processing, _ := client.Cmd("GET", KeyProcessing(parsed.GS.ID())).Int()
+			return fmt.Sprintf("Processing %d users.", processing), nil
 		},
 	},
 }

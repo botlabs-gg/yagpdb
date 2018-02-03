@@ -49,9 +49,10 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
 	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed")
-	limiter := tollbooth.NewLimiterExpiringBuckets(10, time.Second*60, time.Hour, time.Minute*10)
-	limiter.Message = "You're doing that too much, wait a minute and try again"
-	addHandler = tollbooth.LimitHandler(limiter, addHandler)
+	tbLimiter := tollbooth.NewLimiter(10, nil)
+	tbLimiter = tbLimiter.SetTokenBucketExpirationTTL(time.Second * 60)
+	tbLimiter = tbLimiter.SetMessage("You're doing that too much, wait a minute and try again")
+	addHandler = tollbooth.LimitHandler(tbLimiter, addHandler)
 
 	ytMux.Handle(pat.Post(""), addHandler)
 	ytMux.Handle(pat.Post("/"), addHandler)

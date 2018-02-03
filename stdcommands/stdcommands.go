@@ -10,13 +10,13 @@ type Plugin struct{}
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
-	commands.CommandSystem.RegisterCommands(
+	commands.AddRootCommands(
 		cmdInfo,
 		cmdInvite,
 	)
 
-	commands.CommandSystem.RegisterCommands(generalCommands...)
-	commands.CommandSystem.RegisterCommands(maintenanceCommands...)
+	commands.AddRootCommands(generalCommands...)
+	commands.AddRootCommands(maintenanceCommands...)
 }
 
 func (p *Plugin) Name() string {
