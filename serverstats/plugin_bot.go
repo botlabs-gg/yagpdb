@@ -3,8 +3,8 @@ package serverstats
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -36,50 +36,47 @@ func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleReady), eventsystem.EventReady)
 
-	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
+	commands.AddRootCommands(&commands.YAGCommand{
 		CustomEnabled: true,
-		Category:      commands.CategoryTool,
+		CmdCategory:   commands.CategoryTool,
 		Cooldown:      5,
-		Command: &commandsystem.Command{
-			Name:        "Stats",
-			Description: "Shows server stats (if public stats are enabled)",
-			Run: func(data *commandsystem.ExecData) (interface{}, error) {
-				config, err := GetConfig(data.Context(), data.Guild.ID())
-				if err != nil {
-					return "Failed retreiving guild config", err
-				}
+		Name:          "Stats",
+		Description:   "Shows server stats (if public stats are enabled)",
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			config, err := GetConfig(data.Context(), data.GS.ID())
+			if err != nil {
+				return "Failed retreiving guild config", err
+			}
 
-				if !config.Public {
-					return "Stats are set to private on this server, this can be changed in the control panel on <http://yagpdb.xyz>", nil
-				}
+			if !config.Public {
+				return "Stats are set to private on this server, this can be changed in the control panel on <http://yagpdb.xyz>", nil
+			}
 
-				stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
-				if err != nil {
-					return "Error retrieving stats", err
-				}
+			stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID())
+			if err != nil {
+				return "Error retrieving stats", err
+			}
 
-				total := int64(0)
-				for _, c := range stats.ChannelsHour {
-					total += c.Count
-				}
+			total := int64(0)
+			for _, c := range stats.ChannelsHour {
+				total += c.Count
+			}
 
-				embed := &discordgo.MessageEmbed{
-					Title:       "Server stats",
-					Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%s/stats)", common.Conf.Host, data.Guild.ID()),
-					Fields: []*discordgo.MessageEmbedField{
-						&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
-						&discordgo.MessageEmbedField{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
-					},
-				}
+			embed := &discordgo.MessageEmbed{
+				Title:       "Server stats",
+				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%s/stats)", common.Conf.Host, data.GS.ID()),
+				Fields: []*discordgo.MessageEmbedField{
+					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
+					&discordgo.MessageEmbedField{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
+				},
+			}
 
-				return embed, nil
-			},
+			return embed, nil
 		},
 	})
-
 }
 
 func HandleReady(evt *eventsystem.EventData) {

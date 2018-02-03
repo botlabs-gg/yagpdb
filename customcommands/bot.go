@@ -3,8 +3,8 @@ package customcommands
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -17,50 +17,48 @@ import (
 	"unicode/utf8"
 )
 
-var cmdListCommands = &commands.CustomCommand{
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:           "CustomCommands",
-		Aliases:        []string{"cc"},
-		Description:    "Shows a custom command specified by id or trigger, or lists them all",
-		ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
-		Arguments: []*commandsystem.ArgDef{
-			&commandsystem.ArgDef{Name: "ID", Type: commandsystem.ArgumentNumber},
-			&commandsystem.ArgDef{Name: "Trigger", Type: commandsystem.ArgumentString},
-		},
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			ccs, _, err := GetCommands(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.Guild.ID())
-			if err != nil {
-				return "Failed retrieving custom commands", err
+var cmdListCommands = &commands.YAGCommand{
+	CmdCategory:    commands.CategoryTool,
+	Name:           "CustomCommands",
+	Aliases:        []string{"cc"},
+	Description:    "Shows a custom command specified by id or trigger, or lists them all",
+	ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
+	},
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		ccs, _, err := GetCommands(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID())
+		if err != nil {
+			return "Failed retrieving custom commands", err
+		}
+
+		foundCCS, provided := FindCommands(ccs, data)
+		if len(foundCCS) < 1 {
+			list := StringCommands(ccs)
+			if provided {
+				return "No command by that name or id found, here is a list of them all:\n" + list, nil
+			} else {
+				return "No id or trigger provided, here is a list of all server commands:\n" + list, nil
 			}
+		}
 
-			foundCCS, provided := FindCommands(ccs, data)
-			if len(foundCCS) < 1 {
-				list := StringCommands(ccs)
-				if provided {
-					return "No command by that name or id found, here is a list of them all:\n" + list, nil
-				} else {
-					return "No id or trigger provided, here is a list of all server commands:\n" + list, nil
-				}
-			}
+		if len(foundCCS) > 1 {
+			return "More than 1 matched command\n" + StringCommands(foundCCS), nil
+		}
 
-			if len(foundCCS) > 1 {
-				return "More than 1 matched command\n" + StringCommands(foundCCS), nil
-			}
+		cc := foundCCS[0]
 
-			cc := foundCCS[0]
+		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, cc.Response), nil
 
-			return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, cc.Response), nil
-
-		},
 	},
 }
 
-func FindCommands(ccs []*CustomCommand, data *commandsystem.ExecData) (foundCCS []*CustomCommand, provided bool) {
+func FindCommands(ccs []*CustomCommand, data *dcmd.Data) (foundCCS []*CustomCommand, provided bool) {
 	foundCCS = make([]*CustomCommand, 0, len(ccs))
 
 	provided = true
-	if data.Args[0] != nil {
+	if data.Args[0].Value != nil {
 		// Find by ID
 		id := data.Args[0].Int()
 		for _, v := range ccs {
@@ -68,7 +66,7 @@ func FindCommands(ccs []*CustomCommand, data *commandsystem.ExecData) (foundCCS 
 				foundCCS = append(foundCCS, v)
 			}
 		}
-	} else if data.Args[1] != nil {
+	} else if data.Args[1].Value != nil {
 		// Find by name
 		name := data.Args[1].Str()
 		for _, v := range ccs {
@@ -191,10 +189,10 @@ func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Cli
 	tmplCtx.Redis = client
 	tmplCtx.Msg = m.Message
 
-	args := commandsystem.ReadArgs(m.Content)
+	args := dcmd.SplitArgs(m.Content)
 	argsStr := make([]string, len(args))
 	for k, v := range args {
-		argsStr[k] = v.Raw.Str
+		argsStr[k] = v.Str
 	}
 
 	tmplCtx.Data["Args"] = argsStr

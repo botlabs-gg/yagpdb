@@ -1,11 +1,8 @@
 package commands
 
 import (
-	"context"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/pkg/errors"
@@ -88,50 +85,55 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 
 	logrus.Info("Custom template is executing a command:", cmdLine)
 
-	var matchedCmd commandsystem.CommandHandler
+	fakeMsg := *m.Message
+	fakeMsg.Content = cmdLine
 
-	triggerData := &commandsystem.TriggerData{
-		Session: common.BotSession,
-		DState:  bot.State,
-		Message: m.Message,
-		Source:  commandsystem.SourcePrefix,
-	}
-
-	for _, command := range CommandSystem.Commands {
-		if !command.CheckMatch(cmdLine, triggerData) {
-			continue
-		}
-		matchedCmd = command
-		break
-	}
-
-	if matchedCmd == nil {
-		return "", errors.New("Couldn't find command")
-	}
-
-	cast, ok := matchedCmd.(*CustomCommand)
-	if !ok {
-		return "", errors.New("Unsopported command")
-	}
-
-	// Do not actually execute the command if it's a dry-run
-	if dryRun {
-		return "", nil
-	}
-
-	parsed, err := cast.ParseCommand(cmdLine, triggerData)
+	data, err := CommandSystem.FillData(common.BotSession, &fakeMsg)
 	if err != nil {
-		return "", err
+		return "", errors.WithMessage(err, "tmplExecCmd")
+	}
+	data.MsgStrippedPrefix = fakeMsg.Content
+
+	resp, err := CommandSystem.Root.Run(data)
+	if err != nil {
+		return "", errors.WithMessage(err, "tmplExecCmd, Run")
 	}
 
-	parsed.Source = triggerData.Source
-	parsed.Channel = ctx.CS
-	if ctx.CS == nil {
-		parsed.Channel = ctx.GS.Channel(true, ctx.GS.ID())
-	}
-	parsed.Guild = parsed.Channel.Guild
+	// for _, command := range CommandSystem.Commands {
+	// 	if !command.CheckMatch(cmdLine, triggerData) {
+	// 		continue
+	// 	}
+	// 	matchedCmd = command
+	// 	break
+	// }
 
-	resp, err := cast.Run(parsed.WithContext(context.WithValue(parsed.Context(), CtxKeyRedisClient, ctx.Redis)))
+	// if matchedCmd == nil {
+	// 	return "", errors.New("Couldn't find command")
+	// }
+
+	// cast, ok := matchedCmd.(*CustomCommand)
+	// if !ok {
+	// 	return "", errors.New("Unsopported command")
+	// }
+
+	// // Do not actually execute the command if it's a dry-run
+	// if dryRun {
+	// 	return "", nil
+	// }
+
+	// parsed, err := cast.ParseCommand(cmdLine, triggerData)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	// parsed.Source = triggerData.Source
+	// parsed.Channel = ctx.CS
+	// if ctx.CS == nil {
+	// 	parsed.Channel = ctx.GS.Channel(true, ctx.GS.ID())
+	// }
+	// parsed.Guild = parsed.Channel.Guild
+
+	// resp, err := cast.Run(parsed.WithContext(context.WithValue(parsed.Context(), CtxKeyRedisClient, ctx.Redis)))
 
 	switch v := resp.(type) {
 	case error:
@@ -142,5 +144,5 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 		return common.FallbackEmbed(v), nil
 	}
 
-	return "", err
+	return "", nil
 }

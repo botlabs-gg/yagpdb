@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/alfredxing/calc/compute"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
-	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -36,7 +36,7 @@ type PluginStatus interface {
 	Status(client *redis.Client) (string, string)
 }
 
-var generalCommands = []commandsystem.CommandHandler{
+var generalCommands = []*commands.YAGCommand{
 	cmdReverse,
 	cmdWeather,
 	cmdCalc,
@@ -52,300 +52,278 @@ var generalCommands = []commandsystem.CommandHandler{
 	cmdListRoles,
 }
 
-var cmdReverse = &commands.CustomCommand{
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:         "Reverse",
-		Aliases:      []string{"r", "rev"},
-		Description:  "Reverses the text given",
-		RunInDm:      true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgDef{
-			&commandsystem.ArgDef{Name: "What", Description: "To flip", Type: commandsystem.ArgumentString},
-		},
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			toFlip := data.Args[0].Str()
+var cmdReverse = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryFun,
+	Name:         "Reverse",
+	Aliases:      []string{"r", "rev"},
+	Description:  "Reverses the text given",
+	RunInDM:      true,
+	RequiredArgs: 1,
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "What", Type: dcmd.String},
+	},
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		toFlip := data.Args[0].Str()
 
-			out := ""
-			for _, r := range toFlip {
-				out = string(r) + out
-			}
+		out := ""
+		for _, r := range toFlip {
+			out = string(r) + out
+		}
 
-			return ":upside_down: " + out, nil
-		},
+		return ":upside_down: " + out, nil
 	},
 }
 
-var cmdWeather = &commands.CustomCommand{
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:         "Weather",
-		Aliases:      []string{"w"},
-		Description:  "Shows the weather somewhere (add ?m for metric: -w bergen?m)",
-		RunInDm:      true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgDef{
-			&commandsystem.ArgDef{Name: "Where", Description: "Where", Type: commandsystem.ArgumentString},
-		},
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			where := data.Args[0].Str()
+var cmdWeather = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryFun,
+	Name:         "Weather",
+	Aliases:      []string{"w"},
+	Description:  "Shows the weather somewhere (add ?m for metric: -w bergen?m)",
+	RunInDM:      true,
+	RequiredArgs: 1,
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "Where", Type: dcmd.String},
+	},
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		where := data.Args[0].Str()
 
-			req, err := http.NewRequest("GET", "http://wttr.in/"+where, nil)
+		req, err := http.NewRequest("GET", "http://wttr.in/"+where, nil)
+		if err != nil {
+			return err, err
+		}
+
+		req.Header.Set("User-Agent", "curl/7.49.1")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return err, err
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err, err
+		}
+
+		// remove escape sequences
+		unescaped := vtclean.Clean(string(body), false)
+
+		split := strings.Split(string(unescaped), "\n")
+
+		out := "```\n"
+		for i := 0; i < 7; i++ {
+			if i >= len(split) {
+				break
+			}
+			out += strings.TrimRight(split[i], " ") + "\n"
+		}
+		out += "\n```"
+
+		return out, nil
+	},
+}
+
+var cmdCalc = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryTool,
+	Name:         "Calc",
+	Aliases:      []string{"c", "calculate"},
+	Description:  "Calculator 2+2=5",
+	RunInDM:      true,
+	RequiredArgs: 1,
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "Expression", Type: dcmd.String},
+	},
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		computeLock.Lock()
+		defer computeLock.Unlock()
+		result, err := compute.Evaluate(data.Args[0].Str())
+		if err != nil {
+			return err, err
+		}
+
+		return fmt.Sprintf("Result: `%f`", result), nil
+	},
+}
+
+var cmdTopic = &commands.YAGCommand{
+	Cooldown:    5,
+	CmdCategory: commands.CategoryFun,
+	Name:        "Topic",
+	Description: "Generates a chat topic",
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
+		if err != nil {
+			return err, err
+		}
+
+		topic := doc.Find("#random").Text()
+		return topic, nil
+	},
+}
+
+var cmdCatFact = &commands.YAGCommand{
+	CmdCategory: commands.CategoryFun,
+	Name:        "CatFact",
+	Aliases:     []string{"cf", "cat", "catfacts"},
+	Description: "Cat Facts",
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		cf := Catfacts[rand.Intn(len(Catfacts))]
+		return cf, nil
+	},
+}
+
+var cmdAdvice = &commands.YAGCommand{
+	Cooldown:    5,
+	CmdCategory: commands.CategoryFun,
+	Name:        "Advice",
+	Description: "Get advice",
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "What", Type: dcmd.String},
+	},
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		random := true
+		addr := "http://api.adviceslip.com/advice"
+		if data.Args[0].Str() != "" {
+			random = false
+			addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
+		}
+
+		resp, err := http.Get(addr)
+		if err != nil {
+			return err, err
+		}
+
+		var decoded interface{}
+
+		if random {
+			decoded = &RandomAdviceResp{}
+		} else {
+			decoded = &SearchAdviceResp{}
+		}
+
+		err = json.NewDecoder(resp.Body).Decode(&decoded)
+		if err != nil {
+			return err, err
+		}
+
+		advice := "No advice found :'("
+
+		if random {
+			slip := decoded.(*RandomAdviceResp).Slip
+			if slip != nil {
+				advice = slip.Advice
+			}
+		} else {
+			cast := decoded.(*SearchAdviceResp)
+			if len(cast.Slips) > 0 {
+				advice = cast.Slips[0].Advice
+			}
+		}
+
+		return advice, nil
+	},
+}
+
+var cmdPing = &commands.YAGCommand{
+	CmdCategory: commands.CategoryTool,
+	Name:        "Ping",
+	Description: "I prefer tabletennis",
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
+	},
+}
+
+var cmdThrow = &commands.YAGCommand{
+	CmdCategory: commands.CategoryFun,
+	Name:        "Throw",
+	Description: "Cause you are a rebel",
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Target", Type: dcmd.User},
+	},
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		thing := common.Things[rand.Intn(len(common.Things))]
+
+		target := "a random person nearby"
+		if data.Args[0].Str() != "" {
+			target = data.Args[0].Value.(*discordgo.User).Username
+		}
+
+		return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
+	},
+}
+
+var cmdRoll = &commands.YAGCommand{
+	CmdCategory: commands.CategoryFun,
+	Name:        "Roll",
+	Description: "Roll dices, specify nothing for 6 sides, specify a number for max sides, or rpg dice syntax",
+	Arguments: []*dcmd.ArgDef{
+		{Name: "RPG Dice", Type: dcmd.String},
+		{Name: "Sides", Default: 0, Type: dcmd.Int},
+	},
+	ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		if data.Args[0].Value != nil {
+			// Special dice syntax if string
+			r, _, err := dice.Roll(data.Args[0].Str())
 			if err != nil {
-				return err, err
+				return err.Error(), nil
 			}
+			return r.String(), nil
+		}
 
-			req.Header.Set("User-Agent", "curl/7.49.1")
+		// normal, n sides dice rolling
+		sides := data.Args[1].Int()
+		if sides < 1 {
+			sides = 6
+		}
 
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				return err, err
-			}
-
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return err, err
-			}
-
-			// remove escape sequences
-			unescaped := vtclean.Clean(string(body), false)
-
-			split := strings.Split(string(unescaped), "\n")
-
-			out := "```\n"
-			for i := 0; i < 7; i++ {
-				if i >= len(split) {
-					break
-				}
-				out += strings.TrimRight(split[i], " ") + "\n"
-			}
-			out += "\n```"
-
-			return out, nil
-		},
+		result := rand.Intn(sides)
+		return fmt.Sprintf(":game_die: %d (1 - %d)", result+1, sides), nil
 	},
 }
 
-var cmdCalc = &commands.CustomCommand{
-	Category: commands.CategoryTool,
-	Command: &commandsystem.Command{
-		Name:         "Calc",
-		Aliases:      []string{"c", "calculate"},
-		Description:  "Calculator 2+2=5",
-		RunInDm:      true,
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgDef{
-			&commandsystem.ArgDef{Name: "Expression", Description: "What to calculate", Type: commandsystem.ArgumentString},
-		},
-
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			computeLock.Lock()
-			defer computeLock.Unlock()
-			result, err := compute.Evaluate(data.Args[0].Str())
-			if err != nil {
-				return err, err
-			}
-
-			return fmt.Sprintf("Result: `%f`", result), nil
-		},
+var cmdCustomEmbed = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryFun,
+	Name:         "CustomEmbed",
+	Aliases:      []string{"ce"},
+	Description:  "Creates an embed from what you give it in json form: https://discordapp.com/developers/docs/resources/channel#embed-object",
+	RequiredArgs: 1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Json", Type: dcmd.String},
+	},
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		var parsed *discordgo.MessageEmbed
+		err := json.Unmarshal([]byte(data.Args[0].Str()), &parsed)
+		if err != nil {
+			return "Failed parsing json: " + err.Error(), err
+		}
+		return parsed, nil
 	},
 }
 
-var cmdTopic = &commands.CustomCommand{
-	Cooldown: 5,
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:        "Topic",
-		Description: "Generates a chat topic",
-
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
-			if err != nil {
-				return err, err
-			}
-
-			topic := doc.Find("#random").Text()
-			return topic, nil
-		},
+var cmdCurrentTime = &commands.YAGCommand{
+	CmdCategory:    commands.CategoryTool,
+	Name:           "CurrentTime",
+	Aliases:        []string{"ctime", "gettime"},
+	Description:    "Shows current time in different timezones",
+	ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Zone", Type: dcmd.String},
+		{Name: "Offset", Type: dcmd.Int},
 	},
+	RunFunc: cmdFuncCurrentTime,
 }
 
-var cmdCatFact = &commands.CustomCommand{
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:        "CatFact",
-		Aliases:     []string{"cf", "cat", "catfacts"},
-		Description: "Cat Facts",
-
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			cf := Catfacts[rand.Intn(len(Catfacts))]
-			return cf, nil
-		},
-	},
-}
-
-var cmdAdvice = &commands.CustomCommand{
-	Cooldown: 5,
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:        "Advice",
-		Description: "Get advice",
-		Arguments: []*commandsystem.ArgDef{
-			&commandsystem.ArgDef{Name: "What", Description: "What to get advice on", Type: commandsystem.ArgumentString},
-		},
-
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			random := true
-			addr := "http://api.adviceslip.com/advice"
-			if data.Args[0] != nil {
-				random = false
-				addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
-			}
-
-			resp, err := http.Get(addr)
-			if err != nil {
-				return err, err
-			}
-
-			var decoded interface{}
-
-			if random {
-				decoded = &RandomAdviceResp{}
-			} else {
-				decoded = &SearchAdviceResp{}
-			}
-
-			err = json.NewDecoder(resp.Body).Decode(&decoded)
-			if err != nil {
-				return err, err
-			}
-
-			advice := "No advice found :'("
-
-			if random {
-				slip := decoded.(*RandomAdviceResp).Slip
-				if slip != nil {
-					advice = slip.Advice
-				}
-			} else {
-				cast := decoded.(*SearchAdviceResp)
-				if len(cast.Slips) > 0 {
-					advice = cast.Slips[0].Advice
-				}
-			}
-
-			return advice, nil
-		},
-	},
-}
-
-var cmdPing = &commands.CustomCommand{
-	Category: commands.CategoryTool,
-	Command: &commandsystem.Command{
-		Name:        "Ping",
-		Description: "I prefer tabletennis",
-
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
-		},
-	},
-}
-
-var cmdThrow = &commands.CustomCommand{
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:        "Throw",
-		Description: "Cause you are a rebel",
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "Target", Type: commandsystem.ArgumentUser},
-		},
-
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			thing := common.Things[rand.Intn(len(common.Things))]
-
-			target := "a random person nearby"
-			if data.Args[0] != nil {
-				target = data.Args[0].DiscordUser().Username
-			}
-
-			return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
-		},
-	},
-}
-
-var cmdRoll = &commands.CustomCommand{
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:        "Roll",
-		Description: "Roll dices, specify nothing for 6 sides, specify a number for max sides, or rpg dice syntax",
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "Dice Desc", Type: commandsystem.ArgumentString},
-			{Name: "Sides", Type: commandsystem.ArgumentNumber},
-		},
-		ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			if data.Args[0] != nil {
-				// Special dice syntax if string
-				r, _, err := dice.Roll(data.Args[0].Str())
-				if err != nil {
-					return err.Error(), nil
-				}
-				return r.String(), nil
-			}
-
-			// normal, n sides dice rolling
-			sides := data.SafeArgInt(1)
-			if sides < 1 {
-				sides = 6
-			}
-
-			result := rand.Intn(sides)
-			return fmt.Sprintf(":game_die: %d (1 - %d)", result+1, sides), nil
-		},
-	},
-}
-
-var cmdCustomEmbed = &commands.CustomCommand{
-	Category: commands.CategoryFun,
-	Command: &commandsystem.Command{
-		Name:         "CustomEmbed",
-		Aliases:      []string{"ce"},
-		Description:  "Creates an embed from what you give it in json form: https://discordapp.com/developers/docs/resources/channel#embed-object",
-		RequiredArgs: 1,
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "Json", Type: commandsystem.ArgumentString},
-		},
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			var parsed *discordgo.MessageEmbed
-			err := json.Unmarshal([]byte(data.SafeArgString(0)), &parsed)
-			if err != nil {
-				return "Failed parsing json: " + err.Error(), err
-			}
-			return parsed, nil
-		},
-	},
-}
-
-var cmdCurrentTime = &commands.CustomCommand{
-	Category: commands.CategoryTool,
-	Command: &commandsystem.Command{
-		Name:           "CurrentTime",
-		Aliases:        []string{"ctime", "gettime"},
-		Description:    "Shows current time in different timezones",
-		ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "Zone", Type: commandsystem.ArgumentString},
-			{Name: "Offset", Type: commandsystem.ArgumentNumber},
-		},
-		Run: cmdFuncCurrentTime,
-	},
-}
-
-func cmdFuncCurrentTime(data *commandsystem.ExecData) (interface{}, error) {
+func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
 	const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
 
 	now := time.Now()
-	if data.Args[0] != nil {
+	if data.Args[0].Value != nil {
 		tzName := data.Args[0].Str()
 		names, err := timezone.GetTimezones(strings.ToUpper(data.Args[0].Str()))
 		if err == nil && len(names) > 0 {
@@ -361,7 +339,7 @@ func cmdFuncCurrentTime(data *commandsystem.ExecData) (interface{}, error) {
 			}
 		}
 		return now.In(location).Format(format), nil
-	} else if data.Args[1] != nil {
+	} else if data.Args[1].Value != nil {
 		location := time.FixedZone("", data.Args[1].Int()*60*60)
 		return now.In(location).Format(format), nil
 	}
@@ -370,32 +348,30 @@ func cmdFuncCurrentTime(data *commandsystem.ExecData) (interface{}, error) {
 	return now.Format(format), nil
 }
 
-var cmdMentionRole = &commands.CustomCommand{
-	Category: commands.CategoryTool,
-	Command: &commandsystem.Command{
-		Name:            "MentionRole",
-		Aliases:         []string{"mrole"},
-		Description:     "Sets a role to mentionable, mentions the role, and then sets it back",
-		LongDescription: "Requires the manage roles permission and the bot being above the mentioned role",
-		RequiredArgs:    1,
-		Arguments: []*commandsystem.ArgDef{
-			{Name: "Role", Type: commandsystem.ArgumentString},
-		},
-		Run: cmdFuncMentionRole,
+var cmdMentionRole = &commands.YAGCommand{
+	CmdCategory:     commands.CategoryTool,
+	Name:            "MentionRole",
+	Aliases:         []string{"mrole"},
+	Description:     "Sets a role to mentionable, mentions the role, and then sets it back",
+	LongDescription: "Requires the manage roles permission and the bot being above the mentioned role",
+	RequiredArgs:    1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Role", Type: dcmd.String},
 	},
+	RunFunc: cmdFuncMentionRole,
 }
 
-func cmdFuncMentionRole(data *commandsystem.ExecData) (interface{}, error) {
-	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, data.Message.Author.ID, data.Channel.ID()); err != nil {
+func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
+	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, data.Msg.Author.ID, data.CS.ID()); err != nil {
 		return "Failed checking perms", err
 	} else if !ok {
 		return "You need manage server perms to use this commmand", nil
 	}
 
 	var role *discordgo.Role
-	data.Guild.RLock()
-	defer data.Guild.RUnlock()
-	for _, r := range data.Guild.Guild.Roles {
+	data.GS.RLock()
+	defer data.GS.RUnlock()
+	for _, r := range data.GS.Guild.Roles {
 		if strings.EqualFold(r.Name, data.Args[0].Str()) {
 			role = r
 			break
@@ -406,7 +382,7 @@ func cmdFuncMentionRole(data *commandsystem.ExecData) (interface{}, error) {
 		return "No role with the name `" + data.Args[0].Str() + "` found", nil
 	}
 
-	_, err := common.BotSession.GuildRoleEdit(data.Guild.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
+	_, err := common.BotSession.GuildRoleEdit(data.GS.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
 	if err != nil {
 		if _, dErr := common.DiscordError(err); dErr != "" {
 			return "Failed updating role, discord responded with: " + dErr, err
@@ -415,33 +391,31 @@ func cmdFuncMentionRole(data *commandsystem.ExecData) (interface{}, error) {
 		}
 	}
 
-	_, err = common.BotSession.ChannelMessageSend(data.Channel.ID(), "<@&"+role.ID+">")
+	_, err = common.BotSession.ChannelMessageSend(data.CS.ID(), "<@&"+role.ID+">")
 
-	common.BotSession.GuildRoleEdit(data.Guild.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
+	common.BotSession.GuildRoleEdit(data.GS.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
 	return "", err
 }
 
-var cmdListRoles = &commands.CustomCommand{
-	Category: commands.CategoryTool,
-	Command: &commandsystem.Command{
-		Name:        "ListRoles",
-		Description: "List roles and their id's, and some other stuff on the server",
+var cmdListRoles = &commands.YAGCommand{
+	CmdCategory: commands.CategoryTool,
+	Name:        "ListRoles",
+	Description: "List roles and their id's, and some other stuff on the server",
 
-		Run: func(data *commandsystem.ExecData) (interface{}, error) {
-			out := ""
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		out := ""
 
-			data.Guild.Lock()
-			defer data.Guild.Unlock()
+		data.GS.Lock()
+		defer data.GS.Unlock()
 
-			sort.Sort(dutil.Roles(data.Guild.Guild.Roles))
+		sort.Sort(dutil.Roles(data.GS.Guild.Roles))
 
-			for _, r := range data.Guild.Guild.Roles {
-				me := r.Permissions&discordgo.PermissionAdministrator != 0 || r.Permissions&discordgo.PermissionMentionEveryone != 0
-				out += fmt.Sprintf("`%-25s: %-19s #%-6x  ME:%5t`\n", r.Name, r.ID, r.Color, me)
-			}
+		for _, r := range data.GS.Guild.Roles {
+			me := r.Permissions&discordgo.PermissionAdministrator != 0 || r.Permissions&discordgo.PermissionMentionEveryone != 0
+			out += fmt.Sprintf("`%-25s: %-19s #%-6x  ME:%5t`\n", r.Name, r.ID, r.Color, me)
+		}
 
-			return out, nil
-		},
+		return out, nil
 	},
 }
 
