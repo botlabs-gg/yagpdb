@@ -48,7 +48,7 @@ func GetMembers(guildID string, members ...string) (m []*discordgo.Member, err e
 	query := url.Values{"users": members}
 	encoded := query.Encode()
 
-	err = get(guildID+"/botmember?"+encoded, &m)
+	err = get(guildID+"/members?"+encoded, &m)
 	return
 }
 

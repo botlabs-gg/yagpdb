@@ -22,6 +22,7 @@ func StartServer() {
 
 	muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
 	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
+	muxer.HandleFunc(pat.Get("/:guild/members"), HandleGetMembers)
 	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
 	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
