@@ -138,7 +138,7 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 		return err
 	}
 
-	entries, err := DetailedLeaderboardEntries(top)
+	entries, err := DetailedLeaderboardEntries(activeGuild.ID, top)
 	if err != nil {
 		return err
 	}

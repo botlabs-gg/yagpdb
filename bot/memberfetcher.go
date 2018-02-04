@@ -31,6 +31,26 @@ func GetMember(guildID, userID string) (*discordgo.Member, error) {
 	return result.Member, result.Err
 }
 
+func GetMembers(guildID string, userIDs ...string) ([]*discordgo.Member, error) {
+	resultChan := make(chan *discordgo.Member)
+	for _, v := range userIDs {
+		go func(id string) {
+			m, _ := GetMember(guildID, v)
+			resultChan <- m
+		}(v)
+	}
+
+	result := make([]*discordgo.Member, 0, len(userIDs))
+	for i := 0; i < len(userIDs); i++ {
+		m := <-resultChan
+		if m != nil {
+			result = append(result, m)
+		}
+	}
+
+	return result, nil
+}
+
 // memberFetcher handles a per guild queue for fetching members
 // This is probably overkill as the root cause for the flood of member requests (state being flushed upon guilds becoming unavailble) was fixed
 // But it's here, for better or for worse

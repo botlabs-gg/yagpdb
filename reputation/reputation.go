@@ -9,6 +9,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -313,57 +315,98 @@ type LeaderboardEntry struct {
 	Avatar   string `json:"avatar"`
 }
 
-func DetailedLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
-	if len(ranks) < 1 {
-		return []*LeaderboardEntry{}, nil
+func DetailedLeaderboardEntries(guildID string, ranks []*RankEntry) ([]*LeaderboardEntry, error) {
+	var members []*discordgo.Member
+	var err error
+
+	compiledIDs := make([]string, len(ranks))
+	for i := 0; i < len(ranks); i++ {
+		compiledIDs[i] = strconv.FormatInt(ranks[i].UserID, 10)
 	}
 
-	query := "SELECT id,username,bot,avatar FROM d_users WHERE id in ("
-	args := make([]interface{}, len(ranks))
-
-	for i, v := range ranks {
-		if i != 0 {
-			query += ","
-		}
-
-		args[i] = v.UserID
-		query += "$" + strconv.Itoa(i+1)
-	}
-	query += ")"
-
-	result := make([]*LeaderboardEntry, len(ranks))
-	for i, v := range ranks {
-		result[i] = &LeaderboardEntry{
-			RankEntry: v,
-		}
+	if bot.Running {
+		members, err = bot.GetMembers(guildID, compiledIDs...)
+	} else {
+		members, err = botrest.GetMembers(guildID, compiledIDs...)
 	}
 
-	rows, err := common.DSQLStateDB.Query(query, args...)
 	if err != nil {
-		return nil, errors.WithMessage(err, "ToLeaderboardEntries")
+		return nil, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int64
-		var entry LeaderboardEntry
-		err = rows.Scan(&id, &entry.Username, &entry.Bot, &entry.Avatar)
-		if err != nil {
-			logrus.WithError(err).Error("Failed scanning row")
-			continue
+
+	var resultEntries = make([]*LeaderboardEntry, len(ranks))
+	for i := 0; i < len(ranks); i++ {
+		lEntry := &LeaderboardEntry{
+			RankEntry: ranks[i],
+			Username:  compiledIDs[i],
 		}
 
-		for i, v := range result {
-			if v.UserID == id {
-				entry.RankEntry = v.RankEntry
-				result[i] = &entry
-				if entry.Avatar != "" {
-					result[i].Avatar = discordgo.EndpointUserAvatar(strconv.FormatInt(id, 10), entry.Avatar)
-				} else {
-					result[i].Avatar = "/static/dist/img/unknown-user.png"
-				}
+		for _, m := range members {
+			if m.User.ID == compiledIDs[i] {
+				lEntry.Username = m.User.Username + m.User.Discriminator
+				lEntry.Avatar = m.User.Avatar
+				lEntry.Bot = m.User.Bot
+				break
 			}
 		}
+
+		resultEntries[i] = lEntry
 	}
 
-	return result, nil
+	return resultEntries, nil
 }
+
+// func DetailedLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
+// 	if len(ranks) < 1 {
+// 		return []*LeaderboardEntry{}, nil
+// 	}
+
+// 	query := "SELECT id,username,bot,avatar FROM d_users WHERE id in ("
+// 	args := make([]interface{}, len(ranks))
+
+// 	for i, v := range ranks {
+// 		if i != 0 {
+// 			query += ","
+// 		}
+
+// 		args[i] = v.UserID
+// 		query += "$" + strconv.Itoa(i+1)
+// 	}
+// 	query += ")"
+
+// 	result := make([]*LeaderboardEntry, len(ranks))
+// 	for i, v := range ranks {
+// 		result[i] = &LeaderboardEntry{
+// 			RankEntry: v,
+// 		}
+// 	}
+
+// 	rows, err := common.DSQLStateDB.Query(query, args...)
+// 	if err != nil {
+// 		return nil, errors.WithMessage(err, "ToLeaderboardEntries")
+// 	}
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 		var id int64
+// 		var entry LeaderboardEntry
+// 		err = rows.Scan(&id, &entry.Username, &entry.Bot, &entry.Avatar)
+// 		if err != nil {
+// 			logrus.WithError(err).Error("Failed scanning row")
+// 			continue
+// 		}
+
+// 		for i, v := range result {
+// 			if v.UserID == id {
+// 				entry.RankEntry = v.RankEntry
+// 				result[i] = &entry
+// 				if entry.Avatar != "" {
+// 					result[i].Avatar = discordgo.EndpointUserAvatar(strconv.FormatInt(id, 10), entry.Avatar)
+// 				} else {
+// 					result[i].Avatar = "/static/dist/img/unknown-user.png"
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return result, nil
+// }

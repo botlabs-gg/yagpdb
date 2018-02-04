@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
@@ -40,6 +41,14 @@ func GetGuild(guildID string) (g *discordgo.Guild, err error) {
 
 func GetBotMember(guildID string) (m *discordgo.Member, err error) {
 	err = get(guildID+"/botmember", &m)
+	return
+}
+
+func GetMembers(guildID string, members ...string) (m []*discordgo.Member, err error) {
+	query := url.Values{"users": members}
+	encoded := query.Encode()
+
+	err = get(guildID+"/botmember?"+encoded, &m)
 	return
 }
 

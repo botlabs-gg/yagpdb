@@ -189,7 +189,7 @@ var cmds = []*commands.YAGCommand{
 				return "Something went wrong... i may hae had one too many alcohol", err
 			}
 
-			detailed, err := DetailedLeaderboardEntries(entries)
+			detailed, err := DetailedLeaderboardEntries(parsed.GS.ID(), entries)
 			if err != nil {
 				return "Failed filling in the detalis of the leaderboard entries", err
 			}

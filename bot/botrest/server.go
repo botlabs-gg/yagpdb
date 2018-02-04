@@ -109,6 +109,30 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 	ServeJson(w, r, member)
 }
 
+func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
+	gId := pat.Param(r, "guild")
+	uIDs, ok := r.URL.Query()["users"]
+	if !ok || len(uIDs) < 1 {
+		ServerError(w, r, errors.New("No id's provided"))
+		return
+	}
+
+	if len(uIDs) > 100 {
+		ServerError(w, r, errors.New("Too many ids provided"))
+		return
+	}
+
+	guild := bot.State.Guild(true, gId)
+	if guild == nil {
+		ServerError(w, r, errors.New("Guild not found"))
+		return
+	}
+
+	members, _ := GetMembers(gId, uIDs...)
+
+	ServeJson(w, r, members)
+}
+
 func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 	gId := pat.Param(r, "guild")
 	cId := pat.Param(r, "channel")
