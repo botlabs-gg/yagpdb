@@ -106,18 +106,6 @@ func IsAcceptingRequests() bool {
 }
 
 func runServers(mainMuxer *goji.Mux) {
-	// launch the redir server
-	go func() {
-		unsafeHandler := &http.Server{
-			Addr:        ListenAddressHTTP,
-			Handler:     http.HandlerFunc(httpsRedirHandler),
-			IdleTimeout: time.Minute,
-		}
-		err := unsafeHandler.ListenAndServe()
-		if err != nil {
-			log.Error("Failed http ListenAndServe:", err)
-		}
-	}()
 
 	cache := autocert.DirCache("cert")
 
@@ -127,6 +115,20 @@ func runServers(mainMuxer *goji.Mux) {
 		Email:      common.Conf.Email,
 		Cache:      cache,
 	}
+
+	// launch the redir server
+	go func() {
+		unsafeHandler := &http.Server{
+			Addr:        ListenAddressHTTP,
+			Handler:     certManager.HTTPHandler(http.HandlerFunc(httpsRedirHandler)),
+			IdleTimeout: time.Minute,
+		}
+
+		err := unsafeHandler.ListenAndServe()
+		if err != nil {
+			log.Error("Failed http ListenAndServe:", err)
+		}
+	}()
 
 	tlsServer := &http.Server{
 		Addr:        ListenAddressHTTPS,
