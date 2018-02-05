@@ -266,6 +266,4 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 
 		client.Cmd("ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id"))
 	}
-
-	// TODO
 }
