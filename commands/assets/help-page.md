@@ -6,7 +6,7 @@ invite | inv, i | N/A | Response with the bot website link for invitation.
 info | N/A | N/A | Response with bot information.
 
 ### Tools:
-Command | Aliases | Requiered Args | Optional Args | Description
+Command | Aliases | Required Args | Optional Args | Description
 ------- | ------- | -------------- | ------------- | -----------
 calc | c, calculate | (what to calculate) | N/A | Calculator 2+2=5
 ping | N/A | N/A | N/A | Response with pong and pingtime.
@@ -20,9 +20,10 @@ remindme | remind | (time) (message) | N/A | Schedules a reminder. Example: `rem
 reminders | N/A | N/A | N/A | List of your active reminders with an ID.
 creminders | N/A | N/A | N/A | Lists reminders only in the current channel with an ID. Only members with `manage server` permissions can use this command.
 delreminder | rmreminder | (ID) | N/A | Deletes the reminder with the given ID.
+mentionrole | N/A | role-name | N/A | Sets a role to mentionable, mentions the role, then sets it back to not mentionable.
 
 ### Moderation:
-Command | Aliases | Requiered Args | Optional Args | Description
+Command | Aliases | Required Args | Optional Args | Description
 ------- | ------- | -------------- | ------------- | -----------
 ban | N/A | (username) | (reason) | Bans given member.
 kick | N/A | (username) | (reason) | Kicks given member.
@@ -38,7 +39,7 @@ delwarning | dw | (ID) | N/A | Deletes the warning with the given ID.
 clearwarnings | clw | (username) | N/A | Clears all warnings from given member.
 
 ### Misc/Fun:
-Command | Aliases | Requiered Args | Optional Args | Description
+Command | Aliases | Required Args | Optional Args | Description
 ------- | ------- | -------------- | ------------- | -----------
 reverse | r, rev | (text) | N/A | Reverse the text given.
 weather | w | (location) | N/A | Show the weather for the given location. Add ?m after the location for metric. Example: `w bergen?m`.
@@ -54,9 +55,10 @@ takerep | -, tr, trep | (username) | (count) | Takes away given number of rep fr
 giverep | +, gr, grep | (username) | (count) | Give given number of rep to given member. Default number is 1.
 rep | N/A | N/A | (username) | Shows your or the given member current rep and rank.
 toprep | N/A | N/A | (offset) | Shows top 15 rep members on the server.
-sentiment | sent | N/A | (text) | Does sentiment analysys on the given text or your last 5 messages longer than 3 words.
+sentiment | sent | N/A | (text) | Does sentiment analysis on the given text or your last 5 messages longer than 3 words.
 8ball | N/A | (question) | N/A | Wisdom.
 soundboard | sb | N/A | (soundname) | Play or list soundboard sounds.
+WouYouRather | wyr | N/A | dark questions? | Somewhat NSFW(text): Get presented with 2 choices, add the 'dark' argument for dark questions
 
 ### Debug:
 Command | Aliases | Description

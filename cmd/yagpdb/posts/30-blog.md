@@ -18,7 +18,7 @@ After all this i will start on additions and new features again.
 
 ### Other things:
 
- - [Amiroslo#8803 made a complete video tutorial on how to use the bot](https://youtu.be/zG8PekpD-kk)
+ - KingCobra#8803 made a complete video tutorial on how to use the bot](https://youtu.be/zG8PekpD-kk)
  - The bot is now nearing 9k servers!
  - I changed host to a cheaper one, they also experienced a couple networking issues right after i switched which may either be incompetence on their part or bad luck on my part, wether i will switch to another depends on wether the issues persist or not
 

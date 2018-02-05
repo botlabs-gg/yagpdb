@@ -56,9 +56,9 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 | `exec command command_args` | Executes a command in the users context, max 3 commands can be executed per template |
 | `sendDM "message_here"` | Sends the user a DM, only 1 DM can be sent per template |
 | `mentionEveryone` | Mentions everyone |
-| `MentionHere` | Mentions here |
-| `MentionRoleName "rolename"` | Mentions the first role found with the provided name (case insensitive) |
-| `MentionRoleID roleid` | Mentions the role with the provided ID (use the listroles command for a list of role) |
+| `mentionHere` | Mentions here |
+| `mentionRoleName "rolename"` | Mentions the first role found with the provided name (case insensitive) |
+| `mentionRoleID roleid` | Mentions the role with the provided ID (use the listroles command for a list of role) |
 | `hasRoleName "rolename"` | Returns true if the user has the role with the specified name (case insensitive) |
 | `hasRoleID roleid` | Returns true if the user has the role with the specified ID (use the listroles command for a list of role) |
 
@@ -85,9 +85,7 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 * `{{"{{"}}$d := randInt 10{{"}}"}}` Store the random int into variable $d 
 
 ### How to get a role ID
-1. Make sure the role is mentionable 
-2. @(rolename)
-3. Insert \ before the @
-4. Click enter
+
+Use the `listroles` command. 
 
 

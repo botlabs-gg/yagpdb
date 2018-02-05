@@ -52,7 +52,3 @@ The bot is written in go, and the web interface is using plain HTML with bootstr
 ### Helping out other people in discord
 
 -TODO-
-
-### Buying the ad space
-
--TODO-

@@ -3,7 +3,7 @@ Automod allows you to set up some automated moderation on your server, like bann
 The different rules you can set up at the moment:
 
  - **Slowmode**: Users are allowed to send max `x` messages in `y` seconds
- - **Mass mention**: Messages that contains more than `x` unique mentions (everyone and here mentions dosen't count)
+ - **Mass mention**: Messages that contains more than `x` unique mentions (everyone and here mentions doesn't count)
  - **Server invites**: Messages that contains invites to other servers (invites to the same server is allowed)
  - **Links**: Restrict sending of all links
  - **Ban websites**: Restrict specific websites

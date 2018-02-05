@@ -29,6 +29,6 @@ To set up a role menu, the related roles has to be added to a group, then you in
 
 After which you will be taken through the setup process.
 
-The bot requires manage messages perms and send messages perms in the channel to do this, atleast for the setup, after of which it will only need read messages perms.
+The bot requires manage messages perms and send messages perms in the channel to do this, at least for the setup, after of which it will only need read messages perms.
 
 The group mode and other restrictions still apply to the roles in the role menu.
