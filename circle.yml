@@ -18,6 +18,8 @@ dependencies:
   override:
     - go get github.com/jonas747/discordgo
     - cd ${GOPATH}/src/github.com/jonas747/discordgo && git checkout yagpdb && cd -
+    - go get github.com/jonas747/dcmd
+    - cd ${GOPATH}/src/github.com/jonas747/dcmd && git checkout dgofork && cd -
     - go get -t -d -v ./...
     - cd ${GOPATH}/src/github.com/jonas747/dutil && git checkout dgofork && cd -
     - cd ${GOPATH}/src/github.com/jonas747/dshardmanager && git checkout dgofork && cd -
