@@ -218,7 +218,7 @@ func (yc *YAGCommand) SendResponse(cmdData *dcmd.Data, resp interface{}, err err
 	if resp == nil && err != nil {
 		replies, errR = dcmd.SendResponseInterface(cmdData, fmt.Sprintf("%q command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err), true)
 	} else if resp != nil {
-		replies, errR = dcmd.SendResponseInterface(cmdData, resp, false)
+		replies, errR = dcmd.SendResponseInterface(cmdData, resp, true)
 	}
 
 	return
