@@ -207,7 +207,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		logger.WithError(err).Error("Failed creating command execution log")
 	}
 
-	return replies, err
+	return nil, nil
 }
 
 func (yc *YAGCommand) SendResponse(cmdData *dcmd.Data, resp interface{}, err error) (replies []*discordgo.Message, errR error) {
