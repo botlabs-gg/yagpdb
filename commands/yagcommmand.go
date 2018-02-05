@@ -159,9 +159,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	resp, autoDel := yc.checkCanExecuteCommand(data, client, cState)
 	if resp != "" {
 		m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
-		if m != nil {
-			return []*discordgo.Message{m}, err
-		}
+		go yc.deleteResponse([]*discordgo.Message{m})
 		return nil, err
 	}
 
