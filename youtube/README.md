@@ -53,6 +53,11 @@ Redis keys:
 key is the channel name
 score is unix time in seconds when it was last checked
 
+`youtube_registered_websub_channels` - sorted set
+
+key is the channel name
+score is unix time in seconds when it expires
+
 At the start of a poll, it uses zrange/zrevrange to grab an amount of entries to process and if they do get processed it updates the score to the current unix time.
 
 

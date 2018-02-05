@@ -16,19 +16,23 @@ import (
 )
 
 const (
-	MaxChannelsPerPoll = 300 // Can probably be safely increased to 1000 when caches are hot
-	PollInterval       = time.Second * 100
+	MaxChannelsPerPoll  = 20
+	PollInterval        = time.Second * 10
+	WebSubCheckInterval = time.Second * 10
 	// PollInterval = time.Second * 5 // <- used for debug purposes
 )
 
 func (p *Plugin) StartFeed() {
 	p.Stop = make(chan *sync.WaitGroup)
+	go p.runWebsubChecker()
 	p.runFeed()
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 
 	if p.Stop != nil {
+		wg.Add(1)
+		p.Stop <- wg
 		p.Stop <- wg
 	} else {
 		wg.Done()
@@ -67,6 +71,75 @@ func (p *Plugin) runFeed() {
 				p.Entry.WithError(err).Error("Failed checking youtube channels")
 			}
 			p.Entry.Info("Took", time.Since(now), "to check youtube feeds")
+		}
+	}
+}
+
+// keeps the subscriptions up to date by updating the ones soon to be expiring
+func (p *Plugin) runWebsubChecker() {
+	redisClient := common.MustGetRedisClient()
+
+	p.syncWebSubs(redisClient)
+
+	websubTicker := time.NewTicker(WebSubCheckInterval)
+	for {
+		select {
+		case wg := <-p.Stop:
+			wg.Done()
+			return
+		case <-websubTicker.C:
+			p.checkExpiringWebsubs(redisClient)
+		}
+	}
+}
+
+func (p *Plugin) checkExpiringWebsubs(client *redis.Client) {
+	err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
+	if err != nil {
+		p.Logger().WithError(err).Error("Failed locking channels lock")
+		return
+	}
+	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+
+	maxScore := time.Now().Add(WebSubCheckInterval).Unix()
+	expiring, err := client.Cmd("ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore).List()
+	if err != nil {
+		p.Logger().WithError(err).Error("Failed checking websubs")
+		return
+	}
+
+	for _, v := range expiring {
+		err := p.WebSubSubscribe(v)
+		if err != nil {
+			p.Logger().WithError(err).Error("Failed subscribing to channel", v)
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+func (p *Plugin) syncWebSubs(client *redis.Client) {
+	err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5000)
+	if err != nil {
+		p.Logger().WithError(err).Error("Failed locking channels lock")
+		return
+	}
+	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+
+	activeChannels, err := client.Cmd("ZRANGEBYSCORE", "youtube_subbed_channels", "-inf", "+inf").List()
+	if err != nil {
+		p.Logger().WithError(err).Error("Failed syncing websubs, failed retrieving subbed channels")
+		return
+	}
+
+	for _, channel := range activeChannels {
+		reply := client.Cmd("ZSCORE", RedisKeyWebSubChannels, channel)
+		if reply.IsType(redis.Nil) {
+			// Not added
+			err := p.WebSubSubscribe(channel)
+			if err != nil {
+				p.Logger().WithError(err).Error("Failed subscribing to channel", channel)
+			}
+			time.Sleep(time.Second)
 		}
 	}
 }
@@ -218,15 +291,15 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 		}
 
 		for _, sub := range subs {
-			go p.sendNewVidMessage(sub.ChannelID, item, sub.MentionEveryone)
+			go p.sendNewVidMessage(sub.ChannelID, item.Snippet.ChannelTitle, item.Snippet.ResourceId.VideoId, sub.MentionEveryone)
 		}
 	}
 
 	return
 }
 
-func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.PlaylistItem, mentionEveryone bool) {
-	content := common.EscapeSpecialMentions(fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", item.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+item.Snippet.ResourceId.VideoId))
+func (p *Plugin) sendNewVidMessage(discordChannel string, channelTitle string, videoID string, mentionEveryone bool) {
+	content := common.EscapeSpecialMentions(fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", channelTitle, "https://www.youtube.com/watch?v="+videoID))
 	if mentionEveryone {
 		content += " @everyone"
 	}
@@ -349,6 +422,11 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 		return
 	}
 
+	err = p.WebSubUnsubscribe(channel)
+	if err != nil {
+		p.Entry.WithError(err).Error("Failed unsubscribing to channel ", channel)
+	}
+
 	p.Entry.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
 }
 
@@ -377,6 +455,13 @@ func (p *Plugin) MaybeAddChannelWatch(lock bool, client *redis.Client, channel s
 
 	client.Cmd("ZADD", "youtube_subbed_channels", now, channel)
 	client.Cmd("SET", KeyLastVidTime(channel), now)
+
+	// Also add websub subscription
+	err := p.WebSubSubscribe(channel)
+	if err != nil {
+		p.Entry.WithError(err).Error("Failed subscribing to channel ", channel)
+	}
+
 	p.Entry.WithField("yt_channel", channel).Info("Added new youtube channel watch")
 	return nil
 }

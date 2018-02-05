@@ -2,16 +2,21 @@ package youtube
 
 import (
 	"context"
+	"encoding/xml"
 	"errors"
 	"github.com/didip/tollbooth"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -59,6 +64,9 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, Form{}, "Updated a youtube feed"))
 	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
 	ytMux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
+
+	// The handler from pubsubhub
+	web.RootMux.Handle(pat.New("/yt_new_upload/"+WebSubVerifyToken), http.HandlerFunc(p.HandleFeedUpdate))
 }
 
 func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -162,4 +170,102 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateD
 
 	p.MaybeRemoveChannelWatch(sub.YoutubeChannelID)
 	return
+}
+
+func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
+	p.Logger().Info("SHIT BOI: ", r.Method)
+	p.Logger().Info(r.RequestURI, r.RemoteAddr)
+
+	query := r.URL.Query()
+	p.Logger().Infof("query: %#v", query)
+
+	client := web.RedisClientFromContext(r.Context())
+
+	switch query.Get("hub.mode") {
+	case "subscribe":
+		if query.Get("hub.verify_token") != WebSubVerifyToken {
+			return // We don't want no intruders here
+		}
+
+		p.Logger().Info("Responding to challenge: ", query.Get("hub.challenge"))
+		p.ValidateSubscription(w, r, query)
+		return
+	case "unsubscribe":
+		if query.Get("hub.verify_token") != WebSubVerifyToken {
+			return // We don't want no intruders here
+		}
+
+		w.Write([]byte(query.Get("hub.challenge")))
+
+		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
+		if err != nil {
+			p.Logger().WithError(err).Error("Failed parsing websub topic URI")
+			return
+		}
+
+		client.Cmd("ZREM", RedisKeyWebSubChannels, topicURI.Query().Get("channel_id"))
+
+		return
+	}
+
+	// Handle new/udpated video
+	defer r.Body.Close()
+	bodyReader := io.LimitReader(r.Body, 0xffff1)
+
+	result, err := ioutil.ReadAll(bodyReader)
+	if err != nil {
+		p.Logger().WithError(err).Error("Failed reading body")
+		return
+	}
+
+	p.Logger().Info(string(result))
+
+	var parsed XMLFeed
+
+	err = xml.Unmarshal(result, &parsed)
+	if err != nil {
+		p.Logger().WithError(err).Error("Failed parsing feed body: ", string(result))
+		return
+	}
+
+	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
+	if err != nil {
+		p.Logger().WithError(err).Error("Failed locking channels lock")
+		return
+	}
+	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+
+	reply := client.Cmd("ZSCORE", "youtube_subbed_channels", parsed.ChannelID)
+	if reply.IsType(redis.Nil) {
+		return
+	}
+
+	// Reset the score to be instantly scanned
+	client.Cmd("ZADD", "youtube_subbed_channels", 0, parsed.ChannelID)
+}
+
+func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, query url.Values) {
+	w.Write([]byte(query.Get("hub.challenge")))
+
+	lease := query.Get("hub.lease_seconds")
+	if lease != "" {
+		parsed, err := strconv.ParseInt(lease, 10, 64)
+		if err != nil {
+			p.Logger().WithError(err).Error("Failed parsing websub lease time")
+			return
+		}
+
+		client := web.RedisClientFromContext(r.Context())
+		expires := time.Now().Unix() + parsed
+
+		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
+		if err != nil {
+			p.Logger().WithError(err).Error("Failed parsing websub topic URI")
+			return
+		}
+
+		client.Cmd("ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id"))
+	}
+
+	// TODO
 }

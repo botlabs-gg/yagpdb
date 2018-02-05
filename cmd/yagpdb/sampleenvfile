@@ -43,3 +43,7 @@ export YAGPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (durati
 
 # Youtube and other google apis credentials json file
 export GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"
+
+# This will be used as the pubsubhubbub (websub) verify token when receiving callbacks on new video uploads
+# if this gets leaked, people could spam shit
+export YAGPDB_YOUTUBE_VERIFY_TOKEN="some_secret_shit"
