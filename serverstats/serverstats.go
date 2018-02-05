@@ -66,6 +66,7 @@ func UpdateStatsLoop() {
 // ProcessTempStats moves stats from redis to postgres batched up
 func ProcessTempStats(full bool) {
 	client := common.MustGetRedisClient()
+	defer common.RedisPool.Put(client)
 
 	started := time.Now()
 

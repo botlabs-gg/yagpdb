@@ -86,7 +86,7 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	RedisPool, err = pool.NewCustom("tcp", addr, 25, RedisDialFunc)
+	RedisPool, err = pool.NewCustom("tcp", addr, 250, RedisDialFunc)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}

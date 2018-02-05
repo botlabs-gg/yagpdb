@@ -52,6 +52,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 		log.WithError(err).Error("Failed retrieving redis client from pool")
 		return
 	}
+	defer common.RedisPool.Put(client)
 
 	currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+guildID)
 	if err != nil {

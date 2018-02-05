@@ -38,6 +38,7 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 		log.WithError(err).Error("Failed retrieving redis connection from pool")
 		return
 	}
+	defer common.RedisPool.Put(client)
 
 	gs := bot.State.Guild(true, event.TargetGuild)
 	if gs == nil {
