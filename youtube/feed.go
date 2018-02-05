@@ -65,12 +65,13 @@ func (p *Plugin) runFeed() {
 			wg.Done()
 			return
 		case <-ticker.C:
-			now := time.Now()
+			// now := time.Now()
 			err := p.checkChannels(redisClient)
 			if err != nil {
 				p.Entry.WithError(err).Error("Failed checking youtube channels")
 			}
-			p.Entry.Info("Took", time.Since(now), "to check youtube feeds")
+
+			// p.Entry.Info("Took", time.Since(now), "to check youtube feeds")
 		}
 	}
 }
