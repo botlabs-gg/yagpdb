@@ -344,7 +344,7 @@ func DetailedLeaderboardEntries(guildID string, ranks []*RankEntry) ([]*Leaderbo
 		for _, m := range members {
 			if m.User.ID == compiledIDs[i] {
 				lEntry.Username = m.User.Username + m.User.Discriminator
-				lEntry.Avatar = m.User.Avatar
+				lEntry.Avatar = m.User.AvatarURL("256")
 				lEntry.Bot = m.User.Bot
 				break
 			}

@@ -35,7 +35,7 @@ func GetMembers(guildID string, userIDs ...string) ([]*discordgo.Member, error) 
 	resultChan := make(chan *discordgo.Member)
 	for _, v := range userIDs {
 		go func(id string) {
-			m, _ := GetMember(guildID, v)
+			m, _ := GetMember(guildID, id)
 			resultChan <- m
 		}(v)
 	}
