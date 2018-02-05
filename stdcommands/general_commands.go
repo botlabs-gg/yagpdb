@@ -50,6 +50,7 @@ var generalCommands = []*commands.YAGCommand{
 	cmdCurrentTime,
 	cmdMentionRole,
 	cmdListRoles,
+	cmdWouldYouRather,
 }
 
 var cmdReverse = &commands.YAGCommand{
@@ -419,6 +420,39 @@ var cmdListRoles = &commands.YAGCommand{
 	},
 }
 
+var cmdWouldYouRather = &commands.YAGCommand{
+	CmdCategory: commands.CategoryFun,
+	Name:        "WouldYouRather",
+	Aliases:     []string{"wyr"},
+	Description: "Somewhat NSFW(text): Get presented with 2 choices, add the 'dark' argument for dark questions",
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Dark Questions", Type: dcmd.String},
+	},
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+
+		dark := strings.EqualFold(data.Args[0].Str(), "dark")
+		q1, q2, err := WouldYouRather(dark)
+		if err != nil {
+			return "Failed fetching the questions :(\n" + err.Error(), err
+		}
+
+		content := fmt.Sprintf("**Would you rather (dark: %t)**\n1⃣ %s\n **OR**\n2⃣ %s", dark, q1, q2)
+		msg, err := common.BotSession.ChannelMessageSend(data.Msg.ChannelID, content)
+		if err != nil {
+			return "Seomthing went wrong", err
+		}
+
+		common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "1⃣")
+		err = common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "2⃣")
+		if err != nil {
+			_, dError := common.DiscordError(err)
+			return "Failed adding reaction\n" + dError, err
+		}
+
+		return "", nil
+	},
+}
+
 type AdviceSlip struct {
 	Advice string `json:"advice"`
 	ID     string `json:"slip_id"`
@@ -497,4 +531,35 @@ type HIBPBread struct {
 	IsSensitive bool
 	IsSpamList  bool
 	IsRetired   bool
+}
+
+func WouldYouRather(dark bool) (q1 string, q2 string, err error) {
+	req, err := http.NewRequest("GET", "https://www.wouldyourather.co.uk/", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	modeStr := "2"
+	if dark {
+		modeStr = "1"
+	}
+
+	req.AddCookie(&http.Cookie{
+		Name:  "siteType",
+		Value: modeStr, // 1 = dark, 2 = funny
+	})
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return
+	}
+
+	doc, err := goquery.NewDocumentFromResponse(resp)
+	if err != nil {
+		return
+	}
+
+	q1 = doc.Find("#q1 > span").Text()
+	q2 = doc.Find("#q2 > span").Text()
+	return
 }
