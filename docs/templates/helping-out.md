@@ -1,16 +1,16 @@
-YAGPDB is being made and ran by 1 guy atm, me myself and i. So any help i can get is appreciated.
+YAGPDB is being made and run by 1 guy atm, me myself and I. So any help I can get is appreciated.
 
-There is several ways you can help making YAGPDB better, you don't have to know any coding to help!
+There are several ways you can help in making YAGPDB better, you don't have to know any coding to help!
 
  - Writing documentation. The bot needs Documentation! See further below for more info on writing documentation.
  - Writing code.
  - Helping out other people in discord.
- - Fix whatever typos and grammar error you find (there are many of them)
+ - Fix whatever typos and grammar errors you find (there are many of them)
  - [Buy the ad space](/docs/ads)
 
 ### Writing this Documentation
 
-YAGPDB is definitely one of the more complicated bots out there, and the reason as stated before for that is i prefer customizability and security over looks, therefor a lot of documentation is needed for people to fully utilize and understand the features the bot provides.
+YAGPDB is definitely one of the more complicated bots out there, and the reason as stated before for that is I prefer customizability and security over looks, therefor a lot of documentation is needed for people to fully utilize and understand the features the bot provides.
 
 Check the guide below if you're interested and if you have any questions then ask me on discord.
 
@@ -47,8 +47,8 @@ Check the guide below if you're interested and if you have any questions then as
 
 ### Contributing code
 
-The bot is written in go, and the web interface is using plain HTML with bootstrap and some small javascript here and there. If you want to make a contribution like fix a bug, add a feature and so on you should probably notify me first by making a issue or sending me a message on discord so that you don't waste your time in case i was also working on that.
+The bot is written in go, and the web interface is using plain HTML with bootstrap and some small javascript here and there. If you want to make a contribution like fix a bug, add a feature and so on you should probably notify me first by making a issue or sending me a message on discord so that you don't waste your time in case I was also working on that.
 
 ### Helping out other people in discord
 
--TODO-
+If you are interested in helping people out on discord and you know what your doing, go ahead and do so, if you do it well and often enough you will earn the Volunteer Support role!
