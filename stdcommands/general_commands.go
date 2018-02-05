@@ -436,14 +436,14 @@ var cmdWouldYouRather = &commands.YAGCommand{
 			return "Failed fetching the questions :(\n" + err.Error(), err
 		}
 
-		content := fmt.Sprintf("**Would you rather (dark: %t)**\n1⃣ %s\n **OR**\n2⃣ %s", dark, q1, q2)
+		content := fmt.Sprintf("**Would you rather (dark: %t)**\n🇦 %s\n **OR**\n🇧 %s", dark, q1, q2)
 		msg, err := common.BotSession.ChannelMessageSend(data.Msg.ChannelID, content)
 		if err != nil {
 			return "Seomthing went wrong", err
 		}
 
-		common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "1⃣")
-		err = common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "2⃣")
+		common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇦")
+		err = common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇧")
 		if err != nil {
 			_, dError := common.DiscordError(err)
 			return "Failed adding reaction\n" + dError, err
