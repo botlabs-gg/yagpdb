@@ -2,7 +2,6 @@ package automod
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -10,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
+	"github.com/mediocregopher/radix.v2/redis"
 	"time"
 )
 
@@ -90,6 +90,12 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		return
 	}
 
+	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", cs.Guild.ID()).Error("Member not found in state, automod ignoring")
+		return
+	}
+
 	locked := true
 	cs.Owner.RLock()
 	defer func() {
@@ -97,12 +103,6 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 			cs.Owner.RUnlock()
 		}
 	}()
-
-	ms := cs.Guild.Member(false, m.Author.ID)
-	if ms == nil || ms.Member == nil {
-		logrus.WithField("guild", cs.Guild.ID()).Error("Member not found in state, automod ignoring")
-		return
-	}
 
 	del := false // Set if a rule triggered a message delete
 	punishMsg := ""
@@ -113,7 +113,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
 	// We gonna need to have this locked while we check
 	for _, r := range rules {
-		if r.ShouldIgnore(m, ms.Member) {
+		if r.ShouldIgnore(m, member) {
 			continue
 		}
 
@@ -148,7 +148,6 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		punishMsg = punishMsg[:len(punishMsg)-1]
 	}
 
-	member := cs.Guild.MemberCopy(false, ms.ID(), true)
 	cs.Owner.RUnlock()
 	locked = false
 

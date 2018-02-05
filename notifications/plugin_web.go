@@ -40,7 +40,7 @@ func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} 
 func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/notifications/general/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/notifications/general/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 

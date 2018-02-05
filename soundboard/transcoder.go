@@ -2,11 +2,11 @@ package soundboard
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/mediocregopher/radix.v2/redis"
 	"io"
 	"io/ioutil"
 	"os"
@@ -97,7 +97,7 @@ func handleQueueItem(client *redis.Client, item string) error {
 	defer common.UnlockRedisKey(client, KeySoundLock(uint(parsedId)))
 
 	var sound SoundboardSound
-	err = common.SQL.Where(uint(parsedId)).First(&sound).Error
+	err = common.GORM.Where(uint(parsedId)).First(&sound).Error
 	if err != nil {
 		return err
 	}
@@ -105,11 +105,11 @@ func handleQueueItem(client *redis.Client, item string) error {
 	logrus.WithField("sound", sound.ID).Info("Handling queued sound ", sound.Name)
 	err = transcodeSound(&sound)
 	if err != nil {
-		logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcodiing sound")
-		common.SQL.Model(&sound).Update("Status", TranscodingStatusFailedOther)
+		logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
+		common.GORM.Model(&sound).Update("Status", TranscodingStatusFailedOther)
 		os.Remove(SoundFilePath(sound.ID, TranscodingStatusReady))
 	} else {
-		common.SQL.Model(&sound).Update("Status", TranscodingStatusReady)
+		common.GORM.Model(&sound).Update("Status", TranscodingStatusReady)
 	}
 
 	configstore.InvalidateGuildCache(client, sound.GuildID, &SoundboardConfig{})

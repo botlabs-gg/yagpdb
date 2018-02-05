@@ -12,6 +12,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,9 +20,17 @@ type DeleteData struct {
 	ID string
 }
 
+type GeneralFormData struct {
+	UsernameLoggingEnabled       bool
+	NicknameLoggingEnabled       bool
+	ManageMessagesCanViewDeleted bool
+	EveryoneCanViewDeleted       bool
+	BlacklistedChannels          []string
+}
+
 func (lp *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/logging.html"))
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/public_channel_logs.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/control_panel.html")))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/log_view.html")))
 
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id/"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
@@ -30,11 +39,13 @@ func (lp *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/logging"), logCPMux)
 	web.CPMux.Handle(pat.New("/logging/*"), logCPMux)
 
+	logCPMux.Use(web.RequireGuildChannelsMiddleware)
+
 	cpGetHandler := web.ControllerHandler(HandleLogsCP, "cp_logging")
 	logCPMux.Handle(pat.Get("/"), cpGetHandler)
 	logCPMux.Handle(pat.Get(""), cpGetHandler)
 
-	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, GuildLoggingConfig{}, "Updated logging config")
+	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, GeneralFormData{}, "Updated logging config")
 	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
 	msgDeleteHandler := web.APIHandler(HandleDeleteMessageJson)
 
@@ -73,7 +84,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	serverLogs, err := GetGuilLogs(g.ID, beforeID, afterID, 20)
-	web.CheckErr(tmpl, err, "Failed retrieving logs", logrus.Error)
+	web.CheckErr(tmpl, err, "Failed retrieving logs", web.CtxLogger(ctx).Error)
 	if err == nil {
 		tmpl["Logs"] = serverLogs
 		if len(serverLogs) > 0 {
@@ -95,9 +106,19 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	ctx := r.Context()
 	_, g, tmpl := web.GetBaseCPContextData(ctx)
 
-	config := ctx.Value(common.ContextKeyParsedForm).(*GuildLoggingConfig)
-	parsed, _ := strconv.ParseInt(g.ID, 10, 64)
-	config.GuildID = parsed
+	form := ctx.Value(common.ContextKeyParsedForm).(*GeneralFormData)
+
+	config := &GuildLoggingConfig{
+		GuildConfigModel: configstore.GuildConfigModel{
+			GuildID: common.MustParseInt(g.ID),
+		},
+
+		NicknameLoggingEnabled:       form.NicknameLoggingEnabled,
+		UsernameLoggingEnabled:       form.UsernameLoggingEnabled,
+		BlacklistedChannels:          strings.Join(form.BlacklistedChannels, ","),
+		EveryoneCanViewDeleted:       form.EveryoneCanViewDeleted,
+		ManageMessagesCanViewDeleted: form.ManageMessagesCanViewDeleted,
+	}
 
 	err := configstore.SQL.SetGuildConfig(ctx, config)
 	return tmpl, err
@@ -112,7 +133,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 		return tmpl, errors.New("ID is blank!")
 	}
 
-	result := common.SQL.Where("id = ? AND guild_id = ?", data.ID, g.ID).Delete(MessageLog{})
+	result := common.GORM.Where("id = ? AND guild_id = ?", data.ID, g.ID).Delete(MessageLog{})
 	if result.Error != nil {
 		return tmpl, result.Error
 	}
@@ -123,7 +144,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	}
 	logrus.Println(result.RowsAffected)
 
-	err := common.SQL.Where("message_log_id = ?", data.ID).Delete(Message{}).Error
+	err := common.GORM.Where("message_log_id = ?", data.ID).Delete(Message{}).Error
 	return tmpl, err
 }
 
@@ -137,8 +158,21 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
+	config, err := GetConfig(g.ID)
+	if web.CheckErr(tmpl, err, "Error retrieving config for this server", web.CtxLogger(r.Context()).Error) {
+		return tmpl
+	}
+
+	canViewDeleted := web.IsAdminCtx(r.Context())
+	if config.EveryoneCanViewDeleted {
+		canViewDeleted = true
+	} else if config.ManageMessagesCanViewDeleted && !canViewDeleted {
+		canViewDeleted = web.HasPermissionCTX(r.Context(), discordgo.PermissionManageMessages)
+	}
+	tmpl["CanViewDeleted"] = canViewDeleted
+
 	msgLogs, err := GetChannelLogs(parsed)
-	if web.CheckErr(tmpl, err, "Failed retrieving message logs", logrus.Error) {
+	if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {
 		return tmpl
 	}
 
@@ -171,7 +205,7 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 	}
 
 	var logContainer MessageLog
-	err := common.SQL.Where("id = ?", logsId).First(&logContainer).Error
+	err := common.GORM.Where("id = ?", logsId).First(&logContainer).Error
 	if err != nil {
 		return err
 	}
@@ -180,7 +214,7 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return err
 	}
 
-	err = common.SQL.Model(&Message{}).Where("message_log_id = ? AND id = ?", logsId, msgID).Update("deleted", true).Error
+	err = common.GORM.Model(&Message{}).Where("message_log_id = ? AND id = ?", logsId, msgID).Update("deleted", true).Error
 	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
 	return err

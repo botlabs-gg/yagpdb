@@ -1,14 +1,21 @@
 package logs
 
+//go:generate esc -o assets_gen.go -pkg logs -ignore ".go" assets/
+
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"strconv"
+	"strings"
+)
+
+var (
+	ErrChannelBlacklisted = errors.New("Channel blacklisted from creating message logs")
 )
 
 type Plugin struct{}
@@ -19,7 +26,7 @@ func (p *Plugin) Name() string {
 
 func InitPlugin() {
 	//p := &Plugin{}
-	err := common.SQL.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
+	err := common.GORM.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
 	if err != nil {
 		panic(err)
 	}
@@ -27,8 +34,7 @@ func InitPlugin() {
 	configstore.RegisterConfig(configstore.SQL, &GuildLoggingConfig{})
 
 	p := &Plugin{}
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 }
 
@@ -36,6 +42,16 @@ type GuildLoggingConfig struct {
 	configstore.GuildConfigModel
 	UsernameLoggingEnabled bool
 	NicknameLoggingEnabled bool
+	BlacklistedChannels    string
+
+	ManageMessagesCanViewDeleted bool
+	EveryoneCanViewDeleted       bool
+
+	ParsedBlacklistedchannels []string `gorm:"-"`
+}
+
+func (g *GuildLoggingConfig) PostFetch() {
+	g.ParsedBlacklistedchannels = strings.Split(g.BlacklistedChannels, ",")
 }
 
 func (g *GuildLoggingConfig) GetName() string {
@@ -79,7 +95,7 @@ type Message struct {
 	common.SmallModel
 	MessageLogID uint `gorm:"index"` // Foreign key, belongs to MessageLog
 
-	MessageID string
+	MessageID string `gorm:"index"`
 	Content   string `gorm:"size:2000"`
 	Timestamp string
 
@@ -89,7 +105,23 @@ type Message struct {
 	Deleted        bool
 }
 
-func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLog, error) {
+func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID, author, authorID string, count int) (*MessageLog, error) {
+	if config == nil {
+		var err error
+		config, err = GetConfig(guildID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(config.ParsedBlacklistedchannels) > 0 {
+		for _, v := range config.ParsedBlacklistedchannels {
+			if v == channelID {
+				return nil, ErrChannelBlacklisted
+			}
+		}
+	}
+
 	if count > 1000 {
 		panic("count > 1000")
 	}
@@ -139,7 +171,7 @@ func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLo
 		GuildID:     channel.GuildID,
 	}
 
-	err = common.SQL.Create(log).Error
+	err = common.GORM.Create(log).Error
 
 	return log, err
 	return nil, nil
@@ -148,14 +180,14 @@ func CreateChannelLog(channelID, author, authorID string, count int) (*MessageLo
 func GetChannelLogs(id int64) (*MessageLog, error) {
 
 	var result MessageLog
-	err := common.SQL.Where(id).First(&result).Error
+	err := common.GORM.Where(id).First(&result).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = common.SQL.Where("message_log_id = ?", result.ID).Order("id desc").Find(&result.Messages).Error
-	// err = common.SQL.Model(&result).Related(&result.Messages, "MessageLogID").Error
+	err = common.GORM.Where("message_log_id = ?", result.ID).Order("id desc").Find(&result.Messages).Error
+	// err = common.GORM.Model(&result).Related(&result.Messages, "MessageLogID").Error
 
 	return &result, err
 }
@@ -165,11 +197,11 @@ func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error
 	var result []*MessageLog
 	var q *gorm.DB
 	if before != 0 {
-		q = common.SQL.Where("guild_id = ? AND id < ?", guildID, before)
+		q = common.GORM.Where("guild_id = ? AND id < ?", guildID, before)
 	} else if after != 0 {
-		q = common.SQL.Where("guild_id = ? AND id > ?", guildID, after)
+		q = common.GORM.Where("guild_id = ? AND id > ?", guildID, after)
 	} else {
-		q = common.SQL.Where("guild_id = ?", guildID)
+		q = common.GORM.Where("guild_id = ?", guildID)
 	}
 
 	err := q.Order("id desc").Limit(limit).Find(&result).Error
@@ -186,13 +218,13 @@ func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error
 
 func GetUsernames(userID string, limit int) ([]UsernameListing, error) {
 	var listings []UsernameListing
-	err := common.SQL.Where(&UsernameListing{UserID: MustParseID(userID)}).Order("id desc").Limit(limit).Find(&listings).Error
+	err := common.GORM.Where(&UsernameListing{UserID: MustParseID(userID)}).Order("id desc").Limit(limit).Find(&listings).Error
 	return listings, err
 }
 
 func GetNicknames(userID, GuildID string, limit int) ([]NicknameListing, error) {
 	var listings []NicknameListing
-	err := common.SQL.Where(&NicknameListing{UserID: MustParseID(userID), GuildID: GuildID}).Order("id desc").Limit(limit).Find(&listings).Error
+	err := common.GORM.Where(&NicknameListing{UserID: MustParseID(userID), GuildID: GuildID}).Order("id desc").Limit(limit).Find(&listings).Error
 	return listings, err
 }
 

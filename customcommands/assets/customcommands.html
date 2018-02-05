@@ -1,0 +1,125 @@
+{{define "cp_custom_commands"}}
+
+{{template "cp_head" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Custom Commands</h1>
+        <p>Add automatic responses, custom commands, memes and so on...</p>
+        {{template "template_help"}}
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Add new
+            </div>
+            <div class="panel-body">
+                <div class="col-lg-12">
+                    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands">
+                        <div class="form-group">
+                            <label for="trigger_type">Trigger type</label>
+                            <select id="trigger_type" class="form-control" name="type">
+                                <option value="cmd">Command (mention/cmd prefix)</option>
+                                <option value="prefix">Starts with</option>
+                                <option value="contains">Contains</option>
+                                <option value="regex">Regex</option>
+                                <option value="exact">Exact match</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="trigger">Trigger</label>
+                            <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun">
+                        </div>
+                        <div class="form-group">
+                            <label for="response">Response</label>
+                            <textarea rows="5" class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
+                            {{template "custom_command_help"}}
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="case_sensitive"> Case sensitive trigger
+                            </label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success">Add</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+            {{$guild := .ActiveGuild.ID}}
+            {{range .CustomCommands}}
+            <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update">
+                <div class="panel panel-default">
+                    <div class="panel-heading clearfix" role="tab" id="headingOne">
+                        <div class="pull-right">
+                            <button type="submit" class="btn btn-danger btn-sm" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
+                        </div>
+                        <h4 class="panel-title">
+
+                            <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.ID}}" aria-expanded="false" aria-controls="collapse_cmd{{.ID}}">
+                                #{{.ID}} - {{.Trigger}}
+                            </a>
+                        </h4>
+                    </div>
+                    <div id="collapse_cmd{{.ID}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                    <div class="panel-body">
+                        <div class="col-lg-12">
+                            <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
+                            <div class="form-group">
+                                <label for="trigger_type">Trigger type</label>
+                                <select id="trigger_type" class="form-control" name="type">
+                                    <option value="cmd" {{if eq .TriggerType 0}} selected{{end}}>Command (mention/cmd prefix)</option>
+                                    <option value="prefix" {{if eq .TriggerType 1}} selected{{end}}>Starts with</option>
+                                    <option value="contains" {{if eq .TriggerType 2}} selected{{end}}>Contains</option>
+                                    <option value="regex" {{if eq .TriggerType 3}} selected{{end}}>Regex</option>
+                                    <option value="exact"{{if eq .TriggerType 4}} selected{{end}}>Exact match</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="trigger">Trigger</label>
+                                <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.Trigger}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="response">Response</label>
+                                <textarea rows="3" class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
+                                {{template "custom_command_help"}}
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="case_sensitive" {{if .CaseSensitive}} checked{{end}}> Case sensitive
+                                    </label>
+                                </div>
+                            </div>
+                                <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
+                            <button type="submit" class="btn btn-success" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </form>
+            {{end}}
+        </div>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->            
+{{template "cp_footer" .}}
+
+{{end}}
+
+{{define "custom_command_help"}}
+<p class="help-block">Available template data is {{template "template_helper_user"}}</p>
+
+<p class="help-block">Execute bot commands using <code>{{"{{"}}exec "command" "arg1" "arg2"{{"}}"}}</code>, Example: <code>{{"{{"}}exec "role" "yagpdb"{{"}}"}}</code> will be the same as the user typing <code>(mention or prefix) role yagpdb</code></p>
+
+<p class="help-block">Arguments are available in a string array: <code>.Args</code><br> Acess single arguments by index using <code>{{"{{"}}index .Args 0{{"}}"}}</code><br>Get the number of arguments using <code>{{"{{"}}len .Args{{"}}"}}</code><br>Loop over them with <br><code>{{"{{"}}range .Args{{"}}"}}{{"{{"}}.{{"}}"}} <- that dot will be replaced by the current argument were looping over{{"{{"}}end{{"}}"}}</code><br>"end" marks the end of the for loop. <a href="https://golang.org/pkg/text/template/">See the templating engine docs for more info</a> and join the support server if you have questions. It's rather complicated so i will make more guides in the future<p>
+
+{{end}}

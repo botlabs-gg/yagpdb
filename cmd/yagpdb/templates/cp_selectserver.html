@@ -1,9 +1,9 @@
 {{define "cp_selectserver"}}
 
 {{template "cp_head" .}}
-<div class="row" id="select-server-row">
-    <div class="col-lg-12">
-        <h1 class="page-header">Welcome to YAGPDB.xyz!</h1>
+<div class="row">
+    <div class="col-lg-7">
+        <h2 class="page-header">Updates and such</h1>
         
         {{if .JoinedGuild}}
         <div class="panel panel-success">
@@ -12,365 +12,63 @@
             </div>
             <div class="panel-body">
                 <p>You manage this bot through a web control panel, if you need any help or want to contact the owner you can join the support server (There is a link above)</p>
-                <p>I'm working on adding proper documentation and guides but at this moment the documentation is very lacking, and it may seem a bit complicated. As as i said earlier, join the support server if you have any questions</p>
+                <p>I'm working on adding proper documentation and guides but at this moment the documentation is very lacking, and it may seem a bit complicated. As as i said earlier, join the support server if you have any questions, although please do try a little on your own first, my time is limited.</p>
                 {{if .User}}
-                <a class="btn btn-primary" href="/cp/{{.JoinedGuild.ID}}/stats">Click here to start managing it</a>
+                <a class="btn btn-primary" href="/manage/{{.JoinedGuild.ID}}/stats">Click here to start managing it</a><br/>
                 {{else}}
-                <a class="btn btn-primary" href="/login?goto={{urlquery "/cp/" .JoinedGuild.ID "/stats" }}">Click here to login and start managing it</a>
+                <a class="btn btn-primary" href="/login?goto={{urlquery "/manage/" .JoinedGuild.ID "/stats" }}">Click here to login and start managing it</a>
                 {{end}}
-                <p>For future reference, you can log in and access your server in the top right menu. Ff the server did'nt show up as added in the menu above now, try refreshing the page and if it still dosen't show up as added then join the support server. (Link above)</p>
+                <br/>
+                <p>For future reference, you can log in and access your server in the top right menu. if the server did not show up as added in the menu above now, try reloading the page, and if it still does not show up as added then join the support server. (Link above)</p>
             </div>
         </div>
         {{end}}
-
-        <h3>Version 0.19.2</h3>
-        <p>Bunch of small changes and tweaks <a href="https://github.com/jonas747/yagpdb/compare/0.19.1...0.19.2">Full changes</a></p>
-        <ul>
-            <li>Cleaned up playSound, added silence frames at the end</li>
-            <li>Send targetted help in channel command was sent in</li>
-            <li>Added more help to automoderator</li>
-            <li>Banning websites will also ban all subdomains</li>
-            <li>Word and website filters will say which word/website triggered automod.</li>
-            <li>Automod uses warnings now</li>
-            <li>Fixed topic notifications</li>
-        </ul>
-
-        <h3>Version 0.19 <small>14 Feb 2017</small></h3>
-        <p>Youtube feeds and a bunch of small things that finally got fixed</p>
-        <ul>
-            <li><b>New Feed: Youtube video uploads </b>: Will post new videos from channels you specify in a discord channel
-            <li><b>Moderation: New command </b><code>Warn @user reason</code>: warns a user, all warnings are stored and can be viewed with the <code>warnings</code> command</li>
-            <li><b>Moderation: New command </b><code>Warnings @user</code>: lists a users warnings.</li>
-            <li><b>Moderation: New command </b><code>EditWarning @user</code>: Edits the warning of a user, this cannot be undone.</li>
-            <li><b>Control panel:</b> Major improvements to the site on mobile devices</li>
-            <li><b>Control panel:</b> Role and channel dropdowns are finally sorted, and you wont see that everyone role either anymore...</li>
-            <li><b>Control panel:</b> Major improvements to navigating the control panel in general</li>
-            <li><b>Control panel:</b> Logs can now be sorted by ascending or descending</li>
-            <li>Dice command now also takes some rpg dice syntax</li>
-            <li>Server stats can now ignore channels</li>
-            <li>Messages that gets deleted will now also be marked as deleted in all logs they appear in, even after the logs was created (admins can still see them)</li>
-            <li>When a command fails to parse, also print the help for that command</li>
-            <li>When exec fails in custom commands, they will not stop executing and instead return the error message the command returned</li>
-            <li>You can now restrict commands to roles on a per channel basis (in the command settings)</li>
-            <li>Preliminary @everyone filtering in commands and other places, i would wait a couple days first before giving it @everyone permissions to see if i forgot to filter some places</li> 
-            <li>More reliable username and nickname logging (users not in state coming online wouldn't get their nicknames/usernames checked)</li> 
-        </ul>
-
-        <h3>Information</h3>
-
-        <p>YAGPDB Is still in a very early alpha version. The feature list is very small at the moment but that will change with time!</p>
-        <p>If you have any bugs or suggestions to report please join my <a href="https://discord.gg/0vYlUK2XBKldPSMY">discord server here</a> and report them to me <b>(jonas747#3124)</b></p>
+        
+        {{if .Posts}}
+        {{range .Posts}}
+        <h3>{{.Meta.Title}} <small>{{.Meta.Date}}</small></h3>
+        {{.RenderedBody}}
         <br/>
-        <p><b>About the permissons</b>: If you don't feel like trusting the bot you can just untick the permissions you don't want to give it. You will not be able to use the moderation features of the bot though unless you give it the permissions it needs of course</p>
-        <br/>
-        <p>Currently working features:</p>
-        <ul>
-            <li>General notifications (join, leave and topic change messages)</li>
-            <li>Custom commands</li>
-            <li>Control panel log</li>
-            <li>Reddit feed</li>
-            <li>Simple stats</li>
-            <li>Simple reputation system</li>
-            <li>Per channel command settings</li>
-            <li>Various fun commands</li>
-            <li>Really simple streaming notifications using the built in streaming status in discord (more advanced one in the future maybe)</li>
-            <li>Moderation utilities</li>
-            <li>Automoderator</li> 
-            <li>Autoroles</li> 
-            <li>Youtube upload feeds</li> 
-        </ul>
+        {{end}}
 
-        <h2>Older changelogs</h2>
-
-
-        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading11">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse11" aria-expanded=false aria-controls="collapse11">
-                            Version 0.18 <small>17 Jan 2017</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse11" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading11">
-                    <div class="panel-body">
-                        <ul>
-                            <li>Specify number of messages log command will log</li>
-                            <li>Logs are always in order now</li>
-                            <li>....bugfixes and other things... i forgot what specifically...</li>
-                            <li>Large changes to core systems, should be more stable now! (i hope) <small>hopefully i didnt break anything because of it</small></li>
-                            <li>Moderation commands should now work even if the target has dm's disabled</li>
-                        </ul>
-
-                        <h3>Version 0.18.2 <small>18 Jan 2017</small></h3>
-                        <ul>
-                            <li>More performance improvements</li>
-                            <li>Muted people leaving and joining regains their mute role if the duration hasnt expired</li>
-                            <li>Added <code>reason messageid new reason here</code> to update the author and reason of a modlog entry, messageid being the actual id of the message in the modlog channel (turn on dev mode in the client to be able to right click->copy id)</li>
-                            <li>Added optional logging of bans not done through the bot, a reason and author can then be assigned through the new reason command</li>
-                        </ul>
-
-                        <h3>Version 0.18.1 <small>17 Jan 2017</small></h3>
-                        <p>Fixing the issues that came up with 0.18</p>
-                        <ul>
-                            <li>Fixed report command</li>
-                            <li>Fixed certain commands panicing because of members not in state</li>
-                        </ul>
-                    </div>
-                </div>
+        <p>
+        {{if .CurrentPostsOffset}}
+        <a href="/manage?offset={{.PreviousPostsOffset}}">Newer Posts</a>
+        {{end}}
+        {{if .NextPostsOffset}}
+        <a href="/manage?offset={{.NextPostsOffset}}">Older Posts</a>
+        {{end}}
+        {{end}}
+        </p>
+    </div>
+    <!-- /.col-lg-6 -->
+    <div class="col-lg-5">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">Information</b></h3>
             </div>
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading10">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse10" aria-expanded=false aria-controls="collapse10">
-                            Version 0.17 <small>5th Dec 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse10" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading10">
-                    <div class="panel-body">
-                        <ul>
-                            <li><b>Added soundboard!</b> Upload sounds to yagpdb and play them through a command in a voice channel!</li>
-                            <li><b>Added reminders!</b> you can set up reminders and the bot will remind you of them later (reminders may be off by up to 1 minute)</li>
-                            <li><b>Added <code>Whois/whoami</code> command</b> with logged usernames and nicknames (Servers can opt out of this)</li>
-                            <li><b>Added modlog search command</b> (<code>sml (SearchModLog)</code>) to search the modlog, this is actually just a channel history search so work with any kind of modlogs, be it handwritten or bot controlled.</li>
-                            <li><b>EMBEDS</b> I've turned a couple things into embeds like reddit, status, stats, and some other things.</li>
-                            <li>Added <code>throw</code> command cause throwing things at people is fun</li>
-                            <li>Added <code>roll</code> command</li>
-                            <li>Added channel log management, view all logs created on the server and delete them</li>
-                            <li>You can now set the reason argument in moderation commands to be optional if you want!</li>
-                            <li>Custom commands now has access to arguments</li>
-                            <li>Custom commands can now execute up to 3 (non-custom)commands in their response (in the user that triggered it context)</li>
-                            <li>Improvements to public pages</li>
-                            <li>Show warning in the control panel when bot dosen't have enough permissions</li>
-                            <li>Start migrating configs to sql+application cache</li>
-                            <li>Probably some stuff i forgot...</li>
-                        </ul>
-
-                        <h3>Version 0.17.7 <small>21th Dec 2016</small></h3>
-                        <ul>
-                            <li>Deleted log messages is still shown to admins</li>
-                            <li>Performance improvements to the website (bigger pages should be around 50% faster on load times)</li>
-                            <li>Logging in redirects you to what page you were on when you clicked the login button after you log in now</li>
-                            <li>Mute command has default duration of 10min</li>
-                            <li>Various other backend changes and improvements to the site</li>
-                        </ul>
-
-                        <h3>Version 0.17.6 <small>19th Dec 2016</small></h3>
-                        <ul>
-                            <li>Logs shows deleted messages (admins can delete indiv messages from logs)</li>
-                            <li>Automatically add the regex case insensitive flag if case sensitivity is unchecked <code>(?i)</code></li>
-                            <li>Improved reddit feeds again, (you shouldnt see anymore '&amp;amp;'s and even though i can't embed videos, i added the thumbnail)</li>
-                        </ul>
-
-                        <h3>Version 0.17.5 <small>18th Dec 2016</small></h3>
-                        <p>Road continues towards beta with mostly backend changes</p>
-                        <ul>
-                            <li>Reports shows originating channel</li>
-                            <li>Rewritten reddit to be more acceptable about failures</li>
-                            <li>Added minus rep command</li>
-                        </ul>
-
-                        <h3>Version 0.17-0.17.4 <small>17th Dec 2016</small></h3>
-                        <p>Contains a series of small improvements and bugfixes, will be more of these as i try to get it into beta</p>
-                        <ul>
-                            <li>Autorole config gets reset if not enough perms have been provided, or the role is above the bot</li>
-                            <li>Fixed automod mutes</li>
-                            <li>Fixed soundboard list only restricted sounds causing panic</li>
-                            <li>Automod invite rule will ignore invites to the current server</li>
-                            <li>New modlog style</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="panel-body">
+                <p>To add this bot to your server click login in the upper right corner, then aferwards select it in the "select a server" dropdown up top.</p>
+                <p>Make sure you have manage server permissions and that you are logged into the right account</p>
+                <p>Afterwards, click around a little to get familiar with the interface and what it provides</p>
+                <p>If you stumble into any issue and need help then join the support server. (link at the top of the page)</p>
             </div>
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading9">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse9" aria-expanded=false aria-controls="collapse9">
-                            Version 0.16 <small>6th Nov 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse9" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading9">
-                    <div class="panel-body">
-                        Huge update
-                        <ul>
-                            <li><b>Added HTTPS via lets encrypt!</b></li>
-                            <li><b>New plugin: Automoderator</b>(beta), this plugin lets you define certain rules and auto punishment for breaking those rules</li>
-                            <li><b>New plugin: AutoRole</b>(beta), this plugin can assign people a role on joins, and also using the command (if they already had the role it will get removed): <code>role &lt;role&gt;</code></li>
-                            <li><b>New Plugin: Logs</b>(beta), use <code>logs (number of messages)</code> to save the n last messages (similar to how hastebin worked but locally hosted on yagpdb instead)</li>
-                            <li><b>Updated moderation plugin,</b> You can now specify a mute role, and give people the role with the commands <code>mute</code> and <code>unmute</code></li>
-                            <li>New/changed roles and channels now instantly shows up in the control panel!</li>
-                            <li>More tweaks to the website!</li>
-                            <li>Fixed a bug where streamer plugin would fail to remove streaming status when the status has them not playing any game</li>
-                        </ul>
-                    </div>
-                </div>
+        </div>
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">Check out...</b></h3>
             </div>
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading8">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse8" aria-expanded=false aria-controls="collapse8">
-                            Version 0.15 <small>04th Oct 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse8" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading8">
-                    <div class="panel-body">
-                        <h3>Version 0.15 <small>04th Oct 2016</small></h3>
-                        <p>This update is mostly providing backend changes, and some bugfixes to prepare for going out of alpha soon!</p>
-                        <ul>
-                            <li>Custom Commands: Added user as template data</li>
-                            <li>Web: Improved form validation most places</li>
-                            <li>Bot: Squashed the persistent no message timestamp bug once and for all... <small>i hope.</small></li>
-                            <li>Bot: Join/Leave messages sent in the same second will now be merged togheter (to handle things like purges of thousands of members better)</li>
-                            <li>Bot: Removed the refreshstreaming command since it's no longer needed as everything will auto update</li>
-                            <li>Bot: Improve member loading on startup (now uses a gateway request instead of rest request)</li>
-                            <li>Backend: Redid all logging</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading7">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse7" aria-expanded=false aria-controls="collapse7">
-                            Version 0.14 <small>22th Sept 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse7" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading7">
-                    <div class="panel-body">
-                        <p>This update brings forward a lot of general bugfixes and improvements, about time to move it into beta soon!</p>
-                        <ul>
-                            <li><b>Added streaming notifications plugin!</b> This plugin will allow you to give people currently streaming a role, and also send a announcement message in a channel</li>
-                            <li>Large cleanups in backend</li>
-                            <li>General improvements and fixes to the overall control panel site</li>
-                            <li>Increased the max subreddit limit to 25</li>
-                            <li>Set Max custom commands to 50</li>
-                            <li>Auto deleting response now also auto deleted the trigger (Will need manage messages perms for this)</li>
-                            <li>Reddit feed should be more reliable <small>(Still needs some work before i would consider it 100% but it is getting there)</small></li>
-                            <li>Added Catfacts command</li>
-                            <li>Added advice command</li>
-                            <li>Add workaround for panics occuring when doing stuff related with message timestamps after the bot has been running for a while <small>(Added a workaround but need to add a proper fix...)</small></li>
-                            <li>Send a panic message when a command triggers a panic<small>(Something went terribly wrong)</small></li>
-                            <li>Added option for the kick command to delete up to the 100 last messages of a user when kicked</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            
-
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading6">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse6" aria-expanded=false aria-controls="collapse6">
-                            Version 0.13 <small>7th Sept 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse6" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading6">
-                    <div class="panel-body">
-                        Small update with mosly bugfixes
-                        <ul>
-                            <li>Kick and ban commands now to hastebin upload</li>
-                            <li>Fixed not being able to update subreddit in reddit feeds</li>
-                            <li>Fixed commands not running in dm</li>
-                            <li>Set default command prefix to "-"</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading5">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse5" aria-expanded=false aria-controls="collapse5">
-                            Version 0.12 <small>24th Aug 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse5" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading5">
-                    <div class="panel-body">
-                        <ul>
-                            <li><b>Topic</b> command that just gives you a conversation topic</li>
-                            <li>You can now specify a direct message that gets sent to people that gets kicked and banned through the bot</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading4">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse4" aria-expanded=false aria-controls="collapse4">
-                            Version 0.11 <small>18th Aug 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse4" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading4">
-                    <div class="panel-body">
-                        <ul>
-                            <li>Per channel command settings</li>
-                            <li>Reputation plugin now listens for <code>thanks @someone</code></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading3">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse3" aria-expanded=false aria-controls="collapse3">
-                            Version 0.10 <small>15th Aug 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse3" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading3">
-                    <div class="panel-body">
-                        <ul>
-                            <li>Fixed everything that depended on message history (clean, pastebin uploads etc...)</li>
-                            <li>Changed to hastebin from pastebin, because i went above the limit</li>
-                            <li>Rewrote the command system</li>
-                            <li>Cleanups behind the scenes</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading2">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse2" aria-expanded=false aria-controls="collapse2">
-                            Version 0.9 <small>11th Aug 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse2" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading2">
-                    <div class="panel-body">
-                        <ul>
-                            <li>Improved all commands that relied on the message history (pastebin, clean, report) to not be limited by message cache</li>
-                            <li>Added aylien plugin, currently the only command for it is the sentiment command, see help for more info</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="heading1">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#old-changelogs" href="#collapse1" aria-expanded=false aria-controls="collapse1">
-                            Version 0.8 <small>9th Aug 2016</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse1" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading1">
-                    <div class="panel-body">
-                        <p>Version 0.8 is released today with some improved backend changes and the reputation system! The reputation system basically lets you give a person 1 rep every now and then if they were helpfull or something like that. You can find it in the control panel under "Fun"</p>
-                    </div>
-                </div>
+            <div class="panel-body">
+                <p>YAGPDB is open source! The project is hosted on github here: <a href="https://github.com/jonas747/yagpdb">jonas747/yagpdb</a></p>
+                <p><a href="/docs/index#donate">Donate using patreon, bitcoin and other cryptos!</a></p>
+                <p>Looking to buy the ad space? <a href="/docs/ads">click here for more info</a></p>
+                <p>Looking for the YAGPDB Discord server? the link is located at the top of the page!</p>
+                <a href="https://discordbots.org/bot/204255221017214977">
+                    <img src="https://discordbots.org/api/widget/204255221017214977.svg" />
+                </a>
             </div>
         </div>
     </div>
-    <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 

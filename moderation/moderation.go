@@ -1,16 +1,20 @@
 package moderation
 
+//go:generate esc -o assets_gen.go -pkg moderation -ignore ".go" assets/
+
 import (
 	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/net/context"
 	"regexp"
 	"strconv"
@@ -43,11 +47,14 @@ func RedisKeyBannedUser(guildID, userID string) string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
-	common.RegisterScheduledEventHandler("unmute", handleUnMute)
+
+	common.RegisterPlugin(plugin)
+
+	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
-	common.SQL.AutoMigrate(&Config{}, &WarningModel{})
+	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
+
+	docs.AddPage("Moderation", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func handleUnMute(data string) error {
@@ -278,12 +285,24 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 		dmMsg = "You were " + actionStr + "\nReason: {{.Reason}}"
 	}
 
-	executed, err := common.ParseExecuteTemplate(dmMsg, map[string]interface{}{
-		"User":   user,
-		"Reason": reason,
-	})
-
 	gs := bot.State.Guild(true, guildID)
+
+	member, err := bot.GetMember(guildID, user.ID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", gs.ID()).Info("Failed retrieving member")
+		member = &discordgo.Member{User: user}
+	}
+
+	ctx := templates.NewContext(bot.State.User(true).User, gs, nil, member)
+	ctx.Data["Reason"] = reason
+	ctx.Data["Author"] = author
+	ctx.SentDM = true
+	executed, err := ctx.Execute(nil, dmMsg)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed executing pusnishment dm")
+		executed = "Failed executing template."
+	}
+
 	gs.RLock()
 	gName := "**" + gs.Guild.Name + ":** "
 	gs.RUnlock()
@@ -295,21 +314,14 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	logLink := ""
 	if channelID != "" {
-		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
-		if err != nil {
-			logLink = "Log Creation failed"
-			logrus.WithError(err).Error("Log Creation failed")
-		} else {
-			logLink = logs.Link()
-		}
+		logLink = CreateLogs(guildID, channelID, author)
 	}
 
 	switch p {
 	case PunishmentKick:
-		err = common.BotSession.GuildMemberDelete(guildID, user.ID)
+		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason)
 	case PunishmentBan:
-
-		err = common.BotSession.GuildBanCreate(guildID, user.ID, 1)
+		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason, 1)
 	}
 
 	if err != nil {
@@ -319,11 +331,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	logrus.Println("MODERATION:", author.Username, actionStr, user.Username, "cause", reason)
 
 	err = CreateModlogEmbed(actionChannel, author, actionStr, user, reason, logLink)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func KickUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
@@ -440,11 +448,11 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 
 	// Either remove the scheduled unmute or schedule an unmute in the future
 	if mute {
-		err = common.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
+		err = scheduledevents.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
 		client.Cmd("SETEX", RedisKeyMutedUser(guildID, user.ID), duration*60, 1)
 	} else {
 		if client != nil {
-			err = common.RemoveScheduledEvent(client, "unmute", guildID+":"+user.ID)
+			err = scheduledevents.RemoveEvent(client, "unmute", guildID+":"+user.ID)
 		}
 	}
 	if err != nil {
@@ -454,13 +462,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	// Upload logs
 	logLink := ""
 	if channelID != "" && mute {
-		logs, err := logs.CreateChannelLog(channelID, author.Username, author.ID, 100)
-		if err != nil {
-			logLink = "Log Creation failed"
-			logrus.WithError(err).Error("Log Creation failed")
-		} else {
-			logLink = logs.Link()
-		}
+		logLink = CreateLogs(guildID, channelID, author)
 	}
 
 	action := ""
@@ -516,16 +518,10 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 	}
 
 	if config.WarnIncludeChannelLogs {
-		logsObj, err := logs.CreateChannelLog(channelID, author.ID, author.Username, 100)
-		if err != nil {
-			logrus.WithError(err).Error("Failed creating channel logs")
-			warning.LogsLink = "(Failed creating logs)"
-		} else {
-			warning.LogsLink = logsObj.Link()
-		}
+		warning.LogsLink = CreateLogs(guildID, channelID, author)
 	}
 
-	err = common.SQL.Create(warning).Error
+	err = common.GORM.Create(warning).Error
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
@@ -545,4 +541,16 @@ func WarnUser(config *Config, guildID, channelID string, author *discordgo.User,
 	}
 
 	return nil
+}
+
+func CreateLogs(guildID, channelID string, user *discordgo.User) string {
+	lgs, err := logs.CreateChannelLog(nil, guildID, channelID, user.Username, user.ID, 100)
+	if err != nil {
+		if err == logs.ErrChannelBlacklisted {
+			return ""
+		}
+		logrus.WithError(err).Error("Log Creation failed")
+		return "Log Creation failed"
+	}
+	return lgs.Link()
 }

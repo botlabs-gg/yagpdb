@@ -1,25 +1,27 @@
 package commands
 
+//go:generate esc -o assets_gen.go -pkg commands -ignore ".go" assets/
+
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/yagpdb/docs"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
-	err := common.SQL.AutoMigrate(&LoggedExecutedCommand{}).Error
+	common.RegisterPlugin(plugin)
+	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
 	if err != nil {
 		log.WithError(err).Error("Failed migrating database")
 	}
+
+	docs.AddPage("Commands", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func (p *Plugin) Name() string {
@@ -27,11 +29,11 @@ func (p *Plugin) Name() string {
 }
 
 type ChannelCommandSetting struct {
-	Info           *CustomCommand `json:"-"` // Used for template info
-	Cmd            string         `json:"cmd"`
-	CommandEnabled bool           `json:"enabled"`
-	AutoDelete     bool           `json:"autodelete"`
-	RequiredRole   string         `json:"required_role"`
+	Info           *YAGCommand `json:"-"` // Used for template info
+	Cmd            string      `json:"cmd"`
+	CommandEnabled bool        `json:"enabled"`
+	AutoDelete     bool        `json:"autodelete"`
+	RequiredRole   string      `json:"required_role"`
 }
 
 type ChannelOverride struct {
@@ -50,7 +52,8 @@ type CommandsConfig struct {
 
 // Fills in the defaults for missing data, for when users create channels or commands are added
 func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
-	commands := CommandSystem.Commands
+
+	commands := CommandSystem.Root.Commands
 
 	if conf.Global == nil {
 		conf.Global = []*ChannelCommandSetting{}
@@ -62,7 +65,7 @@ func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
 
 ROOT:
 	for _, channel := range channels {
-		if channel.Type != "text" {
+		if channel.Type != discordgo.ChannelTypeGuildText {
 			continue
 		}
 
@@ -94,7 +97,7 @@ ROOT:
 	// Check for removed channels
 	for _, override := range conf.ChannelOverrides {
 		for _, channel := range channels {
-			if channel.Type != "text" {
+			if channel.Type != discordgo.ChannelTypeGuildText {
 				continue
 			}
 
@@ -111,11 +114,11 @@ ROOT:
 }
 
 // Checks a single list of ChannelCommandSettings and applies defaults if not found
-func checkCommandSettings(settings []*ChannelCommandSetting, commands []commandsystem.CommandHandler, defaultEnabled bool) []*ChannelCommandSetting {
+func checkCommandSettings(settings []*ChannelCommandSetting, commands []*dcmd.RegisteredCommand, defaultEnabled bool) []*ChannelCommandSetting {
 
 ROOT:
-	for _, cmdDef := range commands {
-		cast, ok := cmdDef.(*CustomCommand)
+	for _, registeredCmd := range commands {
+		cast, ok := registeredCmd.Command.(*YAGCommand)
 		if !ok {
 			continue
 		}
@@ -142,8 +145,8 @@ ROOT:
 
 	// Check for commands that have been removed (e.g the config contains commands from an older version)
 	for _, settingsCmd := range settings {
-		for _, cmdDef := range commands {
-			cast, ok := cmdDef.(*CustomCommand)
+		for _, registeredCmd := range commands {
+			cast, ok := registeredCmd.Command.(*YAGCommand)
 			if !ok {
 				continue
 			}
@@ -188,7 +191,7 @@ func GetCommandPrefix(client *redis.Client, guild string) (string, error) {
 	if reply.Err != nil {
 		return "", reply.Err
 	}
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return "", nil
 	}
 

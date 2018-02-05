@@ -1,0 +1,5 @@
+BEGIN;
+
+DROP TABLE mqueue;
+
+COMMIT;

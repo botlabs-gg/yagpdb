@@ -7,11 +7,12 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strconv"
 	"unicode/utf8"
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/custom_commands.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/customcommands.html")))
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
 
@@ -43,7 +44,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
 
 	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
@@ -52,8 +53,8 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, err
 	}
 
-	if len(currentCommands) > 49 {
-		return templateData, web.NewPublicError("Max 50 custom commands allowed, if you need more ask on the support server")
+	if len(currentCommands) >= MaxCommands {
+		return templateData, web.NewPublicError("Max " + strconv.Itoa(MaxCommands) + " custom commands allowed, if you need more ask on the support server")
 	}
 
 	templateData["CustomCommands"] = currentCommands
@@ -73,12 +74,12 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
 
 	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
 	// Validate that they haven't messed with the id
-	exists, _ := client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID).Bool()
+	exists, _ := common.RedisBool(client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID))
 	if !exists {
 		return templateData, web.NewPublicError("That command dosen't exist?")
 	}
@@ -93,7 +94,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
 
 	cmdIndex := pat.Param(r, "cmd")
 

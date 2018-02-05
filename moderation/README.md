@@ -1,1 +1,1 @@
-## Moderation plugin for yagpdb
+## Moderation plugin for YAGPDB

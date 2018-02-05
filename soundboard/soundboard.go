@@ -3,10 +3,8 @@ package soundboard
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"os"
 )
@@ -17,7 +15,7 @@ type Plugin struct{}
 func (p *Plugin) GetGuildConfig(ctx context.Context, guildID string, dest configstore.GuildConfig) (err error) {
 	cast := dest.(*SoundboardConfig)
 
-	err = common.SQL.Where(common.MustParseInt(guildID)).First(cast).Error
+	err = common.GORM.Where(common.MustParseInt(guildID)).First(cast).Error
 	if err != nil {
 		// Return default config if not found
 		if err == gorm.ErrRecordNotFound {
@@ -31,13 +29,13 @@ func (p *Plugin) GetGuildConfig(ctx context.Context, guildID string, dest config
 		}
 	}
 
-	err = common.SQL.Where("guild_id = ?", guildID).Find(&cast.Sounds).Error
+	err = common.GORM.Where("guild_id = ?", guildID).Find(&cast.Sounds).Error
 	return err
 }
 
 // SetGuildConfig saves the GuildConfig struct
 func (p *Plugin) SetGuildConfig(ctx context.Context, conf configstore.GuildConfig) error {
-	return common.SQL.Save(conf).Error
+	return common.GORM.Save(conf).Error
 }
 
 // SetIfLatest saves it only if the passedLatest time is the latest version
@@ -52,12 +50,10 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	p := &Plugin{}
-
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 	configstore.RegisterConfig(p, &SoundboardConfig{})
-	common.SQL.AutoMigrate(SoundboardConfig{}, SoundboardSound{})
+	common.GORM.AutoMigrate(SoundboardConfig{}, SoundboardSound{})
 
 	// Setup directories
 	err := os.MkdirAll("soundboard/queue", 0755)

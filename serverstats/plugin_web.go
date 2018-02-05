@@ -1,7 +1,6 @@
 package serverstats
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -17,17 +16,17 @@ type FormData struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/serverstats.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/serverstats.html")))
 
 	cpGetHandler := web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
 	web.CPMux.Handle(pat.Get("/stats"), cpGetHandler)
 
 	web.CPMux.Handle(pat.Post("/stats/settings"), web.RequireGuildChannelsMiddleware(web.ControllerPostHandler(HandleStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings")))
-	web.CPMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
+	web.CPMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, false))))
 
 	// Public
 	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
-	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, true)))
+	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
 }
 
 type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)
@@ -61,7 +60,6 @@ func HandleStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	_, ag, templateData := web.GetBaseCPContextData(r.Context())
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
-	log.Printf("%#v", formData)
 
 	newConf := &ServerStatsConfig{
 		GuildConfigModel: configstore.GuildConfigModel{
@@ -90,7 +88,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 
 	conf, err := GetConfig(r.Context(), activeGuild.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving stats config")
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats config")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}
@@ -101,9 +99,18 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 
 	stats, err := RetrieveFullStats(client, activeGuild.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving stats")
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
+	}
+
+	for _, cs := range stats.ChannelsHour {
+		for _, channel := range activeGuild.Channels {
+			if channel.ID == cs.Name {
+				cs.Name = channel.Name
+				break
+			}
+		}
 	}
 
 	return stats

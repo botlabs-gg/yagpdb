@@ -2,14 +2,18 @@ package streaming
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/mediocregopher/radix.v2/redis"
+	"sync"
 )
+
+func KeyCurrentlyStreaming(gID string) string { return "currently_streaming:" + gID }
 
 func (p *Plugin) InitBot() {
 
@@ -47,9 +51,38 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 	}
 
 	gs.RLock()
-	defer gs.RUnlock()
 
+	var wg sync.WaitGroup
+
+	slowCheck := make([]*dstate.MemberState, 0, len(gs.Members))
 	for _, ms := range gs.Members {
+
+		if ms.Member == nil || ms.Presence == nil {
+			if ms.Presence != nil {
+				slowCheck = append(slowCheck, ms)
+				wg.Add(1)
+				go func(gID, uID string) {
+					bot.GetMember(gID, uID)
+					wg.Done()
+				}(gs.ID(), ms.ID())
+			}
+			continue
+		}
+
+		err = CheckPresence(client, config, ms.Presence, ms.Member, gs)
+		if err != nil {
+			log.WithError(err).Error("Error checking presence")
+			continue
+		}
+	}
+
+	gs.RUnlock()
+
+	wg.Wait()
+
+	log.WithField("guild", gs.ID()).Info("Starting slowcheck")
+	gs.RLock()
+	for _, ms := range slowCheck {
 
 		if ms.Member == nil || ms.Presence == nil {
 			continue
@@ -61,6 +94,8 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 			continue
 		}
 	}
+	gs.RUnlock()
+	log.WithField("guild", gs.ID()).Info("Done slowcheck")
 }
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
@@ -156,16 +191,19 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	member := gs.Member(true, p.User.ID)
-	if member == nil {
-		log.WithField("pres", p.Status).Error("Member not in state")
-		return
-	}
+	// member, _ := bot.GetMember(gs.ID(), p.User.ID)
 
 	gs.RLock()
 	defer gs.RUnlock()
 
-	err = CheckPresence(client, config, &p.Presence, member.Member, gs)
+	ms := gs.Member(false, p.User.ID)
+
+	var member *discordgo.Member
+	if ms != nil {
+		member = ms.Member
+	}
+
+	err = CheckPresence(client, config, &p.Presence, member, gs)
 	if err != nil {
 		log.WithError(err).WithField("guild", p.GuildID).Error("Failed checking presence")
 	}
@@ -187,7 +225,13 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 
 		if member == nil {
 			// Member is required from on here
-			return nil
+			var err error
+			gs.RUnlock()
+			member, err = bot.GetMember(gs.ID(), p.User.ID)
+			gs.RLock()
+			if err != nil {
+				return err
+			}
 		}
 
 		if config.RequireRole != "" {
@@ -217,17 +261,21 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 		}
 
 		// Was already marked as streaming before if we added 0 elements
-		if num, _ := client.Cmd("SADD", "currenly_streaming:"+gs.ID(), member.User.ID).Int(); num == 0 {
+		if num, _ := client.Cmd("SADD", KeyCurrentlyStreaming(gs.ID()), member.User.ID).Int(); num == 0 {
 			return nil
 		}
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != "" && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(config, gs, member, p)
+			SendStreamingAnnouncement(client, config, gs, member, p)
 		}
 
 		if config.GiveRole != "" {
-			GiveStreamingRole(member, config.GiveRole, gs.Guild)
+			err := GiveStreamingRole(member, config.GiveRole, gs.Guild)
+			if err != nil {
+				log.WithError(err).WithField("guild", gs.ID()).WithField("user", member.User.ID).Error("Failed adding streaming role")
+				client.Cmd("SREM", KeyCurrentlyStreaming(gs.ID()), member.User.ID)
+			}
 		}
 
 	} else {
@@ -240,16 +288,18 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 
 func RemoveStreaming(client *redis.Client, config *Config, guildID string, userID string, member *discordgo.Member) {
 	// Was not streaming before if we removed 0 elements
-	if num, _ := client.Cmd("SREM", "currenly_streaming:"+guildID, userID).Int(); num == 0 {
+	if num, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); num == 0 {
 		return
 	}
 
 	if member != nil {
 		RemoveStreamingRole(member, config.GiveRole, guildID)
+	} else {
+		common.BotSession.GuildMemberRoleRemove(guildID, userID, config.GiveRole)
 	}
 }
 
-func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, member *discordgo.Member, p *discordgo.Presence) {
+func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dstate.GuildState, member *discordgo.Member, p *discordgo.Presence) {
 	foundChannel := false
 	for _, v := range guild.Channels {
 		if v.ID() == config.AnnounceChannel {
@@ -262,25 +312,22 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, member 
 		return
 	}
 
-	templateData := map[string]interface{}{
-		"user":   member.User,
-		"User":   member.User,
-		"Server": guild.Guild,
-		"server": guild.Guild,
-		"URL":    p.Game.URL,
-		"url":    p.Game.URL,
-	}
+	ctx := templates.NewContext(bot.State.User(true).User, guild, nil, member)
+	ctx.Data["URL"] = common.EscapeSpecialMentions(p.Game.URL)
+	ctx.Data["url"] = common.EscapeSpecialMentions(p.Game.URL)
 
-	out, err := common.ParseExecuteTemplate(config.AnnounceMessage, templateData)
+	guild.RUnlock()
+	out, err := ctx.Execute(client, config.AnnounceMessage)
+	guild.RLock()
 	if err != nil {
-		log.WithError(err).Error("Failed executing template")
+		log.WithError(err).WithField("guild", guild.ID()).Error("Failed executing template")
 		return
 	}
 
-	common.BotSession.ChannelMessageSend(config.AnnounceChannel, common.EscapeEveryoneMention(out))
+	common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
 }
 
-func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) {
+func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) error {
 	// Ensure the role exists
 	found := false
 	for _, v := range guild.Roles {
@@ -290,13 +337,11 @@ func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.G
 		}
 	}
 	if !found {
-		return
+		return nil
 	}
 
 	err := common.AddRole(member, role, guild.ID)
-	if err != nil {
-		log.WithError(err).WithField("guild", guild.ID).WithField("user", member.User.ID).Error("Failed adding streaming role")
-	}
+	return err
 }
 
 func RemoveStreamingRole(member *discordgo.Member, role string, guildID string) {

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -13,7 +12,7 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/commands.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/commands.html")))
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/commands/settings"), subMux)
@@ -24,8 +23,7 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Handle(pat.Get(""), web.RenderHandler(HandleCommands, "cp_commands"))
 	subMux.Handle(pat.Get("/"), web.RenderHandler(HandleCommands, "cp_commands"))
-	subMux.Handle(pat.Post("/general"), web.RenderHandler(HandlePostGeneral, "cp_commands"))
-	subMux.Handle(pat.Post("/channels"), web.RenderHandler(HandlePostChannels, "cp_commands"))
+	subMux.Handle(pat.Post("/"), web.RenderHandler(HandlePostCommands, "cp_commands"))
 }
 
 // Servers the command page with current config
@@ -37,34 +35,19 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) interface{} {
 	return templateData
 }
 
-// Handles more general command settings (prefix)
-func HandlePostGeneral(w http.ResponseWriter, r *http.Request) interface{} {
+// Handles the updating of global and per channel command settings
+func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings/"
-	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/commands/settings"
 
-	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, strings.TrimSpace(r.FormValue("prefix"))).Err
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed saving config", err))
-	} else {
-		templateData.AddAlerts(web.SucessAlert("Sucessfully saved config! :o"))
+	newPrefix := strings.TrimSpace(r.FormValue("prefix"))
+	if len(newPrefix) > 100 {
+		return templateData.AddAlerts(web.ErrorAlert("Command prefix is too long (max 100)"))
 	}
 
-	config := GetConfig(client, activeGuild.ID, channels)
-	templateData["CommandConfig"] = config
-
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Updated general command settings")
-
-	return templateData
-}
-
-// Handles the updating of global and per channel command settings
-func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
-	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/commands/settings"
+	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, newPrefix).Err
+	web.CheckErr(templateData, err, "Failed saving prefix", web.CtxLogger(r.Context()).Error)
 
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
 
@@ -106,13 +89,13 @@ func HandlePostChannels(w http.ResponseWriter, r *http.Request) interface{} {
 		cmd.AutoDelete = r.FormValue("global_autodelete_"+cmd.Cmd) == "on"
 	}
 
-	err := common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
-	if web.CheckErr(templateData, err, "Failed saving item :'(", logrus.Error) {
+	err = common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
+	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Updated advanced command settings")
+	go common.AddCPLogEntry(user, activeGuild.ID, "Updated command settings")
 
 	templateData["CommandConfig"] = GetConfig(client, activeGuild.ID, channels)
 

@@ -1,22 +1,22 @@
 package eventsystem
 
 import (
-	"context"
+	"github.com/jonas747/discordgo"
 	"testing"
 )
 
 func TestAddHandlerAfter(t *testing.T) {
 	firstTriggered := false
-	h1 := func(ctx context.Context, evt interface{}) {
+	h1 := func(evt *EventData) {
 		firstTriggered = true
 	}
-	h2 := func(ctx context.Context, evt interface{}) {
+	h2 := func(evt *EventData) {
 		if !firstTriggered {
 			t.Error("Unordered!")
 		}
 	}
 
-	AddHandler(h2, EventReady)
-	AddHandlerBefore(h1, EventReady, h2)
-	triggerHandlers(context.Background(), EventReady, nil)
+	h2Ptr := AddHandler(h2, EventReady)
+	AddHandlerBefore(h1, EventReady, h2Ptr)
+	HandleEvent(nil, &discordgo.Ready{})
 }

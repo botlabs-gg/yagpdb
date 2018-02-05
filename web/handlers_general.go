@@ -2,8 +2,15 @@ package web
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/web/blog"
+	"github.com/pkg/errors"
+	"goji.io/pat"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
@@ -31,8 +38,76 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 		tmpl["JoinedGuild"] = guild
 	}
 
+	offset := 0
+	if r.FormValue("offset") != "" {
+		offset, _ = strconv.Atoi(r.FormValue("offset"))
+	}
+
+	if r.FormValue("post_id") != "" {
+		id, _ := strconv.Atoi(r.FormValue("post_id"))
+		p := blog.GetPost(id)
+		if p != nil {
+			tmpl["Posts"] = []*blog.Post{p}
+		} else {
+			tmpl.AddAlerts(ErrorAlert("Post not found"))
+		}
+	} else {
+		posts := blog.GetPostsNewest(5, offset)
+		tmpl["Posts"] = posts
+		if len(posts) > 4 {
+			tmpl["NextPostsOffset"] = offset + 5
+		}
+		if offset != 0 {
+			tmpl["CurrentPostsOffset"] = offset
+			previous := offset - 5
+			if previous < 0 {
+				previous = 0
+			}
+			tmpl["PreviousPostsOffset"] = previous
+		}
+	}
+
 	// g, _ := common.BotSession.Guild("140847179043569664")
 	// tmpl["JoinedGuild"] = g
 
 	return tmpl
+}
+
+func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	_, tmpl := GetCreateTemplateData(r.Context())
+	redis := RedisClientFromContext(r.Context())
+
+	joinedServers, _ := redis.Cmd("SCARD", "connected_guilds").Int()
+
+	tmpl["JoinedServers"] = joinedServers
+
+	// Command stats
+	within := time.Now().Add(-24 * time.Hour)
+
+	var result struct {
+		Count int64
+	}
+	err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("COUNT(*)").Where("created_at > ?", within).Scan(&result).Error
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl["Commands"] = result.Count
+
+	return tmpl, nil
+}
+
+func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
+	if !botrest.BotIsRunning() {
+		return errors.New("Bot is not responding")
+	}
+
+	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	c := pat.Param(r, "channel")
+	perms, err := botrest.GetChannelPermissions(g.ID, c)
+	if err != nil {
+		return err
+	}
+
+	return perms
 }

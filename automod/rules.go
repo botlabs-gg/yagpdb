@@ -3,10 +3,10 @@ package automod
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"net/url"
 	"regexp"
 	"strings"
@@ -32,13 +32,13 @@ type BaseRule struct {
 	Enabled bool
 	// Name    string
 
-	ViolationsExpire int `valid:"0,1440"`
+	ViolationsExpire int `valid:"0,44640"`
 
 	// Execute these punishments after certain number of repeated violaions
-	MuteAfter    int `valid:"0,100"`
-	MuteDuration int `valid:"0,100"`
-	KickAfter    int `valid:"0,100"`
-	BanAfter     int `valid:"0,100"`
+	MuteAfter    int `valid:"0,1000"`
+	MuteDuration int `valid:"0,44640"`
+	KickAfter    int `valid:"0,1000"`
+	BanAfter     int `valid:"0,1000"`
 
 	IgnoreRole     string   `valid:"role,true"`
 	IgnoreChannels []string `valid:"channel,false"`
@@ -224,7 +224,7 @@ type LinksRule struct {
 	BaseRule `valid:"traverse"`
 }
 
-var linkRegex = regexp.MustCompile(`^((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
+var linkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
 
 func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 

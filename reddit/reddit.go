@@ -1,14 +1,15 @@
 package reddit
 
+//go:generate esc -o assets_gen.go -pkg reddit -ignore ".go" assets/
+
 import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,13 +23,61 @@ func (p *Plugin) Name() string {
 	return "Reddit"
 }
 
+// Remove feeds if they don't point to a proper channel
+func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
+	code, _ := common.DiscordError(err)
+	if code != discordgo.ErrCodeUnknownChannel {
+		l := log.WithError(err).WithField("channel", elem.Channel)
+		if code != discordgo.ErrCodeMissingPermissions && code != discordgo.ErrCodeMissingAccess {
+			l = l.WithField("s_msg", elem.MessageEmbed)
+		}
+		l.Error("Error posting reddit message")
+		return
+	}
+
+	log.WithError(err).WithField("channel", elem.Channel).Info("Removing reddit feed to nonexistant discord channel")
+
+	// channelid:feed-id
+	split := strings.Split(elem.SourceID, ":")
+	if len(split) < 2 {
+		log.Error("Invalid queued item: ", elem.ID)
+		return
+	}
+
+	guildID := split[0]
+	itemID := split[1]
+
+	client, err := common.RedisPool.Get()
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving redis client from pool")
+		return
+	}
+
+	currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+guildID)
+	if err != nil {
+		log.WithError(err).Error("Failed fetching config to remove")
+		return
+	}
+
+	parsed, err := strconv.Atoi(itemID)
+	if err != nil {
+		log.WithError(err).WithField("mq_id", elem.ID).Error("Failed parsing item id")
+	}
+	for _, v := range currentConfig {
+		if v.ID == parsed {
+			v.Remove(client)
+			common.AddCPLogEntry(common.BotUser, guildID, "Removed reddit feed from "+v.Sub+", Channel does not exist")
+			break
+		}
+	}
+}
+
 func RegisterPlugin() {
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
-	feeds.RegisterPlugin(plugin)
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
+	mqueue.RegisterSource("reddit", plugin)
 }
 
 type SubredditWatchItem struct {
@@ -75,7 +124,7 @@ func (item *SubredditWatchItem) Remove(client *redis.Client) error {
 }
 
 func GetConfig(client *redis.Client, key string) ([]*SubredditWatchItem, error) {
-	rawItems, err := client.Cmd("HGETALL", key).Hash()
+	rawItems, err := client.Cmd("HGETALL", key).Map()
 	if err != nil {
 		return nil, err
 	}

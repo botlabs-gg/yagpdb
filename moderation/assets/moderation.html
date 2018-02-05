@@ -1,0 +1,229 @@
+{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Disciminator){{"}}"}}</code> - The author of the kick/ban{{end}}
+
+{{define "cp_moderation"}}
+{{template "cp_head" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Moderation Tools</h1>
+        <p>Moderations tools to help moderate the server</p>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<form role="form" method="post">
+    <div class="row">
+    {{template "template_help"}}
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    Misc
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label>Channel to announce bans and kicks through the bot in (modlog)</label>
+                        <select class="form-control" name="ActionChannel" data-requireperms-embed>
+                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel "Same as command was sent in"}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Channel to send messages for the mods/admins in (reports and such)</label>
+                        <select class="form-control" name="ReportChannel" data-requireperms-send>
+                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel "None"}}
+                        </select>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="ReportEnabled" {{if .ModConfig.ReportEnabled}} checked{{end}}>
+                            Report command enabled<br/>
+                            <code>(mention or prefix) report @user some reason</code><br/>
+                            Everyone can use this.<br/>
+                            Report will upload a log of the last 100 messages in the channel and send a message about it in the report channel.
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="CleanEnabled" {{if .ModConfig.CleanEnabled}} checked{{end}}>
+                            Clean command enabled<br/>
+                            <code>(mention or prefix) clean NUM {@user <- optional}</code><br/>
+                            Manage Messages permissions is required for this command.<br/>
+                            Clean deletes up to a 1000 messages back in history. (max 100 messages at a time)
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
+                            Log Unban events in the mod log channel<br/>
+                            A reason and author can be assigned to this entry through the <code>reason</code> command<br/>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="LogBans" {{if .ModConfig.LogBans}} checked{{end}}>
+                            Log Bans not made through the bot<br/>
+                            A reason and author can be assigned to this entry through the <code>reason</code> command<br/>
+                        </label>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="panel {{if .ModConfig.MuteEnabled}}panel-green{{else}}panel-default{{end}}">
+                <div class="panel-heading">
+                    Mute/Unmute commands
+                </div>
+                <div class="panel-body">
+                   <div class="checkbox">
+                      <label>
+                        <input type="checkbox" name="MuteEnabled" {{if .ModConfig.MuteEnabled}} checked{{end}}>
+                        Mute/Unmute commands enabled<br/>
+                        <code>(mention or prefix) mute/unmute @user 10 some reason</code><br/>
+                        Only users with kick permission can use this.<br/>
+                        The mute command will assign the mute role to the user for the specified number of minutes (10m in the example above)
+                      </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="MuteReasonOptional" {{if .ModConfig.MuteReasonOptional}} checked{{end}}>
+                            Mute Reason optional
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="UnmuteReasonOptional" {{if .ModConfig.UnmuteReasonOptional}} checked{{end}}>
+                            Unmute Reason optional
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="MuteRole">Mute role</label>
+                        <select class="form-control" name="MuteRole">
+                            {{roleOptions .ActiveGuild.Roles .HighestRole .ModConfig.MuteRole "None"}}
+                        </select>
+                        <p class="help-block">You have to set up the role yourself so that people with it cannot talk in any channels</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel {{if .ModConfig.KickEnabled}}panel-green{{else}}panel-default{{end}}">
+                <div class="panel-heading">
+                    Kick Command
+                </div>
+                <div class="panel-body">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="KickEnabled" {{if .ModConfig.KickEnabled}} checked{{end}}>
+                            Kick command enabled<br/>
+                            <code>(mention or prefix) kick @user some reason</code><br/>
+                            Only users with kick permission can use this.<br/>
+                            Same as ban command but kicks instead
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="DeleteMessagesOnKick" {{if .ModConfig.DeleteMessagesOnKick}} checked{{end}}>
+                            Delete the users last 100 messages on kick<br/>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="KickReasonOptional" {{if .ModConfig.KickReasonOptional}} checked{{end}}>
+                            <code>Reason</code> optional<br/>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Kick DM (Leave empty for default)</label>
+                        <textarea class="form-control" rows="5" name="KickMessage">{{.ModConfig.KickMessage}}</textarea>
+                        
+                        <p class="help-block">Available template data is<br/>
+                        {{template "template_helper_user"}} - The usser being banned/kicked<br/>
+                        <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
+                        {{template "template_helper_mod_author"}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="panel {{if .ModConfig.BanEnabled}}panel-green{{else}}panel-default{{end}}">
+                <div class="panel-heading">
+                    Ban Command
+                </div>
+                <div class="panel-body">
+                   <div class="checkbox">
+                      <label>
+                        <input type="checkbox" name="BanEnabled" {{if .ModConfig.BanEnabled}} checked{{end}}>
+                        Ban command enabled<br/>
+                        <code>(mention or prefix) ban @user some reason</code><br/>
+                        Only users with ban permission can use this.<br/>
+                        The ban commnad will ban a user as well as sending a message that the user was banned in the action channel.
+                      </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="KickReasonOptional" {{if .ModConfig.KickReasonOptional}} checked{{end}}>
+                            <code>Reason</code> optional
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Ban DM (Leave empty for default)</label>
+                        <textarea class="form-control" rows="5" name="BanMessage">{{.ModConfig.BanMessage}}</textarea>
+                        <p class="help-block">Available template data is<br/>
+                        {{template "template_helper_user"}} - The usser being banned/kicked<br/>
+                        <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
+                        {{template "template_helper_mod_author"}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel {{if .ModConfig.WarnCommandsEnabled}}panel-green{{else}}panel-default{{end}}">
+                <div class="panel-heading">
+                    Warn Commands
+                </div>
+                <div class="panel-body">
+                   <div class="checkbox">
+                      <label>
+                        <input type="checkbox" name="WarnCommandsEnabled" {{if .ModConfig.WarnCommandsEnabled}} checked{{end}}>
+                        Warn commands enabled<br/>
+                        Only users with manage messages permission can use this.<br/>
+                        <code>(mention or prefix) warn @user some reason</code><br/>
+                        Creates a new warning for the user<br/>
+                        <code>(mention or prefix) warnings @user</code><br/>
+                        Lists all warning of a user<br/>
+                      </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="WarnIncludeChannelLogs" {{if .ModConfig.WarnIncludeChannelLogs}} checked{{end}}>
+                            Create logs in channel command was ran in when user is warned
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="WarnSendToModlog" {{if .ModConfig.WarnSendToModlog}} checked{{end}}>
+                            Send warnings to the modlog
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+        </div>
+    </div>
+    <!-- /.row -->            
+</form>
+
+{{template "cp_footer" .}}
+
+{{end}}
+

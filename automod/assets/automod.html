@@ -1,0 +1,259 @@
+{{define "cp_automod"}}
+
+{{template "cp_head" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Automoderator {{if .AutomodConfig.Enabled}}<span class="label label-success">Enabled</span>{{else}}<span class="label label-danger">Disabled</span>{{end}}</h1> 
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<form method="post">
+<div class="row">
+    <div class="col-lg-12">
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs tabs" role="tablist">
+            <li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">
+                General 
+            </a></li>
+            <li role="presentation"><a href="#spam" aria-controls="spam" role="tab" data-toggle="tab">
+                Slowmode <span class="label {{if .AutomodConfig.Spam.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#mass-mention" aria-controls="mass-mention" role="tab" data-toggle="tab">
+                Mass Mention <span class="label {{if .AutomodConfig.Mention.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#invites" aria-controls="invites" role="tab" data-toggle="tab">
+                Server Invites <span class="label {{if .AutomodConfig.Invite.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#links" aria-controls="links" role="tab" data-toggle="tab">
+                Links <span class="label {{if .AutomodConfig.Links.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#banned-words" aria-controls="banned-words" role="tab" data-toggle="tab">
+                Banned words <span class="label {{if .AutomodConfig.Words.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+            <li role="presentation"><a href="#banned-websites" aria-controls="banned-websites" role="tab" data-toggle="tab">
+                Banned websites <span class="label {{if .AutomodConfig.Sites.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
+            </a></li>
+        </ul>
+
+        <!-- Tab panesy -->
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="general">{{template "automod_general" .}}</div>
+            <div role="tabpanel" class="tab-pane" id="spam">{{template "automod_spam" .}}</div>
+            <div role="tabpanel" class="tab-pane" id="mass-mention">{{template "automod_mention" .}}</div>
+            <div role="tabpanel" class="tab-pane" id="invites">{{template "automod_invite" .}}</div>
+            <div role="tabpanel" class="tab-pane" id="links">{{template "automod_links" .}}</div>
+            <div role="tabpanel" class="tab-pane" id="banned-words">{{template "automod_banned_words" .}}</div>
+            <div role="tabpanel" class="tab-pane" id="banned-websites">{{template "automod_banned_websites" .}}</div>
+        </div>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <button type="submit" class="btn btn-success btn-lg btn-block" >Save All Settings</button>   
+    </div>
+</div>
+</form>
+<!-- /.row -->            
+{{template "cp_footer" .}}
+{{end}}
+
+<!-- GENERAL -->
+{{define "automod_general"}}
+<div class="row">
+    <div class="col-lg-12">
+        <br/>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="Enabled" {{if .AutomodConfig.Enabled }} checked{{end}}> Enable/Disable Automoderator
+            </label>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <h2>Informaion</h2>
+        <p>Automoderator helps performing mundane and repetetive duties on servers. Automoderator deals with the following cases:</p>
+        <ul>
+            <li><b>Slowmode:</b> You can set up a rule to only allow up to a certain amount of messages within a certain amount of seconds</li>
+            <li><b>Mass mentions:</b> You can set up a rule to detect messages which contains more than a certain amount of mentions in them</li>
+            <li><b>Invite links:</b> You can set up a rule for invite links (for example delete every invite link if they don't have a certain role)</li>
+            <li><b>Links:</b> You can restrict posting any kind of link to a certain role</li>
+            <li><b>Bad words/websites:</b> YAGPDB comes with a builtin list of bad sites and swear words you can use if you want, or you can define your own.</li>
+        </ul>
+        <p><b>TIP:</b> The ban and kick message from the moderation settings will be used when the bot kicks and bans</p>
+        <p>If you need any help setting up a rule, join the support server above.</p>            
+    </div>
+</div>
+{{end}}
+
+<!-- SPAM -->
+{{define "automod_spam"}}
+<div class="col-lg-12">
+    {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Spam "Name" "Spam"}}
+    
+    <div class="form-group">
+        <label for="NumMessages">Number of messages</label>
+        <input type="number" class="form-control" name="Spam.NumMessages" value="{{.AutomodConfig.Spam.NumMessages}}"></input>
+        <p class="help-block">Number of messages sent within the time frame below for it to be triggered</p>
+    </div>
+    <div class="form-group">
+        <label for="Within">Within (Seconds)</label>
+        <input type="number" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
+        <p class="help-block">The timeframe to check messages from</p>
+    </div>
+    <p>Something decent to just protect from raw spam could be 5 messages within 2 seconds. normal users wont come near that, and it would target spammers</p>
+</div>
+{{end}}
+
+<!-- MASS MENTION -->
+{{define "automod_mention"}}
+<div class="col-lg-12">
+    {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Mention "Name" "Mention"}}
+
+    <div class="form-group">
+        <label for="Treshold">Mentions Treshold</label>
+        <input type="number" class="form-control" name="Mention.Treshold" value="{{.AutomodConfig.Mention.Treshold}}"></input>
+        <p class="help-block">Number of mentions in a message for it to trigger.<br>
+        Example: if it's set to 5, then someone mentioning 5 people would trigger this.</p>
+    </div>
+
+</div>
+{{end}}
+
+<!-- SERVER INVITE -->
+{{define "automod_invite"}}
+<div class="col-lg-12">
+    {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Invite "Name" "Invite"}}
+</div>
+{{end}}
+
+<!-- ALL LINKS -->
+{{define "automod_links"}}
+<div class="col-lg-12">
+    {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Links "Name" "Links"}}
+</div>
+{{end}}
+
+<!-- BANNED WORDS -->
+{{define "automod_banned_words"}}
+    <div class="col-lg-12">
+        {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Words "Name" "Words"}}
+
+        <p class="help-block">Built in lists</p>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="Words.BuiltinSwearWords" {{if .AutomodConfig.Words.BuiltinSwearWords }} checked{{end}}> Ban builtin swear words <a href="https://github.com/jonas747/yagpdb/blob/master/automod/swearwords.go"> (list of swear words here)</a>
+            </label>
+        </div>
+        <br/>
+        <div class="form-group">
+            <label>Banned words</label>
+            <p class="help-block"> Seperate entries by spaces or lines, this is case insensitive and it only checks against words.</p>
+            <textarea class="form-control" name="Words.BannedWords" rows="10">{{.AutomodConfig.Words.BannedWords}}</textarea>
+        </div>
+    </div>
+{{end}}
+<!-- END BANNED WORDS -->
+
+<!-- BANNED WEBSITES -->
+{{define "automod_banned_websites"}}
+    <div class="col-lg-12">
+        {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Sites "Name" "Sites"}}
+
+        <!-- <div class="checkbox">
+            <label>
+                <input type="checkbox" name="Sites.BuiltinPornSites" {{if .AutomodConfig.Sites.BuiltinPornSites }} checked{{end}}> Ban builtin porn sites
+            </label>
+        </div> -->
+
+        <!-- <p><b>Google safe browsing integration <i>(Coming soon!)</i></b></p> -->
+        <!-- <div class="checkbox">
+            <label>
+                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing malware site detection
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing social engineering site detection
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing unwanted software site detection
+            </label>
+        </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing potentially harmfull application site detection
+            </label>
+        </div> -->
+
+        <div class="form-group">
+            <label>User defined banned sites</label>
+            <p class="help-block"> Seperate entries by spaces or lines<br/>Only type the host, For example if you want to block google you would add "google.com", NOT "http://google.com"<br>
+            This will also ban all subdomains of the site, e.g. if you ban <code>example.com</code> then <code>fun.example.com</code> will also be banend</p>
+            <textarea class="form-control" name="Sites.BannedWebsites" rows="10">{{.AutomodConfig.Sites.BannedWebsites}}</textarea>
+        </div>
+    </div>
+{{end}}
+<!-- END BANNED WEBSITES -->
+
+<!-- COMMON RULE FIELDS -->
+{{define "automod_common_fields"}}
+
+<br/>
+<div class="checkbox">
+    <label>
+        <input type="checkbox" name="{{.Name}}.Enabled" {{if .Rule.Enabled}} checked {{end}}> Enable/Disable
+    </label>
+</div>
+
+<div class="form-group">
+    <label for="ViolationsExpire">Violations expire after (minutes)</label>
+    <input type="number" class="form-control" name="{{.Name}}.ViolationsExpire" value="{{.Rule.ViolationsExpire}}"></input>
+    <p class="help-block">When this many minutes has passed without any violations, the users violations are forgotten, max is 1 week. (44640 minutes)</p>
+</div>
+
+<div class="form-group row">
+    <div class="col-lg-2">
+        <label for="MuteAfter">Mute after <small>(Set up role in moderation)</small></label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.MuteAfter}}" name="{{.Name}}.MuteAfter">
+    </div>
+
+    <div class="col-lg-3">
+        <label for="BanAfter">Mute Duration <b>(minutes)</b></label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.MuteDuration}}" name="{{.Name}}.MuteDuration">
+    </div>
+
+    <div class="col-lg-3 col-lg-offset-1">
+        <label for="KickAfter">Kick after</label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.KickAfter}}" name="{{.Name}}.KickAfter">
+    </div>
+    <div class="col-lg-3">
+        <label for="BanAfter">Ban after <b>(Be careful with this)</b></label>
+        <input type="number" class="form-control" placeholder="" value="{{.Rule.BanAfter}}" name="{{.Name}}.BanAfter">
+    </div>
+</div>
+<p class="help-block">Punish based on number of violations >:O (Punishment is disabled if set below 1)</p>
+<p class="help-block">A warning and message deletion will always be issued if the rule is broken.</p>
+
+
+<div class="form-group">
+    <label for="IgnoreRole">Ignore role</label>
+    <select id="channel" class="form-control" name="{{.Name}}.IgnoreRole">
+        {{roleOptions .Guild.Roles nil .Rule.IgnoreRole "None"}}
+    </select>
+</div>
+
+<div class="form-group">
+    <label for="IgnoreChannels">Ignore channels</label>
+    <select name="{{.Name}}.IgnoreChannels" class="multiselect" multiple="multiple" id="{{.Name}}">
+        {{mTemplate "channel_options_multi" "Channels" .Guild.Channels "Selections" .Rule.IgnoreChannels}}
+    </select>
+</div>
+{{end}}
+<!-- END COMMON RULE FIELDS -->

@@ -2,7 +2,6 @@ package reddit
 
 import (
 	"context"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -27,7 +26,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/reddit.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
 
 	redditMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
@@ -55,10 +54,10 @@ func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-		templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/reddit/"
+		templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/reddit/"
 
 		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+activeGuild.ID)
-		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", log.Error) {
+		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		}
 
@@ -100,8 +99,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 	}
 
-	if len(currentConfig) > 24 {
-		return templateData.AddAlerts(web.ErrorAlert("Max 25 items allowed"))
+	if len(currentConfig) >= GuildMaxFeeds {
+		return templateData.AddAlerts(web.ErrorAlert("Max " + strconv.Itoa(GuildMaxFeeds) + " items allowed"))
 	}
 
 	watchItem := &SubredditWatchItem{
@@ -112,7 +111,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err := watchItem.Set(client)
-	if web.CheckErr(templateData, err, "Failed saving item :'(", log.Error) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
@@ -160,7 +159,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 	}
 
-	if web.CheckErr(templateData, err, "Failed saving item :'(", log.Error) {
+	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
@@ -192,7 +191,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err = item.Remove(client)
-	if web.CheckErr(templateData, err, "Failed removing item :'(", log.Error) {
+	if web.CheckErr(templateData, err, "Failed removing item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
