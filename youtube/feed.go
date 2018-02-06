@@ -155,12 +155,13 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 		err = p.checkChannel(client, channel)
 		if err != nil {
 			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
+				// This channel has been deleted
 				p.Entry.WithError(err).WithField("yt_channel", channel).Warn("Removing non existant youtube channel")
-				err = common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
-				if err != nil && err != gorm.ErrRecordNotFound {
-					p.Entry.WithError(err).Error("Failed deleting nonexistant channel subs")
-				}
-				go p.MaybeRemoveChannelWatch(channel)
+				p.removeAllSubsForChannel(channel)
+			} else if err == ErrIDNotFound {
+				// This can happen if the channel was terminated because it broke the terms for example, just remove all references to it
+				p.Entry.WithField("channel", channel).Info("Removing youtube feed to channel without playlist")
+				p.removeAllSubsForChannel(channel)
 			} else {
 				p.Entry.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
 			}
@@ -168,6 +169,14 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 	}
 
 	return nil
+}
+
+func (p *Plugin) removeAllSubsForChannel(channel string) {
+	err := common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
+	if err != nil {
+		p.Entry.WithError(err).WithField("yt_channel", channel).Error("failed removing channel")
+	}
+	go p.MaybeRemoveChannelWatch(channel)
 }
 
 func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
