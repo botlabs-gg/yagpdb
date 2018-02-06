@@ -184,7 +184,7 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 
 	m.Unlock()
 
-	logrus.WithField("guild", guildID).WithField("user", elem.Member).Info("Requesting guild member")
+	logrus.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
 
 	if gs := State.Guild(true, guildID); gs != nil {
 		if member := gs.MemberCopy(true, elem.Member, true); member != nil {
@@ -203,7 +203,7 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 
 	member, err := common.BotSession.GuildMember(guildID, elem.Member)
 	if err != nil {
-		logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Error("Failed fetching member")
+		logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
 	} else {
 		go eventsystem.EmitEvent(&eventsystem.EventData{
 			EventDataContainer: &eventsystem.EventDataContainer{
