@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -111,7 +112,7 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 		return "Failed parsing args", nil
 	}
 
-	resp, err := cast.RunFunc(data)
+	resp, err := cast.RunFunc(data.WithContext(context.WithValue(data.Context(), CtxKeyRedisClient, ctx.Redis)))
 	if err != nil {
 		return "", errors.WithMessage(err, "tmplExecCmd, Run")
 	}
@@ -150,7 +151,7 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 	// }
 	// parsed.Guild = parsed.Channel.Guild
 
-	// resp, err := cast.Run(parsed.WithContext(context.WithValue(parsed.Context(), CtxKeyRedisClient, ctx.Redis)))
+	// resp, err := cast.Run(parsed.WithContext()
 
 	switch v := resp.(type) {
 	case error:
