@@ -27,7 +27,7 @@ func (p *Plugin) InitBot() {
 
 	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
 
-	commands.AddRootCommands(cmdLogs)
+	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames)
 }
 
 var _ bot.BotStarterHandler = (*Plugin)(nil)
