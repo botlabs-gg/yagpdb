@@ -1,5 +1,7 @@
 package logs
 
+//go:generate esc -o assets_gen.go -pkg logs -ignore ".go" assets/
+
 import (
 	"errors"
 	"fmt"
@@ -7,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -33,16 +34,19 @@ func InitPlugin() {
 	configstore.RegisterConfig(configstore.SQL, &GuildLoggingConfig{})
 
 	p := &Plugin{}
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 }
 
 type GuildLoggingConfig struct {
 	configstore.GuildConfigModel
-	UsernameLoggingEnabled    bool
-	NicknameLoggingEnabled    bool
-	BlacklistedChannels       string
+	UsernameLoggingEnabled bool
+	NicknameLoggingEnabled bool
+	BlacklistedChannels    string
+
+	ManageMessagesCanViewDeleted bool
+	EveryoneCanViewDeleted       bool
+
 	ParsedBlacklistedchannels []string `gorm:"-"`
 }
 
@@ -91,7 +95,7 @@ type Message struct {
 	common.SmallModel
 	MessageLogID uint `gorm:"index"` // Foreign key, belongs to MessageLog
 
-	MessageID string
+	MessageID string `gorm:"index"`
 	Content   string `gorm:"size:2000"`
 	Timestamp string
 

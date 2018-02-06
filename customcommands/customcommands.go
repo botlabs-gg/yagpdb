@@ -5,12 +5,17 @@ package customcommands
 import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 	"sort"
+)
+
+const (
+	MaxCommands = 100
 )
 
 func KeyCommands(guildID string) string { return "custom_commands:" + guildID }
@@ -19,13 +24,13 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
+	common.RegisterPlugin(plugin)
 	docs.AddPage("Custom Commands", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+	commands.CommandSystem.RegisterCommands(cmdListCommands)
 }
 
 func (p *Plugin) Name() string {
@@ -42,11 +47,25 @@ const (
 	CommandTriggerExact
 )
 
+var (
+	triggerStrings = map[CommandTriggerType]string{
+		CommandTriggerCommand:    "Command",
+		CommandTriggerStartsWith: "StartsWith",
+		CommandTriggerContains:   "Contains",
+		CommandTriggerRegex:      "Regex",
+		CommandTriggerExact:      "Exact",
+	}
+)
+
+func (t CommandTriggerType) String() string {
+	return triggerStrings[t]
+}
+
 type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
 	TriggerTypeForm string             `json:"-" schema:"type"`
-	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,2000"`
-	Response        string             `json:"response" schema:"response" valid:",2000"`
+	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,1000"`
+	Response        string             `json:"response" schema:"response" valid:",3000"`
 	CaseSensitive   bool               `json:"case_sensitive" schema:"case_sensitive"`
 	ID              int                `json:"id"`
 }
@@ -62,15 +81,9 @@ func (cc *CustomCommand) Save(client *redis.Client, guildID string) error {
 }
 
 func GetCommands(client *redis.Client, guild string) ([]*CustomCommand, int, error) {
-	hash, err := client.Cmd("HGETALL", "custom_commands:"+guild).Hash()
+	hash, err := client.Cmd("HGETALL", "custom_commands:"+guild).Map()
 	if err != nil {
-		// Check if the error was that it didnt exist, if so return an empty slice
-		// If not, there was an actual error
-		if _, ok := err.(*redis.CmdError); ok {
-			return []*CustomCommand{}, 0, nil
-		} else {
-			return nil, 0, err
-		}
+		return nil, 0, err
 	}
 
 	highest := 0

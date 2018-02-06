@@ -6,7 +6,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    <a class="navbar-brand" {{if .ActiveGuild}} href="/cp/{{.ActiveGuild.ID}}/stats"{{else}} href="/cp/"{{end}}>YAGPDB <small>alpha</small>{{if .ActiveGuild}}<b> {{.ActiveGuild.Name}}</b>{{end}}</a>
+    <a class="navbar-brand" {{if .ActiveGuild}} href="/manage/{{.ActiveGuild.ID}}/stats"{{else}} href="/manage/"{{end}}>YAGPDB <small>alpha</small>{{if .ActiveGuild}}<b> {{.ActiveGuild.Name}}</b>{{end}}</a>
 
 </div>
 <!-- /.navbar-header -->
@@ -17,7 +17,7 @@
         <a href="https://discord.gg/0vYlUK2XBKldPSMY"><i class="fa fa-info-circle fa-fw"></i><span class="nav-button-desc">YAGPDB Server</span></a>
     </li>
     <li>
-        <a href="/cp"><i class="fa fa-newspaper-o fa-fw"></i><span class="nav-button-desc"> v{{.Version}}</span></a>
+        <a href="/manage"><i class="fa fa-newspaper-o fa-fw"></i><span class="nav-button-desc"> v{{.Version}}</span></a>
     </li>
     {{if .ManagedGuilds}}
     <li class="dropdown">
@@ -31,9 +31,9 @@
             {{range $index, $element := .ManagedGuilds -}}
             <li>
                 {{if $element.Connected -}}
-                <a href="/cp/{{$element.ID}}/stats"><i class="fa fa-magic fa-fw"></i>{{$element.Name}}</a>
+                <a href="/manage/{{$element.ID}}/stats"><i class="fa fa-magic fa-fw"></i>{{$element.Name}}</a>
                 {{- else -}}
-                <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{urlquery "https://"}}{{$host}}{{urlquery "/cp"}}"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
+                <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" $host "/manage")}}"><i class="fa fa-plus fa-fw"></i>{{$element.Name}} (Not added to server)</a>
                 {{- end}}
             </li>
             {{- end}}
@@ -75,55 +75,58 @@
         <ul class="nav" id="side-menu">
             {{if and .ActiveGuild .IsAdmin}}
             <li>
-                <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/stats" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
+                <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/stats" ><i class="fa fa-dashboard fa-fw"></i> Stats</a>
             </li>
             <li>
-                <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/cplogs" ><i class="fa fa-tree fa-fw"></i> Controlpanel Logs</a>
+                <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/cplogs" ><i class="fa fa-tree fa-fw"></i> Controlpanel Logs</a>
             </li>
             <li>
                 <a href="#"><i class="fa fa-bullseye fa-fw"></i>Commands<span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/commands/settings">Command settings</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/commands/settings">Command settings</a>
                     </li>
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/customcommands">Custom Commands</a>
-                    </li>
-                </ul>
-                <!-- /.nav-second-level -->
-            </li>
-            <li>
-                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications &amp; Feeds <span class="label label-success">New!</span><span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
-                    <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/notifications/general">General</a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/reddit">Reddit</a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/youtube">Youtube <span class="label label-success">New!</span></a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/streaming">Streaming</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/customcommands">Custom Commands</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->
             </li>
             <li>
-                <a href="#"><i class="fa fa-bolt fa-fw"></i> Tools &amp; Utilities<span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-exclamation fa-fw"></i> Notifications &amp; Feeds<span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/moderation">Moderation</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/notifications/general">General</a>
                     </li>
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/automod">Automoderator</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/reddit">Reddit</a>
                     </li>
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/autorole">Autorole &amp; role commands</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/youtube">Youtube</a>
                     </li>
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/logging/">Logging</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/streaming">Streaming</a>
+                    </li>
+                </ul>
+                <!-- /.nav-second-level -->
+            </li>
+            <li>
+                <a href="#"><i class="fa fa-bolt fa-fw"></i> Tools &amp; Utilities <span class="label label-success">New!</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    <li>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/moderation">Moderation</a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/automod">Automoderator</a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/autorole">Autorole</a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/rolecommands/">Role Commands <span class="label label-success">New!</span></a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/logging/">Logging</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->
@@ -132,10 +135,10 @@
                 <a href="#"><i class="fa fa-trophy fa-fw"></i> Fun <span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/reputation">Reputation</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/reputation">Reputation</a>
                     </li>
                     <li>
-                        <a class="nav-link" href="/cp/{{.ActiveGuild.ID}}/soundboard/">Soundboard</a>
+                        <a class="nav-link" href="/manage/{{.ActiveGuild.ID}}/soundboard/">Soundboard</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->
@@ -149,13 +152,20 @@
 </div>
 <!-- /.navbar-static-side -->
 </div>
-<div id="nav-footer">
-    <p><a href="/docs/Helping%20Out#buying-the-ad-space">Buy this ad space for 1$/day</a></p>
-    <!-- <script data-cfasync='false' type='text/javascript' src='//p209229.clksite.com/adServe/banners?tid=209229_389421_0'></script> -->
-    <p><i>(Image by the amazing Tashi)</i></p>
-    <a href="https://www.youtube.com/watch?v=kxopViU98Xo" target="_blank"><img src="/static/img/ad_placeholder.png" id="nav-footer-img"></img></a>
-<!--     <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSdWheZWEtyNBF8EZS8f-oH9RiuOw-WOoylFMJ4o0LuoGtUzJg/viewform?usp=sf_link">Would you be okay with an ad showing up here?</a></p>
- --></div>
+<div id="nav-footer" style="height: 150px;">
+    <p><a href="/docs/ads">Buy this space for 1$/day</a></p>
+    <p><a href="https://www.patreon.com/yagpdb" target="_blank">Or support my patreon!</a></p>
+    <!-- <p><i>(Image by the amazing Tashi)</i></p> -->
+    <a href="/docs/ads"><img src="/static/img/onion_placeholder.png" id="nav-footer-img"></img></a>
+<!--     <a href="https://discord.gg/JZufWqM" target="_blank">
+        <img src="/static/img/onion_img_2.png" id="nav-footer-img" style="max-height: 222px !important"></img>
+        <span id="nav-footer-overlay">Advertisement</span>
+    </a> -->
+    <!-- <p><i>(ad by br0wni3#6344)</i></p> -->
+    <!-- <img src="/static/img/ad_image.jpg" id="nav-footer-img"></img> -->
+    <!-- <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSdWheZWEtyNBF8EZS8f-oH9RiuOw-WOoylFMJ4o0LuoGtUzJg/viewform?usp=sf_link">Would you be okay with an ad showing up here?</a></p> -->
+
+ </div>
 {{end}}
 
 {{define "cp_nav"}}

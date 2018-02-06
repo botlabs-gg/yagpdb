@@ -5,9 +5,9 @@ import (
 	"errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/templates"
 	"html/template"
-	"reflect"
-	"strings"
 	"time"
 )
 
@@ -20,7 +20,7 @@ func prettyTime(t time.Time) string {
 // makes certain templates a lot simpler
 func mTemplate(name string, values ...interface{}) (template.HTML, error) {
 
-	data, err := dictionary(values...)
+	data, err := templates.Dictionary(values...)
 	if err != nil {
 		return "", err
 	}
@@ -32,80 +32,6 @@ func mTemplate(name string, values ...interface{}) (template.HTML, error) {
 	}
 
 	return template.HTML(buf.String()), nil
-}
-
-// dictionary creates a map[string]interface{} from the given parameters by
-// walking the parameters and treating them as key-value pairs.  The number
-// of parameters must be even.
-func dictionary(values ...interface{}) (map[string]interface{}, error) {
-	if len(values)%2 != 0 {
-		return nil, errors.New("invalid dict call")
-	}
-	dict := make(map[string]interface{}, len(values)/2)
-	for i := 0; i < len(values); i += 2 {
-		key, ok := values[i].(string)
-		if !ok {
-			return nil, errors.New("dict keys must be strings")
-		}
-		dict[key] = values[i+1]
-	}
-	return dict, nil
-}
-
-// indirect is taken from 'text/template/exec.go'
-func indirect(v reflect.Value) (rv reflect.Value, isNil bool) {
-	for ; v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface; v = v.Elem() {
-		if v.IsNil() {
-			return v, true
-		}
-		if v.Kind() == reflect.Interface && v.NumMethod() > 0 {
-			break
-		}
-	}
-	return v, false
-}
-
-// in returns whether v is in the set l.  l may be an array or slice.
-func in(l interface{}, v interface{}) bool {
-	lv := reflect.ValueOf(l)
-	vv := reflect.ValueOf(v)
-
-	switch lv.Kind() {
-	case reflect.Array, reflect.Slice:
-		for i := 0; i < lv.Len(); i++ {
-			lvv := lv.Index(i)
-			lvv, isNil := indirect(lvv)
-			if isNil {
-				continue
-			}
-			switch lvv.Kind() {
-			case reflect.String:
-				if vv.Type() == lvv.Type() && vv.String() == lvv.String() {
-					return true
-				}
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				switch vv.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					if vv.Int() == lvv.Int() {
-						return true
-					}
-				}
-			case reflect.Float32, reflect.Float64:
-				switch vv.Kind() {
-				case reflect.Float32, reflect.Float64:
-					if vv.Float() == lvv.Float() {
-						return true
-					}
-				}
-			}
-		}
-	case reflect.String:
-		if vv.Type() == lv.Type() && strings.Contains(lv.String(), vv.String()) {
-			return true
-		}
-	}
-
-	return false
 }
 
 var permsString = map[string]int{
@@ -122,10 +48,168 @@ func hasPerm(botPerms int, checkPerm string) (bool, error) {
 	return botPerms&p != 0, nil
 }
 
-func plus1(x int) int {
-	return x + 1
+// tmplRoleDropdown is a template function for generating role dropdown options
+// roles: slice of roles to display options for
+// highestBotRole: the bot's highest role, if not nil will disable roles above this one.
+// args are optinal and in this order:
+// 1. current selected roleid
+// 2. default empty display name
+// 3. default unknown display name
+func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, args ...string) template.HTML {
+	hasCurrentSelected := len(args) > 0
+	currentSelected := ""
+	if hasCurrentSelected {
+		currentSelected = args[0]
+	}
+
+	hasEmptyName := len(args) > 1
+	emptyName := ""
+	if hasEmptyName {
+		emptyName = args[1]
+	}
+
+	hasUnknownName := len(args) > 2
+	unknownName := "Unknown role (deleted most likely)"
+	if hasUnknownName {
+		emptyName = args[2]
+	}
+
+	output := ""
+	if hasEmptyName {
+		output += `<option value=""`
+		if currentSelected == "" {
+			output += `selected`
+		}
+		output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
+	}
+
+	found := false
+	for k, role := range roles {
+		// Skip the everyone role
+		if k == len(roles)-1 {
+			break
+		}
+		if role.Managed {
+			continue
+		}
+
+		output += `<option value="` + role.ID + `"`
+		if role.ID == currentSelected {
+			output += " selected"
+			found = true
+		}
+
+		optName := template.HTMLEscapeString(role.Name)
+		if highestBotRole != nil {
+			if dutil.IsRoleAbove(role, highestBotRole) {
+				output += " disabled"
+				optName += " (role is above bot)"
+			}
+		}
+		output += ">" + optName + "</option>\n"
+	}
+
+	if !found && currentSelected != "" {
+		output += `<option value="` + currentSelected + `" selected>` + unknownName + "</option>\n"
+	}
+
+	return template.HTML(output)
 }
 
-func roleIsAbove(a, b *discordgo.Role) bool {
-	return dutil.IsRoleAbove(a, b)
+// Same as tmplRoleDropdown but supports multiple selections
+func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Role, selections []int64) template.HTML {
+
+	parsedIds := make([]int64, len(roles))
+	for i, r := range roles {
+		parsedIds[i] = common.MustParseInt(r.ID)
+	}
+
+	output := ""
+	for k, role := range roles {
+		// Skip the everyone role
+		if k == len(roles)-1 {
+			break
+		}
+		if role.Managed {
+			continue
+		}
+
+		output += `<option value="` + role.ID + `"`
+		for _, selected := range selections {
+			if selected == parsedIds[k] {
+				output += " selected"
+			}
+		}
+
+		optName := template.HTMLEscapeString(role.Name)
+		if highestBotRole != nil {
+			if dutil.IsRoleAbove(role, highestBotRole) {
+				output += " disabled"
+				optName += " (role is above bot)"
+			}
+		}
+		output += ">" + optName + "</option>\n"
+	}
+
+	return template.HTML(output)
+}
+
+// tmplChannelDropdown is a template function for generating channel dropdown options
+// channels: slice of channels to display options for
+// args are optinal and in this order:
+// 1. current selected channelID
+// 2. default empty display name
+// 3. default unknown display name
+func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*discordgo.Channel, args ...string) template.HTML {
+
+	return func(channels []*discordgo.Channel, args ...string) template.HTML {
+		hasCurrentSelected := len(args) > 0
+		currentSelected := ""
+		if hasCurrentSelected {
+			currentSelected = args[0]
+		}
+
+		hasEmptyName := len(args) > 1
+		emptyName := ""
+		if hasEmptyName {
+			emptyName = args[1]
+		}
+
+		hasUnknownName := len(args) > 2
+		unknownName := "Unknown channel (deleted most likely)"
+		if hasUnknownName {
+			emptyName = args[2]
+		}
+
+		output := ""
+		if hasEmptyName {
+			output += `<option value=""`
+			if currentSelected == "" {
+				output += `selected`
+			}
+			output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
+		}
+
+		found := false
+		for _, channel := range channels {
+			if channel.Type != channelType {
+				continue
+			}
+
+			output += `<option value="` + channel.ID + `"`
+			if channel.ID == currentSelected {
+				output += " selected"
+				found = true
+			}
+
+			optName := template.HTMLEscapeString(channel.Name)
+			output += ">#" + optName + "</option>\n"
+		}
+
+		if !found && currentSelected != "" {
+			output += `<option value="` + currentSelected + `" selected>` + unknownName + "</option>\n"
+		}
+
+		return template.HTML(output)
+	}
 }

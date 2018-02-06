@@ -204,7 +204,7 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		return tmpl, nil
 	}
 
-	err := common.GORM.Debug().Model(data).Updates(map[string]interface{}{"name": data.Name, "required_role": data.RequiredRole}).Error
+	err := common.GORM.Model(data).Updates(map[string]interface{}{"name": data.Name, "required_role": data.RequiredRole}).Error
 	configstore.InvalidateGuildCache(client, g.ID, &SoundboardConfig{})
 	return tmpl, err
 }

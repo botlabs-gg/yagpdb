@@ -21,7 +21,13 @@ func get(url string, dest interface{}) error {
 	}
 
 	if resp.StatusCode != 200 {
-		return ErrServerError
+		var errDest string
+		err := json.NewDecoder(resp.Body).Decode(&errDest)
+		if err != nil {
+			return ErrServerError
+		}
+
+		return errors.New(errDest)
 	}
 
 	return json.NewDecoder(resp.Body).Decode(dest)
@@ -34,6 +40,11 @@ func GetGuild(guildID string) (g *discordgo.Guild, err error) {
 
 func GetBotMember(guildID string) (m *discordgo.Member, err error) {
 	err = get(guildID+"/botmember", &m)
+	return
+}
+
+func GetChannelPermissions(guildID, channelID string) (perms int64, err error) {
+	err = get(guildID+"/channelperms/"+channelID, &perms)
 	return
 }
 
@@ -68,5 +79,5 @@ func RunPinger() {
 func BotIsRunning() bool {
 	lastPingMutex.RLock()
 	defer lastPingMutex.RUnlock()
-	return time.Now().Sub(lastPing) < time.Second*5
+	return time.Since(lastPing) < time.Second*5
 }

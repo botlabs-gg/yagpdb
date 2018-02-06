@@ -1,18 +1,19 @@
 package common
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	"math/rand"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 )
 
@@ -37,7 +38,7 @@ func GetWrapped(in []*discordgo.UserGuild, client *redis.Client) ([]*WrappedGuil
 	}
 
 	for _, g := range in {
-		client.Append("SISMEMBER", "connected_guilds", g.ID)
+		client.PipeAppend("SISMEMBER", "connected_guilds", g.ID)
 	}
 
 	replies, err := GetRedisReplies(client, len(in))
@@ -47,7 +48,7 @@ func GetWrapped(in []*discordgo.UserGuild, client *redis.Client) ([]*WrappedGuil
 
 	out := make([]*WrappedGuild, len(in))
 	for k, g := range in {
-		isConnected, err := replies[k].Bool()
+		isConnected, err := RedisBool(replies[k])
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +72,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 
 // SendTempMessage sends a message that gets deleted after duration
 func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, msg string) {
-	m, err := BotSession.ChannelMessageSend(cID, EscapeEveryoneMention(msg))
+	m, err := BotSession.ChannelMessageSend(cID, EscapeSpecialMentions(msg))
 	if err != nil {
 		return
 	}
@@ -105,26 +106,6 @@ func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err
 	}
 
 	return
-}
-
-func ParseExecuteTemplate(tmplSource string, data interface{}) (string, error) {
-	return ParseExecuteTemplateFM(tmplSource, data, nil)
-}
-
-func ParseExecuteTemplateFM(tmplSource string, data interface{}, f template.FuncMap) (string, error) {
-	tmpl := template.New("")
-	if f != nil {
-		tmpl.Funcs(f)
-	}
-
-	parsed, err := tmpl.Parse(tmplSource)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	err = parsed.Execute(&buf, data)
-	return buf.String(), err
 }
 
 func RandomAdjective() string {
@@ -244,7 +225,7 @@ func SendEmbedWithFallback(s *discordgo.Session, channelID string, embed *discor
 		return s.ChannelMessageSendEmbed(channelID, embed)
 	}
 
-	return s.ChannelMessageSend(channelID, EscapeEveryoneMention(FallbackEmbed(embed)))
+	return s.ChannelMessageSend(channelID, EscapeSpecialMentions(FallbackEmbed(embed)))
 }
 
 func FallbackEmbed(embed *discordgo.MessageEmbed) string {
@@ -360,11 +341,21 @@ func ErrWithCaller(err error) error {
 	return errors.WithMessage(err, filepath.Base(f.Name()))
 }
 
-// EscapeEveryoneMention Escapes an everyone mention, adding a zero width space between the '@' and rest
-func EscapeEveryoneMention(in string) string {
-	const zeroSpace = "​" // <- Zero width space
-	s := strings.Replace(in, "@everyone", "@"+zeroSpace+"everyone", -1)
-	s = strings.Replace(s, "@here", "@"+zeroSpace+"here", -1)
+const zeroWidthSpace = "​"
+
+var (
+	everyoneReplacer    = strings.NewReplacer("@everyone", "@"+zeroWidthSpace+"everyone", "@here", "@"+zeroWidthSpace+"here")
+	patternRoleMentions = regexp.MustCompile("<@&[0-9]*>")
+)
+
+// EscapeSpecialMentions Escapes an everyone mention, adding a zero width space between the '@' and rest
+func EscapeSpecialMentions(in string) string {
+	s := everyoneReplacer.Replace(in)
+
+	s = patternRoleMentions.ReplaceAllStringFunc(s, func(x string) string {
+		return x[:2] + zeroWidthSpace + x[2:]
+	})
+
 	return s
 }
 
@@ -390,13 +381,13 @@ func RetrySendMessage(channel string, msg interface{}, maxTries int) error {
 			return err
 		}
 
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 5)
 	}
 
 	return err
 }
 
-func FindStringSlice(strs []string, search string) bool {
+func ContainsStringSlice(strs []string, search string) bool {
 	for _, v := range strs {
 		if v == search {
 			return true
@@ -404,4 +395,72 @@ func FindStringSlice(strs []string, search string) bool {
 	}
 
 	return false
+}
+
+func ContainsStringSliceFold(strs []string, search string) bool {
+	for _, v := range strs {
+		if strings.EqualFold(v, search) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ContainsInt64Slice(slice []int64, search int64) bool {
+	for _, v := range slice {
+		if v == search {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ValidateSQLSchema does some simple security checks on a sql schema file
+// At the moment it only checks for drop table/index statements accidentally left in the schema file
+func ValidateSQLSchema(input string) {
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	lineCount := 0
+	for scanner.Scan() {
+		lineCount++
+		trimmed := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(strings.ToLower(trimmed), "drop table") || strings.HasPrefix(strings.ToLower(trimmed), "drop index") {
+			panic(fmt.Errorf("Schema file L%d: starts with drop table/index.\n%s", lineCount, trimmed))
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("reading standard input:", err)
+	}
+}
+
+// DiscordError extracts the errorcode discord sent us
+func DiscordError(err error) (code int, msg string) {
+	if rError, ok := err.(*discordgo.RESTError); ok && rError.Message != nil {
+		return rError.Message.Code, rError.Message.Message
+	}
+
+	return 0, ""
+}
+
+type LoggedExecutedCommand struct {
+	SmallModel
+
+	UserID    string
+	ChannelID string
+	GuildID   string
+
+	// Name of command that was triggered
+	Command string
+	// Raw command with arguments passed
+	RawCommand string
+	// If command returned any error this will be no-empty
+	Error string
+
+	TimeStamp    time.Time
+	ResponseTime int64
+}
+
+func (l LoggedExecutedCommand) TableName() string {
+	return "executed_commands"
 }

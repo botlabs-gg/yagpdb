@@ -1,0 +1,1 @@
+Simple message queue based on postgres, this is for more realiably sending messages with retry on failure, accepting long failture durations such as discord being down.

@@ -4,22 +4,19 @@ package commands
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
-	err := common.GORM.AutoMigrate(&LoggedExecutedCommand{}).Error
+	common.RegisterPlugin(plugin)
+	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
 	if err != nil {
 		log.WithError(err).Error("Failed migrating database")
 	}
@@ -67,7 +64,7 @@ func CheckChannelsConfig(conf *CommandsConfig, channels []*discordgo.Channel) {
 
 ROOT:
 	for _, channel := range channels {
-		if channel.Type != "text" {
+		if channel.Type != discordgo.ChannelTypeGuildText {
 			continue
 		}
 
@@ -99,7 +96,7 @@ ROOT:
 	// Check for removed channels
 	for _, override := range conf.ChannelOverrides {
 		for _, channel := range channels {
-			if channel.Type != "text" {
+			if channel.Type != discordgo.ChannelTypeGuildText {
 				continue
 			}
 
@@ -193,7 +190,7 @@ func GetCommandPrefix(client *redis.Client, guild string) (string, error) {
 	if reply.Err != nil {
 		return "", reply.Err
 	}
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return "", nil
 	}
 

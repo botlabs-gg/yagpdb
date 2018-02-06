@@ -3,10 +3,8 @@ package soundboard
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
 	"golang.org/x/net/context"
 	"os"
 )
@@ -52,9 +50,7 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	p := &Plugin{}
-
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 	configstore.RegisterConfig(p, &SoundboardConfig{})
 	common.GORM.AutoMigrate(SoundboardConfig{}, SoundboardSound{})

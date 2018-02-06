@@ -4,6 +4,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
 	"io"
@@ -71,7 +72,7 @@ func runPlayer(guildID string) {
 		}
 
 		var err error
-		vc, err = playSound(vc, common.BotSession, item)
+		vc, err = playSound(vc, bot.ShardManager.SessionForGuildS(guildID), item)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", guildID).Error("Failed playing sound")
 			if item.CommandRanFrom != "" {

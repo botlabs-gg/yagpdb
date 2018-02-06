@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
@@ -13,6 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"time"
 )
 
@@ -225,7 +225,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryModeration,
-		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:         "Kick",
 			Description:  "Kicks a member",
@@ -260,7 +259,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryModeration,
-		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:        "Mute",
 			Description: "Mutes a member",
@@ -290,9 +288,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				target := parsed.Args[0].DiscordUser()
-				member := parsed.Guild.MemberCopy(true, target.ID, true)
+				member, err := bot.GetMember(parsed.Guild.ID(), target.ID)
+				if err != nil || member == nil {
+					return "Member not found", err
+				}
 
-				err := MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, muteDuration)
+				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, muteDuration)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return "API Error: " + cast.Message.Message, err
@@ -308,7 +309,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryModeration,
-		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:         "Unmute",
 			Description:  "unmutes a member",
@@ -331,9 +331,12 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				target := parsed.Args[0].DiscordUser()
-				member := parsed.Guild.MemberCopy(true, target.ID, true)
+				member, err := bot.GetMember(parsed.Guild.ID(), target.ID)
+				if err != nil || member == nil {
+					return "Member not found", err
+				}
 
-				err := MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, 0)
+				err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.Guild.ID(), parsed.Message.ChannelID, parsed.Message.Author, reason, member, 0)
 				if err != nil {
 					if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 						return "API Error: " + cast.Message.Message, err
@@ -365,14 +368,14 @@ var ModerationCommands = []commandsystem.CommandHandler{
 
 				channelID := config.ReportChannel
 				if channelID == "" {
-					channelID = parsed.Guild.ID()
+					return "No report channel set up", nil
 				}
 
 				reportBody := fmt.Sprintf("<@%s> Reported <@%s> in <#%s> For `%s`\nLast 100 messages from channel: <%s>", parsed.Message.Author.ID, parsed.Args[0].DiscordUser().ID, parsed.Message.ChannelID, parsed.Args[1].Str(), logLink)
 
-				_, err := common.BotSession.ChannelMessageSend(channelID, common.EscapeEveryoneMention(reportBody))
+				_, err := common.BotSession.ChannelMessageSend(channelID, common.EscapeSpecialMentions(reportBody))
 				if err != nil {
-					return "Failed sending report", err
+					return "Failed sending report, check perms for report channel", err
 				}
 
 				// don't bother sending confirmation if it's in the same channel
@@ -385,7 +388,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      5,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Clean",
@@ -435,7 +437,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 		},
 	}, &commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      5,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Reason",
@@ -480,7 +481,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Warn",
@@ -505,7 +505,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "Warnings",
@@ -540,7 +539,6 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "EditWarning",
@@ -566,10 +564,10 @@ var ModerationCommands = []commandsystem.CommandHandler{
 	},
 	&commands.CustomCommand{
 		CustomEnabled: true,
-		Cooldown:      2,
 		Category:      commands.CategoryModeration,
 		Command: &commandsystem.Command{
 			Name:                  "DelWarning",
+			Aliases:               []string{"dw"},
 			Description:           "Deletes a warning, id is the first number of each warning from the warnings command",
 			RequiredArgs:          1,
 			UserArgRequireMention: true,
@@ -584,6 +582,25 @@ var ModerationCommands = []commandsystem.CommandHandler{
 				}
 
 				return "👌", nil
+			}),
+		},
+	},
+	&commands.CustomCommand{
+		CustomEnabled: true,
+		Category:      commands.CategoryModeration,
+		Command: &commandsystem.Command{
+			Name:                  "ClearWarnings",
+			Aliases:               []string{"clw"},
+			Description:           "Clears the warnings of a user",
+			RequiredArgs:          1,
+			UserArgRequireMention: true,
+			Arguments: []*commandsystem.ArgDef{
+				&commandsystem.ArgDef{Name: "User", Type: commandsystem.ArgumentUser},
+			},
+			Run: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *commandsystem.ExecData) (interface{}, error) {
+
+				rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.Guild.ID(), parsed.Args[0].DiscordUser().ID).Delete(WarningModel{}).RowsAffected
+				return fmt.Sprintf("Deleted %d warnings.", rows), nil
 			}),
 		},
 	},

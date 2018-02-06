@@ -7,10 +7,11 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -203,6 +204,19 @@ func IsAdminCtx(ctx context.Context) bool {
 	return false
 }
 
+func HasPermissionCTX(ctx context.Context, perms int) bool {
+	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
+
+		cast := v.(*discordgo.UserGuild)
+		// Require manageserver, ownership of guild or ownership of bot
+		if cast.Owner || cast.Permissions&discordgo.PermissionAdministrator != 0 || cast.Permissions&discordgo.PermissionManageServer != 0 || cast.Permissions&perms != 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
 type APIError struct {
 	Message string
 }
@@ -214,4 +228,16 @@ func CtxLogger(ctx context.Context) *log.Entry {
 	}
 
 	return log.NewEntry(log.StandardLogger())
+}
+
+func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, statusCode int) {
+	if r.FormValue("partial") != "" {
+		w.WriteHeader(statusCode)
+		w.Write([]byte(`{"error": "` + err + `"}`))
+		return
+	}
+
+	http.Redirect(w, r, "/?error="+url.QueryEscape(err), http.StatusTemporaryRedirect)
+	return
+
 }

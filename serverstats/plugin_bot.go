@@ -3,15 +3,29 @@ package serverstats
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
+	"sync"
 	"time"
 )
+
+var (
+	guildsToCheck   = make([]string, 0)
+	guildsToCheckMU sync.Mutex
+)
+
+func MarkGuildAsToBeChecked(guildID string) {
+	guildsToCheckMU.Lock()
+	if !common.ContainsStringSlice(guildsToCheck, guildID) {
+		guildsToCheck = append(guildsToCheck, guildID)
+	}
+	guildsToCheckMU.Unlock()
+}
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberAdd), eventsystem.EventGuildMemberAdd)
@@ -25,7 +39,7 @@ func (p *Plugin) InitBot() {
 	commands.CommandSystem.RegisterCommands(&commands.CustomCommand{
 		CustomEnabled: true,
 		Category:      commands.CategoryTool,
-		Cooldown:      10,
+		Cooldown:      5,
 		Command: &commandsystem.Command{
 			Name:        "Stats",
 			Description: "Shows server stats (if public stats are enabled)",
@@ -44,7 +58,7 @@ func (p *Plugin) InitBot() {
 					return "Error retrieving stats", err
 				}
 
-				total := 0
+				total := int64(0)
 				for _, c := range stats.ChannelsHour {
 					total += c.Count
 				}
@@ -92,7 +106,6 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
 	}
-	log.WithField("guild", g.ID).WithField("g_name", g.Name).WithField("member_count", g.MemberCount).Info("Set member count")
 
 	err = ApplyPresences(client, g.ID, g.Presences)
 	if err != nil {
@@ -195,17 +208,19 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
+
+	MarkGuildAsToBeChecked(channel.Guild.ID())
 }
 
 func ApplyPresences(client *redis.Client, guildID string, presences []*discordgo.Presence) error {
-	client.Append("DEL", "guild_stats_online:"+guildID)
+	client.PipeAppend("DEL", "guild_stats_online:"+guildID)
 	count := 1
 	for _, p := range presences {
 		if p.Status == "offline" {
 			continue
 		}
 		count++
-		client.Append("SADD", "guild_stats_online:"+guildID, p.User.ID)
+		client.PipeAppend("SADD", "guild_stats_online:"+guildID, p.User.ID)
 	}
 
 	_, err := common.GetRedisReplies(client, count)

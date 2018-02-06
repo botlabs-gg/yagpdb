@@ -5,6 +5,7 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 )
@@ -23,7 +24,14 @@ func (d *Plugin) InitWeb() {
 // )
 
 func PageHandler(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
-	page := FindPage(pat.Param(r, "page"))
+	name, err := url.QueryUnescape(pat.Param(r, "page"))
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Page not found"))
+		return
+	}
+
+	page := FindPage(name)
 	if page == nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Page not found"))
@@ -42,7 +50,12 @@ func PageHandler(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData,
 }
 
 func StaticHandler(w http.ResponseWriter, r *http.Request) {
-	pageName := pat.Param(r, "page")
+	pageName, err := url.QueryUnescape(pat.Param(r, "page"))
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Page not found"))
+		return
+	}
 
 	page := FindPage(pageName)
 	if page == nil {

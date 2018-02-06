@@ -6,14 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/net/context"
 	"regexp"
 	"strconv"
@@ -46,9 +47,10 @@ func RedisKeyBannedUser(guildID, userID string) string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	web.RegisterPlugin(plugin)
-	bot.RegisterPlugin(plugin)
-	common.RegisterScheduledEventHandler("unmute", handleUnMute)
+
+	common.RegisterPlugin(plugin)
+
+	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
 
@@ -283,12 +285,24 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 		dmMsg = "You were " + actionStr + "\nReason: {{.Reason}}"
 	}
 
-	executed, err := common.ParseExecuteTemplate(dmMsg, map[string]interface{}{
-		"User":   user,
-		"Reason": reason,
-	})
-
 	gs := bot.State.Guild(true, guildID)
+
+	member, err := bot.GetMember(guildID, user.ID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", gs.ID()).Info("Failed retrieving member")
+		member = &discordgo.Member{User: user}
+	}
+
+	ctx := templates.NewContext(bot.State.User(true).User, gs, nil, member)
+	ctx.Data["Reason"] = reason
+	ctx.Data["Author"] = author
+	ctx.SentDM = true
+	executed, err := ctx.Execute(nil, dmMsg)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed executing pusnishment dm")
+		executed = "Failed executing template."
+	}
+
 	gs.RLock()
 	gName := "**" + gs.Guild.Name + ":** "
 	gs.RUnlock()
@@ -305,9 +319,9 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	switch p {
 	case PunishmentKick:
-		err = common.BotSession.GuildMemberDelete(guildID, user.ID)
+		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason)
 	case PunishmentBan:
-		err = common.BotSession.GuildBanCreate(guildID, user.ID, 1)
+		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason, 1)
 	}
 
 	if err != nil {
@@ -317,11 +331,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	logrus.Println("MODERATION:", author.Username, actionStr, user.Username, "cause", reason)
 
 	err = CreateModlogEmbed(actionChannel, author, actionStr, user, reason, logLink)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func KickUser(config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
@@ -438,11 +448,11 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 
 	// Either remove the scheduled unmute or schedule an unmute in the future
 	if mute {
-		err = common.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
+		err = scheduledevents.ScheduleEvent(client, "unmute", guildID+":"+user.ID, time.Now().Add(time.Minute*time.Duration(duration)))
 		client.Cmd("SETEX", RedisKeyMutedUser(guildID, user.ID), duration*60, 1)
 	} else {
 		if client != nil {
-			err = common.RemoveScheduledEvent(client, "unmute", guildID+":"+user.ID)
+			err = scheduledevents.RemoveEvent(client, "unmute", guildID+":"+user.ID)
 		}
 	}
 	if err != nil {

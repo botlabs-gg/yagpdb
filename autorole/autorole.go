@@ -1,13 +1,12 @@
 package autorole
 
+//go:generate esc -o assets_gen.go -pkg autorole -ignore ".go" assets/
+
 import (
-	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
-func KeyCommands(guildID string) string   { return "autorole:" + guildID + ":commands" }
 func KeyGeneral(guildID string) string    { return "autorole:" + guildID + ":general" }
 func KeyProcessing(guildID string) string { return "autorole:" + guildID + ":processing" }
 
@@ -19,28 +18,20 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	p := &Plugin{}
-
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
-}
-
-type RoleCommand struct {
-	Role string
-	Name string
+	common.RegisterPlugin(p)
 }
 
 type GeneralConfig struct {
-	Role             string
+	Role             string `valid:"role,true"`
 	RequiredDuration int
+
+	RequiredRoles []int64 `valid:"role,true"`
+	IgnoreRoles   []int64 `valid:"role,true"`
+	OnlyOnJoin    bool
 }
 
 func GetGeneralConfig(client *redis.Client, guildID string) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
 	err := common.GetRedisJson(client, KeyGeneral(guildID), conf)
 	return conf, err
-}
-
-func GetCommands(client *redis.Client, guildID string) (roles []*RoleCommand, err error) {
-	err = common.GetRedisJson(client, KeyCommands(guildID), &roles)
-	return
 }

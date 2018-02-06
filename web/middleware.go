@@ -5,17 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/miolini/datacounter"
 	"goji.io/pat"
 	"io"
 	"net/http"
-	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
@@ -147,25 +146,15 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		session := DiscordSessionFromContext(r.Context())
 		if session == nil {
-			log.Println("No session in request?")
-			if r.FormValue("partial") != "" {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Not logged in"))
-				return
-			}
-
-			values := url.Values{
-				"error": []string{"No session"},
-			}
-			urlStr := values.Encode()
-			http.Redirect(w, r, "/?"+urlStr, http.StatusTemporaryRedirect)
+			WriteErrorResponse(w, r, "No session or session expired", http.StatusUnauthorized)
 			return
 		}
 
 		origin := r.Header.Get("Origin")
 		if origin != "" {
-			if !strings.EqualFold("https://"+common.Conf.Host, origin) {
-				http.Redirect(w, r, "/?err=bad_origin", http.StatusTemporaryRedirect)
+			split := strings.SplitN(origin, ":", 3)
+			if len(split) < 2 || !strings.EqualFold("https://"+common.Conf.Host, split[0]+":"+split[1]) {
+				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
 				return
 			}
 		}
@@ -204,7 +193,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 		}
 
 		var guilds []*discordgo.UserGuild
-		err = common.GetCacheDataJson(redisClient, session.Token+":guilds", &guilds)
+		err = common.GetCacheDataJson(redisClient, user.ID+":guilds", &guilds)
 		if err != nil {
 			guilds, err = session.UserGuilds(100, "", "")
 			if err != nil {
@@ -213,7 +202,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 				return
 			}
 
-			LogIgnoreErr(common.SetCacheDataJsonSimple(redisClient, session.Token+":guilds", guilds))
+			LogIgnoreErr(common.SetCacheDataJson(redisClient, user.ID+":guilds", 10, guilds))
 		}
 
 		wrapped, err := common.GetWrapped(guilds, redisClient)
@@ -502,6 +491,8 @@ func APIHandler(inner CustomHandlerFunc) http.Handler {
 			} else {
 				if public, ok := cast.(*PublicError); ok {
 					out = map[string]interface{}{"ok": false, "error": public.msg}
+				} else {
+					out = map[string]interface{}{"ok": false}
 				}
 				CtxLogger(r.Context()).WithError(cast).Error("API Error")
 			}

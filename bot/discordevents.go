@@ -2,16 +2,24 @@ package bot
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"time"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 func HandleReady(evt *eventsystem.EventData) {
-	log.Info("Ready received!")
 	ContextSession(evt.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
+
+	// We pass the common.Session to the command system and that needs the user from the state
+	common.BotSession.State.Lock()
+	ready := discordgo.Ready{
+		Version:   evt.Ready.Version,
+		SessionID: evt.Ready.SessionID,
+		User:      evt.Ready.User,
+	}
+	common.BotSession.State.Ready = ready
+	common.BotSession.State.Unlock()
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
@@ -35,9 +43,21 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 			Type: eventsystem.EventNewGuild,
 		}, eventsystem.EventNewGuild)
 	}
+
+	banned, _ := common.RedisBool(ContextRedis(evt.Context()).Cmd("SISMEMBER", "banned_servers", g.ID))
+	if banned {
+		log.WithField("guild", g.ID).Info("Banned server tried to add bot back")
+		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
+		common.BotSession.GuildLeave(g.ID)
+	}
 }
 
 func HandleGuildDelete(evt *eventsystem.EventData) {
+	if evt.GuildDelete.Unavailable {
+		// Just a guild outage
+		return
+	}
+
 	log.WithFields(log.Fields{
 		"g_name": evt.GuildDelete.Name,
 	}).Info("Left guild")
@@ -68,24 +88,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	started := time.Now()
-	log.WithField("guild", p.GuildID).WithField("user", p.User.ID).Info("Querying api for guildmember")
-	member, err := common.BotSession.GuildMember(p.GuildID, p.User.ID)
-	elapsed := time.Since(started)
-	if elapsed > time.Second*3 {
-		log.WithField("guild", p.GuildID).WithField("user", p.User.ID).Error("LongGMQuery: Took " + elapsed.String() + ", to query guild member! maybe ratelimits?")
-	}
-
-	if err == nil {
-		member.GuildID = p.GuildID
-		gs.MemberAddUpdate(true, member)
-		go eventsystem.EmitEvent(&eventsystem.EventData{
-			EventDataContainer: &eventsystem.EventDataContainer{
-				GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
-			},
-			Type: eventsystem.EventMemberFetched,
-		}, eventsystem.EventMemberFetched)
-	}
+	GetMember(p.GuildID, p.User.ID)
 }
 
 // StateHandler updates the world state
@@ -95,34 +98,43 @@ func StateHandler(evt *eventsystem.EventData) {
 }
 
 func HandleGuildUpdate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildUpdate.Guild.ID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildUpdate.Guild.ID, "")
 }
 
 func HandleGuildRoleUpdate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildRoleUpdate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleUpdate.GuildID, "")
 }
 
 func HandleGuildRoleCreate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildRoleCreate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleCreate.GuildID, "")
 }
 
 func HandleGuildRoleRemove(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.GuildRoleDelete.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleDelete.GuildID, "")
 }
 
 func HandleChannelCreate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.ChannelCreate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelCreate.GuildID, "")
 }
 func HandleChannelUpdate(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.ChannelUpdate.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelUpdate.GuildID, "")
 }
 func HandleChannelDelete(evt *eventsystem.EventData) {
-	InvalidateGuildCache(ContextRedis(evt.Context()), evt.ChannelDelete.GuildID)
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelDelete.GuildID, "")
 }
 
-func InvalidateGuildCache(client *redis.Client, guildID string) {
-	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))
-	client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))
+func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
+	InvalidateCache(ContextRedis(evt.Context()), "", evt.GuildMemberUpdate.User.ID)
+}
+
+func InvalidateCache(client *redis.Client, guildID, userID string) {
+	if userID != "" {
+		client.Cmd("DEL", common.CacheKeyPrefix+userID+":guilds")
+	}
+	if guildID != "" {
+		client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))
+		client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))
+	}
 }
 
 func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {

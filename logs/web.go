@@ -21,14 +21,16 @@ type DeleteData struct {
 }
 
 type GeneralFormData struct {
-	UsernameLoggingEnabled bool
-	NicknameLoggingEnabled bool
-	BlacklistedChannels    []string
+	UsernameLoggingEnabled       bool
+	NicknameLoggingEnabled       bool
+	ManageMessagesCanViewDeleted bool
+	EveryoneCanViewDeleted       bool
+	BlacklistedChannels          []string
 }
 
 func (lp *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/logging.html"))
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/public_channel_logs.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/control_panel.html")))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/log_view.html")))
 
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id/"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
@@ -111,9 +113,11 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 			GuildID: common.MustParseInt(g.ID),
 		},
 
-		NicknameLoggingEnabled: form.NicknameLoggingEnabled,
-		UsernameLoggingEnabled: form.UsernameLoggingEnabled,
-		BlacklistedChannels:    strings.Join(form.BlacklistedChannels, ","),
+		NicknameLoggingEnabled:       form.NicknameLoggingEnabled,
+		UsernameLoggingEnabled:       form.UsernameLoggingEnabled,
+		BlacklistedChannels:          strings.Join(form.BlacklistedChannels, ","),
+		EveryoneCanViewDeleted:       form.EveryoneCanViewDeleted,
+		ManageMessagesCanViewDeleted: form.ManageMessagesCanViewDeleted,
 	}
 
 	err := configstore.SQL.SetGuildConfig(ctx, config)
@@ -153,6 +157,19 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	if web.CheckErr(tmpl, err, "Thats's not a real log id", nil) {
 		return tmpl
 	}
+
+	config, err := GetConfig(g.ID)
+	if web.CheckErr(tmpl, err, "Error retrieving config for this server", web.CtxLogger(r.Context()).Error) {
+		return tmpl
+	}
+
+	canViewDeleted := web.IsAdminCtx(r.Context())
+	if config.EveryoneCanViewDeleted {
+		canViewDeleted = true
+	} else if config.ManageMessagesCanViewDeleted && !canViewDeleted {
+		canViewDeleted = web.HasPermissionCTX(r.Context(), discordgo.PermissionManageMessages)
+	}
+	tmpl["CanViewDeleted"] = canViewDeleted
 
 	msgLogs, err := GetChannelLogs(parsed)
 	if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {

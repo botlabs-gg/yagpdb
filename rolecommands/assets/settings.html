@@ -1,0 +1,323 @@
+{{define "cp_rolecommands"}}
+
+{{template "cp_head" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">Role Commands</h1>
+        <p>Also referred to as self assignable roles, role commands allows you to have members assign their own roles. <a class="nav-link" href="/docs/role%20commands">Read the docs for more details and examples.</a></p>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-6">
+        <!-- Add new role command -->
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Add new role command
+            </div>
+            <div class="panel-body">
+                <form class="form-horizontal" action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_cmd" method="post">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <label for="new-role-command-name">Name</label>
+                            <div class="input-group">
+                                <span class="input-group-addon">-role </span>
+                                <input type="text" class="form-control" id="new-role-command-name" name="Name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <label for="new-role-command-group">Group</label><br>
+                            <select name="Group" class="form-control" id="new-role-command-group">
+                                {{mTemplate "rolecommands_groupopts" "Groups" .Groups}}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="new-role-command-role">Role</label>
+                            <select id="channel" class="form-control" name="Role">
+                                {{roleOptions .ActiveGuild.Roles .HighestRole}}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <label for="new-role-command-require-roles">Requires roles</label><br>
+                            <select name="RequireRoles" class="multiselect form-control" multiple="multiple" id="new-role-command-require-roles">
+                                {{roleOptions .ActiveGuild.Roles nil}}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="new-role-command-ignore-roles">Ignore roles</label><br>
+                            <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple" id="new-role-command-ignore-roles">
+                                {{roleOptions .ActiveGuild.Roles nil}}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- /.col-lg-6 -->
+    <div class="col-lg-6">
+        <!-- Add new role command group -->
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Add new role command group
+            </div>
+            <div class="panel-body">
+                <form class="form-horizontal" action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_group" method="post">
+                    <div class="form-group" >
+                        <div class="col-sm-6">
+                            <label for="new-group-name">Name</label>
+                            <input type="text" class="form-control" id="new-group-name" name="Name">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="new-group-mode">Mode</label><br>
+                            <select name="Mode" class="form-control" id="new-group-mode" onchange="ModeChanged(this,'new-')">
+                                <option value="0">None</option>
+                                <option value="1">Single</option>
+                                <option value="2">Multiple</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <label for="new-group-require-roles">Requires roles</label><br>
+                            <select name="RequireRoles" class="multiselect form-control" multiple="multiple" id="new-group-require-roles">
+                                {{roleOptions .ActiveGuild.Roles nil}}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="new-group-ignore-roles">Ignore roles</label><br>
+                            <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple" id="new-group-ignore-roles">
+                                {{roleOptions .ActiveGuild.Roles nil}}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="new-group-single-opts">
+                        <div class="col-sm-6">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="SingleRequireOne"> Require 1 role in group at all times (after initial assignment)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="SingleAutoToggleOff"> Remove existing role when assigning another role in group.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" id="new-group-multi-opts">
+                        <div class="col-sm-6">
+                            <label for="new-group-min-roles">Minimum number of roles</label><br>
+                            <input type="text" class="form-control" id="new-group-min-roles" name="MultipleMin">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="new-group-max-roles">Maximum number of roles</label><br>
+                            <input type="text" class="form-control" id="new-group-max-roles" name="MultipleMax">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- /.col-lg-6 -->
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <!-- Group listings with commands -->
+        {{mTemplate "rolecommands_group" "ActiveGuild" .ActiveGuild  "Commands" .LoneCommands "HighestRole" .HighestRole "Groups" .Groups}}
+
+        {{$ag := .ActiveGuild}}
+        {{$hr := .HighestRole}}
+        {{$groups := .Groups}}
+        {{range $group, $commands := .SortedCommands}}
+            {{mTemplate "rolecommands_group" "ActiveGuild" $ag  "Commands" $commands "Group" $group "HighestRole" $hr "Groups" $groups}}
+        {{end}}
+    </div>
+</div>
+<!-- /.row -->  
+
+
+
+<script>
+function ModeChanged(dropdown, idPrefix){
+    var idMultiOpts = $("#" + idPrefix + "group-multi-opts");
+    var idSingleOpts = $("#" + idPrefix + "group-single-opts");
+
+    if(dropdown.value === "0"){
+        idMultiOpts.addClass("hidden");
+        idSingleOpts.addClass("hidden");
+    }else if(dropdown.value === "1"){
+        idMultiOpts.addClass("hidden");
+        idSingleOpts.removeClass("hidden");        
+    }else{
+        idMultiOpts.removeClass("hidden");
+        idSingleOpts.addClass("hidden");
+    }
+}
+
+$(function(){
+    ModeChanged($("#new-group-mode")[0], "new-");
+    {{range .Groups}}
+    ModeChanged($("#{{.ID}}-group-mode")[0], "{{.ID}}-");
+    {{end}}
+})
+</script>          
+{{template "cp_footer" .}}
+
+{{end}}
+
+{{define "rolecommands_group"}}
+{{$ag := .ActiveGuild}}
+{{$hr := .HighestRole}}
+
+<div class="panel {{if .Group}}panel-yellow{{else}}panel-primary{{end}}">
+    <div class="panel-heading">
+        Group: {{if .Group}}{{.Group.Name}}{{else}}None{{end}}
+    </div>
+    <div class="panel-body" style="padding-top: 0px;">
+        {{if .Group}}
+        <!-- Group settings here -->
+        <div class="well well-sm row">
+            <form class="" action="/manage/{{$ag.ID}}/rolecommands/update_group" method="post">
+                <input type="number" name="ID" class="hidden" value="{{.Group.ID}}">
+                <div class="form-group col-lg-2">
+                    <label for="{{.Group.ID}}-group-name">Name</label>
+                    <input type="text" class="form-control" id="{{.Group.ID}}-group-name" name="Name" value="{{.Group.Name}}">
+                </div>
+
+              <div class="col-lg-2">
+                    <label for="{{.Group.ID}}-group-mode">Mode</label><br>
+                    <select name="Mode" class="form-control" id="{{.Group.ID}}-group-mode" onchange="ModeChanged(this,'{{.Group.ID}}-')">
+                        <option value="0" {{if eq .Group.Mode 0}} selected{{end}}>None</option>
+                        <option value="1" {{if eq .Group.Mode 1}} selected{{end}}>Single</option>
+                        <option value="2" {{if eq .Group.Mode 2}} selected{{end}}>Multiple</option>
+                    </select>
+                </div>
+
+                <div class="form-group col-lg-2">
+                    <label for="{{.Group.ID}}-group-require-roles">Requires roles</label><br>
+                    <select name="RequireRoles" class="multiselect form-control" multiple="multiple" id="{{.Group.ID}}-group-require-roles">
+                        {{roleOptionsMulti $ag.Roles nil .Group.RequireRoles}}
+                    </select>
+                </div>
+                <div class="form-group col-lg-2">
+                    <label for="{{.Group.ID}}-group-ignore-roles">Ignore roles</label><br>
+                    <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple" id="{{.Group.ID}}-group-ignore-roles">
+                        {{roleOptionsMulti $ag.Roles nil .Group.IgnoreRoles}}
+                    </select>
+                </div>
+
+                <div id="{{.Group.ID}}-group-single-opts">
+                    <div class="form-group col-lg-2">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="SingleRequireOne" {{if .Group.SingleRequireOne}}checked{{end}}> Require 1 role in group at all times (after initial assignment)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group col-lg-2">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="SingleAutoToggleOff" {{if .Group.SingleAutoToggleOff}}checked{{end}}> Remove existing role when assigning another role in group.
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div id="{{.Group.ID}}-group-multi-opts">
+                    <div class="form-group col-lg-2">
+                        <label for="{{.Group.ID}}-group-min-roles">Minimum number of roles</label><br>
+                        <input type="text" class="form-control" id="{{.Group.ID}}-group-min-roles" name="MultipleMin" value="{{.Group.MultipleMin}}">
+                    </div>
+                    <div class="form-group col-lg-2">
+                        <label for="{{.Group.ID}}-group-max-roles">Maximum number of roles</label><br>
+                        <input type="text" class="form-control" id="{{.Group.ID}}-group-max-roles" name="MultipleMax" value="{{.Group.MultipleMax}}">
+                    </div>
+                </div>
+
+                <div class="col-lg-2" style="padding-top: 10px">
+                    <button type="submit" class="btn btn-success" formaction="/manage/{{$ag.ID}}/rolecommands/update_group">Save Group</button>
+                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/remove_group">Delete Group</button>
+                </div>
+            </form>
+        </div>
+        {{end}} 
+        <!-- End group settings -->
+
+        {{$groups := .Groups}}
+        {{range .Commands}}
+        <div class="well well-sm row" >
+            <form class="" action="/manage/{{$ag.ID}}/rolecommands/update_cmd" method="post">
+                <input type="number" name="ID" class="hidden" value="{{.ID}}">
+                <div class="form-group col-lg-2">
+                    <label for="{{.ID}}-role-command-name">Name</label>
+                    <div class="input-group">
+                        <span class="input-group-addon">-role </span>
+                        <input type="text" class="form-control" id="{{.ID}}-role-command-name" name="Name" value="{{.Name}}">
+                    </div>
+                </div>
+                <div class="form-group col-lg-2">
+                    <label for="{{.ID}}-role-command-group">Group</label><br>
+                    <select name="Group" class="form-control" id="{{.ID}}-role-command-group">
+                        {{if .Group}}{{mTemplate "rolecommands_groupopts" "Groups" $groups "Selected" .Group.ID}}
+                        {{else}}{{mTemplate "rolecommands_groupopts" "Groups" $groups}}
+                        {{end}}
+                    </select>
+                </div>
+                <div class="form-group col-lg-2">
+                    <label for="{{.ID}}-role-command-role">Role</label>
+                    <select id="{{.ID}}-role-command-role" class="form-control" name="Role">
+                        {{roleOptions $ag.Roles $hr (str .Role)}}
+                    </select>
+                </div>
+                <div class="form-group col-lg-2">
+                    <label for="{{.ID}}-role-command-require-roles">Requires roles</label><br>
+                    <select name="RequireRoles" class="multiselect form-control" multiple="multiple" id="{{.ID}}-role-command-require-roles">
+                        {{roleOptionsMulti $ag.Roles nil .RequireRoles}}
+                    </select>
+                </div>
+                <div class="form-group col-lg-2">
+                    <label for="{{.ID}}-role-command-ignore-roles">Ignore roles</label><br>
+                    <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple" id="{{.ID}}-role-command-ignore-roles">
+                        {{roleOptionsMulti $ag.Roles nil .IgnoreRoles}}
+                    </select>
+                </div>
+                <div class="form-group col-lg-2" style="padding-top: 10px">
+                    <!-- Single button -->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Action <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><input type="submit" class="btn btn-link" formaction="/manage/{{$ag.ID}}/rolecommands/update_cmd" value="Save"></input></li>
+                            <li><input type="submit" class="btn btn-link delete-button" formaction="/manage/{{$ag.ID}}/rolecommands/remove_cmd" value="Delete"></input></li>
+                            <li><input type="submit" class="btn btn-link" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=1" value="Move Up"></input></li>
+                            <li><input type="submit" class="btn btn-link" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=-1" value="Move Down"></input></li>
+                        </ul>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {{end}}
+    </div>
+</div>    
+{{end}}
+
+{{define "rolecommands_groupopts"}}
+{{$selected := or .Selected -1}}
+<option value="-1">None</option> 
+{{range .Groups}}
+<option value="{{.ID}}" {{if and ($selected) (eq $selected .ID)}} selected {{end}}>{{.Name}} </option>
+{{end}}
+{{end}}

@@ -4,11 +4,10 @@ package youtube
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/web"
 	"google.golang.org/api/youtube/v3"
 	"sync"
 	"time"
@@ -16,12 +15,14 @@ import (
 
 const (
 	RedisChannelsLockKey = "youtube_subbed_channel_lock"
+	GuildMaxFeeds        = 50
 )
 
 func KeyLastVidTime(channel string) string { return "youtube_last_video_time:" + channel }
 func KeyLastVidID(channel string) string   { return "youtube_last_video_id:" + channel }
 
 type Plugin struct {
+	common.BasePlugin
 	YTService *youtube.Service
 	Stop      chan *sync.WaitGroup
 }
@@ -40,9 +41,8 @@ func RegisterPlugin() {
 
 	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
 
-	web.RegisterPlugin(p)
-	feeds.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPluginL(p)
+	mqueue.RegisterSource("youtube", p)
 
 	docs.AddPage("Youtube Feeds", FSMustString(false, "/assets/help-page.md"), nil)
 }
@@ -64,4 +64,21 @@ type YoutubePlaylistID struct {
 	ChannelID  string `gorm:"primary_key"`
 	CreatedAt  time.Time
 	PlaylistID string
+}
+
+// Remove feeds if they don't point to a proper channel
+func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
+	code, _ := common.DiscordError(err)
+	if code != discordgo.ErrCodeUnknownChannel {
+		logrus.WithError(err).WithField("channel", elem.Channel).Error("Error posting youtube message")
+		return
+	}
+
+	// Remove it
+	err = common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
+	if err != nil {
+		p.Entry.WithError(err).Error("failed removing nonexistant channel")
+	} else {
+		logrus.WithField("channel", elem.Channel).Info("Removed youtube feed to nonexistant channel")
+	}
 }

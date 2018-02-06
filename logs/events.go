@@ -22,7 +22,7 @@ func init() {
 
 func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildCreate, eventsystem.EventMemberFetched)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
 	commands.CommandSystem.RegisterCommands(cmds...)
@@ -36,7 +36,7 @@ func (p *Plugin) StartBot() {
 
 var cmds = []commandsystem.CommandHandler{
 	&commands.CustomCommand{
-		Cooldown: 30,
+		Cooldown: 5,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Logs",
@@ -71,7 +71,6 @@ var cmds = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Cooldown: 10,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Whois",
@@ -218,7 +217,6 @@ var cmds = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Cooldown: 10,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Usernames",
@@ -261,7 +259,6 @@ var cmds = []commandsystem.CommandHandler{
 		},
 	},
 	&commands.CustomCommand{
-		Cooldown: 10,
 		Category: commands.CategoryTool,
 		Command: &commandsystem.Command{
 			Name:        "Nicknames",
@@ -307,7 +304,24 @@ var cmds = []commandsystem.CommandHandler{
 
 // Mark all log messages with this id as deleted
 func HandleMsgDelete(evt *eventsystem.EventData) {
-	common.GORM.Model(Message{}).Where("message_id = ?", evt.MessageDelete.ID).Update("deleted", true)
+	if evt.MessageDelete != nil {
+		err := markLoggedMessageAsDeleted(evt.MessageDelete.ID)
+		if err != nil {
+			logrus.WithError(err).Error("Failed marking message as deleted")
+		}
+		return
+	}
+
+	for _, m := range evt.MessageDeleteBulk.Messages {
+		err := markLoggedMessageAsDeleted(m)
+		if err != nil {
+			logrus.WithError(err).Error("Failed marking message as deleted")
+		}
+	}
+}
+
+func markLoggedMessageAsDeleted(mID string) error {
+	return common.GORM.Model(Message{}).Where("message_id = ?", mID).Update("deleted", true).Error
 }
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
@@ -316,6 +330,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	if gs == nil {
 		go func() { evtChan <- evt }()
 	}
+
 	ms := gs.Member(true, pu.User.ID)
 	if ms == nil || ms.Presence == nil || ms.Member == nil {
 		go func() { evtChan <- evt }()

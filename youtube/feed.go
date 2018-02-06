@@ -4,20 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/mediocregopher/radix.v2/redis"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
 	"sync"
 	"time"
 )
 
 const (
+	MaxChannelsPerPoll = 200 // Can probably be safely increased to 1000 when caches are hot
 	PollInterval       = time.Second * 100
-	MaxChannelsPerPoll = 100 // Can probably be safely increased to 1000 when caches are hot
-	// PollInterval       = time.Second * 5 // <- used for debug purposes
+	// PollInterval = time.Second * 5 // <- used for debug purposes
 )
 
 func (p *Plugin) StartFeed() {
@@ -63,9 +64,9 @@ func (p *Plugin) runFeed() {
 			now := time.Now()
 			err := p.checkChannels(redisClient)
 			if err != nil {
-				logrus.WithError(err).Error("Failed checking youtube channels")
+				p.Entry.WithError(err).Error("Failed checking youtube channels")
 			}
-			logrus.Info("Took", time.Since(now), "to check youtube feeds")
+			p.Entry.Info("Took", time.Since(now), "to check youtube feeds")
 		}
 	}
 }
@@ -79,7 +80,16 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 	for _, channel := range channels {
 		err = p.checkChannel(client, channel)
 		if err != nil {
-			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
+			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
+				p.Entry.WithError(err).WithField("yt_channel", channel).Warn("Removing non existant youtube channel")
+				err = common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
+				if err != nil && err != gorm.ErrRecordNotFound {
+					p.Entry.WithError(err).Error("Failed deleting nonexistant channel subs")
+				}
+				go p.MaybeRemoveChannelWatch(channel)
+			} else {
+				p.Entry.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
+			}
 		}
 	}
 
@@ -96,8 +106,8 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	}
 
 	if len(subs) < 1 {
-		time.AfterFunc(time.Second, func() {
-			maybeRemoveChannelWatch(channel)
+		time.AfterFunc(time.Second*10, func() {
+			p.MaybeRemoveChannelWatch(channel)
 		})
 		return nil
 	}
@@ -111,7 +121,7 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 	seconds, err := client.Cmd("GET", KeyLastVidTime(channel)).Int64()
 	var lastProcessedVidTime time.Time
 	if err != nil {
-		logrus.WithError(err).Error("Failed retrieving last processed vid time, falling back to this time")
+		p.Entry.WithError(err).Error("Failed retrieving last processed vid time, falling back to this time")
 		lastProcessedVidTime = time.Now()
 	} else {
 		lastProcessedVidTime = time.Unix(seconds, 0)
@@ -119,18 +129,20 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 
 	lastVidID, _ := client.Cmd("GET", KeyLastVidID(channel)).Str()
 
+	// latestVid is used to set the last vid id and time
 	var latestVid *youtube.PlaylistItem
 
 	first := true
 
 	for {
-		call := p.YTService.PlaylistItems.List("snippet").PlaylistId(playlistID)
+		call := p.YTService.PlaylistItems.List("snippet").PlaylistId(playlistID).MaxResults(50)
 		if nextPage != "" {
 			call = call.PageToken(nextPage)
 		}
 
 		resp, err := call.Do()
 		if err != nil {
+
 			return err
 		}
 		if first {
@@ -140,16 +152,28 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 			first = false
 		}
 
-		done, err := p.handlePlaylistItemsResponse(resp, subs, lastProcessedVidTime, lastVidID)
+		lv, done, err := p.handlePlaylistItemsResponse(resp, subs, lastProcessedVidTime, lastVidID)
 		if err != nil {
 			return err
+		}
+		if lv != nil {
+			// compare lv, the latest video in the response, and latestVid, the current latest video tracked for this channel
+			parsedPublishedAtLv, _ := time.Parse(time.RFC3339, lv.Snippet.PublishedAt)
+			parsedPublishedOld, err := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
+			if err != nil {
+				p.Entry.WithError(err).WithField("vid", latestVid.Id).Error("Failed parsing publishedat")
+			} else {
+				if parsedPublishedAtLv.After(parsedPublishedOld) {
+					latestVid = lv
+				}
+			}
 		}
 
 		if done {
 			break
 		}
 
-		logrus.Debug("next", resp.NextPageToken)
+		p.Entry.Debug("next", resp.NextPageToken)
 		if resp.NextPageToken == "" {
 			break // Reached end
 		}
@@ -158,26 +182,39 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 
 	client.Cmd("ZADD", "youtube_subbed_channels", now.Unix(), channel)
 
+	// Update the last vid id and time if needed
 	if latestVid != nil && lastVidID != latestVid.Id {
 		parsedTime, _ := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
-		client.Cmd("SET", KeyLastVidTime(channel), parsedTime.Unix())
-		client.Cmd("SET", KeyLastVidID(channel), latestVid.Id)
+		if !lastProcessedVidTime.After(parsedTime) {
+			client.Cmd("SET", KeyLastVidTime(channel), parsedTime.Unix())
+			client.Cmd("SET", KeyLastVidID(channel), latestVid.Id)
+		}
 	}
 
 	return nil
 }
 
-func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListResponse, subs []*ChannelSubscription, lastProcessedVidTime time.Time, lastVidID string) (complete bool, err error) {
+func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListResponse, subs []*ChannelSubscription, lastProcessedVidTime time.Time, lastVidID string) (latest *youtube.PlaylistItem, complete bool, err error) {
+
+	var latestTime time.Time
+
 	for _, item := range resp.Items {
 		parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 		if err != nil {
-			logrus.WithError(err).Error("Failed parsing video time")
+			p.Entry.WithError(err).Error("Failed parsing video time")
 			continue
 		}
 
-		if lastProcessedVidTime.After(parsedPublishedAt) || item.Id == lastVidID {
+		// Video is published before the latest video we checked, mark as complete and do not post messages for
+		if !parsedPublishedAt.After(lastProcessedVidTime) || item.Id == lastVidID {
 			complete = true
-			break
+			continue
+		}
+
+		// This is the new latest video
+		if parsedPublishedAt.After(latestTime) {
+			latestTime = parsedPublishedAt
+			latest = item
 		}
 
 		for _, sub := range subs {
@@ -189,11 +226,12 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 }
 
 func (p *Plugin) sendNewVidMessage(discordChannel string, item *youtube.PlaylistItem, mentionEveryone bool) {
-	content := common.EscapeEveryoneMention(fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", item.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+item.Snippet.ResourceId.VideoId))
+	content := common.EscapeSpecialMentions(fmt.Sprintf("**%s** Uploaded a new youtube video!\n%s", item.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+item.Snippet.ResourceId.VideoId))
 	if mentionEveryone {
 		content += " @everyone"
 	}
-	common.RetrySendMessage(discordChannel, content, 10)
+
+	mqueue.QueueMessageString("youtube", "", discordChannel, content)
 }
 
 var (
@@ -266,7 +304,7 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 	sub.YoutubeChannelName = cResp.Items[0].Snippet.Title
 	sub.YoutubeChannelID = cResp.Items[0].Id
 
-	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 5)
+	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		return nil, err
 	}
@@ -277,19 +315,19 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 		return nil, err
 	}
 
-	err = maybeAddChannelWatch(false, client, sub.YoutubeChannelID)
+	err = p.MaybeAddChannelWatch(false, client, sub.YoutubeChannelID)
 	return sub, err
 }
 
 // maybeRemoveChannelWatch checks the channel for subs, if it has none then it removes it from the watchlist in redis.
-func maybeRemoveChannelWatch(channel string) {
+func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	client, err := common.RedisPool.Get()
 	if err != nil {
 		return
 	}
 	defer common.RedisPool.Put(client)
 
-	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 5)
+	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		return
 	}
@@ -299,7 +337,7 @@ func maybeRemoveChannelWatch(channel string) {
 	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
 	if err != nil || count > 0 {
 		if err != nil {
-			logrus.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")
+			p.Entry.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")
 		}
 		return
 	}
@@ -311,13 +349,13 @@ func maybeRemoveChannelWatch(channel string) {
 		return
 	}
 
-	logrus.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
+	p.Entry.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
 }
 
 // maybeAddChannelWatch adds a channel watch to redis, if there wasnt one before
-func maybeAddChannelWatch(lock bool, client *redis.Client, channel string) error {
+func (p *Plugin) MaybeAddChannelWatch(lock bool, client *redis.Client, channel string) error {
 	if lock {
-		err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 5)
+		err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
 		if err != nil {
 			return common.ErrWithCaller(err)
 		}
@@ -331,14 +369,14 @@ func maybeAddChannelWatch(lock bool, client *redis.Client, channel string) error
 		return common.ErrWithCaller(reply.Err)
 	}
 
-	if reply.Type != redis.NilReply {
+	if !reply.IsType(redis.Nil) {
 		// already added before, don't need to do anything
-		logrus.Info("Not nil reply", reply.String())
+		p.Entry.Info("Not nil reply", reply.String())
 		return nil
 	}
 
 	client.Cmd("ZADD", "youtube_subbed_channels", now, channel)
 	client.Cmd("SET", KeyLastVidTime(channel), now)
-	logrus.WithField("yt_channel", channel).Info("Added new youtube channel watch")
+	p.Entry.WithField("yt_channel", channel).Info("Added new youtube channel watch")
 	return nil
 }

@@ -15,10 +15,19 @@ export YAGPDB_PQPASSWORD="postgres password"
 export YAGPDB_REDIS="redis address"
 
 # Logging, not required
-# Send errors to a discord channel
-export YAGPDB_ERRORCHANNEL=""
+# Send gateway connection events to a discord channel
+export YAGPDB_CONNEVT_CHANNEL=""
+# Send connection status to a discord channel
+export YAGPDB_CONNSTATUS_CHANNEL=""
+
 # Bot leaves joins to this channel
 export YAGPDB_BOTLEAVESJOINS=""
+
+# specialised state db, currently only used in reputation, in testing phase
+export YAGPDB_SQLSTATE_ADDR=""
+export YAGPDB_SQLSTATE_USER=""
+export YAGPDB_SQLSTATE_PW=""
+export YAGPDB_SQLSTATE_DB=""
 
 # Plugins below, not required
 

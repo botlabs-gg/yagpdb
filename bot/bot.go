@@ -3,18 +3,22 @@ package bot
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dshardmanager"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 )
 
 var (
 	// When the bot was started
-	Started = time.Now()
-	Running bool
-	State   *dstate.State
+	Started      = time.Now()
+	Running      bool
+	State        *dstate.State
+	ShardManager *dshardmanager.Manager
 
 	StateHandlerPtr *eventsystem.Handler
 )
@@ -37,50 +41,58 @@ func Setup() {
 	eventsystem.AddHandler(RedisWrapper(HandleChannelCreate), eventsystem.EventChannelCreate)
 	eventsystem.AddHandler(RedisWrapper(HandleChannelUpdate), eventsystem.EventChannelUpdate)
 	eventsystem.AddHandler(RedisWrapper(HandleChannelDelete), eventsystem.EventChannelDelete)
+	eventsystem.AddHandler(RedisWrapper(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
 	log.Info("Initializing bot plugins")
-	for _, plugin := range Plugins {
-		plugin.InitBot()
-		log.Info("Initialized bot plugin ", plugin.Name())
+	for _, plugin := range common.Plugins {
+		if botPlugin, ok := plugin.(Plugin); ok {
+			botPlugin.InitBot()
+			log.Info("Initialized bot plugin ", plugin.Name())
+		}
 	}
 
 	log.Printf("Registered %d event handlers", eventsystem.NumHandlers(eventsystem.EventAll))
-
 }
 
 func Run() {
 
 	log.Println("Running bot")
 
-	// Only handler
-	common.BotSession.AddHandler(eventsystem.HandleEvent)
+	// Set up shard manager
+	ShardManager = dshardmanager.New(common.Conf.BotToken)
+	ShardManager.LogChannel = os.Getenv("YAGPDB_CONNEVT_CHANNEL")
+	ShardManager.StatusMessageChannel = os.Getenv("YAGPDB_CONNSTATUS_CHANNEL")
+	ShardManager.Name = "YAGPDB"
+	ShardManager.GuildCountsFunc = GuildCountsFunc
+	ShardManager.SessionFunc = func(token string) (session *discordgo.Session, err error) {
+		session, err = discordgo.New(token)
+		if err != nil {
+			return
+		}
 
-	// common.BotSession.LogLevel = discordgo.LogDebug
-	// common.BotSession.Debug = true
+		session.StateEnabled = false
+		session.LogLevel = discordgo.LogInformational
+
+		return
+	}
+
+	// Only handler
+	ShardManager.AddHandler(eventsystem.HandleEvent)
 
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
-
-	common.BotSession.StateEnabled = false
-
-	// common.BotSession.LogLevel = discordgo.LogDebug
-	// common.BotSession.Debug = true
-	common.BotSession.LogLevel = discordgo.LogInformational
-	err := common.BotSession.Open()
-	if err != nil {
-		panic(err)
-	}
-
 	Running = true
+	go ShardManager.Start()
 
 	go mergedMessageSender()
+	go MemberFetcher.Run()
 
-	for _, p := range Plugins {
+	for _, p := range common.Plugins {
 		starter, ok := p.(BotStarterHandler)
 		if ok {
 			starter.StartBot()
-			log.Info("Ran StartBot for ", p.Name())
+			log.Debug("Ran StartBot for ", p.Name())
 		}
 	}
 
@@ -89,17 +101,17 @@ func Run() {
 
 func Stop(wg *sync.WaitGroup) {
 
-	for _, v := range Plugins {
+	for _, v := range common.Plugins {
 		stopper, ok := v.(BotStopperHandler)
 		if !ok {
 			continue
 		}
 		wg.Add(1)
-		log.Info("Sending stop event to stopper: ", v.Name())
+		log.Debug("Sending stop event to stopper: ", v.Name())
 		go stopper.StopBot(wg)
 	}
 
-	common.BotSession.Close()
+	ShardManager.StopAll()
 	wg.Done()
 }
 
@@ -153,4 +165,18 @@ OUTER:
 			log.WithField("guild", gID).Info("Removed from guild when offline")
 		}
 	}
+}
+
+func GuildCountsFunc() []int {
+	numShards := ShardManager.GetNumShards()
+	result := make([]int, numShards)
+	State.RLock()
+	for _, v := range State.Guilds {
+		parsed, _ := strconv.ParseInt(v.ID(), 10, 64)
+		shard := (parsed >> 22) % int64(numShards)
+		result[shard]++
+	}
+	State.RUnlock()
+
+	return result
 }

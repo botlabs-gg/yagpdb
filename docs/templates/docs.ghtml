@@ -1,10 +1,10 @@
 {{define "docs-nav"}}
 <li>
-    <a href="#"><i class="fa fa-info fa-fw"></i> Documentation <span class="fa arrow"></span></a>
+    <a href="#"><i class="fa fa-info fa-fw"></i> Documentation <span class="label label-warning">WIP</span><span class="fa arrow"></span></a>
     <ul class="nav nav-second-level">
 	    {{range .DocPages}}
         <li>
-            <a class="nav-link" href="/docs/{{.Name}}">{{.Name}}</a>
+            <a class="nav-link" href="/docs/{{urlquery (lower .Name)}}">{{.Name}}</a>
         </li>
 	    {{end}}
     <!-- /.nav-second-level -->

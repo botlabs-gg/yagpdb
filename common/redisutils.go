@@ -3,18 +3,18 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fzzy/radix/redis"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strings"
 	"time"
 )
 
 // GetRedisReplies is a helper func when using redis pipelines
 // It retrieves n amount of replies and returns the first error it finds (but still continues to retrieve replies after that)
-func GetRedisReplies(client *redis.Client, n int) ([]*redis.Reply, error) {
+func GetRedisReplies(client *redis.Client, n int) ([]*redis.Resp, error) {
 	var err error
-	out := make([]*redis.Reply, n)
+	out := make([]*redis.Resp, n)
 	for i := 0; i < n; i++ {
-		reply := client.GetReply()
+		reply := client.PipeResp()
 		out[i] = reply
 		if reply.Err != nil && err == nil {
 			err = reply.Err
@@ -29,8 +29,8 @@ type RedisCmd struct {
 }
 
 // SafeRedisCommands Will do the following commands and stop if an error occurs
-func SafeRedisCommands(client *redis.Client, cmds []*RedisCmd) ([]*redis.Reply, error) {
-	out := make([]*redis.Reply, 0)
+func SafeRedisCommands(client *redis.Client, cmds []*RedisCmd) ([]*redis.Resp, error) {
+	out := make([]*redis.Resp, 0)
 	for _, cmd := range cmds {
 		reply := client.Cmd(cmd.Name, cmd.Args...)
 		out = append(out, reply)
@@ -43,7 +43,7 @@ func SafeRedisCommands(client *redis.Client, cmds []*RedisCmd) ([]*redis.Reply, 
 
 func RedisDialFunc(network, addr string) (client *redis.Client, err error) {
 	for {
-		client, err = redis.Dial(network, addr)
+		client, err = redis.DialTimeout(network, addr, time.Second*10)
 		if err != nil {
 			errStr := err.Error()
 			if strings.Contains(errStr, "socket: too many open files") ||
@@ -74,7 +74,7 @@ func GenID(client *redis.Client, key string) string {
 // GetRedisJson executes a get redis command and unmarshals the value into out
 func GetRedisJson(client *redis.Client, key string, out interface{}) error {
 	reply := client.Cmd("GET", key)
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return nil
 	}
 
@@ -90,7 +90,7 @@ func GetRedisJson(client *redis.Client, key string, out interface{}) error {
 // GetRedisJson executes a get redis command and unmarshals the value into out
 func GetRedisJsonDefault(client *redis.Client, key string, out interface{}) error {
 	reply := client.Cmd("GET", key)
-	if reply.Type == redis.NilReply {
+	if reply.IsType(redis.Nil) {
 		return nil
 	}
 
@@ -122,33 +122,24 @@ func MustGetRedisClient() *redis.Client {
 	return client
 }
 
-// Locks the lock and if succeded sets it to expire after maxdur
-// So that if someting went wrong its not locked forever
-func TryLockRedisKey(client *redis.Client, key string, maxDur int) (bool, error) {
-	didSet, err := client.Cmd("SET", key, true, "NX", "EX", maxDur).Bool()
-	if err != nil {
-		return didSet, ErrWithCaller(err)
+func RedisBool(resp *redis.Resp) (b bool, err error) {
+	if resp.Err != nil {
+		return false, resp.Err
 	}
 
-	return didSet, err
-}
-
-// BlockingLockRedisKey blocks until it suceeded to lock the key
-func BlockingLockRedisKey(client *redis.Client, key string, maxDur int) error {
-	for {
-		locked, err := TryLockRedisKey(client, key, maxDur)
-		if err != nil {
-			return ErrWithCaller(err)
-		}
-
-		if locked {
-			return nil
-		}
-
-		time.Sleep(time.Millisecond)
+	if resp.IsType(redis.Nil) {
+		return false, nil
 	}
-}
 
-func UnlockRedisKey(client *redis.Client, key string) {
-	client.Cmd("DEL", key)
+	if resp.IsType(redis.Int) {
+		i, err := resp.Int()
+		return i > 0, err
+	}
+
+	if resp.IsType(redis.Str) {
+		s, err := resp.Str()
+		return (s != "" && s != "false" && s != "0"), err
+	}
+
+	panic("Unknown redis reply type")
 }

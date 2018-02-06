@@ -6,8 +6,8 @@ package common
 import (
 	"encoding/json"
 	"errors"
-	"github.com/fzzy/radix/redis"
 	"github.com/karlseguin/ccache"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 var (
@@ -25,11 +25,7 @@ func GetCacheData(client *redis.Client, key string) ([]byte, error) {
 
 // Stores an entry in the cache and sets it to expire after expire
 func SetCacheData(client *redis.Client, key string, expire int, data []byte) error {
-
-	client.Append("SET", CacheKeyPrefix+key, data)
-	client.Append("EXPIRE", CacheKeyPrefix+key, expire)
-
-	_, err := GetRedisReplies(client, 2)
+	err := client.Cmd("SET", CacheKeyPrefix+key, data, "EX", expire).Err
 	return err
 }
 

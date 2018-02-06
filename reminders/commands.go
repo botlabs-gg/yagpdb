@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/commandsystem"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"strings"
 	"time"
@@ -45,8 +46,11 @@ var cmds = []commandsystem.CommandHandler{
 					return err, err
 				}
 
+				timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
+				tStr := when.Format(time.RFC822)
+
 				if when.After(time.Now().Add(time.Hour * 24 * 366)) {
-					return "Can be max 265 days from now...", nil
+					return "Can be max 365 days from now...", nil
 				}
 
 				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
@@ -54,9 +58,6 @@ var cmds = []commandsystem.CommandHandler{
 				if err != nil {
 					return err, err
 				}
-
-				timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
-				tStr := when.Format(time.RFC822)
 
 				return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 			},
@@ -140,6 +141,9 @@ var cmds = []commandsystem.CommandHandler{
 
 				// Do the actual deletion
 				err = common.GORM.Delete(reminder).Error
+				if err != nil {
+					return "Failed deleting reminder?", err
+				}
 
 				// Check if we should remove the scheduled event
 				currentReminders, err := GetUserReminders(reminder.UserID)
@@ -158,7 +162,7 @@ var cmds = []commandsystem.CommandHandler{
 
 				client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
 				// No other reminder for this user at this timestamp, remove the scheduled event
-				common.RemoveScheduledEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
+				scheduledevents.RemoveEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
 
 				return delMsg, nil
 			},
@@ -175,10 +179,18 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
 		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
-			out += fmt.Sprintf("**%d**: <#%s>: %q - %s from now (%s)\n", v.ID, cs.ID(), v.Message, timeFromNow, tStr)
+			channel := "Unknown channel"
+			if cs != nil {
+				channel = "<#" + cs.ID() + ">"
+			}
+			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
 			member := cs.Guild.MemberCopy(true, v.UserID, false)
-			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, member.User.Username, v.Message, timeFromNow, tStr)
+			username := "Unknown user"
+			if member != nil {
+				username = member.User.Username
+			}
+			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
 		}
 	}
 	return out

@@ -8,30 +8,24 @@ import (
 )
 
 type Plugin interface {
+	common.Plugin
+
 	StartFeed()
 	StopFeed(*sync.WaitGroup)
-	Name() string
 }
 
 var (
-	Plugins        []Plugin
 	runningPlugins = make([]Plugin, 0)
 )
 
-// Register a plugin
-func RegisterPlugin(plugin Plugin) {
-	if Plugins == nil {
-		Plugins = []Plugin{plugin}
-	} else {
-		Plugins = append(Plugins, plugin)
-	}
-
-	common.AddPlugin(plugin)
-}
-
 // Run runs the specified feeds
 func Run(which []string) {
-	for _, plugin := range Plugins {
+	for _, plugin := range common.Plugins {
+		fp, ok := plugin.(Plugin)
+		if !ok {
+			continue
+		}
+
 		if len(which) > 0 {
 			found := false
 
@@ -49,8 +43,8 @@ func Run(which []string) {
 		}
 
 		logrus.Info("Starting feed ", plugin.Name())
-		go plugin.StartFeed()
-		runningPlugins = append(runningPlugins, plugin)
+		go fp.StartFeed()
+		runningPlugins = append(runningPlugins, fp)
 	}
 }
 

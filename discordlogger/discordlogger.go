@@ -24,14 +24,15 @@ func init() {
 }
 
 func Register() {
-	if ErrorChannel != "" {
-		logrus.Info("Adding logrus hook")
-		logrus.AddHook(&Plugin{})
-	}
+	// if ErrorChannel != "" {
+	// 	logrus.Info("Adding logrus hook")
+	// 	// logrus.AddHook(&Plugin{})
+	// 	eventsystem.AddHandler(OnReady, eventsystem.EventReady)
+	// }
 
 	if BotLeavesJoins != "" {
 		logrus.Info("Listening for bot leaves and join")
-		bot.RegisterPlugin(&Plugin{})
+		common.RegisterPlugin(&Plugin{})
 	}
 }
 
@@ -49,13 +50,17 @@ func EventHandler(evt *eventsystem.EventData) {
 	msg := ""
 	switch evt.Type {
 	case eventsystem.EventGuildDelete:
+		if evt.GuildDelete.Unavailable {
+			// Just a guild outage
+			return
+		}
 		msg = fmt.Sprintf(":x: Left guild **%s** :(", evt.GuildDelete.Guild.Name)
 	case eventsystem.EventNewGuild:
 		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", evt.GuildCreate.Guild.Name)
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
-	common.BotSession.ChannelMessageSend(BotLeavesJoins, common.EscapeEveryoneMention(msg))
+	common.BotSession.ChannelMessageSend(BotLeavesJoins, common.EscapeSpecialMentions(msg))
 }
 
 func (p *Plugin) Levels() []logrus.Level {
@@ -98,4 +103,8 @@ func (p *Plugin) Fire(entry *logrus.Entry) error {
 
 type Stringer interface {
 	String() string
+}
+
+func OnReady(evt *eventsystem.EventData) {
+	// common.BotSession.ChannelMessageSend(ErrorChannel, "<@"+common.Conf.Owner+"> Ready!")
 }

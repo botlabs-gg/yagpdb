@@ -2,8 +2,8 @@ package youtube
 
 import (
 	"fmt"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 func (p *Plugin) InitBot() {}

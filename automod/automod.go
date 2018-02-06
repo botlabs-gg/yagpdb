@@ -3,11 +3,9 @@ package automod
 //go:generate esc -o assets_gen.go -pkg automod -ignore ".go" assets/
 
 import (
-	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 type Condition string
@@ -24,9 +22,7 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	p := &Plugin{}
-
-	web.RegisterPlugin(p)
-	bot.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 	docs.AddPage("Automoderator", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
@@ -66,8 +62,5 @@ func GetConfig(client *redis.Client, guildID string) (config *Config, err error)
 }
 
 func (c Config) Save(client *redis.Client, guildID string) error {
-	if err := common.SetRedisJson(client, KeyConfig(guildID), c); err != nil {
-		return err
-	}
-	return nil
+	return common.SetRedisJson(client, KeyConfig(guildID), c)
 }

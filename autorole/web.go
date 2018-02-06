@@ -1,11 +1,11 @@
 package autorole
 
 import (
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v2/redis"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -13,29 +13,18 @@ import (
 )
 
 type Form struct {
-	General  *GeneralConfig
-	Commands []*RoleCommand
+	GeneralConfig `valid:"traverse"`
 }
 
 func (f Form) Save(client *redis.Client, guildID string) error {
 	pubsub.Publish(client, "autorole_stop_processing", guildID, nil)
 
-	realCommands := make([]*RoleCommand, 0)
-
-	for _, v := range f.Commands {
-		if v != nil {
-			realCommands = append(realCommands, v)
-		}
-	}
-	f.Commands = realCommands
-
-	err := common.SetRedisJson(client, KeyGeneral(guildID), f.General)
+	err := common.SetRedisJson(client, KeyGeneral(guildID), f.GeneralConfig)
 	if err != nil {
 		return err
 	}
 
-	err = common.SetRedisJson(client, KeyCommands(guildID), f.Commands)
-	return err
+	return nil
 }
 
 func (f Form) Name() string {
@@ -43,7 +32,7 @@ func (f Form) Name() string {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/autorole.html"))
+	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
 
 	muxer := goji.SubMux()
 
@@ -66,10 +55,6 @@ func (p *Plugin) InitWeb() {
 func HandleAutoroles(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, tmpl := web.GetBaseCPContextData(ctx)
-
-	commands, err := GetCommands(client, activeGuild.ID)
-	web.CheckErr(tmpl, err, "Failed retrieving commands (contact support)", web.CtxLogger(r.Context()).Error)
-	tmpl["RoleCommands"] = commands
 
 	general, err := GetGeneralConfig(client, activeGuild.ID)
 	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)

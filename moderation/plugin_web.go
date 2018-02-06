@@ -51,15 +51,11 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/cp/" + activeGuild.ID + "/moderation/"
+	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/moderation/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	templateData["ModConfig"] = newConfig
 
 	err := newConfig.Save(client, activeGuild.ID)
-	if err != nil {
-		return templateData, err
-	}
-
-	return templateData, nil
+	return templateData, err
 }

@@ -6,9 +6,7 @@ import (
 	"bytes"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs/static"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/shurcooL/github_flavored_markdown"
-	"log"
 	"net/http"
 	"strings"
 	"text/template"
@@ -22,7 +20,7 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	p := &Plugin{}
-	web.RegisterPlugin(p)
+	common.RegisterPlugin(p)
 
 	AddDefaultDoc()
 }
@@ -77,8 +75,10 @@ func staticContent(page string) func(string) string {
 }
 
 func AddDefaultDoc() {
+	AddPage("Index", FSMustString(false, "/templates/index.md"), static.FS(false))
 	AddPage("Quickstart", FSMustString(false, "/templates/quickstart.md"), static.FS(false))
 	AddPage("Helping Out", FSMustString(false, "/templates/helping-out.md"), static.FS(false))
+	AddPage("Ads", FSMustString(false, "/templates/ads.md"), static.FS(false))
 	AddPage("Templates", FSMustString(false, "/templates/templates.md"), static.FS(false))
 }
 
@@ -87,5 +87,6 @@ func (p *Page) Render() []byte {
 	p.Tmpl.Execute(&buf, nil)
 
 	output := github_flavored_markdown.Markdown(buf.Bytes())
+	output = []byte(strings.Replace(string(output), "<table>", "<table class='table table-striped table-hover'>", -1))
 	return output
 }

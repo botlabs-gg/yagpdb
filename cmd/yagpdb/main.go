@@ -3,16 +3,7 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/web"
-	"github.com/jonas747/yagpdb/youtube"
-	"github.com/shiena/ansicolor"
+	"github.com/mediocregopher/radix.v2/redis"
 	"os"
 	"os/signal"
 	"strconv"
@@ -20,8 +11,18 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	//"github.com/wercker/journalhook"
-	stdlog "log"
+
+	// Core yagpdb packages
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/feeds"
+	"github.com/jonas747/yagpdb/web"
+
 	// Plugin imports
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
@@ -36,9 +37,12 @@ import (
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
+	"github.com/jonas747/yagpdb/rolecommands"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
+	"github.com/jonas747/yagpdb/stdcommands"
 	"github.com/jonas747/yagpdb/streaming"
+	"github.com/jonas747/yagpdb/youtube"
 )
 
 var (
@@ -61,21 +65,21 @@ func init() {
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
-	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected")
+	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected, migrate")
 }
 
 func main() {
 	flag.Parse()
 
 	log.AddHook(common.ContextHook{})
-	log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
-	stdlog.SetOutput(log.StandardLogger().Writer())
+
+	log.SetFormatter(&log.TextFormatter{
+		DisableTimestamp: !common.Testing,
+	})
+
+	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
 	//log.AddHook(&journalhook.JournalHook{})
 	//journalhook.Enable()
-
-	if flagLogTimestamp {
-		web.LogRequestTimestamps = true
-	}
 
 	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && flagAction == "" && !flagDryRun {
 		log.Error("Didnt specify what to run, see -h for more info")
@@ -97,6 +101,7 @@ func main() {
 	discordlogger.Register()
 	docs.RegisterPlugin()
 	commands.RegisterPlugin()
+	stdcommands.RegisterPlugin()
 	serverstats.RegisterPlugin()
 	notifications.RegisterPlugin()
 	customcommands.RegisterPlugin()
@@ -111,6 +116,7 @@ func main() {
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
+	rolecommands.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
@@ -119,6 +125,7 @@ func main() {
 
 	// Setup plugins for bot, but run later if enabled
 	bot.Setup()
+	mqueue.InitStores()
 
 	// RUN FORREST RUN
 	if flagAction != "" {
@@ -132,8 +139,9 @@ func main() {
 
 	if flagRunBot || flagRunEverything {
 		go bot.Run()
-		go common.RunScheduledEvents()
+		go scheduledevents.Run()
 		go botrest.StartServer()
+		go mqueue.StartPolling()
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
@@ -152,7 +160,7 @@ func runAction(str string) {
 		log.WithError(err).Error("Failed to get redis connection")
 		return
 	}
-	defer common.RedisPool.CarefullyPut(client, &err)
+	defer common.RedisPool.Put(client)
 
 	switch str {
 	case "connected":
@@ -175,7 +183,7 @@ func runAction(str string) {
 
 // Gracefull shutdown
 func listenSignal() {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	<-c
@@ -189,7 +197,8 @@ func listenSignal() {
 		wg.Add(2)
 
 		go bot.Stop(&wg)
-		go common.StopSheduledEvents(&wg)
+		go scheduledevents.Stop(&wg)
+		mqueue.Stop(&wg)
 
 		shouldWait = true
 	}
@@ -212,36 +221,27 @@ func listenSignal() {
 
 	log.Info("Sleeping for a second to allow work to finish")
 	time.Sleep(time.Second)
+
+	if !common.Testing {
+		log.Info("Sleeping a little longer")
+		time.Sleep(time.Second * 5)
+	}
+
 	log.Info("Bye..")
 	os.Exit(0)
 }
 
 type SQLMigrater interface {
-	MigrateStorage(client *redis.Client, guildID string, guildIDInt int64) error
+	MigrateStorage(client *redis.Client, guildIDInt int64) error
 	Name() string
 }
 
 func migrate(client *redis.Client) error {
 	plugins := make([]SQLMigrater, 0)
 
-	for _, v := range bot.Plugins {
+	for _, v := range common.Plugins {
 		cast, ok := v.(SQLMigrater)
 		if ok {
-			plugins = append(plugins, cast)
-			log.Info("Migrating ", cast.Name())
-		}
-	}
-
-OUTER:
-	for _, v := range web.Plugins {
-		for _, p := range plugins {
-			if interface{}(v) == p {
-				log.Info("Found duplicate ", v.Name())
-				continue OUTER
-			}
-		}
-
-		if cast, ok := v.(SQLMigrater); ok {
 			plugins = append(plugins, cast)
 			log.Info("Migrating ", cast.Name())
 		}
@@ -261,7 +261,7 @@ OUTER:
 		}
 
 		for _, p := range plugins {
-			err = p.MigrateStorage(client, g, parsed)
+			err = p.MigrateStorage(client, parsed)
 			if err != nil {
 				log.WithError(err).Error("Error migrating ", p.Name())
 			}

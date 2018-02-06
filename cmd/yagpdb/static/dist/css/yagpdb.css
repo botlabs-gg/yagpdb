@@ -1,7 +1,13 @@
 #page-wrapper{
 	padding-bottom: 400px;
-	padding-top: 40px;
+	padding-top: 60px;
 }
+
+
+.page-header{
+    margin-top: 10px !important;
+}
+
 
 textarea {
 	resize: vertical;
@@ -49,11 +55,10 @@ form table td{
   	overflow-y: scroll;
   }
 
-   	/*
-    .nav-button-desc {
-        display: none;
-    }
-    }*/
+
+  .nav-button-desc {
+    display: none;
+  }
 
   #nav-footer {
     display: none;
@@ -79,7 +84,7 @@ form table td{
 		overflow-y: auto;
 		top: 51px;
 		bottom: 0%;
-    margin-bottom: 200px;
+    margin-bottom: 150px;
   }
 
 }
@@ -104,7 +109,14 @@ form table td{
 }
 
 #nav-footer-img{
-  width: 100%;
+  max-width: 100%;
+  max-height: 150px;
+}
+
+#nav-footer-overlay{
+  position: fixed;
+  bottom: 200px;
+  left: 5px;
 }
 
 .markdown-body .anchor {
@@ -195,4 +207,93 @@ form table td{
     -webkit-transform: rotate(360deg);
     transform: rotate(360deg);
   }
+}
+
+.bs-callout {
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #eee;
+  border-left-width: 5px;
+  border-radius: 3px;
+}
+
+*.bs-callout:empty {
+   padding: 20px;
+   margin: 0px;
+   border: none;   
+}
+
+.bs-callout h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+.bs-callout p:last-child {
+    margin-bottom: 0;
+}
+.bs-callout code {
+    border-radius: 3px;
+}
+.bs-callout+.bs-callout {
+    margin-top: -5px;
+}
+
+.bs-callout-danger{
+  border-left-color: #d9534f;
+  background-color: rgba(217, 83, 79, 0.1);
+  animation: danger 4s infinite;
+}
+.bs-callout-danger h4 {
+    color: #d9534f;
+}
+
+.bs-callout-info {
+    border-left-color: #5bc0de;
+}
+.bs-callout-info h4 {
+    color: #5bc0de;
+}
+
+.bs-callout-success {
+    border-left-color: #5cb85c;
+    background-color: rgba(92,184,92, 0.1)
+}
+.bs-callout-success h4 {
+    color: #5cb85c;
+}
+
+.bs-callout-primary {
+    border-left-color: #428bca;
+    background-color: rgba(66,139,202, 0.1)
+}
+.bs-callout-primary h4 {
+    color: #428bca;
+}
+
+.bs-callout-warning {
+    border-left-color: #f0ad4e;
+    background-color: rgba(240,173,78, 0.1)
+}
+.bs-callout-warning h4 {
+    color: #f0ad4e;
+}
+
+@keyframes danger{
+  0% {border-left-color: rgba(217,83,79, 0)}
+  50% {border-left-color: rgba(217,83,79, 1)}
+  100% {border-left-color: rgba(217,83,79, 0)}
+}
+
+.avatar {
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+}
+
+.intro-text {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.panel-body > .form-horizontal {
+  margin: 0px 10px 0px 10px;
 }

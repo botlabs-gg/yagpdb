@@ -30,6 +30,9 @@ $(function(){
     if(window.location.hash){
     	navigateToAnchor(window.location.hash);
     }
+
+   	// Update all dropdowns
+	// $(".btn-group .dropdown-menu").dropdownUpdate();
 })
 
 var currentlyLoading = false;
@@ -71,6 +74,7 @@ function navigate(url, method, data, updateHistory){
 
 			updateSelectedMenuItem();
 			addListeners(true);
+			
 			if (typeof ga !== 'undefined') {
 				ga('send', 'pageview', window.location.pathname);
 				console.log("Sent pageview")
@@ -128,13 +132,137 @@ function addListeners(partial){
 		$("#main-content").html('<div class="loader">Loading...</div>');
 	});
 
+	initializeMultiselect(selectorPrefix);
+	formSubmissionEvents(selectorPrefix);
+	channelRequirepermsDropdown(selectorPrefix);
+}
+
+var discordPermissions = {
+	read: {
+		name: "Read Messages",
+		perm: 0x400
+	},
+	send: {
+		name: "Send Messages",
+		perm: 0x800
+	},
+	embed: {
+		name: "Embed Links",
+		perm: 0x4000
+	},
+}
+var cachedChannelPerms = {};
+function channelRequirepermsDropdown(prefix){
+	var dropdowns = $(prefix + "select[data-requireperms-send]");
+	dropdowns.each(function(i, rawElem){
+		trackChannelDropdown($(rawElem), [discordPermissions.read, discordPermissions.send]);
+	});
+
+	var dropdownsLinks = $(prefix + "select[data-requireperms-embed]");
+	dropdownsLinks.each(function(i, rawElem){
+		trackChannelDropdown($(rawElem), [discordPermissions.read, discordPermissions.send, discordPermissions.embed]);
+	});
+}
+
+function trackChannelDropdown(dropdown, perms){
+	var currentElem = $('<div class="form-group"><p class="text-danger form-control-static">Checking...</p></div>');
+	dropdown.parent().after(currentElem);
+
+	dropdown.on("change", function(){
+		check();
+	})
+
+	function check(){
+		currentElem.text("Checking...");
+		var currentSelected = dropdown.val();
+		if(!currentSelected){
+			currentElem.text("");
+		}else{
+			validateChannelDropdown(dropdown, currentElem, currentSelected, perms);
+		}
+	}
+	check();
+}
+
+function validateChannelDropdown(dropdown, currentElem, channel, perms){
+	// Expire after 5 seconds
+	if(cachedChannelPerms[channel] && (!cachedChannelPerms[channel].lastChecked || Date.now() - cachedChannelPerms[channel].lastChecked < 5000)){
+		var obj = cachedChannelPerms[channel];
+		if(obj.fetching){
+			window.setTimeout(function(){
+				validateChannelDropdown(dropdown, currentElem, channel, perms);
+			}, 1000)
+		}else{
+			check(cachedChannelPerms[channel].perms);
+		}
+	}else{
+		cachedChannelPerms[channel] = {fetching: true};
+		createRequest("GET", "/api/"+CURRENT_GUILDID+"/channelperms/"+channel, null, function(){
+			console.log(this);
+			cachedChannelPerms[channel].fetching = false;
+			if(this.status != 200){
+				currentElem.addClass("text-danger");
+				currentElem.removeClass("text-success");
+
+				if(this.responseText){
+					var decoded = JSON.parse(this.responseText);
+					if(decoded.message){
+						currentElem.text(decoded.message);
+					}else{
+						currentElem.text("Something went wrong");
+					}
+				}else{
+					currentElem.text("Something went wrong");
+				}
+				cachedChannelPerms[channel] = null;
+				return;
+			}
+
+			var channelPerms = parseInt(this.responseText);
+			cachedChannelPerms[channel].perms = channelPerms;
+			cachedChannelPerms[channel].lastChecked = Date.now();
+
+			check(channelPerms);
+		})
+	}
+
+	function check(channelPerms){
+		var missing = [];
+		for(var i in perms){
+			var p = perms[i];
+			if((channelPerms&p.perm) != p.perm){
+				missing.push(p.name);
+			}
+		}
+
+		// console.log(missing.join(", "));
+		if(missing.length < 1){
+			// Has perms
+			currentElem.removeClass("text-danger");
+			currentElem.addClass("text-success");
+			currentElem.text("OK Perms");
+		}else{
+			currentElem.addClass("text-danger");
+			currentElem.removeClass("text-success");
+
+			currentElem.text("Missing "+missing.join(", "));
+		}
+	}
+}
+
+function initializeMultiselect(selectorPrefix){
+	$(selectorPrefix+".multiselect").multiselect();
+}
+
+function formSubmissionEvents(selectorPrefix){
+	// Form submission fuckery
 	var forms = $(selectorPrefix + "form");
 	
 	forms.each(function(i, elem){
 		elem.onsubmit = submitform;
 	})
 
-	$(selectorPrefix + ".btn-danger").click(function(evt){
+	function dangerButtonClick(evt){
 		var target = $(evt.target);
 		if(target.attr("noconfirm") !== undefined){
 			return;
@@ -151,7 +279,10 @@ function addListeners(partial){
 			evt.stopPropagation();
 		}
 		// alert("aaa")
-	})
+	} 
+
+	$(selectorPrefix + ".btn-danger").click(dangerButtonClick)
+	$(selectorPrefix + ".delete-button").click(dangerButtonClick)
 
 	$(selectorPrefix + '[data-toggle="popover"]').popover()
 	$(selectorPrefix + '[data-toggle="popover"]').click(function(evt){
@@ -206,9 +337,7 @@ function addListeners(partial){
 	const $navbar = $('.navbar');
 	$(selectorPrefix + 'a[href^="#"]').on('click', function(e) {
 	    e.preventDefault();
-	    console.log(e);
-
-	    
+    
 	    navigateToAnchor($.attr(this, "href"));
  
 	    // e.target.scrollIntoView({"behaviour": "smooth", "block": "end"});
@@ -217,7 +346,6 @@ function addListeners(partial){
 	    //     $navbar.outerHeight();
 
 	    // $('html, body').animate({ scrollTop });
-
 	})
 }
 
@@ -225,6 +353,10 @@ function navigateToAnchor(name){
 	name = name.substring(1);
 
 	var elem = $("a[name=\""+name+"\"]");
+	if(elem.length < 1){
+		return;
+	}
+
     $('html, body').animate({
         scrollTop: elem.offset().top-60
     }, 500);
@@ -233,4 +365,20 @@ function navigateToAnchor(name){
     console.log(offset)
 
     window.location.hash = "#"+name
+}
+
+function createRequest(method, path, data, cb){
+    var oReq = new XMLHttpRequest();
+    oReq.addEventListener("load", cb);
+    oReq.addEventListener("error", function(){
+        window.location.href = '/';
+    });
+    oReq.open(method, path);
+    
+    if (data) {
+        oReq.setRequestHeader("content-type", "application/json");
+        oReq.send(JSON.stringify(data));
+    }else{
+        oReq.send();
+    }
 }

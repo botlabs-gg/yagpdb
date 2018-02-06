@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/extra/pubsub"
-	"github.com/fzzy/radix/redis"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v2/pubsub"
+	"github.com/mediocregopher/radix.v2/redis"
 	"reflect"
 	"runtime/debug"
 	"strings"
@@ -45,7 +45,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 	}
 
 	eventHandlers = append(eventHandlers, handler)
-	logrus.WithField("evt", evt).Info("Added event handler")
+	logrus.WithField("evt", evt).Debug("Added event handler")
 }
 
 // PublishEvent publishes the specified event
@@ -64,10 +64,10 @@ func Publish(client *redis.Client, evt string, target string, data interface{}) 
 }
 
 func PollEvents() {
-	client, err := common.RedisPool.Get()
+	// Create a new client for pubsub
+	client, err := redis.Dial("tcp", common.Conf.Redis)
 	if err != nil {
 		panic(err)
-
 	}
 
 	subClient := pubsub.NewSubClient(client)
@@ -79,7 +79,7 @@ func PollEvents() {
 	for {
 		reply := subClient.Receive()
 		if reply.Err != nil {
-			logrus.WithError(err).Error("PubSub Error")
+			logrus.WithError(reply.Err).Error("PubSub Error")
 			continue
 		}
 

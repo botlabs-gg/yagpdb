@@ -14,7 +14,12 @@ func (hook ContextHook) Levels() []logrus.Level {
 }
 
 func (hook ContextHook) Fire(entry *logrus.Entry) error {
-	pc := make([]uintptr, 3, 3)
+	// Skip if already provided
+	if _, ok := entry.Data["line"]; ok {
+		return nil
+	}
+
+	pc := make([]uintptr, 3)
 	cnt := runtime.Callers(6, pc)
 
 	for i := 0; i < cnt; i++ {
@@ -29,4 +34,31 @@ func (hook ContextHook) Fire(entry *logrus.Entry) error {
 		}
 	}
 	return nil
+}
+
+type STDLogProxy struct{}
+
+func (p *STDLogProxy) Write(b []byte) (n int, err error) {
+	n = len(b)
+
+	pc := make([]uintptr, 3)
+	runtime.Callers(4, pc)
+
+	data := make(logrus.Fields)
+
+	fu := runtime.FuncForPC(pc[0] - 1)
+	name := fu.Name()
+	file, line := fu.FileLine(pc[0] - 1)
+	data["file"] = filepath.Base(file)
+	data["func"] = filepath.Base(name)
+	data["line"] = line
+
+	logLine := string(b)
+	if strings.HasSuffix(logLine, "\n") {
+		logLine = strings.TrimSuffix(logLine, "\n")
+	}
+
+	logrus.WithFields(data).Info(logLine)
+
+	return
 }
