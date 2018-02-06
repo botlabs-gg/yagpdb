@@ -250,7 +250,7 @@ var cmdThrow = &commands.YAGCommand{
 		thing := common.Things[rand.Intn(len(common.Things))]
 
 		target := "a random person nearby"
-		if data.Args[0].Str() != "" {
+		if data.Args[0].Value != nil {
 			target = data.Args[0].Value.(*discordgo.User).Username
 		}
 
