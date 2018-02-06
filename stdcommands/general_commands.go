@@ -231,7 +231,7 @@ var cmdAdvice = &commands.YAGCommand{
 var cmdPing = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "Ping",
-	Description: "I prefer tabletennis",
+	Description: "I prefer tabletennis (Shows your ping to the server)",
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
