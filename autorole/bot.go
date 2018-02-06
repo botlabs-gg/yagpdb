@@ -72,6 +72,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	if err != nil {
 		return
 	}
+	defer common.RedisPool.Put(client)
 
 	config, err := GetGeneralConfig(client, gs.ID())
 	if err != nil {
@@ -108,6 +109,7 @@ func runDurationChecker() {
 	if err != nil {
 		panic(err)
 	}
+	defer common.RedisPool.Put(client)
 
 	ticker := time.NewTicker(time.Minute)
 	state := bot.State

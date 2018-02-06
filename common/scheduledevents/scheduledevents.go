@@ -136,6 +136,8 @@ func handleScheduledEvent(evt string) {
 			logrus.WithError(err).Error("Failed retrieving redis connection from pool")
 			return
 		}
+		defer common.RedisPool.Put(client)
+
 		err = ScheduleEvent(client, split[0], rest, time.Now())
 		if err != nil {
 			logrus.WithError(err).Error("Failed re-scheduling failed event")

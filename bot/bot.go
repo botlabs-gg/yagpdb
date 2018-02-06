@@ -125,6 +125,8 @@ func checkConnectedGuilds() {
 		return
 	}
 
+	defer common.RedisPool.Put(client)
+
 	currentlyConnected, err := client.Cmd("SMEMBERS", "connected_guilds").List()
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving currently connected guilds")

@@ -34,6 +34,7 @@ func EmitChangedEvent(client *redis.Client, key string) error {
 		if err != nil {
 			return err
 		}
+		defer common.RedisPool.Put(client)
 	}
 
 	Cache.Delete(key)

@@ -433,8 +433,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			numDeleted, err := DeleteMessages(parsed.Msg.ChannelID, filter, num, limitFetch)
 
-			return fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), err
-			// return commandsystem.NewTemporaryResponse(time.Second*5, , true), err
+			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		}),
 	},
 	&commands.YAGCommand{
