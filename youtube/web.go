@@ -173,11 +173,7 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateD
 }
 
 func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
-	p.Logger().Info("SHIT BOI: ", r.Method)
-	p.Logger().Info(r.RequestURI, r.RemoteAddr)
-
 	query := r.URL.Query()
-	p.Logger().Infof("query: %#v", query)
 
 	client := web.RedisClientFromContext(r.Context())
 
