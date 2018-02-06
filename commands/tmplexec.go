@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
@@ -94,7 +95,23 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 	}
 	data.MsgStrippedPrefix = fakeMsg.Content
 
-	resp, err := CommandSystem.Root.Run(data)
+	foundCmd, rest := CommandSystem.Root.FindCommand(cmdLine)
+	if foundCmd == nil {
+		return "Unknown command", nil
+	}
+
+	data.MsgStrippedPrefix = rest
+
+	data.Cmd = foundCmd
+
+	cast := foundCmd.Command.(*YAGCommand)
+
+	err = dcmd.ParseCmdArgs(data)
+	if err != nil {
+		return "Failed parsing args", nil
+	}
+
+	resp, err := cast.RunFunc(data)
 	if err != nil {
 		return "", errors.WithMessage(err, "tmplExecCmd, Run")
 	}
