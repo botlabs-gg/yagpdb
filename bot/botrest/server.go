@@ -129,7 +129,7 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, _ := GetMembers(gId, uIDs...)
+	members, _ := bot.GetMembers(gId, uIDs...)
 
 	ServeJson(w, r, members)
 }
