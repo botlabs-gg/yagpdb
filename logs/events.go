@@ -363,9 +363,9 @@ type NicknameListing struct {
 	Nickname string
 }
 
-func CheckUsername(user *discordgo.User) {
+func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
 	var result UsernameListing
-	err := common.GORM.Model(&result).Where(UsernameListing{UserID: MustParseID(user.ID)}).Last(&result).Error
+	err := gDB.Model(&result).Where(UsernameListing{UserID: MustParseID(user.ID)}).Last(&result).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.WithError(err).Error("Failed checking username for changes")
 		return
@@ -382,15 +382,15 @@ func CheckUsername(user *discordgo.User) {
 		Username: user.Username,
 	}
 
-	err = common.GORM.Create(&listing).Error
+	err = gDB.Create(&listing).Error
 	if err != nil {
 		logrus.WithError(err).Error("Failed setting username")
 	}
 }
 
-func CheckNickname(userID, guildID, nickname string) {
+func CheckNickname(gDB *gorm.DB, userID, guildID, nickname string) {
 	var result NicknameListing
-	err := common.GORM.Model(&result).Where(NicknameListing{UserID: MustParseID(userID), GuildID: guildID}).Last(&result).Error
+	err := gDB.Model(&result).Where(NicknameListing{UserID: MustParseID(userID), GuildID: guildID}).Last(&result).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.WithError(err).Error("Failed checking nickname for changes")
 		return
@@ -413,7 +413,7 @@ func CheckNickname(userID, guildID, nickname string) {
 		Nickname: nickname,
 	}
 
-	err = common.GORM.Create(&listing).Error
+	err = gDB.Create(&listing).Error
 	if err != nil {
 		logrus.WithError(err).Error("Failed setting nickname")
 	}
@@ -438,12 +438,12 @@ func EvtProcesser() {
 			}
 
 			if conf.NicknameLoggingEnabled {
-				CheckNickname(t.User.ID, t.GuildID, t.Presence.Nick)
+				CheckNickname(common.GORM, t.User.ID, t.GuildID, t.Presence.Nick)
 			}
 
 			if conf.UsernameLoggingEnabled {
 				if t.User.Username != "" {
-					CheckUsername(t.User)
+					CheckUsername(common.GORM, t.User)
 				}
 			}
 		case *discordgo.GuildMemberUpdate:
@@ -453,7 +453,7 @@ func EvtProcesser() {
 				continue
 			}
 			if conf.NicknameLoggingEnabled {
-				CheckNickname(t.User.ID, t.GuildID, t.Nick)
+				CheckNickname(common.GORM, t.User.ID, t.GuildID, t.Nick)
 			}
 		case *discordgo.GuildMemberAdd:
 			conf, err := GetConfig(t.GuildID)
@@ -462,7 +462,7 @@ func EvtProcesser() {
 				continue
 			}
 			if conf.UsernameLoggingEnabled {
-				CheckUsername(t.User)
+				CheckUsername(common.GORM, t.User)
 			}
 		case *discordgo.Member:
 			conf, err := GetConfig(t.GuildID)
@@ -472,11 +472,11 @@ func EvtProcesser() {
 			}
 
 			if conf.NicknameLoggingEnabled {
-				CheckNickname(t.User.ID, t.GuildID, t.Nick)
+				CheckNickname(common.GORM, t.User.ID, t.GuildID, t.Nick)
 			}
 
 			if conf.UsernameLoggingEnabled {
-				CheckUsername(t.User)
+				CheckUsername(common.GORM, t.User)
 			}
 		}
 	}
@@ -488,6 +488,8 @@ func EvtProcesserGCs() {
 
 		switch t := e.(type) {
 		case *discordgo.GuildCreate:
+			tx := common.GORM.Begin()
+
 			conf, err := GetConfig(t.ID)
 			if err != nil {
 				logrus.WithError(err).Error("Failed fetching config")
@@ -497,13 +499,23 @@ func EvtProcesserGCs() {
 			started := time.Now()
 			for _, v := range t.Members {
 				if conf.NicknameLoggingEnabled {
-					CheckNickname(v.User.ID, t.Guild.ID, v.Nick)
+					CheckNickname(tx, v.User.ID, t.Guild.ID, v.Nick)
 				}
 				if conf.UsernameLoggingEnabled {
-					CheckUsername(v.User)
+					CheckUsername(tx, v.User)
 				}
 			}
-			logrus.Infof("Checked %d members in %s", len(t.Members), time.Since(started).String())
+
+			err = tx.Commit().Error
+			if err != nil {
+				logrus.WithError(err).Error("Failed committing transaction")
+				continue
+			}
+
+			if len(t.Members) > 100 {
+				logrus.Infof("Checked %d members in %s", len(t.Members), time.Since(started).String())
+			}
+
 			// Make sure this dosen't use all our resources
 			time.Sleep(time.Millisecond * 25)
 		}
