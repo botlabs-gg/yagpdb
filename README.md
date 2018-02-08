@@ -72,7 +72,7 @@ Currently YAGPDB builds everything into one executable and you run the bot with 
 
 YAGPDB uses redis for light data and caching.
 
-I'm currently in the process of moving configuration over to postgres, about 50% of the configuration settings lives on postgres atm.
+I'm currently in the process of moving configuration over to postgres, about 50% of the configuration settings live on postgres atm.
 
 ### Creating a new plugin
 
