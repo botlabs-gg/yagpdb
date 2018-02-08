@@ -6,7 +6,7 @@ YAGPDB is a pineapple!
 
 ### Project status
 
-YAGPDB is very much work in progress so I'm not actively advertising it. Although I do have it perform a lot of duties on a somewhat large server, but it's still in alpha so beware of bugs. If you do decide to use it and want to come in contact with me, look below for my discord server.
+YAGPDB is very much a work in progress so I'm not actively advertising it. Although I do have it perform a lot of duties on a somewhat large server, but it's still in alpha so beware of bugs. If you do decide to use it and want to come in contact with me, look below for my discord server.
 
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
@@ -14,9 +14,9 @@ YAGPDB is very much work in progress so I'm not actively advertising it. Althoug
 
 ### Running YAGPDB yourself
 
-**Running YAGPDB on your own you can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
+**Running YAGPDB on your own however you can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
 
-**IF YOU DO NOT UNDERSTAND THESE STEPS THEN DON'T BOTHER TRYING TO RUN THIS, Please dont waste my time by ignoring this warning**
+**IF YOU DO NOT UNDERSTAND THESE STEPS THEN DON'T BOTHER TRYING TO RUN THIS, Please dont waste my (or the support team's) time by ignoring this warning**
 
 Required databases: 
  - PostgresSQL
@@ -42,7 +42,7 @@ Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfi
 **Standard plugins:**
 
 * Youtube-Feed
-* Streamannouncement
+* Stream-announcements
 * Soundboard
 * Serverstats
 * Reputation
@@ -52,6 +52,7 @@ Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfi
 * Moderation
 * Logs
 * Customcommands
+* And More!
 
 **Planned plugins**
 
