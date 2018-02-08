@@ -320,7 +320,7 @@ function formSubmissionEvents(selectorPrefix){
 			"I think I broke it!",
 			"Oh hello there!",
 			"Now you see me, now you dont.",
-			"Erorr 404: Response not found.",
+			"I think its working...",
 			"Wait... You're actually reading this?",
 			"Maybe if I just wait a little longer...",
 		]
