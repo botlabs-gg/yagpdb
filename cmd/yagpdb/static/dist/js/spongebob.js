@@ -323,6 +323,13 @@ function formSubmissionEvents(selectorPrefix){
 			"I think its working...",
 			"Wait... You're actually reading this?",
 			"Maybe if I just wait a little longer...",
+			"Getting outta bed",
+			"Elevator Music Plays",
+			"Juggling with chainsaws",
+			"Playing with fire",
+			"Welcome ... I've been expecting you",
+			"Just relaxing in the loading bar",
+			"Yet Another Generic Response",
 		]
 
 		for(var i = 0; i < evt.target.elements.length; i++){
