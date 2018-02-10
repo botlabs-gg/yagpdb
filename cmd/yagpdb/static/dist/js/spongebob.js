@@ -314,8 +314,22 @@ function formSubmissionEvents(selectorPrefix){
 			"Wonder what this button does?",
 			"Hmmm this sure is taking a long time",
 			"Wanna go out on a date?",
-			"Am i loading?",
+			"Am I loading?",
 			"Click me harder boi ;)	)))",
+			"OwO Whats this?",
+			"I think I broke it!",
+			"Oh hello there!",
+			"Now you see me, now you dont.",
+			"I think its working...",
+			"Wait... You're actually reading this?",
+			"Maybe if I just wait a little longer...",
+			"Getting outta bed",
+			"Elevator Music Plays",
+			"Juggling with chainsaws",
+			"Playing with fire",
+			"Welcome ... I've been expecting you",
+			"Just relaxing in the loading bar",
+			"Yet Another Generic Response",
 		]
 
 		for(var i = 0; i < evt.target.elements.length; i++){

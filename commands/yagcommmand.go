@@ -24,7 +24,7 @@ const (
 var (
 	CategoryGeneral = &dcmd.Category{
 		Name:        "General",
-		Description: "General commands",
+		Description: "General & informational commands",
 		HelpEmoji:   "ℹ️",
 		EmbedColor:  0xe53939,
 	}
