@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"database/sql"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
@@ -8,7 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"gopkg.in/src-d/go-kallax.v1"
+	"github.com/jonas747/yagpdb/rolecommands/models"
 )
 
 func (p *Plugin) InitBot() {
@@ -49,7 +50,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 
 	given, err := FindAssignRole(parsed.GS.ID(), member, parsed.Args[0].Str())
 	if err != nil {
-		if err == kallax.ErrNotFound {
+		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
 			if v, ok := resp.(string); ok {
 				return "Role not round, " + v, err
@@ -124,7 +125,7 @@ func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
 }
 
 // StringCommands pretty formats a bunch of commands into  a string
-func StringCommands(cmds []*RoleCommand) string {
+func StringCommands(cmds []*models.RoleCommand) string {
 	stringedCommands := make([]int64, 0, len(cmds))
 
 	output := "```\n"

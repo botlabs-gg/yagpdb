@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
@@ -9,7 +10,9 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"gopkg.in/src-d/go-kallax.v1"
+	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"gopkg.in/volatiletech/null.v6"
 	"sort"
 	"strconv"
 )
@@ -29,13 +32,17 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		return "You do not have the proper permissions (Manage Server) to create a role menu", nil
 	}
 
-	group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, common.MustParseInt(parsed.GS.ID())).Where(kallax.Ilike(Schema.RoleGroup.Name, parsed.Args[0].Str())))
+	group, err := models.RoleGroupsG(qm.Where("guild_id=?", parsed.GS.ID()), qm.Where("name ILIKE ?", parsed.Args[0].Str())).One()
 	if err != nil {
-		if err == kallax.ErrNotFound {
-			return "Did not find the role command group specified, make sure you types it right", nil
+		if err == sql.ErrNoRows {
+			return "Did not find the role command group specified, make sure you typed it right", nil
 		}
 
 		return "Failed retrieving the group", err
+	}
+
+	if c, _ := models.RoleCommandsG(qm.Where("role_group_id=?", group.ID)).Count(); c < 1 {
+		return "No commands in group, set them up in the control panel at: <https://yagpdb.xyz/manage>", nil
 	}
 
 	// set up the message if not provided
@@ -44,106 +51,112 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		_, dErr := common.DiscordError(err)
 		errStr := "Failed creating the menu message, check the permissions on the channel"
 		if dErr != "" {
-			errStr += ", discord respondedn with: " + errStr
+			errStr += ", discord responded with: " + errStr
 		}
 		return errStr, err
 	}
 
-	model := &RoleMenu{
+	model := &models.RoleMenu{
 		MessageID: common.MustParseInt(msg.ID),
 		GuildID:   common.MustParseInt(parsed.GS.ID()),
 		OwnerID:   common.MustParseInt(parsed.Msg.Author.ID),
 		ChannelID: common.MustParseInt(parsed.Msg.ChannelID),
 
-		OwnMessage: true,
-		Group:      group,
+		OwnMessage:  true,
+		RoleGroupID: null.Int64From(group.ID),
 	}
 
-	err = roleMenuStore.Insert(model)
+	err = model.InsertG()
 	if err != nil {
 		return "Failed setting up menu", err
 	}
 
-	resp, err := model.NextSetupStep(true)
+	resp, err := NextRoleMenuSetupStep(model, nil, true)
 
 	content := msg.Content + "\n" + resp
 	_, err = common.BotSession.ChannelMessageEdit(parsed.CS.ID(), msg.ID, content)
 	return "", err
 }
 
-func (rm *RoleMenu) NextSetupStep(first bool) (resp string, err error) {
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().FindByGroup(rm.Group.ID).Order(kallax.Desc(Schema.RoleCommand.ID)))
+func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, first bool) (resp string, err error) {
+	commands, err := models.RoleCommandsG(qm.Where("role_group_id = ?", rm.RoleGroupID)).All()
 	if err != nil {
 		return "Failed fetching commands for role group", err
 	}
 
-	var nextCmd *RoleCommand
+	var nextCmd *models.RoleCommand
 
 	sort.Slice(commands, RoleCommandsLessFunc(commands))
 
-OUTER:
-	for _, cmd := range commands {
-		for _, option := range rm.Options {
-			if cmd.ID == option.RoleCmd.ID {
-				continue OUTER
-			}
+	if first {
+		if len(commands) > 0 {
+			nextCmd = commands[0]
 		}
+	} else {
+		// Find next command, making sure we dont do any duplicate ones
 
-		// New command is cmd
-		nextCmd = cmd
-		break
+	OUTER:
+		for _, cmd := range commands {
+			for _, option := range opts {
+				if cmd.ID == option.RoleCommandID.Int64 {
+					continue OUTER
+				}
+			}
+
+			// New command is cmd
+			nextCmd = cmd
+			break
+		}
 	}
-
-	rm.Options = nil
 
 	if nextCmd == nil {
 		rm.State = RoleMenuStateDone
-		roleMenuStore.Update(rm, Schema.RoleMenu.State)
+		rm.UpdateG()
 		return "Done setting up!", nil
 	}
 
-	rm.NextRoleCommand = nextCmd
-	roleMenuStore.Debug().Update(rm, Schema.RoleMenu.NextRoleCommandFK)
+	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
+	rm.UpdateG(models.RoleMenuColumns.NextRoleCommandID)
 	if first {
 		return "**Start setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the this message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
 	}
 	return "**Continue setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
 }
 
-func (rm *RoleMenu) UpdateMenuMessage() error {
+func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) error {
 	newMsg := "**Role Menu**: react to give yourself a role\n\n"
 
-	for _, option := range rm.Options {
-		// Fetch the roel command if missing
-		if option.RoleCmd == nil {
-			cmdId, err := option.Value("role_command_id")
-			if err != nil {
-				return err
-			}
-			// Not very pretty, but a limitation of kallax atm...
-			cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByID(int64(*(cmdId.(*kallax.NumericID)))))
-			if err != nil {
-				return err
-			}
-			option.RoleCmd = cmd
+	pairs := make([]*OptionCommandPair, 0, len(opts))
+	for _, v := range opts {
+		cmd, err := v.RoleCommandG().One()
+		if err != nil {
+			return err
 		}
+
+		pairs = append(pairs, &OptionCommandPair{Command: cmd, Option: v})
 	}
 
-	sort.Slice(rm.Options, RoleMenuOptionLessFunc(rm.Options))
+	sort.Slice(pairs, OptionCommandPairLessFunc(pairs))
 
-	for _, option := range rm.Options {
+	for _, option := range opts {
+
+		cmd, err := option.RoleCommandG().One()
+		if err != nil {
+			return err
+		}
+
 		emoji := option.UnicodeEmoji
 		if option.EmojiID != 0 {
 			emoji = fmt.Sprintf("<:yagpdb:%d>", option.EmojiID)
 		}
-		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, option.RoleCmd.Name)
+		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, cmd.Name)
 	}
 
 	_, err := common.BotSession.ChannelMessageEdit(strconv.FormatInt(rm.ChannelID, 10), strconv.FormatInt(rm.MessageID, 10), newMsg)
 	return err
 }
 
-func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string, err error) {
+func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd) (resp string, err error) {
 	if common.MustParseInt(ra.UserID) != rm.OwnerID {
 		common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
 		return "This menu is still being set up, wait until the owner of this menu is done.", nil
@@ -154,8 +167,13 @@ func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string
 		parsedID = common.MustParseInt(ra.Emoji.ID)
 	}
 
+	currentOpts, err := rm.RoleMenuOptionsG().All()
+	if err != nil && err != sql.ErrNoRows {
+		return "Error communicating with DB", err
+	}
+
 	// Make sure this emoji isnt used to another option
-	for _, option := range rm.Options {
+	for _, option := range currentOpts {
 		if ra.Emoji.ID != "" {
 			if parsedID == option.EmojiID && option.EmojiID != 0 {
 				return "Emoji already used for another option", nil
@@ -167,17 +185,17 @@ func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string
 		}
 	}
 
-	model := &RoleMenuOption{
-		Menu:    rm,
-		RoleCmd: rm.NextRoleCommand,
-		EmojiID: parsedID,
+	model := &models.RoleMenuOption{
+		RoleMenuID:    rm.MessageID,
+		RoleCommandID: rm.NextRoleCommandID,
+		EmojiID:       parsedID,
 	}
 
 	if ra.Emoji.ID == "" {
 		model.UnicodeEmoji = ra.Emoji.Name
 	}
 
-	err = roleMenuOptionStore.Insert(model)
+	err = model.InsertG()
 	if err != nil {
 		return "Failed inserting option", err
 	}
@@ -187,13 +205,21 @@ func (rm *RoleMenu) ContinueSetup(ra *discordgo.MessageReactionAdd) (resp string
 		logrus.WithError(err).WithField("emoji", ra.Emoji.APIName()).Error("Failed reacting")
 	}
 
-	rm.Options = append(rm.Options, model)
-	err = rm.UpdateMenuMessage()
+	currentOpts = append(currentOpts, model)
+	// rm.Options = append(rm.Options, model)
+	// err = rm.UpdateMenuMessage()
+	err = UpdateRoleMenuMessage(rm, currentOpts)
 	if err != nil {
 		return "Failed updating", err
 	}
 
-	return rm.NextSetupStep(false)
+	// return rm.NextSetupStep(false)
+	return NextRoleMenuSetupStep(rm, currentOpts, false)
+}
+
+type OptionCommandPair struct {
+	Option  *models.RoleMenuOption
+	Command *models.RoleCommand
 }
 
 func handleReactionAdd(evt *eventsystem.EventData) {
@@ -202,16 +228,17 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 		return
 	}
 
-	menu, err := roleMenuStore.FindOne(NewRoleMenuQuery().FindByMessageID(common.MustParseInt(ra.MessageID)).WithOptions(nil).WithNextRoleCommand().WithGroup())
+	menu, err := models.FindRoleMenuG(common.MustParseInt(ra.MessageID))
+	// menu, err := .FindByMessageID(common.MustParseInt(ra.MessageID)).WithOptions(nil).WithNextRoleCommand().WithGroup())
 	if err != nil {
-		if err != kallax.ErrNotFound {
+		if err != sql.ErrNoRows {
 			logrus.WithError(err).Error("RoleCommnadsMenu: Failed finding menu")
 		}
 		return
 	}
 
 	if menu.State == RoleMenuStateSettingUp {
-		resp, err := menu.ContinueSetup(ra)
+		resp, err := ContinueRoleMenuSetup(menu, ra)
 		if err != nil {
 			logrus.WithError(err).Error("RoleCommnadsMenu: Failed continuing role menu setup")
 		}
@@ -226,18 +253,24 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 		return
 	}
 
-	var option *RoleMenuOption
+	opts, err := menu.RoleMenuOptionsG().All()
+	if err != nil && err != sql.ErrNoRows {
+		logrus.WithError(err).Error("Failed retrieving rolemenu options")
+		return
+	}
+
+	var option *models.RoleMenuOption
 	if ra.Emoji.ID != "" {
 		// This is a custom emoji
 		parsedID := common.MustParseInt(ra.Emoji.ID)
-		for _, v := range menu.Options {
+		for _, v := range opts {
 			if v.EmojiID != 0 && v.EmojiID == parsedID {
 				option = v
 			}
 		}
 	} else {
 		// Unicode emoji
-		for _, v := range menu.Options {
+		for _, v := range opts {
 			if v.UnicodeEmoji == ra.Emoji.Name && v.EmojiID == 0 {
 				option = v
 			}
@@ -253,7 +286,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	name := gs.Guild.Name
 	gs.RUnlock()
 
-	resp, err := menu.MemberChooseOption(ra, gs, option)
+	resp, err := MemberChooseOption(menu, ra, gs, option)
 	if err != nil {
 		logrus.WithError(err).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
 	}
@@ -262,16 +295,18 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	}
 }
 
-func (rm *RoleMenu) MemberChooseOption(ra *discordgo.MessageReactionAdd, gs *dstate.GuildState, option *RoleMenuOption) (resp string, err error) {
-	cmdId, err := option.Value("role_command_id")
+func MemberChooseOption(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd, gs *dstate.GuildState, option *models.RoleMenuOption) (resp string, err error) {
+	cmd, err := option.RoleCommandG().One()
 	if err != nil {
 		return "An error occured giving you the role", err
 	}
 
-	// Not very pretty, but a limitation of kallax atm...
-	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByID(int64(*(cmdId.(*kallax.NumericID)))).WithGroup())
-	if err != nil {
-		return "An error occured giving you the role", err
+	pair := &CommandGroupPair{Command: cmd}
+	if cmd.RoleGroupID.Valid {
+		pair.Group, err = cmd.RoleGroupG().One()
+		if err != nil {
+			return "An error occured giving you the role", err
+		}
 	}
 
 	member, err := bot.GetMember(gs.ID(), ra.UserID)
@@ -279,7 +314,7 @@ func (rm *RoleMenu) MemberChooseOption(ra *discordgo.MessageReactionAdd, gs *dst
 		return "An error occured giving you the role", err
 	}
 
-	given, err := AssignRole(rm.GuildID, member, cmd)
+	given, err := AssignRole(rm.GuildID, member, pair)
 	if err != nil {
 		return HumanizeAssignError(gs, err)
 	}
@@ -291,14 +326,14 @@ func (rm *RoleMenu) MemberChooseOption(ra *discordgo.MessageReactionAdd, gs *dst
 	return "Took away your role!", nil
 }
 
-func RoleMenuOptionLessFunc(slice []*RoleMenuOption) func(int, int) bool {
+func OptionCommandPairLessFunc(slice []*OptionCommandPair) func(int, int) bool {
 	return func(i, j int) bool {
 		// Compare timestamps if positions are equal, for deterministic output
-		if slice[i].RoleCmd.Position == slice[0].RoleCmd.Position {
-			return slice[i].RoleCmd.CreatedAt.After(slice[j].RoleCmd.CreatedAt)
+		if slice[i].Command.Position == slice[0].Command.Position {
+			return slice[i].Command.CreatedAt.After(slice[j].Command.CreatedAt)
 		}
 
-		if slice[i].RoleCmd.Position > slice[j].RoleCmd.Position {
+		if slice[i].Command.Position > slice[j].Command.Position {
 			return false
 		}
 
@@ -317,12 +352,8 @@ func handleMessageRemove(evt *eventsystem.EventData) {
 }
 
 func messageRemoved(id string) {
-	result, err := roleMenuStore.RawExec("DELETE FROM role_menus WHERE message_id=$1", id)
+	err := models.RoleMenusG(qm.Where("message_id=?", id)).DeleteAll()
 	if err != nil {
 		logrus.WithError(err).Error("Failed removing old role menus")
-	}
-
-	if result > 0 {
-		logrus.Infof("Deleetd %d role menus", result)
 	}
 }

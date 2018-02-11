@@ -8,7 +8,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
 	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/vattle/sqlboiler/boil"
+	boilOld "github.com/vattle/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
 	"os"
 )
@@ -98,6 +99,7 @@ func connectDB(user, pass, dbName string) error {
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)
+	boilOld.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(5)
 	}

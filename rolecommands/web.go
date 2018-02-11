@@ -3,11 +3,13 @@ package rolecommands
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"gopkg.in/src-d/go-kallax.v1"
+	"gopkg.in/volatiletech/null.v6"
 	"html/template"
 	"net/http"
 	"sort"
@@ -30,7 +32,7 @@ type FormGroup struct {
 	RequireRoles []int64 `valid:"role,true"`
 	IgnoreRoles  []int64 `valid:"role,true"`
 
-	Mode GroupMode
+	Mode int
 
 	MultipleMax int
 	MultipleMin int
@@ -85,17 +87,18 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
 	form.Name = strings.TrimSpace(form.Name)
-	if c, _ := cmdStore.Count(NewRoleCommandQuery().FindByGuildID(kallax.Eq, parsedGID)); c >= 1000 {
+
+	if c, _ := models.RoleCommandsG(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID)).Count(); c >= 1000 {
 		tmpl.AddAlerts(web.ErrorAlert("Max 1000 role commands allowed"))
 		return tmpl, nil
 	}
 
-	if c, _ := cmdStore.Count(NewRoleCommandQuery().FindByGuildID(kallax.Eq, parsedGID).Where(kallax.Ilike(Schema.RoleCommand.Name, form.Name))); c > 0 {
+	if c, _ := models.RoleCommandsG(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name)).Count(); c > 0 {
 		tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name"))
 		return tmpl, nil
 	}
 
-	model := &RoleCommand{
+	model := &models.RoleCommand{
 		Name:    form.Name,
 		GuildID: parsedGID,
 
@@ -105,20 +108,16 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if form.Group != -1 {
-		group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).FindByID(form.Group))
+		group, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+"=?", common.MustParseInt(g.ID)), qm.Where(models.RoleGroupColumns.ID+"=?", form.Group)).One()
 		if err != nil {
 			return tmpl, err
 		}
 
-		model.Group = group
+		model.RoleGroupID = null.Int64From(group.ID)
 	}
 
-	err := cmdStore.Insert(model)
-	if err != nil {
-		return tmpl, err
-	}
-
-	return tmpl, nil
+	err := model.InsertG()
+	return tmpl, err
 }
 
 func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
@@ -126,9 +125,13 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 
 	formCmd := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
 
-	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).FindByID(formCmd.ID))
+	cmd, err := models.FindRoleCommandG(formCmd.ID)
 	if err != nil {
 		return
+	}
+
+	if cmd.GuildID != common.MustParseInt(g.ID) {
+		return tmpl.AddAlerts(web.ErrorAlert("That's not your command")), nil
 	}
 
 	cmd.Name = formCmd.Name
@@ -136,23 +139,33 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 	cmd.IgnoreRoles = formCmd.IgnoreRoles
 	cmd.RequireRoles = formCmd.RequireRoles
 
-	if formCmd.Group != 0 {
-		group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, cmd.GuildID).FindByID(formCmd.Group))
-		if err != nil && err != kallax.ErrNotFound {
+	if formCmd.Group != -1 {
+		group, err := models.FindRoleGroupG(formCmd.Group)
+		if err != nil {
 			return tmpl, err
 		}
-		cmd.Group = group
+		if group.GuildID != common.MustParseInt(g.ID) {
+			return tmpl.AddAlerts(web.ErrorAlert("That's not your group")), nil
+		}
+		err = cmd.SetRoleGroupG(false, group)
+		if err != nil {
+			return tmpl, err
+		}
 	} else {
-		cmd.Group = nil
+		cmd.RoleGroupID.Valid = false
+		if err = cmd.UpdateG(models.RoleCommandColumns.RoleGroupID); err != nil {
+			cmd.RoleGroupID.Valid = true
+			return tmpl, err
+		}
 	}
 
-	_, err = cmdStore.Update(cmd)
+	err = cmd.UpdateG(models.RoleCommandColumns.Name, models.RoleCommandColumns.Role, models.RoleCommandColumns.IgnoreRoles, models.RoleCommandColumns.RequireRoles)
 	return
 }
 
 func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	_, g, tmpl := web.GetBaseCPContextData(r.Context())
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).WithGroup())
+	commands, err := models.RoleCommandsG(qm.Where("guild_id=?", g.ID)).All()
 	if err != nil {
 		return tmpl, err
 	}
@@ -162,7 +175,7 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		return tmpl, err
 	}
 
-	var targetCmd *RoleCommand
+	var targetCmd *models.RoleCommand
 	for _, v := range commands {
 		if v.ID == tID {
 			targetCmd = v
@@ -174,11 +187,11 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		return tmpl, errors.New("RoleCommand not found")
 	}
 
-	commandsInGroup := make([]*RoleCommand, 0, len(commands))
+	commandsInGroup := make([]*models.RoleCommand, 0, len(commands))
 
 	// Sort all relevant commands
 	for _, v := range commands {
-		if (targetCmd.Group == nil && v.Group == nil) || (targetCmd.Group != nil && v.Group != nil && targetCmd.Group.ID == v.Group.ID) {
+		if (!targetCmd.RoleGroupID.Valid && !v.RoleGroupID.Valid) || (targetCmd.RoleGroupID.Valid && v.RoleGroupID.Valid && targetCmd.RoleGroupID.Int64 == v.RoleGroupID.Int64) {
 			commandsInGroup = append(commandsInGroup, v)
 		}
 	}
@@ -191,7 +204,7 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	for i := 0; i < len(commandsInGroup); i++ {
 		v := commandsInGroup[i]
 
-		v.Position = i
+		v.Position = int64(i)
 		if v.ID == tID {
 			if isUp {
 				if i == 0 {
@@ -200,21 +213,21 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 				}
 
 				v.Position--
-				commandsInGroup[i-1].Position = i
+				commandsInGroup[i-1].Position = int64(i)
 			} else {
 				if i == len(commandsInGroup)-1 {
 					// Can't move further down
 					continue
 				}
 				v.Position++
-				commandsInGroup[i+1].Position = i
+				commandsInGroup[i+1].Position = int64(i)
 				i++
 			}
 		}
 	}
 
 	for _, v := range commandsInGroup {
-		_, lErr := cmdStore.Update(v, Schema.RoleCommand.Position)
+		lErr := v.UpdateG(models.RoleCommandColumns.Position)
 		if lErr != nil {
 			err = lErr
 		}
@@ -224,16 +237,15 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 }
 
 func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, g, _ := web.GetBaseCPContextData(r.Context())
+	_, g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
-	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).FindByID(idParsed))
+	err := models.RoleCommandsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll()
 	if err != nil {
 		return nil, err
 	}
 
-	err = cmdStore.Delete(cmd)
-	return nil, err
+	return tmpl, nil
 }
 
 func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -242,30 +254,32 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
 	form.Name = strings.TrimSpace(form.Name)
-	if c, _ := groupStore.Count(NewRoleGroupQuery().FindByGuildID(kallax.Eq, parsedGID)); c >= 1000 {
+
+	if c, _ := models.RoleGroupsG(qm.Where("guild_id=?", g.ID)).Count(); c >= 1000 {
 		tmpl.AddAlerts(web.ErrorAlert("Max 1000 role groups allowed"))
 		return tmpl, nil
 	}
 
-	if c, _ := groupStore.Count(NewRoleGroupQuery().FindByGuildID(kallax.Eq, parsedGID).Where(kallax.Ilike(Schema.RoleGroup.Name, form.Name))); c > 0 {
+	if c, _ := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("name ILIKE ?", form.Name)).Count(); c >= 0 {
 		tmpl.AddAlerts(web.ErrorAlert("Already a role group with that name"))
 		return tmpl, nil
 	}
 
-	model := &RoleGroup{
+	model := &models.RoleGroup{
 		Name:    form.Name,
 		GuildID: parsedGID,
 
 		RequireRoles: form.RequireRoles,
 		IgnoreRoles:  form.IgnoreRoles,
-		Mode:         form.Mode,
+		Mode:         int64(form.Mode),
 
-		MultipleMax:         form.MultipleMax,
-		MultipleMin:         form.MultipleMin,
+		MultipleMax:         int64(form.MultipleMax),
+		MultipleMin:         int64(form.MultipleMin),
 		SingleRequireOne:    form.SingleRequireOne,
 		SingleAutoToggleOff: form.SingleAutoToggleOff,
 	}
-	err := groupStore.Insert(model)
+
+	err := model.InsertG()
 	if err != nil {
 		return tmpl, err
 	}
@@ -278,7 +292,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 
 	formGroup := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
 
-	group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).FindByID(formGroup.ID))
+	group, err := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", formGroup.ID)).One()
 	if err != nil {
 		return
 	}
@@ -288,11 +302,11 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 	group.RequireRoles = formGroup.RequireRoles
 	group.SingleRequireOne = formGroup.SingleRequireOne
 	group.SingleAutoToggleOff = formGroup.SingleAutoToggleOff
-	group.MultipleMax = formGroup.MultipleMax
-	group.MultipleMin = formGroup.MultipleMin
-	group.Mode = formGroup.Mode
+	group.MultipleMax = int64(formGroup.MultipleMax)
+	group.MultipleMin = int64(formGroup.MultipleMin)
+	group.Mode = int64(formGroup.Mode)
 
-	_, err = groupStore.Update(group)
+	err = group.UpdateG()
 	return
 }
 
@@ -300,11 +314,6 @@ func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	_, g, _ := web.GetBaseCPContextData(r.Context())
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
-	group, err := groupStore.FindOne(NewRoleGroupQuery().FindByGuildID(kallax.Eq, common.MustParseInt(g.ID)).FindByID(idParsed))
-	if err != nil {
-		return nil, err
-	}
-
-	err = groupStore.Delete(group)
+	err := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll()
 	return nil, err
 }

@@ -8,20 +8,14 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
+	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"gopkg.in/src-d/go-kallax.v1"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sort"
 	"strconv"
 )
 
 //go:generate esc -o assets_gen.go -pkg rolecommands -ignore ".go" assets/
-
-var (
-	groupStore          *RoleGroupStore
-	cmdStore            *RoleCommandStore
-	roleMenuStore       *RoleMenuStore
-	roleMenuOptionStore *RoleMenuOptionStore
-)
 
 type Plugin struct {
 }
@@ -29,6 +23,17 @@ type Plugin struct {
 func (p *Plugin) Name() string {
 	return "RoleCommands"
 }
+
+const (
+	GroupModeNone = iota
+	GroupModeSingle
+	GroupModeMultiple
+)
+
+const (
+	RoleMenuStateSettingUp = 0
+	RoleMenuStateDone      = 1
+)
 
 var (
 	_ common.Plugin = (*Plugin)(nil)
@@ -45,44 +50,51 @@ func RegisterPlugin() {
 		logrus.WithError(err).Fatal("Failed initializing db schema")
 	}
 
-	groupStore = NewRoleGroupStore(common.PQ)
-	cmdStore = NewRoleCommandStore(common.PQ)
-	roleMenuStore = NewRoleMenuStore(common.PQ)
-	roleMenuOptionStore = NewRoleMenuOptionStore(common.PQ)
-
 	docs.AddPage("Role Commands / Self assignable roles", FSMustString(false, "/assets/help.md"), nil)
+}
+
+type CommandGroupPair struct {
+	Command *models.RoleCommand
+	Group   *models.RoleGroup
 }
 
 func FindAssignRole(guildID string, member *discordgo.Member, name string) (gaveRole bool, err error) {
 	parsedGuildID := common.MustParseInt(guildID)
-	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByGuildID(kallax.Eq, parsedGuildID).Where(kallax.Ilike(Schema.RoleCommand.Name, name)).WithGroup())
+	cmd, err := models.RoleCommandsG(qm.Where("guild_id=?", guildID), qm.Where("name ILIKE ?", name)).One()
 	if err != nil {
 		return false, err
 	}
+	var group *models.RoleGroup
+	if cmd.RoleGroupID.Valid {
+		group, err = cmd.RoleGroupG().One()
+		if err != nil {
+			return false, err
+		}
+	}
 
-	return AssignRole(parsedGuildID, member, cmd)
+	return AssignRole(parsedGuildID, member, &CommandGroupPair{Command: cmd, Group: group})
 }
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
 // or is unable to receie said role
-func AssignRole(guildID int64, member *discordgo.Member, cmd *RoleCommand) (gaveRole bool, err error) {
+func AssignRole(guildID int64, member *discordgo.Member, cmd *CommandGroupPair) (gaveRole bool, err error) {
 	// We work with int64's internally
 	parsedRoles := make([]int64, len(member.Roles))
 	for i, v := range member.Roles {
 		parsedRoles[i], _ = strconv.ParseInt(v, 10, 64)
 	}
 
-	if err := cmd.CanAssignTo(parsedRoles); err != nil {
+	if err := CanAssignRoleCmdTo(cmd.Command, parsedRoles); err != nil {
 		return false, err
 	}
 
 	// This command belongs to a group, let the group handle it
 	if cmd.Group != nil {
-		return cmd.Group.AssignRoleToMember(guildID, member, parsedRoles, cmd)
+		return GroupAssignRoleToMember(cmd.Group, guildID, member, parsedRoles, cmd.Command)
 	}
 
 	// This is a single command, just toggle it
-	return ToggleRole(guildID, member, parsedRoles, cmd.Role)
+	return ToggleRole(guildID, member, parsedRoles, cmd.Command.Role)
 }
 
 // ToggleRole toggles the role of a guildmember, adding it if the member does not have the role and removing it if they do
@@ -100,7 +112,7 @@ func ToggleRole(guildID int64, member *discordgo.Member, parsedMemberRoles []int
 
 // AssignRoleToMember attempts to assign the given role command, part of this group
 // to the member
-func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member, parsedRoles []int64, targetRole *RoleCommand) (gaveRole bool, err error) {
+func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, member *discordgo.Member, parsedRoles []int64, targetRole *models.RoleCommand) (gaveRole bool, err error) {
 	if len(rg.RequireRoles) > 0 {
 		if !CheckRequiredRoles(rg.RequireRoles, parsedRoles) {
 			err = NewSimpleError("Missing a required role")
@@ -120,7 +132,7 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 	}
 
 	// First retrieve role commands for this group
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().FindByGroup(rg.ID))
+	commands, err := rg.RoleCommandsG().All()
 	if err != nil {
 		return
 	}
@@ -167,13 +179,13 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 	}
 
 	if hasTargetRole {
-		if hasRoles-1 < rg.MultipleMin {
-			err = NewLmitError("Minimum of `%d` roles required in this group", rg.MultipleMin)
+		if hasRoles-1 < int(rg.MultipleMin) {
+			err = NewLmitError("Minimum of `%d` roles required in this group", int(rg.MultipleMin))
 			return
 		}
 	} else {
-		if hasRoles+1 > rg.MultipleMax {
-			err = NewLmitError("Maximum of `%d` roles allowed in this group", rg.MultipleMax)
+		if hasRoles+1 > int(rg.MultipleMax) {
+			err = NewLmitError("Maximum of `%d` roles allowed in this group", int(rg.MultipleMax))
 			return
 		}
 	}
@@ -181,7 +193,7 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 	return ToggleRole(guildID, member, parsedRoles, targetRole.Role)
 }
 
-func (r *RoleCommand) CanAssignTo(memberRoles []int64) error {
+func CanAssignRoleCmdTo(r *models.RoleCommand, memberRoles []int64) error {
 
 	if len(r.RequireRoles) > 0 {
 		if !CheckRequiredRoles(r.RequireRoles, memberRoles) {
@@ -290,11 +302,11 @@ func (r *LmitError) Error() string {
 }
 
 type GroupError struct {
-	Group   *RoleGroup
+	Group   *models.RoleGroup
 	Message string
 }
 
-func NewGroupError(msg string, group *RoleGroup) error {
+func NewGroupError(msg string, group *models.RoleGroup) error {
 	return &GroupError{
 		Group:   group,
 		Message: msg,
@@ -314,7 +326,7 @@ func IsRoleCommandError(err error) bool {
 	}
 }
 
-func RoleCommandsLessFunc(slice []*RoleCommand) func(int, int) bool {
+func RoleCommandsLessFunc(slice []*models.RoleCommand) func(int, int) bool {
 	return func(i, j int) bool {
 		// Compare timestamps if positions are equal, for deterministic output
 		if slice[i].Position == slice[j].Position {
@@ -329,22 +341,25 @@ func RoleCommandsLessFunc(slice []*RoleCommand) func(int, int) bool {
 	}
 }
 
-func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*RoleGroup][]*RoleCommand, unGrouped []*RoleCommand, err error) {
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().WithGroup().FindByGuildID(kallax.Eq, guildID))
-	if err != nil && err != kallax.ErrNotFound {
+func GetAllRoleCommandsSorted(guildID int64) (groups []*models.RoleGroup, grouped map[*models.RoleGroup][]*models.RoleCommand, unGrouped []*models.RoleCommand, err error) {
+	commands, err := models.RoleCommandsG(qm.Where(models.RoleCommandColumns.GuildID+"=?", guildID)).All()
+	if err != nil {
 		return
 	}
 
-	groups, err = groupStore.FindAll(NewRoleGroupQuery().FindByGuildID(kallax.Eq, guildID))
-	if err != nil && err != kallax.ErrNotFound {
+	grps, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+"=?", guildID)).All()
+	if err != nil {
 		return
 	}
+	groups = grps
 
-	grouped = make(map[*RoleGroup][]*RoleCommand)
+	grouped = make(map[*models.RoleGroup][]*models.RoleCommand)
 	for _, group := range groups {
-		grouped[group] = make([]*RoleCommand, 0, 10)
+
+		grouped[group] = make([]*models.RoleCommand, 0, 10)
+
 		for _, cmd := range commands {
-			if cmd.Group != nil && cmd.Group.ID == group.ID {
+			if cmd.RoleGroupID.Valid && cmd.RoleGroupID.Int64 == group.ID {
 				grouped[group] = append(grouped[group], cmd)
 			}
 		}
@@ -352,9 +367,9 @@ func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*
 		sort.Slice(grouped[group], RoleCommandsLessFunc(grouped[group]))
 	}
 
-	unGrouped = make([]*RoleCommand, 0, 10)
+	unGrouped = make([]*models.RoleCommand, 0, 10)
 	for _, cmd := range commands {
-		if cmd.Group == nil {
+		if !cmd.RoleGroupID.Valid {
 			unGrouped = append(unGrouped, cmd)
 		}
 	}
@@ -362,8 +377,4 @@ func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*
 
 	err = nil
 	return
-}
-
-func kallaxDebugger(message string, args ...interface{}) {
-	logrus.Debugf("%s, args: %v", message, args)
 }
