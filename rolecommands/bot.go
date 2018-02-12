@@ -13,6 +13,7 @@ import (
 )
 
 func (p *Plugin) InitBot() {
+
 	commands.AddRootCommands(
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,

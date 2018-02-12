@@ -10,9 +10,11 @@ import (
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/tidwall/buntdb"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sort"
 	"strconv"
+	"time"
 )
 
 //go:generate esc -o assets_gen.go -pkg rolecommands -ignore ".go" assets/
@@ -39,9 +41,13 @@ var (
 	_ common.Plugin = (*Plugin)(nil)
 	_ web.Plugin    = (*Plugin)(nil)
 	_ bot.Plugin    = (*Plugin)(nil)
+
+	cooldownsDB *buntdb.DB
 )
 
 func RegisterPlugin() {
+	cooldownsDB, _ = buntdb.Open(":memory:")
+
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
@@ -78,6 +84,21 @@ func FindAssignRole(guildID string, member *discordgo.Member, name string) (gave
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
 // or is unable to receie said role
 func AssignRole(guildID int64, member *discordgo.Member, cmd *CommandGroupPair) (gaveRole bool, err error) {
+	onCD := false
+
+	// First check cooldown
+	err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
+		_, replaced, _ := tx.Set(member.User.ID, "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
+		if replaced {
+			onCD = true
+		}
+		return nil
+	})
+
+	if onCD {
+		return false, NewSimpleError("You're on cooldown")
+	}
+
 	// We work with int64's internally
 	parsedRoles := make([]int64, len(member.Roles))
 	for i, v := range member.Roles {
