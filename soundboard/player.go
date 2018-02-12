@@ -105,7 +105,7 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 
 	// Either use the passed voice connection, or create a new one
 	if vc == nil || !vc.Ready {
-		vc, err = session.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
+		vc, err = session.GatewayManager.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
 		if err != nil {
 			return nil, common.ErrWithCaller(err)
 		}
