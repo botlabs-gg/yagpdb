@@ -258,6 +258,7 @@ $(function(){
         <!-- End group settings -->
 
         {{$groups := .Groups}}
+        {{$group := .Group}}
         {{range .Commands}}
         <div class="well well-sm row" >
             <form class="" action="/manage/{{$ag.ID}}/rolecommands/update_cmd" method="post">
@@ -272,7 +273,7 @@ $(function(){
                 <div class="form-group col-lg-2">
                     <label for="{{.ID}}-role-command-group">Group</label><br>
                     <select name="Group" class="form-control" id="{{.ID}}-role-command-group">
-                        {{if .Group}}{{mTemplate "rolecommands_groupopts" "Groups" $groups "Selected" .Group.ID}}
+                        {{if $group}}{{mTemplate "rolecommands_groupopts" "Groups" $groups "Selected" $group.ID}}
                         {{else}}{{mTemplate "rolecommands_groupopts" "Groups" $groups}}
                         {{end}}
                     </select>

@@ -260,7 +260,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		return tmpl, nil
 	}
 
-	if c, _ := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("name ILIKE ?", form.Name)).Count(); c >= 0 {
+	if c, _ := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("name ILIKE ?", form.Name)).Count(); c > 0 {
 		tmpl.AddAlerts(web.ErrorAlert("Already a role group with that name"))
 		return tmpl, nil
 	}
