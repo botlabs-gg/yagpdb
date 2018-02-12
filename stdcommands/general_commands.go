@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/lunixbochs/vtclean"
 	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/pkg/errors"
 	"github.com/tkuchiki/go-timezone"
 	"io/ioutil"
 	"math/rand"
@@ -424,19 +425,15 @@ var cmdWouldYouRather = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "WouldYouRather",
 	Aliases:     []string{"wyr"},
-	Description: "Somewhat NSFW(text): Get presented with 2 choices, add the 'dark' argument for dark questions",
-	Arguments: []*dcmd.ArgDef{
-		{Name: "Dark Questions", Type: dcmd.String},
-	},
+	Description: "Get presented with 2 options.",
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 
-		dark := strings.EqualFold(data.Args[0].Str(), "dark")
-		q1, q2, err := WouldYouRather(dark)
+		q1, q2, err := WouldYouRather()
 		if err != nil {
 			return "Failed fetching the questions :(\n" + err.Error(), err
 		}
 
-		content := fmt.Sprintf("**Would you rather (dark: %t)**\n🇦 %s\n **OR**\n🇧 %s", dark, q1, q2)
+		content := fmt.Sprintf("**Would you rather** (*<http://either.io>*)\n🇦 %s\n **OR**\n🇧 %s", q1, q2)
 		msg, err := common.BotSession.ChannelMessageSend(data.Msg.ChannelID, content)
 		if err != nil {
 			return "Seomthing went wrong", err
@@ -533,21 +530,11 @@ type HIBPBread struct {
 	IsRetired   bool
 }
 
-func WouldYouRather(dark bool) (q1 string, q2 string, err error) {
-	req, err := http.NewRequest("GET", "https://www.wouldyourather.co.uk/", nil)
+func WouldYouRather() (q1 string, q2 string, err error) {
+	req, err := http.NewRequest("GET", "http://either.io/", nil)
 	if err != nil {
 		panic(err)
 	}
-
-	modeStr := "2"
-	if dark {
-		modeStr = "1"
-	}
-
-	req.AddCookie(&http.Cookie{
-		Name:  "siteType",
-		Value: modeStr, // 1 = dark, 2 = funny
-	})
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -559,7 +546,14 @@ func WouldYouRather(dark bool) (q1 string, q2 string, err error) {
 		return
 	}
 
-	q1 = doc.Find("#q1 > span").Text()
-	q2 = doc.Find("#q2 > span").Text()
+	r1 := doc.Find("div.result.result-1 > .option-text")
+	r2 := doc.Find("div.result.result-2 > .option-text")
+
+	if len(r1.Nodes) < 1 || len(r2.Nodes) < 1 {
+		return "", "", errors.New("Failed finding questions, format may have changed.")
+	}
+
+	q1 = r1.Nodes[0].FirstChild.Data
+	q2 = r2.Nodes[0].FirstChild.Data
 	return
 }
