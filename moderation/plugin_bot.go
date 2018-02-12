@@ -139,25 +139,22 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 
 		enabled := false
 		reasonOptional := false
-		reason := ""
 
+		reasonArgIndex := 1
 		switch cmd {
 		case ModCmdBan:
 			enabled = config.BanEnabled
 			reasonOptional = config.BanReasonOptional
-			reason = SafeArgString(data, 1)
 		case ModCmdKick:
 			enabled = config.KickEnabled
 			reasonOptional = config.KickReasonOptional
-			reason = SafeArgString(data, 1)
 		case ModCmdMute, ModCmdUnMute:
 			enabled = config.MuteEnabled
 			if cmd == ModCmdMute {
 				reasonOptional = config.MuteReasonOptional
-				reason = SafeArgString(data, 2)
+				reasonArgIndex = 2
 			} else {
 				reasonOptional = config.UnmuteReasonOptional
-				reason = SafeArgString(data, 1)
 			}
 		case ModCmdClean:
 			reasonOptional = true
@@ -175,12 +172,16 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 			panic("Unknown command")
 		}
 
+		reason := SafeArgString(data, reasonArgIndex)
+
 		if !enabled {
 			return fmt.Sprintf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName), nil
 		}
 
 		if !reasonOptional && reason == "" {
 			return "Reason is required.", nil
+		} else if reason == "" {
+			data.Args[reasonArgIndex].Value = "(No reason specified)"
 		}
 
 		return inner(data.WithContext(context.WithValue(data.Context(), ContextKeyConfig, config)))
@@ -211,9 +212,6 @@ var ModerationCommands = []*commands.YAGCommand{
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
 			reason := SafeArgString(parsed, 1)
-			if reason == "" {
-				reason = "(No reason specified)"
-			}
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
@@ -243,9 +241,6 @@ var ModerationCommands = []*commands.YAGCommand{
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
 			reason := SafeArgString(parsed, 1)
-			if reason == "" {
-				reason = "(No reason specified)"
-			}
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
@@ -268,7 +263,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Mutes a member",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Minutes", Type: &dcmd.IntArg{Min: 1, Max: 1440}},
+			&dcmd.ArgDef{Name: "Minutes", Default: 10, Type: &dcmd.IntArg{Min: 1, Max: 1440}},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
@@ -278,20 +273,10 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No mute role set up, assign a mute role in the control panel", nil
 			}
 
-			reason := "(No reason specified)"
-			if parsed.Args[2].Str() != "" {
-				reason = parsed.Args[2].Str()
-			}
-
-			muteDuration := 10
-			if parsed.Args[1].Value != nil {
-				muteDuration = parsed.Args[1].Int()
-				if muteDuration < 1 || muteDuration > 1440 {
-					return "Duration out of bounds (min 1, max 1440 - 1 day)", nil
-				}
-			}
-
 			target := parsed.Args[0].Value.(*discordgo.User)
+			muteDuration := parsed.Args[1].Int()
+			reason := parsed.Args[2].Str()
+
 			member, err := bot.GetMember(parsed.GS.ID(), target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
@@ -325,14 +310,9 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No mute role set up, assign a mute role in the control panel", nil
 			}
 
-			reason := "(No reason specified)"
-			if parsed.Args[1].Str() != "" {
-				reason = parsed.Args[1].Str()
-			} else if !config.UnmuteReasonOptional {
-				return "No reason specified", nil
-			}
-
 			target := parsed.Args[0].Value.(*discordgo.User)
+			reason := parsed.Args[1].Str()
+
 			member, err := bot.GetMember(parsed.GS.ID(), target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
