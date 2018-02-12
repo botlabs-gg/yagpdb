@@ -363,7 +363,7 @@ var cmdMentionRole = &commands.YAGCommand{
 }
 
 func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
-	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, data.Msg.Author.ID, data.CS.ID()); err != nil {
+	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageRoles, data.Msg.Author.ID, data.CS.ID()); err != nil {
 		return "Failed checking perms", err
 	} else if !ok {
 		return "You need manage server perms to use this commmand", nil
