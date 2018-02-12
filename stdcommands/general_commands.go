@@ -248,7 +248,7 @@ var cmdThrow = &commands.YAGCommand{
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		thing := common.Things[rand.Intn(len(common.Things))]
+		thing := ThrowThings[rand.Intn(len(ThrowThings))]
 
 		target := "a random person nearby"
 		if data.Args[0].Value != nil {
