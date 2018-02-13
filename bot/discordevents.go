@@ -5,12 +5,70 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
+	"sync"
+	"sync/atomic"
 )
 
-var ()
+var (
+	waitingGuildsMU sync.Mutex
+	waitingGuilds   = make(map[string]bool)
+	waitingReadies  []int
+
+	botStartedFired = new(int32)
+)
+
+// Once we have received a guild create for all guilds
+// We fire BotStarted
+func setWaitingGuildReady(g string) {
+	if atomic.LoadInt32(botStartedFired) == 1 {
+		return
+	}
+
+	waitingGuildsMU.Lock()
+	delete(waitingGuilds, g)
+	shouldFireStarted := len(waitingGuilds) < 1
+
+	// Some shards aren't ready yet
+	if len(waitingReadies) > 0 {
+		shouldFireStarted = false
+	}
+
+	if shouldFireStarted {
+		atomic.StoreInt32(botStartedFired, 1)
+	}
+
+	waitingGuildsMU.Unlock()
+
+	if shouldFireStarted {
+		log.Println("Bot is now fully ready")
+		for _, p := range common.Plugins {
+			starter, ok := p.(BotStartedHandler)
+			if ok {
+				starter.BotStarted()
+				log.Debug("Ran BotStarted for ", p.Name())
+			}
+		}
+
+		go scheduledevents.Run()
+	}
+}
 
 func HandleReady(evt *eventsystem.EventData) {
+	waitingGuildsMU.Lock()
+	for i, v := range waitingReadies {
+		if ContextSession(evt.Context()).ShardID == v {
+			waitingReadies = append(waitingReadies[:i], waitingReadies[i+1:]...)
+			break
+		}
+	}
+
+	for _, v := range evt.Ready.Guilds {
+		waitingGuilds[v.ID] = true
+	}
+	waitingGuildsMU.Unlock()
+
 	ContextSession(evt.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
 
 	// We pass the common.Session to the command system and that needs the user from the state
@@ -30,6 +88,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		"g_name": g.Name,
 		"guild":  g.ID,
 	}).Info("Joined guild")
+
+	setWaitingGuildReady(g.ID)
 
 	n, err := ContextRedis(evt.Context()).Cmd("SADD", "connected_guilds", g.ID).Int()
 	if err != nil {

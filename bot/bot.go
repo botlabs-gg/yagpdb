@@ -82,6 +82,15 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
+	shardCount, err := ShardManager.GetRecommendedCount()
+	if err != nil {
+		panic("Failed getting shard count: " + err.Error())
+	}
+
+	for i := 0; i < shardCount; i++ {
+		waitingReadies = append(waitingReadies, i)
+	}
+
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
