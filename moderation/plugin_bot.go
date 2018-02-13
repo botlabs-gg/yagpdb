@@ -373,8 +373,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled:   true,
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
-		Description:     "Deleted the last n messages from chat, optionally filtering by user",
-		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"",
+		Description:     "Delete the last n messages from chat, optionally filtering by user, max age and regex.",
+		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nNote: Will only look in the last 1k messages",
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
 		Arguments: []*dcmd.ArgDef{
