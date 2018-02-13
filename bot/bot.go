@@ -83,7 +83,7 @@ func Run() {
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
 	Running = true
-	go ShardManager.Start()
+	ShardManager.Start()
 
 	go mergedMessageSender()
 	go MemberFetcher.Run()

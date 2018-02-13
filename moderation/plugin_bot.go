@@ -30,8 +30,7 @@ const (
 
 func (p *Plugin) InitBot() {
 	commands.AddRootCommands(ModerationCommands...)
-	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 }
 
@@ -39,6 +38,8 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
 	guildID := ""
 	action := ""
+
+	botPerformed := false
 
 	switch evt.Type {
 	case eventsystem.EventGuildBanAdd:
@@ -54,6 +55,12 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		action = ActionUnbanned
 		user = evt.GuildBanRemove.User
 		guildID = evt.GuildBanRemove.GuildID
+
+		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyUnbannedUser(guildID, user.ID)).Int(); i > 0 {
+			bot.ContextRedis(evt.Context()).Cmd("DEL", RedisKeyUnbannedUser(guildID, user.ID))
+			botPerformed = true
+		}
+
 	default:
 		return
 	}
@@ -68,11 +75,18 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	if (action == ActionUnbanned && !config.LogUnbans) || (action == ActionBanned && !config.LogBans) {
+	if (action == ActionUnbanned && !config.LogUnbans && !botPerformed) || (action == ActionBanned && !config.LogBans) {
 		return
 	}
 
-	err = CreateModlogEmbed(config.ActionChannel, nil, action, user, "", "")
+	var author *discordgo.User
+	reason := ""
+	if botPerformed {
+		author = common.BotUser
+		reason = "Timed ban expired"
+	}
+
+	err = CreateModlogEmbed(config.ActionChannel, author, action, user, reason, "")
 	if err != nil {
 		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action + " log message")
 	}
@@ -206,11 +220,14 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Ban",
-		Description:   "Bans a member",
+		Description:   "Bans a member, specify a duration with -d",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionBanMembers, ModCmdBan, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
@@ -219,7 +236,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
-			err := BanUser(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
+			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration))
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err

@@ -3,7 +3,6 @@ package moderation
 //go:generate esc -o assets_gen.go -pkg moderation -ignore ".go" assets/
 
 import (
-	"errors"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
@@ -15,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"regexp"
 	"strconv"
@@ -45,12 +45,17 @@ func RedisKeyBannedUser(guildID, userID string) string {
 	return "moderation_banned_user:" + guildID + ":" + userID
 }
 
+func RedisKeyUnbannedUser(guildID, userID string) string {
+	return "moderation_unbanned_user:" + guildID + ":" + userID
+}
+
 func RegisterPlugin() {
 	plugin := &Plugin{}
 
 	common.RegisterPlugin(plugin)
 
 	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
+	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
 
@@ -86,6 +91,33 @@ func handleUnMute(data string) error {
 
 		return err
 	}
+	return nil
+}
+
+func handleUnban(data string) error {
+
+	split := strings.Split(data, ":")
+	if len(split) < 2 {
+		logrus.Error("Invalid unban event", data)
+		return nil // Can't re-schedule an invalid event..
+	}
+
+	guildID := split[0]
+	userID := split[1]
+
+	g := bot.State.Guild(true, guildID)
+	if g == nil {
+		logrus.WithField("guild", guildID).Error("Unban scheduled for guild now in state")
+		return nil
+	}
+
+	common.RedisPool.Cmd("SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1)
+
+	err := common.BotSession.GuildBanDelete(guildID, userID)
+	if err != nil {
+		logrus.WithField("guild", guildID).WithError(err).Error("Failed unbanning user")
+	}
+
 	return nil
 }
 
@@ -250,7 +282,7 @@ func getConfig(guildID string, config *Config) (*Config, error) {
 }
 
 // Kick or bans someone, uploading a hasebin log, and sending the report tmessage in the action channel
-func punish(config *Config, p Punishment, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
+func punish(config *Config, p Punishment, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
 	if author == nil {
 		author = &discordgo.User{
 			ID:            "??",
@@ -264,9 +296,14 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 		return common.ErrWithCaller(err)
 	}
 
-	actionStr := "Banned"
+	actionStr := ""
 	if p == PunishmentKick {
 		actionStr = "Kicked"
+	} else {
+		actionStr = "Banned"
+		if duration > 0 {
+			actionStr += " (" + common.HumanizeDuration(common.DurationPrecisionMinutes, duration) + ")"
+		}
 	}
 
 	actionChannel := config.ActionChannel
@@ -295,6 +332,8 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	ctx := templates.NewContext(bot.State.User(true).User, gs, nil, member)
 	ctx.Data["Reason"] = reason
+	ctx.Data["Duration"] = duration
+	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	ctx.Data["Author"] = author
 	ctx.SentDM = true
 	executed, err := ctx.Execute(nil, dmMsg)
@@ -340,7 +379,7 @@ func KickUser(config *Config, guildID, channelID string, author *discordgo.User,
 		return common.ErrWithCaller(err)
 	}
 
-	err = punish(config, PunishmentKick, guildID, channelID, author, reason, user)
+	err = punish(config, PunishmentKick, guildID, channelID, author, reason, user, 0)
 	if err != nil {
 		return err
 	}
@@ -393,10 +432,26 @@ func DeleteMessages(channelID string, filterUser string, deleteNum, fetchNum int
 	return len(toDelete), err
 }
 
-func BanUser(client *redis.Client, config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
+func BanUserWithDuration(client *redis.Client, config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
 	// Set a key in redis that marks that this user has appeared in the modlog already
 	client.Cmd("SETEX", RedisKeyBannedUser(guildID, user.ID), 60, 1)
-	return punish(config, PunishmentBan, guildID, channelID, author, reason, user)
+	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration)
+	if err != nil {
+		return err
+	}
+
+	if duration > 0 {
+		err = scheduledevents.ScheduleEvent(client, "mod_unban", guildID+":"+user.ID, time.Now().Add(duration))
+		if err != nil {
+			return errors.WithMessage(err, "pusnish,sched_unban")
+		}
+	}
+
+	return nil
+}
+
+func BanUser(client *redis.Client, config *Config, guildID, channelID string, author *discordgo.User, reason string, user *discordgo.User) error {
+	return BanUserWithDuration(client, config, guildID, channelID, author, reason, user, 0)
 }
 
 var (

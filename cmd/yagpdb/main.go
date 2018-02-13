@@ -138,7 +138,7 @@ func main() {
 	}
 
 	if flagRunBot || flagRunEverything {
-		go bot.Run()
+		bot.Run()
 		go scheduledevents.Run()
 		go botrest.StartServer()
 		go mqueue.StartPolling()
