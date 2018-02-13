@@ -31,7 +31,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 		if code != discordgo.ErrCodeMissingPermissions && code != discordgo.ErrCodeMissingAccess {
 			l = l.WithField("s_msg", elem.MessageEmbed)
 		}
-		l.Error("Error posting reddit message")
+		l.Warn("Error posting reddit message")
 		return
 	}
 
