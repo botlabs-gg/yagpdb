@@ -248,14 +248,24 @@ var cmdThrow = &commands.YAGCommand{
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		thing := ThrowThings[rand.Intn(len(ThrowThings))]
 
 		target := "a random person nearby"
 		if data.Args[0].Value != nil {
 			target = data.Args[0].Value.(*discordgo.User).Username
 		}
 
-		return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
+		resp := ""
+
+		rng := rand.Intn(100)
+		if rng < 5 {
+			resp = fmt.Sprintf("TRIPPLE THROW! Threw **%s**, **%s** and **%s** at **%s**", RandomThing(), RandomThing(), RandomThing(), target)
+		} else if rng < 15 {
+			resp = fmt.Sprintf("DOUBLE THROW! Threw **%s** and **%s** at **%s**", RandomThing(), RandomThing(), target)
+		} else {
+			resp = fmt.Sprintf("Threw **%s** at **%s**", RandomThing(), target)
+		}
+
+		return resp, nil
 	},
 }
 

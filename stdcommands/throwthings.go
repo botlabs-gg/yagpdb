@@ -1,5 +1,13 @@
 package stdcommands
 
+import (
+	"math/rand"
+)
+
+func RandomThing() string {
+	return ThrowThings[rand.Intn(len(ThrowThings))]
+}
+
 // If you want somthing added submit a pr
 var ThrowThings = []string{
 	"anime girls",
@@ -24,7 +32,7 @@ var ThrowThings = []string{
 	"hate",
 	"a tomato",
 	"a time machine that takes 1 year to travel 1 year into the future",
-	"sadness disuised as hapiness",
+	"sadness disguised as hapiness",
 	"debt",
 	"all your imaginary friends",
 	"homelessness",
@@ -51,4 +59,9 @@ var ThrowThings = []string{
 	"divorce papers",
 	"an engagement ring",
 	"yourself",
+	"nothing",
+	"insults",
+	"compliments",
+	"life advice",
+	"scams",
 }
