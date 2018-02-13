@@ -30,9 +30,16 @@ type NewGuildHandler interface {
 	NewGuild(client *redis.Client, guild *discordgo.Guild) error
 }
 
+// Fired when the bot it starting up, not for the webserver
 type BotStarterHandler interface {
 	StartBot()
 }
+
+// Fired after the bot has connected all shards
+type BotStartedHandler interface {
+	BotStarted()
+}
+
 type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
+var ()
+
 func HandleReady(evt *eventsystem.EventData) {
 	ContextSession(evt.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
 
@@ -27,7 +29,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	log.WithFields(log.Fields{
 		"g_name": g.Name,
 		"guild":  g.ID,
-	}).Debug("Joined guild")
+	}).Info("Joined guild")
 
 	n, err := ContextRedis(evt.Context()).Cmd("SADD", "connected_guilds", g.ID).Int()
 	if err != nil {

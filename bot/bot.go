@@ -28,6 +28,8 @@ func Setup() {
 	State = dstate.NewState()
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
+	eventsystem.ConcurrentAfter = StateHandlerPtr
+
 	// eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
 
@@ -72,6 +74,7 @@ func Run() {
 
 		session.StateEnabled = false
 		session.LogLevel = discordgo.LogInformational
+		session.SyncEvents = true
 
 		return
 	}
@@ -83,10 +86,10 @@ func Run() {
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
 	Running = true
-	ShardManager.Start()
 
-	go mergedMessageSender()
+	go ShardManager.Start()
 	go MemberFetcher.Run()
+	go mergedMessageSender()
 
 	for _, p := range common.Plugins {
 		starter, ok := p.(BotStarterHandler)
