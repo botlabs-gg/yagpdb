@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -235,6 +236,49 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason := SafeArgString(parsed, 1)
 
 			target := parsed.Args[0].Value.(*discordgo.User)
+
+			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration))
+			if err != nil {
+				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+					return cast.Message.Message, err
+				} else {
+					return "An error occurred", err
+				}
+			}
+
+			return "👌", nil
+		}),
+	},
+	&commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "Banid",
+		Description:   "Bans a user by id, specify a duration with -d",
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.Int},
+			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
+		},
+		RunFunc: ModBaseCmd(discordgo.PermissionBanMembers, ModCmdBan, func(parsed *dcmd.Data) (interface{}, error) {
+			config := parsed.Context().Value(ContextKeyConfig).(*Config)
+
+			reason := SafeArgString(parsed, 1)
+
+			targetID := parsed.Args[0].Int64()
+			targetMember := parsed.GS.MemberCopy(true, strconv.FormatInt(targetID, 10), false)
+			var target *discordgo.User
+			if targetMember == nil {
+				target = &discordgo.User{
+					Username:      "unknown",
+					Discriminator: "????",
+					ID:            strconv.FormatInt(targetID, 10),
+				}
+			} else {
+				target = targetMember.User
+			}
 
 			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration))
 			if err != nil {
