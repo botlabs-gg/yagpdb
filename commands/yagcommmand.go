@@ -99,7 +99,7 @@ func (yc *YAGCommand) Category() *dcmd.Category {
 }
 
 func (yc *YAGCommand) Descriptions(data *dcmd.Data) (short, long string) {
-	return yc.Description, yc.LongDescription
+	return yc.Description, yc.Description + "\n" + yc.LongDescription
 }
 
 func (yc *YAGCommand) ArgDefs(data *dcmd.Data) (args []*dcmd.ArgDef, required int, combos [][]int) {

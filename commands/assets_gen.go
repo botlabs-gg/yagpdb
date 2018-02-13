@@ -233,7 +233,7 @@ yn2jDi0+ZuIwsMy5OfqENRFCo7RfcC5cPPpvAAAA//9QFn6/ACsAAA==
 	"/assets/help-page.md": {
 		local:   "assets/help-page.md",
 		size:    4653,
-		modtime: 1517841237,
+		modtime: 1518359152,
 		compressed: `
 H4sIAAAAAAAC/8xX3W/cNhJ/118xhzxkjW7kJEUOBwMHw7XboLjrB5wURt9MUSOJWYqjcqjd7GH/+MOQ
 +trNxr5DXxrAWYma+Q35m0++ePEC3qNDr+xVdkttq1wJB7ixRjEyHOCXLhhyysKNr+X9Dll7ExezV+kf

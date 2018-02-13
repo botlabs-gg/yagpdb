@@ -13,6 +13,8 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -159,6 +161,7 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 		case ModCmdClean:
 			reasonOptional = true
 			enabled = config.CleanEnabled
+			reasonArgIndex = -1
 		case ModCmdReport:
 			reasonOptional = true
 			enabled = config.ReportEnabled
@@ -172,16 +175,17 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 			panic("Unknown command")
 		}
 
-		reason := SafeArgString(data, reasonArgIndex)
-
 		if !enabled {
 			return fmt.Sprintf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName), nil
 		}
 
-		if !reasonOptional && reason == "" {
-			return "Reason is required.", nil
-		} else if reason == "" {
-			data.Args[reasonArgIndex].Value = "(No reason specified)"
+		if reasonArgIndex != -1 {
+			reason := SafeArgString(data, reasonArgIndex)
+			if !reasonOptional && reason == "" {
+				return "Reason is required.", nil
+			} else if reason == "" {
+				data.Args[reasonArgIndex].Value = "(No reason specified)"
+			}
 		}
 
 		return inner(data.WithContext(context.WithValue(data.Context(), ContextKeyConfig, config)))
@@ -366,25 +370,33 @@ var ModerationCommands = []*commands.YAGCommand{
 		}),
 	},
 	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Clean",
-		Description:   "Deleted the last n messages from chat, optionally filtering by user",
-		Aliases:       []string{"clear", "cl"},
-		RequiredArgs:  1,
+		CustomEnabled:   true,
+		CmdCategory:     commands.CategoryModeration,
+		Name:            "Clean",
+		Description:     "Deleted the last n messages from chat, optionally filtering by user",
+		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"",
+		Aliases:         []string{"clear", "cl"},
+		RequiredArgs:    1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "Num", Type: &dcmd.IntArg{Min: 1, Max: 100}},
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "r", Name: "Regex", Type: dcmd.String},
+			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max age", Type: &commands.DurationArg{}},
+			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
+		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdClean, func(parsed *dcmd.Data) (interface{}, error) {
-			filter := ""
+			userFilter := ""
 			if parsed.Args[1].Value != nil {
-				filter = parsed.Args[1].Value.(*discordgo.User).ID
+				userFilter = parsed.Args[1].Value.(*discordgo.User).ID
 			}
 
+			logrus.Println(parsed.Switches)
+
 			num := parsed.Args[0].Int()
-			if filter == "" || filter == parsed.Msg.Author.ID {
+			if userFilter == "" || userFilter == parsed.Msg.Author.ID {
 				num++ // Automatically include our own message
 			}
 
@@ -399,8 +411,30 @@ var ModerationCommands = []*commands.YAGCommand{
 				return errors.New("Can't delete nothing"), nil
 			}
 
+			filtered := false
+
+			// Check if we should regex match this
+			re := ""
+			if parsed.Switches["r"].Value != nil {
+				filtered = true
+				re = parsed.Switches["r"].Str()
+
+				// Add the case insensitive flag if needed
+				if parsed.Switches["i"].Value != nil && parsed.Switches["i"].Value.(bool) {
+					if !strings.HasPrefix(re, "(?i)") {
+						re = "(?i)" + re
+					}
+				}
+			}
+
+			// Check if we have a max age
+			ma := parsed.Switches["ma"].Value.(time.Duration)
+			if ma != 0 {
+				filtered = true
+			}
+
 			limitFetch := num
-			if filter != "" {
+			if userFilter != "" || filtered {
 				limitFetch = num * 50 // Maybe just change to full fetch?
 			}
 
@@ -411,7 +445,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := DeleteMessages(parsed.Msg.ChannelID, filter, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, ma, num, limitFetch)
 
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		}),
@@ -567,4 +601,67 @@ var ModerationCommands = []*commands.YAGCommand{
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil
 		}),
 	},
+}
+
+func AdvancedDeleteMessages(channelID string, filterUser string, regex string, maxAge time.Duration, deleteNum, fetchNum int) (int, error) {
+	var compiledRegex *regexp.Regexp
+	if regex != "" {
+		// Start by compiling the regex
+		var err error
+		compiledRegex, err = regexp.Compile(regex)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	msgs, err := bot.GetMessages(channelID, fetchNum, false)
+	if err != nil {
+		return 0, err
+	}
+
+	toDelete := make([]string, 0)
+	now := time.Now()
+	for i := len(msgs) - 1; i >= 0; i-- {
+		if filterUser != "" && msgs[i].Author.ID != filterUser {
+			continue
+		}
+
+		parsedCreatedAt, _ := msgs[i].Timestamp.Parse()
+		// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)
+		if now.Sub(parsedCreatedAt) > (time.Hour*24*14)-time.Minute {
+			continue
+		}
+
+		// Check regex
+		if compiledRegex != nil {
+			if !compiledRegex.MatchString(msgs[i].Content) {
+				continue
+			}
+		}
+
+		// Check max age
+		if maxAge != 0 && now.Sub(parsedCreatedAt) > maxAge {
+			continue
+		}
+
+		toDelete = append(toDelete, msgs[i].ID)
+		//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
+		if len(toDelete) >= deleteNum || len(toDelete) >= 100 {
+			break
+		}
+	}
+
+	if len(toDelete) < 1 {
+		return 0, nil
+	}
+
+	if len(toDelete) < 1 {
+		return 0, nil
+	} else if len(toDelete) == 1 {
+		err = common.BotSession.ChannelMessageDelete(channelID, toDelete[0])
+	} else {
+		err = common.BotSession.ChannelMessagesBulkDelete(channelID, toDelete)
+	}
+
+	return len(toDelete), err
 }
