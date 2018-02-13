@@ -79,6 +79,10 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	cu := evt.ChannelUpdate
 
 	curChannel := bot.State.Channel(true, cu.ID)
+	if curChannel == nil {
+		return
+	}
+
 	curChannel.Owner.RLock()
 	oldTopic := curChannel.Channel.Topic
 	curChannel.Owner.RUnlock()
