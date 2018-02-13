@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
+	"github.com/evalphobia/logrus_sentry"
 	"github.com/mediocregopher/radix.v2/redis"
 	"os"
 	"os/signal"
@@ -76,6 +77,21 @@ func main() {
 	log.SetFormatter(&log.TextFormatter{
 		DisableTimestamp: !common.Testing,
 	})
+
+	if os.Getenv("YAGPDB_SENTRY_DSN") != "" {
+		hook, err := logrus_sentry.NewSentryHook(os.Getenv("YAGPDB_SENTRY_DSN"), []log.Level{
+			log.PanicLevel,
+			log.FatalLevel,
+			log.ErrorLevel,
+		})
+
+		if err == nil {
+			log.AddHook(hook)
+			log.Info("Added Sentry Hook")
+		} else {
+			log.WithError(err).Error("Failed adding sentry hook")
+		}
+	}
 
 	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
 	//log.AddHook(&journalhook.JournalHook{})
