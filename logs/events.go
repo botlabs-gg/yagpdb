@@ -375,7 +375,7 @@ func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
 		return
 	}
 
-	logrus.Info("User changed username, old:", result.Username, "new:", user.Username)
+	logrus.Info("User changed username, old:", result.Username, " | new:", user.Username)
 
 	listing := UsernameListing{
 		UserID:   MustParseID(user.ID),
@@ -405,7 +405,7 @@ func CheckNickname(gDB *gorm.DB, userID, guildID, nickname string) {
 		return
 	}
 
-	logrus.Info("User changed nickname, old:", result.Nickname, "new:", nickname)
+	logrus.Info("User changed nickname, old:", result.Nickname, " | new:", nickname)
 
 	listing := NicknameListing{
 		UserID:   MustParseID(userID),
