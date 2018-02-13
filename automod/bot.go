@@ -92,7 +92,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
 	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", cs.Guild.ID()).Error("Member not found in state, automod ignoring")
+		logrus.WithError(err).WithField("guild", cs.Guild.ID()).Warn("Member not found in state, automod ignoring")
 		return
 	}
 
