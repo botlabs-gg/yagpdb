@@ -27,7 +27,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	log.WithFields(log.Fields{
 		"g_name": g.Name,
 		"guild":  g.ID,
-	}).Info("Joined guild")
+	}).Debug("Joined guild")
 
 	n, err := ContextRedis(evt.Context()).Cmd("SADD", "connected_guilds", g.ID).Int()
 	if err != nil {
