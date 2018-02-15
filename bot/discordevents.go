@@ -52,6 +52,7 @@ func setWaitingGuildReady(g string) {
 		}
 
 		go scheduledevents.Run()
+		go checkConnectedGuilds()
 	}
 }
 
@@ -87,7 +88,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	log.WithFields(log.Fields{
 		"g_name": g.Name,
 		"guild":  g.ID,
-	}).Info("Joined guild")
+	}).Debug("Joined guild")
 
 	setWaitingGuildReady(g.ID)
 

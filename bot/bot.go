@@ -99,6 +99,7 @@ func Run() {
 	go ShardManager.Start()
 	go MemberFetcher.Run()
 	go mergedMessageSender()
+	go MonitorLoading()
 
 	for _, p := range common.Plugins {
 		starter, ok := p.(BotStarterHandler)
@@ -107,8 +108,26 @@ func Run() {
 			log.Debug("Ran StartBot for ", p.Name())
 		}
 	}
+}
 
-	go checkConnectedGuilds()
+func MonitorLoading() {
+	t := time.NewTicker(time.Second)
+	defer t.Stop()
+
+	for {
+		<-t.C
+
+		waitingGuildsMU.Lock()
+		numWaitingGuilds := len(waitingGuilds)
+		numWaitingShards := len(waitingReadies)
+		waitingGuildsMU.Unlock()
+
+		log.Infof("Starting up... GC's Remaining: %d, Shards remaining: %d", numWaitingGuilds, numWaitingShards)
+
+		if numWaitingGuilds == 0 && numWaitingShards == 0 {
+			return
+		}
+	}
 }
 
 func Stop(wg *sync.WaitGroup) {

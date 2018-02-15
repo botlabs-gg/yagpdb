@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -228,6 +229,8 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 				gs.MemberAddUpdate(true, member)
 			}
 		}
+	} else {
+		err = errors.New("Member is in failed fetching cache")
 	}
 
 	m.Lock()
