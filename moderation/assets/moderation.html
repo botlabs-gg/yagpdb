@@ -47,7 +47,7 @@
                         <label>
                             <input type="checkbox" name="CleanEnabled" {{if .ModConfig.CleanEnabled}} checked{{end}}>
                             Clean command enabled<br/>
-                            <code>(mention or prefix) clean NUM {@user <- optional}</code><br/>
+                            <code>(mention or prefix) clean NUM {@user <- optional} {-r text <- optional, add this to only delete messages with that word in them, if its multiple words then put them in ""} {-ma NUMhNUMm <- optional, add this to set a max age for the command to delete the messages of ex: -cl 10 -ma 1h20m | would clean up to 10 messages up to 1 hour and 20 minutes old}</code><br/>
                             Manage Messages permissions is required for this command.<br/>
                             Clean deletes up to a 1000 messages back in history. (max 100 messages at a time)
                         </label>
