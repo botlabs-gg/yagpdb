@@ -5,6 +5,7 @@ package eventsystem
 import (
 	"context"
 	"github.com/Sirupsen/logrus"
+	"runtime/debug"
 )
 
 type Handler func(evtData *EventData)
@@ -43,10 +44,18 @@ func EmitEvent(data *EventData, evt Event) {
 		// Check if we should start firing the rest in a different goroutine
 		if ConcurrentAfter != nil && ConcurrentAfter == v {
 			go func(startFrom int) {
+				defer func() {
+					if err := recover(); err != nil {
+						stack := string(debug.Stack())
+						logrus.WithField(logrus.ErrorKey, err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
+					}
+				}()
+
 				for j := startFrom; j < len(handlers[evt]); j++ {
 					(*handlers[evt][j])(data)
 				}
 			}(i + 1)
+
 			break
 		}
 	}
