@@ -19,6 +19,7 @@ func (p *Plugin) InitBot() {
 	CommandSystem.Prefix = p
 	CommandSystem.State = bot.State
 	CommandSystem.Root.RunInDM = true
+	CommandSystem.Root.IgnoreBots = true
 
 	// CommandSystem = commandsystem.NewSystem(nil, "")
 	// CommandSystem.SendError = false
