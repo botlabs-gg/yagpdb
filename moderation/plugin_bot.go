@@ -194,7 +194,7 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 			return fmt.Sprintf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName), nil
 		}
 
-		if reasonArgIndex != -1 {
+		if reasonArgIndex != -1 && reasonArgIndex < len(data.Args) {
 			reason := SafeArgString(data, reasonArgIndex)
 			if !reasonOptional && reason == "" {
 				return "Reason is required.", nil
