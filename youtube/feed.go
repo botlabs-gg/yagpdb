@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	MaxChannelsPerPoll  = 20
+	MaxChannelsPerPoll  = 30
 	PollInterval        = time.Second * 10
 	WebSubCheckInterval = time.Second * 10
 	// PollInterval = time.Second * 5 // <- used for debug purposes
