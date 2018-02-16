@@ -232,5 +232,14 @@ var Catfacts = []string{
 	`Cats are often lactose intolerant, so stop givin' them milk!`,
 	`The oldest cat video on YouTube dates back to 1894 (when it was made, not when it was uploaded, duh).`,
 	`In the 1960s, the CIA tried to turn a cat into a bonafide spy by implanting a microphone into her ear and a radio transmitter at the base of her skull. She somehow survived the surgery but got hit by a taxi on her first mission.`,
-	``
+	`Female cats are typically right-pawed while male cats are typically left-pawed.`,
+	`Basically, cats have a lower social IQ than dogs but can solve more difficult cognitive problems when they feel like it.`,
+	`Cats are magical. Here's a cute cat for you. :3 - https://giphy.com/gifs/JIX9t2j0ZTN9S`,
+	`Cats have 1,000 times more data storage than an iPad.`,
+	`Isaac Newton is credited with inventing the cat door.`,
+	`A house cat is faster than Usain Bolt.`,
+	`When cats leave their poop uncovered, it is a sign of aggression to let you know they don't fear you.`,
+	`Cats use their whiskers to detect if they can fit through a space.`,
+	`A cat's nose is ridged with a unique pattern, just like a human fingerprint.`,
+	`Cats lick themselves to get *your* scent off, not theirs... Nice try though...`
 }
