@@ -218,5 +218,16 @@ var Catfacts = []string{
 
 	`Cats are the most popular pet in the United States: There are 88 million pet cats and 74 million dogs.`,
 	`There are cats who have survived falls from over 32 stories (320 meters) onto concrete.`,
+	`Cats have over 20 muscles that control their ears.`,
+	`Cats sleep 70% of their lives.`,
+	`A cat has been mayor of Talkeetna, Alaska, for 15 years. His name is Stubbs.`,
+	`A cat ran for mayor of Mexico City in 2013.`,
+	`In tigers and tabbies, the middle of the tongue is covered in backward-pointing spines, used for breaking off and gripping meat.`,
+	`When cats grimace, they are usually "taste-scenting." They have an extra organ that, with some breathing control, allows the cats to taste-sense the air.`,
+	`The world's largest cat measured 48.5 inches long.`,
+	`Owning a cat can reduce the risk of stroke and heart attack by a third.`,
+	`The world's richest cat is worth $13 million after his human passed away and left her fortune to him.`,
+	`Similarly, the frequency of a domestic cat's purr is the same at which muscles and bones repair themselves.`,
+	`Adult cats only meow to communicate with humans,`,
 	``
 }
