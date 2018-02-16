@@ -229,5 +229,8 @@ var Catfacts = []string{
 	`The world's richest cat is worth $13 million after his human passed away and left her fortune to him.`,
 	`Similarly, the frequency of a domestic cat's purr is the same at which muscles and bones repair themselves.`,
 	`Adult cats only meow to communicate with humans,`,
+	`Cats are often lactose intolerant, so stop givin' them milk!`,
+	`The oldest cat video on YouTube dates back to 1894 (when it was made, not when it was uploaded, duh).`,
+	`In the 1960s, the CIA tried to turn a cat into a bonafide spy by implanting a microphone into her ear and a radio transmitter at the base of her skull. She somehow survived the surgery but got hit by a taxi on her first mission.`,
 	``
 }
