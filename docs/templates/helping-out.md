@@ -17,14 +17,14 @@ Check the guide below if you're interested and if you have any questions then as
 #### Simple guide on making a change to a documentation page
 
  1. Fork YAGPDB
-    - Create/Login to github
+    - Create/Login to GitHub
     - Navigate to the project page [here](https://github.com/jonas747/yagpdb)
     - Press the fork button
- 2. You should be able to see something like this then ![Fork Project Name Image]({{static "doc-guide-1-fork.png"}})
+ 2. You should then be able to see something like this: ![Fork Project Name Image]({{static "doc-guide-1-fork.png"}})
  3. Create a new branch from the dev branch
     - Press the branch button here ![Branch button image]({{static "doc-guide-2-branch-button.png"}})
     - Click the dev branch
-    - Once you're on the dev branch, click the branch button again and type in a name you wanna give your branch
+    - Once you're on the dev branch, click the branch button again and type in a name you want to give your branch
     - ![Create branch image]({{static "doc-guide-3-branch-create.png"}})
  4. After that you should be on your new branch, the branch button should now say `Branch: your branch name here`
  5. Make the changes
