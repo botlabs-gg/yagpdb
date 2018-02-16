@@ -191,7 +191,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	var results []*TopCommandsResult
 	err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("command, COUNT(id)").Where("created_at > ?", within).Group("command").Order("count(id) desc").Scan(&results).Error
 	if err != nil {
-		return "Uh oh something bad happened", err
+		return "Uh oh... Something bad happened :'(", err
 	}
 
 	out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours)
@@ -284,7 +284,7 @@ var cmdYagStatus = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "Yagstatus",
 	Aliases:     []string{"status"},
-	Description: "Shows yagpdb status, version, uptime, memory stats and so on",
+	Description: "Shows yagpdb status, version, uptime, memory stats, and so on",
 	RunInDM:     true,
 	RunFunc:     cmdFuncYagStatus,
 }
@@ -362,7 +362,7 @@ var cmdTopServers = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "TopServers",
-	Description: "Responds with the top 15 servers im on",
+	Description: "Responds with the top 15 servers I'm on",
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		state := bot.State
@@ -389,7 +389,7 @@ var cmdTopServers = &commands.YAGCommand{
 
 			out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
 		}
-		return "Top servers the bot is on (membercount):\n" + out + "\n```", nil
+		return "Top servers the bot is on (by membercount):\n" + out + "\n```", nil
 	},
 }
 
