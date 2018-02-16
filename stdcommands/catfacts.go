@@ -241,5 +241,5 @@ var Catfacts = []string{
 	`When cats leave their poop uncovered, it is a sign of aggression to let you know they don't fear you.`,
 	`Cats use their whiskers to detect if they can fit through a space.`,
 	`A cat's nose is ridged with a unique pattern, just like a human fingerprint.`,
-	`Cats lick themselves to get *your* scent off, not theirs... Nice try though...`
+	`Cats lick themselves to get *your* scent off, not theirs... Nice try though...`,
 }
