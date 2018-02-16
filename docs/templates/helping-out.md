@@ -47,7 +47,7 @@ Check the guide below if you're interested and if you have any questions then as
 
 ### Contributing code
 
-The bot is written in go, and the web interface is using plain HTML with Nootstrap and some small JavaScript here and there. If you want to make a contribution like fix a bug, add a feature and so on you should probably notify me first by making an issue, or sending me a message on Discord so that you don't waste your time in case I was also working on that.
+The bot is written in go, and the web interface is using plain HTML with Bootstrap and some small JavaScript here and there. If you want to make a contribution like fix a bug, add a feature and so on you should probably notify me first by making an issue, or sending me a message on Discord so that you don't waste your time in case I was also working on that.
 
 ### Helping out other people in discord
 
