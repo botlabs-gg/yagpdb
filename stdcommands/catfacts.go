@@ -213,4 +213,10 @@ var Catfacts = []string{
 	`The cat who holds the record for the longest non-fatal fall is Andy. He fell from the 16th floor of an apartment building (about 200 ft/.06 km) and survived.`,
 	`The richest cat is Blackie who was left £15 million by his owner, Ben Rea.`,
 	`The claws on the cat’s back paws aren’t as sharp as the claws on the front paws because the claws in the back don’t retract and, consequently, become worn.`,
+
+	// MORE FACTS
+
+	`Cats are the most popular pet in the United States: There are 88 million pet cats and 74 million dogs.`,
+	`There are cats who have survived falls from over 32 stories (320 meters) onto concrete.`,
+	``
 }
