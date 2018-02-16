@@ -4,33 +4,33 @@ There are several ways you can help in making YAGPDB better, you don't have to k
 
  - Writing documentation. The bot needs Documentation! See further below for more info on writing documentation.
  - Writing code.
- - Helping out other people in discord.
- - Fix whatever typos and grammar errors you find (there are many of them)
- - [Buy the ad space](/docs/ads)
+ - Helping out other people on Discord.
+ - Fix whatever typos and grammar errors you find (there are many of them).
+ - [Buy the ad space.](/docs/ads)
 
 ### Writing this Documentation
 
-YAGPDB is definitely one of the more complicated bots out there, and the reason as stated before for that is I prefer customizability and security over looks, therefor a lot of documentation is needed for people to fully utilize and understand the features the bot provides.
+YAGPDB is definitely one of the more complicated bots out there, and the reason, as stated before, is I prefer customizability and security over looks. Therefore, a lot of documentation is needed for people to fully utilize and understand the features the bot provides.
 
 Check the guide below if you're interested and if you have any questions then ask me on discord.
 
 #### Simple guide on making a change to a documentation page
 
  1. Fork YAGPDB
-    - Create/Login to github
+    - Create/Login to GitHub
     - Navigate to the project page [here](https://github.com/jonas747/yagpdb)
     - Press the fork button
- 2. You should be able to see something like this then ![Fork Project Name Image]({{static "doc-guide-1-fork.png"}})
+ 2. You should then be able to see something like this: ![Fork Project Name Image]({{static "doc-guide-1-fork.png"}})
  3. Create a new branch from the dev branch
     - Press the branch button here ![Branch button image]({{static "doc-guide-2-branch-button.png"}})
     - Click the dev branch
-    - Once you're on the dev branch, click the branch button again and type in a name you wanna give your branch
+    - Once you're on the dev branch, click the branch button again and type in a name you want to give your branch
     - ![Create branch image]({{static "doc-guide-3-branch-create.png"}})
  4. After that you should be on your new branch, the branch button should now say `Branch: your branch name here`
  5. Make the changes
-    - If you wanna make a change to plugin-specific help, you can find that in `plugin-name/assets/help-page.md`
-    - If you wanna make a change to general help, you can do that in `docs/templates/xxxx.md`
-    - Open the file on github, and press the edit button 
+    - If you want to make a change to plugin-specific help, you can find that in `plugin-name/assets/help-page.md`
+    - If you want to make a change to general help, you can do that in `docs/templates/xxxx.md`
+    - Open the file on GitHub, and press the edit button 
     - ![doc-guide-4-edit-button.png]({{static "doc-guide-4-edit-button.png"}})
     - Make your changes, and write a commit message, describing what you did 
     - ![doc-guide-5-commit-message.png]({{static "doc-guide-5-commit-message.png"}})
@@ -47,8 +47,8 @@ Check the guide below if you're interested and if you have any questions then as
 
 ### Contributing code
 
-The bot is written in go, and the web interface is using plain HTML with bootstrap and some small javascript here and there. If you want to make a contribution like fix a bug, add a feature and so on you should probably notify me first by making a issue or sending me a message on discord so that you don't waste your time in case I was also working on that.
+The bot is written in go, and the web interface is using plain HTML with Bootstrap and some small JavaScript here and there. If you want to make a contribution like fix a bug, add a feature and so on you should probably notify me first by making an issue, or sending me a message on Discord so that you don't waste your time in case I was also working on that.
 
 ### Helping out other people in discord
 
-If you are interested in helping people out on discord and you know what your doing, go ahead and do so, if you do it well and often enough you will earn the Volunteer Support role!
+If you are interested in helping people out on Discord and you know what you're doing, go ahead and do so, if you do it well and often enough you will earn the Volunteer Support role!
