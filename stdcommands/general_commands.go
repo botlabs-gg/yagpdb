@@ -536,7 +536,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Gateway (http send -> gateway receive time): "+taken.String())
 	httpPing := time.Since(started)
 
-	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGatway: "+taken.String())
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGateway: "+taken.String())
 }
 
 type GuildsSortUsers []*discordgo.Guild
