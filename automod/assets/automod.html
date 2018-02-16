@@ -105,7 +105,7 @@
         <input type="number" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
         <p class="help-block">The timeframe to check messages from</p>
     </div>
-    <p>Something decent to just protect from raw spam could be 5 messages within 2 seconds. normal users wont come near that, and it would target spammers</p>
+    <p>Something decent to just protect from raw spam could be 5 messages within 2 seconds. Normal users won't come near that, and it would target spammers.</p>
 </div>
 {{end}}
 
@@ -115,10 +115,10 @@
     {{mTemplate "automod_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Mention "Name" "Mention"}}
 
     <div class="form-group">
-        <label for="Treshold">Mentions Treshold</label>
+        <label for="Treshold">Mention Threshold</label>
         <input type="number" class="form-control" name="Mention.Treshold" value="{{.AutomodConfig.Mention.Treshold}}"></input>
         <p class="help-block">Number of mentions in a message for it to trigger.<br>
-        Example: if it's set to 5, then someone mentioning 5 people would trigger this.</p>
+        Example: If it's set to 5, then someone mentioning 5 people or more would trigger this.</p>
     </div>
 
 </div>
