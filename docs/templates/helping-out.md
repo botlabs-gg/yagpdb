@@ -4,9 +4,9 @@ There are several ways you can help in making YAGPDB better, you don't have to k
 
  - Writing documentation. The bot needs Documentation! See further below for more info on writing documentation.
  - Writing code.
- - Helping out other people in discord.
- - Fix whatever typos and grammar errors you find (there are many of them)
- - [Buy the ad space](/docs/ads)
+ - Helping out other people on Discord.
+ - Fix whatever typos and grammar errors you find (there are many of them).
+ - [Buy the ad space.](/docs/ads)
 
 ### Writing this Documentation
 
