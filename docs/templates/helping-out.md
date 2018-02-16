@@ -10,7 +10,7 @@ There are several ways you can help in making YAGPDB better, you don't have to k
 
 ### Writing this Documentation
 
-YAGPDB is definitely one of the more complicated bots out there, and the reason as stated before for that is I prefer customizability and security over looks, therefor a lot of documentation is needed for people to fully utilize and understand the features the bot provides.
+YAGPDB is definitely one of the more complicated bots out there, and the reason, as stated before, is I prefer customizability and security over looks. Therefore, a lot of documentation is needed for people to fully utilize and understand the features the bot provides.
 
 Check the guide below if you're interested and if you have any questions then ask me on discord.
 
