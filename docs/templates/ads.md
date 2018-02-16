@@ -1,4 +1,4 @@
-I rent out the lower left corner to help pay for the cost of running yagpdb. If you want to rent that spot, then feel free to contact me, either on email (jonasr747@gmail.com) or on Discord (jonas747#0001).
+I rent out the lower left corner to help pay for the cost of running yagpdb. If you want to rent that spot, then feel free to contact me, either on email (jonasr747@gmail.com) or on Discord (Jonas747#0001).
 
 Here's some details on that spot:
  - The control panel pages gets around 10k page views per week
