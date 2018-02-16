@@ -6,7 +6,7 @@ If you don't find the information you're looking for, then I recommend you join 
 
 ## Donating
 
-If you want to donate or [buy the ad-space](/docs/ads) you can do so using Patreon, Bitcoin, Bitcoincash, Etherum and Litecoin:
+If you want to donate or [buy the ad-space](/docs/ads) you can do so using Patreon, Bitcoin, Bitcoincash, Ethereum and Litecoin:
 
  - Patreon: https://www.patreon.com/yagpdb
  - Bitcoin: [`1Hud7HW2R6pSGupBDZkJxqkFzqTSgjnrdB`]({{static "qrbitcoin.png"}})
