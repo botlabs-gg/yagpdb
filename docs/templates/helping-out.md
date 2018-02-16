@@ -28,9 +28,9 @@ Check the guide below if you're interested and if you have any questions then as
     - ![Create branch image]({{static "doc-guide-3-branch-create.png"}})
  4. After that you should be on your new branch, the branch button should now say `Branch: your branch name here`
  5. Make the changes
-    - If you wanna make a change to plugin-specific help, you can find that in `plugin-name/assets/help-page.md`
-    - If you wanna make a change to general help, you can do that in `docs/templates/xxxx.md`
-    - Open the file on github, and press the edit button 
+    - If you want to make a change to plugin-specific help, you can find that in `plugin-name/assets/help-page.md`
+    - If you want to make a change to general help, you can do that in `docs/templates/xxxx.md`
+    - Open the file on GitHub, and press the edit button 
     - ![doc-guide-4-edit-button.png]({{static "doc-guide-4-edit-button.png"}})
     - Make your changes, and write a commit message, describing what you did 
     - ![doc-guide-5-commit-message.png]({{static "doc-guide-5-commit-message.png"}})
