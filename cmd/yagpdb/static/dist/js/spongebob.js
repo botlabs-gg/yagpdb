@@ -330,6 +330,15 @@ function formSubmissionEvents(selectorPrefix){
 			"Welcome ... I've been expecting you",
 			"Just relaxing in the loading bar",
 			"Yet Another Generic Response",
+			"*Elevator music plays*",
+			"Warning: The page is loading, THIS IS NOT A DRILL!",
+			"I dont like loading.",
+			"This isn't an easter egg.",
+			"Woah, this text just changed.",
+			"Loading is overrated.",
+			"The worse your internet, the more times you can read this over.",
+			"Not saving.",
+			"Jonas747 wasn't here.",
 		]
 
 		for(var i = 0; i < evt.target.elements.length; i++){
