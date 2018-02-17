@@ -338,7 +338,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	ctx.SentDM = true
 	executed, err := ctx.Execute(nil, dmMsg)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed executing pusnishment dm")
+		logrus.WithError(err).WithField("guild", gs.ID()).Warn("Failed executing pusnishment dm")
 		executed = "Failed executing template."
 	}
 

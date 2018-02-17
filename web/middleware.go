@@ -473,7 +473,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 
 		err := Templates.ExecuteTemplate(w, tmpl, out)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed executing template")
+			CtxLogger(r.Context()).WithError(err).Warn("Failed executing template")
 			return
 		}
 	}

@@ -179,7 +179,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Send the reponse
 	replies, err := yc.SendResponse(data, r, err)
-	if err != nil {
+	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions) {
 		logger.WithError(err).Error("Failed sending response")
 	}
 

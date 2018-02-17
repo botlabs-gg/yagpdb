@@ -216,7 +216,7 @@ OUTER:
 
 		parsedJoined, err := discordgo.Timestamp(ms.Member.JoinedAt).Parse()
 		if err != nil {
-			logrus.WithError(err).Error("Failed parsing join timestamp")
+			logrus.WithError(err).Warn("Failed parsing join timestamp")
 			continue
 		}
 

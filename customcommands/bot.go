@@ -169,7 +169,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		out += common.EscapeSpecialMentions(err.Error())
 	}
 
-	if out != "" {
+	if strings.TrimSpace(out) != "" {
 		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, out)
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
