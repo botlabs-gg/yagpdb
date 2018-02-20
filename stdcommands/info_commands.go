@@ -21,6 +21,7 @@ var cmdInvite = &commands.YAGCommand{
 var cmdInfo = &commands.YAGCommand{
 	CmdCategory: commands.CategoryGeneral,
 	Name:        "Info",
+	Aliases:     []string{"inf", "in"},
 	Description: "Responds with bot information",
 	RunInDM:     true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
