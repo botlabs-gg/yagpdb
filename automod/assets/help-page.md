@@ -18,6 +18,6 @@ All rules have a set of common options:
      + max 1 week
  -  **Mute/Kick/Ban after**: this is the amount of violations that are required for a mute/kick/ban, if this is set to 0 then it will never apply this punishment. *Even if all the punishments are disabled, the messages that break the rules will still be removed and the user will still be warned.* Caution with the ban option!
  -  **Ignore role**: This rule does not apply to people with this role (Good for staff or admins)
- -  **Ignore channels**: This rule is ignored in the selected channels (if it doesnt work in some channels, check that the bot can read and mannage messages there)
+ -  **Ignore channels**: This rule is ignored in the selected channels (if it doesnt work in some channels, check that the bot can read and manage messages there)
 
 There are plans to extend automod in the future but time is a valuable resource.
