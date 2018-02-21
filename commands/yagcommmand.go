@@ -29,7 +29,7 @@ var (
 		EmbedColor:  0xe53939,
 	}
 	CategoryTool = &dcmd.Category{
-		Name:        "Tools",
+		Name:        "Tools & Utilities",
 		Description: "Various miscellaneous commands",
 		HelpEmoji:   "🔨",
 		EmbedColor:  0xeaed40,
@@ -47,7 +47,7 @@ var (
 		EmbedColor:  0x5ae26c,
 	}
 	CategoryDebug = &dcmd.Category{
-		Name:        "Debug",
+		Name:        "Debug & Maintenance",
 		Description: "Debug and other commands to inspect the bot",
 		HelpEmoji:   "🖥",
 		EmbedColor:  0,
