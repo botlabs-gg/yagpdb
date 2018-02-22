@@ -1,11 +1,11 @@
-{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Disciminator){{"}}"}}</code> - The author of the kick/ban{{end}}
+{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Discriminator){{"}}"}}</code> - The author of the kick/ban{{end}}
 
 {{define "cp_moderation"}}
 {{template "cp_head" .}}
 <div class="row">
     <div class="col-lg-12">
         <h1 class="page-header">Moderation Tools</h1>
-        <p>Moderations tools to help moderate the server</p>
+        <p>Moderation tools to help the moderators moderate the server</p>
     </div>
     <!-- /.col-lg-12 -->
 </div>
@@ -121,7 +121,7 @@
                             Kick command enabled<br/>
                             <code>(mention or prefix) kick @user some reason</code><br/>
                             Only users with kick permission can use this.<br/>
-                            Same as ban command but kicks instead
+                            Same as ban command, but kicks instead
                         </label>
                     </div>
                     <div class="checkbox">
@@ -141,7 +141,7 @@
                         <textarea class="form-control" rows="5" name="KickMessage">{{.ModConfig.KickMessage}}</textarea>
                         
                         <p class="help-block">Available template data is<br/>
-                        {{template "template_helper_user"}} - The usser being banned/kicked<br/>
+                        {{template "template_helper_user"}} - The user being banned/kicked<br/>
                         <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
                         {{template "template_helper_mod_author"}}</p>
                     </div>
@@ -173,7 +173,7 @@
                         <label>Ban DM (Leave empty for default)</label>
                         <textarea class="form-control" rows="5" name="BanMessage">{{.ModConfig.BanMessage}}</textarea>
                         <p class="help-block">Available template data is<br/>
-                        {{template "template_helper_user"}} - The usser being banned/kicked<br/>
+                        {{template "template_helper_user"}} - The user being banned/kicked<br/>
                         <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
                         {{template "template_helper_mod_author"}}</p>
                     </div>
@@ -196,13 +196,13 @@
                         <code>(mention or prefix) warn @user some reason</code><br/>
                         Creates a new warning for the user<br/>
                         <code>(mention or prefix) warnings @user</code><br/>
-                        Lists all warning of a user<br/>
+                        Displays a list of a specified user's warnings<br/>
                       </label>
                     </div>
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" name="WarnIncludeChannelLogs" {{if .ModConfig.WarnIncludeChannelLogs}} checked{{end}}>
-                            Create logs in channel command was ran in when user is warned
+                            Create logs in the channel that the command was run in when a user is warned
                         </label>
                     </div>
                     <div class="checkbox">

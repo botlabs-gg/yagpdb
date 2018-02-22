@@ -21,11 +21,11 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
 
 	// Beware of the pyramid and its curses
-	if config.JoinDMEnabled {
+	if config.JoinDMEnabled && !evt.GuildMemberAdd.User.Bot {
 
 		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinDMMsg)
 		if err != nil {
-			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing dm template")
+			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing dm template")
 		} else {
 			err = bot.SendDM(evt.GuildMemberAdd.User.ID, msg)
 			if err != nil {
@@ -41,7 +41,7 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 		}
 		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinServerMsg)
 		if err != nil {
-			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing join template")
+			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing join template")
 		} else {
 			bot.QueueMergedMessage(channel, msg)
 		}
@@ -68,7 +68,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberRemove.Member).Execute(client, config.LeaveMsg)
 	if err != nil {
-		log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing leave template")
+		log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing leave template")
 		return
 	}
 
@@ -79,6 +79,10 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	cu := evt.ChannelUpdate
 
 	curChannel := bot.State.Channel(true, cu.ID)
+	if curChannel == nil {
+		return
+	}
+
 	curChannel.Owner.RLock()
 	oldTopic := curChannel.Channel.Topic
 	curChannel.Owner.RUnlock()
@@ -102,7 +106,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 
 	_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%s> changed to **%s**", cu.ID, cu.Topic)))
 	if err != nil {
-		log.WithError(err).WithField("guild", cu.GuildID).Error("Failed sending topic change message")
+		log.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
 	}
 }
 

@@ -273,7 +273,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 
 		if config.GiveRole != "" {
 			err := GiveStreamingRole(member, config.GiveRole, gs.Guild)
-			if err != nil {
+			if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
 				log.WithError(err).WithField("guild", gs.ID()).WithField("user", member.User.ID).Error("Failed adding streaming role")
 				client.Cmd("SREM", KeyCurrentlyStreaming(gs.ID()), member.User.ID)
 			}
@@ -309,7 +309,7 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 	}
 
 	if !foundChannel {
-		log.WithField("guild", guild.ID()).WithField("channel", config.AnnounceChannel).Error("Channel not found in state")
+		log.WithField("guild", guild.ID()).WithField("channel", config.AnnounceChannel).Warn("Channel not found in state, not sending streaming announcement")
 		return
 	}
 
@@ -321,7 +321,7 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 	out, err := ctx.Execute(client, config.AnnounceMessage)
 	guild.RLock()
 	if err != nil {
-		log.WithError(err).WithField("guild", guild.ID()).Error("Failed executing template")
+		log.WithError(err).WithField("guild", guild.ID()).Warn("Failed executing template")
 		return
 	}
 
@@ -347,7 +347,7 @@ func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.G
 
 func RemoveStreamingRole(member *discordgo.Member, role string, guildID string) {
 	err := common.RemoveRole(member, role, guildID)
-	if err != nil {
+	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
 		log.WithError(err).WithField("guild", guildID).WithField("user", member.User.ID).Error("Failed removing streaming role")
 	}
 }

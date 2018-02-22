@@ -19,6 +19,7 @@ func (p *Plugin) InitBot() {
 	CommandSystem.Prefix = p
 	CommandSystem.State = bot.State
 	CommandSystem.Root.RunInDM = true
+	CommandSystem.Root.IgnoreBots = true
 
 	// CommandSystem = commandsystem.NewSystem(nil, "")
 	// CommandSystem.SendError = false
@@ -68,6 +69,7 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 
 var cmdHelp = &YAGCommand{
 	Name:        "Help",
+	Aliases:     []string{"commands", "h", "how", "command"},
 	Description: "Shows help abut all or one specific command",
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,

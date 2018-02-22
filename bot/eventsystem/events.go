@@ -358,6 +358,7 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 
 	ctx := context.WithValue(context.Background(), common.ContextKeyDiscordSession, s)
 	evtData.ctx = ctx
+
 	EmitEvent(evtData, EventAllPre)
 	EmitEvent(evtData, evtData.Type)
 	EmitEvent(evtData, EventAllPost)

@@ -28,6 +28,8 @@ func Setup() {
 	State = dstate.NewState()
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
+	eventsystem.ConcurrentAfter = StateHandlerPtr
+
 	// eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
 
@@ -72,6 +74,7 @@ func Run() {
 
 		session.StateEnabled = false
 		session.LogLevel = discordgo.LogInformational
+		session.SyncEvents = true
 
 		return
 	}
@@ -79,14 +82,24 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
+	shardCount, err := ShardManager.GetRecommendedCount()
+	if err != nil {
+		panic("Failed getting shard count: " + err.Error())
+	}
+
+	for i := 0; i < shardCount; i++ {
+		waitingReadies = append(waitingReadies, i)
+	}
+
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
 	Running = true
-	ShardManager.Start()
 
-	go mergedMessageSender()
+	go ShardManager.Start()
 	go MemberFetcher.Run()
+	go mergedMessageSender()
+	go MonitorLoading()
 
 	for _, p := range common.Plugins {
 		starter, ok := p.(BotStarterHandler)
@@ -95,8 +108,26 @@ func Run() {
 			log.Debug("Ran StartBot for ", p.Name())
 		}
 	}
+}
 
-	go checkConnectedGuilds()
+func MonitorLoading() {
+	t := time.NewTicker(time.Second)
+	defer t.Stop()
+
+	for {
+		<-t.C
+
+		waitingGuildsMU.Lock()
+		numWaitingGuilds := len(waitingGuilds)
+		numWaitingShards := len(waitingReadies)
+		waitingGuildsMU.Unlock()
+
+		log.Infof("Starting up... GC's Remaining: %d, Shards remaining: %d", numWaitingGuilds, numWaitingShards)
+
+		if numWaitingGuilds == 0 && numWaitingShards == 0 {
+			return
+		}
+	}
 }
 
 func Stop(wg *sync.WaitGroup) {

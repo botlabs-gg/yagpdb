@@ -58,7 +58,7 @@ func GetUserStats(guildID, userID string) (score int64, rank int, err error) {
 	const query = `SELECT points, position FROM
 (
 	SELECT user_id, points,
-	DENSE_RANK() OVER(ORDER BY points DESC) AS position
+	RANK() OVER(ORDER BY points DESC) AS position
 	FROM reputation_users WHERE guild_id = $1
 ) AS w
 WHERE user_id = $2`
@@ -83,7 +83,7 @@ func TopUsers(guildID string, offset, limit int) ([]*RankEntry, error) {
 	const query = `SELECT points, position, user_id FROM
 (
 	SELECT user_id, points,
-	DENSE_RANK() OVER(ORDER BY points DESC) AS position
+	RANK() OVER(ORDER BY points DESC) AS position
 	FROM reputation_users WHERE guild_id = $1
 ) AS w
 ORDER BY points desc

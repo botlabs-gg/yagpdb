@@ -81,7 +81,7 @@ type YoutubePlaylistID struct {
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	code, _ := common.DiscordError(err)
 	if code != discordgo.ErrCodeUnknownChannel {
-		logrus.WithError(err).WithField("channel", elem.Channel).Error("Error posting youtube message")
+		logrus.WithError(err).WithField("channel", elem.Channel).Warn("Error posting youtube message")
 		return
 	}
 

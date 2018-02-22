@@ -459,11 +459,26 @@ func ValidateSQLSchema(input string) {
 
 // DiscordError extracts the errorcode discord sent us
 func DiscordError(err error) (code int, msg string) {
+	err = errors.Cause(err)
+
 	if rError, ok := err.(*discordgo.RESTError); ok && rError.Message != nil {
 		return rError.Message.Code, rError.Message.Message
 	}
 
 	return 0, ""
+}
+
+// IsDiscordErr returns true if this was a discord error and one of the codes matches
+func IsDiscordErr(err error, codes ...int) bool {
+	code, _ := DiscordError(err)
+
+	for _, v := range codes {
+		if code == v {
+			return true
+		}
+	}
+
+	return false
 }
 
 type LoggedExecutedCommand struct {

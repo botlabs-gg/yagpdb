@@ -23,7 +23,6 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
-
 	// Plugin imports
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
@@ -155,7 +154,6 @@ func main() {
 
 	if flagRunBot || flagRunEverything {
 		bot.Run()
-		go scheduledevents.Run()
 		go botrest.StartServer()
 		go mqueue.StartPolling()
 	}

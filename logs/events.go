@@ -316,28 +316,32 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	gs := bot.State.Guild(true, pu.GuildID)
 	if gs == nil {
 		go func() { evtChan <- evt }()
-	}
-
-	ms := gs.Member(true, pu.User.ID)
-	if ms == nil || ms.Presence == nil || ms.Member == nil {
-		go func() { evtChan <- evt }()
 		return
 	}
 
 	gs.RLock()
-	defer gs.RUnlock()
+	ms := gs.Member(false, pu.User.ID)
+	if ms == nil || ms.Presence == nil || ms.Member == nil {
+		gs.RUnlock()
+		go func() { evtChan <- evt }()
+		return
+	}
 
 	if pu.User.Username != "" {
 		if pu.User.Username != ms.Member.User.Username {
+			gs.RUnlock()
 			go func() { evtChan <- evt }()
 			return
 		}
 	}
 
 	if pu.Nick != ms.Presence.Nick {
+		gs.RUnlock()
 		go func() { evtChan <- evt }()
 		return
 	}
+
+	gs.RUnlock()
 }
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER

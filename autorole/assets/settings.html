@@ -41,13 +41,13 @@
                     <div class="form-group">
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="OnlyOnJoin" {{if .Autorole.OnlyOnJoin}}checked{{end}}> Only assign role when they join, do not give it back it it's removed from them afterwards
+                                <input type="checkbox" name="OnlyOnJoin" {{if .Autorole.OnlyOnJoin}}checked{{end}}> Only assign role when they join, do not give it back it it's removed from them afterwards.
                             </label>
                         </div>
                     </div>
 
-                    <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA: <code>{{.ProcessingETA}}</code>minutes (May take up to a minute before the bot starts assigning roles)</p>
-                    <p>To stop set the role to "None"</p>
+                    <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA: <code>{{.ProcessingETA}}</code>minutes (May take up to a minute before the bot starts assigning roles).</p>
+                    <p>To stop, set the role to "None".</p>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary btn-lg btn-block" >Save</button>   

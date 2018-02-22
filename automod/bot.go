@@ -165,7 +165,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 	// Execute the punishment before removing the message to make sure it's included in logs
 	common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
 
-	if err != nil {
+	if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
 		logrus.WithError(err).Error("Error carrying out punishment")
 	}
 

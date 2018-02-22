@@ -1,10 +1,12 @@
 package bot
 
 import (
+	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/karlseguin/ccache"
 	"sync"
 	"time"
 )
@@ -14,6 +16,8 @@ var (
 		fetching:    make(map[string]*MemberFetchGuildQueue),
 		notFetching: make(map[string]*MemberFetchGuildQueue),
 	}
+
+	failedUsersCache = ccache.New(ccache.Configure())
 )
 
 func GetMember(guildID, userID string) (*discordgo.Member, error) {
@@ -201,20 +205,32 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 		}
 	}
 
-	member, err := common.BotSession.GuildMember(guildID, elem.Member)
-	if err != nil {
-		logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
-	} else {
-		go eventsystem.EmitEvent(&eventsystem.EventData{
-			EventDataContainer: &eventsystem.EventDataContainer{
-				GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
-			},
-			Type: eventsystem.EventMemberFetched,
-		}, eventsystem.EventMemberFetched)
+	var member *discordgo.Member
+	var err error
+	// Check if this was previously attempted and failed
+	if failedUsersCache.Get(guildID+":"+elem.Member) == nil {
 
-		if gs := State.Guild(true, guildID); gs != nil {
-			gs.MemberAddUpdate(true, member)
+		member, err = common.BotSession.GuildMember(guildID, elem.Member)
+		if err != nil {
+			logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
+			code, _ := common.DiscordError(err)
+			if code == discordgo.ErrCodeUnknownUser {
+				failedUsersCache.Set(guildID+":"+elem.Member, 1, time.Hour)
+			}
+		} else {
+			go eventsystem.EmitEvent(&eventsystem.EventData{
+				EventDataContainer: &eventsystem.EventDataContainer{
+					GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
+				},
+				Type: eventsystem.EventMemberFetched,
+			}, eventsystem.EventMemberFetched)
+
+			if gs := State.Guild(true, guildID); gs != nil {
+				gs.MemberAddUpdate(true, member)
+			}
 		}
+	} else {
+		err = errors.New("Member is in failed fetching cache")
 	}
 
 	m.Lock()

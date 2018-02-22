@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/alfredxing/calc/compute"
+	"github.com/dpatrie/urbandictionary"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/discordgo"
@@ -38,6 +39,7 @@ type PluginStatus interface {
 }
 
 var generalCommands = []*commands.YAGCommand{
+	cmdDefine,
 	cmdReverse,
 	cmdWeather,
 	cmdCalc,
@@ -248,14 +250,24 @@ var cmdThrow = &commands.YAGCommand{
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		thing := ThrowThings[rand.Intn(len(ThrowThings))]
 
 		target := "a random person nearby"
 		if data.Args[0].Value != nil {
 			target = data.Args[0].Value.(*discordgo.User).Username
 		}
 
-		return fmt.Sprintf("Threw **%s** at %s", thing, target), nil
+		resp := ""
+
+		rng := rand.Intn(100)
+		if rng < 5 {
+			resp = fmt.Sprintf("TRIPPLE THROW! Threw **%s**, **%s** and **%s** at **%s**", RandomThing(), RandomThing(), RandomThing(), target)
+		} else if rng < 15 {
+			resp = fmt.Sprintf("DOUBLE THROW! Threw **%s** and **%s** at **%s**", RandomThing(), RandomThing(), target)
+		} else {
+			resp = fmt.Sprintf("Threw **%s** at **%s**", RandomThing(), target)
+		}
+
+		return resp, nil
 	},
 }
 
@@ -337,7 +349,7 @@ func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
 			if offset, ok := customTZOffsets[strings.ToUpper(tzName)]; ok {
 				location = time.FixedZone(tzName, int(offset*60*60))
 			} else {
-				return err, err
+				return "Unknown timezone :(", err
 			}
 		}
 		return now.In(location).Format(format), nil
@@ -450,6 +462,37 @@ var cmdWouldYouRather = &commands.YAGCommand{
 	},
 }
 
+var cmdDefine = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryFun,
+	Name:         "Define",
+	Aliases:      []string{"df"},
+	Description:  "Look up an urban dictionary definition",
+	RequiredArgs: 1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Topic", Type: dcmd.String},
+	},
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+
+		qResp, err := urbandictionary.Query(data.Args[0].Str())
+		if err != nil {
+			return "Failed querying :(", err
+		}
+
+		if len(qResp.Results) < 1 {
+			return "No result :(", nil
+		}
+
+		result := qResp.Results[0]
+
+		cmdResp := fmt.Sprintf("**%s**: %s\n*%s*\n*(<%s>)*", result.Word, result.Definition, result.Example, result.Permalink)
+		if len(qResp.Results) > 1 {
+			cmdResp += fmt.Sprintf(" *%d more results*", len(qResp.Results)-1)
+		}
+
+		return cmdResp, nil
+	},
+}
+
 type AdviceSlip struct {
 	Advice string `json:"advice"`
 	ID     string `json:"slip_id"`
@@ -490,10 +533,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	taken := time.Duration(time.Now().UnixNano() - parsed)
 
 	started := time.Now()
-	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Gatway (http send -> gateway receive time): "+taken.String())
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Gateway (http send -> gateway receive time): "+taken.String())
 	httpPing := time.Since(started)
 
-	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGatway: "+taken.String())
+	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGateway: "+taken.String())
 }
 
 type GuildsSortUsers []*discordgo.Guild
