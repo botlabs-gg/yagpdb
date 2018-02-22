@@ -5,7 +5,7 @@
  */
 
 body {
-    background-color: #f8f8f8;
+    /*background-color: #f8f8f8;*/
 }
 
 #wrapper {
@@ -15,7 +15,7 @@ body {
 #page-wrapper {
     padding: 0 15px;
     min-height: 568px;
-    background-color: #fff;
+    /*background-color: #fff;*/
 }
 
 @media(min-width:768px) {
@@ -23,7 +23,7 @@ body {
         position: inherit;
         margin: 0 0 0 250px;
         padding: 0 30px;
-        border-left: 1px solid #e7e7e7;
+        border-left: 1px solid #black;
     }
 
     #select-server-row {
@@ -36,7 +36,7 @@ body {
 }
 
 .navbar-top-links li {
-    display: inline-block;
+    display: inline-block !important;
 }
 
 .navbar-top-links li:last-child {
@@ -99,11 +99,12 @@ body {
 }
 
 .sidebar ul li {
-    border-bottom: 1px solid #e7e7e7;
+    border-bottom: 1px solid black;
 }
 
 .sidebar ul li a.active {
-    background-color: #eee;
+    /*background-color: #eee;*/
+    background-color: #222;
 }
 
 .sidebar .arrow {
