@@ -14,6 +14,7 @@ import (
 var (
 	StandardFuncMap = map[string]interface{}{
 		"dict":      Dictionary,
+		"json":      tmplJson,
 		"in":        in,
 		"title":     strings.Title,
 		"add":       add,

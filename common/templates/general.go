@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/pkg/errors"
@@ -233,4 +234,13 @@ func tmplToString(from interface{}) string {
 	default:
 		return ""
 	}
+}
+
+func tmplJson(v interface{}) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
