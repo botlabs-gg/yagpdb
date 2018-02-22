@@ -64,4 +64,12 @@ var ThrowThings = []string{
 	"compliments",
 	"life advice",
 	"scams",
+	"nothing",
+	"crappy code",
+	"2 million ping",
+	"myself",
+	"easter eggs",
+	"explosives",
+	"a black hole",
+	"cheap servers",
 }
