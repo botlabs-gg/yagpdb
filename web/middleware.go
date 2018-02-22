@@ -87,8 +87,9 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 		}
 
 		baseData := map[string]interface{}{
-			"BotRunning": botrest.BotIsRunning(),
-			"RequestURI": r.RequestURI,
+			"BotRunning":    botrest.BotIsRunning(),
+			"RequestURI":    r.RequestURI,
+			"StartedAtUnix": StartedAt.Unix(),
 		}
 
 		for k, v := range globalTemplateData {

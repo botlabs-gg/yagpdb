@@ -40,6 +40,8 @@ var (
 	acceptingRequests *int32
 
 	globalTemplateData = TemplateData(make(map[string]interface{}))
+
+	StartedAt = time.Now()
 )
 
 func init() {
