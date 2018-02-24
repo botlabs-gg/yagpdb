@@ -59,4 +59,11 @@ var BuiltinSwearWords = map[string]bool{
 	"vagina":      true,
 	"wank":        true,
 	"whore":       true,
+	"tits":        true,
+	"titty":       true,
+	"asshole":     true,
+	"fvck":        true,
+	"asshat":      true,
+	"pu55y":       true,
+	"pen1s":       true,
 }
