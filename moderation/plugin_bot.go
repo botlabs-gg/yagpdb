@@ -400,7 +400,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Cooldown:      5,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Report",
-		Description:   "Reports a member",
+		Description:   "Reports a member to the server's staff",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
@@ -556,7 +556,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warn",
-		Description:   "Warns a user, warnings are saved. Use -warnings to view them.",
+		Description:   "Warns a user, warnings are saved using the bot. Use -warnings to view them.",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
