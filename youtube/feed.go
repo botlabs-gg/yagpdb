@@ -102,7 +102,7 @@ func (p *Plugin) checkExpiringWebsubs(client *redis.Client) {
 	}
 	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
 
-	maxScore := time.Now().Add(WebSubCheckInterval).Unix()
+	maxScore := time.Now().Unix()
 	expiring, err := client.Cmd("ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore).List()
 	if err != nil {
 		p.Logger().WithError(err).Error("Failed checking websubs")
@@ -112,7 +112,7 @@ func (p *Plugin) checkExpiringWebsubs(client *redis.Client) {
 	for _, v := range expiring {
 		err := p.WebSubSubscribe(v)
 		if err != nil {
-			p.Logger().WithError(err).Error("Failed subscribing to channel", v)
+			p.Logger().WithError(err).WithField("yt_channel", v).Error("Failed subscribing to channel")
 		}
 		time.Sleep(time.Second)
 	}
@@ -138,8 +138,9 @@ func (p *Plugin) syncWebSubs(client *redis.Client) {
 			// Not added
 			err := p.WebSubSubscribe(channel)
 			if err != nil {
-				p.Logger().WithError(err).Error("Failed subscribing to channel", channel)
+				p.Logger().WithError(err).WithField("yt_channel", channel).Error("Failed subscribing to channel")
 			}
+
 			time.Sleep(time.Second)
 		}
 	}
