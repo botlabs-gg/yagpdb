@@ -62,6 +62,9 @@ type Context struct {
 	MentionRoles     []string
 	MentionRoleNames []string
 
+	DelResponse bool
+	DelTrigger  bool
+
 	SentDM bool
 }
 
@@ -158,4 +161,6 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["hasRoleID"] = tmplHasRoleID(c)
 	c.ContextFuncs["addRoleID"] = tmplAddRoleID(c)
 	c.ContextFuncs["removeRoleID"] = tmplRemoveRoleID(c)
+	c.ContextFuncs["deleteResponse"] = tmplDelResponse(c)
+	c.ContextFuncs["deleteTrigger"] = tmplDelTrigger(c)
 }

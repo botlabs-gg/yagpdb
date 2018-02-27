@@ -209,3 +209,17 @@ func tmplRemoveRoleID(c *Context) interface{} {
 		return true, nil
 	}
 }
+
+func tmplDelResponse(c *Context) interface{} {
+	return func() bool {
+		c.DelResponse = true
+		return true
+	}
+}
+
+func tmplDelTrigger(c *Context) interface{} {
+	return func() bool {
+		c.DelTrigger = true
+		return true
+	}
+}
