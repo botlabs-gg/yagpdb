@@ -14,6 +14,7 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -162,7 +163,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	out, err := ExecuteCustomCommand(matched, stripped, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
+	out, delTrigger, delResponse, err := ExecuteCustomCommand(matched, stripped, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
 	if err != nil {
 		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
@@ -170,19 +171,28 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	if strings.TrimSpace(out) != "" {
-		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, out)
+		m, err := common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, out)
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
+		} else {
+			if delResponse {
+				go common.DelayedMessageDelete(common.BotSession, time.Second*10, m.ChannelID, m.ID)
+			}
 		}
+	}
+
+	if delTrigger {
+		go common.DelayedMessageDelete(common.BotSession, time.Second*10, evt.MessageCreate.ChannelID, evt.MessageCreate.ID)
 	}
 }
 
-func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (string, error) {
+func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, delTrigger bool, delResponse bool, err error) {
 
 	cs := bot.State.Channel(true, m.ChannelID)
 	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
 	if err != nil {
-		return "", err
+		err = err
+		return
 	}
 
 	tmplCtx := templates.NewContext(bot.State.User(true).User, cs.Guild, cs, member)
@@ -203,8 +213,12 @@ func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Cli
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
 	}
+	resp = out
 
-	return out, err
+	delTrigger = tmplCtx.DelTrigger
+	delResponse = tmplCtx.DelResponse
+
+	return
 }
 
 func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool, stripped string) {
