@@ -170,56 +170,56 @@ func tmplHasRoleName(c *Context) interface{} {
 
 func tmplAddRoleID(c *Context) interface{} {
 	numCalls := 0
-	return func(role interface{}) (bool, error) {
+	return func(role interface{}) (string, error) {
 		if numCalls >= 10 {
-			return false, ErrTooManyCalls
+			return "", ErrTooManyCalls
 		}
 
 		rid := str(role)
-		if rid != "" {
-			return false, errors.New("No role id specified")
+		if rid == "" {
+			return "", errors.New("No role id specified")
 		}
 
 		err := common.BotSession.GuildMemberRoleAdd(c.GS.ID(), c.Member.User.ID, rid)
 		if err != nil {
-			return false, err
+			return "", err
 		}
 
-		return true, nil
+		return "", nil
 	}
 }
 
 func tmplRemoveRoleID(c *Context) interface{} {
 	numCalls := 0
-	return func(role interface{}) (bool, error) {
+	return func(role interface{}) (string, error) {
 		if numCalls >= 10 {
-			return false, ErrTooManyCalls
+			return "", ErrTooManyCalls
 		}
 
 		rid := str(role)
-		if rid != "" {
-			return false, errors.New("No role id specified")
+		if rid == "" {
+			return "", errors.New("No role id specified")
 		}
 
 		err := common.BotSession.GuildMemberRoleRemove(c.GS.ID(), c.Member.User.ID, rid)
 		if err != nil {
-			return false, err
+			return "", err
 		}
 
-		return true, nil
+		return "", nil
 	}
 }
 
 func tmplDelResponse(c *Context) interface{} {
-	return func() bool {
+	return func() string {
 		c.DelResponse = true
-		return true
+		return ""
 	}
 }
 
 func tmplDelTrigger(c *Context) interface{} {
-	return func() bool {
+	return func() string {
 		c.DelTrigger = true
-		return true
+		return ""
 	}
 }
