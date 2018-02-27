@@ -140,10 +140,20 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	member, err := bot.GetMember(cs.Guild.ID(), evt.MessageCreate.Author.ID)
+	if err != nil {
+		return
+	}
+
 	var matched *CustomCommand
 	var stripped string
 	for _, cmd := range cmds {
+		if !cmd.RunsInChannel(evt.MessageCreate.ID) || !cmd.RunsForUser(member) {
+			continue
+		}
+
 		if m, s := CheckMatch(prefix, cmd, evt.MessageCreate.Content); m {
+
 			matched = cmd
 			stripped = s
 			break

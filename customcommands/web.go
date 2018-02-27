@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
@@ -16,14 +17,21 @@ func (p *Plugin) InitWeb() {
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
 
-	web.CPMux.Handle(pat.Get("/customcommands"), getHandler)
-	web.CPMux.Handle(pat.Get("/customcommands/"), getHandler)
+	subMux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/customcommands"), subMux)
+	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
+
+	subMux.Use(web.RequireGuildChannelsMiddleware)
+	subMux.Use(web.RequireFullGuildMW)
+
+	subMux.Handle(pat.Get(""), getHandler)
+	subMux.Handle(pat.Get("/"), getHandler)
 
 	newHandler := web.ControllerPostHandler(HandleNewCommand, getHandler, CustomCommand{}, "Created a new custom command")
-	web.CPMux.Handle(pat.Post("/customcommands"), newHandler)
-	web.CPMux.Handle(pat.Post("/customcommands/"), newHandler)
-	web.CPMux.Handle(pat.Post("/customcommands/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
-	web.CPMux.Handle(pat.Post("/customcommands/:cmd/delete"), web.ControllerHandler(HandleDeleteCommand, "cp_custom_commands"))
+	subMux.Handle(pat.Post(""), newHandler)
+	subMux.Handle(pat.Post("/"), newHandler)
+	subMux.Handle(pat.Post("/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
+	subMux.Handle(pat.Post("/:cmd/delete"), web.ControllerHandler(HandleDeleteCommand, "cp_custom_commands"))
 }
 
 func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
