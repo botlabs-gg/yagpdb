@@ -172,6 +172,8 @@ func str(arg interface{}) string {
 		return strconv.FormatInt(v, 10)
 	case int:
 		return strconv.FormatInt(int64(v), 10)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
 	}
 
 	return ""
