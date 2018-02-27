@@ -14,7 +14,7 @@ var ThrowThings = []string{
 	"b1nzy",
 	"bad jokes",
 	"a boom box",
-	"graliko~ (from GBDS)",
+	"garliko~ (from GBDS)",
 	"old cheese",
 	"heroin",
 	"sadness",
