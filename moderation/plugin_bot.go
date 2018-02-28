@@ -363,7 +363,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Unmute",
-		Description:   "unmutes a member",
+		Description:   "Unmutes a member",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
@@ -400,7 +400,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Cooldown:      5,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Report",
-		Description:   "Reports a member",
+		Description:   "Reports a member to the server's staff",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
@@ -434,7 +434,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled:   true,
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
-		Description:     "Delete the last n messages from chat, optionally filtering by user, max age and regex.",
+		Description:     "Delete the last number of messages from chat, optionally filtering by user, max age and regex.",
 		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nNote: Will only look in the last 1k messages",
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
@@ -556,7 +556,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warn",
-		Description:   "Warn a user, warning are saved.",
+		Description:   "Warns a user, warnings are saved using the bot. Use -warnings to view them.",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
@@ -578,6 +578,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warnings",
 		Description:   "Lists warning of a user.",
+		Aliases:     []string{"Warns"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
