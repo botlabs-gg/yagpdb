@@ -10,67 +10,110 @@
     <!-- /.col-lg-12 -->
 </div>
 {{template "cp_alerts" .}}
-<!-- /.row -->
-<div class="row">
-    <div class="col-lg-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                Add new
-            </div>
-            <div class="panel-body">
-                <div class="col-lg-12">
-                    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands">
-                        <div class="form-group">
-                            <label for="trigger_type">Trigger type</label>
-                            <select id="trigger_type" class="form-control" name="type">
-                                <option value="cmd">Command (mention/cmd prefix)</option>
-                                <option value="prefix">Starts with</option>
-                                <option value="contains">Contains</option>
-                                <option value="regex">Regex</option>
-                                <option value="exact">Exact match</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="trigger">Trigger</label>
-                            <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun">
-                        </div>
-                        <div class="form-group">
-                            <label for="response">Response</label>
-                            <textarea rows="5" class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
-                            {{template "custom_command_help"}}
-                        </div>
-                        <div class="form-group">
-                            <div class="checkbox">
+ <div class="panel panel-default">
+    <div class="panel-heading">
+        Add new
+    </div>
+    <div class="panel-body">
+        <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands">
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label for="trigger_type">Trigger type</label>
+                        <select id="trigger_type" class="form-control" name="type">
+                            <option value="cmd">Command (mention/cmd prefix)</option>
+                            <option value="prefix">Starts with</option>
+                            <option value="contains">Contains</option>
+                            <option value="regex">Regex</option>
+                            <option value="exact">Exact match</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <div class="form-group">
+                        <label for="trigger">Trigger</label>
+                        <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun">
+                        <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="case_sensitive"> Case sensitive trigger
+                                <input type="checkbox" name="case_sensitive"> Case sensitive
                             </label>
-                            </div>
                         </div>
-                        <button type="submit" class="btn btn-success">Add</button>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-            {{$guild := .ActiveGuild.ID}}
-            {{range .CustomCommands}}
-            <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update">
-                <div class="panel panel-default">
-                    <div class="panel-heading clearfix" role="tab" id="headingOne">
-                        <div class="pull-right">
-                            <button type="submit" class="btn btn-danger btn-sm" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
-                        </div>
-                        <h4 class="panel-title">
-
-                            <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.ID}}" aria-expanded="false" aria-controls="collapse_cmd{{.ID}}">
-                                #{{.ID}} - {{.Trigger}}
-                            </a>
-                        </h4>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <label for="response">Response</label>
+                        <textarea rows="5" class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
+                        {{template "custom_command_help"}}
                     </div>
-                    <div id="collapse_cmd{{.ID}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
-                    <div class="panel-body">
-                        <div class="col-lg-12">
-                            <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
+                    <div class="form-group">
+                        <div class="col-sm-6">
+                            <div class="radio">
+                              <label>
+                                <input type="radio" name="require_roles" value="on">
+                                Require at least one of the roles in the following lists
+                              </label>
+                            </div>
+                            <div class="radio">
+                              <label>
+                                <input type="radio" name="require_roles" value="" checked>
+                                Ignore the roles in the following list
+                              </label>
+                            </div>
+                            <label for="new-command-roles">Roles</label><br>
+                            <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles">
+                                {{roleOptions .ActiveGuild.Roles nil}}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="radio">
+                              <label>
+                                <input type="radio" name="require_channels" value="on">
+                                Only run in the following channels
+                              </label>
+                            </div>
+                            <div class="radio">
+                              <label>
+                                <input type="radio" name="require_channels" value="" checked>
+                                Ignore the channels in the following list
+                              </label>
+                            </div>
+                            <label for="new-command-roles">Channels</label><br>
+                            <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles">
+                                {{textChannelOptions .ActiveGuild.Channels}}
+                            </select>
+                        </div>
+                    </div>            
+                    <button type="submit" class="btn btn-success">Add</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+    {{$guild := .ActiveGuild.ID}}
+    {{$g := .ActiveGuild}}
+    {{range .CustomCommands}}
+    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix" role="tab" id="headingOne">
+                <div class="pull-right">
+                    <button type="submit" class="btn btn-danger btn-sm" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
+                </div>
+                <h4 class="panel-title">
+
+                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.ID}}" aria-expanded="false" aria-controls="collapse_cmd{{.ID}}">
+                        #{{.ID}} - {{.Trigger}}
+                    </a>
+                </h4>
+            </div>
+            <div id="collapse_cmd{{.ID}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-sm-4">
                             <div class="form-group">
                                 <label for="trigger_type">Trigger type</label>
                                 <select id="trigger_type" class="form-control" name="type">
@@ -81,36 +124,74 @@
                                     <option value="exact"{{if eq .TriggerType 4}} selected{{end}}>Exact match</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="col-sm-8">
                             <div class="form-group">
                                 <label for="trigger">Trigger</label>
                                 <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.Trigger}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="response">Response</label>
-                                <textarea rows="3" class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
-                                {{template "custom_command_help"}}
-                            </div>
-                            <div class="form-group">
                                 <div class="checkbox">
                                     <label>
                                         <input type="checkbox" name="case_sensitive" {{if .CaseSensitive}} checked{{end}}> Case sensitive
                                     </label>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="form-group">
+                                <label for="response">Response</label>
+                                <textarea rows="5" class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
+                                {{template "custom_command_help"}}
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-6">
+                                    <div class="radio">
+                                      <label>
+                                        <input type="radio" name="require_roles" value="on" {{if .RequireRoles}}checked{{end}}>
+                                        Require at least one of the roles in the following lists
+                                      </label>
+                                    </div>
+                                    <div class="radio">
+                                      <label>
+                                        <input type="radio" name="require_roles" value="" {{if not .RequireRoles}}checked{{end}}>
+                                        Ignore the roles in the following list
+                                      </label>
+                                    </div>
+                                    <label for="new-command-roles">Roles</label><br>
+                                    <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles">
+                                        {{roleOptionsMulti $g.Roles nil .Roles}}
+                                    </select>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="radio">
+                                        <label>
+                                            <input type="radio" name="require_channels" value="on" {{if .RequireChannels}}checked{{end}}>
+                                            Only run in the following channels
+                                            </label>
+                                        </div>
+                                    <div class="radio">
+                                        <label>
+                                            <input type="radio" name="require_channels" value="" {{if not .RequireChannels}}checked{{end}}>
+                                            Ignore the channels in the following list
+                                        </label>
+                                    </div>
+                                    <label for="new-command-roles">Channels</label><br>
+                                    <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles">
+                                        {{mTemplate "channel_options_multi_int" "Channels" $g.Channels "Selections" .Channels}}
+                                    </select>
+                                </div>
+                            </div>   
                                 <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
                             <button type="submit" class="btn btn-success" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
                         </div>
                     </div>
-                    </div>
                 </div>
-            </form>
-            {{end}}
+            </div>
         </div>
-        <!-- /.panel -->
-    </div>
-    <!-- /.col-lg-12 -->
+    </form>
+    {{end}}
 </div>
-<!-- /.row -->            
 {{template "cp_footer" .}}
 
 {{end}}

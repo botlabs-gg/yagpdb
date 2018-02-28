@@ -5,6 +5,7 @@ package customcommands
 import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -12,6 +13,7 @@ import (
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/mediocregopher/radix.v2/redis"
 	"sort"
+	"strconv"
 )
 
 const (
@@ -68,6 +70,14 @@ type CustomCommand struct {
 	Response        string             `json:"response" schema:"response" valid:",3000"`
 	CaseSensitive   bool               `json:"case_sensitive" schema:"case_sensitive"`
 	ID              int                `json:"id"`
+
+	// If set, then the following channels are required, otherwise they are ignored
+	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
+	Channels        []int64 `json:"channels" schema:"channels"`
+
+	// If set, then one of the following channels are required, otherwise they are ignored
+	RequireRoles bool    `json:"require_roles" schema:"require_roles"`
+	Roles        []int64 `json:"roles" schema:"roles"`
 }
 
 func (cc *CustomCommand) Save(client *redis.Client, guildID string) error {
@@ -78,6 +88,63 @@ func (cc *CustomCommand) Save(client *redis.Client, guildID string) error {
 
 	err = client.Cmd("HSET", KeyCommands(guildID), cc.ID, serialized).Err
 	return err
+}
+
+func (cc *CustomCommand) RunsInChannel(channel string) bool {
+	parsed, _ := strconv.ParseInt(channel, 10, 64)
+
+	for _, v := range cc.Channels {
+		if v == parsed {
+			if cc.RequireChannels {
+				return true
+			}
+
+			// Ignore the channel
+			return false
+		}
+	}
+
+	// Not found
+	if cc.RequireChannels {
+		return false
+	}
+
+	// Not in ignore list
+	return true
+}
+
+func (cc *CustomCommand) RunsForUser(m *discordgo.Member) bool {
+
+	if len(cc.Roles) == 0 {
+		// Fast path
+		if cc.RequireRoles {
+			return false
+		}
+
+		return true
+	}
+
+	pRoles := make([]int64, len(m.Roles))
+	for i, r := range m.Roles {
+		pRoles[i], _ = strconv.ParseInt(r, 10, 64)
+	}
+
+	for _, v := range cc.Roles {
+		if common.ContainsInt64Slice(pRoles, v) {
+			if cc.RequireRoles {
+				return true
+			}
+
+			return false
+		}
+	}
+
+	// Not found
+	if cc.RequireRoles {
+		return false
+	}
+
+	return true
 }
 
 func GetCommands(client *redis.Client, guild string) ([]*CustomCommand, int, error) {
