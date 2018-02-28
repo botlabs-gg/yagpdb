@@ -578,7 +578,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warnings",
 		Description:   "Lists warning of a user.",
-		Aliases:     []string{"Warns", "History"},
+		Aliases:     []string{"Warns"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
