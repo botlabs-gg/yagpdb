@@ -102,7 +102,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 
 		if role.Color != 0 {
 			hexColor := strconv.FormatInt(int64(role.Color), 16)
-			output += "style=\"color: #" + hexColor + "\""
+			output += " style=\"color: #" + hexColor + "\""
 		}
 
 		optName := template.HTMLEscapeString(role.Name)
@@ -149,7 +149,7 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 
 		if role.Color != 0 {
 			hexColor := strconv.FormatInt(int64(role.Color), 16)
-			output += "style=\"color: #" + hexColor + "\""
+			output += " style=\"color: #" + hexColor + "\""
 		}
 
 		optName := template.HTMLEscapeString(role.Name)
