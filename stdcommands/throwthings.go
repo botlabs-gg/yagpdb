@@ -84,5 +84,4 @@ var ThrowThings = []string{
 	"a sign saying hentai is an art form",
 	"a car",
 	"a chair",
-	"yagpdb",
 }
