@@ -82,7 +82,7 @@ func handleUnMute(data string) error {
 		return err
 	}
 
-	err = MuteUnmuteUser(nil, nil, false, guildID, "", bot.State.User(true).User, "Mute Duration expired", member, 0)
+	err = MuteUnmuteUser(nil, nil, false, guildID, "", bot.State.User(true).User, "Mute Duration Expired", member, 0)
 	if err != ErrNoMuteRole {
 
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
@@ -338,7 +338,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 	ctx.SentDM = true
 	executed, err := ctx.Execute(nil, dmMsg)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", gs.ID()).Warn("Failed executing pusnishment dm")
+		logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed executing pusnishment DM")
 		executed = "Failed executing template."
 	}
 
@@ -348,7 +348,7 @@ func punish(config *Config, p Punishment, guildID, channelID string, author *dis
 
 	err = bot.SendDM(user.ID, gName+executed)
 	if err != nil {
-		logrus.WithError(err).Warn("Failed sending punishment dm")
+		logrus.WithError(err).Warn("Failed sending punishment DM")
 	}
 
 	logLink := ""
@@ -511,7 +511,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 		}
 	}
 	if err != nil {
-		logrus.WithError(err).Error("Failed shceduling/removing unmute event")
+		logrus.WithError(err).Error("Failed scheduling/removing unmute event")
 	}
 
 	// Upload logs
@@ -604,8 +604,8 @@ func CreateLogs(guildID, channelID string, user *discordgo.User) string {
 		if err == logs.ErrChannelBlacklisted {
 			return ""
 		}
-		logrus.WithError(err).Error("Log Creation failed")
-		return "Log Creation failed"
+		logrus.WithError(err).Error("Log Creation Failed")
+		return "Log Creation Failed"
 	}
 	return lgs.Link()
 }
