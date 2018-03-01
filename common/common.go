@@ -7,7 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/jonas747/yagpdb/common/fixedpool"
 	boilOld "github.com/vattle/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
@@ -28,12 +28,14 @@ var (
 
 	GORM        *gorm.DB
 	PQ          *sql.DB
-	RedisPool   *pool.Pool
+	RedisPool   *fixedpool.Pool
 	DSQLStateDB *sql.DB
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
 	Conf       *CoreConfig
+
+	RedisPoolSize = 25
 )
 
 // Initalizes all database connections, config loading and so on
@@ -87,10 +89,11 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	RedisPool, err = pool.NewCustom("tcp", addr, 25, RedisDialFunc)
+	RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}
+
 	return
 }
 
