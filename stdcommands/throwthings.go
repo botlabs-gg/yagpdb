@@ -72,4 +72,10 @@ var ThrowThings = []string{
 	"explosives",
 	"a black hole",
 	"cheap servers",
+	"babies",
+	"oranges",
+	"eggs",
+	"cream puffs",
+	"plasma grenades",
+	"human body parts",
 }
