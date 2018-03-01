@@ -101,6 +101,9 @@ func main() {
 		return
 	}
 
+	if flagRunWeb || flagRunEverything {
+		common.RedisPoolSize = 25
+	}
 	if flagRunBot || flagRunEverything {
 		common.RedisPoolSize = 100
 	}
