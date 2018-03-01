@@ -78,4 +78,11 @@ var ThrowThings = []string{
 	"cream puffs",
 	"plasma grenades",
 	"human body parts",
+	"Whitney",
+	"a wedding",
+	"original work",
+	"a sign saying hentai is an art form",
+	"a car",
+	"a chair",
+	"yagpdb",
 }
