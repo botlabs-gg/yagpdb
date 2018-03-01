@@ -29,7 +29,7 @@ var (
 		EmbedColor:  0xe53939,
 	}
 	CategoryTool = &dcmd.Category{
-		Name:        "Tools",
+		Name:        "Tools & Utilities",
 		Description: "Various miscellaneous commands",
 		HelpEmoji:   "🔨",
 		EmbedColor:  0xeaed40,
@@ -47,7 +47,7 @@ var (
 		EmbedColor:  0x5ae26c,
 	}
 	CategoryDebug = &dcmd.Category{
-		Name:        "Debug",
+		Name:        "Debug & Maintenance",
 		Description: "Debug and other commands to inspect the bot",
 		HelpEmoji:   "🖥",
 		EmbedColor:  0,
@@ -179,7 +179,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Send the reponse
 	replies, err := yc.SendResponse(data, r, err)
-	if err != nil {
+	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions) {
 		logger.WithError(err).Error("Failed sending response")
 	}
 

@@ -61,6 +61,11 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 | `mentionRoleID roleid` | Mentions the role with the provided ID (use the listroles command for a list of role) |
 | `hasRoleName "rolename"` | Returns true if the user has the role with the specified name (case insensitive) |
 | `hasRoleID roleid` | Returns true if the user has the role with the specified ID (use the listroles command for a list of role) |
+| `addRoleID roleid` | Add the role with the given id to the user that triggered the command (use the listroles command for a list of role) |
+| `removeRoleID roleid` | Remove the role with the given id from the user that triggered the command (use the listroles command for a list of role) |
+| `deleteResponse` | Deletes the response after 10 seconds |
+| `deleteTrigger` | Deletes the trigger after 10 seconds |
+
 
 ### Branching
 | Case | Example |

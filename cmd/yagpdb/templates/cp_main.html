@@ -34,17 +34,17 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.metismenu/2.5.2/metisMenu.min.css" integrity="sha256-XjZ0z1dEt5rG6mqMEhy+ssUiX+83tigMsRhQX1nqvKs=" crossorigin="anonymous">
 
     <!-- Timeline CSS -->
-    <link href="/static/dist/css/timeline.css" rel="stylesheet">
+    <link href="/static/dist/css/timeline.css?{{.StartedAtUnix}}" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="/static/dist/css/sb-admin-2.css" rel="stylesheet">
+    <link href="/static/dist/css/sb-admin-2.css?{{.StartedAtUnix}}" rel="stylesheet">
     
-    <link href="/static/dist/css/yagpdb.css" rel="stylesheet">
+    <link href="/static/dist/css/yagpdb.css?{{.StartedAtUnix}}" rel="stylesheet">
 
     <!-- Morris Charts CSS -->
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
     
-    <link rel="stylesheet" href="/static/dist/css/bootstrap-multiselect.css"></script>
+    <link rel="stylesheet" href="/static/dist/css/bootstrap-multiselect.css?{{.StartedAtUnix}}"></script>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
@@ -93,14 +93,14 @@
     <!-- <script src="/static/js/morris-data.js"></script> -->
 
     <!-- Custom Theme JavaScript -->
-    <script src="/static/dist/js/sb-admin-2.js"></script>
+    <script src="/static/dist/js/sb-admin-2.js?{{.StartedAtUnix}}"></script>
 
     <!-- ;)))) -->
-    <script src="/static/dist/js/spongebob.js"></script>
+    <script src="/static/dist/js/spongebob.js?{{.StartedAtUnix}}"></script>
     <!-- Custom Fonts -->
     <script src="https://use.fontawesome.com/e3f4515047.js"></script>
 
-    <script type="text/javascript" src="/static/dist/js/bootstrap-multiselect.js"></script>
+    <script type="text/javascript" src="/static/dist/js/bootstrap-multiselect.js?{{.StartedAtUnix}}"></script>
 
     {{template "googleAnalytics" .}}
 </body>
@@ -147,3 +147,5 @@ To mention the user for example you would do <code><@{{"{{"}}.User.ID{{"}}"}}></
 {{/*Specific template helpers*/}}
 {{define "template_helper_user"}}<code>{{"{{"}}.User.(ID/Username/Discriminator/Bot{{"}}"}}</code>{{end}}
 {{define "template_helper_guild"}}<code>{{"{{"}}.Server.(ID/Name/Icon/Owner/Permissions){{"}}"}}</code>{{end}}
+
+{{define "set_roles"}}<script>var activeGuildRoles = JSON.parse('{{json .ActiveGuild.Roles}}');</script>{{end}}

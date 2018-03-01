@@ -6,6 +6,7 @@ package bot
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"sync"
@@ -53,7 +54,7 @@ func sendMergedBatch(channelID string, messages []string) {
 	out = out[:len(out)-1]
 
 	_, err := dutil.SplitSendMessage(common.BotSession, channelID, out)
-	if err != nil {
-		log.WithError(err).Error("Error sending messages")
+	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions) {
+		log.WithError(err).WithField("message", out).Error("Error sending messages")
 	}
 }

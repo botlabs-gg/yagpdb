@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"html/template"
+	"strconv"
 	"time"
 )
 
@@ -99,6 +100,11 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 			found = true
 		}
 
+		if role.Color != 0 {
+			hexColor := strconv.FormatInt(int64(role.Color), 16)
+			output += " style=\"color: #" + hexColor + "\""
+		}
+
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
 			if dutil.IsRoleAbove(role, highestBotRole) {
@@ -139,6 +145,11 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 			if selected == parsedIds[k] {
 				output += " selected"
 			}
+		}
+
+		if role.Color != 0 {
+			hexColor := strconv.FormatInt(int64(role.Color), 16)
+			output += " style=\"color: #" + hexColor + "\""
 		}
 
 		optName := template.HTMLEscapeString(role.Name)

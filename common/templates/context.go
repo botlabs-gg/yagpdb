@@ -14,6 +14,7 @@ import (
 var (
 	StandardFuncMap = map[string]interface{}{
 		"dict":      Dictionary,
+		"json":      tmplJson,
 		"in":        in,
 		"title":     strings.Title,
 		"add":       add,
@@ -60,6 +61,9 @@ type Context struct {
 	MentionHere      bool
 	MentionRoles     []string
 	MentionRoleNames []string
+
+	DelResponse bool
+	DelTrigger  bool
 
 	SentDM bool
 }
@@ -155,4 +159,8 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["mentionRoleID"] = tmplMentionRoleID(c)
 	c.ContextFuncs["hasRoleName"] = tmplHasRoleName(c)
 	c.ContextFuncs["hasRoleID"] = tmplHasRoleID(c)
+	c.ContextFuncs["addRoleID"] = tmplAddRoleID(c)
+	c.ContextFuncs["removeRoleID"] = tmplRemoveRoleID(c)
+	c.ContextFuncs["deleteResponse"] = tmplDelResponse(c)
+	c.ContextFuncs["deleteTrigger"] = tmplDelTrigger(c)
 }

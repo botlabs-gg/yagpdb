@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -8,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+var ErrTooManyCalls = errors.New("Too many calls to this function")
 
 func tmplSendDM(c *Context) interface{} {
 	return func(s ...interface{}) string {
@@ -162,5 +165,61 @@ func tmplHasRoleName(c *Context) interface{} {
 
 		c.GS.RUnlock()
 		return true
+	}
+}
+
+func tmplAddRoleID(c *Context) interface{} {
+	numCalls := 0
+	return func(role interface{}) (string, error) {
+		if numCalls >= 10 {
+			return "", ErrTooManyCalls
+		}
+
+		rid := str(role)
+		if rid == "" {
+			return "", errors.New("No role id specified")
+		}
+
+		err := common.BotSession.GuildMemberRoleAdd(c.GS.ID(), c.Member.User.ID, rid)
+		if err != nil {
+			return "", err
+		}
+
+		return "", nil
+	}
+}
+
+func tmplRemoveRoleID(c *Context) interface{} {
+	numCalls := 0
+	return func(role interface{}) (string, error) {
+		if numCalls >= 10 {
+			return "", ErrTooManyCalls
+		}
+
+		rid := str(role)
+		if rid == "" {
+			return "", errors.New("No role id specified")
+		}
+
+		err := common.BotSession.GuildMemberRoleRemove(c.GS.ID(), c.Member.User.ID, rid)
+		if err != nil {
+			return "", err
+		}
+
+		return "", nil
+	}
+}
+
+func tmplDelResponse(c *Context) interface{} {
+	return func() string {
+		c.DelResponse = true
+		return ""
+	}
+}
+
+func tmplDelTrigger(c *Context) interface{} {
+	return func() string {
+		c.DelTrigger = true
+		return ""
 	}
 }

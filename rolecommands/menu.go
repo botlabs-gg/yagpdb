@@ -287,9 +287,10 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	gs.RUnlock()
 
 	resp, err := MemberChooseOption(menu, ra, gs, option)
-	if err != nil {
-		logrus.WithError(err).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
+	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingPermissions) {
+		logrus.WithError(err).WithField("option", option.ID).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
 	}
+
 	if resp != "" {
 		bot.SendDM(ra.UserID, "**"+name+"**: "+resp)
 	}

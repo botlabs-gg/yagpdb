@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/patrickmn/go-cache"
+	"strings"
 	"time"
 )
 
@@ -59,6 +60,10 @@ func GetCreatePrivateChannel(user string) (*discordgo.Channel, error) {
 }
 
 func SendDM(user string, msg string) error {
+	if strings.TrimSpace(msg) == "" {
+		return nil
+	}
+
 	channel, err := GetCreatePrivateChannel(user)
 	if err != nil {
 		return err
