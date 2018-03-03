@@ -7,7 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common/fixedpool"
+	"github.com/mediocregopher/radix.v2/pool"
 	boilOld "github.com/vattle/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
