@@ -80,7 +80,6 @@ var ThrowThings = []string{
 	"human body parts",
 	"Whitney",
 	"a wedding",
-	"original work",
 	"a car",
 	"a chair",
 }
