@@ -28,7 +28,7 @@ var (
 
 	GORM        *gorm.DB
 	PQ          *sql.DB
-	RedisPool   *fixedpool.Pool
+	RedisPool   *pool.Pool
 	DSQLStateDB *sql.DB
 
 	BotSession *discordgo.Session
@@ -89,7 +89,7 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
+	RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}

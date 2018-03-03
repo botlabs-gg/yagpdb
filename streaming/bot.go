@@ -291,11 +291,12 @@ func RemoveStreaming(client *redis.Client, config *Config, guildID string, userI
 	if member != nil {
 		RemoveStreamingRole(member, config.GiveRole, guildID)
 	} else {
-		common.BotSession.GuildMemberRoleRemove(guildID, userID, config.GiveRole)
+		// Was not streaming before if we removed 0 elements
+		if n, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); n > 0 {
+			common.BotSession.GuildMemberRoleRemove(guildID, userID, config.GiveRole)
+		}
 	}
 
-	// Was not streaming before if we removed 0 elements
-	client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID)
 }
 
 func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dstate.GuildState, member *discordgo.Member, p *discordgo.Presence) {
