@@ -17,7 +17,7 @@ import (
 const (
 	VERSIONMAJOR = 0
 	VERSIONMINOR = 27
-	VERSIONPATCH = 0
+	VERSIONPATCH = 2
 
 	Testing = false // Disables stuff like command cooldowns
 )
@@ -34,6 +34,8 @@ var (
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
 	Conf       *CoreConfig
+
+	RedisPoolSize = 25
 )
 
 // Initalizes all database connections, config loading and so on
@@ -87,10 +89,11 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	RedisPool, err = pool.NewCustom("tcp", addr, 25, RedisDialFunc)
+	RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}
+
 	return
 }
 

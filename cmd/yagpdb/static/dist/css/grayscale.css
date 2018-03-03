@@ -14,23 +14,24 @@ html {
   width: 100%;
   height: 100%;
 }
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2 {
   margin: 0 0 35px;
   text-transform: uppercase;
   font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 700;
   letter-spacing: 1px;
 }
+
 p {
   margin: 0 0 25px;
   font-size: 18px;
   line-height: 1.5;
 }
+
+#about{
+  text-align: left;
+}
+
 @media (min-width: 768px) {
   p {
     margin: 0 0 35px;

@@ -246,3 +246,7 @@ func tmplJson(v interface{}) (string, error) {
 
 	return string(b), nil
 }
+
+func tmplFormatTime(t time.Time, layout string) string {
+	return t.Format(layout)
+}

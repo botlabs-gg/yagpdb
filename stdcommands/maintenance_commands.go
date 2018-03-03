@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
@@ -214,42 +215,53 @@ var cmdTopEvents = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "topevents",
-	Description:          "Shows gateway event processing stats",
+	Description:          "Shows gateway event processing stats for all or one shard",
 	HideFromHelp:         true,
-	RunFunc:              cmdFuncTopEvents,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "shard", Type: dcmd.Int},
+	},
+	RunFunc: cmdFuncTopEvents,
 }
 
 func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 
-	bot.EventLogger.Lock()
+	shardsTotal, lastPeriod := bot.EventLogger.GetStats()
 
-	sortable := make([]*DiscordEvtEntry, len(bot.EventLogger.Events))
-
-	i := 0
-	for k, v := range bot.EventLogger.Events {
+	sortable := make([]*DiscordEvtEntry, len(eventsystem.AllDiscordEvents))
+	for i, _ := range sortable {
 		sortable[i] = &DiscordEvtEntry{
-			Name:  k,
-			Count: v,
+			Name: eventsystem.Event(i).String(),
 		}
-		i++
 	}
 
-	bot.EventLogger.Unlock()
+	for i, _ := range shardsTotal {
+		if data.Args[0].Value != nil && data.Args[0].Int() != i {
+			continue
+		}
+
+		for de, j := range eventsystem.AllDiscordEvents {
+			sortable[de].Total += shardsTotal[i][j]
+			sortable[de].PerSecond += float64(lastPeriod[i][j]) / bot.EventLoggerPeriodDuration.Seconds()
+		}
+	}
 
 	sort.Sort(DiscordEvtEntrySortable(sortable))
 
-	uptime := time.Since(bot.Started)
-
-	out := "```\n#   Total  -  Avg/m  - Event\n"
-	total := 0
-	for k, entry := range sortable {
-		out += fmt.Sprintf("#%-2d: %5d - %5.2f - %s\n", k+1, entry.Count, float64(entry.Count)/(uptime.Seconds()/60), entry.Name)
-		total += entry.Count
+	out := "Total event stats across all shards:\n"
+	if data.Args[0].Value != nil {
+		out = fmt.Sprintf("Stats for shard %d:\n", data.Args[0].Int())
 	}
 
-	epm := float64(total) / (uptime.Seconds() / 60)
+	out += "```\n#     Total  -   /s  - Event\n"
+	sum := int64(0)
+	sumPerSecond := float64(0)
+	for k, entry := range sortable {
+		out += fmt.Sprintf("#%-2d: %7d - %5.1f - %s\n", k+1, entry.Total, entry.PerSecond, entry.Name)
+		sum += entry.Total
+		sumPerSecond += entry.PerSecond
+	}
 
-	out += fmt.Sprintf("\nTotal: %d, Events per minute: %.1f", total, epm)
+	out += fmt.Sprintf("\nTotal: %d, Events per minute: %.1f", sum, sumPerSecond)
 	out += "\n```"
 
 	return out, nil
@@ -399,8 +411,9 @@ type TopCommandsResult struct {
 }
 
 type DiscordEvtEntry struct {
-	Name  string
-	Count int
+	Name      string
+	Total     int64
+	PerSecond float64
 }
 
 type DiscordEvtEntrySortable []*DiscordEvtEntry
@@ -410,7 +423,7 @@ func (d DiscordEvtEntrySortable) Len() int {
 }
 
 func (d DiscordEvtEntrySortable) Less(i, j int) bool {
-	return d[i].Count > d[j].Count
+	return d[i].Total > d[j].Total
 }
 
 func (d DiscordEvtEntrySortable) Swap(i, j int) {

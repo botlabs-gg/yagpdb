@@ -261,6 +261,14 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 			}
 		}
 
+		if config.GiveRole != "" {
+			err := GiveStreamingRole(member, config.GiveRole, gs.Guild)
+			if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
+				log.WithError(err).WithField("guild", gs.ID()).WithField("user", member.User.ID).Error("Failed adding streaming role")
+				client.Cmd("SREM", KeyCurrentlyStreaming(gs.ID()), member.User.ID)
+			}
+		}
+
 		// Was already marked as streaming before if we added 0 elements
 		if num, _ := client.Cmd("SADD", KeyCurrentlyStreaming(gs.ID()), member.User.ID).Int(); num == 0 {
 			return nil
@@ -269,14 +277,6 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != "" && config.AnnounceMessage != "" {
 			SendStreamingAnnouncement(client, config, gs, member, p)
-		}
-
-		if config.GiveRole != "" {
-			err := GiveStreamingRole(member, config.GiveRole, gs.Guild)
-			if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
-				log.WithError(err).WithField("guild", gs.ID()).WithField("user", member.User.ID).Error("Failed adding streaming role")
-				client.Cmd("SREM", KeyCurrentlyStreaming(gs.ID()), member.User.ID)
-			}
 		}
 
 	} else {
@@ -288,16 +288,15 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 }
 
 func RemoveStreaming(client *redis.Client, config *Config, guildID string, userID string, member *discordgo.Member) {
-	// Was not streaming before if we removed 0 elements
-	if num, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); num == 0 {
-		return
-	}
-
 	if member != nil {
 		RemoveStreamingRole(member, config.GiveRole, guildID)
 	} else {
-		common.BotSession.GuildMemberRoleRemove(guildID, userID, config.GiveRole)
+		// Was not streaming before if we removed 0 elements
+		if n, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); n > 0 {
+			common.BotSession.GuildMemberRoleRemove(guildID, userID, config.GiveRole)
+		}
 	}
+
 }
 
 func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dstate.GuildState, member *discordgo.Member, p *discordgo.Presence) {
