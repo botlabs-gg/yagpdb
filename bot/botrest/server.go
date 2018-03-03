@@ -11,7 +11,9 @@ import (
 	"goji.io/pat"
 	"net/http"
 	"net/http/pprof"
+	"strconv"
 	"strings"
+	"time"
 )
 
 var serverAddr = ":5002"
@@ -24,6 +26,8 @@ func StartServer() {
 	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
 	muxer.HandleFunc(pat.Get("/:guild/members"), HandleGetMembers)
 	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
+	muxer.HandleFunc(pat.Get("/gw_status"), HandleGWStatus)
+	muxer.HandleFunc(pat.Post("/shard/:shard/reconnect"), HandleReconnectShard)
 	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
 	// Debug stuff
@@ -155,4 +159,68 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 
 func HandlePing(w http.ResponseWriter, r *http.Request) {
 	ServeJson(w, r, "pong")
+}
+
+type ShardStatus struct {
+	TotalEvents     int64   `json:"total_events"`
+	EventsPerSecond float64 `json:"events_per_second"`
+
+	ConnStatus discordgo.GatewayStatus `json:"conn_status"`
+
+	LastHeartbeatSend time.Time `json:"last_heartbeat_send"`
+	LastHeartbeatAck  time.Time `json:"last_heartbeat_ack"`
+}
+
+func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
+
+	totalEventStats, periodEventStats := bot.EventLogger.GetStats()
+
+	numShards := bot.ShardManager.GetNumShards()
+	result := make([]*ShardStatus, numShards)
+	for i := 0; i < numShards; i++ {
+		shard := bot.ShardManager.Sessions[i]
+
+		sumEvents := int64(0)
+		sumPeriodEvents := int64(0)
+
+		for j, _ := range totalEventStats[i] {
+			sumEvents += totalEventStats[i][j]
+			sumPeriodEvents += periodEventStats[i][j]
+		}
+
+		if shard == nil || shard.GatewayManager == nil {
+			result[i] = &ShardStatus{ConnStatus: discordgo.GatewayStatusDisconnected}
+			continue
+		}
+
+		beat, ack := shard.GatewayManager.HeartBeatStats()
+
+		result[i] = &ShardStatus{
+			ConnStatus:        shard.GatewayManager.Status(),
+			TotalEvents:       sumEvents,
+			EventsPerSecond:   float64(sumPeriodEvents) / bot.EventLoggerPeriodDuration.Seconds(),
+			LastHeartbeatSend: beat,
+			LastHeartbeatAck:  ack,
+		}
+	}
+
+	ServeJson(w, r, result)
+}
+
+func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
+	sID := pat.Param(r, "shard")
+	parsed, _ := strconv.ParseInt(sID, 10, 32)
+	shardcount := bot.ShardManager.GetNumShards()
+	if parsed < 0 || int(parsed) >= shardcount {
+		ServerError(w, r, errors.New("Unknown shard"))
+		return
+	}
+
+	err := bot.ShardManager.Sessions[parsed].GatewayManager.Reconnect(false)
+	if err != nil {
+		ServerError(w, r, errors.WithMessage(err, "Reconnect"))
+		return
+	}
+
+	ServeJson(w, r, "ok")
 }
