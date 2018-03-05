@@ -3,7 +3,7 @@ YAGPDB  [![Circle CI](https://circleci.com/gh/jonas747/yagpdb.svg?style=svg)](ht
 
 ### Yet another general purpose discord bot
 
-YAGPDB is a multifunctional modular discord bot, it's modular in that plugins exist for the most part on their own (with exceptions to some lazy things in the main stylesheet), some plugins do whoever depend on other plugins, (most plugins depends on the commands plugin for example)
+YAGPDB is a multifunctional modular discord bot, it's modular in that plugins exist for the most part on their own (with exceptions to some lazy things in the main stylesheet), some plugins do however depend on other plugins, (most plugins depends on the commands plugin for example)
 
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
@@ -11,7 +11,7 @@ YAGPDB is a multifunctional modular discord bot, it's modular in that plugins ex
 
 ### Running YAGPDB yourself
 
-Running this bot may seem challenging and that's because i don't have time to make it easy to run for everyone, for the most part it should run fine after the initial work has been done.
+Running this bot may seem challenging and that's because I don't have time to make it easy to run for everyone, for the most part it should run fine after the initial work has been done.
 
 There's also some struggle when you update, as in the past at least I've been bad at announcing what needs to be done to migrate certain data, in most cases `-a "migrate"` will do the trick though.
 
@@ -23,15 +23,15 @@ With that said running this bot requires knowledge of:
  - Basic knowledge of go (being able to compile things)
  - Basic knowledge of git (being able to change branches and such)
 
-**I will not help you if you're missing one of these, i simply do not have time.**
+**I will not help you if you're missing one of these, I simply do not have time.**
 
-(There's still a lot of contributing you can do without this though, such as writing docs, fixing my horribel typos and so on)
+(There's still a lot of contributing you can do without this though, such as writing docs, fixing my horrible typos and so on)
 
-**Running YAGPDB on your own however you can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
+**Running YAGPDB on your own - however you can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
 
 Required databases: 
  - PostgresSQL
-     + requires a db named yagpdb, this is currently hardcoded in.
+     + Requires a db named yagpdb, this is currently hardcoded in.
      + The user and password is configurable through env variables.
  - Redis
      + Defaults are fine
@@ -55,7 +55,7 @@ YAGPDB currently use a lot of alternative branches of my projects, mostly becaus
 
 You can now build it and run `$GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb`
 
-Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfile` for which environment variables there are.
+Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfile` for what environment variables are available.
 
 You can run the webserver, bot, reddit and youtube parts as seperate processes (haven't tested on different physical machines yet, doubt it'll work well atm for the webserver and bot at least)
 
@@ -81,27 +81,27 @@ And it should be running now.
 
 **Planned plugins**
 
-[See the Issues-Tab for more](https://github.com/jonas747/yagpdb/issues)
+[See the Issues Tab for more](https://github.com/jonas747/yagpdb/issues)
 
 ### Core packages:
 
 - Web: The core webserver package, in charge of authentication.
 - Bot: Core bot package, delegates events to plugins.
 - Common: Handles all the common stuff between web and bot (config, discord session, redis pool etc).
-- Feeds: Handles all feeds, personally I like to run each feed as its own service, that way I can start and stop individual feed without   taking everything down.
+- Feeds: Handles all feeds, personally I like to run each feed as its own service, that way I can start and stop individual feeds without taking everything down.
 - Commands: Handles all commands.
 
 Currently YAGPDB builds everything into one executable and you run the bot with the -bot switch, the webserver with the -web switch and so on (see -h for help).
 
 ### Databases
 
-YAGPDB uses redis for light data and caching. (and some remnants of configuration)
+YAGPDB uses redis for light data and caching (and some remnants of configuration).
 
-It uses postgresql for most configuration and more heavy data (logs and such)
+It uses postgresql for most configuration and more heavy data (logs and such).
 
 ### Contributing new features
 
-See bot/plugin for info about bot plugins, web/plugin for web plugins and feeds/plugin for feeds, if you wanna make a new fully fledged plugin.
+See bot/plugin for info about bot plugins, web/plugin for web plugins and feeds/plugin for feeds if you wanna make a new fully fledged plugin.
 
 Expect web, bot and feed instances to be run separately.
 
