@@ -82,12 +82,10 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
-	shardCount := 3
-	ShardManager.SetNumShards(3)
-	// shardCount, err := ShardManager.GetRecommendedCount()
-	// if err != nil {
-	// 	panic("Failed getting shard count: " + err.Error())
-	// }
+	shardCount, err := ShardManager.GetRecommendedCount()
+	if err != nil {
+		panic("Failed getting shard count: " + err.Error())
+	}
 
 	go EventLogger.run(shardCount)
 
