@@ -9,6 +9,8 @@ Records and shows stats for individual servers.
  - Messages last hour
  - Users joined/left today
  - Messages today, per channel with bar graphs
+ - Current online users
+ - Total amount of users
 
 ### Planned soon
 

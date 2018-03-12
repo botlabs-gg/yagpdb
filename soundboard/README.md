@@ -2,10 +2,10 @@
 
 Soundboard plugin for YAGPDB
 
-Foldre structure:
+Folder structure:
 
 ### Sounds waiting:
 soundboard/queue/guildid/soundhash.extension
 
 ### Transcoded sounds
-soundboard/ready/guildi/soundhash.dca
+soundboard/ready/guildid/soundhash.dca
