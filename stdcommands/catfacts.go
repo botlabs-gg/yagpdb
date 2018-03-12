@@ -242,4 +242,8 @@ var Catfacts = []string{
 	`Cats use their whiskers to detect if they can fit through a space.`,
 	`A cat's nose is ridged with a unique pattern, just like a human fingerprint.`,
 	`Cats lick themselves to get *your* scent off, not theirs... Nice try though...`,
+	`Ancient Egyptians shaved off their eyebrows to mourn the death of their cats.`,
+	`Cat gut, used in tennis rackets and strings for musical instruments does not come from cats, but from sheep.`,
+	`Cat urine glows under a black light.`,
+	`A cat rubs against people to mark them as their territory.`,
 }
