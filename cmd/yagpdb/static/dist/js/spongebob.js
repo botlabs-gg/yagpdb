@@ -330,6 +330,13 @@ function formSubmissionEvents(selectorPrefix){
 			"Welcome ... I've been expecting you",
 			"Just relaxing in the loading bar",
 			"Yet Another Generic Response",
+			"Firing up the grill!",
+			"If you are reading this, you aren't blind.",
+			"I'll just finish this sandwich...",
+			"Finding ways to load faster...",
+			"What a great choice!",
+			"Putting the bunny back in the box...",
+			"Testing your patience...",
 		]
 
 		for(var i = 0; i < evt.target.elements.length; i++){
