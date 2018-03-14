@@ -42,7 +42,7 @@ Check the guide below if you're interested and if you have any questions then as
     - Set base branch to Dev
     - ![doc-guide-7-base-branch.png]({{static "doc-guide-7-base-branch.png"}})
     - Describe what you did and press Create pull request
- 7. Wait for response from me, you might get some comments back with proposed changes, make those and hopefully it will be merged!
+ 7. Wait for a response from me, you might get some comments back with proposed changes, make those and hopefully, it will be merged!
 
 
 ### Contributing code
