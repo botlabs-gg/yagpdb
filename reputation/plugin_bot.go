@@ -221,7 +221,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 	pointsName := conf.PointsName
 
 	if target.ID == parsed.Msg.Author.ID {
-		return fmt.Sprintf("Can't give yourself %s... **Silly**", pointsName), nil
+		return fmt.Sprintf("You can't modify your own %s... **Silly**", pointsName), nil
 	}
 
 	client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
