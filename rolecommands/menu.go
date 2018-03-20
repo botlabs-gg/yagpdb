@@ -138,18 +138,13 @@ func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) e
 
 	sort.Slice(pairs, OptionCommandPairLessFunc(pairs))
 
-	for _, option := range opts {
+	for _, pair := range pairs {
 
-		cmd, err := option.RoleCommandG().One()
-		if err != nil {
-			return err
+		emoji := pair.Option.UnicodeEmoji
+		if pair.Option.EmojiID != 0 {
+			emoji = fmt.Sprintf("<:yagpdb:%d>", pair.Option.EmojiID)
 		}
-
-		emoji := option.UnicodeEmoji
-		if option.EmojiID != 0 {
-			emoji = fmt.Sprintf("<:yagpdb:%d>", option.EmojiID)
-		}
-		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, cmd.Name)
+		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, pair.Command.Name)
 	}
 
 	_, err := common.BotSession.ChannelMessageEdit(strconv.FormatInt(rm.ChannelID, 10), strconv.FormatInt(rm.MessageID, 10), newMsg)
