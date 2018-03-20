@@ -1,0 +1,64 @@
+{{define "cp_status"}}
+{{$botOwner := .IsBotOwner}}
+
+{{template "cp_head" .}}
+{{if not .BotRunning}}
+<div class="row">
+    <div class="col-lg-12">
+        <p>Bot is currently not running</p>
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+{{else}}{{range $i, $v := .Shards}}
+<div class="bg-{{if eq .ConnStatus 4}}success{{else}}danger{{end}}">
+	<div class="row">
+		<form action="/shard/{{$i}}/reconnect" method="POST">
+		    <div class="col-lg-1">
+		    Shard: {{$i}}
+		    </div>
+		    
+		    <div class="col-lg-2">
+		    {{if eq .ConnStatus 0}}
+		    Connection Status: Disconnected
+		    {{else if eq .ConnStatus 1}}
+		    Connection Status: Connecting
+		    {{else if eq .ConnStatus 2}}
+		    Connection Status: Identifying
+		    {{else if eq .ConnStatus 3}}
+		    Connection Status: Resuming
+		    {{else if eq .ConnStatus 4}}
+		    Connection Status: Ready
+		    {{end}}
+		    </div>
+
+		    <div class="col-lg-2">
+		    Total Events: {{.TotalEvents}}
+		    </div>
+		    
+		    <div class="col-lg-2">
+		    Events Per Second: {{.EventsPerSecond}}
+		    </div>
+		    
+		    <div class="col-lg-2">
+		    Last Heartbeat Send: {{formatTime .LastHeartbeatSend.UTC "02 15:04:05"}}
+		    </div>
+		    
+		    <div class="col-lg-2">
+		    Last Heartbeat Ack: {{formatTime .LastHeartbeatAck "02 15:04:05"}}
+		    </div>
+		    
+		    {{if $botOwner}}
+		    <div class="col-lg-1">
+		 			<button class="btn btn-danger" type="submit">Reconnect</button>
+		    </div>
+		    {{end}}
+		</form>
+	</div>
+</div>
+<!-- /.row -->
+{{end}}{{end}}
+
+{{template "cp_footer" .}}
+
+{{end}}
+

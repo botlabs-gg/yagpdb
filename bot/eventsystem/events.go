@@ -164,6 +164,56 @@ var AllDiscordEvents = []Event{
 	EventVoiceStateUpdate,
 }
 
+var AllEvents = []Event{
+	EventNewGuild,
+	EventAll,
+	EventAllPre,
+	EventAllPost,
+	EventMemberFetched,
+	EventChannelCreate,
+	EventChannelDelete,
+	EventChannelPinsUpdate,
+	EventChannelUpdate,
+	EventConnect,
+	EventDisconnect,
+	EventGuildBanAdd,
+	EventGuildBanRemove,
+	EventGuildCreate,
+	EventGuildDelete,
+	EventGuildEmojisUpdate,
+	EventGuildIntegrationsUpdate,
+	EventGuildMemberAdd,
+	EventGuildMemberRemove,
+	EventGuildMemberUpdate,
+	EventGuildMembersChunk,
+	EventGuildRoleCreate,
+	EventGuildRoleDelete,
+	EventGuildRoleUpdate,
+	EventGuildUpdate,
+	EventMessageAck,
+	EventMessageCreate,
+	EventMessageDelete,
+	EventMessageDeleteBulk,
+	EventMessageReactionAdd,
+	EventMessageReactionRemove,
+	EventMessageReactionRemoveAll,
+	EventMessageUpdate,
+	EventPresenceUpdate,
+	EventPresencesReplace,
+	EventRateLimit,
+	EventReady,
+	EventRelationshipAdd,
+	EventRelationshipRemove,
+	EventResumed,
+	EventTypingStart,
+	EventUserGuildSettingsUpdate,
+	EventUserNoteUpdate,
+	EventUserSettingsUpdate,
+	EventUserUpdate,
+	EventVoiceServerUpdate,
+	EventVoiceStateUpdate,
+}
+
 var handlers = make([][]*Handler, 47)
 
 type EventDataContainer struct {
@@ -209,13 +259,17 @@ type EventDataContainer struct {
 	UserUpdate               *discordgo.UserUpdate
 	VoiceServerUpdate        *discordgo.VoiceServerUpdate
 	VoiceStateUpdate         *discordgo.VoiceStateUpdate
+
+	Session *discordgo.Session
 }
 
 func HandleEvent(s *discordgo.Session, evt interface{}) {
 
 	var evtData = &EventData{
-		EventDataContainer: &EventDataContainer{},
-		EvtInterface:       evt,
+		EventDataContainer: &EventDataContainer{
+			Session: s,
+		},
+		EvtInterface: evt,
 	}
 
 	switch t := evt.(type) {
@@ -358,7 +412,6 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 
 	ctx := context.WithValue(context.Background(), common.ContextKeyDiscordSession, s)
 	evtData.ctx = ctx
-
 	EmitEvent(evtData, EventAllPre)
 	EmitEvent(evtData, evtData.Type)
 	EmitEvent(evtData, EventAllPost)

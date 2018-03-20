@@ -1,9 +1,11 @@
 package botrest
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"github.com/jonas747/discordgo"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,6 +22,7 @@ func get(url string, dest interface{}) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		var errDest string
@@ -31,7 +34,39 @@ func get(url string, dest interface{}) error {
 		return errors.New(errDest)
 	}
 
-	return json.NewDecoder(resp.Body).Decode(dest)
+	return errors.WithMessage(json.NewDecoder(resp.Body).Decode(dest), "json.Decode")
+}
+
+func post(url string, bodyData interface{}, dest interface{}) error {
+	var bodyBuf bytes.Buffer
+	if bodyData != nil {
+		encoder := json.NewEncoder(&bodyBuf)
+		err := encoder.Encode(bodyData)
+		if err != nil {
+			return err
+		}
+	}
+	resp, err := http.Post("http://"+serverAddr+"/"+url, "application/json", &bodyBuf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		var errDest string
+		err := json.NewDecoder(resp.Body).Decode(&errDest)
+		if err != nil {
+			return ErrServerError
+		}
+
+		return errors.New(errDest)
+	}
+
+	if dest == nil {
+		return nil
+	}
+
+	return errors.WithMessage(json.NewDecoder(resp.Body).Decode(dest), "json.Decode")
 }
 
 func GetGuild(guildID string) (g *discordgo.Guild, err error) {
@@ -54,6 +89,16 @@ func GetMembers(guildID string, members ...string) (m []*discordgo.Member, err e
 
 func GetChannelPermissions(guildID, channelID string) (perms int64, err error) {
 	err = get(guildID+"/channelperms/"+channelID, &perms)
+	return
+}
+
+func GetShardStatuses() (st []*ShardStatus, err error) {
+	err = get("gw_status", &st)
+	return
+}
+
+func SendReconnectShard(shardID int) (err error) {
+	err = post(fmt.Sprintf("shard/%d/reconnect", shardID), nil, nil)
 	return
 }
 

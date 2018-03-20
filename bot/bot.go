@@ -87,6 +87,8 @@ func Run() {
 		panic("Failed getting shard count: " + err.Error())
 	}
 
+	go EventLogger.run(shardCount)
+
 	for i := 0; i < shardCount; i++ {
 		waitingReadies = append(waitingReadies, i)
 	}

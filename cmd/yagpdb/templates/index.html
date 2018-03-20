@@ -35,7 +35,7 @@
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
 
     <!-- Theme CSS -->
-    <link href="/static/dist/css/grayscale.css" rel="stylesheet">
+    <link href="/static/dist/css/grayscale.css?2" rel="stylesheet">
     <link href="/static/dist/css/yagpdb.css" rel="stylesheet">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -118,30 +118,87 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2">
                 <h2>About YAGPDB</h2>
-                <p>YAGPDB is a project of mine that i've worked on for quite some time now. What does it do? Well it does a bunch of stuff right now, the best way to figure out what it does is to try it out by adding it onto a testing server and see what it provides for yourself.</p>
-                <p><b>Who am i?</b> I go by the name jonas747 online and (unsuprisingly) my real name is also jonas, although not 747, I'm not a plane. YAGPDB is a project that i have been developing in my spare time for roughly a year now, it started out because mee6 (which i was currently using for my server) where lacking a lot of stuff that i wanted, so i decided to make my own bot, and here i am.</p>
+                <p>YAGPDB is a multi-purpose discord bot that I've worked on for quite some time now. What does it do? Well it does a bunch of stuff right now, the best way to figure out what it does is to try it out by adding it onto a testing server and see what it provides for yourself.</p>
+                <p><b>Who am I?</b> I go by the name jonas747 online and (unsuprisingly) my real name is also Jonas, although not 747, I'm not a plane. YAGPDB is a project that I have been developing in my spare time for roughly a year now, it started out because Mee6 (which I was currently using for my server) was lacking a lot of stuff that I wanted, so I decided to make my own bot, and here I am.</p>
             </div>
         </div>
         <div class=row>
             <div class="col-lg-8 col-lg-offset-2">
-                <p>Quick rundown of features</p>
-                <ul style="text-align: left;">
-                    <li>General notifications (join, leave and topic change messages)</li>
-                    <li>Custom commands</li>
-                    <li>Control panel log</li>
-                    <li>Simple stats</li>
+                <h2>Features</h2>
+
+                <p>Every feature may not be listed here</p>
+
+                <h3>Feeds</h3>
+                <ul>
+                    <li>Super Fast reddit feeds (within 10 seconds normally)</li>
+                    <li>Fast youtube feeds (within a couple minutes)</li>
+                </ul><br>
+
+                <h3>General Moderation</h3>
+                <ul>
+                    <li>Kick, ban, report and clean commands</li>
+                    <li>Timed bans</li>
+                    <li>Advanced options for clean command: max age and regex matching</li>
+                    <li>Mute command with auto unmute after a duration</li>
+                    <li>Send a kick/ban/mute log message in a channel</li>
+                    <li>Send a kick/ban message to the person being kicked/banned</li>
+                    <li>Snapshots of the chat created on command or added to log message</li>
+                    <li>Warning command to give users warnings and track them</li>
+                </ul><br>
+
+                <h3>Automoderator</h3>
+                <p>YAGPDB has a very configurable automoderator, for each rule (spam, links, bad words etc) you can set automoderator to mute, kick or ban after a certain number of violations within a certain timeframe</p>
+                <p>Current automoderator rules are:</p>
+                <ul>
+                    <li>Spam/Slowmode</li>
+                    <li>Mass mention</li> 
+                    <li>Invites to other servers</li>
+                    <li>Links</li>
+                    <li>Banned words (with inbuilt swear list)</li>
+                    <li>Banned websites (Planned google safe-browsing integration sometime in the future)</li>
+                </ul><br>
+
+                <h3>Custom Commands</h3>
+                <ul>
+                    <li>Triggers: starts with, contains, regex</li>
+                    <li>Dynamic responses</li>
+                    <li>Useful for things like automatic responses to common questions and command aliases</li>
+                </ul><br>
+
+                <h3>Server stats <small>(<a href=http://yagpdb.xyz/public/140847179043569664/stats>Example</a>)</small></h3>
+                <ul>
+                    <li>Stats: members joined, left, messages last 24h, members online. (more stats and graphs coming later)</li>
+                    <li>Optionally make stats public</li>
+                </ul><br>
+
+                <h3>Super advanced self assignable roles</h3>
+                <ul>
+                    <li>Group up several roles</li>
+                    <li>Toggle groups</li>
+                    <li>Assign them via reactions</li>
+                </ul><br>
+
+                <h3>Other</h3>
+                <ul>
+                    <li>Automatic assignement of role after a being a member for a certain duration</li>
+                    <li>Role commands to let people assign roles to themselves without the 'manage roles' permission</li>
+                    <li>Super fast reddit feeds (normally within 10 seconds of the post being made!!)</li>
+                    <li>Join, leave, topic change message (can also send a join message to the person joining in a dm)</li>
+                    <li>Calculator command</li>
                     <li>Simple reputation system</li>
-                    <li>Per channel command settings</li>
-                    <li>Generate message logs on command</li>
-                    <li>Really simple streaming notifications and role using the built in streaming status in discord</li>
-                    <li>Moderation utilities</li>
-                    <li>Automoderator</li> 
-                    <li>Autorole</li> 
-                    <li>Reddit feed</li>
-                    <li>Youtube upload feeds</li>
-                    <li>Reminders</li>
-                    <li>...And various other fun commands and utilities</li>
-                </ul>
+                    <li>Various other fun commands</li>
+                    <li>Very good reliability and stability</li>
+                </ul><br>
+
+                <p>And finally, the feature im most proud of that made me spend days and nights sitting in a horrible chair in a basement staring at a old crt monitor with bugs crawling up the wall behind it is: <b>catfacts.</b></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2">
+                <h3>Help/Feedback/Community/Other...</h3>
+                <p>The documentation can be found <a href="/docs/index">here</a></p>
+                <p>The yagpdb discord server for support, suggestions, feedback and the general community can be found <a href="https://discord.gg/GcpyYh3">here</a></p>
+                <p>If you want to donate using patreon or crypto currencies, check out <a href="7docs/index#donating">this page</a></p>
             </div>
         </div>
     </section>

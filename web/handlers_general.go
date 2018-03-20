@@ -97,6 +97,44 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	return tmpl, nil
 }
 
+func HandleStatus(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	_, tmpl := GetCreateTemplateData(r.Context())
+
+	statuses, err := botrest.GetShardStatuses()
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl["Shards"] = statuses
+
+	return tmpl, nil
+}
+
+func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	ctx, tmpl := GetCreateTemplateData(r.Context())
+
+	if user := ctx.Value(common.ContextKeyUser); user != nil {
+		cast := user.(*discordgo.User)
+		if cast.ID != common.Conf.Owner {
+			return HandleStatus(w, r)
+		}
+	} else {
+		return HandleStatus(w, r)
+	}
+
+	CtxLogger(ctx).Info("Triggering reconnect...")
+
+	sID := pat.Param(r, "shard")
+	parsed, _ := strconv.ParseInt(sID, 10, 32)
+
+	err := botrest.SendReconnectShard(int(parsed))
+	if err != nil {
+		return tmpl, err
+	}
+
+	return HandleStatus(w, r)
+}
+
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
 	if !botrest.BotIsRunning() {
 		return errors.New("Bot is not responding")

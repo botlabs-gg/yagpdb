@@ -52,17 +52,24 @@ var AllDiscordEvents = []Event{ {{range .}}{{if .Discord}}
 	Event{{.Name}},{{end}}{{end}}
 }
 
+var AllEvents = []Event{ {{range .}}
+	Event{{.Name}},{{end}}
+}
 
 var handlers = make([][]*Handler, {{len .}})
 
 type EventDataContainer struct{ {{range .}}{{if .Discord}}
 	{{.Name}} *discordgo.{{.Name}}{{end}}{{end}}
+
+	Session *discordgo.Session
 }
 
 func HandleEvent(s *discordgo.Session, evt interface{}){
 
 	var evtData = &EventData{
-		EventDataContainer: &EventDataContainer{},
+		EventDataContainer: &EventDataContainer{
+			Session: s,
+		},
 		EvtInterface: evt,
 	}
 

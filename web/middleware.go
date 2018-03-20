@@ -224,7 +224,13 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			"User":          user,
 			"Guilds":        wrapped,
 			"ManagedGuilds": managedGuilds,
+			"IsBotOwner":    false,
 		}
+
+		if user.ID == common.Conf.Owner {
+			templateData["IsBotOwner"] = true
+		}
+
 		entry := CtxLogger(ctx).WithField("u", user.ID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(SetContextTemplateData(ctx, templateData), common.ContextKeyUser, user)

@@ -66,7 +66,7 @@ func init() {
 }
 
 func LoadTemplates() {
-	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html"))
+	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html", "templates/status.html"))
 }
 
 func Run() {
@@ -191,6 +191,10 @@ func setupRoutes() *goji.Mux {
 	// Server selection has it's own handler
 	mux.Handle(pat.Get("/manage"), RenderHandler(HandleSelectServer, "cp_selectserver"))
 	mux.Handle(pat.Get("/manage/"), RenderHandler(HandleSelectServer, "cp_selectserver"))
+	mux.Handle(pat.Get("/status"), ControllerHandler(HandleStatus, "cp_status"))
+	mux.Handle(pat.Get("/status/"), ControllerHandler(HandleStatus, "cp_status"))
+	mux.Handle(pat.Post("/shard/:shard/reconnect"), ControllerHandler(HandleReconnectShard, "cp_status"))
+	mux.Handle(pat.Post("/shard/:shard/reconnect/"), ControllerHandler(HandleReconnectShard, "cp_status"))
 
 	mux.HandleFunc(pat.Get("/cp"), legacyCPRedirHandler)
 	mux.HandleFunc(pat.Get("/cp/*"), legacyCPRedirHandler)
