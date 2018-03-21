@@ -45,25 +45,39 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		return "No commands in group, set them up in the control panel at: <https://yagpdb.xyz/manage>", nil
 	}
 
-	// set up the message if not provided
-	msg, err := common.BotSession.ChannelMessageSend(parsed.CS.ID(), "Role menu\nSetting up...")
-	if err != nil {
-		_, dErr := common.DiscordError(err)
-		errStr := "Failed creating the menu message, check the permissions on the channel"
-		if dErr != "" {
-			errStr += ", discord responded with: " + errStr
-		}
-		return errStr, err
-	}
-
 	model := &models.RoleMenu{
-		MessageID: common.MustParseInt(msg.ID),
 		GuildID:   common.MustParseInt(parsed.GS.ID()),
 		OwnerID:   common.MustParseInt(parsed.Msg.Author.ID),
 		ChannelID: common.MustParseInt(parsed.Msg.ChannelID),
 
 		OwnMessage:  true,
 		RoleGroupID: null.Int64From(group.ID),
+	}
+
+	var msg *discordgo.Message
+	if parsed.Switches["m"].Value != nil {
+		model.OwnMessage = false
+
+		id := parsed.Switches["m"].Int64()
+		msg, err = common.BotSession.ChannelMessage(parsed.CS.ID(), strconv.FormatInt(id, 10))
+		if err != nil {
+			return "Couldn't find the message", err
+		}
+
+		model.MessageID = id
+	} else {
+		// set up the message if not provided
+		msg, err = common.BotSession.ChannelMessageSend(parsed.CS.ID(), "Role menu\nSetting up...")
+		if err != nil {
+			_, dErr := common.DiscordError(err)
+			errStr := "Failed creating the menu message, check the permissions on the channel"
+			if dErr != "" {
+				errStr += ", discord responded with: " + errStr
+			}
+			return errStr, err
+		}
+
+		model.MessageID = common.MustParseInt(msg.ID)
 	}
 
 	err = model.InsertG()
@@ -73,9 +87,13 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 
 	resp, err := NextRoleMenuSetupStep(model, nil, true)
 
-	content := msg.Content + "\n" + resp
-	_, err = common.BotSession.ChannelMessageEdit(parsed.CS.ID(), msg.ID, content)
-	return "", err
+	if model.OwnMessage {
+		content := msg.Content + "\n" + resp
+		_, err = common.BotSession.ChannelMessageEdit(parsed.CS.ID(), msg.ID, content)
+		return "", err
+	}
+
+	return resp, err
 }
 
 func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, first bool) (resp string, err error) {
@@ -117,10 +135,10 @@ func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, f
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
 	rm.UpdateG(models.RoleMenuColumns.NextRoleCommandID)
-	if first {
-		return "**Start setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the this message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
+	if first && rm.OwnMessage {
+		return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on this message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
 	}
-	return "**Continue setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
+	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
 }
 
 func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) error {
@@ -201,11 +219,12 @@ func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd
 	}
 
 	currentOpts = append(currentOpts, model)
-	// rm.Options = append(rm.Options, model)
-	// err = rm.UpdateMenuMessage()
-	err = UpdateRoleMenuMessage(rm, currentOpts)
-	if err != nil {
-		return "Failed updating", err
+
+	if rm.OwnMessage {
+		err = UpdateRoleMenuMessage(rm, currentOpts)
+		if err != nil {
+			return "Failed updating message", err
+		}
 	}
 
 	// return rm.NextSetupStep(false)
