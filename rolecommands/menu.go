@@ -65,6 +65,12 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		}
 
 		model.MessageID = id
+
+		// Update menu if its already existing
+		existing, err := models.FindRoleMenuG(id)
+		if err == nil {
+			return UpdateMenu(parsed, existing)
+		}
 	} else {
 		// set up the message if not provided
 		msg, err = common.BotSession.ChannelMessageSend(parsed.CS.ID(), "Role menu\nSetting up...")
@@ -94,6 +100,23 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 	}
 
 	return resp, err
+}
+
+func UpdateMenu(parsed *dcmd.Data, existing *models.RoleMenu) (interface{}, error) {
+	if existing.State == RoleMenuStateSettingUp {
+		return "Already setting this menun up", nil
+	}
+
+	existing.State = RoleMenuStateSettingUp
+	existing.UpdateG()
+
+	opts, err := existing.RoleMenuOptionsG().All()
+	if err != nil && err != sql.ErrNoRows {
+		return "Error communicating with DB", nil
+	}
+
+	// Add all mising options
+	return NextRoleMenuSetupStep(existing, opts, false)
 }
 
 func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, first bool) (resp string, err error) {
