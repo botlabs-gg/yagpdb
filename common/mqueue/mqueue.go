@@ -2,9 +2,9 @@ package mqueue
 
 import (
 	"encoding/json"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
 	"sync"
 	"time"

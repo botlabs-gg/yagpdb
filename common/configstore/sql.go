@@ -1,9 +1,9 @@
 package configstore
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"math/rand"
 	"strings"

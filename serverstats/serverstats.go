@@ -4,12 +4,12 @@ package serverstats
 
 import (
 	"context"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
 	"strconv"
 	"strings"

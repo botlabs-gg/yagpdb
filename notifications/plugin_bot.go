@@ -2,12 +2,12 @@ package notifications
 
 import (
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
+	log "github.com/sirupsen/logrus"
 )
 
 func HandleGuildMemberAdd(evt *eventsystem.EventData) {

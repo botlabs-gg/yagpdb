@@ -2,7 +2,6 @@ package logs
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/bwmarrin/snowflake"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
@@ -11,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )

@@ -1,10 +1,10 @@
 package bot
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
+	log "github.com/sirupsen/logrus"
 	"sort"
 )
 

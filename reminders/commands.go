@@ -3,7 +3,6 @@ package reminders
 import (
 	"errors"
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -12,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"

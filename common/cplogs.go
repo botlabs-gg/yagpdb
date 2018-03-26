@@ -3,9 +3,9 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 

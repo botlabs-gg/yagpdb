@@ -2,11 +2,11 @@ package botrest
 
 import (
 	"encoding/json"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
 	"net/http"

@@ -3,13 +3,13 @@ package rolecommands
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/sirupsen/logrus"
 	"github.com/tidwall/buntdb"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sort"

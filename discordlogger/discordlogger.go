@@ -2,11 +2,11 @@ package discordlogger
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"os"
 	"time"
 )

@@ -1,12 +1,12 @@
 package soundboard
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"sync"

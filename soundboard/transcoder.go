@@ -1,12 +1,12 @@
 package soundboard
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"

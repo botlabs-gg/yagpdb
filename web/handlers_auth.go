@@ -4,10 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/oauth2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )

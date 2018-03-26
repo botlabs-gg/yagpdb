@@ -2,11 +2,11 @@ package configstore
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"reflect"
 	"strconv"

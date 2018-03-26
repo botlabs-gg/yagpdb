@@ -1,7 +1,6 @@
 package streaming
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
@@ -10,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
 	"sync"
 )
 

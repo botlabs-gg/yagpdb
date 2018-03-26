@@ -4,7 +4,6 @@ package moderation
 
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -15,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"regexp"
 	"strconv"

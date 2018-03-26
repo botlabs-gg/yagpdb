@@ -4,7 +4,6 @@ package customcommands
 
 import (
 	"encoding/json"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -12,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
 	"sort"
 	"strconv"
 )

@@ -1,8 +1,8 @@
 package feeds
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 )

@@ -3,12 +3,11 @@ package common
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
 	"github.com/mediocregopher/radix.v2/pool"
-	boilOld "github.com/vattle/sqlboiler/boil"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
 	"os"
@@ -101,7 +100,6 @@ func connectDB(user, pass, dbName string) error {
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)
-	boilOld.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(5)
 	}

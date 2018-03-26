@@ -8,9 +8,9 @@ package scheduledevents
 // LIMITATIONS: different events cannot have same key as another event
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"sync/atomic"

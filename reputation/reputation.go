@@ -6,7 +6,6 @@ package reputation
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
@@ -15,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"strconv"
 )
 

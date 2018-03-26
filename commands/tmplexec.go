@@ -2,12 +2,12 @@ package commands
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"strconv"
 )
 

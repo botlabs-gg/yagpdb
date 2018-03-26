@@ -3,12 +3,12 @@ package commands
 //go:generate esc -o assets_gen.go -pkg commands -ignore ".go" assets/
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
 )
 
 type Plugin struct{}

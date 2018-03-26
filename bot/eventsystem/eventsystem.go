@@ -4,7 +4,7 @@ package eventsystem
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"runtime/debug"
 )
 

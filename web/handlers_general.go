@@ -1,12 +1,12 @@
 package web
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web/blog"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"net/http"
 	"strconv"

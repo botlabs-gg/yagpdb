@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	log "github.com/Sirupsen/logrus"
 	"github.com/evalphobia/logrus_sentry"
 	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"strconv"

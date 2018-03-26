@@ -2,12 +2,12 @@ package commands
 
 import (
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	log "github.com/sirupsen/logrus"
 )
 
 var (

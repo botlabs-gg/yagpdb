@@ -2,11 +2,11 @@ package logs
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
