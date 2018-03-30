@@ -65,7 +65,7 @@ func Init() error {
 
 	err = connectDB(config.PQUsername, config.PQPassword, "yagpdb")
 
-	BotUser, err = BotSession.User("@me")
+	BotUser, err = BotSession.UserMe()
 	if err != nil {
 		panic(err)
 	}

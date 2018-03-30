@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"fmt"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
@@ -16,8 +17,8 @@ func (p *Plugin) InitBot() {}
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 
-func (p *Plugin) RemoveGuild(c *redis.Client, g string) error {
-	config, err := GetConfig(c, "guild_subreddit_watch:"+g)
+func (p *Plugin) RemoveGuild(c *redis.Client, g int64) error {
+	config, err := GetConfig(c, "guild_subreddit_watch:"+discordgo.StrID(g))
 	if err != nil {
 		return err
 	}

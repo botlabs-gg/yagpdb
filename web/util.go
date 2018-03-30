@@ -12,7 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
@@ -138,29 +137,6 @@ func GetBaseCPContextData(ctx context.Context) (*redis.Client, *discordgo.Guild,
 	templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
 
 	return client, guild, templateData
-}
-
-// Returns a channel id from name, or if id is provided makes sure it's a channel inside the guild
-// Throws a api request to guild/channels
-func GetChannelId(name string, guildId string) (string, error) {
-	channels, err := common.BotSession.GuildChannels(guildId)
-	if err != nil {
-		return "", err
-	}
-
-	var channel *discordgo.Channel
-	for _, c := range channels {
-		if c.ID == name || strings.EqualFold(name, c.Name) {
-			channel = c
-			break
-		}
-	}
-
-	if channel == nil {
-		return guildId, nil
-	}
-
-	return channel.ID, nil
 }
 
 // Checks and error and logs it aswell as adding it to the alerts

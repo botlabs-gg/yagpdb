@@ -64,8 +64,7 @@ type CommandGroupPair struct {
 	Group   *models.RoleGroup
 }
 
-func FindAssignRole(guildID string, member *discordgo.Member, name string) (gaveRole bool, err error) {
-	parsedGuildID := common.MustParseInt(guildID)
+func FindAssignRole(guildID int64, member *discordgo.Member, name string) (gaveRole bool, err error) {
 	cmd, err := models.RoleCommandsG(qm.Where("guild_id=?", guildID), qm.Where("name ILIKE ?", name)).One()
 	if err != nil {
 		return false, err
@@ -78,7 +77,7 @@ func FindAssignRole(guildID string, member *discordgo.Member, name string) (gave
 		}
 	}
 
-	return AssignRole(parsedGuildID, member, &CommandGroupPair{Command: cmd, Group: group})
+	return AssignRole(guildID, member, &CommandGroupPair{Command: cmd, Group: group})
 }
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
@@ -88,7 +87,7 @@ func AssignRole(guildID int64, member *discordgo.Member, cmd *CommandGroupPair) 
 
 	// First check cooldown
 	err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
-		_, replaced, _ := tx.Set(member.User.ID, "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
+		_, replaced, _ := tx.Set(discordgo.StrID(member.User.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
 		if replaced {
 			onCD = true
 		}
@@ -99,57 +98,51 @@ func AssignRole(guildID int64, member *discordgo.Member, cmd *CommandGroupPair) 
 		return false, NewSimpleError("You're on cooldown")
 	}
 
-	// We work with int64's internally
-	parsedRoles := make([]int64, len(member.Roles))
-	for i, v := range member.Roles {
-		parsedRoles[i], _ = strconv.ParseInt(v, 10, 64)
-	}
-
-	if err := CanAssignRoleCmdTo(cmd.Command, parsedRoles); err != nil {
+	if err := CanAssignRoleCmdTo(cmd.Command, member.Roles); err != nil {
 		return false, err
 	}
 
 	// This command belongs to a group, let the group handle it
 	if cmd.Group != nil {
-		return GroupAssignRoleToMember(cmd.Group, guildID, member, parsedRoles, cmd.Command)
+		return GroupAssignRoleToMember(cmd.Group, guildID, member, cmd.Command)
 	}
 
 	// This is a single command, just toggle it
-	return ToggleRole(guildID, member, parsedRoles, cmd.Command.Role)
+	return ToggleRole(guildID, member, cmd.Command.Role)
 }
 
 // ToggleRole toggles the role of a guildmember, adding it if the member does not have the role and removing it if they do
-func ToggleRole(guildID int64, member *discordgo.Member, parsedMemberRoles []int64, role int64) (gaveRole bool, err error) {
-	if common.ContainsInt64Slice(parsedMemberRoles, role) {
-		err = common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(role, 10))
+func ToggleRole(guildID int64, member *discordgo.Member, role int64) (gaveRole bool, err error) {
+	if common.ContainsInt64Slice(member.Roles, role) {
+		err = common.BotSession.GuildMemberRoleRemove(guildID, member.User.ID, role)
 		gaveRole = false
 		return
 	}
 
-	err = common.BotSession.GuildMemberRoleAdd(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(role, 10))
+	err = common.BotSession.GuildMemberRoleAdd(guildID, member.User.ID, role)
 	gaveRole = true
 	return
 }
 
 // AssignRoleToMember attempts to assign the given role command, part of this group
 // to the member
-func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, member *discordgo.Member, parsedRoles []int64, targetRole *models.RoleCommand) (gaveRole bool, err error) {
+func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, member *discordgo.Member, targetRole *models.RoleCommand) (gaveRole bool, err error) {
 	if len(rg.RequireRoles) > 0 {
-		if !CheckRequiredRoles(rg.RequireRoles, parsedRoles) {
+		if !CheckRequiredRoles(rg.RequireRoles, member.Roles) {
 			err = NewSimpleError("Missing a required role")
 			return
 		}
 	}
 
 	if len(rg.IgnoreRoles) > 0 {
-		if err = CheckIgnoredRoles(rg.IgnoreRoles, parsedRoles); err != nil {
+		if err = CheckIgnoredRoles(rg.IgnoreRoles, member.Roles); err != nil {
 			return
 		}
 	}
 
 	// Default behaviour of groups is no more restrictions than reuiqred and ignore roles
 	if rg.Mode == GroupModeNone {
-		return ToggleRole(guildID, member, parsedRoles, targetRole.Role)
+		return ToggleRole(guildID, member, targetRole.Role)
 	}
 
 	// First retrieve role commands for this group
@@ -160,27 +153,27 @@ func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, member *discor
 
 	if rg.Mode == GroupModeSingle {
 		// If user already has role it's attempting to give itself
-		if common.ContainsInt64Slice(parsedRoles, targetRole.Role) {
+		if common.ContainsInt64Slice(member.Roles, targetRole.Role) {
 			if rg.SingleRequireOne {
 				return false, NewGroupError("Need atleast one role in group **%s**", rg)
 			}
-			err = common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(targetRole.Role, 10))
+			err = common.BotSession.GuildMemberRoleRemove(guildID, member.User.ID, targetRole.Role)
 			gaveRole = false
 			return
 		}
 
 		// Check if the user has any other role commands in this group
 		for _, v := range commands {
-			if common.ContainsInt64Slice(parsedRoles, v.Role) {
+			if common.ContainsInt64Slice(member.Roles, v.Role) {
 				if rg.SingleAutoToggleOff {
-					common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(v.Role, 10))
+					common.BotSession.GuildMemberRoleRemove(guildID, member.User.ID, v.Role)
 				} else {
 					return false, NewGroupError("Max 1 role in group **%s** is allowed", rg)
 				}
 			}
 		}
 		// Finally give the role
-		err = common.BotSession.GuildMemberRoleAdd(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(targetRole.Role, 10))
+		err = common.BotSession.GuildMemberRoleAdd(guildID, member.User.ID, targetRole.Role)
 		return true, err
 	}
 
@@ -191,7 +184,7 @@ func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, member *discor
 	hasRoles := 0
 	hasTargetRole := false
 	for _, role := range commands {
-		if common.ContainsInt64Slice(parsedRoles, role.Role) {
+		if common.ContainsInt64Slice(member.Roles, role.Role) {
 			hasRoles++
 			if role.ID == targetRole.ID {
 				hasTargetRole = true
@@ -211,7 +204,7 @@ func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, member *discor
 		}
 	}
 
-	return ToggleRole(guildID, member, parsedRoles, targetRole.Role)
+	return ToggleRole(guildID, member, targetRole.Role)
 }
 
 func CanAssignRoleCmdTo(r *models.RoleCommand, memberRoles []int64) error {
@@ -293,7 +286,7 @@ func (r *RoleError) PrettyError(roles []*discordgo.Role) string {
 	roleStr := ""
 
 	for _, v := range roles {
-		if v.ID == idStr {
+		if v.ID == r.Role {
 			roleStr = "**" + v.Name + "**"
 			break
 		}

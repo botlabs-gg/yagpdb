@@ -100,7 +100,7 @@ var cmdSecretCommand = &commands.YAGCommand{
 	Description:          ";))",
 	HideFromHelp:         true,
 	RunFunc: requireOwner(func(data *dcmd.Data) (interface{}, error) {
-		return "<@" + common.Conf.Owner + "> Is my owner", nil
+		return "<@" + discordgo.StrID(common.Conf.Owner) + "> Is my owner", nil
 	}),
 }
 
@@ -113,10 +113,10 @@ var cmdLeaveServer = &commands.YAGCommand{
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "server", Type: dcmd.String},
+		{Name: "server", Type: dcmd.Int},
 	},
 	RunFunc: requireOwner(func(data *dcmd.Data) (interface{}, error) {
-		err := common.BotSession.GuildLeave(data.Args[0].Str())
+		err := common.BotSession.GuildLeave(data.Args[0].Int64())
 		if err == nil {
 			return "Left " + data.Args[0].Str(), nil
 		}
@@ -132,10 +132,10 @@ var cmdBanServer = &commands.YAGCommand{
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "server", Type: dcmd.String},
+		{Name: "server", Type: dcmd.Int},
 	},
 	RunFunc: requireOwner(func(data *dcmd.Data) (interface{}, error) {
-		err := common.BotSession.GuildLeave(data.Args[0].Str())
+		err := common.BotSession.GuildLeave(data.Args[0].Int64())
 		if err == nil {
 			client := data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
 			client.Cmd("SADD", "banned_servers", data.Args[0].Str())
@@ -274,7 +274,7 @@ var cmdCurrentShard = &commands.YAGCommand{
 	Aliases:              []string{"cshard"},
 	Description:          "Shows the current shard this server is on",
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		shard := bot.ShardManager.SessionForGuildS(data.GS.ID())
+		shard := bot.ShardManager.SessionForGuild(data.GS.ID())
 		return fmt.Sprintf("On shard %d out of total %d shards.", shard.ShardID+1, shard.ShardCount), nil
 	},
 }

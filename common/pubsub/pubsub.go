@@ -13,13 +13,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"reflect"
 	"runtime/debug"
+	"strconv"
 	"strings"
 )
 
 type Event struct {
-	TargetGuild string // The guild this event was meant for, or * for all
-	EventName   string
-	Data        interface{}
+	TargetGuild    string // The guild this event was meant for, or * for all
+	TargetGuildInt int64
+	EventName      string
+	Data           interface{}
 }
 
 type eventHandler struct {
@@ -49,7 +51,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 }
 
 // PublishEvent publishes the specified event
-func Publish(client *redis.Client, evt string, target string, data interface{}) error {
+func Publish(client *redis.Client, evt string, target int64, data interface{}) error {
 	dataStr := ""
 	if data != nil {
 		encoded, err := json.Marshal(data)
@@ -59,7 +61,7 @@ func Publish(client *redis.Client, evt string, target string, data interface{}) 
 		dataStr = string(encoded)
 	}
 
-	value := fmt.Sprintf("%s,%s,%s", target, evt, dataStr)
+	value := fmt.Sprintf("%d,%s,%s", target, evt, dataStr)
 	return client.Cmd("PUBLISH", "events", value).Err
 }
 
@@ -127,6 +129,9 @@ func handleEvent(evt string) {
 		EventName:   name,
 		Data:        decoded,
 	}
+
+	parsedTarget, _ := strconv.ParseInt(target, 10, 64)
+	event.TargetGuildInt = parsedTarget
 
 	defer func() {
 		if r := recover(); r != nil {

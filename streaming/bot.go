@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-func KeyCurrentlyStreaming(gID string) string { return "currently_streaming:" + gID }
+func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }
 
 func (p *Plugin) InitBot() {
 
@@ -40,7 +40,7 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 	}
 	defer common.RedisPool.Put(client)
 
-	gs := bot.State.Guild(true, event.TargetGuild)
+	gs := bot.State.Guild(true, event.TargetGuildInt)
 	if gs == nil {
 		log.WithField("guild", event.TargetGuild).Error("Guild not found in state")
 		return
@@ -62,7 +62,7 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 			if ms.Presence != nil {
 				slowCheck = append(slowCheck, ms)
 				wg.Add(1)
-				go func(gID, uID string) {
+				go func(gID, uID int64) {
 					bot.GetMember(gID, uID)
 					wg.Done()
 				}(gs.ID(), ms.ID())
@@ -235,7 +235,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 			}
 		}
 
-		if config.RequireRole != "" {
+		if config.RequireRole != 0 {
 			found := false
 			for _, role := range member.Roles {
 				if role == config.RequireRole {
@@ -251,7 +251,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 			}
 		}
 
-		if config.IgnoreRole != "" {
+		if config.IgnoreRole != 0 {
 			for _, role := range member.Roles {
 				// We ignore people with this role.. :')
 				if role == config.IgnoreRole {
@@ -261,7 +261,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 			}
 		}
 
-		if config.GiveRole != "" {
+		if config.GiveRole != 0 {
 			err := GiveStreamingRole(member, config.GiveRole, gs.Guild)
 			if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
 				log.WithError(err).WithField("guild", gs.ID()).WithField("user", member.User.ID).Error("Failed adding streaming role")
@@ -275,7 +275,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 		}
 
 		// Send the streaming announcement if enabled
-		if config.AnnounceChannel != "" && config.AnnounceMessage != "" {
+		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
 			SendStreamingAnnouncement(client, config, gs, member, p)
 		}
 
@@ -287,7 +287,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 	return nil
 }
 
-func RemoveStreaming(client *redis.Client, config *Config, guildID string, userID string, member *discordgo.Member) {
+func RemoveStreaming(client *redis.Client, config *Config, guildID int64, userID int64, member *discordgo.Member) {
 	if member != nil {
 		RemoveStreamingRole(member, config.GiveRole, guildID)
 	} else {
@@ -327,7 +327,7 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 	common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
 }
 
-func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.Guild) error {
+func GiveStreamingRole(member *discordgo.Member, role int64, guild *discordgo.Guild) error {
 	// Ensure the role exists
 	found := false
 	for _, v := range guild.Roles {
@@ -344,7 +344,7 @@ func GiveStreamingRole(member *discordgo.Member, role string, guild *discordgo.G
 	return err
 }
 
-func RemoveStreamingRole(member *discordgo.Member, role string, guildID string) {
+func RemoveStreamingRole(member *discordgo.Member, role int64, guildID int64) {
 	err := common.RemoveRole(member, role, guildID)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
 		log.WithError(err).WithField("guild", guildID).WithField("user", member.User.ID).Error("Failed removing streaming role")

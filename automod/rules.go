@@ -40,7 +40,7 @@ type BaseRule struct {
 	KickAfter    int `valid:"0,1000"`
 	BanAfter     int `valid:"0,1000"`
 
-	IgnoreRole     string   `valid:"role,true"`
+	IgnoreRole     int64    `json:",string" valid:"role,true"`
 	IgnoreChannels []string `valid:"channel,false"`
 }
 
@@ -78,8 +78,9 @@ func (r BaseRule) ShouldIgnore(evt *discordgo.Message, m *discordgo.Member) bool
 		return true
 	}
 
+	strC := discordgo.StrID(evt.ChannelID)
 	for _, ignoreChannel := range r.IgnoreChannels {
-		if ignoreChannel == evt.ChannelID {
+		if ignoreChannel == strC {
 			return true
 		}
 	}

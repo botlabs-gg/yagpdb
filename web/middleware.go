@@ -182,7 +182,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 		err := common.GetCacheDataJson(redisClient, session.Token+":user", &user)
 		if err != nil {
 			// nothing in cache...
-			user, err = session.User("@me")
+			user, err = session.UserMe()
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Error("Failed getting user info from discord")
 				HandleLogout(w, r)
@@ -194,16 +194,16 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 		}
 
 		var guilds []*discordgo.UserGuild
-		err = common.GetCacheDataJson(redisClient, user.ID+":guilds", &guilds)
+		err = common.GetCacheDataJson(redisClient, discordgo.StrID(user.ID)+":guilds", &guilds)
 		if err != nil {
-			guilds, err = session.UserGuilds(100, "", "")
+			guilds, err = session.UserGuilds(100, 0, 0)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Error("Failed getting user guilds")
 				HandleLogout(w, r)
 				return
 			}
 
-			LogIgnoreErr(common.SetCacheDataJson(redisClient, user.ID+":guilds", 10, guilds))
+			LogIgnoreErr(common.SetCacheDataJson(redisClient, discordgo.StrID(user.ID)+":guilds", 10, guilds))
 		}
 
 		wrapped, err := common.GetWrapped(guilds, redisClient)
@@ -242,7 +242,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-func setFullGuild(ctx context.Context, guildID string) (context.Context, error) {
+func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
 	fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guildID)
 	if err != nil {
 		CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
@@ -264,10 +264,10 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			inner.ServeHTTP(w, r)
 		}()
 		ctx := r.Context()
-		guildID := pat.Param(r, "server")
+		guildID, err := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 
 		// Validate the id
-		if _, err := strconv.ParseInt(guildID, 10, 64); err != nil {
+		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("GuilID is not a number")
 			return
 		}
@@ -373,7 +373,7 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
-		if guild.OwnerID != "" {
+		if guild.OwnerID != 0 {
 			// Was already full. so this is not needed
 			inner.ServeHTTP(w, r)
 			return
@@ -399,10 +399,12 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 
 func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		member, err := botrest.GetBotMember(pat.Param(r, "server"))
+		parsedGuildID, _ := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
+
+		member, err := botrest.GetBotMember(parsedGuildID)
 		if err != nil {
 			CtxLogger(r.Context()).WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
-			member, err = common.BotSession.GuildMember(pat.Param(r, "server"), common.Conf.BotID)
+			member, err = common.BotSession.GuildMember(parsedGuildID, common.Conf.BotID)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
 				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
@@ -593,7 +595,7 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 }
 
 type SimpleConfigSaver interface {
-	Save(client *redis.Client, guildID string) error
+	Save(client *redis.Client, guildID int64) error
 	Name() string // Returns this config's name, as it will be logged in the server's control panel log
 }
 

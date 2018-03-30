@@ -50,7 +50,7 @@ func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
 	web.CheckErr(templateData, err, "Failed retrieving rules", web.CtxLogger(r.Context()).Error)
 
 	templateData["AutomodConfig"] = config
-	templateData["VisibleURL"] = "/manage/" + g.ID + "/automod/"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(g.ID) + "/automod/"
 
 	return templateData
 }

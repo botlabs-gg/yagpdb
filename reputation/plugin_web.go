@@ -1,6 +1,7 @@
 package reputation
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/jonas747/yagpdb/web"
@@ -74,11 +75,11 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
 	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/reputation"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*PostConfigForm)
 	conf := form.RepConfig()
-	conf.GuildID = common.MustParseInt(activeGuild.ID)
+	conf.GuildID = activeGuild.ID
 
 	templateData["RepSettings"] = conf
 

@@ -8,6 +8,7 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -39,14 +40,14 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) interface{} {
 func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/commands/settings"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/commands/settings"
 
 	newPrefix := strings.TrimSpace(r.FormValue("prefix"))
 	if len(newPrefix) > 100 {
 		return templateData.AddAlerts(web.ErrorAlert("Command prefix is too long (max 100)"))
 	}
 
-	err := client.Cmd("SET", "command_prefix:"+activeGuild.ID, newPrefix).Err
+	err := client.Cmd("SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix).Err
 	web.CheckErr(templateData, err, "Failed saving prefix", web.CtxLogger(r.Context()).Error)
 
 	channels := ctx.Value(common.ContextKeyGuildChannels).([]*discordgo.Channel)
@@ -71,12 +72,12 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 
 		// Update all the command settings for the override
 		for _, overrideCmd := range override.Settings {
-			overrideCmd.CommandEnabled = r.FormValue(channel.ID+"_enabled_"+overrideCmd.Cmd) == "on"
-			overrideCmd.AutoDelete = r.FormValue(channel.ID+"_autodelete_"+overrideCmd.Cmd) == "on"
-			overrideCmd.RequiredRole = r.FormValue(channel.ID + "_required_role_" + overrideCmd.Cmd)
+			overrideCmd.CommandEnabled = r.FormValue(discordgo.StrID(channel.ID)+"_enabled_"+overrideCmd.Cmd) == "on"
+			overrideCmd.AutoDelete = r.FormValue(discordgo.StrID(channel.ID)+"_autodelete_"+overrideCmd.Cmd) == "on"
+			overrideCmd.RequiredRole, _ = strconv.ParseInt(r.FormValue(discordgo.StrID(channel.ID)+"_required_role_"+overrideCmd.Cmd), 10, 64)
 		}
 
-		override.OverrideEnabled = r.FormValue(channel.ID+"_override_enabled") == "on"
+		override.OverrideEnabled = r.FormValue(discordgo.StrID(channel.ID)+"_override_enabled") == "on"
 	}
 
 	// Update the global settings
@@ -85,11 +86,11 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 		if cmd.Info.Key == "" {
 			cmd.CommandEnabled = r.FormValue("global_enabled_"+cmd.Cmd) == "on"
 		}
-		cmd.RequiredRole = r.FormValue("global_required_role_" + cmd.Cmd)
+		cmd.RequiredRole, _ = strconv.ParseInt(r.FormValue("global_required_role_"+cmd.Cmd), 10, 64)
 		cmd.AutoDelete = r.FormValue("global_autodelete_"+cmd.Cmd) == "on"
 	}
 
-	err = common.SetRedisJson(client, "commands_settings:"+activeGuild.ID, config)
+	err = common.SetRedisJson(client, "commands_settings:"+discordgo.StrID(activeGuild.ID), config)
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}

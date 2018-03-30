@@ -41,7 +41,7 @@ func RedisWrapper(inner eventsystem.Handler) eventsystem.Handler {
 	}
 }
 
-func GetCreatePrivateChannel(user string) (*discordgo.Channel, error) {
+func GetCreatePrivateChannel(user int64) (*discordgo.Channel, error) {
 
 	State.RLock()
 	defer State.RUnlock()
@@ -59,7 +59,7 @@ func GetCreatePrivateChannel(user string) (*discordgo.Channel, error) {
 	return channel, nil
 }
 
-func SendDM(user string, msg string) error {
+func SendDM(user int64, msg string) error {
 	if strings.TrimSpace(msg) == "" {
 		return nil
 	}
@@ -78,7 +78,7 @@ var (
 	ErrGuildNotFound = errors.New("Guild not found")
 )
 
-func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
+func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 	channel := State.Channel(true, channelID)
 	if channel == nil {
 		return false, errors.New("Channel not found")

@@ -14,7 +14,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"gopkg.in/volatiletech/null.v6"
 	"sort"
-	"strconv"
 )
 
 func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
@@ -46,9 +45,9 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 	}
 
 	model := &models.RoleMenu{
-		GuildID:   common.MustParseInt(parsed.GS.ID()),
-		OwnerID:   common.MustParseInt(parsed.Msg.Author.ID),
-		ChannelID: common.MustParseInt(parsed.Msg.ChannelID),
+		GuildID:   parsed.GS.ID(),
+		OwnerID:   parsed.Msg.Author.ID,
+		ChannelID: parsed.Msg.ChannelID,
 
 		OwnMessage:  true,
 		RoleGroupID: null.Int64From(group.ID),
@@ -59,7 +58,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		model.OwnMessage = false
 
 		id := parsed.Switches["m"].Int64()
-		msg, err = common.BotSession.ChannelMessage(parsed.CS.ID(), strconv.FormatInt(id, 10))
+		msg, err = common.BotSession.ChannelMessage(parsed.CS.ID(), id)
 		if err != nil {
 			return "Couldn't find the message", err
 		}
@@ -83,7 +82,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 			return errStr, err
 		}
 
-		model.MessageID = common.MustParseInt(msg.ID)
+		model.MessageID = msg.ID
 	}
 
 	err = model.InsertG()
@@ -188,19 +187,14 @@ func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) e
 		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, pair.Command.Name)
 	}
 
-	_, err := common.BotSession.ChannelMessageEdit(strconv.FormatInt(rm.ChannelID, 10), strconv.FormatInt(rm.MessageID, 10), newMsg)
+	_, err := common.BotSession.ChannelMessageEdit(rm.ChannelID, rm.MessageID, newMsg)
 	return err
 }
 
 func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd) (resp string, err error) {
-	if common.MustParseInt(ra.UserID) != rm.OwnerID {
+	if ra.UserID != rm.OwnerID {
 		common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
 		return "This menu is still being set up, wait until the owner of this menu is done.", nil
-	}
-
-	parsedID := int64(0)
-	if ra.Emoji.ID != "" {
-		parsedID = common.MustParseInt(ra.Emoji.ID)
 	}
 
 	currentOpts, err := rm.RoleMenuOptionsG().All()
@@ -210,8 +204,8 @@ func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd
 
 	// Make sure this emoji isnt used to another option
 	for _, option := range currentOpts {
-		if ra.Emoji.ID != "" {
-			if parsedID == option.EmojiID && option.EmojiID != 0 {
+		if ra.Emoji.ID != 0 {
+			if ra.Emoji.ID == option.EmojiID && option.EmojiID != 0 {
 				return "Emoji already used for another option", nil
 			}
 		} else {
@@ -224,10 +218,10 @@ func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd
 	model := &models.RoleMenuOption{
 		RoleMenuID:    rm.MessageID,
 		RoleCommandID: rm.NextRoleCommandID,
-		EmojiID:       parsedID,
+		EmojiID:       ra.Emoji.ID,
 	}
 
-	if ra.Emoji.ID == "" {
+	if ra.Emoji.ID == 0 {
 		model.UnicodeEmoji = ra.Emoji.Name
 	}
 
@@ -265,7 +259,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 		return
 	}
 
-	menu, err := models.FindRoleMenuG(common.MustParseInt(ra.MessageID))
+	menu, err := models.FindRoleMenuG(ra.MessageID)
 	// menu, err := .FindByMessageID(common.MustParseInt(ra.MessageID)).WithOptions(nil).WithNextRoleCommand().WithGroup())
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -297,11 +291,10 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	}
 
 	var option *models.RoleMenuOption
-	if ra.Emoji.ID != "" {
+	if ra.Emoji.ID != 0 {
 		// This is a custom emoji
-		parsedID := common.MustParseInt(ra.Emoji.ID)
 		for _, v := range opts {
-			if v.EmojiID != 0 && v.EmojiID == parsedID {
+			if v.EmojiID != 0 && v.EmojiID == ra.Emoji.ID {
 				option = v
 			}
 		}
@@ -318,7 +311,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 		return
 	}
 
-	gs := bot.State.Guild(true, strconv.FormatInt(menu.GuildID, 10))
+	gs := bot.State.Guild(true, menu.GuildID)
 	gs.RLock()
 	name := gs.Guild.Name
 	gs.RUnlock()
@@ -389,7 +382,7 @@ func handleMessageRemove(evt *eventsystem.EventData) {
 	}
 }
 
-func messageRemoved(id string) {
+func messageRemoved(id int64) {
 	err := models.RoleMenusG(qm.Where("message_id=?", id)).DeleteAll()
 	if err != nil {
 		logrus.WithError(err).Error("Failed removing old role menus")

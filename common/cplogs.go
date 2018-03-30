@@ -16,7 +16,7 @@ type CPLogEntry struct {
 	TimestampString string `json:"-"`
 }
 
-func AddCPLogEntry(user *discordgo.User, guild string, args ...interface{}) {
+func AddCPLogEntry(user *discordgo.User, guild int64, args ...interface{}) {
 	client, err := RedisPool.Get()
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving redis connection")
@@ -38,8 +38,8 @@ func AddCPLogEntry(user *discordgo.User, guild string, args ...interface{}) {
 		return
 	}
 
-	client.PipeAppend("LPUSH", "cp_logs:"+guild, serialized)
-	client.PipeAppend("LTRIM", "cp_logs:"+guild, 0, 100)
+	client.PipeAppend("LPUSH", "cp_logs:"+discordgo.StrID(guild), serialized)
+	client.PipeAppend("LTRIM", "cp_logs:"+discordgo.StrID(guild), 0, 100)
 
 	_, err = GetRedisReplies(client, 2)
 	if err != nil {
@@ -48,8 +48,8 @@ func AddCPLogEntry(user *discordgo.User, guild string, args ...interface{}) {
 
 }
 
-func GetCPLogEntries(client *redis.Client, guild string) ([]*CPLogEntry, error) {
-	entriesRaw, err := client.Cmd("LRANGE", "cp_logs:"+guild, 0, -1).ListBytes()
+func GetCPLogEntries(client *redis.Client, guild int64) ([]*CPLogEntry, error) {
+	entriesRaw, err := client.Cmd("LRANGE", "cp_logs:"+discordgo.StrID(guild), 0, -1).ListBytes()
 	if err != nil {
 		return nil, err
 	}

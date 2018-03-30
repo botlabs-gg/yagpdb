@@ -199,7 +199,7 @@ func tmplToInt(from interface{}) int {
 	}
 }
 
-func tmplToInt64(from interface{}) int64 {
+func ToInt64(from interface{}) int64 {
 	switch t := from.(type) {
 	case int:
 		return int64(t)

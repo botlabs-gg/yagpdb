@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -362,10 +363,10 @@ var (
 	ErrNoChannel = errors.New("No channel with that id found")
 )
 
-func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtubeChannelID, youtubeUsername string, mentionEveryone bool) (*ChannelSubscription, error) {
+func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID int64, youtubeChannelID, youtubeUsername string, mentionEveryone bool) (*ChannelSubscription, error) {
 	sub := &ChannelSubscription{
-		GuildID:         guildID,
-		ChannelID:       discordChannelID,
+		GuildID:         discordgo.StrID(guildID),
+		ChannelID:       discordgo.StrID(discordChannelID),
 		MentionEveryone: mentionEveryone,
 	}
 

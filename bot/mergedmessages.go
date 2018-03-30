@@ -15,11 +15,11 @@ import (
 
 var (
 	// map of channels and their message queue
-	mergedQueue     = make(map[string][]string)
+	mergedQueue     = make(map[int64][]string)
 	mergedQueueLock sync.Mutex
 )
 
-func QueueMergedMessage(channelID, message string) {
+func QueueMergedMessage(channelID int64, message string) {
 	mergedQueueLock.Lock()
 	defer mergedQueueLock.Unlock()
 
@@ -37,14 +37,14 @@ func mergedMessageSender() {
 		for c, m := range mergedQueue {
 			go sendMergedBatch(c, m)
 		}
-		mergedQueue = make(map[string][]string)
+		mergedQueue = make(map[int64][]string)
 		mergedQueueLock.Unlock()
 
 		time.Sleep(time.Second)
 	}
 }
 
-func sendMergedBatch(channelID string, messages []string) {
+func sendMergedBatch(channelID int64, messages []string) {
 	out := ""
 	for _, v := range messages {
 		out += v + "\n"

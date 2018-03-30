@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -45,7 +44,7 @@ func (p *Plugin) StartBot() {
 
 // Stop updating
 func HandleUpdateAutomodRules(event *pubsub.Event) {
-	stopProcessing(event.TargetGuild)
+	stopProcessing(event.TargetGuildInt)
 }
 
 // HandlePresenceUpdate makes sure the member with joined_at is available for the relevant guilds
@@ -79,17 +78,17 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !config.OnlyOnJoin && config.Role != "" {
+	if !config.OnlyOnJoin && config.Role != 0 {
 		bot.GetMember(gs.ID(), p.User.ID)
 	}
 }
 
 var (
-	processingGuilds = make(map[string]chan bool)
+	processingGuilds = make(map[int64]chan bool)
 	processingLock   sync.Mutex
 )
 
-func stopProcessing(guildID string) {
+func stopProcessing(guildID int64) {
 	processingLock.Lock()
 	if c, ok := processingGuilds[guildID]; ok {
 		go func() {
@@ -142,7 +141,7 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 
 	logger := logrus.WithField("guild", gs.ID())
 
-	perms, err := gs.MemberPermissions(false, "", bot.State.User(true).ID)
+	perms, err := gs.MemberPermissions(false, 0, bot.State.User(true).ID)
 	if err != nil && err != dstate.ErrChannelNotFound {
 		logger.WithError(err).Error("Error checking perms")
 		return
@@ -159,7 +158,7 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 		return
 	}
 
-	if conf.Role == "" || conf.OnlyOnJoin {
+	if conf.Role == 0 || conf.OnlyOnJoin {
 		return
 	}
 
@@ -173,7 +172,7 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 
 	// If not remove it
 	logger.Info("Autorole role dosen't exist, removing config...")
-	conf.Role = ""
+	conf.Role = 0
 	saveGeneral(client, gs.ID(), conf)
 }
 
@@ -203,7 +202,7 @@ func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 		}
 	}()
 
-	membersToGiveRole := make([]string, 0)
+	membersToGiveRole := make([]int64, 0)
 
 	gs.RLock()
 
@@ -256,7 +255,7 @@ OUTER:
 			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
 				// No perms, remove autorole
 				logrus.WithError(err).Info("No perms to add autorole, removing from config")
-				config.Role = ""
+				config.Role = 0
 				saveGeneral(client, gs.ID(), config)
 				return
 			}
@@ -270,7 +269,7 @@ OUTER:
 	}
 }
 
-func saveGeneral(client *redis.Client, guildID string, config *GeneralConfig) {
+func saveGeneral(client *redis.Client, guildID int64, config *GeneralConfig) {
 	if client == nil {
 		var err error
 		client, err = common.RedisPool.Get()
@@ -297,7 +296,7 @@ func OnMemberJoin(evt *eventsystem.EventData) {
 		return
 	}
 
-	if config.Role != "" && config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Member) {
+	if config.Role != 0 && config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Member) {
 		common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
 	}
 }
@@ -307,14 +306,8 @@ func (conf *GeneralConfig) CanAssignTo(member *discordgo.Member) bool {
 		return true
 	}
 
-	parsedMemberRoles := make([]int64, len(member.Roles))
-	for i, v := range member.Roles {
-		p, _ := strconv.ParseInt(v, 10, 64)
-		parsedMemberRoles[i] = p
-	}
-
 	for _, ignoreRole := range conf.IgnoreRoles {
-		if common.ContainsInt64Slice(parsedMemberRoles, ignoreRole) {
+		if common.ContainsInt64Slice(member.Roles, ignoreRole) {
 			return false
 		}
 	}
@@ -322,7 +315,7 @@ func (conf *GeneralConfig) CanAssignTo(member *discordgo.Member) bool {
 	// If require roles are set up, make sure the member has one of them
 	if len(conf.RequiredRoles) > 0 {
 		for _, reqRole := range conf.RequiredRoles {
-			if common.ContainsInt64Slice(parsedMemberRoles, reqRole) {
+			if common.ContainsInt64Slice(member.Roles, reqRole) {
 				return true
 			}
 		}

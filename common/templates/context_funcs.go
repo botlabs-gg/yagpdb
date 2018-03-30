@@ -56,16 +56,14 @@ func tmplMentionRoleID(c *Context) interface{} {
 			return ""
 		}
 
-		role := ""
+		var role int64
 		switch r := roleID.(type) {
 		case int64:
-			role = strconv.FormatInt(r, 10)
-		case int32:
-			role = strconv.FormatInt(int64(r), 10)
-		case int:
-			role = strconv.FormatInt(int64(r), 10)
-		case string:
 			role = r
+		case int:
+			role = int64(r)
+		case string:
+			role, _ = strconv.ParseInt(r, 10, 64)
 		default:
 			return ""
 		}
@@ -75,12 +73,12 @@ func tmplMentionRoleID(c *Context) interface{} {
 			return "(role not found)"
 		}
 
-		if common.ContainsStringSlice(c.MentionRoles, role) {
-			return "<@&" + role + ">"
+		if common.ContainsInt64Slice(c.MentionRoles, role) {
+			return "<@&" + discordgo.StrID(role) + ">"
 		}
 
 		c.MentionRoles = append(c.MentionRoles, role)
-		return " <@&" + role + "> "
+		return " <@&" + discordgo.StrID(role) + "> "
 	}
 }
 
@@ -99,7 +97,7 @@ func tmplMentionRoleName(c *Context) interface{} {
 		c.GS.RLock()
 		for _, r := range c.GS.Guild.Roles {
 			if r.Name == role {
-				if !common.ContainsStringSlice(c.MentionRoles, r.ID) {
+				if !common.ContainsInt64Slice(c.MentionRoles, r.ID) {
 					c.MentionRoles = append(c.MentionRoles, r.ID)
 					found = r
 				}
@@ -110,7 +108,7 @@ func tmplMentionRoleName(c *Context) interface{} {
 			return "(role not found)"
 		}
 
-		return " <@&" + found.ID + "> "
+		return " <@&" + discordgo.StrID(found.ID) + "> "
 	}
 }
 
@@ -121,22 +119,20 @@ func tmplHasRoleID(c *Context) interface{} {
 			return false
 		}
 
-		role := ""
+		var role int64
 		switch r := roleID.(type) {
 		case int64:
-			role = strconv.FormatInt(r, 10)
-		case int32:
-			role = strconv.FormatInt(int64(r), 10)
-		case int:
-			role = strconv.FormatInt(int64(r), 10)
-		case string:
 			role = r
+		case int:
+			role = int64(r)
+		case string:
+			role, _ = strconv.ParseInt(r, 10, 64)
 		default:
 			return false
 		}
 
 		c.GS.RLock()
-		contains := common.ContainsStringSlice(c.Member.Roles, role)
+		contains := common.ContainsInt64Slice(c.Member.Roles, role)
 		c.GS.RUnlock()
 		return contains
 	}
@@ -153,7 +149,7 @@ func tmplHasRoleName(c *Context) interface{} {
 
 		for _, r := range c.GS.Guild.Roles {
 			if strings.EqualFold(r.Name, name) {
-				if common.ContainsStringSlice(c.Member.Roles, r.ID) {
+				if common.ContainsInt64Slice(c.Member.Roles, r.ID) {
 					c.GS.RUnlock()
 					return true
 				}
@@ -175,8 +171,8 @@ func tmplAddRoleID(c *Context) interface{} {
 			return "", ErrTooManyCalls
 		}
 
-		rid := str(role)
-		if rid == "" {
+		rid := ToInt64(role)
+		if rid == 0 {
 			return "", errors.New("No role id specified")
 		}
 
@@ -196,8 +192,8 @@ func tmplRemoveRoleID(c *Context) interface{} {
 			return "", ErrTooManyCalls
 		}
 
-		rid := str(role)
-		if rid == "" {
+		rid := ToInt64(role)
+		if rid == 0 {
 			return "", errors.New("No role id specified")
 		}
 

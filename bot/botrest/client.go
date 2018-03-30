@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -69,26 +70,31 @@ func post(url string, bodyData interface{}, dest interface{}) error {
 	return errors.WithMessage(json.NewDecoder(resp.Body).Decode(dest), "json.Decode")
 }
 
-func GetGuild(guildID string) (g *discordgo.Guild, err error) {
-	err = get(guildID+"/guild", &g)
+func GetGuild(guildID int64) (g *discordgo.Guild, err error) {
+	err = get(discordgo.StrID(guildID)+"/guild", &g)
 	return
 }
 
-func GetBotMember(guildID string) (m *discordgo.Member, err error) {
-	err = get(guildID+"/botmember", &m)
+func GetBotMember(guildID int64) (m *discordgo.Member, err error) {
+	err = get(discordgo.StrID(guildID)+"/botmember", &m)
 	return
 }
 
-func GetMembers(guildID string, members ...string) (m []*discordgo.Member, err error) {
-	query := url.Values{"users": members}
+func GetMembers(guildID int64, members ...int64) (m []*discordgo.Member, err error) {
+	stringed := make([]string, 0, len(members))
+	for _, v := range members {
+		stringed = append(stringed, strconv.FormatInt(v, 10))
+	}
+
+	query := url.Values{"users": stringed}
 	encoded := query.Encode()
 
-	err = get(guildID+"/members?"+encoded, &m)
+	err = get(discordgo.StrID(guildID)+"/members?"+encoded, &m)
 	return
 }
 
-func GetChannelPermissions(guildID, channelID string) (perms int64, err error) {
-	err = get(guildID+"/channelperms/"+channelID, &perms)
+func GetChannelPermissions(guildID, channelID int64) (perms int64, err error) {
+	err = get(discordgo.StrID(guildID)+"/channelperms/"+discordgo.StrID(channelID), &perms)
 	return
 }
 

@@ -1,13 +1,13 @@
 package notifications
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"strconv"
 )
 
 func (p *Plugin) InitWeb() {
@@ -40,12 +40,11 @@ func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} 
 func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/notifications/general/"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/notifications/general/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 
-	parsed, _ := strconv.ParseInt(activeGuild.ID, 10, 64)
-	newConfig.GuildID = parsed
+	newConfig.GuildID = activeGuild.ID
 
 	err := configstore.SQL.SetGuildConfig(ctx, newConfig)
 	if err != nil {

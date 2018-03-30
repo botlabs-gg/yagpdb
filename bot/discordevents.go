@@ -13,7 +13,7 @@ import (
 
 var (
 	waitingGuildsMU sync.Mutex
-	waitingGuilds   = make(map[string]bool)
+	waitingGuilds   = make(map[int64]bool)
 	waitingReadies  []int
 
 	botStartedFired = new(int32)
@@ -21,7 +21,7 @@ var (
 
 // Once we have received a guild create for all guilds
 // We fire BotStarted
-func setWaitingGuildReady(g string) {
+func setWaitingGuildReady(g int64) {
 	if atomic.LoadInt32(botStartedFired) == 1 {
 		return
 	}
@@ -161,40 +161,40 @@ func StateHandler(evt *eventsystem.EventData) {
 }
 
 func HandleGuildUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), evt.GuildUpdate.Guild.ID, "")
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildUpdate.Guild.ID, 0)
 }
 
 func HandleGuildRoleUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleUpdate.GuildID, "")
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleUpdate.GuildID, 0)
 }
 
 func HandleGuildRoleCreate(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleCreate.GuildID, "")
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleCreate.GuildID, 0)
 }
 
 func HandleGuildRoleRemove(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleDelete.GuildID, "")
+	InvalidateCache(ContextRedis(evt.Context()), evt.GuildRoleDelete.GuildID, 0)
 }
 
 func HandleChannelCreate(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelCreate.GuildID, "")
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelCreate.GuildID, 0)
 }
 func HandleChannelUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelUpdate.GuildID, "")
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelUpdate.GuildID, 0)
 }
 func HandleChannelDelete(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelDelete.GuildID, "")
+	InvalidateCache(ContextRedis(evt.Context()), evt.ChannelDelete.GuildID, 0)
 }
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(ContextRedis(evt.Context()), "", evt.GuildMemberUpdate.User.ID)
+	InvalidateCache(ContextRedis(evt.Context()), 0, evt.GuildMemberUpdate.User.ID)
 }
 
-func InvalidateCache(client *redis.Client, guildID, userID string) {
-	if userID != "" {
-		client.Cmd("DEL", common.CacheKeyPrefix+userID+":guilds")
+func InvalidateCache(client *redis.Client, guildID, userID int64) {
+	if userID != 0 {
+		client.Cmd("DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds")
 	}
-	if guildID != "" {
+	if guildID != 0 {
 		client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))
 		client.Cmd("DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))
 	}

@@ -13,14 +13,13 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
 	"sort"
-	"strconv"
 )
 
 const (
 	MaxCommands = 100
 )
 
-func KeyCommands(guildID string) string { return "custom_commands:" + guildID }
+func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
 
 type Plugin struct{}
 
@@ -80,7 +79,7 @@ type CustomCommand struct {
 	Roles        []int64 `json:"roles" schema:"roles"`
 }
 
-func (cc *CustomCommand) Save(client *redis.Client, guildID string) error {
+func (cc *CustomCommand) Save(client *redis.Client, guildID int64) error {
 	serialized, err := json.Marshal(cc)
 	if err != nil {
 		return err
@@ -90,11 +89,9 @@ func (cc *CustomCommand) Save(client *redis.Client, guildID string) error {
 	return err
 }
 
-func (cc *CustomCommand) RunsInChannel(channel string) bool {
-	parsed, _ := strconv.ParseInt(channel, 10, 64)
-
+func (cc *CustomCommand) RunsInChannel(channel int64) bool {
 	for _, v := range cc.Channels {
-		if v == parsed {
+		if v == channel {
 			if cc.RequireChannels {
 				return true
 			}
@@ -124,13 +121,8 @@ func (cc *CustomCommand) RunsForUser(m *discordgo.Member) bool {
 		return true
 	}
 
-	pRoles := make([]int64, len(m.Roles))
-	for i, r := range m.Roles {
-		pRoles[i], _ = strconv.ParseInt(r, 10, 64)
-	}
-
 	for _, v := range cc.Roles {
-		if common.ContainsInt64Slice(pRoles, v) {
+		if common.ContainsInt64Slice(m.Roles, v) {
 			if cc.RequireRoles {
 				return true
 			}
@@ -147,8 +139,8 @@ func (cc *CustomCommand) RunsForUser(m *discordgo.Member) bool {
 	return true
 }
 
-func GetCommands(client *redis.Client, guild string) ([]*CustomCommand, int, error) {
-	hash, err := client.Cmd("HGETALL", "custom_commands:"+guild).Map()
+func GetCommands(client *redis.Client, guild int64) ([]*CustomCommand, int, error) {
+	hash, err := client.Cmd("HGETALL", "custom_commands:"+discordgo.StrID(guild)).Map()
 	if err != nil {
 		return nil, 0, err
 	}

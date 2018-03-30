@@ -110,7 +110,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	config := &GuildLoggingConfig{
 		GuildConfigModel: configstore.GuildConfigModel{
-			GuildID: common.MustParseInt(g.ID),
+			GuildID: g.ID,
 		},
 
 		NicknameLoggingEnabled:       form.NicknameLoggingEnabled,
@@ -176,7 +176,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
-	if msgLogs.GuildID != g.ID {
+	if msgLogs.GuildID != discordgo.StrID(g.ID) {
 		return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
 	}
 
@@ -210,7 +210,7 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return err
 	}
 
-	if logContainer.GuildID != g.ID {
+	if logContainer.GuildID != discordgo.StrID(g.ID) {
 		return err
 	}
 

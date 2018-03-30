@@ -35,8 +35,8 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 	}
 
 	if config.JoinServerEnabled {
-		channel := GetChannel(gs, config.JoinServerChannel)
-		if channel == "" {
+		channel := GetChannel(gs, config.JoinServerChannelInt())
+		if channel == 0 {
 			return
 		}
 		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinServerMsg)
@@ -59,8 +59,8 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	channel := GetChannel(gs, config.LeaveChannel)
-	if channel == "" {
+	channel := GetChannel(gs, config.LeaveChannelInt())
+	if channel == 0 {
 		return
 	}
 
@@ -97,8 +97,8 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	}
 
 	topicChannel := cu.Channel.ID
-	if config.TopicChannel != "" {
-		c := curChannel.Guild.Channel(true, config.TopicChannel)
+	if config.TopicChannelInt() != 0 {
+		c := curChannel.Guild.Channel(true, config.TopicChannelInt())
 		if c != nil {
 			topicChannel = c.ID()
 		}
@@ -111,10 +111,10 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 }
 
 // GetChannel makes sure the channel is in the guild, if not it returns no channel
-func GetChannel(guild *dstate.GuildState, channel string) string {
+func GetChannel(guild *dstate.GuildState, channel int64) int64 {
 	c := guild.Channel(true, channel)
 	if c == nil {
-		return ""
+		return 0
 	}
 
 	return c.ID()

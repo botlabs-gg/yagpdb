@@ -60,10 +60,13 @@ func Run() {
 
 	log.Println("Running bot")
 
+	connEvtChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNEVT_CHANNEL"), 10, 64)
+	connStatusChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNSTATUS_CHANNEL"), 10, 64)
+
 	// Set up shard manager
 	ShardManager = dshardmanager.New(common.Conf.BotToken)
-	ShardManager.LogChannel = os.Getenv("YAGPDB_CONNEVT_CHANNEL")
-	ShardManager.StatusMessageChannel = os.Getenv("YAGPDB_CONNSTATUS_CHANNEL")
+	ShardManager.LogChannel = connEvtChannel
+	ShardManager.StatusMessageChannel = connStatusChannel
 	ShardManager.Name = "YAGPDB"
 	ShardManager.GuildCountsFunc = GuildCountsFunc
 	ShardManager.SessionFunc = func(token string) (session *discordgo.Session, err error) {
@@ -167,10 +170,10 @@ func checkConnectedGuilds() {
 	}
 
 	guilds := make([]*discordgo.UserGuild, 0)
-	after := ""
+	var after int64
 
 	for {
-		g, err := common.BotSession.UserGuilds(100, "", after)
+		g, err := common.BotSession.UserGuilds(100, 0, after)
 		if err != nil {
 			log.WithError(err).Error("Userguilds failed")
 			return
@@ -186,8 +189,9 @@ func checkConnectedGuilds() {
 
 OUTER:
 	for _, gID := range currentlyConnected {
+		parsedGID, _ := strconv.ParseInt(gID, 10, 64)
 		for _, g := range guilds {
-			if g.ID == gID {
+			if g.ID == parsedGID {
 				continue OUTER
 			}
 		}
@@ -196,7 +200,7 @@ OUTER:
 		if err != nil {
 			log.WithError(err).Error("Failed removing guild from connected guilds")
 		} else {
-			EmitGuildRemoved(client, gID)
+			EmitGuildRemoved(client, parsedGID)
 			log.WithField("guild", gID).Info("Removed from guild when offline")
 		}
 	}
@@ -207,8 +211,7 @@ func GuildCountsFunc() []int {
 	result := make([]int, numShards)
 	State.RLock()
 	for _, v := range State.Guilds {
-		parsed, _ := strconv.ParseInt(v.ID(), 10, 64)
-		shard := (parsed >> 22) % int64(numShards)
+		shard := (v.ID() >> 22) % int64(numShards)
 		result[shard]++
 	}
 	State.RUnlock()

@@ -15,7 +15,7 @@ const MaxRetries = 1000
 type Postgres struct{}
 
 // conf is requried to be a pointer value
-func (p *Postgres) GetGuildConfig(ctx context.Context, guildID string, conf GuildConfig) error {
+func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf GuildConfig) error {
 
 	currentRetries := 0
 	for {

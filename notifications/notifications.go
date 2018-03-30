@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
+	"strconv"
 )
 
 type Plugin struct{}
@@ -47,6 +48,21 @@ type Config struct {
 	TopicChannel string `json:"topic_channel" schema:"topic_channel" valid:"channel,true"`
 }
 
+func (c *Config) JoinServerChannelInt() (i int64) {
+	i, _ = strconv.ParseInt(c.JoinServerChannel, 10, 64)
+	return
+}
+
+func (c *Config) LeaveChannelInt() (i int64) {
+	i, _ = strconv.ParseInt(c.LeaveChannel, 10, 64)
+	return
+}
+
+func (c *Config) TopicChannelInt() (i int64) {
+	i, _ = strconv.ParseInt(c.TopicChannel, 10, 64)
+	return
+}
+
 func (c *Config) GetName() string {
 	return "general_notifications"
 }
@@ -57,7 +73,7 @@ func (c *Config) TableName() string {
 
 var DefaultConfig = &Config{}
 
-func GetConfig(guildID string) *Config {
+func GetConfig(guildID int64) *Config {
 	var conf Config
 	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &conf)
 	if err != nil {

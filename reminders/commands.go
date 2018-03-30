@@ -122,8 +122,8 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			// Check perms
-			if reminder.UserID != parsed.Msg.Author.ID {
-				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, reminder.ChannelID)
+			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
+				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, reminder.ChannelIDInt())
 				if err != nil {
 					return "An eror occured checkign for perms", err
 				}
@@ -139,7 +139,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			// Check if we should remove the scheduled event
-			currentReminders, err := GetUserReminders(reminder.UserID)
+			currentReminders, err := GetUserReminders(reminder.UserIDInt())
 			if err != nil {
 				return "Failed fetching reminders, contact bot owner", err
 			}
@@ -165,7 +165,9 @@ var cmds = []*commands.YAGCommand{
 func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 	out := ""
 	for _, v := range reminders {
-		cs := bot.State.Channel(true, v.ChannelID)
+		parsedCID, _ := strconv.ParseInt(v.ChannelID, 10, 64)
+
+		cs := bot.State.Channel(true, parsedCID)
 
 		t := time.Unix(v.When, 0)
 		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
@@ -173,11 +175,11 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		if !displayUsernames {
 			channel := "Unknown channel"
 			if cs != nil {
-				channel = "<#" + cs.ID() + ">"
+				channel = "<#" + discordgo.StrID(cs.ID()) + ">"
 			}
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
-			member, _ := bot.GetMember(cs.Guild.ID(), v.UserID)
+			member, _ := bot.GetMember(cs.Guild.ID(), v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.User.Username

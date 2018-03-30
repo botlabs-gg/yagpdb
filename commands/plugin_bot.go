@@ -116,14 +116,19 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
 	g := evt.GuildCreate
-	prefixExists, err := common.RedisBool(client.Cmd("EXISTS", "command_prefix:"+g.ID))
+	prefixExists, err := common.RedisBool(client.Cmd("EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")
 		return
 	}
 
 	if !prefixExists {
-		client.Cmd("SET", "command_prefix:"+g.ID, "-")
-		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (-)")
+		defaultPrefix := "-"
+		if common.Testing {
+			defaultPrefix = "("
+		}
+
+		client.Cmd("SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix)
+		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
 }

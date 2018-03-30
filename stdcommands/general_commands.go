@@ -405,7 +405,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
-	_, err = common.BotSession.ChannelMessageSend(data.CS.ID(), "<@&"+role.ID+">")
+	_, err = common.BotSession.ChannelMessageSend(data.CS.ID(), "<@&"+discordgo.StrID(role.ID)+">")
 
 	common.BotSession.GuildRoleEdit(data.GS.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
 	return "", err

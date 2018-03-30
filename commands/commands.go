@@ -33,13 +33,13 @@ type ChannelCommandSetting struct {
 	Cmd            string      `json:"cmd"`
 	CommandEnabled bool        `json:"enabled"`
 	AutoDelete     bool        `json:"autodelete"`
-	RequiredRole   string      `json:"required_role"`
+	RequiredRole   int64       `json:"required_role,string"`
 }
 
 type ChannelOverride struct {
 	Settings        []*ChannelCommandSetting `json:"settings"`
 	OverrideEnabled bool                     `json:"enabled"`
-	Channel         string                   `json:"channel"`
+	Channel         int64                    `json:"channel,string"`
 	ChannelName     string                   `json:"-"` // Used for the template rendering
 }
 
@@ -161,9 +161,9 @@ ROOT:
 	return newSettings
 }
 
-func GetConfig(client *redis.Client, guild string, channels []*discordgo.Channel) *CommandsConfig {
+func GetConfig(client *redis.Client, guild int64, channels []*discordgo.Channel) *CommandsConfig {
 	var config *CommandsConfig
-	err := common.GetRedisJson(client, "commands_settings:"+guild, &config)
+	err := common.GetRedisJson(client, "commands_settings:"+discordgo.StrID(guild), &config)
 	if err != nil {
 		log.WithError(err).Error("Error retrieving command settings")
 	}
@@ -186,8 +186,8 @@ func GetConfig(client *redis.Client, guild string, channels []*discordgo.Channel
 	return config
 }
 
-func GetCommandPrefix(client *redis.Client, guild string) (string, error) {
-	reply := client.Cmd("GET", "command_prefix:"+guild)
+func GetCommandPrefix(client *redis.Client, guild int64) (string, error) {
+	reply := client.Cmd("GET", "command_prefix:"+discordgo.StrID(guild))
 	if reply.Err != nil {
 		return "", reply.Err
 	}

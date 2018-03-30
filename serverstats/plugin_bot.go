@@ -15,13 +15,13 @@ import (
 )
 
 var (
-	guildsToCheck   = make([]string, 0)
+	guildsToCheck   = make([]int64, 0)
 	guildsToCheckMU sync.Mutex
 )
 
-func MarkGuildAsToBeChecked(guildID string) {
+func MarkGuildAsToBeChecked(guildID int64) {
 	guildsToCheckMU.Lock()
-	if !common.ContainsStringSlice(guildsToCheck, guildID) {
+	if !common.ContainsInt64Slice(guildsToCheck, guildID) {
 		guildsToCheck = append(guildsToCheck, guildID)
 	}
 	guildsToCheckMU.Unlock()
@@ -99,7 +99,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	g := evt.GuildCreate
 	client := bot.ContextRedis(evt.Context())
 
-	err := client.Cmd("SET", "guild_stats_num_members:"+g.ID, g.MemberCount).Err
+	err := client.Cmd("SET", "guild_stats_num_members:"+discordgo.StrID(g.ID), g.MemberCount).Err
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
 	}
@@ -114,12 +114,12 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 	g := evt.GuildMemberAdd
 	client := bot.ContextRedis(evt.Context())
 
-	err := client.Cmd("ZADD", "guild_stats_members_joined_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
+	err := client.Cmd("ZADD", "guild_stats_members_joined_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	err = client.Cmd("INCR", "guild_stats_num_members:"+g.GuildID).Err
+	err = client.Cmd("INCR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)).Err
 	if err != nil {
 		log.WithError(err).Error("Failed Increasing members")
 	}
@@ -135,9 +135,9 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	var err error
 	if p.Status == "offline" {
-		err = client.Cmd("SREM", "guild_stats_online:"+p.GuildID, p.User.ID).Err
+		err = client.Cmd("SREM", "guild_stats_online:"+discordgo.StrID(p.GuildID), p.User.ID).Err
 	} else {
-		err = client.Cmd("SADD", "guild_stats_online:"+p.GuildID, p.User.ID).Err
+		err = client.Cmd("SADD", "guild_stats_online:"+discordgo.StrID(p.GuildID), p.User.ID).Err
 	}
 
 	if err != nil {
@@ -149,12 +149,12 @@ func HandleMemberRemove(evt *eventsystem.EventData) {
 	g := evt.GuildMemberRemove
 	client := bot.ContextRedis(evt.Context())
 
-	err := client.Cmd("ZADD", "guild_stats_members_left_day:"+g.GuildID, time.Now().Unix(), g.User.ID).Err
+	err := client.Cmd("ZADD", "guild_stats_members_left_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID).Err
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	err = client.Cmd("DECR", "guild_stats_num_members:"+g.GuildID).Err
+	err = client.Cmd("DECR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)).Err
 	if err != nil {
 		log.WithError(err).Error("Failed decreasing members")
 	}
@@ -182,7 +182,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	for _, v := range config.ParsedChannels {
-		if channel.ID() == v {
+		if channel.StrID() == v {
 			return
 		}
 	}
@@ -201,7 +201,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.Guild.ID(), time.Now().Unix(), channel.ID()+":"+m.ID+":"+m.Author.ID).Err
+	err = client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), channel.StrID()+":"+discordgo.StrID(m.ID)+":"+discordgo.StrID(m.Author.ID)).Err
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
@@ -209,15 +209,15 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	MarkGuildAsToBeChecked(channel.Guild.ID())
 }
 
-func ApplyPresences(client *redis.Client, guildID string, presences []*discordgo.Presence) error {
-	client.PipeAppend("DEL", "guild_stats_online:"+guildID)
+func ApplyPresences(client *redis.Client, guildID int64, presences []*discordgo.Presence) error {
+	client.PipeAppend("DEL", "guild_stats_online:"+discordgo.StrID(guildID))
 	count := 1
 	for _, p := range presences {
 		if p.Status == "offline" {
 			continue
 		}
 		count++
-		client.PipeAppend("SADD", "guild_stats_online:"+guildID, p.User.ID)
+		client.PipeAppend("SADD", "guild_stats_online:"+discordgo.StrID(guildID), p.User.ID)
 	}
 
 	_, err := common.GetRedisReplies(client, count)

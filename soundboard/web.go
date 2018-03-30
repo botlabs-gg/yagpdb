@@ -79,7 +79,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	if isDCA {
 		data.Status = TranscodingStatusReady
 	}
-	data.GuildID = common.MustParseInt(g.ID)
+	data.GuildID = g.ID
 
 	count := 0
 	err := common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ?", g.ID, data.Name).Count(&count).Error
@@ -195,7 +195,7 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	ctx := r.Context()
 	client, g, tmpl := web.GetBaseCPContextData(ctx)
 	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
-	data.GuildID = common.MustParseInt(g.ID)
+	data.GuildID = g.ID
 
 	count := 0
 	common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID).Count(&count)
@@ -213,7 +213,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	ctx := r.Context()
 	client, g, tmpl := web.GetBaseCPContextData(ctx)
 	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
-	data.GuildID = common.MustParseInt(g.ID)
+	data.GuildID = g.ID
 
 	locked, err := common.TryLockRedisKey(client, KeySoundLock(data.ID), 10)
 	if err != nil {

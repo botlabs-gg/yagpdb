@@ -64,10 +64,12 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	if err != nil {
 		log.WithError(err).WithField("mq_id", elem.ID).Error("Failed parsing item id")
 	}
+
+	parsedGID, _ := strconv.ParseInt(guildID, 10, 64)
 	for _, v := range currentConfig {
 		if v.ID == parsed {
 			v.Remove(client)
-			common.AddCPLogEntry(common.BotUser, guildID, "Removed reddit feed from "+v.Sub+", Channel does not exist")
+			common.AddCPLogEntry(common.BotUser, parsedGID, "Removed reddit feed from "+v.Sub+", Channel does not exist")
 			break
 		}
 	}

@@ -1,6 +1,7 @@
 package serverstats
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -63,7 +64,7 @@ func HandleStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	newConf := &ServerStatsConfig{
 		GuildConfigModel: configstore.GuildConfigModel{
-			GuildID: common.MustParseInt(ag.ID),
+			GuildID: ag.ID,
 		},
 		Public:         formData.Public,
 		IgnoreChannels: strings.Join(formData.IgnoreChannels, ","),
@@ -104,9 +105,10 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return nil
 	}
 
+	// Update the names to human readable ones, leave the ids in the name fields for the ones not available
 	for _, cs := range stats.ChannelsHour {
 		for _, channel := range activeGuild.Channels {
-			if channel.ID == cs.Name {
+			if discordgo.StrID(channel.ID) == cs.Name {
 				cs.Name = channel.Name
 				break
 			}

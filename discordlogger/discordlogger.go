@@ -8,19 +8,20 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
 	"os"
+	"strconv"
 	"time"
 )
 
 var (
 	// Send errors to this discord channel
-	ErrorChannel string
+	ErrorChannel int64
 	// Send bot leaves joins to this disocrd channel
-	BotLeavesJoins string
+	BotLeavesJoins int64
 )
 
 func init() {
-	ErrorChannel = os.Getenv("YAGPDB_ERRORCHANNEL")
-	BotLeavesJoins = os.Getenv("YAGPDB_BOTLEAVESJOINS")
+	ErrorChannel, _ = strconv.ParseInt(os.Getenv("YAGPDB_ERRORCHANNEL"), 10, 64)
+	BotLeavesJoins, _ = strconv.ParseInt(os.Getenv("YAGPDB_BOTLEAVESJOINS"), 10, 64)
 }
 
 func Register() {
@@ -30,7 +31,7 @@ func Register() {
 	// 	eventsystem.AddHandler(OnReady, eventsystem.EventReady)
 	// }
 
-	if BotLeavesJoins != "" {
+	if BotLeavesJoins != 0 {
 		logrus.Info("Listening for bot leaves and join")
 		common.RegisterPlugin(&Plugin{})
 	}

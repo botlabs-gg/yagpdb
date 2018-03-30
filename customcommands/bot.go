@@ -91,7 +91,7 @@ func StringCommands(ccs []*CustomCommand) string {
 	return out
 }
 
-func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID string, cState *dstate.ChannelState) bool {
+func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dstate.ChannelState) bool {
 	if cState == nil {
 		log.Warn("Channel not found in state")
 		return true

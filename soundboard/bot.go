@@ -53,13 +53,13 @@ func (p *Plugin) InitBot() {
 			data.GS.RLock()
 			defer data.GS.RUnlock()
 
-			voiceChannel := ""
+			var voiceChannel int64
 			vs := data.GS.VoiceState(false, data.Msg.Author.ID)
 			if vs != nil {
 				voiceChannel = vs.ChannelID
 			}
 
-			if voiceChannel == "" {
+			if voiceChannel == 0 {
 				return "You're not in a voice channel stopid.", nil
 			}
 

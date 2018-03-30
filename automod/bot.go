@@ -31,11 +31,11 @@ func (p *Plugin) StartBot() {
 
 // Invalidate the cache when the rules have changed
 func HandleUpdateAutomodRules(event *pubsub.Event) {
-	confCache.Delete(KeyConfig(event.TargetGuild))
+	confCache.Delete(KeyConfig(event.TargetGuildInt))
 }
 
 // CachedGetConfig either retrieves from local application cache or redis
-func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
+func CachedGetConfig(client *redis.Client, gID int64) (*Config, error) {
 	confItem, err := confCache.Fetch(KeyConfig(gID), time.Minute*5, func() (interface{}, error) {
 		c, err := GetConfig(client, gID)
 		if err != nil {

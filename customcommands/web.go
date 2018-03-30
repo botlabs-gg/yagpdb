@@ -52,7 +52,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/customcommands/"
 
 	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
@@ -82,7 +82,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/customcommands/"
 
 	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
@@ -102,7 +102,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/customcommands/"
 
 	cmdIndex := pat.Param(r, "cmd")
 

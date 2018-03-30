@@ -11,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
-	"strconv"
 	"time"
 )
 
@@ -107,8 +106,7 @@ var cmdWhois = &commands.YAGCommand{
 			joinedAtDurStr = "Lesss than an hour ago"
 		}
 
-		parsedId, _ := strconv.ParseInt(target.ID, 10, 64)
-		flake := snowflake.ID(parsedId)
+		flake := snowflake.ID(target.ID)
 		t := time.Unix(flake.Time()/1000, 0)
 		createdDurStr := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
 		if createdDurStr == "" {
@@ -119,7 +117,7 @@ var cmdWhois = &commands.YAGCommand{
 			Fields: []*discordgo.MessageEmbedField{
 				&discordgo.MessageEmbedField{
 					Name:   "ID",
-					Value:  target.ID,
+					Value:  discordgo.StrID(target.ID),
 					Inline: true,
 				},
 				&discordgo.MessageEmbedField{
@@ -307,7 +305,7 @@ func HandleMsgDelete(evt *eventsystem.EventData) {
 	}
 }
 
-func markLoggedMessageAsDeleted(mID string) error {
+func markLoggedMessageAsDeleted(mID int64) error {
 	return common.GORM.Model(Message{}).Where("message_id = ?", mID).Update("deleted", true).Error
 }
 
@@ -369,7 +367,7 @@ type NicknameListing struct {
 
 func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
 	var result UsernameListing
-	err := gDB.Model(&result).Where(UsernameListing{UserID: MustParseID(user.ID)}).Last(&result).Error
+	err := gDB.Model(&result).Where(UsernameListing{UserID: user.ID}).Last(&result).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.WithError(err).Error("Failed checking username for changes")
 		return
@@ -382,7 +380,7 @@ func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
 	logrus.Info("User changed username, old:", result.Username, " | new:", user.Username)
 
 	listing := UsernameListing{
-		UserID:   MustParseID(user.ID),
+		UserID:   user.ID,
 		Username: user.Username,
 	}
 
@@ -392,9 +390,9 @@ func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
 	}
 }
 
-func CheckNickname(gDB *gorm.DB, userID, guildID, nickname string) {
+func CheckNickname(gDB *gorm.DB, userID, guildID int64, nickname string) {
 	var result NicknameListing
-	err := gDB.Model(&result).Where(NicknameListing{UserID: MustParseID(userID), GuildID: guildID}).Last(&result).Error
+	err := gDB.Model(&result).Where(NicknameListing{UserID: userID, GuildID: discordgo.StrID(guildID)}).Last(&result).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.WithError(err).Error("Failed checking nickname for changes")
 		return
@@ -412,8 +410,8 @@ func CheckNickname(gDB *gorm.DB, userID, guildID, nickname string) {
 	logrus.Info("User changed nickname, old:", result.Nickname, " | new:", nickname)
 
 	listing := NicknameListing{
-		UserID:   MustParseID(userID),
-		GuildID:  guildID,
+		UserID:   userID,
+		GuildID:  discordgo.StrID(guildID),
 		Nickname: nickname,
 	}
 

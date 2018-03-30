@@ -95,7 +95,7 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 }
 
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
-	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(common.MustParseInt(parsed.GS.ID()))
+	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.GS.ID())
 	if err != nil {
 		return "Failed retrieving role commands", err
 	}

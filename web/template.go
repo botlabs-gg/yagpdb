@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"html/template"
 	"strconv"
@@ -58,9 +57,9 @@ func hasPerm(botPerms int, checkPerm string) (bool, error) {
 // 3. default unknown display name
 func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, args ...string) template.HTML {
 	hasCurrentSelected := len(args) > 0
-	currentSelected := ""
+	var currentSelected int64
 	if hasCurrentSelected {
-		currentSelected = args[0]
+		currentSelected = templates.ToInt64(args[0])
 	}
 
 	hasEmptyName := len(args) > 1
@@ -78,7 +77,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 	output := ""
 	if hasEmptyName {
 		output += `<option value=""`
-		if currentSelected == "" {
+		if currentSelected == 0 {
 			output += `selected`
 		}
 		output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
@@ -94,7 +93,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 			continue
 		}
 
-		output += `<option value="` + role.ID + `"`
+		output += `<option value="` + discordgo.StrID(role.ID) + `"`
 		if role.ID == currentSelected {
 			output += " selected"
 			found = true
@@ -115,8 +114,8 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 		output += ">" + optName + "</option>\n"
 	}
 
-	if !found && currentSelected != "" {
-		output += `<option value="` + currentSelected + `" selected>` + unknownName + "</option>\n"
+	if !found && currentSelected != 0 {
+		output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
 	}
 
 	return template.HTML(output)
@@ -124,11 +123,6 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 
 // Same as tmplRoleDropdown but supports multiple selections
 func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Role, selections []int64) template.HTML {
-
-	parsedIds := make([]int64, len(roles))
-	for i, r := range roles {
-		parsedIds[i] = common.MustParseInt(r.ID)
-	}
 
 	output := ""
 	for k, role := range roles {
@@ -140,9 +134,9 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 			continue
 		}
 
-		output += `<option value="` + role.ID + `"`
+		output += `<option value="` + discordgo.StrID(role.ID) + `"`
 		for _, selected := range selections {
-			if selected == parsedIds[k] {
+			if selected == role.ID {
 				output += " selected"
 			}
 		}
@@ -175,9 +169,9 @@ func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*dis
 
 	return func(channels []*discordgo.Channel, args ...string) template.HTML {
 		hasCurrentSelected := len(args) > 0
-		currentSelected := ""
+		var currentSelected int64
 		if hasCurrentSelected {
-			currentSelected = args[0]
+			currentSelected = templates.ToInt64(args[0])
 		}
 
 		hasEmptyName := len(args) > 1
@@ -195,7 +189,7 @@ func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*dis
 		output := ""
 		if hasEmptyName {
 			output += `<option value=""`
-			if currentSelected == "" {
+			if currentSelected == 0 {
 				output += `selected`
 			}
 			output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
@@ -207,7 +201,7 @@ func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*dis
 				continue
 			}
 
-			output += `<option value="` + channel.ID + `"`
+			output += `<option value="` + discordgo.StrID(channel.ID) + `"`
 			if channel.ID == currentSelected {
 				output += " selected"
 				found = true
@@ -217,8 +211,8 @@ func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*dis
 			output += ">#" + optName + "</option>\n"
 		}
 
-		if !found && currentSelected != "" {
-			output += `<option value="` + currentSelected + `" selected>` + unknownName + "</option>\n"
+		if !found && currentSelected != 0 {
+			output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
 		}
 
 		return template.HTML(output)

@@ -16,7 +16,7 @@ type Form struct {
 	GeneralConfig `valid:"traverse"`
 }
 
-func (f Form) Save(client *redis.Client, guildID string) error {
+func (f Form) Save(client *redis.Client, guildID int64) error {
 	pubsub.Publish(client, "autorole_stop_processing", guildID, nil)
 
 	err := common.SetRedisJson(client, KeyGeneral(guildID), f.GeneralConfig)

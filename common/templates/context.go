@@ -28,7 +28,7 @@ var (
 		"lower":      strings.ToLower,
 		"toString":   tmplToString,
 		"toInt":      tmplToInt,
-		"toInt64":    tmplToInt64,
+		"toInt64":    ToInt64,
 		"formatTime": tmplFormatTime,
 	}
 
@@ -60,7 +60,7 @@ type Context struct {
 
 	MentionEveryone  bool
 	MentionHere      bool
-	MentionRoles     []string
+	MentionRoles     []int64
 	MentionRoleNames []string
 
 	DelResponse bool

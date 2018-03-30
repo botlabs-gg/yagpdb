@@ -59,7 +59,7 @@ func baseData(inner http.Handler) http.Handler {
 func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	client, guild, tmpl := web.GetBaseCPContextData(ctx)
-	tmpl["VisibleURL"] = "/manage/" + guild.ID + "/streaming/"
+	tmpl["VisibleURL"] = "/manage/" + discordgo.StrID(guild.ID) + "/streaming/"
 
 	ok := ctx.Value(common.ContextKeyFormOk).(bool)
 	newConf := ctx.Value(common.ContextKeyParsedForm).(*Config)

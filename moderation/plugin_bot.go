@@ -14,7 +14,6 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -37,7 +36,7 @@ func (p *Plugin) InitBot() {
 
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
-	guildID := ""
+	var guildID int64
 	action := ""
 
 	botPerformed := false
@@ -87,7 +86,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		reason = "Timed ban expired"
 	}
 
-	err = CreateModlogEmbed(config.ActionChannel, author, action, user, reason, "")
+	err = CreateModlogEmbed(config.IntActionChannel(), author, action, user, reason, "")
 	if err != nil {
 		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action + " log message")
 	}
@@ -112,7 +111,7 @@ func HandleMemberJoin(evt *eventsystem.EventData) {
 	}
 
 	logrus.WithField("guild", c.GuildID).WithField("user", c.User.ID).Info("Assigning back mute role after member rejoined")
-	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.MuteRole)
+	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.IntMuteRole())
 	if err != nil {
 		logrus.WithField("guild", c.GuildID).WithError(err).Error("Failed assigning mute role")
 	}
@@ -268,13 +267,13 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason := SafeArgString(parsed, 1)
 
 			targetID := parsed.Args[0].Int64()
-			targetMember := parsed.GS.MemberCopy(true, strconv.FormatInt(targetID, 10), false)
+			targetMember := parsed.GS.MemberCopy(true, targetID, false)
 			var target *discordgo.User
 			if targetMember == nil {
 				target = &discordgo.User{
 					Username:      "unknown",
 					Discriminator: "????",
-					ID:            strconv.FormatInt(targetID, 10),
+					ID:            targetID,
 				}
 			} else {
 				target = targetMember.User
@@ -411,8 +410,8 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			logLink := CreateLogs(parsed.GS.ID(), parsed.CS.ID(), parsed.Msg.Author)
 
-			channelID := config.ReportChannel
-			if channelID == "" {
+			channelID := config.IntReportChannel()
+			if channelID == 0 {
 				return "No report channel set up", nil
 			}
 
@@ -449,7 +448,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdClean, func(parsed *dcmd.Data) (interface{}, error) {
-			userFilter := ""
+			var userFilter int64
 			if parsed.Args[1].Value != nil {
 				userFilter = parsed.Args[1].Value.(*discordgo.User).ID
 			}
@@ -457,7 +456,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			logrus.Println(parsed.Switches)
 
 			num := parsed.Args[0].Int()
-			if userFilter == "" || userFilter == parsed.Msg.Author.ID {
+			if userFilter == 0 || userFilter == parsed.Msg.Author.ID {
 				num++ // Automatically include our own message
 			}
 
@@ -495,7 +494,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			limitFetch := num
-			if userFilter != "" || filtered {
+			if userFilter != 0 || filtered {
 				limitFetch = num * 50 // Maybe just change to full fetch?
 			}
 
@@ -518,7 +517,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Add/Edit a modlog reason",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.String},
+			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdReason, func(parsed *dcmd.Data) (interface{}, error) {
@@ -526,7 +525,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if config.ActionChannel == "" {
 				return "No mod log channel set up", nil
 			}
-			msg, err := common.BotSession.ChannelMessage(config.ActionChannel, parsed.Args[0].Str())
+			msg, err := common.BotSession.ChannelMessage(config.IntActionChannel(), parsed.Args[0].Int64())
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "Failed retrieving the message: " + cast.Message.Message, nil
@@ -544,7 +543,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			embed := msg.Embeds[0]
 			updateEmbedReason(parsed.Msg.Author, parsed.Args[1].Str(), embed)
-			_, err = common.BotSession.ChannelMessageEditEmbed(config.ActionChannel, msg.ID, embed)
+			_, err = common.BotSession.ChannelMessageEditEmbed(config.IntActionChannel(), msg.ID, embed)
 			if err != nil {
 				return "Failed updating the modlog entry", err
 			}
@@ -665,7 +664,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(channelID string, filterUser string, regex string, maxAge time.Duration, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, maxAge time.Duration, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -681,10 +680,10 @@ func AdvancedDeleteMessages(channelID string, filterUser string, regex string, m
 		return 0, err
 	}
 
-	toDelete := make([]string, 0)
+	toDelete := make([]int64, 0)
 	now := time.Now()
 	for i := len(msgs) - 1; i >= 0; i-- {
-		if filterUser != "" && msgs[i].Author.ID != filterUser {
+		if filterUser != 0 && msgs[i].Author.ID != filterUser {
 			continue
 		}
 

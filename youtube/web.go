@@ -30,7 +30,7 @@ const (
 type Form struct {
 	YoutubeChannelID   string
 	YoutubeChannelUser string
-	DiscordChannel     string `valid:"channel,false`
+	DiscordChannel     int64 `valid:"channel,false`
 	ID                 uint
 	MentionEveryone    bool
 }
@@ -80,7 +80,7 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 	}
 
 	templateData["Subs"] = subs
-	templateData["VisibleURL"] = "/manage/" + ag.ID + "/youtube"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(ag.ID) + "/youtube"
 
 	return templateData, nil
 }
@@ -134,7 +134,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 			return templateData.AddAlerts(web.ErrorAlert("Failed retrieving that feed item")), err
 		}
 
-		if sub.GuildID != activeGuild.ID {
+		if sub.GuildID != discordgo.StrID(activeGuild.ID) {
 			return templateData.AddAlerts(web.ErrorAlert("This appears to belong somewhere else...")), nil
 		}
 
@@ -152,7 +152,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
 
 	sub.MentionEveryone = data.MentionEveryone
-	sub.ChannelID = data.DiscordChannel
+	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
 
 	err = common.GORM.Save(sub).Error
 	return

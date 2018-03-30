@@ -130,7 +130,7 @@ var cmds = []*commands.YAGCommand{
 			parsed.GS.RUnlock()
 
 			target := parsed.Args[0].Value.(*discordgo.User)
-			err = SetRep(common.MustParseInt(parsed.GS.ID()), common.MustParseInt(member.User.ID), common.MustParseInt(target.ID), int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.GS.ID(), member.User.ID, target.ID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return "Failed setting rep, contact bot owner", err
 			}
@@ -194,7 +194,7 @@ var cmds = []*commands.YAGCommand{
 				return "Failed filling in the detalis of the leaderboard entries", err
 			}
 
-			leaderboardURL := "https://" + common.Conf.Host + "/public/" + parsed.GS.ID() + "/reputation/leaderboard"
+			leaderboardURL := "https://" + common.Conf.Host + "/public/" + discordgo.StrID(parsed.GS.ID()) + "/reputation/leaderboard"
 			out := "```\n# -- Points -- User\n"
 			for _, v := range detailed {
 				user := v.Username

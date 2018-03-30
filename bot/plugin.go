@@ -22,7 +22,7 @@ type Plugin interface {
 
 // Used for deleting configuration about servers
 type RemoveGuildHandler interface {
-	RemoveGuild(client *redis.Client, guildID string) error
+	RemoveGuild(client *redis.Client, guildID int64) error
 }
 
 // Used for intializing stuff for new servers
@@ -44,7 +44,7 @@ type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)
 }
 
-func EmitGuildRemoved(client *redis.Client, guildID string) {
+func EmitGuildRemoved(client *redis.Client, guildID int64) {
 	for _, v := range common.Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(client, guildID)

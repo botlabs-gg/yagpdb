@@ -2,6 +2,7 @@ package streaming
 
 import (
 	"encoding/json"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
 )
@@ -21,25 +22,25 @@ type Config struct {
 	Enabled bool `json:"enabled" schema:"enabled"` // Wether streaming notifications is enabled or not
 
 	// Give a role to people streaming
-	GiveRole string `json:"give_role" schema:"give_role" valid:"role,true"`
+	GiveRole int64 `json:"give_role,string" schema:"give_role" valid:"role,true"`
 	// Ignores people with this role, requirerole is ignored if this is set
-	IgnoreRole string `json:"ban_role" schema:"ignore_role" valid:"role,true"`
+	IgnoreRole int64 `json:"ban_role,string" schema:"ignore_role" valid:"role,true"`
 	// Requires people to have this role
-	RequireRole string `json:"require_role" schema:"require_role" valid:"role,true"`
+	RequireRole int64 `json:"require_role,string" schema:"require_role" valid:"role,true"`
 
 	// Channel to send streaming announcements in
-	AnnounceChannel string `json:"announce_channel" schema:"announce_channel" valid:"channel,true"`
+	AnnounceChannel int64 `json:"announce_channel,string" schema:"announce_channel" valid:"channel,true"`
 	// The message
 	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:"template,2000"`
 }
 
-func (c *Config) Save(client *redis.Client, guildID string) error {
+func (c *Config) Save(client *redis.Client, guildID int64) error {
 	encoded, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}
 
-	return client.Cmd("SET", "streaming_config:"+guildID, encoded).Err
+	return client.Cmd("SET", "streaming_config:"+discordgo.StrID(guildID), encoded).Err
 }
 
 var DefaultConfig = &Config{
@@ -48,8 +49,8 @@ var DefaultConfig = &Config{
 }
 
 // Returns he guild's conifg, or the defaul one if not set
-func GetConfig(client *redis.Client, guildID string) (*Config, error) {
-	reply := client.Cmd("GET", "streaming_config:"+guildID)
+func GetConfig(client *redis.Client, guildID int64) (*Config, error) {
+	reply := client.Cmd("GET", "streaming_config:"+discordgo.StrID(guildID))
 	if reply.IsType(redis.Nil) {
 		return DefaultConfig, nil
 	}

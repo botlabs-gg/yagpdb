@@ -219,9 +219,9 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (kee
 	// Check what kind of string field it is, and perform the needed vliadation depending on type
 	switch kind {
 	case "role":
-		err = ValidateRoleField(strconv.FormatInt(i, 10), guild.Roles, allowEmpty)
+		err = ValidateRoleField(i, guild.Roles, allowEmpty)
 	case "channel":
-		err = ValidateChannelField(strconv.FormatInt(i, 10), guild.Channels, allowEmpty)
+		err = ValidateChannelField(i, guild.Channels, allowEmpty)
 	default:
 		logrus.WithField("kind", kind).Error("UNKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
 	}
@@ -292,13 +292,15 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 	case "regex":
 		err = ValidateRegexField(s, maxLen)
 	case "role":
-		err = ValidateRoleField(s, guild.Roles, allowEmpty)
+		parsedID, _ := strconv.ParseInt(s, 10, 64)
+		err = ValidateRoleField(parsedID, guild.Roles, allowEmpty)
 		if err != nil && allowEmpty {
 			str = ""
 			err = nil
 		}
 	case "channel":
-		err = ValidateChannelField(s, guild.Channels, allowEmpty)
+		parsedID, _ := strconv.ParseInt(s, 10, 64)
+		err = ValidateChannelField(parsedID, guild.Channels, allowEmpty)
 		if err != nil && allowEmpty {
 			str = ""
 			err = nil
@@ -355,8 +357,8 @@ func ValidateTemplateField(s string, max int) error {
 	return nil
 }
 
-func ValidateChannelField(s string, channels []*discordgo.Channel, allowEmpty bool) error {
-	if s == "" {
+func ValidateChannelField(s int64, channels []*discordgo.Channel, allowEmpty bool) error {
+	if s == 0 {
 		if allowEmpty {
 			return nil
 		} else {
@@ -373,8 +375,8 @@ func ValidateChannelField(s string, channels []*discordgo.Channel, allowEmpty bo
 	return ErrChannelNotFound
 }
 
-func ValidateRoleField(s string, roles []*discordgo.Role, allowEmpty bool) error {
-	if s == "" {
+func ValidateRoleField(s int64, roles []*discordgo.Role, allowEmpty bool) error {
+	if s == 0 {
 		if allowEmpty {
 			return nil
 		} else {

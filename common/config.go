@@ -5,8 +5,8 @@ import (
 )
 
 type CoreConfig struct {
-	Owner string
-	BotID string
+	Owner int64
+	BotID int64
 
 	ClientID     string
 	ClientSecret string
@@ -17,12 +17,6 @@ type CoreConfig struct {
 	PQUsername string
 	PQPassword string
 	Redis      string
-
-	// Third party api's other than discord
-	// for the Alyien text analysys plugin api access
-
-	// AylienAppID  string `json:"aylien_app_id"`
-	// AylienAppKey string `json:"aylien_app_key"`
 }
 
 func LoadConfig() (c *CoreConfig, err error) {

@@ -55,8 +55,8 @@ var (
 )
 
 var (
-	RKeyCommandCooldown = func(uID, cmd string) string { return "cmd_cd:" + uID + ":" + cmd }
-	RKeyCommandLock     = func(uID, cmd string) string { return "cmd_lock:" + uID + ":" + cmd }
+	RKeyCommandCooldown = func(uID int64, cmd string) string { return "cmd_cd:" + discordgo.StrID(uID) + ":" + cmd }
+	RKeyCommandLock     = func(uID int64, cmd string) string { return "cmd_lock:" + discordgo.StrID(uID) + ":" + cmd }
 
 	CommandExecTimeout = time.Minute
 )
@@ -144,8 +144,8 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Set up log entry for later use
 	logEntry := &common.LoggedExecutedCommand{
-		UserID:    data.Msg.Author.ID,
-		ChannelID: cState.ID(),
+		UserID:    discordgo.StrID(data.Msg.Author.ID),
+		ChannelID: discordgo.StrID(cState.ID()),
 
 		Command:    yc.Name,
 		RawCommand: data.Msg.Content,
@@ -153,7 +153,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if cState.Guild != nil {
-		logEntry.GuildID = cState.Guild.ID()
+		logEntry.GuildID = discordgo.StrID(cState.Guild.ID())
 	}
 
 	resp, autoDel := yc.checkCanExecuteCommand(data, client, cState)
@@ -236,7 +236,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 
 		var enabled bool
 		var err error
-		var role string
+		var role int64
 		// Check wether it's enabled or not
 		enabled, role, autoDel, err = cs.Enabled(client, cState.ID(), guild)
 		if err != nil {
@@ -247,7 +247,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 			return fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host), false
 		}
 
-		if role != "" {
+		if role != 0 {
 			member, err := bot.GetMember(guild.ID(), data.Msg.Author.ID)
 			if err != nil {
 				log.WithError(err).WithField("user", data.Msg.Author.ID).WithField("guild", guild.ID()).Error("Failed fetchign guild member")
@@ -293,8 +293,8 @@ func (cs *YAGCommand) logExecutionTime(dur time.Duration, raw string, sender str
 }
 
 func (cs *YAGCommand) deleteResponse(msgs []*discordgo.Message) {
-	ids := make([]string, 0, len(msgs))
-	cID := ""
+	ids := make([]int64, 0, len(msgs))
+	var cID int64
 	for _, msg := range msgs {
 		if msg == nil {
 			continue
@@ -318,14 +318,14 @@ func (cs *YAGCommand) deleteResponse(msgs []*discordgo.Message) {
 }
 
 // customEnabled returns wether the command is enabled by it's custom key or not
-func (cs *YAGCommand) customEnabled(client *redis.Client, guildID string) (bool, error) {
+func (cs *YAGCommand) customEnabled(client *redis.Client, guildID int64) (bool, error) {
 	// No special key so it's automatically enabled
 	if cs.Key == "" || cs.CustomEnabled {
 		return true, nil
 	}
 
 	// Check redis for settings
-	reply := client.Cmd("GET", cs.Key+guildID)
+	reply := client.Cmd("GET", cs.Key+discordgo.StrID(guildID))
 	if reply.Err != nil {
 		return false, reply.Err
 	}
@@ -344,12 +344,12 @@ func (cs *YAGCommand) customEnabled(client *redis.Client, guildID string) (bool,
 }
 
 // Enabled returns wether the command is enabled or not
-func (cs *YAGCommand) Enabled(client *redis.Client, channel string, gState *dstate.GuildState) (enabled bool, requiredRole string, autodel bool, err error) {
+func (cs *YAGCommand) Enabled(client *redis.Client, channel int64, gState *dstate.GuildState) (enabled bool, requiredRole int64, autodel bool, err error) {
 	gState.RLock()
 	defer gState.RUnlock()
 
 	if cs.HideFromCommandsPage {
-		return true, "", false, nil
+		return true, 0, false, nil
 	}
 
 	ce, err := cs.customEnabled(client, gState.ID())
@@ -357,7 +357,7 @@ func (cs *YAGCommand) Enabled(client *redis.Client, channel string, gState *dsta
 		return
 	}
 	if !ce {
-		return false, "", false, nil
+		return false, 0, false, nil
 	}
 
 	channels := make([]*discordgo.Channel, len(gState.Channels))
@@ -398,11 +398,11 @@ func (cs *YAGCommand) Enabled(client *redis.Client, channel string, gState *dsta
 
 	log.WithField("command", cs.Name).WithField("guild", gState.ID()).Error("Command not in global commands")
 
-	return false, "", false, nil
+	return false, 0, false, nil
 }
 
 // CooldownLeft returns the number of seconds before a command can be used again
-func (cs *YAGCommand) CooldownLeft(client *redis.Client, userID string) (int, error) {
+func (cs *YAGCommand) CooldownLeft(client *redis.Client, userID int64) (int, error) {
 	if cs.Cooldown < 1 || common.Testing {
 		return 0, nil
 	}
@@ -416,7 +416,7 @@ func (cs *YAGCommand) CooldownLeft(client *redis.Client, userID string) (int, er
 }
 
 // SetCooldown sets the cooldown of the command as it's defined in the struct
-func (cs *YAGCommand) SetCooldown(client *redis.Client, userID string) error {
+func (cs *YAGCommand) SetCooldown(client *redis.Client, userID int64) error {
 	if cs.Cooldown < 1 {
 		return nil
 	}

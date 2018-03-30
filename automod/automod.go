@@ -3,6 +3,7 @@ package automod
 //go:generate esc -o assets_gen.go -pkg automod -ignore ".go" assets/
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -11,11 +12,11 @@ import (
 type Condition string
 
 // Redis keys
-func KeyEnabled(gID string) string { return "automod_enabled:" + gID }
-func KeyConfig(gID string) string  { return "automod_config:" + gID }
+func KeyEnabled(gID int64) string { return "automod_enabled:" + discordgo.StrID(gID) }
+func KeyConfig(gID int64) string  { return "automod_config:" + discordgo.StrID(gID) }
 
-func KeyViolations(gID, uID, violation string) string {
-	return "automod_words_violations_" + violation + ":" + gID + ":" + uID
+func KeyViolations(gID, uID int64, violation string) string {
+	return "automod_words_violations_" + violation + ":" + discordgo.StrID(gID) + ":" + discordgo.StrID(uID)
 }
 
 type Plugin struct{}
@@ -54,13 +55,13 @@ func NewConfig() *Config {
 }
 
 // Behold the almighty number of return values on this one!
-func GetConfig(client *redis.Client, guildID string) (config *Config, err error) {
+func GetConfig(client *redis.Client, guildID int64) (config *Config, err error) {
 
 	config = NewConfig()
 	err = common.GetRedisJson(client, KeyConfig(guildID), &config)
 	return
 }
 
-func (c Config) Save(client *redis.Client, guildID string) error {
+func (c Config) Save(client *redis.Client, guildID int64) error {
 	return common.SetRedisJson(client, KeyConfig(guildID), c)
 }

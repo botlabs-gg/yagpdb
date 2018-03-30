@@ -15,7 +15,7 @@ type WrappedMessage struct {
 
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api
 // Puts the messages in the state aswell
-func GetMessages(channelID string, limit int, deleted bool) ([]*WrappedMessage, error) {
+func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, error) {
 	if limit < 1 {
 		return []*WrappedMessage{}, nil
 	}
@@ -54,7 +54,7 @@ func GetMessages(channelID string, limit int, deleted bool) ([]*WrappedMessage, 
 
 	// Not enough messages in state, retrieve them from the api
 	// Initialize the before id
-	before := ""
+	var before int64
 	if n+1 < len(msgBuf) {
 		if msgBuf[n+1] != nil {
 			before = msgBuf[n+1].ID
@@ -67,7 +67,7 @@ func GetMessages(channelID string, limit int, deleted bool) ([]*WrappedMessage, 
 		if toFetch > 100 {
 			toFetch = 100
 		}
-		msgs, err := common.BotSession.ChannelMessages(channelID, toFetch, before, "", "")
+		msgs, err := common.BotSession.ChannelMessages(channelID, toFetch, before, 0, 0)
 		if err != nil {
 			return nil, err
 		}

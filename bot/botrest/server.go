@@ -73,7 +73,7 @@ func dropNonLocal(inner http.Handler) http.Handler {
 }
 
 func HandleGuild(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
 	guild := bot.State.Guild(true, gId)
 	if guild == nil {
@@ -95,7 +95,7 @@ func HandleGuild(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleBotMember(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
 	guild := bot.State.Guild(true, gId)
 	if guild == nil {
@@ -115,8 +115,9 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 	uIDs, ok := r.URL.Query()["users"]
+
 	if !ok || len(uIDs) < 1 {
 		ServerError(w, r, errors.New("No id's provided"))
 		return
@@ -133,14 +134,21 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, _ := bot.GetMembers(gId, uIDs...)
+	uIDsParsed := make([]int64, 0, len(uIDs))
+	for _, v := range uIDs {
+		parsed, _ := strconv.ParseInt(v, 10, 64)
+		uIDsParsed = append(uIDsParsed, parsed)
+	}
+
+	members, _ := bot.GetMembers(gId, uIDsParsed...)
 
 	ServeJson(w, r, members)
 }
 
 func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
-	cId := pat.Param(r, "channel")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
+	cId, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
+
 	guild := bot.State.Guild(true, gId)
 	if guild == nil {
 		ServerError(w, r, errors.New("Guild not found"))

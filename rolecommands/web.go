@@ -70,9 +70,8 @@ func (p *Plugin) InitWeb() {
 
 func HandleSettings(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
 	_, g, tmpl := web.GetBaseCPContextData(r.Context())
-	parsedGID := common.MustParseInt(g.ID)
 
-	groups, groupedCommands, ungroupedCommands, err := GetAllRoleCommandsSorted(parsedGID)
+	groups, groupedCommands, ungroupedCommands, err := GetAllRoleCommandsSorted(g.ID)
 
 	tmpl["Groups"] = groups
 	tmpl["SortedCommands"] = groupedCommands
@@ -83,7 +82,6 @@ func HandleSettings(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateDa
 
 func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	_, g, tmpl := web.GetBaseCPContextData(r.Context())
-	parsedGID := common.MustParseInt(g.ID)
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
 	form.Name = strings.TrimSpace(form.Name)
@@ -100,7 +98,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	model := &models.RoleCommand{
 		Name:    form.Name,
-		GuildID: parsedGID,
+		GuildID: g.ID,
 
 		Role:         form.Role,
 		RequireRoles: form.RequireRoles,
@@ -108,7 +106,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if form.Group != -1 {
-		group, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+"=?", common.MustParseInt(g.ID)), qm.Where(models.RoleGroupColumns.ID+"=?", form.Group)).One()
+		group, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+"=?", g.ID), qm.Where(models.RoleGroupColumns.ID+"=?", form.Group)).One()
 		if err != nil {
 			return tmpl, err
 		}
@@ -130,7 +128,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 		return
 	}
 
-	if cmd.GuildID != common.MustParseInt(g.ID) {
+	if cmd.GuildID != g.ID {
 		return tmpl.AddAlerts(web.ErrorAlert("That's not your command")), nil
 	}
 
@@ -144,7 +142,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 		if err != nil {
 			return tmpl, err
 		}
-		if group.GuildID != common.MustParseInt(g.ID) {
+		if group.GuildID != g.ID {
 			return tmpl.AddAlerts(web.ErrorAlert("That's not your group")), nil
 		}
 		err = cmd.SetRoleGroupG(false, group)
@@ -250,7 +248,6 @@ func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	_, g, tmpl := web.GetBaseCPContextData(r.Context())
-	parsedGID := common.MustParseInt(g.ID)
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
 	form.Name = strings.TrimSpace(form.Name)
@@ -267,7 +264,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	model := &models.RoleGroup{
 		Name:    form.Name,
-		GuildID: parsedGID,
+		GuildID: g.ID,
 
 		RequireRoles: form.RequireRoles,
 		IgnoreRoles:  form.IgnoreRoles,

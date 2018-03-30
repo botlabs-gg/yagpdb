@@ -54,9 +54,9 @@ func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-		templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/reddit/"
+		templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reddit/"
 
-		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+activeGuild.ID)
+		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+discordgo.StrID(activeGuild.ID))
 		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		}
@@ -106,7 +106,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	watchItem := &SubredditWatchItem{
 		Sub:     strings.TrimSpace(newElem.Subreddit),
 		Channel: newElem.Channel,
-		Guild:   activeGuild.ID,
+		Guild:   discordgo.StrID(activeGuild.ID),
 		ID:      highest + 1,
 	}
 

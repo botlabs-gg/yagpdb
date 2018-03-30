@@ -3,12 +3,15 @@ package autorole
 //go:generate esc -o assets_gen.go -pkg autorole -ignore ".go" assets/
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
-func KeyGeneral(guildID string) string    { return "autorole:" + guildID + ":general" }
-func KeyProcessing(guildID string) string { return "autorole:" + guildID + ":processing" }
+func KeyGeneral(guildID int64) string { return "autorole:" + discordgo.StrID(guildID) + ":general" }
+func KeyProcessing(guildID int64) string {
+	return "autorole:" + discordgo.StrID(guildID) + ":processing"
+}
 
 type Plugin struct{}
 
@@ -22,7 +25,7 @@ func RegisterPlugin() {
 }
 
 type GeneralConfig struct {
-	Role             string `valid:"role,true"`
+	Role             int64 `json:",string" valid:"role,true"`
 	RequiredDuration int
 
 	RequiredRoles []int64 `valid:"role,true"`
@@ -30,7 +33,7 @@ type GeneralConfig struct {
 	OnlyOnJoin    bool
 }
 
-func GetGeneralConfig(client *redis.Client, guildID string) (*GeneralConfig, error) {
+func GetGeneralConfig(client *redis.Client, guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
 	err := common.GetRedisJson(client, KeyGeneral(guildID), conf)
 	return conf, err

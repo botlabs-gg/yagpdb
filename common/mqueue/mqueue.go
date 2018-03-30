@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -180,12 +181,16 @@ func process(elem *QueuedElement) {
 		}
 	}
 
+	parsedChannel, err := strconv.ParseInt(elem.Channel, 10, 64)
+	if err != nil {
+		queueLogger.WithError(err).Error("Failed parsing Channel")
+	}
 	for {
 		var err error
 		if elem.MessageStr != "" {
-			_, err = common.BotSession.ChannelMessageSend(elem.Channel, elem.MessageStr)
+			_, err = common.BotSession.ChannelMessageSend(parsedChannel, elem.MessageStr)
 		} else if embed != nil {
-			_, err = common.BotSession.ChannelMessageSendEmbed(elem.Channel, embed)
+			_, err = common.BotSession.ChannelMessageSendEmbed(parsedChannel, embed)
 		} else {
 			queueLogger.Error("MQueue: Both MessageEmbed and MessageStr empty")
 			break

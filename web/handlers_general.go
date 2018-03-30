@@ -28,14 +28,14 @@ func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
 func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 	_, tmpl := GetCreateTemplateData(r.Context())
 
-	if r.FormValue("guild_id") != "" {
-		guild, err := common.BotSession.Guild(r.FormValue("guild_id"))
+	joinedGuildParsed, _ := strconv.ParseInt(r.FormValue("guild_id"), 10, 64)
+	if joinedGuildParsed != 0 {
+		guild, err := common.BotSession.Guild(joinedGuildParsed)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed fetching guild")
-			return tmpl
+		} else {
+			tmpl["JoinedGuild"] = guild
 		}
-
-		tmpl["JoinedGuild"] = guild
 	}
 
 	offset := 0
@@ -141,7 +141,7 @@ func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{
 	}
 
 	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
-	c := pat.Param(r, "channel")
+	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
 	if err != nil {
 		return err
