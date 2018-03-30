@@ -55,7 +55,7 @@ func hasPerm(botPerms int, checkPerm string) (bool, error) {
 // 1. current selected roleid
 // 2. default empty display name
 // 3. default unknown display name
-func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, args ...string) template.HTML {
+func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, args ...interface{}) template.HTML {
 	hasCurrentSelected := len(args) > 0
 	var currentSelected int64
 	if hasCurrentSelected {
@@ -65,13 +65,13 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 	hasEmptyName := len(args) > 1
 	emptyName := ""
 	if hasEmptyName {
-		emptyName = args[1]
+		emptyName = templates.ToString(args[1])
 	}
 
 	hasUnknownName := len(args) > 2
 	unknownName := "Unknown role (deleted most likely)"
 	if hasUnknownName {
-		emptyName = args[2]
+		emptyName = templates.ToString(args[2])
 	}
 
 	output := ""

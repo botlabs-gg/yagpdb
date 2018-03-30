@@ -219,7 +219,7 @@ func ToInt64(from interface{}) int64 {
 	}
 }
 
-func tmplToString(from interface{}) string {
+func ToString(from interface{}) string {
 	switch t := from.(type) {
 	case int:
 		return strconv.Itoa(t)

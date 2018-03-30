@@ -1,6 +1,7 @@
 package commands
 
 //go:generate esc -o assets_gen.go -pkg commands -ignore ".go" assets/
+//go:generate easyjson  commands.go
 
 import (
 	"github.com/jonas747/dcmd"
@@ -28,21 +29,24 @@ func (p *Plugin) Name() string {
 	return "Commands"
 }
 
+//easyjson:json
 type ChannelCommandSetting struct {
 	Info           *YAGCommand `json:"-"` // Used for template info
 	Cmd            string      `json:"cmd"`
 	CommandEnabled bool        `json:"enabled"`
 	AutoDelete     bool        `json:"autodelete"`
-	RequiredRole   int64       `json:"required_role,string"`
+	RequiredRole   string      `json:"required_role"`
 }
 
+//easyjson:json
 type ChannelOverride struct {
 	Settings        []*ChannelCommandSetting `json:"settings"`
 	OverrideEnabled bool                     `json:"enabled"`
-	Channel         int64                    `json:"channel,string"`
+	Channel         string                   `json:"channel"`
 	ChannelName     string                   `json:"-"` // Used for the template rendering
 }
 
+//easyjson:json
 type CommandsConfig struct {
 	Prefix string `json:"-"` // Stored in a seperate key for speed
 
@@ -68,11 +72,11 @@ ROOT:
 		if channel.Type != discordgo.ChannelTypeGuildText {
 			continue
 		}
-
+		strCID := discordgo.StrID(channel.ID)
 		// Look for an existing override
 		for _, override := range conf.ChannelOverrides {
 			// Found an existing override, check if it has all the commands
-			if channel.ID == override.Channel {
+			if strCID == override.Channel {
 				override.Settings = checkCommandSettings(override.Settings, commands, false)
 				override.ChannelName = channel.Name // Update name if changed
 				continue ROOT
@@ -83,7 +87,7 @@ ROOT:
 		override := &ChannelOverride{
 			Settings:        []*ChannelCommandSetting{},
 			OverrideEnabled: false,
-			Channel:         channel.ID,
+			Channel:         strCID,
 			ChannelName:     channel.Name,
 		}
 
@@ -101,7 +105,7 @@ ROOT:
 				continue
 			}
 
-			if channel.ID == override.Channel {
+			if discordgo.StrID(channel.ID) == override.Channel {
 				newOverrides = append(newOverrides, override)
 				break
 			}

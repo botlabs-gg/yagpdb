@@ -26,7 +26,7 @@ var (
 		"joinStr":    joinStrings,
 		"str":        str,
 		"lower":      strings.ToLower,
-		"toString":   tmplToString,
+		"toString":   ToString,
 		"toInt":      tmplToInt,
 		"toInt64":    ToInt64,
 		"formatTime": tmplFormatTime,

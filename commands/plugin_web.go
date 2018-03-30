@@ -8,7 +8,6 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -59,7 +58,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 		// Find the override
 		var override *ChannelOverride
 		for _, r := range config.ChannelOverrides {
-			if r.Channel == channel.ID {
+			if r.Channel == discordgo.StrID(channel.ID) {
 				override = r
 				break
 			}
@@ -74,7 +73,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 		for _, overrideCmd := range override.Settings {
 			overrideCmd.CommandEnabled = r.FormValue(discordgo.StrID(channel.ID)+"_enabled_"+overrideCmd.Cmd) == "on"
 			overrideCmd.AutoDelete = r.FormValue(discordgo.StrID(channel.ID)+"_autodelete_"+overrideCmd.Cmd) == "on"
-			overrideCmd.RequiredRole, _ = strconv.ParseInt(r.FormValue(discordgo.StrID(channel.ID)+"_required_role_"+overrideCmd.Cmd), 10, 64)
+			overrideCmd.RequiredRole = r.FormValue(discordgo.StrID(channel.ID) + "_required_role_" + overrideCmd.Cmd)
 		}
 
 		override.OverrideEnabled = r.FormValue(discordgo.StrID(channel.ID)+"_override_enabled") == "on"
@@ -86,7 +85,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) interface{} {
 		if cmd.Info.Key == "" {
 			cmd.CommandEnabled = r.FormValue("global_enabled_"+cmd.Cmd) == "on"
 		}
-		cmd.RequiredRole, _ = strconv.ParseInt(r.FormValue("global_required_role_"+cmd.Cmd), 10, 64)
+		cmd.RequiredRole = r.FormValue("global_required_role_" + cmd.Cmd)
 		cmd.AutoDelete = r.FormValue("global_autodelete_"+cmd.Cmd) == "on"
 	}
 

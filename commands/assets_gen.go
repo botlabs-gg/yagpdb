@@ -193,7 +193,7 @@ var _escData = map[string]*_escFile{
 	"/assets/commands.html": {
 		local:   "assets/commands.html",
 		size:    11008,
-		modtime: 1519660715,
+		modtime: 1521566046,
 		compressed: `
 H4sIAAAAAAAC/+xa3Y/buBF/918xVQKcF3eWmuLQh0Y2sN1t06BALrjcS3E4LGhpZLGhSJWkvFkI+t8L
 itSXLdnazxS95CFr8WuGvxn+ZoZSWcaYUI7gRflNJLKM8Fh5VbVYlKXGLGdE274USeyBX1WLMKZ7iBhR
@@ -233,7 +233,7 @@ yn2jDi0+ZuIwsMy5OfqENRFCo7RfcC5cPPpvAAAA//9QFn6/ACsAAA==
 	"/assets/help-page.md": {
 		local:   "assets/help-page.md",
 		size:    4653,
-		modtime: 1519494558,
+		modtime: 1521566046,
 		compressed: `
 H4sIAAAAAAAC/8xX3W/cNhJ/118xhzxkjW7kJEUOBwMHw7XboLjrB5wURt9MUSOJWYqjcqjd7GH/+MOQ
 +trNxr5DXxrAWYma+Q35m0++ePEC3qNDr+xVdkttq1wJB7ixRjEyHOCXLhhyysKNr+X9Dll7ExezV+kf

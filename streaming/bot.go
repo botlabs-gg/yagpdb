@@ -292,7 +292,7 @@ func RemoveStreaming(client *redis.Client, config *Config, guildID int64, userID
 		RemoveStreamingRole(member, config.GiveRole, guildID)
 	} else {
 		// Was not streaming before if we removed 0 elements
-		if n, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); n > 0 {
+		if n, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); n > 0 && config.GiveRole != 0 {
 			common.BotSession.GuildMemberRoleRemove(guildID, userID, config.GiveRole)
 		}
 	}
@@ -345,8 +345,12 @@ func GiveStreamingRole(member *discordgo.Member, role int64, guild *discordgo.Gu
 }
 
 func RemoveStreamingRole(member *discordgo.Member, role int64, guildID int64) {
+	if role == 0 {
+		return
+	}
+
 	err := common.RemoveRole(member, role, guildID)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
-		log.WithError(err).WithField("guild", guildID).WithField("user", member.User.ID).Error("Failed removing streaming role")
+		log.WithError(err).WithField("guild", guildID).WithField("user", member.User.ID).WithField("role", role).Error("Failed removing streaming role")
 	}
 }

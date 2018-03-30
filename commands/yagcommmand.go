@@ -11,6 +11,7 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -369,14 +370,16 @@ func (cs *YAGCommand) Enabled(client *redis.Client, channel int64, gState *dstat
 
 	config := GetConfig(client, gState.ID(), channels)
 
+	strCID := discordgo.StrID(channel)
 	// Check overrides first to see if one was enabled, and if so determine if the command is available
 	for _, override := range config.ChannelOverrides {
-		if override.Channel == channel {
+		if override.Channel == strCID {
 			if override.OverrideEnabled {
 				// Find settings for this command
 				for _, cmd := range override.Settings {
 					if cmd.Cmd == cs.Name {
-						return cmd.CommandEnabled, cmd.RequiredRole, cmd.AutoDelete, nil
+						parsedRR, _ := strconv.ParseInt(cmd.RequiredRole, 10, 64)
+						return cmd.CommandEnabled, parsedRR, cmd.AutoDelete, nil
 					}
 				}
 
@@ -388,11 +391,13 @@ func (cs *YAGCommand) Enabled(client *redis.Client, channel int64, gState *dstat
 	// Return from global settings then
 	for _, cmd := range config.Global {
 		if cmd.Cmd == cs.Name {
+			parsedRR, _ := strconv.ParseInt(cmd.RequiredRole, 10, 64)
+
 			if cs.Key != "" || cs.CustomEnabled {
-				return true, cmd.RequiredRole, cmd.AutoDelete, nil
+				return true, parsedRR, cmd.AutoDelete, nil
 			}
 
-			return cmd.CommandEnabled, cmd.RequiredRole, cmd.AutoDelete, nil
+			return cmd.CommandEnabled, parsedRR, cmd.AutoDelete, nil
 		}
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"path/filepath"
