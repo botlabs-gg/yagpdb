@@ -154,7 +154,6 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		}
 
 		if m, s := CheckMatch(prefix, cmd, evt.MessageCreate.Content); m {
-
 			matched = cmd
 			stripped = s
 			break
