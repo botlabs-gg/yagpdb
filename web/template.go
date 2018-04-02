@@ -165,9 +165,9 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 // 1. current selected channelID
 // 2. default empty display name
 // 3. default unknown display name
-func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*discordgo.Channel, args ...string) template.HTML {
+func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
 
-	return func(channels []*discordgo.Channel, args ...string) template.HTML {
+	return func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
 		hasCurrentSelected := len(args) > 0
 		var currentSelected int64
 		if hasCurrentSelected {
@@ -177,13 +177,13 @@ func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*dis
 		hasEmptyName := len(args) > 1
 		emptyName := ""
 		if hasEmptyName {
-			emptyName = args[1]
+			emptyName = templates.ToString(args[1])
 		}
 
 		hasUnknownName := len(args) > 2
 		unknownName := "Unknown channel (deleted most likely)"
 		if hasUnknownName {
-			emptyName = args[2]
+			unknownName = templates.ToString(args[2])
 		}
 
 		output := ""
