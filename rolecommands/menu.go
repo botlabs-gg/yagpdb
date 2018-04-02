@@ -31,17 +31,20 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		return "You do not have the proper permissions (Manage Server) to create a role menu", nil
 	}
 
-	group, err := models.RoleGroupsG(qm.Where("guild_id=?", parsed.GS.ID()), qm.Where("name ILIKE ?", parsed.Args[0].Str())).One()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "Did not find the role command group specified, make sure you typed it right", nil
+	var group *models.RoleGroup
+	if parsed.Args[0].Value != nil {
+		group, err = models.RoleGroupsG(qm.Where("guild_id=?", parsed.GS.ID()), qm.Where("name ILIKE ?", parsed.Args[0].Str())).One()
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return "Did not find the role command group specified, make sure you typed it right", nil
+			}
+
+			return "Failed retrieving the group", err
 		}
 
-		return "Failed retrieving the group", err
-	}
-
-	if c, _ := models.RoleCommandsG(qm.Where("role_group_id=?", group.ID)).Count(); c < 1 {
-		return "No commands in group, set them up in the control panel at: <https://yagpdb.xyz/manage>", nil
+		if c, _ := models.RoleCommandsG(qm.Where("role_group_id=?", group.ID)).Count(); c < 1 {
+			return "No commands in group, set them up in the control panel at: <https://yagpdb.xyz/manage>", nil
+		}
 	}
 
 	model := &models.RoleMenu{
@@ -49,8 +52,11 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		OwnerID:   parsed.Msg.Author.ID,
 		ChannelID: parsed.Msg.ChannelID,
 
-		OwnMessage:  true,
-		RoleGroupID: null.Int64From(group.ID),
+		OwnMessage: true,
+	}
+
+	if group != nil {
+		model.RoleGroupID = null.Int64From(group.ID)
 	}
 
 	var msg *discordgo.Message
@@ -69,8 +75,14 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		existing, err := models.FindRoleMenuG(id)
 		if err == nil {
 			return UpdateMenu(parsed, existing)
+		} else if group == nil {
+			return "No group specified", nil
 		}
 	} else {
+		if group == nil {
+			return "No group specified", nil
+		}
+
 		// set up the message if not provided
 		msg, err = common.BotSession.ChannelMessageSend(parsed.CS.ID(), "Role menu\nSetting up...")
 		if err != nil {
@@ -112,6 +124,10 @@ func UpdateMenu(parsed *dcmd.Data, existing *models.RoleMenu) (interface{}, erro
 	opts, err := existing.RoleMenuOptionsG().All()
 	if err != nil && err != sql.ErrNoRows {
 		return "Error communicating with DB", nil
+	}
+
+	if existing.OwnMessage {
+		UpdateRoleMenuMessage(existing, opts)
 	}
 
 	// Add all mising options

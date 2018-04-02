@@ -24,10 +24,9 @@ func (p *Plugin) InitBot() {
 			},
 			RunFunc: CmdFuncRole,
 		}, &commands.YAGCommand{
-			CmdCategory:  commands.CategoryTool,
-			Name:         "RoleMenu",
-			Description:  "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one, if there's already a menu on this message it will be updated with the missing options.",
-			RequiredArgs: 1,
+			CmdCategory: commands.CategoryTool,
+			Name:        "RoleMenu",
+			Description: "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one, if there's already a menu on this message it will be updated with the missing options.",
 			Arguments: []*dcmd.ArgDef{
 				&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
 			},
