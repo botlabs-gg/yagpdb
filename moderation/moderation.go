@@ -273,7 +273,7 @@ func updateEmbedReason(author *discordgo.User, reason string, embed *discordgo.M
 
 	if author != nil {
 		embed.Author = &discordgo.MessageEmbedAuthor{
-			Name:    fmt.Sprintf("%s#%s (ID %s)", author.Username, author.Discriminator, author.ID),
+			Name:    fmt.Sprintf("%s#%s (ID %d)", author.Username, author.Discriminator, author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		}
 	}
