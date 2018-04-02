@@ -24,7 +24,7 @@ func AddCPLogEntry(user *discordgo.User, guild int64, args ...interface{}) {
 	}
 	defer RedisPool.Put(client)
 
-	action := fmt.Sprintf("(UserID: %s) %s#%s: %s", user.ID, user.Username, user.Discriminator, fmt.Sprint(args...))
+	action := fmt.Sprintf("(UserID: %d) %s#%s: %s", user.ID, user.Username, user.Discriminator, fmt.Sprint(args...))
 
 	now := time.Now()
 	entry := &CPLogEntry{

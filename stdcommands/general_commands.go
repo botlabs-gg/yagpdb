@@ -426,7 +426,7 @@ var cmdListRoles = &commands.YAGCommand{
 
 		for _, r := range data.GS.Guild.Roles {
 			me := r.Permissions&discordgo.PermissionAdministrator != 0 || r.Permissions&discordgo.PermissionMentionEveryone != 0
-			out += fmt.Sprintf("`%-25s: %-19s #%-6x  ME:%5t`\n", r.Name, r.ID, r.Color, me)
+			out += fmt.Sprintf("`%-25s: %-19d #%-6x  ME:%5t`\n", r.Name, r.ID, r.Color, me)
 		}
 
 		return out, nil

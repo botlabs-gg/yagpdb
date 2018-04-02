@@ -212,10 +212,10 @@ func CreateModlogEmbed(channelID int64, author *discordgo.User, action string, t
 
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:    fmt.Sprintf("%s#%s (ID %s)", author.Username, author.Discriminator, author.ID),
+			Name:    fmt.Sprintf("%s#%s (ID %d)", author.Username, author.Discriminator, author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		},
-		Description: fmt.Sprintf("**%s %s**#%s *(ID %s)*\n📄**Reason:** %s", action, target.Username, target.Discriminator, target.ID, reason),
+		Description: fmt.Sprintf("**%s %s**#%s *(ID %d)*\n📄**Reason:** %s", action, target.Username, target.Discriminator, target.ID, reason),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
 		},
