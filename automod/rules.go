@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -40,12 +41,17 @@ type BaseRule struct {
 	KickAfter    int `valid:"0,1000"`
 	BanAfter     int `valid:"0,1000"`
 
-	IgnoreRole     int64    `json:",string" valid:"role,true"`
+	IgnoreRole     string   `valid:"role,true"`
 	IgnoreChannels []string `valid:"channel,false"`
 }
 
 func (r BaseRule) GetMuteDuration() int {
 	return r.MuteDuration
+}
+
+func (r BaseRule) IgnoreRoleInt() int64 {
+	ir, _ := strconv.ParseInt(r.IgnoreRole, 10, 64)
+	return ir
 }
 
 func (r BaseRule) PushViolation(client *redis.Client, key string) (p Punishment, err error) {
@@ -86,7 +92,7 @@ func (r BaseRule) ShouldIgnore(evt *discordgo.Message, m *discordgo.Member) bool
 	}
 
 	for _, role := range m.Roles {
-		if r.IgnoreRole == role {
+		if r.IgnoreRoleInt() == role {
 			return true
 		}
 	}
