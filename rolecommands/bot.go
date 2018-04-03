@@ -56,7 +56,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
 			if v, ok := resp.(string); ok {
-				return "Role not round, " + v, err
+				return "Role not found, " + v, err
 			}
 
 			return resp, err
@@ -89,7 +89,7 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 		}
 	}
 
-	return "An error occured assignign the role", err
+	return "An error occurred while assigning the role", err
 
 }
 
