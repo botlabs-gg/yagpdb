@@ -149,7 +149,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	var matched *CustomCommand
 	var stripped string
 	for _, cmd := range cmds {
-		if !cmd.RunsInChannel(evt.MessageCreate.ID) || !cmd.RunsForUser(member) {
+		if !cmd.RunsInChannel(evt.MessageCreate.ChannelID) || !cmd.RunsForUser(member) {
 			continue
 		}
 
