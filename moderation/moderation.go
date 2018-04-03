@@ -277,7 +277,6 @@ func updateEmbedReason(author *discordgo.User, reason string, embed *discordgo.M
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		}
 	}
-
 }
 
 func getConfig(guildID int64, config *Config) (*Config, error) {

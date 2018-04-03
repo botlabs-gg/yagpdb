@@ -1,7 +1,6 @@
 package reminders
 
 import (
-	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
@@ -11,11 +10,8 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
-	"github.com/sirupsen/logrus"
 	"strconv"
-	"strings"
 	"time"
-	"unicode"
 )
 
 func (p *Plugin) InitBot() {
@@ -31,7 +27,7 @@ var cmds = []*commands.YAGCommand{
 		Aliases:      []string{"remind"},
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Time", Type: dcmd.String},
+			&dcmd.ArgDef{Name: "Time", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Name: "Message", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -40,12 +36,10 @@ var cmds = []*commands.YAGCommand{
 				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
 			}
 
-			when, err := parseReminderTime(parsed.Args[0].Str())
-			if err != nil {
-				return err, err
-			}
+			fromNow := parsed.Args[0].Value.(time.Duration)
 
-			timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
+			durString := common.HumanizeDuration(common.DurationPrecisionSeconds, fromNow)
+			when := time.Now().Add(fromNow)
 			tStr := when.Format(time.RFC822)
 
 			if when.After(time.Now().Add(time.Hour * 24 * 366)) {
@@ -53,12 +47,12 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-			_, err = NewReminder(client, parsed.Msg.Author.ID, parsed.CS.ID(), parsed.Args[1].Str(), when)
+			_, err := NewReminder(client, parsed.Msg.Author.ID, parsed.CS.ID(), parsed.Args[1].Str(), when)
 			if err != nil {
 				return err, err
 			}
 
-			return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
+			return "Set a reminder in " + durString + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 		},
 	},
 	&commands.YAGCommand{
@@ -188,82 +182,4 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		}
 	}
 	return out
-}
-
-// Parses a time string like 1day3h
-func parseReminderTime(str string) (time.Time, error) {
-	logrus.Info(str)
-
-	t := time.Now()
-
-	currentNumBuf := ""
-	currentModifierBuf := ""
-
-	// Parse the time
-	for _, v := range str {
-		if unicode.Is(unicode.White_Space, v) {
-			continue
-		}
-
-		if unicode.IsNumber(v) {
-			if currentModifierBuf != "" {
-				if currentNumBuf == "" {
-					currentNumBuf = "1"
-				}
-				d, err := parseDuration(currentNumBuf, currentModifierBuf)
-				if err != nil {
-					return t, err
-				}
-
-				t = t.Add(d)
-
-				currentNumBuf = ""
-				currentModifierBuf = ""
-			}
-
-			currentNumBuf += string(v)
-
-		} else {
-			currentModifierBuf += string(v)
-		}
-	}
-
-	if currentNumBuf != "" {
-		d, err := parseDuration(currentNumBuf, currentModifierBuf)
-		if err == nil {
-			t = t.Add(d)
-		}
-	}
-
-	return t, nil
-}
-
-func parseDuration(numStr, modifierStr string) (time.Duration, error) {
-	parsedNum, err := strconv.ParseInt(numStr, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	parsedDur := time.Duration(parsedNum)
-
-	if strings.HasPrefix(modifierStr, "s") {
-		parsedDur = parsedDur * time.Second
-	} else if modifierStr == "" || (strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o')) {
-		parsedDur = parsedDur * time.Minute
-	} else if strings.HasPrefix(modifierStr, "h") {
-		parsedDur = parsedDur * time.Hour
-	} else if strings.HasPrefix(modifierStr, "d") {
-		parsedDur = parsedDur * time.Hour * 24
-	} else if strings.HasPrefix(modifierStr, "w") {
-		parsedDur = parsedDur * time.Hour * 24 * 7
-	} else if strings.HasPrefix(modifierStr, "mo") {
-		parsedDur = parsedDur * time.Hour * 24 * 30
-	} else if strings.HasPrefix(modifierStr, "y") {
-		parsedDur = parsedDur * time.Hour * 24 * 365
-	} else {
-		return parsedDur, errors.New("Couldn't figure out what '" + numStr + modifierStr + "` was")
-	}
-
-	return parsedDur, nil
-
 }
