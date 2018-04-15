@@ -10,6 +10,7 @@ export YAGPDB_BOTTOKEN="Bot token_here"
 export YAGPDB_HOST="somehost.com"   
 export YAGPDB_EMAIL="insert@email.here"      
 
+export YAGPDB_PQHOST="localhost"
 export YAGPDB_PQUSERNAME="postgres username"
 export YAGPDB_PQPASSWORD="postgres password"
 export YAGPDB_REDIS="redis address"
