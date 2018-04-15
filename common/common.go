@@ -97,7 +97,7 @@ func connectRedis(addr string) (err error) {
 }
 
 func connectDB(user, pass, dbName string) error {
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=%s sslmode=disable password=%s", user, dbName, pass))
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=%s sslmode=disable password='%s'", user, dbName, pass))
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)
@@ -113,7 +113,7 @@ func connectDB(user, pass, dbName string) error {
 		pass := os.Getenv("YAGPDB_SQLSTATE_PW")
 		dbName := os.Getenv("YAGPDB_SQLSTATE_DB")
 
-		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", addr, user, dbName, pass))
+		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password='%s'", addr, user, dbName, pass))
 		if err != nil {
 			DSQLStateDB = PQ
 			return err
