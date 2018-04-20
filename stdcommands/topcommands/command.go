@@ -1,0 +1,65 @@
+package topcommands
+
+import (
+	"fmt"
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/stdcommands/util"
+	"time"
+)
+
+var yagCommand = commands.YAGCommand{
+	Cooldown:             2,
+	CmdCategory:          commands.CategoryDebug,
+	HideFromCommandsPage: true,
+	Name:                 "topcommands",
+	Description:          "Shows command usage stats",
+	HideFromHelp:         true,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "hours", Type: dcmd.Int, Default: 1},
+	},
+	RunFunc: cmdFuncTopCommands,
+}
+
+func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
+	hours := data.Args[0].Int()
+	within := time.Now().Add(time.Duration(-hours) * time.Hour)
+
+	var results []*TopCommandsResult
+	err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("command, COUNT(id)").Where("created_at > ?", within).Group("command").Order("count(id) desc").Scan(&results).Error
+	if err != nil {
+		return "Uh oh... Something bad happened :'(", err
+	}
+
+	out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours)
+	total := 0
+	for k, result := range results {
+		out += fmt.Sprintf("#%02d: %5d - %s\n", k+1, result.Count, result.Command)
+		total += result.Count
+	}
+
+	cpm := float64(total) / float64(hours) / 60
+
+	out += fmt.Sprintf("\nTotal: %d, Commands per minute: %.1f", total, cpm)
+	out += "\n```"
+
+	return out, nil
+}
+
+func Cmd() util.Command {
+	return &cmd{}
+}
+
+type cmd struct {
+	util.BaseCmd
+}
+
+func (c cmd) YAGCommand() *commands.YAGCommand {
+	return &yagCommand
+}
+
+type TopCommandsResult struct {
+	Command string
+	Count   int
+}

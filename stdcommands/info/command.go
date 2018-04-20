@@ -1,24 +1,12 @@
-package stdcommands
+package info
 
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
-var cmdInvite = &commands.YAGCommand{
-	CmdCategory: commands.CategoryGeneral,
-	Name:        "Invite",
-	Aliases:     []string{"inv", "i"},
-	Description: "Responds with bot invite link",
-	RunInDM:     true,
-
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
-	},
-}
-
-var cmdInfo = &commands.YAGCommand{
+var yagCommand = commands.YAGCommand{
 	CmdCategory: commands.CategoryGeneral,
 	Name:        "Info",
 	Description: "Responds with bot information",
@@ -32,4 +20,16 @@ Control panel: <https://yagpdb.xyz/manage>
 				`
 		return info, nil
 	},
+}
+
+func Cmd() util.Command {
+	return &cmd{}
+}
+
+type cmd struct {
+	util.BaseCmd
+}
+
+func (c cmd) YAGCommand() *commands.YAGCommand {
+	return &yagCommand
 }

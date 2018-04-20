@@ -1,0 +1,64 @@
+package currenttime
+
+import (
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/tkuchiki/go-timezone"
+	"strings"
+	"time"
+)
+
+var yagCommand = commands.YAGCommand{
+	CmdCategory:    commands.CategoryTool,
+	Name:           "CurrentTime",
+	Aliases:        []string{"ctime", "gettime"},
+	Description:    "Shows current time in different timezones",
+	ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Zone", Type: dcmd.String},
+		{Name: "Offset", Type: dcmd.Int},
+	},
+	RunFunc: cmdFuncCurrentTime,
+}
+
+func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
+	const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
+
+	now := time.Now()
+	if data.Args[0].Value != nil {
+		tzName := data.Args[0].Str()
+		names, err := timezone.GetTimezones(strings.ToUpper(data.Args[0].Str()))
+		if err == nil && len(names) > 0 {
+			tzName = names[0]
+		}
+
+		location, err := time.LoadLocation(tzName)
+		if err != nil {
+			if offset, ok := customTZOffsets[strings.ToUpper(tzName)]; ok {
+				location = time.FixedZone(tzName, int(offset*60*60))
+			} else {
+				return "Unknown timezone :(", err
+			}
+		}
+		return now.In(location).Format(format), nil
+	} else if data.Args[1].Value != nil {
+		location := time.FixedZone("", data.Args[1].Int()*60*60)
+		return now.In(location).Format(format), nil
+	}
+
+	// No offset of zone specified, just return the bots location
+	return now.Format(format), nil
+}
+
+func Cmd() util.Command {
+	return &cmd{}
+}
+
+type cmd struct {
+	util.BaseCmd
+}
+
+func (c cmd) YAGCommand() *commands.YAGCommand {
+	return &yagCommand
+}

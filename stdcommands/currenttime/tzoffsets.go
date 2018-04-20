@@ -1,4 +1,4 @@
-package stdcommands
+package currenttime
 
 var (
 	customTZOffsets = map[string]float32{
