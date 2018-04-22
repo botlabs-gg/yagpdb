@@ -260,7 +260,7 @@ var cmdThrow = &commands.YAGCommand{
 
 		rng := rand.Intn(100)
 		if rng < 5 {
-			resp = fmt.Sprintf("TRIPPLE THROW! Threw **%s**, **%s** and **%s** at **%s**", RandomThing(), RandomThing(), RandomThing(), target)
+			resp = fmt.Sprintf("TRIPLE THROW! Threw **%s**, **%s** and **%s** at **%s**", RandomThing(), RandomThing(), RandomThing(), target)
 		} else if rng < 15 {
 			resp = fmt.Sprintf("DOUBLE THROW! Threw **%s** and **%s** at **%s**", RandomThing(), RandomThing(), target)
 		} else {
