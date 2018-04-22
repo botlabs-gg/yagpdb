@@ -63,7 +63,10 @@ func Init() error {
 		return err
 	}
 
-	err = connectDB(config.PQUsername, config.PQPassword, "yagpdb")
+	err = connectDB(config.PQHost, config.PQUsername, config.PQPassword, "yagpdb")
+	if err != nil {
+		panic(err)
+	}
 
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
@@ -79,7 +82,7 @@ func InitTest() {
 		return
 	}
 
-	err := connectDB("postgres", "123", testDB)
+	err := connectDB("localhost", "postgres", "123", testDB)
 	if err != nil {
 		panic(err)
 	}
@@ -95,8 +98,12 @@ func connectRedis(addr string) (err error) {
 	return
 }
 
-func connectDB(user, pass, dbName string) error {
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=%s sslmode=disable password=%s", user, dbName, pass))
+func connectDB(host, user, pass, dbName string) error {
+	if host == "" {
+		host = "localhost"
+	}
+
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password='%s'", host, user, dbName, pass))
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)
@@ -111,7 +118,7 @@ func connectDB(user, pass, dbName string) error {
 		pass := os.Getenv("YAGPDB_SQLSTATE_PW")
 		dbName := os.Getenv("YAGPDB_SQLSTATE_DB")
 
-		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", addr, user, dbName, pass))
+		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password='%s'", addr, user, dbName, pass))
 		if err != nil {
 			DSQLStateDB = PQ
 			return err

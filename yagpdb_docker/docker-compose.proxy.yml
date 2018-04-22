@@ -1,0 +1,47 @@
+version: '2'
+
+volumes:
+  proxy_certs:
+  proxy_config:
+  proxy_dhparam:
+  proxy_html:
+  proxy_vhost:
+
+networks:
+  proxy-tier:
+    external:
+      name: proxy-tier
+
+services:
+  proxy:
+    image: jwilder/nginx-proxy
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - proxy_config:/etc/nginx
+      - proxy_certs:/etc/nginx/certs:ro
+      - proxy_dhparam:/etc/nginx/dhparam
+      - proxy_html:/usr/share/nginx/html
+      # Hack to create dir since the companion expects it from start.
+      - proxy_vhost:/etc/nginx/vhost.d
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    labels:
+      com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
+    networks:
+      - proxy-tier
+
+  letsencrypt-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: unless-stopped
+    volumes_from:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - proxy_certs:/etc/nginx/certs:rw
+    networks:
+      - proxy-tier
+    depends_on:
+      - proxy
+
