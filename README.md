@@ -23,11 +23,64 @@ With that said running this bot requires knowledge of:
  - Basic knowledge of go (being able to compile things)
  - Basic knowledge of git (being able to change branches and such)
 
-**I will not help you if you're missing one of these, I simply do not have time.**
+**I will not help you if you're missing one of these, I simply do not have time. You can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
 
 (There's still a lot of contributing you can do without this though, such as writing docs, fixing my horrible typos and so on)
 
-**Running YAGPDB on your own - however you can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
+**The web server requires a domain.**
+
+The web server (control panel) requires a domain (e.g., yagpdb.example.com) in
+order to integrate with Discord. Although it is possible to run this bot without
+the control panel, it is significantly more difficult and not supported by the
+maintainers.
+
+#### General Discord bot setup
+
+Directions on creating an app and getting credentials may be found
+[here](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
+YAGPDB does not require you to authorize the bot: all of that will be handled
+via the Control Panel.
+
+In addition, you will need to add your domain to the bot's "REDIRECT URI(S)"
+configuration:
+
+- https://YourHostNameHere/confirm_login
+- https://YourHostNameHere/manage
+
+#### Docker quickstart
+
+If you have docker-compose installed it will offer the fastest route to getting
+up-and-running.
+
+```bash
+git clone https://github.com/jonas747/yagpdb
+cp yagpdb/yagpdb_docker/{app.example.env,app.env}
+cp yagpdb/yagpdb_docker/{db.example.env,db.env}
+```
+
+Edit `app.env` and `db.env` to specify the Discord bot values from above.
+
+Make sure ports 80 and 443 are accessible on your network and launch:
+
+    docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml up
+
+The bot will connect automatically and the control panel will be available via
+your host after a short setup.
+
+If you are running several bots (or other web sites alongside the bot), consider
+running a proxy such as jrcs/letsencrypt-nginx-proxy-companion.
+
+First start the proxy. This needs to be started only once and is shared by all
+web sites:
+
+    docker network create proxy-tier
+    docker-compose -p proxy yagpdb/yagpdb_docker/docker-compose.proxy.yml up
+
+And then start the bot using the proxy:
+
+    docker-compose -f yagpdb/yagpdb_docker/docker-compose.proxied.yml up
+
+#### Manual setup
 
 Required databases: 
  - PostgresSQL
@@ -38,22 +91,20 @@ Required databases:
 
 First step is to set those up, and get them running.
 
-**The webserver currently requires a domain, (a subdomain works), reason is currently i haven't made https (letsencrypt) optional.**
-
-The webserver by default (unless `-pa`) listens on 5000(http) and 5001(https)
-So if you're behind a NAT, forward those, if not you can either use the `-pa` switch or add an entry to iptables.
-
 **Steps for building:**
 
 YAGPDB currently use a lot of alternative branches of my projects, mostly because of my custom discordgo fork.
 
-1. `go get github.com/jonas747/yagpdb/cmd/yagpdb` (this will error, that's fine)
-2. go into `$GOPATH/src/github.com/jonas747/discordgo` and change the git branch to `yagpdb`
-2. go into `$GOPATH/src/github.com/jonas747/dutil` and change the git branch to `dgofork`
-3. cd `${GOPATH}/src/github.com/jonas747/dshardmanager && git checkout dgofork`
-4. cd `${GOPATH}/src/github.com/jonas747/dcmd && git checkout dgofork`
-
-You can now build it and run `$GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb`
+```bash
+git clone -b yagpdb https://github.com/jonas747/discordgo $GOPATH/src/github.com/jonas747/discordgo
+git clone -b dgofork https://github.com/jonas747/dutil $GOPATH/src/github.com/jonas747/dutil
+git clone -b dgofork https://github.com/jonas747/dshardmanager $GOPATH/src/github.com/jonas747/dshardmanager
+git clone -b dgofork https://github.com/jonas747/dcmd $GOPATH/src/github.com/jonas747/dcmd
+go get -v -d github.com/jonas747/yagpdb/cmd/yagpdb
+cd $GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb
+go build -o yagpdb main.go
+```
+You can now run `./yagpdb`
 
 Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfile` for what environment variables are available.
 
@@ -61,6 +112,9 @@ You can run the webserver, bot, reddit and youtube parts as seperate processes (
 
 You specify `-bot` to run the bot, `-web` to run the webserver and so on.
 And it should be running now.
+
+The webserver by default (unless `-pa`) listens on 5000(http) and 5001(https)
+So if you're behind a NAT, forward those, if not you can either use the `-pa` switch or add an entry to iptables.
 
 ### Plugins
 
