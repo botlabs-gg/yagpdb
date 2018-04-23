@@ -51,7 +51,7 @@ func TestValidationString(t *testing.T) {
 			t.Errorf("String case [%d] is valid, but shoulnd't be", i)
 		} else if !ok && v.Valid {
 			t.Errorf("String case [%d] is not valid, but should be", i)
-		} else if strings.TrimSpace(v.Struct.TrimSpace) != v.Struct.TrimSpace {
+		} else if ok && strings.TrimSpace(v.Struct.TrimSpace) != v.Struct.TrimSpace {
 			t.Errorf("String case [%d] is not trimmed properly", i)
 		}
 	}

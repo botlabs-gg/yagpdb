@@ -327,7 +327,7 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 			}
 		}
 
-		err = ValidateNormalStringField(s, min, maxLen)
+		err = ValidateNormalStringField(str, min, maxLen)
 	default:
 		logrus.WithField("kind", kind).Error("UNKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
 	}
