@@ -5,7 +5,7 @@ package web
 // depending on struct tags
 //
 // struct: `valid:"traverse"`
-//	  - Validates the struct
+//	  - Validates the struct or slice
 // float/int: `valid:"{min],{max}"` or (for int64's) `valid:"role/channel,{allowEmpty}}"
 //    - Makes sure the float/int is whitin min and max
 // normal string: `valid:",{minLen},{maxLen},opts..."` or `valid:",{maxLen},opts..."`
@@ -160,6 +160,12 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 				innerOk := ValidateForm(guild, tmpl, addr.Interface())
 				if !innerOk {
 					ok = false
+				}
+			case reflect.Slice:
+				sl := reflect.Indirect(vField)
+				for i := 0; i < sl.Len(); i++ {
+					innerOk := ValidateForm(guild, tmpl, sl.Index(i).Addr().Interface())
+					ok = ok && innerOk
 				}
 			}
 		}

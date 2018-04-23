@@ -48,7 +48,7 @@ func TestValidationString(t *testing.T) {
 	for i, v := range stringTestCases {
 		ok := ValidateForm(nil, TemplateData(make(map[string]interface{})), v.Struct)
 		if ok && !v.Valid {
-			t.Errorf("String case [%d] is valid, but shoulnd't be", i)
+			t.Errorf("String case [%d] is valid, but shouldn't be", i)
 		} else if !ok && v.Valid {
 			t.Errorf("String case [%d] is not valid, but should be", i)
 		} else if ok && strings.TrimSpace(v.Struct.TrimSpace) != v.Struct.TrimSpace {
@@ -121,6 +121,59 @@ func TestValidationChannel(t *testing.T) {
 			t.Errorf("Channel case [%d] is valid, but shoulnd't be", i)
 		} else if !ok && v.Valid {
 			t.Errorf("Channel case [%d] is not valid, but should be", i)
+		}
+	}
+}
+
+func TestValidationNestedSlice(t *testing.T) {
+	type NestedString struct {
+		Msg string `valid:",1,8,trimspace"`
+	}
+
+	type NestedSlice struct {
+		Msgs []NestedString `valid:"traverse"`
+	}
+
+	testCases := []struct {
+		Struct *NestedSlice
+		Valid  bool
+	}{
+		{ // 0
+			Struct: &NestedSlice{
+				[]NestedString{
+					{"aa"},
+					{"aa   "},
+				},
+			},
+			Valid: true,
+		}, { // 1
+			Struct: &NestedSlice{
+				[]NestedString{
+					{"aa"},
+					{"123456789"},
+				},
+			},
+			Valid: false,
+		},
+	}
+
+	allTrimmed := func(n *NestedSlice) bool {
+		for _, s := range n.Msgs {
+			if strings.TrimSpace(s.Msg) != s.Msg {
+				return false
+			}
+		}
+		return true
+	}
+
+	for i, v := range testCases {
+		ok := ValidateForm(nil, TemplateData(make(map[string]interface{})), v.Struct)
+		if ok && !v.Valid {
+			t.Errorf("String case [%d] is valid, but shouldn't be", i)
+		} else if !ok && v.Valid {
+			t.Errorf("String case [%d] is not valid, but should be", i)
+		} else if !allTrimmed(v.Struct) {
+			t.Errorf("String case [%d] is not trimmed properly", i)
 		}
 	}
 }
