@@ -69,14 +69,14 @@ var (
 	}{
 		{
 			Struct: &ChannelTestStruct{
-				ChannelNotEmpty:   "0",
+				ChannelNotEmpty:   "1",
 				ChannelAllowEmpty: "",
 			},
 			Valid: true,
 		},
 		{
 			Struct: &ChannelTestStruct{
-				ChannelNotEmpty:   "0",
+				ChannelNotEmpty:   "1",
 				ChannelAllowEmpty: "0",
 			},
 			Valid: true,
@@ -110,7 +110,7 @@ func TestValidationChannel(t *testing.T) {
 	g := &discordgo.Guild{
 		Channels: []*discordgo.Channel{
 			&discordgo.Channel{
-				ID: "0",
+				ID: 1,
 			},
 		},
 	}
