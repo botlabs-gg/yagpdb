@@ -24,16 +24,16 @@ FROM alpine:latest
 WORKDIR /app
 VOLUME /app/soundboard \
   /app/cert
+EXPOSE 80 443
 
 # We need the X.509 certificates for client TLS to work.
 RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /go/bin/yagpdb .
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/templates templates/
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/posts posts/
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/static static/
 
-EXPOSE 80 443
+COPY --from=builder /go/bin/yagpdb .
 
 # Set to "-https=false" if using a TLS-enabled proxy such as
 # jrcs/letsencrypt-nginx-proxy-companion
