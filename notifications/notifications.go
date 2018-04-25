@@ -8,6 +8,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"strconv"
+	"strings"
+)
+
+const (
+	RecordSeparator = "\x1e"
+	MaxUserMessages = 20
 )
 
 type Plugin struct{}
@@ -35,14 +41,29 @@ type Config struct {
 	configstore.GuildConfigModel
 	JoinServerEnabled bool   `json:"join_server_enabled" schema:"join_server_enabled"`
 	JoinServerChannel string `json:"join_server_channel" schema:"join_server_channel" valid:"channel,true"`
-	JoinServerMsg     string `json:"join_server_msg" schema:"join_server_msg" valid:"template,2000"`
+
+	// Implementation note: gorilla/schema currently requires manual index
+	// setting in forms to parse sub-objects. GORM has_many is also complicated
+	// by manual handling of associations and loss of IDs through the web form
+	// (without which Replace() is currently n^2).
+	// For strings, we greatly simplify things by flattening for storage.
+
+	// TODO: Remove the legacy single-message variant when ready to migrate the
+	// database.
+	JoinServerMsg  string   `json:"join_server_msg" valid:"template,2000"`
+	JoinServerMsgs []string `json:"join_server_msgs" schema:"join_server_msgs" gorm:"-" valid:"template,2000"`
+	// Do Not Use! For persistence only.
+	JoinServerMsgs_ string `json:"-"`
 
 	JoinDMEnabled bool   `json:"join_dm_enabled" schema:"join_dm_enabled"`
 	JoinDMMsg     string `json:"join_dm_msg" schema:"join_dm_msg" valid:"template,2000"`
 
-	LeaveEnabled bool   `json:"leave_enabled" schema:"leave_enabled"`
-	LeaveChannel string `json:"leave_channel" schema:"leave_channel" valid:"channel,true"`
-	LeaveMsg     string `json:"leave_msg" schema:"leave_msg" valid:"template,500"`
+	LeaveEnabled bool     `json:"leave_enabled" schema:"leave_enabled"`
+	LeaveChannel string   `json:"leave_channel" schema:"leave_channel" valid:"channel,true"`
+	LeaveMsg     string   `json:"leave_msg" schema:"leave_msg" valid:"template,500"`
+	LeaveMsgs    []string `json:"leave_msgs" schema:"leave_msgs" gorm:"-" valid:"template,500"`
+	// Do Not Use! For persistence only.
+	LeaveMsgs_ string `json:"-"`
 
 	TopicEnabled bool   `json:"topic_enabled" schema:"topic_enabled"`
 	TopicChannel string `json:"topic_channel" schema:"topic_channel" valid:"channel,true"`
@@ -71,6 +92,53 @@ func (c *Config) TableName() string {
 	return "general_notification_configs"
 }
 
+// GORM BeforeSave hook
+func (c *Config) BeforeSave() (err error) {
+	filterAndJoin := func(a []string) string {
+		b := ""
+		for _, s := range a {
+			if s == "" {
+				continue
+			}
+			if len(b) > 0 {
+				b += RecordSeparator
+			}
+			b += s
+		}
+		if len(b) >= MaxUserMessages {
+			b = b[:MaxUserMessages]
+		}
+
+		return b
+	}
+
+	c.JoinServerMsgs_ = filterAndJoin(c.JoinServerMsgs)
+	c.LeaveMsgs_ = filterAndJoin(c.LeaveMsgs)
+
+	return nil
+}
+
+// GORM AfterFind hook
+func (c *Config) AfterFind() (err error) {
+	if c.JoinServerMsg != "" {
+		c.JoinServerMsgs = append(c.JoinServerMsgs, c.JoinServerMsg)
+		c.JoinServerMsg = ""
+	}
+	if c.JoinServerMsgs_ != "" {
+		c.JoinServerMsgs = append(c.JoinServerMsgs, strings.Split(c.JoinServerMsgs_, RecordSeparator)...)
+	}
+
+	if c.LeaveMsg != "" {
+		c.LeaveMsgs = append(c.LeaveMsgs, c.LeaveMsg)
+		c.LeaveMsg = ""
+	}
+	if c.LeaveMsgs_ != "" {
+		c.LeaveMsgs = append(c.LeaveMsgs, strings.Split(c.LeaveMsgs_, RecordSeparator)...)
+	}
+
+	return nil
+}
+
 var DefaultConfig = &Config{}
 
 func GetConfig(guildID int64) *Config {
@@ -81,9 +149,10 @@ func GetConfig(guildID int64) *Config {
 			log.WithError(err).Error("Failed retrieving config")
 		}
 		return &Config{
-			JoinServerMsg: "<@{{.User.ID}}> Joined!",
-			LeaveMsg:      "**{{.User.Username}}** Left... :'(",
+			JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
+			LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
 		}
 	}
+
 	return &conf
 }
