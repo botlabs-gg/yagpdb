@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
+	"math/rand"
 	"regexp"
 	"strings"
 	"time"
@@ -50,7 +51,7 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, cc.Response), nil
+		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
 
 	},
 }
@@ -160,7 +161,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		}
 	}
 
-	if matched == nil || matched.Response == "" {
+	if matched == nil || len(matched.Responses) == 0 {
 		return
 	}
 
@@ -217,7 +218,8 @@ func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Cli
 	tmplCtx.Data["Args"] = argsStr
 	tmplCtx.Data["StrippedMsg"] = stripped
 
-	out, err := tmplCtx.Execute(client, cmd.Response)
+	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
+	out, err := tmplCtx.Execute(client, chanMsg)
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
