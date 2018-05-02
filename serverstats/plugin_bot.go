@@ -49,7 +49,7 @@ func (p *Plugin) InitBot() {
 			}
 
 			if !config.Public {
-				return "Stats are set to private on this server, this can be changed in the control panel on <http://yagpdb.xyz>", nil
+				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.Conf.Host), nil
 			}
 
 			stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID())
