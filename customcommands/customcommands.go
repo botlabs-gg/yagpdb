@@ -17,6 +17,7 @@ import (
 
 const (
 	MaxCommands = 100
+	MaxUserMessages = 20
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -66,9 +67,11 @@ type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
 	TriggerTypeForm string             `json:"-" schema:"type"`
 	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,1000"`
-	Response        string             `json:"response" schema:"response" valid:",3000"`
-	CaseSensitive   bool               `json:"case_sensitive" schema:"case_sensitive"`
-	ID              int                `json:"id"`
+	// TODO: Retire the legacy Response field.
+	Response      string   `json:"response,omitempty" schema:"response" valid:",3000"`
+	Responses     []string `json:"responses" schema:"responses" valid:",3000"`
+	CaseSensitive bool     `json:"case_sensitive" schema:"case_sensitive"`
+	ID            int      `json:"id"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -80,7 +83,7 @@ type CustomCommand struct {
 }
 
 func (cc *CustomCommand) Save(client *redis.Client, guildID int64) error {
-	serialized, err := json.Marshal(cc)
+	serialized, err := json.Marshal(cc.Migrate())
 	if err != nil {
 		return err
 	}
@@ -139,6 +142,17 @@ func (cc *CustomCommand) RunsForUser(m *discordgo.Member) bool {
 	return true
 }
 
+// Migrate modifies a CustomCommand to remove legacy fields.
+func (cc *CustomCommand) Migrate() *CustomCommand {
+	cc.Responses = filterEmptyResponses(cc.Response, cc.Responses...)
+	cc.Response = ""
+	if len(cc.Responses) > MaxUserMessages {
+		cc.Responses = cc.Responses[:MaxUserMessages]
+	}
+
+	return cc
+}
+
 func GetCommands(client *redis.Client, guild int64) ([]*CustomCommand, int, error) {
 	hash, err := client.Cmd("HGETALL", "custom_commands:"+discordgo.StrID(guild)).Map()
 	if err != nil {
@@ -157,7 +171,7 @@ func GetCommands(client *redis.Client, guild int64) ([]*CustomCommand, int, erro
 			log.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
 			result[i] = &CustomCommand{}
 		} else {
-			result[i] = decoded
+			result[i] = decoded.Migrate()
 			if decoded.ID > highest {
 				highest = decoded.ID
 			}
@@ -189,4 +203,17 @@ func (c CustomCommandSlice) Swap(i, j int) {
 	temp := c[i]
 	c[i] = c[j]
 	c[j] = temp
+}
+
+func filterEmptyResponses(s string, ss ...string) []string {
+	r := make([]string, 0, len(ss)+1)
+	if s != "" {
+		r = append(r, s)
+	}
+	for _, s := range ss {
+		if s != "" {
+			r = append(r, s)
+		}
+	}
+	return r
 }
