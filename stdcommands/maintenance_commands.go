@@ -165,7 +165,7 @@ var cmdUnbanServer = &commands.YAGCommand{
 		}
 
 		if unbanned < 1 {
-			return "Server wasnt banned", nil
+			return "Server wasn't banned", nil
 		}
 
 		return "Unbanned server", nil

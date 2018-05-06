@@ -126,7 +126,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 			continue
 		}
 
-		// If the rule did not trigger a deletion there wasnt any violation
+		// If the rule did not trigger a deletion there wasn't any violation
 		if !d {
 			continue
 		}

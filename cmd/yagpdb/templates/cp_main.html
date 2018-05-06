@@ -133,7 +133,7 @@ Selections - List of selections
 */}}
 {{define "channel_options_multi"}}
     {{$selections := .Selections}}
-    {{range .Channels}}{{if eq .Type 0}}<option value="{{.ID}}" {{if $selections}}{{if in $selections .ID}}selected {{end}}{{end}}>#{{.Name}}</option>
+    {{range .Channels}}{{if eq .Type 0}}<option value="{{.ID}}" {{if $selections}}{{if in $selections (toString .ID)}}selected {{end}}{{end}}>#{{.Name}}</option>
     {{end}}{{end}}
 {{end}}
 
