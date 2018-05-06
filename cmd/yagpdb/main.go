@@ -75,6 +75,7 @@ func main() {
 
 	log.SetFormatter(&log.TextFormatter{
 		DisableTimestamp: !common.Testing,
+		ForceColors:      true,
 	})
 
 	if os.Getenv("YAGPDB_SENTRY_DSN") != "" {

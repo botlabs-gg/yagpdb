@@ -1,6 +1,7 @@
 package fixedpool
 
 import (
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 
@@ -101,8 +102,14 @@ func New(network, addr string, size int) (*Pool, error) {
 // Get retrieves an available redis client. If there are none available it will
 // create a new one on the fly
 func (p *Pool) Get() (*redis.Client, error) {
+	t := time.Now()
 	select {
 	case conn := <-p.pool:
+		s := time.Since(t)
+		if s.Nanoseconds() > 1000 {
+			logrus.Println("Found conn after: ", s)
+		}
+
 		return conn, nil
 	case <-time.After(time.Second * 10):
 		panic("Ran out of connections?")
@@ -127,6 +134,7 @@ func (p *Pool) Put(conn *redis.Client) {
 					p.pool <- client
 					return
 				}
+				logrus.WithError(err).Error("Failed connecting to redis")
 				time.Sleep(time.Second)
 			}
 		}()
