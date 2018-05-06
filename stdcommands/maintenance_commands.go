@@ -230,7 +230,7 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 	sortable := make([]*DiscordEvtEntry, len(eventsystem.AllDiscordEvents))
 	for i, _ := range sortable {
 		sortable[i] = &DiscordEvtEntry{
-			Name: eventsystem.Event(i).String(),
+			Name: eventsystem.AllDiscordEvents[i].String(),
 		}
 	}
 
