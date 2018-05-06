@@ -7,6 +7,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common/fixedpool"
+	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/mediocregopher/radix.v2/redis"
 	// "github.com/mediocregopher/radix.v2/pool"
 	"github.com/sirupsen/logrus"
@@ -30,7 +31,7 @@ var (
 	PQ   *sql.DB
 
 	// RedisPool   *pool.Pool
-	RedisPool *fixedpool.Pool
+	RedisPool redisPool
 
 	DSQLStateDB *sql.DB
 
@@ -95,8 +96,14 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	// RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
-	RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
+	if os.Getenv("YAGPDB_LEGACY_REDIS_POOL") != "" {
+		logrus.Info("Using legacy redis pool")
+		RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
+	} else {
+		logrus.Info("Using new redis pool, set YAGPDB_LEGACY_REDIS_POOL=yes if it's broken")
+		RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
+	}
+
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}
@@ -137,4 +144,10 @@ func connectDB(host, user, pass, dbName string) error {
 	}
 
 	return err
+}
+
+type redisPool interface {
+	Cmd(cmd string, args ...interface{}) *redis.Resp
+	Put(conn *redis.Client)
+	Get() (*redis.Client, error)
 }
