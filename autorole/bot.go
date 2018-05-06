@@ -19,7 +19,7 @@ import (
 func (p *Plugin) InitBot() {
 	commands.AddRootCommands(roleCommands...)
 	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 }
 
 var roleCommands = []*commands.YAGCommand{
@@ -79,7 +79,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 
 	if !config.OnlyOnJoin && config.Role != 0 {
-		bot.GetMember(gs.ID(), p.User.ID)
+		go bot.GetMember(gs.ID(), p.User.ID)
 	}
 }
 
