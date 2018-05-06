@@ -64,7 +64,7 @@ func (p *Plugin) InitBot() {
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%s/stats)", common.Conf.Host, data.GS.ID()),
+				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%d/stats)", common.Conf.Host, data.GS.ID()),
 				Fields: []*discordgo.MessageEmbedField{
 					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
