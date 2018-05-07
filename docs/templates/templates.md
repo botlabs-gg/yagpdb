@@ -65,6 +65,7 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 | `removeRoleID roleid` | Remove the role with the given id from the user that triggered the command (use the listroles command for a list of role) |
 | `deleteResponse` | Deletes the response after 10 seconds |
 | `deleteTrigger` | Deletes the trigger after 10 seconds |
+| `addReactions "👍" "👎"` | Adds each emoji as a reaction to the message that triggered the command |
 
 
 ### Branching
@@ -88,6 +89,8 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 * `{{"{{"}}if eq .Channel.ID “#######”{{"}}"}}` Will only show in Channel #####
 * `{{"{{"}}if ne  .User.ID “#######”{{"}}"}}` Will ignore if user ID ##### uses command
 * `{{"{{"}}$d := randInt 10{{"}}"}}` Store the random int into variable $d 
+* `{{"{{"}}$d := randInt 10{{"}}"}}` Store the random int into variable $d 
+* `{{"{{addReactions .CmdArgs}}"}}` Adds the emoji following a trigger as reactions
 
 ### How to get a role ID
 
