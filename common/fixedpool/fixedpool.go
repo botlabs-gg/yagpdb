@@ -85,7 +85,10 @@ func NewCustom(network, addr string, size int, df DialFunc) (*Pool, error) {
 	// make the rest of the connections in the background, if any fail it's fine
 	go func() {
 		for i := 0; i < size-1; i++ {
-			mkConn()
+			err := mkConn()
+			if err != nil {
+				panic("Failde initializing redis pool: " + err.Error())
+			}
 		}
 		close(p.initDoneCh)
 	}()
