@@ -30,6 +30,7 @@ var (
 		"toInt":      tmplToInt,
 		"toInt64":    ToInt64,
 		"formatTime": tmplFormatTime,
+		"slice":      slice,
 	}
 
 	contextSetupFuncs = []ContextSetupFunc{
@@ -164,4 +165,5 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["removeRoleID"] = tmplRemoveRoleID(c)
 	c.ContextFuncs["deleteResponse"] = tmplDelResponse(c)
 	c.ContextFuncs["deleteTrigger"] = tmplDelTrigger(c)
+	c.ContextFuncs["addReactions"] = tmplAddReactions(c)
 }
