@@ -54,6 +54,7 @@ var generalCommands = []*commands.YAGCommand{
 	cmdMentionRole,
 	cmdListRoles,
 	cmdWouldYouRather,
+	cmdPoll,
 }
 
 var cmdReverse = &commands.YAGCommand{
