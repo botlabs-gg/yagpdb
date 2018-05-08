@@ -210,7 +210,7 @@ kG7F2t41LUm6trWRC/9+c+9n7q9m3/4JAAD//xYSEVLkAwAA
 	"/assets/moderation.html": {
 		local:   "assets/moderation.html",
 		size:    13832,
-		modtime: 1525808768,
+		modtime: 1525809620,
 		compressed: `
 H4sIAAAAAAAC/+wb224bufVdX3F2usDKQCTFBdqXVYzGzqIbNNoAuaDok8EZHo0Ic8gpyZEsCPr34pAc
 aSSNbo7txIvqwZaG5OG538hZLDiOhUJIHBalZA5vJyhLNLeF5reschNtkuVymGmOV4tFslgky2X/rX/e

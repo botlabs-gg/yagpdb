@@ -193,7 +193,7 @@ var _escData = map[string]*_escFile{
 	"/assets/settings.html": {
 		local:   "assets/settings.html",
 		size:    3350,
-		modtime: 1518879672,
+		modtime: 1521566047,
 		compressed: `
 H4sIAAAAAAAC/7xWS2/jNhC++1dMiR5aYGU1e+hhYRsIsmjRU4Gm94LSjCRuKJLlw04g+L8XpORHbEuJ
 A299oGnPkPPN6+N0HVIlFAErzT+WEIVn2+1s1nWeWiO57yUNcWQw325nCxRrKCV3bsms3rDVDADg+N9S

@@ -193,7 +193,7 @@ var _escData = map[string]*_escFile{
 	"/templates/ads.md": {
 		local:   "templates/ads.md",
 		size:    691,
-		modtime: 1524119236,
+		modtime: 1521566046,
 		compressed: `
 H4sIAAAAAAAC/zxSQW7bMBC86xUDtEBsVHYcI4GBnnrooe65H1hTK4k1xRW4Kyvs6wvSiXngYTkznBny
 jMTRIIvBRkaQlRMC9wYnKXKCCUYOM2bK6CVVlBM1SI+0xOjjgEzD3F32OPfIsmClaIVXlW0kg85ibaFG
@@ -209,7 +209,7 @@ JXK3rReeITFkUAiygj6Q8FMprMQrwXc3TnlHMUoun+TmO5bNtBh32+fB958GHz3dxfyuTzSxVpmYbSzc
 	"/templates/customembed.md": {
 		local:   "templates/customembed.md",
 		size:    1434,
-		modtime: 1524119236,
+		modtime: 1521566046,
 		compressed: `
 H4sIAAAAAAAC/6xUwY7bNhC96yum6mXX8ErZdY3UymmDtgEKNA3QXLZxYNHUSGKW4gicoZ2tYV/6E731
 F/sJhWh74zUCtAiii4h5o/fePJK6owBaOdAelSDowEIdYLfEiuGiQ2bVIMPaSAuaLHmsgE2FS+Uv99W7
@@ -229,7 +229,7 @@ GA3pGZRut5fJvwEAAP//djV3NpoFAAA=
 	"/templates/docs.ghtml": {
 		local:   "templates/docs.ghtml",
 		size:    994,
-		modtime: 1524119236,
+		modtime: 1521566046,
 		compressed: `
 H4sIAAAAAAAC/5xSTW+cPBA+v/sr5nUviVQvSs+ES3KpVFU5VOqxmrUHsGJmqG1YrSz+ewULCVn11AtY
 9swz83zkbKl2TKCsmKgZRzVNh9K76gAAUCK0gepH9UlVpQPjMcZHVSPUqB3XMv/rs6rKwlXwLGboiBMm
@@ -246,7 +246,7 @@ AQAA//+stVcF4gMAAA==
 	"/templates/helping-out.md": {
 		local:   "templates/helping-out.md",
 		size:    3418,
-		modtime: 1524119236,
+		modtime: 1521571034,
 		compressed: `
 H4sIAAAAAAAC/4xXWW8cNxJ+719Rsh8iA3PAiRMDfostxNYihwEZGwSCAVc3q7sZNVlcsnpGkyD/fVEk
 57KkxT5Os+7vq2P++PH9x6u3YBO0ZP0ADg0BegNx9tDu4CUM8w5Q3AIcgdslmvr8fr2CGwb0OxhpCnAN
@@ -280,7 +280,7 @@ AAA=
 	"/templates/index.md": {
 		local:   "templates/index.md",
 		size:    1674,
-		modtime: 1524119236,
+		modtime: 1521566046,
 		compressed: `
 H4sIAAAAAAAC/4xUTW/bOBC9+1cM0kMTwFViu3Hc3JK4+ejmkKbd7bZBgVDSSGIsceghaVkt+t8XQzlu
 mu0CexPEmcf3Zt7jx0o70A58hZBTFho0XnlNBgpi+HxycTM/TQaDKy9FWWBG4+sOVsgdaJNRY2v0CMrk
@@ -304,7 +304,7 @@ Y0qXwOCfAAAA//9GoFGYigYAAA==
 	"/templates/quickstart.md": {
 		local:   "templates/quickstart.md",
 		size:    1290,
-		modtime: 1524119236,
+		modtime: 1521566046,
 		compressed: `
 H4sIAAAAAAAC/3xUTW/cNhC961e8ugfHgCy3TQsYvqUxYAQt2gBOD0HRA0WOJHYpjjocriL/+oJcbbYB
 itwIzcd782aemg+TT1jMSFh9CJgoLNg445/s7SFsSKTIC3Qi9Kxd0zyT5uWhab7v8MRQxqS6pIe7u82M
@@ -325,7 +325,7 @@ AAA=
 	"/templates/templates.md": {
 		local:   "templates/templates.md",
 		size:    5169,
-		modtime: 1525739939,
+		modtime: 1525809620,
 		compressed: `
 H4sIAAAAAAAC/7RY4XLbuBH+z6fYUW4mduvoIud6PzLtTRXLyak9Jzexr53+OsPEkkRMAgoWlKxGmrkX
 aGf6v52+2z1BH6GzAEiRlOxcMnP+IdHAt7sfdoEPS10VCLkBh9WiFA4Bda40giKoCSVkxsLfpq++n714
