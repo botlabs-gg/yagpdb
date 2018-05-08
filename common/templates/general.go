@@ -255,3 +255,52 @@ func tmplFormatTime(t time.Time, args ...string) string {
 
 	return t.Format(layout)
 }
+
+// slice returns the result of creating a new slice with the given arguments.
+// "slice x 1 2" is, in Go syntax, x[1:2], and "slice x 1" is equivalent to
+// x[1:].
+func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) {
+	v, _ := indirect(item)
+	if !v.IsValid() {
+		return reflect.Value{}, errors.New("index of untyped nil")
+	}
+
+	var args []int
+	for _, i := range indices {
+		index, _ := indirect(i)
+		switch index.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			args = append(args, int(index.Int()))
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			args = append(args, int(index.Uint()))
+		case reflect.Invalid:
+			return reflect.Value{}, errors.New("cannot index slice/array with nil")
+		default:
+			return reflect.Value{}, errors.Errorf("cannot index slice/array with type %s", index.Type())
+		}
+	}
+
+	switch v.Kind() {
+	case reflect.Array, reflect.Slice, reflect.String:
+		switch len(args) {
+		case 0:
+			return v, nil
+		case 1:
+			args = append(args, v.Len()+1-args[0])
+		case 2:
+			break
+		default:
+			return reflect.Value{}, errors.Errorf("unexpected slice arguments %d", len(args))
+		}
+
+		if args[0] < 0 || args[0] >= v.Len() {
+			return reflect.Value{}, errors.Errorf("begin index out of range: %d", args[0])
+		} else if args[1] <= args[0] || args[1] >= v.Len() {
+			return reflect.Value{}, errors.Errorf("end index out of range: %d", args[1])
+		}
+
+		return v.Slice(args[0], args[1]), nil
+	default:
+		return reflect.Value{}, errors.Errorf("can't index item of type %s", v.Type())
+	}
+}
