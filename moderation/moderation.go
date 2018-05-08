@@ -558,7 +558,10 @@ func RemoveMemberMuteRole(config *Config, member *discordgo.Member, mute MuteMod
 
 	for _, rmRole := range mute.RemovedRoles {
 		if !common.ContainsInt64Slice(member.Roles, rmRole) {
-			common.BotSession.GuildMemberRoleAdd(member.GuildID, member.User.ID, rmRole)
+			err := common.BotSession.GuildMemberRoleAdd(config.GuildID, member.User.ID, rmRole)
+			if err != nil {
+				logrus.WithError(err).Error("failed adding back removed role in mute")
+			}
 		}
 	}
 
