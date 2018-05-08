@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -69,11 +70,20 @@ func NewCustom(network, addr string, size int, df DialFunc) (*Pool, error) {
 		}
 	}()
 
+	finalizer := func(conn *redis.Client) {
+		if conn.LastCritical == nil {
+			logrus.Error("Healthy Redis client garbage collected! This is bad my dude!")
+			p.Put(conn)
+		}
+	}
+
 	mkConn := func() error {
 		client, err := df(network, addr)
 		if err == nil {
 			p.pool <- client
+			runtime.SetFinalizer(client, finalizer)
 		}
+
 		return err
 	}
 
@@ -99,6 +109,7 @@ func NewCustom(network, addr string, size int, df DialFunc) (*Pool, error) {
 			for {
 				<-t.C
 				logrus.Println("Redis pool size: ", len(p.pool))
+				runtime.GC()
 			}
 		}()
 	}
@@ -140,6 +151,7 @@ func (p *Pool) Put(conn *redis.Client) {
 			conn.Close()
 		}
 	} else {
+		// The conn was bad so replace it with a good conn
 		go func() {
 			for {
 				client, err := p.df(p.Network, p.Addr)
