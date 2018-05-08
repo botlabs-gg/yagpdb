@@ -294,7 +294,7 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 		}
 
 		if args[0] < 0 || args[0] >= v.Len() {
-			return reflect.Value{}, errors.Errorf("beg index out of range: %d", args[0])
+			return reflect.Value{}, errors.Errorf("begin index out of range: %d", args[0])
 		} else if args[1] <= args[0] || args[1] >= v.Len() {
 			return reflect.Value{}, errors.Errorf("end index out of range: %d", args[1])
 		}
