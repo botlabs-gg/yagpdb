@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"reflect"
 	"regexp"
@@ -139,19 +140,21 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			}
 			vField.Set(reflect.ValueOf(newSlice))
 		case []int64:
-			newSlice := make([]int64, 0, len(cv))
-			for _, integer := range cv {
-				keep, e := ValidateIntField(integer, validationTag, guild)
-				if e != nil {
-					err = e
-					break
-				}
-				if keep && !common.ContainsInt64Slice(newSlice, integer) {
-					newSlice = append(newSlice, integer)
-				}
+			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			if e != nil {
+				err = e
+				break
 			}
 
 			vField.Set(reflect.ValueOf(newSlice))
+		case pq.Int64Array:
+			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			if e != nil {
+				err = e
+				break
+			}
+
+			vField.Set(reflect.ValueOf(pq.Int64Array(newSlice)))
 		default:
 			// Recurse if it's another struct
 			switch tField.Type.Kind() {
@@ -199,6 +202,22 @@ func readMinMax(valid *ValidationTag) (float64, float64) {
 	max, _ := valid.Float(1)
 
 	return min, max
+}
+
+func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Guild) (filtered []int64, err error) {
+	filtered = make([]int64, 0, len(is))
+	for _, integer := range is {
+		keep, err := ValidateIntField(integer, tags, guild)
+		if err != nil {
+			return filtered, err
+		}
+
+		if keep && !common.ContainsInt64Slice(filtered, integer) {
+			filtered = append(filtered, integer)
+		}
+	}
+
+	return filtered, nil
 }
 
 func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (keep bool, err error) {
