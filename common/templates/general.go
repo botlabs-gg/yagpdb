@@ -256,6 +256,31 @@ func tmplFormatTime(t time.Time, args ...string) string {
 	return t.Format(layout)
 }
 
+type variadicFunc func([]reflect.Value) (reflect.Value, error)
+
+// callVariadic allows the given function to be called with either a variadic
+// sequence of arguments (i.e., fixed in the template definition) or a slice
+// (i.e., from a pipeline or context variable). In effect, a limited `flatten`
+// operation.
+func callVariadic(f variadicFunc, values ...reflect.Value) (reflect.Value, error) {
+  var vs []reflect.Value
+  for _, val := range values {
+		v, _ := indirect(val)
+    switch {
+    case !v.IsValid():
+      continue
+    case v.Kind() == reflect.Array || v.Kind() == reflect.Slice:
+			for i := 0; i < v.Len(); i++ {
+				vs = append(vs, v.Index(i))
+			}
+    default:
+      vs = append(vs, v)
+    }
+	}
+
+	return f(vs)
+}
+
 // slice returns the result of creating a new slice with the given arguments.
 // "slice x 1 2" is, in Go syntax, x[1:2], and "slice x 1" is equivalent to
 // x[1:].
