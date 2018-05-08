@@ -4,6 +4,7 @@ package moderation
 
 import (
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -57,7 +58,7 @@ func RegisterPlugin() {
 	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
 	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
-	common.GORM.AutoMigrate(&Config{}, &WarningModel{})
+	common.GORM.AutoMigrate(&Config{}, &WarningModel{}, &MuteModel{})
 
 	docs.AddPage("Moderation", FSMustString(false, "/assets/help-page.md"), nil)
 }
@@ -82,7 +83,10 @@ func handleUnMute(data string) error {
 		return err
 	}
 
-	err = MuteUnmuteUser(nil, nil, false, guildID, 0, bot.State.User(true).User, "Mute Duration Expired", member, 0)
+	rc := common.MustGetRedisClient()
+	defer common.RedisPool.Put(rc)
+
+	err = MuteUnmuteUser(nil, rc, false, guildID, 0, bot.State.User(true).User, "Mute Duration Expired", member, 0)
 	if err != ErrNoMuteRole {
 
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
@@ -119,68 +123,6 @@ func handleUnban(data string) error {
 	}
 
 	return nil
-}
-
-type Config struct {
-	configstore.GuildConfigModel
-
-	// Kick command
-	KickEnabled          bool
-	DeleteMessagesOnKick bool
-	KickReasonOptional   bool
-	KickMessage          string `valid:"template,1900"`
-
-	// Ban
-	BanEnabled        bool
-	BanReasonOptional bool
-	BanMessage        string `valid:"template,1900"`
-
-	// Mute/unmute
-	MuteEnabled          bool
-	MuteRole             string `valid:"role,true"`
-	MuteReasonOptional   bool
-	UnmuteReasonOptional bool
-
-	// Warn
-	WarnCommandsEnabled    bool
-	WarnIncludeChannelLogs bool
-	WarnSendToModlog       bool
-
-	// Misc
-	CleanEnabled  bool
-	ReportEnabled bool
-	ActionChannel string `valid:"channel,true"`
-	ReportChannel string `valid:"channel,true"`
-	LogUnbans     bool
-	LogBans       bool
-}
-
-func (c *Config) IntMuteRole() (r int64) {
-	r, _ = strconv.ParseInt(c.MuteRole, 10, 64)
-	return
-}
-
-func (c *Config) IntActionChannel() (r int64) {
-	r, _ = strconv.ParseInt(c.ActionChannel, 10, 64)
-	return
-}
-
-func (c *Config) IntReportChannel() (r int64) {
-	r, _ = strconv.ParseInt(c.ReportChannel, 10, 64)
-	return
-}
-
-func (c *Config) GetName() string {
-	return "moderation"
-}
-
-func (c *Config) TableName() string {
-	return "moderation_configs"
-}
-
-func (c *Config) Save(client *redis.Client, guildID int64) error {
-	c.GuildID = guildID
-	return configstore.SQL.SetGuildConfig(context.Background(), c)
 }
 
 func GetConfig(guildID int64) (*Config, error) {
@@ -479,6 +421,14 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 		return ErrNoMuteRole
 	}
 
+	// To avoid unexpected things from happening, make sure were only updating the mute of the player 1 place at a time
+	lockKey := "moderation_updating_mute:" + strconv.FormatInt(member.User.ID, 10)
+	err = common.BlockingLockRedisKey(client, lockKey, time.Second*15, 15)
+	if err != nil {
+		return common.ErrWithCaller(err)
+	}
+	defer common.UnlockRedisKey(client, lockKey)
+
 	logChannel, _ := strconv.ParseInt(config.ActionChannel, 10, 64)
 	if config.ActionChannel == "" {
 		logChannel = channelID
@@ -486,43 +436,63 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 
 	user := member.User
 
-	isMuted := false
-	parsedMuteRole, _ := strconv.ParseInt(config.MuteRole, 10, 64)
-	for _, v := range member.Roles {
-		if v == parsedMuteRole {
-			isMuted = true
-			break
+	// Look for existing mute
+	currentMute := MuteModel{}
+	err = common.GORM.Where(&MuteModel{UserID: member.User.ID, GuildID: guildID}).First(&currentMute).Error
+	alreadyMuted := err != gorm.ErrRecordNotFound
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return common.ErrWithCaller(err)
+	}
+
+	// Insert/update the mute entry in the database
+	if !alreadyMuted {
+		currentMute = MuteModel{
+			UserID:  member.User.ID,
+			GuildID: guildID,
 		}
 	}
 
-	// Mute or unmute if needed
-	if mute && !isMuted {
-		// Mute
-		err = common.BotSession.GuildMemberRoleAdd(guildID, user.ID, parsedMuteRole)
-		logrus.Info("Added mute role yoooo")
-	} else if !mute && isMuted {
-		// Unmute
-		err = common.BotSession.GuildMemberRoleRemove(guildID, user.ID, parsedMuteRole)
-	} else if !mute && !isMuted {
-		// Trying to unmute an unmuted user? e.e
-		return nil
+	if author != nil {
+		currentMute.AuthorID = author.ID
 	}
 
-	if err != nil {
-		return err
-	}
+	currentMute.Reason = reason
+	currentMute.ExpiresAt = time.Now().Add(time.Minute * time.Duration(duration))
 
-	// Either remove the scheduled unmute or schedule an unmute in the future
 	if mute {
+		// Apply the roles to the user
+		removedRoles, err := AddMemberMuteRole(config, member)
+		if err != nil {
+			return errors.WithMessage(err, "AddMemberMuteRole")
+		}
+
+		currentMute.RemovedRoles = removedRoles
+		err = common.GORM.Save(&currentMute).Error
+		if err != nil {
+			return errors.WithMessage(err, "failed inserting/updating mute")
+		}
+
 		err = scheduledevents.ScheduleEvent(client, "unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(user.ID), time.Now().Add(time.Minute*time.Duration(duration)))
 		client.Cmd("SETEX", RedisKeyMutedUser(guildID, user.ID), duration*60, 1)
-	} else {
-		if client != nil {
-			err = scheduledevents.RemoveEvent(client, "unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(user.ID))
+		if err != nil {
+			return errors.WithMessage(err, "failed scheduling unmute")
 		}
-	}
-	if err != nil {
-		logrus.WithError(err).Error("Failed scheduling/removing unmute event")
+	} else {
+		// Remove the mute role, and give back the role the bot took
+		err = RemoveMemberMuteRole(config, member, currentMute)
+		if err != nil {
+			return errors.WithMessage(err, "failed removing mute role")
+		}
+
+		if alreadyMuted {
+			common.GORM.Delete(&currentMute)
+			client.Cmd("DEL", RedisKeyMutedUser(guildID, user.ID))
+		}
+
+		err = scheduledevents.RemoveEvent(client, "unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(user.ID))
+		if err != nil {
+			logrus.WithError(err).Error("Failed scheduling/removing unmute event")
+		}
 	}
 
 	// Upload logs
@@ -551,21 +521,48 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	return nil
 }
 
-type WarningModel struct {
-	common.SmallModel
-	GuildID  int64 `gorm:"index"`
-	UserID   string
-	AuthorID string
+func AddMemberMuteRole(config *Config, member *discordgo.Member) (removedRoles []int64, err error) {
 
-	// Username and discrim for author incase he/she leaves
-	AuthorUsernameDiscrim string
+	hasMuteRole := common.ContainsInt64Slice(member.Roles, config.IntMuteRole())
 
-	Message  string
-	LogsLink string
+	// Mute or unmute if needed
+	if !hasMuteRole {
+		// Mute
+		err = common.BotSession.GuildMemberRoleAdd(config.GuildID, member.User.ID, config.IntMuteRole())
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	removedRoles = make([]int64, 0, len(config.MuteRemoveRoles))
+	for _, rmRole := range config.MuteRemoveRoles {
+		if common.ContainsInt64Slice(member.Roles, rmRole) {
+			removedRoles = append(removedRoles, rmRole)
+			common.BotSession.GuildMemberRoleRemove(config.GuildID, member.User.ID, rmRole)
+		}
+	}
+
+	return
 }
 
-func (w *WarningModel) TableName() string {
-	return "moderation_warnings"
+func RemoveMemberMuteRole(config *Config, member *discordgo.Member, mute MuteModel) (err error) {
+
+	hasMuteRole := common.ContainsInt64Slice(member.Roles, config.IntMuteRole())
+
+	// Mute or unmute if needed
+	if hasMuteRole {
+		// Mute
+		err = common.BotSession.GuildMemberRoleRemove(config.GuildID, member.User.ID, config.IntMuteRole())
+	}
+
+	for _, rmRole := range mute.RemovedRoles {
+		if !common.ContainsInt64Slice(member.Roles, rmRole) {
+			common.BotSession.GuildMemberRoleAdd(member.GuildID, member.User.ID, rmRole)
+		}
+	}
+
+	return
 }
 
 func WarnUser(config *Config, guildID, channelID int64, author *discordgo.User, target *discordgo.User, message string) error {

@@ -84,6 +84,29 @@
                         The mute command will assign the mute role to the user for the specified number of minutes (10m in the example above)
                       </label>
                     </div>
+                    <div class="form-group">
+                        <label>Remove the following roles from the user when muted, and give them back when the mute ends.</label><br>
+                        <select name="MuteRemoveRoles" class="multiselect form-control" multiple="multiple">
+                            {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.MuteRemoveRoles}}
+                        </select>
+                    </div>
+
+                    <!-- If you come across this, this functionality isnt fully implemented yet so.. it dosen't do anything -->
+                    <div class="hidden">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="mute-managed" name="MuteManageRole" {{if .ModConfig.MuteManageRole}} checked{{end}} onchange="MuteManagedChanged()">
+                                Have the bot manage the mute role. It will automatically add overrides to all channels for the role.
+                            </label>
+                        </div>
+                        <div class="form-group" id="mute-ignore-channels">
+                            <label>Have the auto management of the mute role ignore the following channels</label><br>
+                            <select class="multiselect" name="MuteIgnoreChannels" multiple="multiple">
+                                {{mTemplate "channel_options_multi_int" "Channels" .ActiveGuild.Channels "Selections" .ModConfig.MuteIgnoreChannels}}
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" name="MuteReasonOptional" {{if .ModConfig.MuteReasonOptional}} checked{{end}}>
@@ -221,7 +244,19 @@
     </div>
     <!-- /.row -->            
 </form>
+<script>
+function MuteManagedChanged(){
+    if($("#mute-managed").prop("checked")){
+        $("#mute-ignore-channels").removeClass("hidden");
+    }else{
+        $("#mute-ignore-channels").addClass("hidden");
+    }
+}
 
+$(function(){
+    MuteManagedChanged();
+})
+</script>  
 {{template "cp_footer" .}}
 
 {{end}}

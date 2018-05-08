@@ -14,6 +14,7 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -31,8 +32,46 @@ const (
 func (p *Plugin) InitBot() {
 	commands.AddRootCommands(ModerationCommands...)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleMemberJoin)), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleGuildMemberUpdate)), eventsystem.EventGuildMemberUpdate)
 }
+
+// func (p *Plugin) BotStarted() {
+// 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
+// }
+
+// func HandleRefreshMuteOverrides(evt *pubsub.Event) {
+// 	gs := bot.State.Guild(true, evt.TargetGuildInt)
+// 	RefreshMuteOverrides(evt.TargetGuildInt)
+// }
+
+// // Refreshes the mute override on the channel, currently it only adds it.
+// func RefreshMuteOverrides(guildID int64 channels []*discordgo.Channel) {
+// 	const DeniedPermissions = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
+
+// 	config, err := GetConfig(guildID)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	if config.MuteRole == "" || !config.MuteManageRole {
+// 		return
+// 	}
+
+// 	guild := bot.State.Guild(true, guildID)
+
+// 	guild.RLock()
+// 	defer guild.RUnlock()
+// 	for _, v := range guild.Channels {
+
+// 		for _, cp := range v.Channel.PermissionOverwrites {
+// 			if !common.ContainsInt64Slice(config.MuteIgnoreChannels, cp.ID) {
+// 				go common.BotSession.ChannelPermissionSet(v.ID(), config.IntMuteRole(), "role", 0, DeniedPermissions)
+// 			}
+// 		}
+
+// 	}
+// }
 
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
@@ -92,6 +131,36 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	}
 }
 
+// Since updating mutes are not a complex operation, to avoid weird bugs from happening we lock it so it can only be updated one place per user
+func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsystem.EventData) {
+	return func(evt *eventsystem.EventData) {
+		var userID int64
+		var guild int64
+		// TODO: add utility functions to the eventdata struct for fetching things like these?
+		if evt.Type == eventsystem.EventGuildMemberAdd {
+			userID = evt.GuildMemberAdd.User.ID
+			guild = evt.GuildMemberAdd.GuildID
+		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
+			userID = evt.GuildMemberUpdate.User.ID
+			guild = evt.GuildMemberUpdate.GuildID
+		} else {
+			panic("Unknown event in lock memebr mute middleware")
+		}
+
+		client := bot.ContextRedis(evt.Context())
+		lockKey := "moderation_updating_mute:" + strconv.FormatInt(userID, 10)
+		err := common.BlockingLockRedisKey(client, lockKey, time.Second*15, 15)
+		if err != nil {
+			logrus.WithError(err).WithField("guild", guild).WithField("user", userID).Error("Failed locking mute")
+			return
+		}
+
+		defer common.UnlockRedisKey(client, lockKey)
+
+		next(evt)
+	}
+}
+
 func HandleMemberJoin(evt *eventsystem.EventData) {
 	c := evt.GuildMemberAdd
 	client := bot.ContextRedis(evt.Context())
@@ -114,6 +183,30 @@ func HandleMemberJoin(evt *eventsystem.EventData) {
 	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.IntMuteRole())
 	if err != nil {
 		logrus.WithField("guild", c.GuildID).WithError(err).Error("Failed assigning mute role")
+	}
+}
+
+func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
+	c := evt.GuildMemberUpdate
+	client := bot.ContextRedis(evt.Context())
+
+	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.GuildID, c.User.ID)).Int()
+	if muteLeft < 2 {
+		return
+	}
+
+	config, err := GetConfig(c.GuildID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
+		return
+	}
+	if config.MuteRole == "" {
+		return
+	}
+	logrus.Debug("Giving back mute roles arr")
+	_, err = AddMemberMuteRole(config, c.Member)
+	if err != nil {
+		logrus.WithError(err).Error("Failed adding mute role to user in member update")
 	}
 }
 
