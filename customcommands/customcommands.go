@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	MaxCommands = 100
+	MaxCommands     = 100
 	MaxUserMessages = 20
 )
 

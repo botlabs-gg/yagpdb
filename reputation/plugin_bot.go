@@ -139,6 +139,40 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	&commands.YAGCommand{
+		CmdCategory:  commands.CategoryFun,
+		Name:         "SetRepID",
+		Description:  "Sets someones rep, by userid, this is an admin command and bypasses cooldowns and other restrictions.",
+		RequiredArgs: 2,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.Int},
+			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			conf, err := GetConfig(parsed.GS.ID())
+			if err != nil {
+				return "An error occured while finding the server config", err
+			}
+
+			member, _ := bot.GetMember(parsed.GS.ID(), parsed.Msg.Author.ID)
+			parsed.GS.RLock()
+
+			if !IsAdmin(parsed.GS, member, conf) {
+				parsed.GS.RUnlock()
+				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
+			}
+			parsed.GS.RUnlock()
+
+			target := parsed.Args[0].Int64()
+
+			err = SetRep(parsed.GS.ID(), member.User.ID, target, int64(parsed.Args[1].Int()))
+			if err != nil {
+				return "Failed setting rep, contact bot owner", err
+			}
+
+			return fmt.Sprintf("Set **%d** %s to `%d`", target, conf.PointsName, parsed.Args[1].Int()), nil
+		},
+	},
+	&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Rep",
 		Description: "Shows yours or the specified users current rep and rank",
