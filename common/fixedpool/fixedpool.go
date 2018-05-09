@@ -128,12 +128,13 @@ func New(network, addr string, size int) (*Pool, error) {
 // Get retrieves an available redis client. If there are none available it will
 // create a new one on the fly
 func (p *Pool) Get() (*redis.Client, error) {
+	after := time.NewTimer(time.Second * 30)
+
 	select {
 	case conn := <-p.pool:
+		after.Stop()
 		return conn, nil
-	case <-time.After(time.Second * 10):
-		logrus.Warn("Low on connection, 10 or more seconds for a redis connection")
-	case <-time.After(time.Second * 60):
+	case <-after.C:
 		panic("Ran out of connections?")
 	}
 
