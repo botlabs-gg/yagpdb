@@ -87,7 +87,7 @@
                     <div class="form-group">
                         <label>Remove the following roles from the user when muted, and give them back when the mute ends.</label><br>
                         <select name="MuteRemoveRoles" class="multiselect form-control" multiple="multiple">
-                            {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.MuteRemoveRoles}}
+                            {{roleOptionsMulti .ActiveGuild.Roles .HighestRole .ModConfig.MuteRemoveRoles}}
                         </select>
                     </div>
 
