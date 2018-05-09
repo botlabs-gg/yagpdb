@@ -162,10 +162,10 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, clie
 
 OUTER:
 	for _, v := range matches {
-		if len(v) < 2 {
+		if len(v) < 3 {
 			continue
 		}
-		id := v[1]
+		id := v[2]
 
 		// only check each link once
 		for _, c := range checked {
@@ -186,7 +186,6 @@ OUTER:
 		if invite.Guild.ID == cs.Guild.ID() {
 			continue
 		}
-
 		badInvite = true
 		break
 	}
