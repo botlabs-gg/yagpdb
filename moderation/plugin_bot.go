@@ -14,7 +14,6 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -148,7 +147,13 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 		}
 
 		client := bot.ContextRedis(evt.Context())
-		lockKey := "moderation_updating_mute:" + strconv.FormatInt(userID, 10)
+
+		muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(guild, userID)).Int()
+		if muteLeft < 10 {
+			return
+		}
+
+		lockKey := RedisKeyLockedMute(guild, userID)
 		err := common.BlockingLockRedisKey(client, lockKey, time.Second*15, 15)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", guild).WithField("user", userID).Error("Failed locking mute")
@@ -157,18 +162,18 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 
 		defer common.UnlockRedisKey(client, lockKey)
 
+		// The situation may have changed at th is point, check again
+		muteLeft, _ = client.Cmd("TTL", RedisKeyMutedUser(guild, userID)).Int()
+		if muteLeft < 10 {
+			return
+		}
+
 		next(evt)
 	}
 }
 
 func HandleMemberJoin(evt *eventsystem.EventData) {
 	c := evt.GuildMemberAdd
-	client := bot.ContextRedis(evt.Context())
-
-	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.GuildID, c.User.ID)).Int()
-	if muteLeft < 10 {
-		return
-	}
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
@@ -188,12 +193,6 @@ func HandleMemberJoin(evt *eventsystem.EventData) {
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	c := evt.GuildMemberUpdate
-	client := bot.ContextRedis(evt.Context())
-
-	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.GuildID, c.User.ID)).Int()
-	if muteLeft < 2 {
-		return
-	}
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {

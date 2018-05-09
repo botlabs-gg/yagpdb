@@ -50,6 +50,10 @@ func RedisKeyUnbannedUser(guildID, userID int64) string {
 	return "moderation_unbanned_user:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
 }
 
+func RedisKeyLockedMute(guildID, userID int64) string {
+	return "moderation_updating_mute:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
+}
+
 func RegisterPlugin() {
 	plugin := &Plugin{}
 
@@ -422,7 +426,7 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	}
 
 	// To avoid unexpected things from happening, make sure were only updating the mute of the player 1 place at a time
-	lockKey := "moderation_updating_mute:" + strconv.FormatInt(member.User.ID, 10)
+	lockKey := RedisKeyLockedMute(guildID, member.User.ID)
 	err = common.BlockingLockRedisKey(client, lockKey, time.Second*15, 15)
 	if err != nil {
 		return common.ErrWithCaller(err)
@@ -522,48 +526,43 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 }
 
 func AddMemberMuteRole(config *Config, member *discordgo.Member) (removedRoles []int64, err error) {
-
-	hasMuteRole := common.ContainsInt64Slice(member.Roles, config.IntMuteRole())
-
-	// Mute or unmute if needed
-	if !hasMuteRole {
-		// Mute
-		err = common.BotSession.GuildMemberRoleAdd(config.GuildID, member.User.ID, config.IntMuteRole())
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
 	removedRoles = make([]int64, 0, len(config.MuteRemoveRoles))
-	for _, rmRole := range config.MuteRemoveRoles {
-		if common.ContainsInt64Slice(member.Roles, rmRole) {
-			removedRoles = append(removedRoles, rmRole)
-			common.BotSession.GuildMemberRoleRemove(config.GuildID, member.User.ID, rmRole)
+	newMemberRoles := make([]string, 0, len(member.Roles))
+	newMemberRoles = append(newMemberRoles, config.MuteRole)
+
+	for _, r := range member.Roles {
+		if config.IntMuteRole() == r {
+			continue
+		}
+
+		if common.ContainsInt64Slice(config.MuteRemoveRoles, r) {
+			removedRoles = append(removedRoles, r)
+		} else {
+			newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
 		}
 	}
 
+	err = common.BotSession.GuildMemberEdit(config.GuildID, member.User.ID, newMemberRoles)
 	return
 }
 
 func RemoveMemberMuteRole(config *Config, member *discordgo.Member, mute MuteModel) (err error) {
 
-	hasMuteRole := common.ContainsInt64Slice(member.Roles, config.IntMuteRole())
+	newMemberRoles := make([]string, 0, len(member.Roles)+len(config.MuteRemoveRoles))
 
-	// Mute or unmute if needed
-	if hasMuteRole {
-		// Mute
-		err = common.BotSession.GuildMemberRoleRemove(config.GuildID, member.User.ID, config.IntMuteRole())
-	}
-
-	for _, rmRole := range mute.RemovedRoles {
-		if !common.ContainsInt64Slice(member.Roles, rmRole) {
-			err := common.BotSession.GuildMemberRoleAdd(config.GuildID, member.User.ID, rmRole)
-			if err != nil {
-				logrus.WithError(err).Error("failed adding back removed role in mute")
-			}
+	for _, v := range member.Roles {
+		if v != config.IntMuteRole() {
+			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
 		}
 	}
+
+	for _, v := range mute.RemovedRoles {
+		if !common.ContainsInt64Slice(member.Roles, v) {
+			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
+		}
+	}
+
+	err = common.BotSession.GuildMemberEdit(config.GuildID, member.User.ID, newMemberRoles)
 
 	return
 }
