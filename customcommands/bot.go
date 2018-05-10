@@ -253,7 +253,7 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 	}
 	switch cmd.TriggerType {
 	case CommandTriggerCommand:
-		cmdMatch += "^" + regexp.QuoteMeta(globalPrefix+trigger)
+		cmdMatch += "^" + regexp.QuoteMeta(globalPrefix+trigger) + "($|[[:space:]])"
 	case CommandTriggerStartsWith:
 		cmdMatch += "^" + regexp.QuoteMeta(trigger)
 	case CommandTriggerContains:
