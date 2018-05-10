@@ -206,14 +206,16 @@ func (c CustomCommandSlice) Swap(i, j int) {
 }
 
 func filterEmptyResponses(s string, ss ...string) []string {
-	r := make([]string, 0, len(ss)+1)
+	result := make([]string, 0, len(ss)+1)
 	if s != "" {
-		r = append(r, s)
+		result = append(result, s)
 	}
+
 	for _, s := range ss {
 		if s != "" {
-			r = append(r, s)
+			result = append(result, s)
 		}
 	}
-	return r
+
+	return result
 }

@@ -13,7 +13,7 @@ import (
 
 const (
 	RecordSeparator = "\x1e"
-	MaxUserMessages = 20
+	MaxUserMessages = 10
 )
 
 type Plugin struct{}
@@ -95,21 +95,25 @@ func (c *Config) TableName() string {
 // GORM BeforeSave hook
 func (c *Config) BeforeSave() (err error) {
 	filterAndJoin := func(a []string) string {
-		b := ""
+		joined := ""
+		msgsJoined := 0
 		for _, s := range a {
 			if s == "" {
 				continue
 			}
-			if len(b) > 0 {
-				b += RecordSeparator
+			if msgsJoined >= MaxUserMessages {
+				break
 			}
-			b += s
-		}
-		if len(b) >= MaxUserMessages {
-			b = b[:MaxUserMessages]
+			msgsJoined++
+
+			if len(joined) > 0 {
+				joined += RecordSeparator
+			}
+
+			joined += s
 		}
 
-		return b
+		return joined
 	}
 
 	c.JoinServerMsgs_ = filterAndJoin(c.JoinServerMsgs)
