@@ -202,7 +202,9 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	if config.MuteRole == "" {
 		return
 	}
-	logrus.Debug("Giving back mute roles arr")
+
+	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
+
 	_, err = AddMemberMuteRole(config, c.Member)
 	if err != nil {
 		logrus.WithError(err).Error("Failed adding mute role to user in member update")

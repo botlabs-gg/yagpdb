@@ -530,8 +530,10 @@ func AddMemberMuteRole(config *Config, member *discordgo.Member) (removedRoles [
 	newMemberRoles := make([]string, 0, len(member.Roles))
 	newMemberRoles = append(newMemberRoles, config.MuteRole)
 
+	hadMuteRole := false
 	for _, r := range member.Roles {
 		if config.IntMuteRole() == r {
+			hadMuteRole = true
 			continue
 		}
 
@@ -540,6 +542,11 @@ func AddMemberMuteRole(config *Config, member *discordgo.Member) (removedRoles [
 		} else {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
 		}
+	}
+
+	if hadMuteRole && len(removedRoles) < 1 {
+		// No changes needs to be made
+		return
 	}
 
 	err = common.BotSession.GuildMemberEdit(config.GuildID, member.User.ID, newMemberRoles)
