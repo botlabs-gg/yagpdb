@@ -148,7 +148,7 @@ type InviteRule struct {
 	BaseRule `valid:"traverse"`
 }
 
-var inviteRegex = regexp.MustCompile(`(discord\.gg|discordapp\.com)(?:\/#)?(?:\/invite)?\/([a-zA-Z0-9-]+)`)
+var inviteRegex = regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`)
 
 func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
 	matches := inviteRegex.FindAllStringSubmatch(evt.ContentWithMentionsReplaced(), -1)

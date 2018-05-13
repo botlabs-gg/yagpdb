@@ -10,6 +10,7 @@ func TestInviteRegex(t *testing.T) {
 		inviteID string
 	}{
 		{input: "https://discordapp.com/invite/FPxNX2", inviteID: "FPxNX2"},
+		{input: "discordapp.com/developers/docs/reference#message-formatting", inviteID: ""},
 		{input: "https://discord.gg/FPxNX2", inviteID: "FPxNX2"},
 		{input: "https://discord.gg/landfall", inviteID: "landfall"},
 		{input: "HElllo there", inviteID: ""},
