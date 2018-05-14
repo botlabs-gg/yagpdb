@@ -33,8 +33,6 @@ var (
 	// RedisPool   *pool.Pool
 	RedisPool redisPool
 
-	DSQLStateDB *sql.DB
-
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
 	Conf       *CoreConfig
@@ -122,25 +120,6 @@ func connectDB(host, user, pass, dbName string) error {
 	boil.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(5)
-	}
-
-	if os.Getenv("YAGPDB_SQLSTATE_ADDR") != "" {
-		logrus.Info("Using special sql state db")
-		addr := os.Getenv("YAGPDB_SQLSTATE_ADDR")
-		user := os.Getenv("YAGPDB_SQLSTATE_USER")
-		pass := os.Getenv("YAGPDB_SQLSTATE_PW")
-		dbName := os.Getenv("YAGPDB_SQLSTATE_DB")
-
-		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password='%s'", addr, user, dbName, pass))
-		if err != nil {
-			DSQLStateDB = PQ
-			return err
-		}
-
-		DSQLStateDB = db
-
-	} else {
-		DSQLStateDB = PQ
 	}
 
 	return err
