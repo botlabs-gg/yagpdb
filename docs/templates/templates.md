@@ -65,7 +65,7 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 | `removeRoleID roleid` | Remove the role with the given id from the user that triggered the command (use the listroles command for a list of role) |
 | `deleteResponse` | Deletes the response after 10 seconds |
 | `deleteTrigger` | Deletes the trigger after 10 seconds |
-| `addReactions "👍" "👎"` | Adds each emoji as a reaction to the message that triggered the command |
+| `addReactions "👍" "👎"` | Adds each emoji as a reaction to the message that triggered the command, accepts (most)[https://unicode.org/Public/emoji/11.0/emoji-test.txt] unicode emojis (must be qualified)  |
 
 
 ### Branching
