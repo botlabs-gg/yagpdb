@@ -201,7 +201,7 @@ OUTER:
 		if err != nil {
 			log.WithError(err).Error("Failed removing guild from connected guilds")
 		} else {
-			EmitGuildRemoved(client, parsedGID)
+			go EmitGuildRemoved(parsedGID)
 			log.WithField("guild", gID).Info("Removed from guild when offline")
 		}
 	}

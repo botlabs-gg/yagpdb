@@ -131,7 +131,7 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 		log.WithError(err).Error("Redis error")
 	}
 
-	go EmitGuildRemoved(client, evt.GuildDelete.ID)
+	go EmitGuildRemoved(evt.GuildDelete.ID)
 }
 
 // Makes sure the member is always in state when coming online

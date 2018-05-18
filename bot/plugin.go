@@ -44,7 +44,10 @@ type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)
 }
 
-func EmitGuildRemoved(client *redis.Client, guildID int64) {
+func EmitGuildRemoved(guildID int64) {
+	client := common.MustGetRedisClient()
+	defer common.RedisPool.Put(client)
+
 	for _, v := range common.Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(client, guildID)
