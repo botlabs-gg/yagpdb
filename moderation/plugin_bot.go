@@ -75,7 +75,7 @@ func (p *Plugin) InitBot() {
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
 	var guildID int64
-	action := ""
+	var action ModlogAction
 
 	botPerformed := false
 
@@ -84,17 +84,20 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 		guildID = evt.GuildBanAdd.GuildID
 		user = evt.GuildBanAdd.User
-		action = ActionBanned
+		action = MABanned
+
 		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyBannedUser(guildID, user.ID)).Int(); i > 0 {
+			// The bot banned the user earlier, don't make duplicate entries in the modlog
 			bot.ContextRedis(evt.Context()).Cmd("DEL", RedisKeyBannedUser(guildID, user.ID))
 			return
 		}
 	case eventsystem.EventGuildBanRemove:
-		action = ActionUnbanned
+		action = MAUnbanned
 		user = evt.GuildBanRemove.User
 		guildID = evt.GuildBanRemove.GuildID
 
 		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyUnbannedUser(guildID, user.ID)).Int(); i > 0 {
+			// The bot wa the one that performed the unban
 			bot.ContextRedis(evt.Context()).Cmd("DEL", RedisKeyUnbannedUser(guildID, user.ID))
 			botPerformed = true
 		}
@@ -110,10 +113,12 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	}
 
 	if config.ActionChannel == "" {
+		// No modlog channel set up
 		return
 	}
 
-	if (action == ActionUnbanned && !config.LogUnbans && !botPerformed) || (action == ActionBanned && !config.LogBans) {
+	if (action == MAUnbanned && !config.LogUnbans && !botPerformed) ||
+		(action == MABanned && !config.LogBans) {
 		return
 	}
 
@@ -126,7 +131,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	err = CreateModlogEmbed(config.IntActionChannel(), author, action, user, reason, "")
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action + " log message")
+		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
 	}
 }
 
