@@ -24,7 +24,7 @@ type eventLogger struct {
 	numShards int
 }
 
-func (e *eventLogger) run(numShards int) {
+func (e *eventLogger) init(numShards int) {
 	e.totalStats = make([][]*int64, numShards)
 	e.lastPeriod = make([][]int64, numShards)
 	e.perPeriod = make([][]int64, numShards)
@@ -39,6 +39,10 @@ func (e *eventLogger) run(numShards int) {
 			e.totalStats[i][j] = new(int64)
 		}
 	}
+
+}
+
+func (e *eventLogger) run() {
 
 	ticker := time.NewTicker(EventLoggerPeriodDuration)
 	for {
