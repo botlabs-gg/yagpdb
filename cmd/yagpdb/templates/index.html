@@ -27,7 +27,7 @@
     <script src="https://use.fontawesome.com/e3f4515047.js"></script>
 
     <!-- Bootstrap Core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
 
     <!-- Custom Fonts -->
     <!-- <link href="/static/dist/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
@@ -49,42 +49,41 @@
 <body id="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
 
     <!-- Navigation -->
-    <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
-        <div class="container" id="homepage-nav">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-main-collapse">
-                    Menu <i class="fa fa-bars"></i>
-                </button>
-                <a class="navbar-brand page-scroll" href="#page-top">
-                    <i class="fa fa-play-circle"></i> <span class="light">YAGPDB</span>
-                </a>
-            </div>
+    <nav class="navbar navbar-custom navbar-fixed-top fixed-top navbar-expand-lg" role="navigation">
+        <!-- <div class="container" id="homepage-nav"> -->
+        <!-- <div class="navbar-header"> -->
+        <a class="navbar-brand page-scroll" href="#page-top">
+            <i class="fa fa-play-circle"></i> <span class="light">YAGPDB</span>
+        </a>
 
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
-                <ul class="nav navbar-nav">
-                    <!-- Hidden li included to remove active class from about link when scrolled up past about section -->
-                    <li class="hidden">
-                        <a href="#page-top"></a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="#about">About</a>
-                    </li>
-                    <li>
-                        <a href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=bot&permissions=535948311&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
-                    </li>
-                    <li>
-                        <a href="/manage">Control panel</a>
-                    </li>
-                    {{if .User}}
-                    <li>
-                        <a href="/logout">Logout</a>
-                    </li>
-                    {{end}}
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
+        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target=".navbar-main-collapse">
+            Menu <i class="fa fa-bars"></i>
+        </button>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse navbar-right navbar-main-collapse nav">
+            <ul class="navbar-nav ml-lg-auto">
+                <!-- Hidden li included to remove active class from about link when scrolled up past about section -->
+                <li class="hidden">
+                    <a class="nav-link" href="#page-top"></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" class="page-scroll" href="#about">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=bot&permissions=535948311&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/manage">Control panel</a>
+                </li>
+                {{if .User}}
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+                {{end}}
+            </ul>
         </div>
+            <!-- /.navbar-collapse -->
         <!-- /.container -->
     </nav>
 
@@ -92,17 +91,17 @@
     <header class="intro">
         <div class="intro-body">
             <div class="container">
-                <div class="row">
-                    <div class="col-md-8 col-md-offset-2">
+                <div class="row justify-content-md-center">
+                    <div class="col col-md-8">
                         <h1 class="brand-heading"><br/>YAGPDB</h1>
                         <p class="intro-text">Yet Another General Purpose Discord Bot</p>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-4 col-md-offset-2">
+                <div class="row justify-content-md-center">
+                    <div class="col col-md-4">
                         <p class="intro-text">Joined Servers: {{.JoinedServers}}</p> 
                     </div>
-                    <div class="col-md-4">
+                    <div class="col col-md-4">
                         <p class="intro-text">Commands ran today: {{.Commands}}</p>
                     </div>
                 </div>
@@ -115,15 +114,15 @@
 
     <!-- About Section -->
     <section id="about" class="container content-section text-center">
-        <div class="row">
-            <div class="col-lg-8 col-lg-offset-2">
+        <div class="row justify-content-md-center">
+            <div class="col col-lg-8">
                 <h2>About YAGPDB</h2>
                 <p>YAGPDB is a multi-purpose discord bot that I've worked on for quite some time now. What does it do? Well it does a bunch of stuff right now, the best way to figure out what it does is to try it out by adding it onto a testing server and see what it provides for yourself.</p>
                 <p><b>Who am I?</b> I go by the name jonas747 online and (unsuprisingly) my real name is also Jonas, although not 747, I'm not a plane. YAGPDB is a project that I have been developing in my spare time for roughly a year now, it started out because Mee6 (which I was currently using for my server) was lacking a lot of stuff that I wanted, so I decided to make my own bot, and here I am.</p>
             </div>
         </div>
-        <div class=row>
-            <div class="col-lg-8 col-lg-offset-2">
+        <div class="row justify-content-md-center">
+            <div class="col col-lg-8">
                 <h2>Features</h2>
 
                 <p>Every feature may not be listed here</p>
@@ -193,8 +192,8 @@
                 <p>And finally, the feature im most proud of that made me spend days and nights sitting in a horrible chair in a basement staring at a old crt monitor with bugs crawling up the wall behind it is: <b>catfacts.</b></p>
             </div>
         </div>
-        <div class="row">
-            <div class="col-lg-8 col-lg-offset-2">
+        <div class="row justify-content-md-center">
+            <div class="col col-lg-8">
                 <h3>Help/Feedback/Community/Other...</h3>
                 <p>The documentation can be found <a href="/docs/index">here</a></p>
                 <p>The yagpdb discord server for support, suggestions, feedback and the general community can be found <a href="https://discord.gg/GcpyYh3">here</a></p>
@@ -211,13 +210,17 @@
     </footer>
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script> -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
 
     <!-- Bootstrap Core JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
 
     <!-- Plugin JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
 
     <!-- Theme JavaScript -->
     <script src="/static/dist/js/grayscale.js"></script>
