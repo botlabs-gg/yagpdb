@@ -383,9 +383,9 @@ type NicknameListing struct {
 	Nickname string
 }
 
-func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
+func CheckUsername(gDB *gorm.DB, usernameStmt *sql.Stmt, user *discordgo.User) {
 	var lastUsername string
-	row := usernameQueryStatement.QueryRow(user.ID)
+	row := usernameStmt.QueryRow(user.ID)
 	err := row.Scan(&lastUsername)
 	if err == nil && lastUsername == user.Username {
 		// Not changed
@@ -405,9 +405,9 @@ func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
 	}
 }
 
-func CheckNickname(gDB *gorm.DB, userID, guildID int64, nickname string) {
+func CheckNickname(gDB *gorm.DB, nicknameStmt *sql.Stmt, userID, guildID int64, nickname string) {
 	var lastNickname string
-	row := nicknameQueryStatement.QueryRow(userID, guildID)
+	row := nicknameStmt.QueryRow(userID, guildID)
 	err := row.Scan(&lastNickname)
 	if err == sql.ErrNoRows && nickname == "" {
 		// don't need to be putting this in the database as the first record for the user
@@ -452,12 +452,12 @@ func EvtProcesser() {
 			}
 
 			if conf.NicknameLoggingEnabled {
-				CheckNickname(common.GORM, t.User.ID, t.GuildID, t.Presence.Nick)
+				CheckNickname(common.GORM, nicknameQueryStatement, t.User.ID, t.GuildID, t.Presence.Nick)
 			}
 
 			if conf.UsernameLoggingEnabled {
 				if t.User.Username != "" {
-					CheckUsername(common.GORM, t.User)
+					CheckUsername(common.GORM, usernameQueryStatement, t.User)
 				}
 			}
 		case *discordgo.GuildMemberUpdate:
@@ -467,7 +467,7 @@ func EvtProcesser() {
 				continue
 			}
 			if conf.NicknameLoggingEnabled {
-				CheckNickname(common.GORM, t.User.ID, t.GuildID, t.Nick)
+				CheckNickname(common.GORM, nicknameQueryStatement, t.User.ID, t.GuildID, t.Nick)
 			}
 		case *discordgo.GuildMemberAdd:
 			conf, err := GetConfig(t.GuildID)
@@ -476,7 +476,7 @@ func EvtProcesser() {
 				continue
 			}
 			if conf.UsernameLoggingEnabled {
-				CheckUsername(common.GORM, t.User)
+				CheckUsername(common.GORM, usernameQueryStatement, t.User)
 			}
 		case *discordgo.Member:
 			conf, err := GetConfig(t.GuildID)
@@ -486,11 +486,11 @@ func EvtProcesser() {
 			}
 
 			if conf.NicknameLoggingEnabled {
-				CheckNickname(common.GORM, t.User.ID, t.GuildID, t.Nick)
+				CheckNickname(common.GORM, nicknameQueryStatement, t.User.ID, t.GuildID, t.Nick)
 			}
 
 			if conf.UsernameLoggingEnabled {
-				CheckUsername(common.GORM, t.User)
+				CheckUsername(common.GORM, usernameQueryStatement, t.User)
 			}
 		}
 	}
@@ -504,6 +504,11 @@ func EvtProcesserGCs() {
 		case *discordgo.GuildCreate:
 			tx := common.GORM.Begin()
 
+			rawTX := tx.CommonDB().(*sql.Tx)
+			nickStmt := rawTX.Stmt(nicknameQueryStatement)
+			usernameStmt := rawTX.Stmt(usernameQueryStatement)
+			// nickStmt := rawTX.Stmt(rawTX)
+
 			conf, err := GetConfig(t.ID)
 			if err != nil {
 				logrus.WithError(err).Error("Failed fetching config")
@@ -513,10 +518,10 @@ func EvtProcesserGCs() {
 			started := time.Now()
 			for _, v := range t.Members {
 				if conf.NicknameLoggingEnabled {
-					CheckNickname(tx, v.User.ID, t.Guild.ID, v.Nick)
+					CheckNickname(tx, nickStmt, v.User.ID, t.Guild.ID, v.Nick)
 				}
 				if conf.UsernameLoggingEnabled {
-					CheckUsername(tx, v.User)
+					CheckUsername(tx, usernameStmt, v.User)
 				}
 			}
 
