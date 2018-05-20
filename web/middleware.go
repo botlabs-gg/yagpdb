@@ -90,6 +90,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"BotRunning":    botrest.BotIsRunning(),
 			"RequestURI":    r.RequestURI,
 			"StartedAtUnix": StartedAt.Unix(),
+			"CurrentAd":     CurrentAd,
 		}
 
 		for k, v := range globalTemplateData {

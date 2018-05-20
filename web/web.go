@@ -16,6 +16,8 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -44,7 +46,16 @@ var (
 	globalTemplateData = TemplateData(make(map[string]interface{}))
 
 	StartedAt = time.Now()
+
+	CurrentAd *Advertisement
 )
+
+type Advertisement struct {
+	Path    template.URL
+	LinkURL template.URL
+	Width   int
+	Height  int
+}
 
 func init() {
 	b := int32(1)
@@ -96,8 +107,24 @@ func Run() {
 		log.WithError(err).Error("Web: Failed loading blog posts")
 	}
 
+	LoadAd()
+
 	log.Info("Running webservers")
 	runServers(mux)
+}
+
+func LoadAd() {
+	path := os.Getenv("YAGPDB_AD_IMG_PATH")
+	linkurl := os.Getenv("YAGPDB_AD_LINK")
+	width, _ := strconv.Atoi(os.Getenv("YAGPDB_AD_W"))
+	height, _ := strconv.Atoi(os.Getenv("YAGPDB_AD_H"))
+
+	CurrentAd = &Advertisement{
+		Path:    template.URL(path),
+		LinkURL: template.URL(linkurl),
+		Width:   width,
+		Height:  height,
+	}
 }
 
 func Stop() {
