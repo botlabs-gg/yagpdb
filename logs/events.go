@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/snowflake"
 	"github.com/jinzhu/gorm"
@@ -11,7 +12,13 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
+	"runtime"
 	"time"
+)
+
+var (
+	nicknameQueryStatement *sql.Stmt
+	usernameQueryStatement *sql.Stmt
 )
 
 func init() {
@@ -27,6 +34,17 @@ func (p *Plugin) InitBot() {
 	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
 
 	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames)
+
+	var err error
+	nicknameQueryStatement, err = common.PQ.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
+	if err != nil {
+		panic("Failed preparing statement: " + err.Error())
+	}
+
+	usernameQueryStatement, err = common.PQ.Prepare("select username from username_listings where user_id=$1 order by id desc limit 1;")
+	if err != nil {
+		panic("Failed preparing statement: " + err.Error())
+	}
 }
 
 var _ bot.BotStarterHandler = (*Plugin)(nil)
@@ -366,18 +384,15 @@ type NicknameListing struct {
 }
 
 func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
-	var result UsernameListing
-	err := gDB.Model(&result).Where(UsernameListing{UserID: user.ID}).Last(&result).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		logrus.WithError(err).Error("Failed checking username for changes")
+	var lastUsername string
+	row := usernameQueryStatement.QueryRow(user.ID)
+	err := row.Scan(&lastUsername)
+	if err == nil && lastUsername == user.Username {
+		// Not changed
 		return
 	}
 
-	if err == nil && result.Username == user.Username {
-		return
-	}
-
-	logrus.Info("User changed username, old:", result.Username, " | new:", user.Username)
+	logrus.Debug("User changed username, old:", lastUsername, " | new:", user.Username)
 
 	listing := UsernameListing{
 		UserID:   user.ID,
@@ -391,23 +406,20 @@ func CheckUsername(gDB *gorm.DB, user *discordgo.User) {
 }
 
 func CheckNickname(gDB *gorm.DB, userID, guildID int64, nickname string) {
-	var result NicknameListing
-	err := gDB.Model(&result).Where(NicknameListing{UserID: userID, GuildID: discordgo.StrID(guildID)}).Last(&result).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		logrus.WithError(err).Error("Failed checking nickname for changes")
-		return
-	}
-
-	if err == gorm.ErrRecordNotFound && nickname == "" {
+	var lastNickname string
+	row := nicknameQueryStatement.QueryRow(userID, guildID)
+	err := row.Scan(&lastNickname)
+	if err == sql.ErrNoRows && nickname == "" {
 		// don't need to be putting this in the database as the first record for the user
 		return
 	}
 
-	if err == nil && result.Nickname == nickname {
+	if err == nil && lastNickname == nickname {
+		// Not changed
 		return
 	}
 
-	logrus.Info("User changed nickname, old:", result.Nickname, " | new:", nickname)
+	logrus.Debug("User changed nickname, old:", lastNickname, " | new:", nickname)
 
 	listing := NicknameListing{
 		UserID:   userID,
@@ -516,10 +528,11 @@ func EvtProcesserGCs() {
 
 			if len(t.Members) > 100 {
 				logrus.Infof("Checked %d members in %s", len(t.Members), time.Since(started).String())
+				// Make sure this dosen't use all our resources
+				time.Sleep(time.Millisecond * 10)
+			} else {
+				runtime.Gosched()
 			}
-
-			// Make sure this dosen't use all our resources
-			time.Sleep(time.Millisecond * 25)
 		}
 	}
 }
