@@ -7,7 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"gopkg.in/nullbio/null.v6"
+	"gopkg.in/volatiletech/null.v6"
 	"html/template"
 	"net/http"
 	"strconv"

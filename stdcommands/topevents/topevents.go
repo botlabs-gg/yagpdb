@@ -29,7 +29,7 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 	sortable := make([]*DiscordEvtEntry, len(eventsystem.AllDiscordEvents))
 	for i, _ := range sortable {
 		sortable[i] = &DiscordEvtEntry{
-			Name: eventsystem.Event(i).String(),
+			Name: eventsystem.AllDiscordEvents[i].String(),
 		}
 	}
 
@@ -60,7 +60,7 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 		sumPerSecond += entry.PerSecond
 	}
 
-	out += fmt.Sprintf("\nTotal: %d, Events per minute: %.1f", sum, sumPerSecond)
+	out += fmt.Sprintf("\nTotal: %d, Events per second: %.1f", sum, sumPerSecond)
 	out += "\n```"
 
 	return out, nil

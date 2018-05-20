@@ -1,6 +1,10 @@
 package fixedpool
 
 import (
+	"errors"
+	"github.com/sirupsen/logrus"
+	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -66,11 +70,20 @@ func NewCustom(network, addr string, size int, df DialFunc) (*Pool, error) {
 		}
 	}()
 
+	finalizer := func(conn *redis.Client) {
+		if conn.LastCritical == nil {
+			logrus.Error("Healthy Redis client garbage collected! This is bad my dude!")
+			p.Put(conn)
+		}
+	}
+
 	mkConn := func() error {
 		client, err := df(network, addr)
 		if err == nil {
 			p.pool <- client
+			runtime.SetFinalizer(client, finalizer)
 		}
+
 		return err
 	}
 
@@ -82,10 +95,24 @@ func NewCustom(network, addr string, size int, df DialFunc) (*Pool, error) {
 	// make the rest of the connections in the background, if any fail it's fine
 	go func() {
 		for i := 0; i < size-1; i++ {
-			mkConn()
+			err := mkConn()
+			if err != nil {
+				panic("Failde initializing redis pool: " + err.Error())
+			}
 		}
 		close(p.initDoneCh)
 	}()
+
+	if os.Getenv("YAGPDB_DISABLE_REDIS_POOL_DEBUG") == "" {
+		go func() {
+			t := time.NewTicker(time.Second * 10)
+			for {
+				<-t.C
+				logrus.Println("Redis pool size: ", len(p.pool))
+				runtime.GC()
+			}
+		}()
+	}
 
 	return &p, nil
 }
@@ -101,12 +128,17 @@ func New(network, addr string, size int) (*Pool, error) {
 // Get retrieves an available redis client. If there are none available it will
 // create a new one on the fly
 func (p *Pool) Get() (*redis.Client, error) {
+	after := time.NewTimer(time.Second * 30)
+
 	select {
 	case conn := <-p.pool:
+		after.Stop()
 		return conn, nil
-	case <-time.After(time.Second * 10):
+	case <-after.C:
 		panic("Ran out of connections?")
 	}
+
+	return nil, errors.New("Pool is empty")
 }
 
 // Put returns a client back to the pool. If the pool is full the client is
@@ -120,6 +152,7 @@ func (p *Pool) Put(conn *redis.Client) {
 			conn.Close()
 		}
 	} else {
+		// The conn was bad so replace it with a good conn
 		go func() {
 			for {
 				client, err := p.df(p.Network, p.Addr)
@@ -127,6 +160,7 @@ func (p *Pool) Put(conn *redis.Client) {
 					p.pool <- client
 					return
 				}
+				logrus.WithError(err).Error("Failed connecting to redis")
 				time.Sleep(time.Second)
 			}
 		}()

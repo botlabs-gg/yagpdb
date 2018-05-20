@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -217,5 +218,19 @@ func tmplDelTrigger(c *Context) interface{} {
 	return func() string {
 		c.DelTrigger = true
 		return ""
+	}
+}
+
+func tmplAddReactions(c *Context) interface{} {
+	return func(values ...reflect.Value) (reflect.Value, error) {
+		f := func(args []reflect.Value) (reflect.Value, error) {
+			for _, reaction := range args {
+				if err := common.BotSession.MessageReactionAdd(c.Msg.ChannelID, c.Msg.ID, reaction.String()); err != nil {
+					return reflect.Value{}, err
+				}
+			}
+			return reflect.ValueOf(""), nil
+		}
+		return callVariadic(f, values...)
 	}
 }

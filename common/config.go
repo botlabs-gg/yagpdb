@@ -14,6 +14,7 @@ type CoreConfig struct {
 	Host         string
 	Email        string // The letsencrypt cert will use this email
 
+	PQHost     string
 	PQUsername string
 	PQPassword string
 	Redis      string

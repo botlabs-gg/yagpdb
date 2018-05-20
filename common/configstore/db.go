@@ -55,12 +55,12 @@ type GuildConfig interface {
 	GetName() string
 }
 
-func RedisClientCtx(ctx context.Context) (*redis.Client, error) {
+func RedisClientCtx(ctx context.Context) *redis.Client {
 	if client := ctx.Value(common.ContextKeyRedis); client != nil {
-		return client.(*redis.Client), nil
+		return client.(*redis.Client)
 	}
 
-	return common.RedisPool.Get()
+	return nil
 }
 
 type PostFetchHandler interface {

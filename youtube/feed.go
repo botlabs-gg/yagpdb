@@ -442,7 +442,7 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	p.Entry.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
 }
 
-// maybeAddChannelWatch adds a channel watch to redis, if there wasnt one before
+// maybeAddChannelWatch adds a channel watch to redis, if there wasn't one before
 func (p *Plugin) MaybeAddChannelWatch(lock bool, client *redis.Client, channel string) error {
 	if lock {
 		err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)

@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	log "github.com/sirupsen/logrus"
+	"math/rand"
 )
 
 func HandleGuildMemberAdd(evt *eventsystem.EventData) {
@@ -34,12 +35,13 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 		}
 	}
 
-	if config.JoinServerEnabled {
+	if config.JoinServerEnabled && len(config.JoinServerMsgs) > 0 {
 		channel := GetChannel(gs, config.JoinServerChannelInt())
 		if channel == 0 {
 			return
 		}
-		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinServerMsg)
+		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
+		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, chanMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing join template")
 		} else {
@@ -64,9 +66,14 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 		return
 	}
 
+	if len(config.LeaveMsgs) == 0 {
+		return
+	}
+	chanMsg := config.LeaveMsgs[rand.Intn(len(config.LeaveMsgs))]
+
 	client := bot.ContextRedis(evt.Context())
 
-	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberRemove.Member).Execute(client, config.LeaveMsg)
+	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberRemove.Member).Execute(client, chanMsg)
 	if err != nil {
 		log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing leave template")
 		return

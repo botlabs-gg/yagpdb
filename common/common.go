@@ -6,7 +6,10 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common/fixedpool"
 	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/mediocregopher/radix.v2/redis"
+	// "github.com/mediocregopher/radix.v2/pool"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
@@ -15,19 +18,20 @@ import (
 
 const (
 	VERSIONMAJOR = 0
-	VERSIONMINOR = 28
-	VERSIONPATCH = 1
-	Testing      = false // Disables stuff like command cooldowns
+	VERSIONMINOR = 30
+	VERSIONPATCH = 0
+	Testing      = true // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Quadriphonic"
+	VERSION       = VERSIONNUMBER + " Reluctant"
 
-	GORM        *gorm.DB
-	PQ          *sql.DB
-	RedisPool   *pool.Pool
-	DSQLStateDB *sql.DB
+	GORM *gorm.DB
+	PQ   *sql.DB
+
+	// RedisPool   *pool.Pool
+	RedisPool redisPool
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
@@ -63,7 +67,10 @@ func Init() error {
 		return err
 	}
 
-	err = connectDB(config.PQUsername, config.PQPassword, "yagpdb")
+	err = connectDB(config.PQHost, config.PQUsername, config.PQPassword, "yagpdb")
+	if err != nil {
+		panic(err)
+	}
 
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
@@ -79,7 +86,7 @@ func InitTest() {
 		return
 	}
 
-	err := connectDB("postgres", "123", testDB)
+	err := connectDB("localhost", "postgres", "123", testDB)
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +94,14 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
+	if os.Getenv("YAGPDB_LEGACY_REDIS_POOL") != "" {
+		logrus.Info("Using legacy redis pool")
+		RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
+	} else {
+		logrus.Info("Using new redis pool, set YAGPDB_LEGACY_REDIS_POOL=yes if it's broken")
+		RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
+	}
+
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initilizing redis pool")
 	}
@@ -95,8 +109,12 @@ func connectRedis(addr string) (err error) {
 	return
 }
 
-func connectDB(user, pass, dbName string) error {
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=%s sslmode=disable password=%s", user, dbName, pass))
+func connectDB(host, user, pass, dbName string) error {
+	if host == "" {
+		host = "localhost"
+	}
+
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password='%s'", host, user, dbName, pass))
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)
@@ -104,24 +122,11 @@ func connectDB(user, pass, dbName string) error {
 		PQ.SetMaxOpenConns(5)
 	}
 
-	if os.Getenv("YAGPDB_SQLSTATE_ADDR") != "" {
-		logrus.Info("Using special sql state db")
-		addr := os.Getenv("YAGPDB_SQLSTATE_ADDR")
-		user := os.Getenv("YAGPDB_SQLSTATE_USER")
-		pass := os.Getenv("YAGPDB_SQLSTATE_PW")
-		dbName := os.Getenv("YAGPDB_SQLSTATE_DB")
-
-		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", addr, user, dbName, pass))
-		if err != nil {
-			DSQLStateDB = PQ
-			return err
-		}
-
-		DSQLStateDB = db
-
-	} else {
-		DSQLStateDB = PQ
-	}
-
 	return err
+}
+
+type redisPool interface {
+	Cmd(cmd string, args ...interface{}) *redis.Resp
+	Put(conn *redis.Client)
+	Get() (*redis.Client, error)
 }

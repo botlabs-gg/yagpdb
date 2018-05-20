@@ -44,8 +44,15 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="form-group">
-                        <label for="response">Response</label>
-                        <textarea rows="5" class="form-control" id="response" name="response" placeholder="^ Smells!"></textarea>
+                        <label for="responses">Response</label>
+                        <div class="entry input-group">
+                            <textarea rows="5" class="form-control" name="responses" placeholder="^ Smells!"></textarea>
+                            <span class="input-group-btn">
+                                <button class="btn btn-success btn-add btn-circle" type="button">
+                                    <span class="glyphicon glyphicon-plus"></span>
+                                </button>
+                            </span>
+                        </div>
                         {{template "custom_command_help"}}
                     </div>
                     <div class="form-group">
@@ -140,8 +147,18 @@
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="form-group">
-                                <label for="response">Response</label>
-                                <textarea rows="5" class="form-control" id="response" name="response" placeholder="^ Smells!">{{.Response}}</textarea>
+                                <label for="responses">Response</label>
+                                {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
+                                {{range .Responses}}
+                                <div class="entry input-group">
+                                    <textarea rows="5" class="form-control" name="responses" placeholder="^ Smells!">{{.}}</textarea>
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{end}}
                                 {{template "custom_command_help"}}
                             </div>
                             <div class="form-group">
@@ -201,6 +218,7 @@
 
 <p class="help-block">Execute bot commands using <code>{{"{{"}}exec "command" "arg1" "arg2"{{"}}"}}</code>, Example: <code>{{"{{"}}exec "role" "yagpdb"{{"}}"}}</code> will be the same as the user typing <code>(mention or prefix) role yagpdb</code></p>
 
-<p class="help-block">Arguments are available in a string array: <code>.Args</code><br> Access single arguments by index using <code>{{"{{"}}index .Args 0{{"}}"}}</code><br>Get the number of arguments using <code>{{"{{"}}len .Args{{"}}"}}</code><br>Loop over them with <br><code>{{"{{"}}range .Args{{"}}"}}{{"{{"}}.{{"}}"}} <- that dot will be replaced by the current argument we're looping over{{"{{"}}end{{"}}"}}</code><br>"end" marks the end of the for loop. <a href="https://yagpdb.xyz/docs/templates">See yagpdb's custom templates for help</a> or you can also <a href="https://golang.org/pkg/text/template/">view the templating engine docs for more info</a> and join the support server if you have questions. It's rather complicated so I will make more guides in the future.<p>
+<p class="help-block">Arguments are available in a string array: <code>.CmdArgs</code><br> Access single arguments by index using <code>{{"{{index .CmdArgs 0}}"}}</code><br>Get the number of arguments using <code>{{"{{len .CmdArgs}}"}}</code><br>Loop over them with <br><code>{{"{{range .CmdArgs}}{{.}}"}} <- that dot will be replaced by the current argument we're looping over{{"{{end}}"}}</code><br>"end" marks the end of the for loop. <a href="/docs/templates">See yagpdb's custom templates for help</a> or you can also <a href="https://golang.org/pkg/text/template/">view the templating engine docs for more info</a> and join the support server if you have questions. It's rather complicated so I will make more guides in the future.<p>
 
+<p class="help-block">YAGPDB will pick one message at random from all configured.</p>
 {{end}}

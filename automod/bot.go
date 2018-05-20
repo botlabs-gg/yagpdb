@@ -70,6 +70,10 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		return // Pls no panicerinos or banerinos self
 	}
 
+	if m.Author.Bot {
+		return
+	}
+
 	cs := bot.State.Channel(true, m.ChannelID)
 	if cs == nil {
 		logrus.WithField("channel", m.ChannelID).Error("Channel not found in state")
@@ -126,7 +130,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 			continue
 		}
 
-		// If the rule did not trigger a deletion there wasnt any violation
+		// If the rule did not trigger a deletion there wasn't any violation
 		if !d {
 			continue
 		}

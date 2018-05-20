@@ -14,6 +14,6 @@ var Command = &commands.YAGCommand{
 	RunInDM:     true,
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		return "Please add the bot through the websie\nhttps://" + common.Conf.Host, nil
+		return "Please add the bot through the website\nhttps://" + common.Conf.Host, nil
 	},
 }

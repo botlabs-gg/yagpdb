@@ -16,7 +16,7 @@ html {
 }
 h1, h2 {
   margin: 0 0 35px;
-  text-transform: uppercase;
+  /*text-transform: uppercase;*/
   font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 700;
   letter-spacing: 1px;
@@ -29,7 +29,7 @@ p {
 }
 
 #about{
-  text-align: left;
+  text-align: left !important;
 }
 
 @media (min-width: 768px) {
@@ -56,17 +56,18 @@ a:focus {
 .navbar-custom {
   margin-bottom: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
+  /*text-transform: uppercase;*/
   font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
   background-color: black;
 }
-.navbar-custom .navbar-toggle {
+
+.navbar-custom .navbar-toggler {
   color: white;
   background-color: rgba(255, 255, 255, 0.2);
   font-size: 12px;
 }
-.navbar-custom .navbar-toggle:focus,
-.navbar-custom .navbar-toggle:active {
+.navbar-custom .navbar-toggler:focus,
+.navbar-custom .navbar-toggler:active {
   outline: none;
 }
 .navbar-custom .navbar-brand {
@@ -104,7 +105,7 @@ a:focus {
 }
 @media (min-width: 768px) {
   .navbar-custom {
-    padding: 20px 0;
+    padding: 10px 20px;
     border-bottom: none;
     letter-spacing: 1px;
     background: transparent;
@@ -113,7 +114,7 @@ a:focus {
     transition: background 0.5s ease-in-out, padding 0.5s ease-in-out;
   }
   .navbar-custom.top-nav-collapse {
-    padding: 0;
+    padding: 0 10px;
     background: black;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   }
@@ -250,7 +251,7 @@ a:focus {
   }
 }
 .btn {
-  text-transform: uppercase;
+  /*text-transform: uppercase;*/
   font-family: "Montserrat", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 400;
   -webkit-transition: all 0.3s ease-in-out;

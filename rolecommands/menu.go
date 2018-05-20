@@ -174,9 +174,9 @@ func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, f
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
 	rm.UpdateG(models.RoleMenuColumns.NextRoleCommandID)
 	if first && rm.OwnMessage {
-		return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on this message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
+		return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on this message\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 	}
-	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message\nNote: the bot has to be on the server where the emoji is from, otherwise it wont be able to use it", nil
+	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 }
 
 func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) error {

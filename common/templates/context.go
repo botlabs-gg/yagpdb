@@ -30,6 +30,7 @@ var (
 		"toInt":      tmplToInt,
 		"toInt64":    ToInt64,
 		"formatTime": tmplFormatTime,
+		"slice":      slice,
 	}
 
 	contextSetupFuncs = []ContextSetupFunc{
@@ -146,7 +147,7 @@ func (c *Context) Execute(redisClient *redis.Client, source string) (string, err
 
 	result := common.EscapeSpecialMentionsConditional(buf.String(), c.MentionEveryone, c.MentionHere, c.MentionRoles)
 	if err != nil {
-		return result, errors.WithMessage(err, "Failed execuing template")
+		return result, errors.WithMessage(err, "Failed executing template")
 	}
 
 	return result, nil
@@ -164,4 +165,5 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["removeRoleID"] = tmplRemoveRoleID(c)
 	c.ContextFuncs["deleteResponse"] = tmplDelResponse(c)
 	c.ContextFuncs["deleteTrigger"] = tmplDelTrigger(c)
+	c.ContextFuncs["addReactions"] = tmplAddReactions(c)
 }

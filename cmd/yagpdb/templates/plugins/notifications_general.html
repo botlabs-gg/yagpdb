@@ -31,8 +31,27 @@
                             </div>
                             <div class="form-group">
                                 <label>Message</label>
-                                <textarea class="form-control" rows="3" name="join_server_msg">{{.NotifyConfig.JoinServerMsg}}</textarea>
-                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
+                                {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
+                                {{range .NotifyConfig.JoinServerMsgs}}
+                                <div class="entry input-group">
+                                    <textarea class="form-control" rows="3" name="join_server_msgs">{{.}}</textarea>
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{else}}
+                                <div class="entry input-group">
+                                    <textarea class="form-control" rows="3" name="join_server_msgs"></textarea>
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{end}}
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}. YAGPDB will pick one message at random from all configured.</p>
                             </div>
                         </div>
                     </div>
@@ -55,8 +74,27 @@
                             </div>
                             <div class="form-group">
                                 <label>Message</label>
-                                <textarea class="form-control" rows="3" name="leave_msg">{{.NotifyConfig.LeaveMsg}}</textarea>
-                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
+                                {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
+                                {{range .NotifyConfig.LeaveMsgs}}
+                                <div class="entry input-group">
+                                    <textarea class="form-control" rows="3" name="leave_msgs">{{.}}</textarea>
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{else}}
+                                <div class="entry input-group">
+                                    <textarea class="form-control" rows="3" name="leave_msgs"></textarea>
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{end}}
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}. YAGPDB will pick one message at random from all configured.</p>
                             </div>
                         </div>
                     </div>

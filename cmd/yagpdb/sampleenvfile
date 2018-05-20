@@ -10,6 +10,7 @@ export YAGPDB_BOTTOKEN="Bot token_here"
 export YAGPDB_HOST="somehost.com"   
 export YAGPDB_EMAIL="insert@email.here"      
 
+export YAGPDB_PQHOST="localhost"
 export YAGPDB_PQUSERNAME="postgres username"
 export YAGPDB_PQPASSWORD="postgres password"
 export YAGPDB_REDIS="redis address"
@@ -47,3 +48,13 @@ export GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"
 # This will be used as the pubsubhubbub (websub) verify token when receiving callbacks on new video uploads
 # if this gets leaked, people could spam shit
 export YAGPDB_YOUTUBE_VERIFY_TOKEN="some_secret_shit"
+
+## These variables are for displaying an ad in the sidebar
+# Leave empty for nothing
+# Path to ad image (it's automatically prefixed with / because msys64 kept messing with my path in my dev env)
+export YAGPDB_AD_IMG_PATH=
+# Where clicking on the image sends you
+export YAGPDB_AD_LINK=
+#Dimensions
+export YAGPDB_AD_H=
+export YAGPDB_AD_W=

@@ -350,7 +350,7 @@ func RemoveStreamingRole(member *discordgo.Member, role int64, guildID int64) {
 	}
 
 	err := common.RemoveRole(member, role, guildID)
-	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
+	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
 		log.WithError(err).WithField("guild", guildID).WithField("user", member.User.ID).WithField("role", role).Error("Failed removing streaming role")
 	}
 }

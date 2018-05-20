@@ -105,3 +105,13 @@ func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 
 	return false, nil
 }
+
+// GuildName is a convenience function for getting the name of a guild
+func GuildName(gID int64) (name string) {
+	g := State.Guild(true, gID)
+	g.RLock()
+	name = g.Guild.Name
+	g.RUnlock()
+
+	return
+}

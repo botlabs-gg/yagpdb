@@ -19,7 +19,7 @@ import (
 func (p *Plugin) InitBot() {
 	commands.AddRootCommands(roleCommands...)
 	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 }
 
 var roleCommands = []*commands.YAGCommand{
@@ -67,10 +67,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 	gs.RUnlock()
 
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		return
-	}
+	client := common.MustGetRedisClient()
 	defer common.RedisPool.Put(client)
 
 	config, err := GetGeneralConfig(client, gs.ID())
@@ -79,7 +76,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 
 	if !config.OnlyOnJoin && config.Role != 0 {
-		bot.GetMember(gs.ID(), p.User.ID)
+		go bot.GetMember(gs.ID(), p.User.ID)
 	}
 }
 
@@ -104,10 +101,7 @@ func stopProcessing(guildID int64) {
 
 func runDurationChecker() {
 
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		panic(err)
-	}
+	client := common.MustGetRedisClient()
 	defer common.RedisPool.Put(client)
 
 	ticker := time.NewTicker(time.Minute)
@@ -271,14 +265,8 @@ OUTER:
 
 func saveGeneral(client *redis.Client, guildID int64, config *GeneralConfig) {
 	if client == nil {
-		var err error
-		client, err = common.RedisPool.Get()
-		if err != nil {
-			logrus.WithError(err).Error("Failed retrieving redis connection")
-			return
-		}
-
-		common.RedisPool.Put(client)
+		client = common.MustGetRedisClient()
+		defer common.RedisPool.Put(client)
 	}
 
 	err := common.SetRedisJson(client, KeyGeneral(guildID), config)

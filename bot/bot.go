@@ -90,7 +90,8 @@ func Run() {
 		panic("Failed getting shard count: " + err.Error())
 	}
 
-	go EventLogger.run(shardCount)
+	EventLogger.init(shardCount)
+	go EventLogger.run()
 
 	for i := 0; i < shardCount; i++ {
 		waitingReadies = append(waitingReadies, i)
@@ -200,7 +201,7 @@ OUTER:
 		if err != nil {
 			log.WithError(err).Error("Failed removing guild from connected guilds")
 		} else {
-			EmitGuildRemoved(client, parsedGID)
+			go EmitGuildRemoved(parsedGID)
 			log.WithField("guild", gID).Info("Removed from guild when offline")
 		}
 	}

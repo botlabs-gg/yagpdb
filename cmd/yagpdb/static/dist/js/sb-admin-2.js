@@ -52,3 +52,35 @@ function updateSelectedMenuItem(){
 
 
 }
+
+// Adapted from https://bootsnipp.com/snippets/featured/dynamic-form-fields-add-amp-remove-bs3
+$(function()
+{
+    $(document).on('click', '.btn-add', function(e)
+    {
+        e.preventDefault();
+
+        var currentEntry = $(this).parent().parent(),
+            newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
+
+        newEntry.find('input, textarea').val('');
+        newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
+            .removeClass('btn-add').addClass('btn-remove')
+            .removeClass('btn-success').addClass('btn-danger')
+            .html('<span class="glyphicon glyphicon-minus"></span>');
+    }).on('click', '.btn-remove', function(e)
+    {
+    $(this).parents('.entry:first').remove();
+
+    e.preventDefault();
+    return false;
+  });
+});
+$(function() {
+    $(window).bind("load", function() {
+      $('.entry:not(:last-of-type) .btn-add')
+          .removeClass('btn-add').addClass('btn-remove')
+          .removeClass('btn-success').addClass('btn-danger')
+          .html('<span class="glyphicon glyphicon-minus"></span>');
+    });
+});
