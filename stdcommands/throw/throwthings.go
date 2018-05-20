@@ -1,15 +1,15 @@
-package stdcommands
+package throw
 
 import (
 	"math/rand"
 )
 
-func RandomThing() string {
-	return ThrowThings[rand.Intn(len(ThrowThings))]
+func randomThing() string {
+	return throwThings[rand.Intn(len(throwThings))]
 }
 
 // If you want somthing added submit a pr
-var ThrowThings = []string{
+var throwThings = []string{
 	"anime girls",
 	"b1nzy",
 	"bad jokes",

@@ -1,4 +1,4 @@
-package stdcommands
+package poll
 
 import (
 	"github.com/jonas747/dcmd"
@@ -11,7 +11,7 @@ import (
 
 var (
 	pollReactions = [...]string{"1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"}
-	cmdPoll       = &commands.YAGCommand{
+	Command       = &commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "Poll",
 		Description:  "Create a reaction poll.",
