@@ -1,4 +1,4 @@
-package stdcommands
+package info
 
 import (
 	"fmt"
@@ -7,19 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 )
 
-var cmdInvite = &commands.YAGCommand{
-	CmdCategory: commands.CategoryGeneral,
-	Name:        "Invite",
-	Aliases:     []string{"inv", "i"},
-	Description: "Responds with bot invite link",
-	RunInDM:     true,
-
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		return "Please add the bot through the website\nhttps://" + common.Conf.Host, nil
-	},
-}
-
-var cmdInfo = &commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryGeneral,
 	Name:        "Info",
 	Description: "Responds with bot information",
