@@ -258,7 +258,7 @@ OUTER:
 			if client != nil {
 				client.Cmd("SET", KeyProcessing(gs.ID()), len(membersToGiveRole)-i)
 			}
-			logrus.WithField("guild", gs.ID()).WithField("user", userID).Info("Gave autorole role")
+			logrus.WithField("guild", gs.ID()).WithField("user", userID).Debug("Gave autorole role")
 		}
 	}
 }
