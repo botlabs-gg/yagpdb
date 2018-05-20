@@ -290,6 +290,7 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 func RemoveStreaming(client *redis.Client, config *Config, guildID int64, userID int64, member *discordgo.Member) {
 	if member != nil {
 		RemoveStreamingRole(member, config.GiveRole, guildID)
+		client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID)
 	} else {
 		// Was not streaming before if we removed 0 elements
 		if n, _ := client.Cmd("SREM", KeyCurrentlyStreaming(guildID), userID).Int(); n > 0 && config.GiveRole != 0 {
