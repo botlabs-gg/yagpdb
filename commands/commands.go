@@ -1,7 +1,7 @@
 package commands
 
 //go:generate esc -o assets_gen.go -pkg commands -ignore ".go" assets/
-//go:generate easyjson  commands.go
+//REMOVED: generate easyjson  commands.go
 
 import (
 	"github.com/jonas747/dcmd"
