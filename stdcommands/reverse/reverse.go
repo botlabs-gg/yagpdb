@@ -3,10 +3,9 @@ package reverse
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryFun,
 	Name:         "Reverse",
 	Aliases:      []string{"r", "rev"},
@@ -26,16 +25,4 @@ var yagCommand = commands.YAGCommand{
 
 		return ":upside_down: " + out, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

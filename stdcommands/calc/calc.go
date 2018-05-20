@@ -5,7 +5,6 @@ import (
 	"github.com/alfredxing/calc/compute"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"sync"
 )
 
@@ -14,7 +13,7 @@ var (
 	computeLock sync.Mutex
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Calc",
 	Aliases:      []string{"c", "calculate"},
@@ -35,16 +34,4 @@ var yagCommand = commands.YAGCommand{
 
 		return fmt.Sprintf("Result: `%f`", result), nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

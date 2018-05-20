@@ -3,10 +3,9 @@ package info
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryGeneral,
 	Name:        "Info",
 	Description: "Responds with bot information",
@@ -20,16 +19,4 @@ Control panel: <https://yagpdb.xyz/manage>
 				`
 		return info, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

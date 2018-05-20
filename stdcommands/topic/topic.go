@@ -4,10 +4,9 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "Topic",
@@ -22,16 +21,4 @@ var yagCommand = commands.YAGCommand{
 		topic := doc.Find("#random").Text()
 		return topic, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

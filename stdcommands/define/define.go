@@ -5,10 +5,9 @@ import (
 	"github.com/dpatrie/urbandictionary"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryFun,
 	Name:         "Define",
 	Aliases:      []string{"df"},
@@ -37,16 +36,4 @@ var yagCommand = commands.YAGCommand{
 
 		return cmdResp, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

@@ -5,11 +5,10 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"math/rand"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "Roll",
 	Description: "Roll dices, specify nothing for 6 sides, specify a number for max sides, or rpg dice syntax",
@@ -37,16 +36,4 @@ var yagCommand = commands.YAGCommand{
 		result := rand.Intn(sides)
 		return fmt.Sprintf(":game_die: %d (1 - %d)", result+1, sides), nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

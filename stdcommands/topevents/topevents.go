@@ -6,11 +6,10 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"sort"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:             2,
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
@@ -65,18 +64,6 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 	out += "\n```"
 
 	return out, nil
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }
 
 type DiscordEvtEntry struct {

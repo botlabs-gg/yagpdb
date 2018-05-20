@@ -5,11 +5,10 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"time"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:             2,
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
@@ -45,18 +44,6 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	out += "\n```"
 
 	return out, nil
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }
 
 type TopCommandsResult struct {

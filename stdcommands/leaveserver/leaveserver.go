@@ -7,7 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:             2,
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
@@ -25,16 +25,4 @@ var yagCommand = commands.YAGCommand{
 		}
 		return err, err
 	}),
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

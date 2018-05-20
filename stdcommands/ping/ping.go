@@ -7,13 +7,12 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"strconv"
 	"strings"
 	"time"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "Ping",
 	Description: "I prefer tabletennis (Shows the bots ping to the discord servers)",
@@ -23,7 +22,7 @@ var yagCommand = commands.YAGCommand{
 	},
 }
 
-func handleMessageCreate(evt *eventsystem.EventData) {
+func HandleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate
 
 	bUser := bot.State.User(true)
@@ -53,20 +52,4 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	httpPing := time.Since(started)
 
 	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGateway: "+taken.String())
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
-}
-
-func (c cmd) EventHandler() ([]eventsystem.Event, eventsystem.Handler) {
-	return []eventsystem.Event{eventsystem.EventMessageCreate}, handleMessageCreate
 }

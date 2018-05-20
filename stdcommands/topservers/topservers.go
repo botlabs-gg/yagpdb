@@ -6,11 +6,10 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"sort"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "TopServers",
@@ -43,18 +42,6 @@ var yagCommand = commands.YAGCommand{
 		}
 		return "Top servers the bot is on (by membercount):\n" + out + "\n```", nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }
 
 type GuildsSortUsers []*discordgo.Guild

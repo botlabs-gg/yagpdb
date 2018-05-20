@@ -5,11 +5,10 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"math/rand"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "Throw",
 	Description: "Cause you are a rebel",
@@ -37,16 +36,4 @@ var yagCommand = commands.YAGCommand{
 
 		return resp, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

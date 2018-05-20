@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
@@ -17,7 +16,7 @@ import (
 	"time"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryDebug,
 	Name:        "Yagstatus",
@@ -94,18 +93,6 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 
 	return embed, nil
 	// return &commandsystem.FallbackEmebd{embed}, nil
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }
 
 type PluginStatus interface {

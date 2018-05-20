@@ -8,7 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:             2,
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
@@ -18,16 +18,4 @@ var yagCommand = commands.YAGCommand{
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		return "<@" + discordgo.StrID(common.Conf.Owner) + "> Is my owner", nil
 	}),
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

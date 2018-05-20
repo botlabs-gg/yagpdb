@@ -6,11 +6,10 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"sort"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "ListRoles",
 	Description: "List roles and their id's, and some other stuff on the server",
@@ -30,16 +29,4 @@ var yagCommand = commands.YAGCommand{
 
 		return out, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

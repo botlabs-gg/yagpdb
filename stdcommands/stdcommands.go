@@ -42,47 +42,42 @@ type Command interface {
 type Plugin struct{}
 
 func (p *Plugin) InitBot() {
-  cmds := []Command {
+  commands.AddRootCommands(
     // Info
-    info.Cmd(),
-    invite.Cmd(),
+    info.Command,
+    invite.Command,
 
     // Standard
-    define.Cmd(),
-    reverse.Cmd(),
-    weather.Cmd(),
-    calc.Cmd(),
-    topic.Cmd(),
-    catfact.Cmd(),
-    advice.Cmd(),
-    ping.Cmd(),
-    throw.Cmd(),
-    roll.Cmd(),
-    customembed.Cmd(),
-    currenttime.Cmd(),
-    mentionrole.Cmd(),
-    listroles.Cmd(),
-    wouldyourather.Cmd(),
+    define.Command,
+    reverse.Command,
+    weather.Command,
+    calc.Command,
+    topic.Command,
+    catfact.Command,
+    advice.Command,
+    ping.Command,
+    throw.Command,
+    roll.Command,
+    customembed.Command,
+    currenttime.Command,
+    mentionrole.Command,
+    listroles.Command,
+    wouldyourather.Command,
 
     // Maintenance
-    stateinfo.Cmd(),
-    secretcommand.Cmd(),
-    leaveserver.Cmd(),
-    banserver.Cmd(),
-    unbanserver.Cmd(),
-    topservers.Cmd(),
-    topcommands.Cmd(),
-    topevents.Cmd(),
-    currentshard.Cmd(),
-    memberfetcher.Cmd(),
-    yagstatus.Cmd(),
-  }
-
-  for _, cmd := range cmds {
-    evts, handler := cmd.EventHandler()
-	  eventsystem.AddHandler(handler, evts...)
-    commands.AddRootCommands(cmd.YAGCommand())
-  }
+    stateinfo.Command,
+    secretcommand.Command,
+    leaveserver.Command,
+    banserver.Command,
+    unbanserver.Command,
+    topservers.Command,
+    topcommands.Command,
+    topevents.Command,
+    currentshard.Command,
+    memberfetcher.Command,
+    yagstatus.Command,
+  )
+  eventsystem.AddHandler(ping.HandleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 func (p *Plugin) Name() string {

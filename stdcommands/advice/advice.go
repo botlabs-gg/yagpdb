@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"net/http"
 	"net/url"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "Advice",
@@ -60,18 +59,6 @@ var yagCommand = commands.YAGCommand{
 
 		return advice, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }
 
 type AdviceSlip struct {

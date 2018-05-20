@@ -6,11 +6,10 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"strings"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "MentionRole",
 	Aliases:         []string{"mrole"},
@@ -57,16 +56,4 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 
 	common.BotSession.GuildRoleEdit(data.GS.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
 	return "", err
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

@@ -3,11 +3,10 @@ package catfact
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"math/rand"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "CatFact",
 	Aliases:     []string{"cf", "cat", "catfacts"},
@@ -17,16 +16,4 @@ var yagCommand = commands.YAGCommand{
 		cf := Catfacts[rand.Intn(len(Catfacts))]
 		return cf, nil
 	},
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

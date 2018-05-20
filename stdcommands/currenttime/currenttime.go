@@ -3,13 +3,12 @@ package currenttime
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/tkuchiki/go-timezone"
 	"strings"
 	"time"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CurrentTime",
 	Aliases:        []string{"ctime", "gettime"},
@@ -49,16 +48,4 @@ func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
 
 	// No offset of zone specified, just return the bots location
 	return now.Format(format), nil
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }

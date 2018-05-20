@@ -6,12 +6,11 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/pkg/errors"
 	"net/http"
 )
 
-var yagCommand = commands.YAGCommand{
+var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "WouldYouRather",
 	Aliases:     []string{"wyr"},
@@ -66,16 +65,4 @@ func wouldYouRather() (q1 string, q2 string, err error) {
 	q1 = r1.Nodes[0].FirstChild.Data
 	q2 = r2.Nodes[0].FirstChild.Data
 	return
-}
-
-func Cmd() util.Command {
-	return &cmd{}
-}
-
-type cmd struct {
-	util.BaseCmd
-}
-
-func (c cmd) YAGCommand() *commands.YAGCommand {
-	return &yagCommand
 }
