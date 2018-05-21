@@ -17,7 +17,12 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/soundboard.html"))
+	tmplPath := "templates/plugins/soundboard.html"
+	if common.Testing {
+		tmplPath = "../../soundboard/assets/soundboard.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	cpMux := goji.SubMux()
 

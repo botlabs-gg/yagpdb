@@ -1,7 +1,6 @@
 package reputation
 
 //go:generate sqlboiler --no-hooks -w "reputation_configs,reputation_users,reputation_log" postgres
-//go:generate esc -o assets_gen.go -pkg reputation -ignore ".go" assets/
 
 import (
 	"database/sql"
@@ -26,8 +25,8 @@ type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-	common.ValidateSQLSchema(FSMustString(false, "/assets/schema.sql"))
-	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
+	common.ValidateSQLSchema(DBSchema)
+	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {
 		panic(errors.WithMessage(err, "Failed upating reputation schema"))
 	}

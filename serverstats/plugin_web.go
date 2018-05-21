@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
+	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
@@ -17,13 +18,23 @@ type FormData struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/serverstats.html")))
+	tmplPath := "templates/plugins/serverstats.html"
+	if common.Testing {
+		tmplPath = "../../serverstats/assets/serverstats.html"
+	}
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
-	cpGetHandler := web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
-	web.CPMux.Handle(pat.Get("/stats"), cpGetHandler)
+	statsCPMux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/stats"), statsCPMux)
+	web.CPMux.Handle(pat.New("/stats/*"), statsCPMux)
+	statsCPMux.Use(web.RequireGuildChannelsMiddleware)
 
-	web.CPMux.Handle(pat.Post("/stats/settings"), web.RequireGuildChannelsMiddleware(web.ControllerPostHandler(HandleStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings")))
-	web.CPMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, false))))
+	cpGetHandler := web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats")
+	statsCPMux.Handle(pat.Get(""), cpGetHandler)
+	statsCPMux.Handle(pat.Get("/"), cpGetHandler)
+
+	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
+	statsCPMux.Handle(pat.Get("/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
 
 	// Public
 	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
@@ -50,9 +61,11 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return templateData, common.ErrWithCaller(err)
 	}
 
-	// publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
-
 	templateData["Config"] = config
+	templateData["ExtraHead"] = template.HTML(`
+<link rel="stylesheet" href="/static/vendor/morris/morris.css" />
+<link rel="stylesheet" href="/static/vendor/chartist/chartist.min.css" />
+	`)
 
 	return templateData, nil
 }

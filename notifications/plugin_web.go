@@ -11,7 +11,12 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/notifications_general.html"))
+	tmplPath := "templates/plugins/notifications_general.html"
+	if common.Testing {
+		tmplPath = "../../notifications/assets/notifications_general.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	getHandler := web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")
 	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifications config.")

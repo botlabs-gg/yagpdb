@@ -1,0 +1,101 @@
+{{define "cp_soundboard"}}
+{{template "cp_head" .}}
+<header class="page-header">
+    <h2>Soundboard</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <header class="card-header">
+                <h2 class="card-title">Upload new</h2>
+            </header>
+            <div class="card-body">
+                <form method="post" action="new" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="form-control" name="Name" placeholder="name">
+                    </div>
+                    <div class="form-group">
+                        <label>Required Role</label>
+                        <select class="form-control" name="RequiredRole">
+                            {{roleOptions .ActiveGuild.Roles nil "" "None"}}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <p class="form-control-static">Either upload a sound or specify a sound url</p>
+                        <p class="form-control-static">You can find many great sounds <a href="http://soundboard.panictank.net/">here</a></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="sound-file">Upload a sound</label>
+                        <input type="file" id="sound-file" name="Sound">
+                    </div>
+                    <div class="form-group">
+                        <label>Sound URL</label>
+                        <input type="text" class="form-control" name="SoundURL" placeholder="URL">
+                        <p class="help-block">Specify a sound url instead of uploading a sound</p>
+                    </div>
+                    <input type="submit" class="btn btn-success" value="Upload/Download!">
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Existing sounds</h2>
+            </div>
+            <div class="card-body">
+                <table class="table table-responsive-md table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Required role</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{$guildmember := .ActiveGuild.ID}}
+                        {{$roles := .ActiveGuild.Roles}}
+                        {{$highest := .HighestRole}}
+                        {{range .Config.Sounds}}
+                        <tr class="well well-sm">
+                            <form class="form-inline" method="post" action="update">
+                                <input type="text" name="ID" class="hidden" value="{{.ID}}">
+
+                                <td>
+                                    <input type="text" class="form-control" name="Name" placeholder="" value="{{.Name}}">
+                                </td>
+
+                                <td>
+                                    <select class="form-control" name="RequiredRole">
+                                        {{roleOptions $roles nil .RequiredRole "None"}}
+                                    </select>
+                                </td>
+ 
+                                <td>
+                                    <p class="form-control-static">{{.Status}}</p>
+                                </td>
+                                
+                                <td>
+                                    <button type="submit" class="btn btn-success" formaction="update">Save</button>
+                                    <button type="submit" class="btn btn-danger" formaction="delete">Delete</button>
+                                </td>
+                            </form>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->            
+
+{{template "cp_footer" .}}
+
+{{end}}

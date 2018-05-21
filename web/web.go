@@ -63,14 +63,15 @@ func init() {
 
 	Templates = template.New("")
 	Templates = Templates.Funcs(template.FuncMap{
-		"mTemplate":           mTemplate,
-		"hasPerm":             hasPerm,
-		"formatTime":          prettyTime,
-		"roleOptions":         tmplRoleDropdown,
-		"roleOptionsMulti":    tmplRoleDropdownMutli,
-		"textChannelOptions":  tmplChannelDropdown(discordgo.ChannelTypeGuildText),
-		"voiceChannelOptions": tmplChannelDropdown(discordgo.ChannelTypeGuildVoice),
-		"catChannelOptions":   tmplChannelDropdown(discordgo.ChannelTypeGuildCategory),
+		"mTemplate":               mTemplate,
+		"hasPerm":                 hasPerm,
+		"formatTime":              prettyTime,
+		"roleOptions":             tmplRoleDropdown,
+		"roleOptionsMulti":        tmplRoleDropdownMutli,
+		"textChannelOptions":      tmplChannelOpts,
+		"textChannelOptionsMulti": tmplChannelOptsMulti,
+		"voiceChannelOptions":     tmplChannelDropdown(discordgo.ChannelTypeGuildVoice),
+		"catChannelOptions":       tmplChannelDropdown(discordgo.ChannelTypeGuildCategory),
 	})
 
 	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)

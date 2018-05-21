@@ -2,36 +2,40 @@
 
 {{define "cp_moderation"}}
 {{template "cp_head" .}}
-<div class="row">
-    <div class="col-lg-12">
-        <h1 class="page-header">Moderation Tools</h1>
-        <p>Moderation tools to help the moderators moderate the server</p>
-    </div>
-    <!-- /.col-lg-12 -->
-</div>
+<header class="page-header">
+    <h2>Moderation tools</h2>
+</header>
+
 {{template "cp_alerts" .}}
+
 <!-- /.row -->
-<form role="form" method="post">
-    <div class="row">
-    {{template "template_help"}}
+<form role="form" method="post" data-async-form>
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <section class="card">
+                <div class="card-body">
+                    {{template "template_help"}}
+                </div>
+            </section>
+        </div>
     </div>
     <div class="row">
-        <div class="col-lg-6">
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    Misc
-                </div>
-                <div class="panel-body">
+        <div class="col-lg-6 mb-4">
+            <section class="card card-featured card-featured-primary">
+                <header class="card-header">
+                    <h2 class="card-title">General</h2>
+                </header>
+                <div class="card-body">
                     <div class="form-group">
                         <label>Channel to announce bans and kicks through the bot in (modlog)</label>
                         <select class="form-control" name="ActionChannel" data-requireperms-embed>
-                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel "Same as command was sent in"}}
+                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "Same as command was sent in"}}
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Channel to send messages for the mods/admins in (reports and such)</label>
                         <select class="form-control" name="ReportChannel" data-requireperms-send>
-                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel "None"}}
+                            {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel true "None"}}
                         </select>
                     </div>
                     <div class="checkbox">
@@ -67,14 +71,14 @@
                         </label>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
-        <div class="col-lg-6">
-            <div class="panel {{if .ModConfig.MuteEnabled}}panel-green{{else}}panel-default{{end}}">
-                <div class="panel-heading">
-                    Mute/Unmute commands
-                </div>
-                <div class="panel-body">
+        <div class="col-lg-6 mb-4">
+            <section class="card {{if .ModConfig.MuteEnabled}}card-featured card-featured-success{{end}}">
+                <header class="card-header">
+                    <h2 class="card-title">Mute/Unmute commands</h2>
+                </header>
+                <div class="card-body">
                    <div class="checkbox">
                       <label>
                         <input type="checkbox" name="MuteEnabled" {{if .ModConfig.MuteEnabled}} checked{{end}}>
@@ -86,7 +90,7 @@
                     </div>
                     <div class="form-group">
                         <label>Remove the following roles from the user when muted, and give them back when the mute ends.</label><br>
-                        <select name="MuteRemoveRoles" class="multiselect form-control" multiple="multiple">
+                        <select name="MuteRemoveRoles" class="multiselect form-control populate" multiple="multiple" data-plugin-multiselect>
                             {{roleOptionsMulti .ActiveGuild.Roles .HighestRole .ModConfig.MuteRemoveRoles}}
                         </select>
                     </div>
@@ -101,8 +105,8 @@
                         </div>
                         <div class="form-group" id="mute-ignore-channels">
                             <label>Have the auto management of the mute role ignore the following channels</label><br>
-                            <select class="multiselect" name="MuteIgnoreChannels" multiple="multiple">
-                                {{mTemplate "channel_options_multi_int" "Channels" .ActiveGuild.Channels "Selections" .ModConfig.MuteIgnoreChannels}}
+                            <select class="multiselect" name="MuteIgnoreChannels" data-plugin-multiselect multiple="multiple">
+                                {{textChannelOptionsMulti .ActiveGuild.Channels .ModConfig.MuteIgnoreChannels}}
                             </select>
                         </div>
                     </div>
@@ -127,16 +131,16 @@
                         <p class="help-block">You have to set up the role yourself so that people with it cannot talk in any channels</p>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
     <div class="row">
-        <div class="col-lg-6">
-            <div class="panel {{if .ModConfig.KickEnabled}}panel-green{{else}}panel-default{{end}}">
-                <div class="panel-heading">
-                    Kick Command
-                </div>
-                <div class="panel-body">
+        <div class="col-lg-6 mb-4">
+            <section class="card {{if .ModConfig.KickEnabled}}card-featured card-featured-success{{end}}">
+                <header class="card-header">
+                    <h2 class="card-title">Kick Command</h2>
+                </header>
+                <div class="card-body">
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" name="KickEnabled" {{if .ModConfig.KickEnabled}} checked{{end}}>
@@ -160,22 +164,22 @@
                     </div>
                     <div class="form-group">
                         <label>Kick DM (Leave empty for default)</label>
-                        <textarea class="form-control" rows="5" name="KickMessage">{{.ModConfig.KickMessage}}</textarea>
+                        <textarea data-plugin-textarea-autosize class="form-control" name="KickMessage" placeholder="{{"You were kicked\nReason: {{.Reason}}"}}">{{.ModConfig.KickMessage}}</textarea>
                         
-                        <p class="help-block">Available template data is<br/>
+                        <p class="help-block">Available template data:<br/>
                         {{template "template_helper_user"}} - The user being banned/kicked<br/>
-                        <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
+                        <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br/>
                         {{template "template_helper_mod_author"}}</p>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
-        <div class="col-lg-6">
-            <div class="panel {{if .ModConfig.BanEnabled}}panel-green{{else}}panel-default{{end}}">
-                <div class="panel-heading">
-                    Ban Command
+        <div class="col-lg-6 mb-4">
+            <section class="card {{if .ModConfig.BanEnabled}}card-featured card-featured-success{{end}}">
+                <div class="card-header">
+                    <h2 class="card-title">Ban Command</h2>
                 </div>
-                <div class="panel-body">
+                <div class="card-body">
                    <div class="checkbox">
                       <label>
                         <input type="checkbox" name="BanEnabled" {{if .ModConfig.BanEnabled}} checked{{end}}>
@@ -193,23 +197,23 @@
                     </div>
                     <div class="form-group">
                         <label>Ban DM (Leave empty for default)</label>
-                        <textarea class="form-control" rows="5" name="BanMessage">{{.ModConfig.BanMessage}}</textarea>
-                        <p class="help-block">Available template data is<br/>
+                        <textarea data-plugin-textarea-autosize class="form-control"  name="BanMessage" placeholder="{{"You were banned\nReason: {{.Reason}}"}}">{{.ModConfig.BanMessage}}</textarea>
+                        <p class="help-block">Available template data:<br/>
                         {{template "template_helper_user"}} - The user being banned/kicked<br/>
-                        <code>{{"{{"}}.Reason{{"}}"}}</code> - The reason specified in the ban/kick<br/>
+                        <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br/>
                         {{template "template_helper_mod_author"}}</p>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
     <div class="row">
-        <div class="col-lg-6">
-            <div class="panel {{if .ModConfig.WarnCommandsEnabled}}panel-green{{else}}panel-default{{end}}">
-                <div class="panel-heading">
-                    Warn Commands
-                </div>
-                <div class="panel-body">
+        <div class="col-lg-6 mb-4">
+            <section class="card {{if .ModConfig.WarnCommandsEnabled}}card-featured card-featured-success{{end}}">
+                <header class="card-header">
+                    <h2 class="card-title">Warn Commands</h2>
+                </header>
+                <div class="card-body">
                    <div class="checkbox">
                       <label>
                         <input type="checkbox" name="WarnCommandsEnabled" {{if .ModConfig.WarnCommandsEnabled}} checked{{end}}>
@@ -234,12 +238,12 @@
                         </label>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
     <div class="row">
         <div class="col-lg-12">
-            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
         </div>
     </div>
     <!-- /.row -->            

@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 	"html/template"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -159,6 +160,97 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 	return template.HTML(output)
 }
 
+func tmplChannelOpts(channels []*discordgo.Channel, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
+
+	const unknownName = "Deleted channel"
+
+	var builder strings.Builder
+
+	if allowEmpty {
+		if emptyName == "" {
+			emptyName = "None"
+		}
+
+		builder.WriteString(`<option value=""`)
+		if selection == 0 {
+			builder.WriteString(" selected")
+		}
+
+		builder.WriteString(">" + template.HTMLEscapeString(emptyName) + "</option>")
+	}
+
+	var selections []int64
+	intSel := templates.ToInt64(selection)
+	if intSel != 0 {
+		selections = []int64{intSel}
+	}
+
+	// Generate the rest of the options, which is the same as multi but with a single selections
+	builder.WriteString(string(tmplChannelOptsMulti(channels, selections)))
+
+	return template.HTML(builder.String())
+}
+
+func tmplChannelOptsMulti(channels []*discordgo.Channel, selections []int64) template.HTML {
+
+	const unknownName = "Deleted channel"
+
+	var builder strings.Builder
+
+	channelOpt := func(id int64, name string) {
+		builder.WriteString(`<option value="` + discordgo.StrID(id) + "\"")
+		for _, selected := range selections {
+			if selected == id {
+				builder.WriteString(" selected")
+			}
+		}
+
+		builder.WriteString(">" + template.HTMLEscapeString(name) + "</option>")
+	}
+
+	// Add options for missing channels (deleted channels and such)
+OUTER:
+	for _, sel := range selections {
+		for _, c := range channels {
+			if sel == c.ID {
+				continue OUTER
+			}
+		}
+
+		// Not found, a deleted channel
+		channelOpt(sel, unknownName)
+	}
+
+	// Channels without a category
+	for _, c := range channels {
+		if c.ParentID != 0 || c.Type != discordgo.ChannelTypeGuildText {
+			continue
+		}
+
+		channelOpt(c.ID, "#"+c.Name)
+	}
+
+	// Group channels by category
+	for _, cat := range channels {
+		if cat.Type != discordgo.ChannelTypeGuildCategory {
+			continue
+		}
+
+		builder.WriteString("<optgroup label=" + template.HTMLEscapeString(cat.Name) + ">")
+		for _, c := range channels {
+			if c.Type != discordgo.ChannelTypeGuildText || c.ParentID != cat.ID {
+				continue
+			}
+
+			channelOpt(c.ID, "#"+c.Name)
+		}
+		builder.WriteString("</optgroup>")
+	}
+
+	return template.HTML(builder.String())
+}
+
+// DEPRECATED
 // tmplChannelDropdown is a template function for generating channel dropdown options
 // channels: slice of channels to display options for
 // args are optinal and in this order:

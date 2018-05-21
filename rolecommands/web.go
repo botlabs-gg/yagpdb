@@ -42,7 +42,12 @@ type FormGroup struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
+	tmplPathSettings := "templates/plugins/rolecommands.html"
+	if common.Testing {
+		tmplPathSettings = "../../rolecommands/assets/rolecommands.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
 	// Setup SubMuxer
 	subMux := goji.SubMux()
@@ -54,28 +59,97 @@ func (p *Plugin) InitWeb() {
 	subMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 
 	// Setup routes
-	indexHandler := web.ControllerHandler(HandleSettings, "cp_rolecommands")
+	getIndexHandler := web.ControllerHandler(HandleGetIndex, "cp_rolecommands")
+	getGroupHandler := web.ControllerHandler(func(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+		groupIDRaw := pat.Param(r, "groupID")
+		parsed, _ := strconv.ParseInt(groupIDRaw, 10, 64)
+		return HandleGetGroup(parsed, w, r)
+	}, "cp_rolecommands")
 
-	subMux.Handle(pat.Get("/"), indexHandler)
+	subMux.Handle(pat.Get("/"), getIndexHandler)
+	subMux.Handle(pat.Get("/group/:groupID"), getGroupHandler)
 
-	subMux.Handle(pat.Post("/new_cmd"), web.ControllerPostHandler(HandleNewCommand, indexHandler, FormCommand{}, "Added a new role command"))
-	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, indexHandler, FormCommand{}, "Updated a role command"))
-	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, indexHandler, nil, "Removed a role command"))
-	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HandleMoveCommand, indexHandler, nil, "Moved a role command"))
+	// either serve the group page or the index page, kinda convoluted but eh
+	getIndexpPostHandler := web.ControllerHandler(func(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+		if r.FormValue("GroupID") != "" {
+			parsed, _ := strconv.ParseInt(r.FormValue("GroupID"), 10, 64)
+			return HandleGetGroup(parsed, w, r)
+		}
 
-	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, indexHandler, FormGroup{}, "Added a new role command group"))
-	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, indexHandler, FormGroup{}, "Updated a role command group"))
-	subMux.Handle(pat.Post("/remove_group"), web.ControllerPostHandler(HandleRemoveGroup, indexHandler, nil, "Removed a role command group"))
+		if r.FormValue("Group") != "" {
+			parsed, _ := strconv.ParseInt(r.FormValue("Group"), 10, 64)
+			return HandleGetGroup(parsed, w, r)
+		}
+
+		_, _, tmpl = web.GetBaseCPContextData(r.Context())
+		if idInterface, ok := tmpl["GroupID"]; ok {
+			return HandleGetGroup(idInterface.(int64), w, r)
+		}
+
+		return HandleGetIndex(w, r)
+	}, "cp_rolecommands")
+
+	subMux.Handle(pat.Post("/new_cmd"), web.ControllerPostHandler(HandleNewCommand, getIndexpPostHandler, FormCommand{}, "Added a new role command"))
+	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, getIndexpPostHandler, FormCommand{}, "Updated a role command"))
+	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, getIndexpPostHandler, nil, "Removed a role command"))
+	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HandleMoveCommand, getIndexpPostHandler, nil, "Moved a role command"))
+
+	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, getIndexpPostHandler, FormGroup{}, "Added a new role command group"))
+	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, getIndexpPostHandler, FormGroup{}, "Updated a role command group"))
+	subMux.Handle(pat.Post("/remove_group"), web.ControllerPostHandler(HandleRemoveGroup, getIndexpPostHandler, nil, "Removed a role command group"))
 }
 
-func HandleSettings(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
 	_, g, tmpl := web.GetBaseCPContextData(r.Context())
 
-	groups, groupedCommands, ungroupedCommands, err := GetAllRoleCommandsSorted(g.ID)
+	ungroupedCommands, err := models.RoleCommandsG(qm.Where("guild_id = ?", g.ID), qm.Where("role_group_id is null")).All()
+	if err != nil {
+		return tmpl, err
+	}
+	sort.Slice(ungroupedCommands, RoleCommandsLessFunc(ungroupedCommands))
+
+	tmpl["LoneCommands"] = ungroupedCommands
+
+	groups, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+" = ?", g.ID), qm.OrderBy("id asc")).All()
+	if err != nil {
+		return tmpl, err
+	}
 
 	tmpl["Groups"] = groups
-	tmpl["SortedCommands"] = groupedCommands
-	tmpl["LoneCommands"] = ungroupedCommands
+
+	return tmpl, nil
+}
+
+func HandleGetGroup(groupID int64, w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	groups, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+" = ?", g.ID), qm.OrderBy("id asc")).All()
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl["Groups"] = groups
+
+	var currentGroup *models.RoleGroup
+	for _, v := range groups {
+		if v.ID == groupID {
+			tmpl["CurrentGroup"] = v
+			currentGroup = v
+			break
+		}
+	}
+
+	if currentGroup != nil {
+		commands, err := currentGroup.RoleCommandsG().All()
+		if err != nil {
+			return tmpl, err
+		}
+		sort.Slice(commands, RoleCommandsLessFunc(commands))
+
+		tmpl["Commands"] = commands
+	} else {
+		// Fallback
+		return HandleGetIndex(w, r)
+	}
 
 	return tmpl, nil
 }
@@ -115,6 +189,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	err := model.InsertG()
+
 	return tmpl, err
 }
 
@@ -281,6 +356,8 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		return tmpl, err
 	}
 
+	tmpl["GroupID"] = model.ID
+
 	return tmpl, nil
 }
 
@@ -302,6 +379,8 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 	group.MultipleMax = int64(formGroup.MultipleMax)
 	group.MultipleMin = int64(formGroup.MultipleMin)
 	group.Mode = int64(formGroup.Mode)
+
+	tmpl["GroupID"] = group.ID
 
 	err = group.UpdateG()
 	return

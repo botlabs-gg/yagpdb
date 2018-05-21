@@ -2,6 +2,7 @@ package automod
 
 import (
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -21,7 +22,12 @@ type GeneralForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/automod.html")))
+	tmplPath := "templates/plugins/automod.html"
+	if common.Testing {
+		tmplPath = "../../automod/assets/automod.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	autmodMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/automod/*"), autmodMux)

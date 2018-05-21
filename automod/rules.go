@@ -54,6 +54,18 @@ func (r BaseRule) IgnoreRoleInt() int64 {
 	return ir
 }
 
+func (r BaseRule) IgnoreChannelsParsed() []int64 {
+	result := make([]int64, 0, len(r.IgnoreChannels))
+	for _, str := range r.IgnoreChannels {
+		parsed, err := strconv.ParseInt(str, 10, 64)
+		if err == nil && parsed != 0 {
+			result = append(result, parsed)
+		}
+	}
+
+	return result
+}
+
 func (r BaseRule) PushViolation(client *redis.Client, key string) (p Punishment, err error) {
 	violations := 0
 	violations, err = client.Cmd("INCR", key).Int()

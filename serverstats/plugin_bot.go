@@ -182,7 +182,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	for _, v := range config.ParsedChannels {
-		if channel.StrID() == v {
+		if channel.ID() == v {
 			return
 		}
 	}
