@@ -174,12 +174,30 @@ func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
 	return "", nil
 }
 
-func (c *Context) tmplDelResponse() string {
+func (c *Context) tmplDelResponse(args ...interface{}) string {
+	dur := 10
+	if len(args) > 0 {
+		dur = int(ToInt64(args[0]))
+	}
+	if dur > 60 {
+		dur = 60
+	}
+
+	c.DelResponseDelay = dur
 	c.DelResponse = true
 	return ""
 }
 
-func (c *Context) tmplDelTrigger() string {
+func (c *Context) tmplDelTrigger(args ...interface{}) string {
+	dur := 10
+	if len(args) > 0 {
+		dur = int(ToInt64(args[0]))
+	}
+	if dur > 60 {
+		dur = 60
+	}
+
+	c.DelTriggerDelay = dur
 	c.DelTrigger = true
 	return ""
 }

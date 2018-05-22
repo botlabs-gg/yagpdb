@@ -67,6 +67,9 @@ type Context struct {
 	DelResponse bool
 	DelTrigger  bool
 
+	DelTriggerDelay  int
+	DelResponseDelay int
+
 	Counters map[string]int
 }
 

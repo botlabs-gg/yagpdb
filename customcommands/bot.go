@@ -175,30 +175,30 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	out, delTrigger, delResponse, err := ExecuteCustomCommand(matched, args, stripped, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
+	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
 	if err != nil {
 		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
 		out += common.EscapeSpecialMentions(err.Error())
 	}
 
-	if strings.TrimSpace(out) != "" {
+	if tmplCtx.DelTrigger {
+		go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelTriggerDelay), evt.MessageCreate.ChannelID, evt.MessageCreate.ID)
+	}
+
+	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
 		m, err := common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, out)
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
 		} else {
-			if delResponse {
-				go common.DelayedMessageDelete(common.BotSession, time.Second*10, m.ChannelID, m.ID)
+			if tmplCtx.DelResponse {
+				go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelResponseDelay), m.ChannelID, m.ID)
 			}
 		}
 	}
-
-	if delTrigger {
-		go common.DelayedMessageDelete(common.BotSession, time.Second*10, evt.MessageCreate.ChannelID, evt.MessageCreate.ID)
-	}
 }
 
-func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, delTrigger bool, delResponse bool, err error) {
+func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
 
 	cs := bot.State.Channel(true, m.ChannelID)
 	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
@@ -207,7 +207,7 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 		return
 	}
 
-	tmplCtx := templates.NewContext(bot.State.User(true).User, cs.Guild, cs, member)
+	tmplCtx = templates.NewContext(bot.State.User(true).User, cs.Guild, cs, member)
 	tmplCtx.Redis = client
 	tmplCtx.Msg = m.Message
 
@@ -234,9 +234,6 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
 	}
 	resp = out
-
-	delTrigger = tmplCtx.DelTrigger
-	delResponse = tmplCtx.DelResponse
 
 	return
 }
