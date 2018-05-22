@@ -80,7 +80,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 	ctx.Data["Duration"] = duration
 	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	ctx.Data["Author"] = author
-	ctx.SentDM = true
+
 	executed, err := ctx.Execute(nil, dmMsg)
 	if err != nil {
 		logrus.WithError(err).WithField("guild", gs.ID()).Warn("Failed executing pusnishment DM")
