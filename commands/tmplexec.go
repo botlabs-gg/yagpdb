@@ -24,25 +24,25 @@ func init() {
 
 // Returns a user from either id, mention string or if the input is just a user, a user...
 func tmplUserArg(tmplCtx *templates.Context) interface{} {
-	return func(v interface{}) interface{} {
+	return func(v interface{}) (interface{}, error) {
 		if tmplCtx.IncreaseCheckCallCounter("commands_user_arg", 2) {
-			return nil
+			return nil, errors.New("Max calls to userarg (2) reached")
 		}
 
 		if num := templates.ToInt64(v); num != 0 {
 			// Assume it's an id
 			member, _ := bot.GetMember(tmplCtx.GS.ID(), num)
 			if member != nil {
-				return member.User
+				return member.User, nil
 			}
 
-			return nil
+			return nil, errors.New("User not found")
 		}
 
 		if str, ok := v.(string); ok {
 			// Mention string
 			if len(str) < 5 {
-				return nil
+				return nil, errors.New("Mention string too short")
 			}
 
 			str = strings.TrimSpace(str)
@@ -52,23 +52,22 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 				if trimmed[0] == '@' {
 					trimmed = trimmed[1:]
 				}
-				logrus.Println("ID: ", trimmed)
 
 				id, _ := strconv.ParseInt(trimmed, 10, 64)
 				member, _ := bot.GetMember(tmplCtx.GS.ID(), id)
 				if member != nil {
 					// Found member
-					return member.User
+					return member.User, nil
 				}
 
 			}
 
 			// No more cases we can hanlde
-			return nil
+			return nil, errors.New("User not found")
 		}
 
 		// Just return whatever we passed
-		return v
+		return v, nil
 	}
 }
 
@@ -118,6 +117,10 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 	cmdLine := cmd + " "
 
 	for _, arg := range args {
+		if arg == nil {
+			return "", errors.New("Nil arg passed")
+		}
+
 		switch t := arg.(type) {
 		case string:
 			cmdLine += "\"" + t + "\""
