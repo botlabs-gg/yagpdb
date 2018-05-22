@@ -135,7 +135,8 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	}
 }
 
-// Since updating mutes are not a complex operation, to avoid weird bugs from happening we lock it so it can only be updated one place per user
+// Since updating mutes are now a complex operation with removing roles and whatnot,
+// to avoid weird bugs from happening we lock it so it can only be updated one place per user
 func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsystem.EventData) {
 	return func(evt *eventsystem.EventData) {
 		var userID int64
@@ -153,8 +154,9 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 
 		client := bot.ContextRedis(evt.Context())
 
+		// If there's less than 2 seconds of the mute left, don't bother doing anything
 		muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(guild, userID)).Int()
-		if muteLeft < 10 {
+		if muteLeft < 2 {
 			return
 		}
 
@@ -210,9 +212,34 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 
 	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
 
-	_, err = AddMemberMuteRole(config, c.Member)
+	removedRoles, err := AddMemberMuteRole(config, c.Member)
 	if err != nil {
 		logrus.WithError(err).Error("Failed adding mute role to user in member update")
+	}
+
+	if len(removedRoles) < 1 {
+		return
+	}
+
+	tx, err := common.PQ.Begin()
+	if err != nil {
+		logrus.WithError(err).Error("Failed starting transaction")
+		return
+	}
+
+	// Append the removed roles to the removed_roles array column, if they don't already exist in it
+	const queryStr = "UPDATE muted_users SET removed_roles = array_append(removed_roles, $3 ) WHERE user_id=$2 AND guild_id=$1 AND NOT ($3 = ANY(removed_roles));"
+	for _, v := range removedRoles {
+		_, err := tx.Exec(queryStr, c.GuildID, c.Member.User.ID, v)
+		if err != nil {
+			logrus.WithError(err).Error("Failed updating removed roles")
+			break
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		logrus.WithError(err).Error("Failed comitting transaction")
 	}
 }
 
