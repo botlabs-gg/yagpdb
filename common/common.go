@@ -18,14 +18,14 @@ import (
 
 const (
 	VERSIONMAJOR = 0
-	VERSIONMINOR = 29
-	VERSIONPATCH = 10
+	VERSIONMINOR = 30
+	VERSIONPATCH = 0
 	Testing      = false // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Reluctant"
+	VERSION       = VERSIONNUMBER + " Skeletal"
 
 	GORM *gorm.DB
 	PQ   *sql.DB
