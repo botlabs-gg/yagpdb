@@ -15,7 +15,7 @@ func init() {
 	templates.RegisterSetupFunc(func(ctx *templates.Context) {
 		execUser, execBot := TmplExecCmdFuncs(ctx, 5, false)
 		ctx.ContextFuncs["exec"] = execUser
-		ctx.ContextFuncs["execBot"] = execBot
+		ctx.ContextFuncs["execAdmin"] = execBot
 	})
 }
 
@@ -41,7 +41,13 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 			return "Exec cannot be used here", nil
 		}
 
-		mc := &discordgo.MessageCreate{ctx.Msg}
+		botUserCopy := *common.BotUser
+		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.Username + "#" + ctx.Msg.Author.Discriminator + ")"
+
+		messageCopy := *ctx.Msg
+		messageCopy.Author = &botUserCopy
+
+		mc := &discordgo.MessageCreate{&messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
