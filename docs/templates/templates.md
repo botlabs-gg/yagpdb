@@ -3,6 +3,18 @@ This page aims to help you to get the most out of templates and custom commands.
 
 Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}"}}`
 
+### Quick intro
+
+Invoking functions: `{{"{{"}}add 1 2{{"}}"}} = 3?`
+
+Printing variables: `Hello {{"{{"}}.User.Username{{"}}"}}!`
+    
+Assigning variables: ` {{"{{"}}$stupidUser := .User{{"}}"}}!`
+
+Note: Variables assigned in the scope block will be forgotten once `{{"{{"}}end{{"}}"}}` is reached.
+
+For branching (if statements and such) look below.
+
 ## Available template data:
 
 ### User
@@ -63,9 +75,12 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 | `hasRoleID roleid` | Returns true if the user has the role with the specified ID (use the listroles command for a list of role) |
 | `addRoleID roleid` | Add the role with the given id to the user that triggered the command (use the listroles command for a list of role) |
 | `removeRoleID roleid` | Remove the role with the given id from the user that triggered the command (use the listroles command for a list of role) |
-| `deleteResponse` | Deletes the response after 10 seconds |
-| `deleteTrigger` | Deletes the trigger after 10 seconds |
+| `deleteResponse seconds-delay` | Deletes the response after 10 seconds, or the specified delay |
+| `deleteTrigger seconds-delay` | Deletes the trigger after 10 seconds, or the specified delay |
 | `addReactions "👍" "👎"` | Adds each emoji as a reaction to the message that triggered the command |
+| `userArg userID or mentionstring` | Returns the user object for the specified user, meant to be used with exec and execAdmin |
+| `exec command arguments...` | Runs a command, this is quite advanced, see below for more information |
+| `execAdmin command arguments...` | Runs a command as if the user that triggered it is the bot, this is quite advanced, see below for more information |
 
 
 ### Branching
@@ -96,4 +111,40 @@ Put {{"{{"}}...{{"}}"}} around the names like that: `{{"{{"}}.User.Username{{"}}
 
 Use the `listroles` command. 
 
+### exec and execAdmin functions
 
+The format is `exec/execAdmin command argument1 argument2...`
+
+Accepted arguments are: numbers, strings and also User objects!
+
+I'll start off with an example:
+
+`{{"{{"}}exec "reverse" "123" {{"}}"}}`
+
+Lets break it down:
+
+ - exec: the function
+ - "reverse": the command were executing
+ - "123": the argument were providing to the command
+
+This executes the `reverse` command, and puts the output in it's place, in the above example, it would be replaced with `321`
+
+It would be the same as sending `-reverse 123` in the chat.
+
+
+A more complicated example:
+
+`{{"{{"}}exec "giverep" (userArg 232658301714825217) {{"}}"}}`
+
+This will make the user who triggered the command give rep to the user with the id above. 
+The `userArg` function can be used to retrieve a user from a mention string or id.
+
+**execAdmin**: 
+
+execAdmin executes commands as if the bot was the one invoking them, meaning if someone without kick permissions triggered a custom command, and that custom command used `execAdmin` with the kick command, it would go through fine.
+
+Example: Say you want to mute everyone that triggers a custom command for 1 minute:
+
+`{{"{{"}}execAdmin "mute" .User 1 "You triggered the evil custom command" {{"}}"}}`
+
+The only new thing here is were using execAdmin instead of exec, this works even if the user that triggers it dosen't have admin.

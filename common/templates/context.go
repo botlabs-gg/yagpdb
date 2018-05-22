@@ -67,7 +67,10 @@ type Context struct {
 	DelResponse bool
 	DelTrigger  bool
 
-	SentDM bool
+	DelTriggerDelay  int
+	DelResponseDelay int
+
+	Counters map[string]int
 }
 
 func NewContext(botUser *discordgo.User, gs *dstate.GuildState, cs *dstate.ChannelState, member *discordgo.Member) *Context {
@@ -80,6 +83,7 @@ func NewContext(botUser *discordgo.User, gs *dstate.GuildState, cs *dstate.Chann
 
 		ContextFuncs: make(map[string]interface{}),
 		Data:         make(map[string]interface{}),
+		Counters:     make(map[string]int),
 	}
 
 	ctx.setupContextFuncs()
@@ -153,17 +157,30 @@ func (c *Context) Execute(redisClient *redis.Client, source string) (string, err
 	return result, nil
 }
 
+// IncreaseCheckCallCounter Returns true if key is above the limit
+func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
+	current, ok := c.Counters[key]
+	if !ok {
+		current = 0
+	}
+	current++
+
+	c.Counters[key] = current
+
+	return current > limit
+}
+
 func baseContextFuncs(c *Context) {
-	c.ContextFuncs["sendDM"] = tmplSendDM(c)
-	c.ContextFuncs["mentionEveryone"] = tmplMentionEveryone(c)
-	c.ContextFuncs["mentionHere"] = tmplMentionHere(c)
-	c.ContextFuncs["mentionRoleName"] = tmplMentionRoleName(c)
-	c.ContextFuncs["mentionRoleID"] = tmplMentionRoleID(c)
-	c.ContextFuncs["hasRoleName"] = tmplHasRoleName(c)
-	c.ContextFuncs["hasRoleID"] = tmplHasRoleID(c)
-	c.ContextFuncs["addRoleID"] = tmplAddRoleID(c)
-	c.ContextFuncs["removeRoleID"] = tmplRemoveRoleID(c)
-	c.ContextFuncs["deleteResponse"] = tmplDelResponse(c)
-	c.ContextFuncs["deleteTrigger"] = tmplDelTrigger(c)
-	c.ContextFuncs["addReactions"] = tmplAddReactions(c)
+	c.ContextFuncs["sendDM"] = c.tmplSendDM
+	c.ContextFuncs["mentionEveryone"] = c.tmplMentionEveryone
+	c.ContextFuncs["mentionHere"] = c.tmplMentionHere
+	c.ContextFuncs["mentionRoleName"] = c.tmplMentionRoleName
+	c.ContextFuncs["mentionRoleID"] = c.tmplMentionRoleID
+	c.ContextFuncs["hasRoleName"] = c.tmplHasRoleName
+	c.ContextFuncs["hasRoleID"] = c.tmplHasRoleID
+	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
+	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
+	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
+	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
+	c.ContextFuncs["addReactions"] = c.tmplAddReactions
 }

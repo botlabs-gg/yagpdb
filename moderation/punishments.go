@@ -80,7 +80,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 	ctx.Data["Duration"] = duration
 	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	ctx.Data["Author"] = author
-	ctx.SentDM = true
+
 	executed, err := ctx.Execute(nil, dmMsg)
 	if err != nil {
 		logrus.WithError(err).WithField("guild", gs.ID()).Warn("Failed executing pusnishment DM")
@@ -247,7 +247,24 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 			return errors.WithMessage(err, "AddMemberMuteRole")
 		}
 
-		currentMute.RemovedRoles = removedRoles
+		if alreadyMuted {
+			// Append new removed roles to the removed_roles array
+		OUTER:
+			for _, removedNow := range removedRoles {
+				for _, alreadyRemoved := range currentMute.RemovedRoles {
+					if removedNow == alreadyRemoved {
+						continue OUTER
+					}
+				}
+
+				// Not in the removed slice
+				currentMute.RemovedRoles = append(currentMute.RemovedRoles, removedNow)
+			}
+		} else {
+			// New mute, so can just do whatever
+			currentMute.RemovedRoles = removedRoles
+		}
+
 		err = common.GORM.Save(&currentMute).Error
 		if err != nil {
 			return errors.WithMessage(err, "failed inserting/updating mute")
