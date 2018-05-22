@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/docs"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"strconv"
@@ -104,9 +105,9 @@ func handleUnMute(data string) error {
 	defer common.RedisPool.Put(rc)
 
 	err = MuteUnmuteUser(nil, rc, false, guildID, 0, bot.State.User(true).User, "Mute Duration Expired", member, 0)
-	if err != ErrNoMuteRole {
+	if errors.Cause(err) != ErrNoMuteRole {
 
-		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
+		if cast, ok := errors.Cause(err).(*discordgo.RESTError); ok && cast.Message != nil {
 			return nil // Discord api ok, something else went wrong. do not reschedule
 		}
 
