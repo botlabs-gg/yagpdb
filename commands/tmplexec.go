@@ -49,7 +49,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 
 			if strings.HasPrefix(str, "<@") && strings.HasSuffix(str, ">") {
 				trimmed := str[2 : len(str)-1]
-				if trimmed[0] == '@' {
+				if trimmed[0] == '!' {
 					trimmed = trimmed[1:]
 				}
 
