@@ -363,14 +363,16 @@ func MemberChooseOption(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd, g
 
 	given, err := AssignRole(rm.GuildID, member, pair)
 	if err != nil {
-		return HumanizeAssignError(gs, err)
+		resp, err = HumanizeAssignError(gs, err)
+	} else {
+		if given {
+			resp = "Gave you the role!"
+		} else {
+			resp = "Took away the role!"
+		}
 	}
 
-	if given {
-		return "Gave you the role!", nil
-	}
-
-	return "Took away your role!", nil
+	return cmd.Name + ": " + resp, err
 }
 
 func OptionCommandPairLessFunc(slice []*OptionCommandPair) func(int, int) bool {

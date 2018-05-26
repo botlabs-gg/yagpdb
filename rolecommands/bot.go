@@ -83,10 +83,14 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 		return err.Error(), nil
 	}
 
-	if code, _ := common.DiscordError(err); code != 0 {
+	if code, msg := common.DiscordError(err); code != 0 {
 		if code == discordgo.ErrCodeMissingPermissions {
-			return "Bot does not have enough permissions to assign you this role", err
+			return "The bot is below the role, contact the server admin", err
+		} else if code == discordgo.ErrCodeMissingAccess {
+			return "Bot does not have enough permissions to assign you this role, contact the server admin", err
 		}
+
+		return "An error occured while assigning the role: " + msg, err
 	}
 
 	return "An error occurred while assigning the role", err
