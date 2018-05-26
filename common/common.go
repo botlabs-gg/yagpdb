@@ -20,7 +20,7 @@ const (
 	VERSIONMAJOR = 0
 	VERSIONMINOR = 30
 	VERSIONPATCH = 1
-	Testing      = false // Disables stuff like command cooldowns
+	Testing      = true // Disables stuff like command cooldowns
 )
 
 var (
