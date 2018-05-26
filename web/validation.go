@@ -405,7 +405,7 @@ func ValidateRoleField(s int64, roles []*discordgo.Role, allowEmpty bool) error 
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("No role specified")
+			return errors.New("No role specified (or role is above bot)")
 		}
 	}
 
