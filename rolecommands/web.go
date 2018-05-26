@@ -20,7 +20,7 @@ import (
 type FormCommand struct {
 	ID           int64
 	Name         string `valid:",1,100,trimspace"`
-	Role         int64  `valid:"role,false`
+	Role         int64  `valid:"role,false"`
 	Group        int64
 	RequireRoles []int64 `valid:"role,true"`
 	IgnoreRoles  []int64 `valid:"role,true"`

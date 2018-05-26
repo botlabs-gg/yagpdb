@@ -281,6 +281,7 @@ $(function(){
                 <div class="form-group col-lg-2">
                     <label for="{{.ID}}-role-command-role">Role</label>
                     <select id="{{.ID}}-role-command-role" class="form-control" name="Role">
+                        {{if eq .Role 0}}<option value="0" disabled selected>No role selected, please select one</option>{{end}}
                         {{roleOptions $ag.Roles $hr (str .Role)}}
                     </select>
                 </div>
