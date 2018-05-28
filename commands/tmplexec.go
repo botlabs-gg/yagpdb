@@ -62,7 +62,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 
 			}
 
-			// No more cases we can hanlde
+			// No more cases we can handle
 			return nil, errors.New("User not found")
 		}
 
@@ -147,8 +147,15 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 		case *discordgo.User:
 			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
 			fakeMsg.Mentions = append(fakeMsg.Mentions, t)
+		case []string:
+			for i, str := range t {
+				if i != 0 {
+					cmdLine += " "
+				}
+				cmdLine += str
+			}
 		default:
-			return "", errors.New("Unknown type in exec, contact bot owner")
+			return "", errors.New("Unknown type in exec, only strings, numbers, users and string slices are supported")
 		}
 		cmdLine += " "
 	}

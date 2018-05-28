@@ -81,6 +81,7 @@ For branching (if statements and such) look below.
 | `userArg userID or mentionstring` | Returns the user object for the specified user, meant to be used with exec and execAdmin |
 | `exec command arguments...` | Runs a command, this is quite advanced, see below for more information |
 | `execAdmin command arguments...` | Runs a command as if the user that triggered it is the bot, this is quite advanced, see below for more information |
+| `slice string-or-slice start [end]` | Slices the the provided slice into a subslice that starts at start index and ends at end index (or the rest of the provided slice if no end index is provided), example: `slice .CmdArgs 1`: creates a slice of the cmdargs excluding the first element |
 
 
 ### Branching
@@ -115,7 +116,7 @@ Use the `listroles` command.
 
 The format is `exec/execAdmin command argument1 argument2...`
 
-Accepted arguments are: numbers, strings and also User objects!
+Accepted arguments are: numbers, strings, string arrays/slices and also User objects!
 
 I'll start off with an example:
 
