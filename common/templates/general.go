@@ -108,15 +108,29 @@ func randInt(args ...int64) int64 {
 	return r + min
 }
 
-func joinStrings(sep string, args ...string) string {
+func joinStrings(sep string, args ...interface{}) string {
+
 	out := ""
 
-	for k, v := range args {
-		if k != 0 {
-			out += sep
+	for _, v := range args {
+		switch t := v.(type) {
+		case string:
+			if out != "" {
+				out += sep
+			}
+
+			out += t
+		case []string:
+			for _, s := range t {
+				if out != "" {
+					out += sep
+				}
+
+				out += s
+			}
 		}
-		out += v
 	}
+
 	return out
 }
 
@@ -263,19 +277,19 @@ type variadicFunc func([]reflect.Value) (reflect.Value, error)
 // (i.e., from a pipeline or context variable). In effect, a limited `flatten`
 // operation.
 func callVariadic(f variadicFunc, values ...reflect.Value) (reflect.Value, error) {
-  var vs []reflect.Value
-  for _, val := range values {
+	var vs []reflect.Value
+	for _, val := range values {
 		v, _ := indirect(val)
-    switch {
-    case !v.IsValid():
-      continue
-    case v.Kind() == reflect.Array || v.Kind() == reflect.Slice:
+		switch {
+		case !v.IsValid():
+			continue
+		case v.Kind() == reflect.Array || v.Kind() == reflect.Slice:
 			for i := 0; i < v.Len(); i++ {
 				vs = append(vs, v.Index(i))
 			}
-    default:
-      vs = append(vs, v)
-    }
+		default:
+			vs = append(vs, v)
+		}
 	}
 
 	return f(vs)
@@ -307,24 +321,34 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 
 	switch v.Kind() {
 	case reflect.Array, reflect.Slice, reflect.String:
+		startIndex := 0
+		endIndex := 0
+
 		switch len(args) {
 		case 0:
+			// No start or end index provided same as slice[:]
 			return v, nil
 		case 1:
-			args = append(args, v.Len()+1-args[0])
+			// Only start index provided, same as slice[i:]
+			startIndex = args[0]
+			endIndex = v.Len()
+			// args = append(args, v.Len()+1-args[0])
 		case 2:
+			// Both start and end index provided
+			startIndex = args[0]
+			endIndex = args[1]
 			break
 		default:
 			return reflect.Value{}, errors.Errorf("unexpected slice arguments %d", len(args))
 		}
 
-		if args[0] < 0 || args[0] >= v.Len() {
-			return reflect.Value{}, errors.Errorf("begin index out of range: %d", args[0])
-		} else if args[1] <= args[0] || args[1] >= v.Len() {
-			return reflect.Value{}, errors.Errorf("end index out of range: %d", args[1])
+		if startIndex < 0 || startIndex >= v.Len() {
+			return reflect.Value{}, errors.Errorf("start index out of range: %d", startIndex)
+		} else if endIndex <= startIndex || endIndex > v.Len() {
+			return reflect.Value{}, errors.Errorf("end index out of range: %d", endIndex)
 		}
 
-		return v.Slice(args[0], args[1]), nil
+		return v.Slice(startIndex, endIndex), nil
 	default:
 		return reflect.Value{}, errors.Errorf("can't index item of type %s", v.Type())
 	}
