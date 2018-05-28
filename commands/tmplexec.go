@@ -62,7 +62,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 
 			}
 
-			// No more cases we can hanlde
+			// No more cases we can handle
 			return nil, errors.New("User not found")
 		}
 
