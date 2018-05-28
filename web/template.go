@@ -134,10 +134,12 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 			continue
 		}
 
+		optIsSelected := false
 		output += `<option value="` + discordgo.StrID(role.ID) + `"`
 		for _, selected := range selections {
 			if selected == role.ID {
 				output += " selected"
+				optIsSelected = true
 			}
 		}
 
@@ -149,7 +151,10 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
 			if dutil.IsRoleAbove(role, highestBotRole) {
-				output += " disabled"
+				if !optIsSelected {
+					output += " disabled"
+				}
+
 				optName += " (role is above bot)"
 			}
 		}
