@@ -26,7 +26,7 @@ func (p *Plugin) Name() string {
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	code, _ := common.DiscordError(err)
-	if code != discordgo.ErrCodeUnknownChannel {
+	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess {
 		l := log.WithError(err).WithField("channel", elem.Channel)
 		if code != discordgo.ErrCodeMissingPermissions && code != discordgo.ErrCodeMissingAccess {
 			l = l.WithField("s_msg", elem.MessageEmbed)
@@ -69,7 +69,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	for _, v := range currentConfig {
 		if v.ID == parsed {
 			v.Remove(client)
-			common.AddCPLogEntry(common.BotUser, parsedGID, "Removed reddit feed from "+v.Sub+", Channel does not exist")
+			common.AddCPLogEntry(common.BotUser, parsedGID, "Removed reddit feed from "+v.Sub+", Channel does not exist or no perms")
 			break
 		}
 	}
