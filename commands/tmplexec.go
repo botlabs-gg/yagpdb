@@ -123,7 +123,15 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 
 		switch t := arg.(type) {
 		case string:
-			cmdLine += "\"" + t + "\""
+			if strings.HasPrefix(t, "-") {
+				// Don't put quotes around switches
+				cmdLine += t
+			} else if strings.HasPrefix(t, "\\-") {
+				// Escaped -
+				cmdLine += "\"" + t[1:] + "\""
+			} else {
+				cmdLine += "\"" + t + "\""
+			}
 		case int:
 			cmdLine += strconv.FormatInt(int64(t), 10)
 		case int32:
@@ -183,12 +191,12 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 
 	err = dcmd.ParseCmdArgs(data)
 	if err != nil {
-		return "Failed parsing args", nil
+		return "", errors.WithMessage(err, "exec/exedamin, parseArgs")
 	}
 
 	resp, err := cast.RunFunc(data.WithContext(context.WithValue(data.Context(), CtxKeyRedisClient, ctx.Redis)))
 	if err != nil {
-		return "", errors.WithMessage(err, "tmplExecCmd, Run")
+		return "", errors.WithMessage(err, "exec/execadmin, run")
 	}
 
 	// for _, command := range CommandSystem.Commands {
