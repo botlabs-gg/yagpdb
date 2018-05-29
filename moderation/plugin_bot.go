@@ -579,8 +579,6 @@ var ModerationCommands = []*commands.YAGCommand{
 				userFilter = parsed.Args[1].Value.(*discordgo.User).ID
 			}
 
-			logrus.Println(parsed.Switches)
-
 			num := parsed.Args[0].Int()
 			if userFilter == 0 || userFilter == parsed.Msg.Author.ID {
 				num++ // Automatically include our own message
