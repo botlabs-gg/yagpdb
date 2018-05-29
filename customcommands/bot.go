@@ -265,7 +265,6 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 
 	re, err := regexp.Compile(cmdMatch)
 	if err != nil {
-		log.WithError(err).Errorf("Failed compiling regex '%s' (%s)", cmdMatch, cmd.TriggerType)
 		return false, "", nil
 	}
 
