@@ -20,7 +20,7 @@ var Catfacts = []string{
 	`The record for the largest number of kittens in the same litter was 19.`,
 	`Over her lifetime, a cat called Dusty had a total of 420 kittens.`,
 	`The oldest cat to give birth to kittens was called Kitty. She was 30 years old when she birthed her last kittens.`,
-	`<em>Bagpuss</em> was a 1999 TV show which featured an old cloth cat. In 2001, it came fourth in a poll of the greatest kids' TV shows.`,
+	`**Bagpuss** was a 1999 TV show which featured an old cloth cat. In 2001, it came fourth in a poll of the greatest kids' TV shows.`,
 	`While people dote over their cats in the West, around 4 million cats are killed and eaten over in Asia.`,
 	`There are about 70 different cat breeds and a staggering 500 million pet cats in the world.`,
 	`Ancient Egyptians worshipped a goddess who was half cat and half woman.`,
