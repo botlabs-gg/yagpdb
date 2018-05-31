@@ -51,7 +51,7 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
+		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```go\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, strings.Join(cc.Responses, "```go\n```")), nil
 
 	},
 }
