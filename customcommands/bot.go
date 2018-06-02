@@ -118,11 +118,11 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dst
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
-
+	mc := evt.MessageCreate()
 	botUser := bot.State.User(true)
-	cs := bot.State.Channel(true, evt.MessageCreate.ChannelID)
+	cs := bot.State.Channel(true, mc.ChannelID)
 
-	if shouldIgnoreChannel(evt.MessageCreate, botUser.ID, cs) {
+	if shouldIgnoreChannel(mc, botUser.ID, cs) {
 		return
 	}
 
@@ -142,7 +142,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	member, err := bot.GetMember(cs.Guild.ID(), evt.MessageCreate.Author.ID)
+	member, err := bot.GetMember(cs.Guild.ID(), mc.Author.ID)
 	if err != nil {
 		return
 	}
@@ -151,11 +151,11 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	var stripped string
 	var args []string
 	for _, cmd := range cmds {
-		if !cmd.RunsInChannel(evt.MessageCreate.ChannelID) || !cmd.RunsForUser(member) {
+		if !cmd.RunsInChannel(mc.ChannelID) || !cmd.RunsForUser(member) {
 			continue
 		}
 
-		if m, s, a := CheckMatch(prefix, cmd, evt.MessageCreate.Content); m {
+		if m, s, a := CheckMatch(prefix, cmd, mc.Content); m {
 			matched = cmd
 			stripped = s
 			args = a
@@ -175,7 +175,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
+	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, client, bot.ContextSession(evt.Context()), mc)
 	if err != nil {
 		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
@@ -183,11 +183,11 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	if tmplCtx.DelTrigger {
-		go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelTriggerDelay), evt.MessageCreate.ChannelID, evt.MessageCreate.ID)
+		go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelTriggerDelay), mc.ChannelID, mc.ID)
 	}
 
 	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
-		m, err := common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, out)
+		m, err := common.BotSession.ChannelMessageSend(mc.ChannelID, out)
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
 		} else {
@@ -263,10 +263,20 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 		panic(fmt.Sprintf("Unknown TriggerType %s", cmd.TriggerType))
 	}
 
-	re, err := regexp.Compile(cmdMatch)
+	item, err := RegexCache.Fetch(cmdMatch, time.Minute*10, func() (interface{}, error) {
+		re, err := regexp.Compile(cmdMatch)
+		if err != nil {
+			return nil, err
+		}
+
+		return re, nil
+	})
+
 	if err != nil {
 		return false, "", nil
 	}
+
+	re := item.Value().(*regexp.Regexp)
 
 	idx := re.FindStringIndex(msg)
 	if idx == nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/docs"
+	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
 	"sort"
@@ -20,6 +21,10 @@ const (
 	MaxUserMessages = 20
 )
 
+var (
+	RegexCache *ccache.Cache
+)
+
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
 
 type Plugin struct{}
@@ -28,6 +33,8 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
 	docs.AddPage("Custom Commands", FSMustString(false, "/assets/help-page.md"), nil)
+
+	RegexCache = ccache.New(ccache.Configure())
 }
 
 func (p *Plugin) InitBot() {

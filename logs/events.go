@@ -307,15 +307,15 @@ var cmdNicknames = &commands.YAGCommand{
 
 // Mark all log messages with this id as deleted
 func HandleMsgDelete(evt *eventsystem.EventData) {
-	if evt.MessageDelete != nil {
-		err := markLoggedMessageAsDeleted(evt.MessageDelete.ID)
+	if evt.Type == eventsystem.EventMessageDelete {
+		err := markLoggedMessageAsDeleted(evt.MessageDelete().ID)
 		if err != nil {
 			logrus.WithError(err).Error("Failed marking message as deleted")
 		}
 		return
 	}
 
-	for _, m := range evt.MessageDeleteBulk.Messages {
+	for _, m := range evt.MessageDeleteBulk().Messages {
 		err := markLoggedMessageAsDeleted(m)
 		if err != nil {
 			logrus.WithError(err).Error("Failed marking message as deleted")
@@ -328,7 +328,7 @@ func markLoggedMessageAsDeleted(mID int64) error {
 }
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
-	pu := evt.PresenceUpdate
+	pu := evt.PresenceUpdate()
 	gs := bot.State.Guild(true, pu.GuildID)
 	if gs == nil {
 		go func() { evtChan <- evt }()

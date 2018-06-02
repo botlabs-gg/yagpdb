@@ -216,188 +216,224 @@ var AllEvents = []Event{
 
 var handlers = make([][]*Handler, 47)
 
-type EventDataContainer struct {
-	ChannelCreate            *discordgo.ChannelCreate
-	ChannelDelete            *discordgo.ChannelDelete
-	ChannelPinsUpdate        *discordgo.ChannelPinsUpdate
-	ChannelUpdate            *discordgo.ChannelUpdate
-	Connect                  *discordgo.Connect
-	Disconnect               *discordgo.Disconnect
-	GuildBanAdd              *discordgo.GuildBanAdd
-	GuildBanRemove           *discordgo.GuildBanRemove
-	GuildCreate              *discordgo.GuildCreate
-	GuildDelete              *discordgo.GuildDelete
-	GuildEmojisUpdate        *discordgo.GuildEmojisUpdate
-	GuildIntegrationsUpdate  *discordgo.GuildIntegrationsUpdate
-	GuildMemberAdd           *discordgo.GuildMemberAdd
-	GuildMemberRemove        *discordgo.GuildMemberRemove
-	GuildMemberUpdate        *discordgo.GuildMemberUpdate
-	GuildMembersChunk        *discordgo.GuildMembersChunk
-	GuildRoleCreate          *discordgo.GuildRoleCreate
-	GuildRoleDelete          *discordgo.GuildRoleDelete
-	GuildRoleUpdate          *discordgo.GuildRoleUpdate
-	GuildUpdate              *discordgo.GuildUpdate
-	MessageAck               *discordgo.MessageAck
-	MessageCreate            *discordgo.MessageCreate
-	MessageDelete            *discordgo.MessageDelete
-	MessageDeleteBulk        *discordgo.MessageDeleteBulk
-	MessageReactionAdd       *discordgo.MessageReactionAdd
-	MessageReactionRemove    *discordgo.MessageReactionRemove
-	MessageReactionRemoveAll *discordgo.MessageReactionRemoveAll
-	MessageUpdate            *discordgo.MessageUpdate
-	PresenceUpdate           *discordgo.PresenceUpdate
-	PresencesReplace         *discordgo.PresencesReplace
-	RateLimit                *discordgo.RateLimit
-	Ready                    *discordgo.Ready
-	RelationshipAdd          *discordgo.RelationshipAdd
-	RelationshipRemove       *discordgo.RelationshipRemove
-	Resumed                  *discordgo.Resumed
-	TypingStart              *discordgo.TypingStart
-	UserGuildSettingsUpdate  *discordgo.UserGuildSettingsUpdate
-	UserNoteUpdate           *discordgo.UserNoteUpdate
-	UserSettingsUpdate       *discordgo.UserSettingsUpdate
-	UserUpdate               *discordgo.UserUpdate
-	VoiceServerUpdate        *discordgo.VoiceServerUpdate
-	VoiceStateUpdate         *discordgo.VoiceStateUpdate
-
-	Session *discordgo.Session
+func (data *EventData) ChannelCreate() *discordgo.ChannelCreate {
+	return data.EvtInterface.(*discordgo.ChannelCreate)
+}
+func (data *EventData) ChannelDelete() *discordgo.ChannelDelete {
+	return data.EvtInterface.(*discordgo.ChannelDelete)
+}
+func (data *EventData) ChannelPinsUpdate() *discordgo.ChannelPinsUpdate {
+	return data.EvtInterface.(*discordgo.ChannelPinsUpdate)
+}
+func (data *EventData) ChannelUpdate() *discordgo.ChannelUpdate {
+	return data.EvtInterface.(*discordgo.ChannelUpdate)
+}
+func (data *EventData) Connect() *discordgo.Connect {
+	return data.EvtInterface.(*discordgo.Connect)
+}
+func (data *EventData) Disconnect() *discordgo.Disconnect {
+	return data.EvtInterface.(*discordgo.Disconnect)
+}
+func (data *EventData) GuildBanAdd() *discordgo.GuildBanAdd {
+	return data.EvtInterface.(*discordgo.GuildBanAdd)
+}
+func (data *EventData) GuildBanRemove() *discordgo.GuildBanRemove {
+	return data.EvtInterface.(*discordgo.GuildBanRemove)
+}
+func (data *EventData) GuildCreate() *discordgo.GuildCreate {
+	return data.EvtInterface.(*discordgo.GuildCreate)
+}
+func (data *EventData) GuildDelete() *discordgo.GuildDelete {
+	return data.EvtInterface.(*discordgo.GuildDelete)
+}
+func (data *EventData) GuildEmojisUpdate() *discordgo.GuildEmojisUpdate {
+	return data.EvtInterface.(*discordgo.GuildEmojisUpdate)
+}
+func (data *EventData) GuildIntegrationsUpdate() *discordgo.GuildIntegrationsUpdate {
+	return data.EvtInterface.(*discordgo.GuildIntegrationsUpdate)
+}
+func (data *EventData) GuildMemberAdd() *discordgo.GuildMemberAdd {
+	return data.EvtInterface.(*discordgo.GuildMemberAdd)
+}
+func (data *EventData) GuildMemberRemove() *discordgo.GuildMemberRemove {
+	return data.EvtInterface.(*discordgo.GuildMemberRemove)
+}
+func (data *EventData) GuildMemberUpdate() *discordgo.GuildMemberUpdate {
+	return data.EvtInterface.(*discordgo.GuildMemberUpdate)
+}
+func (data *EventData) GuildMembersChunk() *discordgo.GuildMembersChunk {
+	return data.EvtInterface.(*discordgo.GuildMembersChunk)
+}
+func (data *EventData) GuildRoleCreate() *discordgo.GuildRoleCreate {
+	return data.EvtInterface.(*discordgo.GuildRoleCreate)
+}
+func (data *EventData) GuildRoleDelete() *discordgo.GuildRoleDelete {
+	return data.EvtInterface.(*discordgo.GuildRoleDelete)
+}
+func (data *EventData) GuildRoleUpdate() *discordgo.GuildRoleUpdate {
+	return data.EvtInterface.(*discordgo.GuildRoleUpdate)
+}
+func (data *EventData) GuildUpdate() *discordgo.GuildUpdate {
+	return data.EvtInterface.(*discordgo.GuildUpdate)
+}
+func (data *EventData) MessageAck() *discordgo.MessageAck {
+	return data.EvtInterface.(*discordgo.MessageAck)
+}
+func (data *EventData) MessageCreate() *discordgo.MessageCreate {
+	return data.EvtInterface.(*discordgo.MessageCreate)
+}
+func (data *EventData) MessageDelete() *discordgo.MessageDelete {
+	return data.EvtInterface.(*discordgo.MessageDelete)
+}
+func (data *EventData) MessageDeleteBulk() *discordgo.MessageDeleteBulk {
+	return data.EvtInterface.(*discordgo.MessageDeleteBulk)
+}
+func (data *EventData) MessageReactionAdd() *discordgo.MessageReactionAdd {
+	return data.EvtInterface.(*discordgo.MessageReactionAdd)
+}
+func (data *EventData) MessageReactionRemove() *discordgo.MessageReactionRemove {
+	return data.EvtInterface.(*discordgo.MessageReactionRemove)
+}
+func (data *EventData) MessageReactionRemoveAll() *discordgo.MessageReactionRemoveAll {
+	return data.EvtInterface.(*discordgo.MessageReactionRemoveAll)
+}
+func (data *EventData) MessageUpdate() *discordgo.MessageUpdate {
+	return data.EvtInterface.(*discordgo.MessageUpdate)
+}
+func (data *EventData) PresenceUpdate() *discordgo.PresenceUpdate {
+	return data.EvtInterface.(*discordgo.PresenceUpdate)
+}
+func (data *EventData) PresencesReplace() *discordgo.PresencesReplace {
+	return data.EvtInterface.(*discordgo.PresencesReplace)
+}
+func (data *EventData) RateLimit() *discordgo.RateLimit {
+	return data.EvtInterface.(*discordgo.RateLimit)
+}
+func (data *EventData) Ready() *discordgo.Ready {
+	return data.EvtInterface.(*discordgo.Ready)
+}
+func (data *EventData) RelationshipAdd() *discordgo.RelationshipAdd {
+	return data.EvtInterface.(*discordgo.RelationshipAdd)
+}
+func (data *EventData) RelationshipRemove() *discordgo.RelationshipRemove {
+	return data.EvtInterface.(*discordgo.RelationshipRemove)
+}
+func (data *EventData) Resumed() *discordgo.Resumed {
+	return data.EvtInterface.(*discordgo.Resumed)
+}
+func (data *EventData) TypingStart() *discordgo.TypingStart {
+	return data.EvtInterface.(*discordgo.TypingStart)
+}
+func (data *EventData) UserGuildSettingsUpdate() *discordgo.UserGuildSettingsUpdate {
+	return data.EvtInterface.(*discordgo.UserGuildSettingsUpdate)
+}
+func (data *EventData) UserNoteUpdate() *discordgo.UserNoteUpdate {
+	return data.EvtInterface.(*discordgo.UserNoteUpdate)
+}
+func (data *EventData) UserSettingsUpdate() *discordgo.UserSettingsUpdate {
+	return data.EvtInterface.(*discordgo.UserSettingsUpdate)
+}
+func (data *EventData) UserUpdate() *discordgo.UserUpdate {
+	return data.EvtInterface.(*discordgo.UserUpdate)
+}
+func (data *EventData) VoiceServerUpdate() *discordgo.VoiceServerUpdate {
+	return data.EvtInterface.(*discordgo.VoiceServerUpdate)
+}
+func (data *EventData) VoiceStateUpdate() *discordgo.VoiceStateUpdate {
+	return data.EvtInterface.(*discordgo.VoiceStateUpdate)
 }
 
 func HandleEvent(s *discordgo.Session, evt interface{}) {
 
 	var evtData = &EventData{
-		EventDataContainer: &EventDataContainer{
-			Session: s,
-		},
+		Session:      s,
 		EvtInterface: evt,
 	}
 
-	switch t := evt.(type) {
+	switch evt.(type) {
 	case *discordgo.ChannelCreate:
-		evtData.ChannelCreate = t
 		evtData.Type = Event(5)
 	case *discordgo.ChannelDelete:
-		evtData.ChannelDelete = t
 		evtData.Type = Event(6)
 	case *discordgo.ChannelPinsUpdate:
-		evtData.ChannelPinsUpdate = t
 		evtData.Type = Event(7)
 	case *discordgo.ChannelUpdate:
-		evtData.ChannelUpdate = t
 		evtData.Type = Event(8)
 	case *discordgo.Connect:
-		evtData.Connect = t
 		evtData.Type = Event(9)
 	case *discordgo.Disconnect:
-		evtData.Disconnect = t
 		evtData.Type = Event(10)
 	case *discordgo.GuildBanAdd:
-		evtData.GuildBanAdd = t
 		evtData.Type = Event(11)
 	case *discordgo.GuildBanRemove:
-		evtData.GuildBanRemove = t
 		evtData.Type = Event(12)
 	case *discordgo.GuildCreate:
-		evtData.GuildCreate = t
 		evtData.Type = Event(13)
 	case *discordgo.GuildDelete:
-		evtData.GuildDelete = t
 		evtData.Type = Event(14)
 	case *discordgo.GuildEmojisUpdate:
-		evtData.GuildEmojisUpdate = t
 		evtData.Type = Event(15)
 	case *discordgo.GuildIntegrationsUpdate:
-		evtData.GuildIntegrationsUpdate = t
 		evtData.Type = Event(16)
 	case *discordgo.GuildMemberAdd:
-		evtData.GuildMemberAdd = t
 		evtData.Type = Event(17)
 	case *discordgo.GuildMemberRemove:
-		evtData.GuildMemberRemove = t
 		evtData.Type = Event(18)
 	case *discordgo.GuildMemberUpdate:
-		evtData.GuildMemberUpdate = t
 		evtData.Type = Event(19)
 	case *discordgo.GuildMembersChunk:
-		evtData.GuildMembersChunk = t
 		evtData.Type = Event(20)
 	case *discordgo.GuildRoleCreate:
-		evtData.GuildRoleCreate = t
 		evtData.Type = Event(21)
 	case *discordgo.GuildRoleDelete:
-		evtData.GuildRoleDelete = t
 		evtData.Type = Event(22)
 	case *discordgo.GuildRoleUpdate:
-		evtData.GuildRoleUpdate = t
 		evtData.Type = Event(23)
 	case *discordgo.GuildUpdate:
-		evtData.GuildUpdate = t
 		evtData.Type = Event(24)
 	case *discordgo.MessageAck:
-		evtData.MessageAck = t
 		evtData.Type = Event(25)
 	case *discordgo.MessageCreate:
-		evtData.MessageCreate = t
 		evtData.Type = Event(26)
 	case *discordgo.MessageDelete:
-		evtData.MessageDelete = t
 		evtData.Type = Event(27)
 	case *discordgo.MessageDeleteBulk:
-		evtData.MessageDeleteBulk = t
 		evtData.Type = Event(28)
 	case *discordgo.MessageReactionAdd:
-		evtData.MessageReactionAdd = t
 		evtData.Type = Event(29)
 	case *discordgo.MessageReactionRemove:
-		evtData.MessageReactionRemove = t
 		evtData.Type = Event(30)
 	case *discordgo.MessageReactionRemoveAll:
-		evtData.MessageReactionRemoveAll = t
 		evtData.Type = Event(31)
 	case *discordgo.MessageUpdate:
-		evtData.MessageUpdate = t
 		evtData.Type = Event(32)
 	case *discordgo.PresenceUpdate:
-		evtData.PresenceUpdate = t
 		evtData.Type = Event(33)
 	case *discordgo.PresencesReplace:
-		evtData.PresencesReplace = t
 		evtData.Type = Event(34)
 	case *discordgo.RateLimit:
-		evtData.RateLimit = t
 		evtData.Type = Event(35)
 	case *discordgo.Ready:
-		evtData.Ready = t
 		evtData.Type = Event(36)
 	case *discordgo.RelationshipAdd:
-		evtData.RelationshipAdd = t
 		evtData.Type = Event(37)
 	case *discordgo.RelationshipRemove:
-		evtData.RelationshipRemove = t
 		evtData.Type = Event(38)
 	case *discordgo.Resumed:
-		evtData.Resumed = t
 		evtData.Type = Event(39)
 	case *discordgo.TypingStart:
-		evtData.TypingStart = t
 		evtData.Type = Event(40)
 	case *discordgo.UserGuildSettingsUpdate:
-		evtData.UserGuildSettingsUpdate = t
 		evtData.Type = Event(41)
 	case *discordgo.UserNoteUpdate:
-		evtData.UserNoteUpdate = t
 		evtData.Type = Event(42)
 	case *discordgo.UserSettingsUpdate:
-		evtData.UserSettingsUpdate = t
 		evtData.Type = Event(43)
 	case *discordgo.UserUpdate:
-		evtData.UserUpdate = t
 		evtData.Type = Event(44)
 	case *discordgo.VoiceServerUpdate:
-		evtData.VoiceServerUpdate = t
 		evtData.Type = Event(45)
 	case *discordgo.VoiceStateUpdate:
-		evtData.VoiceStateUpdate = t
 		evtData.Type = Event(46)
 	default:
 		return

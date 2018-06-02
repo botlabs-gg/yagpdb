@@ -48,7 +48,7 @@ func AddRootCommands(cmds ...*YAGCommand) {
 }
 
 func handleMsgCreate(evt *eventsystem.EventData) {
-	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate)
+	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
 }
 
 func (p *Plugin) Prefix(data *dcmd.Data) string {
@@ -115,7 +115,7 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
-	g := evt.GuildCreate
+	g := evt.GuildCreate()
 	prefixExists, err := common.RedisBool(client.Cmd("EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")

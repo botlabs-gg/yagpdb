@@ -82,8 +82,8 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	switch evt.Type {
 	case eventsystem.EventGuildBanAdd:
 
-		guildID = evt.GuildBanAdd.GuildID
-		user = evt.GuildBanAdd.User
+		guildID = evt.GuildBanAdd().GuildID
+		user = evt.GuildBanAdd().User
 		action = MABanned
 
 		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyBannedUser(guildID, user.ID)).Int(); i > 0 {
@@ -93,8 +93,8 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		}
 	case eventsystem.EventGuildBanRemove:
 		action = MAUnbanned
-		user = evt.GuildBanRemove.User
-		guildID = evt.GuildBanRemove.GuildID
+		user = evt.GuildBanRemove().User
+		guildID = evt.GuildBanRemove().GuildID
 
 		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyUnbannedUser(guildID, user.ID)).Int(); i > 0 {
 			// The bot wa the one that performed the unban
@@ -143,11 +143,11 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 		var guild int64
 		// TODO: add utility functions to the eventdata struct for fetching things like these?
 		if evt.Type == eventsystem.EventGuildMemberAdd {
-			userID = evt.GuildMemberAdd.User.ID
-			guild = evt.GuildMemberAdd.GuildID
+			userID = evt.GuildMemberAdd().User.ID
+			guild = evt.GuildMemberAdd().GuildID
 		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
-			userID = evt.GuildMemberUpdate.User.ID
-			guild = evt.GuildMemberUpdate.GuildID
+			userID = evt.GuildMemberUpdate().User.ID
+			guild = evt.GuildMemberUpdate().GuildID
 		} else {
 			panic("Unknown event in lock memebr mute middleware")
 		}
@@ -180,7 +180,7 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 }
 
 func HandleMemberJoin(evt *eventsystem.EventData) {
-	c := evt.GuildMemberAdd
+	c := evt.GuildMemberAdd()
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
@@ -199,7 +199,7 @@ func HandleMemberJoin(evt *eventsystem.EventData) {
 }
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
-	c := evt.GuildMemberUpdate
+	c := evt.GuildMemberUpdate()
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
