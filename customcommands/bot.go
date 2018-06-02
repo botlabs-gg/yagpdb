@@ -263,10 +263,20 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 		panic(fmt.Sprintf("Unknown TriggerType %s", cmd.TriggerType))
 	}
 
-	re, err := regexp.Compile(cmdMatch)
+	item, err := RegexCache.Fetch(cmdMatch, time.Minute*10, func() (interface{}, error) {
+		re, err := regexp.Compile(cmdMatch)
+		if err != nil {
+			return nil, err
+		}
+
+		return re, nil
+	})
+
 	if err != nil {
 		return false, "", nil
 	}
+
+	re := item.Value().(*regexp.Regexp)
 
 	idx := re.FindStringIndex(msg)
 	if idx == nil {
