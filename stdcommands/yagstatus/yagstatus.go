@@ -83,11 +83,14 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 
 	for _, v := range common.Plugins {
 		if cast, ok := v.(PluginStatus); ok {
+			started := time.Now()
 			name, val := cast.Status(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client))
 			if name == "" || val == "" {
 				continue
 			}
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: v.Name() + ": " + name, Value: val, Inline: true})
+			elapsed := time.Since(started)
+			logrus.Println("Took ", elapsed.Seconds(), " to gather stats from ", v.Name())
 		}
 	}
 
