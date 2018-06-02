@@ -101,7 +101,8 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
-	m := evt.GuildMemberUpdate
+	m := evt.GuildMemberUpdate()
+
 	config, err := GetConfig(client, m.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
@@ -137,7 +138,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	client := bot.ContextRedis(evt.Context())
-	g := evt.GuildCreate
+	g := evt.GuildCreate()
 
 	config, err := GetConfig(client, g.ID)
 	if err != nil {
@@ -179,7 +180,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
-	p := evt.PresenceUpdate
+	p := evt.PresenceUpdate()
+
 	config, err := GetConfig(client, p.GuildID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")

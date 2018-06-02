@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/stdcommands/advice"
+	"github.com/jonas747/yagpdb/stdcommands/allocstat"
 	"github.com/jonas747/yagpdb/stdcommands/banserver"
 	"github.com/jonas747/yagpdb/stdcommands/calc"
 	"github.com/jonas747/yagpdb/stdcommands/catfact"
@@ -66,6 +67,7 @@ func (p *Plugin) InitBot() {
 		secretcommand.Command,
 		leaveserver.Command,
 		banserver.Command,
+		allocstat.Command,
 		unbanserver.Command,
 		topservers.Command,
 		topcommands.Command,

@@ -58,24 +58,20 @@ var AllEvents = []Event{ {{range .}}
 
 var handlers = make([][]*Handler, {{len .}})
 
-type EventDataContainer struct{ {{range .}}{{if .Discord}}
-	{{.Name}} *discordgo.{{.Name}}{{end}}{{end}}
-
-	Session *discordgo.Session
-}
+{{range .}}{{if .Discord}}
+func (data *EventData) {{.Name}}() *discordgo.{{.Name}}{ 
+	return data.EvtInterface.(*discordgo.{{.Name}})
+}{{end}}{{end}}
 
 func HandleEvent(s *discordgo.Session, evt interface{}){
 
 	var evtData = &EventData{
-		EventDataContainer: &EventDataContainer{
-			Session: s,
-		},
+		Session: s,
 		EvtInterface: evt,
 	}
 
-	switch t := evt.(type){ {{range $k, $v := .}}{{if .Discord}}
+	switch evt.(type){ {{range $k, $v := .}}{{if .Discord}}
 	case *discordgo.{{.Name}}:
-		evtData.{{.Name}} = t
 		evtData.Type = Event({{$k}}){{end}}{{end}}
 	default:
 		return

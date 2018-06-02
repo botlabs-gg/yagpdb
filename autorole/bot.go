@@ -50,7 +50,7 @@ func HandleUpdateAutomodRules(event *pubsub.Event) {
 // HandlePresenceUpdate makes sure the member with joined_at is available for the relevant guilds
 // TODO: Figure out a solution that scales better
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
-	p := evt.PresenceUpdate
+	p := evt.PresenceUpdate()
 	if p.Status == discordgo.StatusOffline {
 		return
 	}
@@ -276,7 +276,7 @@ func saveGeneral(client *redis.Client, guildID int64, config *GeneralConfig) {
 }
 
 func OnMemberJoin(evt *eventsystem.EventData) {
-	addEvt := evt.GuildMemberAdd
+	addEvt := evt.GuildMemberAdd()
 
 	client := bot.ContextRedis(evt.Context())
 	config, err := GetGeneralConfig(client, addEvt.GuildID)

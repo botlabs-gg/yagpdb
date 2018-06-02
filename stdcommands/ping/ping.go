@@ -23,7 +23,7 @@ var Command = &commands.YAGCommand{
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
-	m := evt.MessageCreate
+	m := evt.MessageCreate()
 
 	bUser := bot.State.User(true)
 	if bUser == nil {

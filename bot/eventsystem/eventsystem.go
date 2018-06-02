@@ -4,6 +4,7 @@ package eventsystem
 
 import (
 	"context"
+	"github.com/jonas747/discordgo"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"
 )
@@ -11,10 +12,10 @@ import (
 type Handler func(evtData *EventData)
 
 type EventData struct {
-	*EventDataContainer
 	EvtInterface interface{}
 	Type         Event
 	ctx          context.Context
+	Session      *discordgo.Session
 }
 
 var (

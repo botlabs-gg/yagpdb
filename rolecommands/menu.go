@@ -270,7 +270,7 @@ type OptionCommandPair struct {
 }
 
 func handleReactionAdd(evt *eventsystem.EventData) {
-	ra := evt.MessageReactionAdd
+	ra := evt.MessageReactionAdd()
 	if ra.UserID == common.BotUser.ID {
 		return
 	}
@@ -391,10 +391,10 @@ func OptionCommandPairLessFunc(slice []*OptionCommandPair) func(int, int) bool {
 }
 
 func handleMessageRemove(evt *eventsystem.EventData) {
-	if evt.MessageDelete != nil {
-		messageRemoved(evt.MessageDelete.Message.ID)
-	} else if evt.MessageDeleteBulk != nil {
-		for _, v := range evt.MessageDeleteBulk.Messages {
+	if evt.Type == eventsystem.EventMessageDelete {
+		messageRemoved(evt.MessageDelete().Message.ID)
+	} else if evt.Type == eventsystem.EventMessageDeleteBulk {
+		for _, v := range evt.MessageDeleteBulk().Messages {
 			messageRemoved(v)
 		}
 	}

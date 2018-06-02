@@ -220,10 +220,8 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 			}
 		} else {
 			go eventsystem.EmitEvent(&eventsystem.EventData{
-				EventDataContainer: &eventsystem.EventDataContainer{
-					GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
-				},
-				Type: eventsystem.EventMemberFetched,
+				EvtInterface: &discordgo.GuildMemberAdd{Member: member},
+				Type:         eventsystem.EventMemberFetched,
 			}, eventsystem.EventMemberFetched)
 
 			if gs := State.Guild(true, guildID); gs != nil {

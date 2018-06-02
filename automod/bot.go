@@ -57,11 +57,11 @@ func CachedGetConfig(client *redis.Client, gID int64) (*Config, error) {
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageCreate.Message, bot.ContextRedis(evt.Context()))
+	CheckMessage(evt.MessageCreate().Message, bot.ContextRedis(evt.Context()))
 }
 
 func HandleMessageUpdate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageUpdate.Message, bot.ContextRedis(evt.Context()))
+	CheckMessage(evt.MessageUpdate().Message, bot.ContextRedis(evt.Context()))
 }
 
 func CheckMessage(m *discordgo.Message, client *redis.Client) {

@@ -11,24 +11,26 @@ import (
 	"math/rand"
 )
 
-func HandleGuildMemberAdd(evt *eventsystem.EventData) {
-	config := GetConfig(evt.GuildMemberAdd.GuildID)
+func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
+	evt := evtData.GuildMemberAdd()
+
+	config := GetConfig(evt.GuildID)
 	if !config.JoinServerEnabled && !config.JoinDMEnabled {
 		return
 	}
 
-	gs := bot.State.Guild(true, evt.GuildMemberAdd.GuildID)
+	gs := bot.State.Guild(true, evt.GuildID)
 
-	client := bot.ContextRedis(evt.Context())
+	client := bot.ContextRedis(evtData.Context())
 
 	// Beware of the pyramid and its curses
-	if config.JoinDMEnabled && !evt.GuildMemberAdd.User.Bot {
+	if config.JoinDMEnabled && !evt.User.Bot {
 
-		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinDMMsg)
+		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.Member).Execute(client, config.JoinDMMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing dm template")
 		} else {
-			err = bot.SendDM(evt.GuildMemberAdd.User.ID, msg)
+			err = bot.SendDM(evt.User.ID, msg)
 			if err != nil {
 				log.WithError(err).WithField("guild", gs.ID()).Error("Failed sending join dm")
 			}
@@ -41,7 +43,7 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 			return
 		}
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, chanMsg)
+		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.Member).Execute(client, chanMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing join template")
 		} else {
@@ -51,12 +53,14 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 }
 
 func HandleGuildMemberRemove(evt *eventsystem.EventData) {
-	config := GetConfig(evt.GuildMemberRemove.GuildID)
+	memberRemove := evt.GuildMemberRemove()
+
+	config := GetConfig(memberRemove.GuildID)
 	if !config.LeaveEnabled {
 		return
 	}
 
-	gs := bot.State.Guild(true, evt.GuildMemberRemove.GuildID)
+	gs := bot.State.Guild(true, memberRemove.GuildID)
 	if gs == nil {
 		return
 	}
@@ -73,7 +77,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	client := bot.ContextRedis(evt.Context())
 
-	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberRemove.Member).Execute(client, chanMsg)
+	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, memberRemove.Member).Execute(client, chanMsg)
 	if err != nil {
 		log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing leave template")
 		return
@@ -83,7 +87,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 }
 
 func HandleChannelUpdate(evt *eventsystem.EventData) {
-	cu := evt.ChannelUpdate
+	cu := evt.ChannelUpdate()
 
 	curChannel := bot.State.Channel(true, cu.ID)
 	if curChannel == nil {

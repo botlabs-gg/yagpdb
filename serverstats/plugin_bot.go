@@ -80,7 +80,7 @@ func (p *Plugin) InitBot() {
 }
 
 func HandleReady(evt *eventsystem.EventData) {
-	r := evt.Ready
+	r := evt.Ready()
 	client := bot.ContextRedis(evt.Context())
 
 	for _, guild := range r.Guilds {
@@ -96,7 +96,7 @@ func HandleReady(evt *eventsystem.EventData) {
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
-	g := evt.GuildCreate
+	g := evt.GuildCreate()
 	client := bot.ContextRedis(evt.Context())
 
 	err := client.Cmd("SET", "guild_stats_num_members:"+discordgo.StrID(g.ID), g.MemberCount).Err
@@ -111,7 +111,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 }
 
 func HandleMemberAdd(evt *eventsystem.EventData) {
-	g := evt.GuildMemberAdd
+	g := evt.GuildMemberAdd()
 	client := bot.ContextRedis(evt.Context())
 
 	err := client.Cmd("ZADD", "guild_stats_members_joined_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID).Err
@@ -126,7 +126,7 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 }
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
-	p := evt.PresenceUpdate
+	p := evt.PresenceUpdate()
 	client := bot.ContextRedis(evt.Context())
 
 	if p.Status == "" { // Not a status update
@@ -146,7 +146,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 }
 
 func HandleMemberRemove(evt *eventsystem.EventData) {
-	g := evt.GuildMemberRemove
+	g := evt.GuildMemberRemove()
 	client := bot.ContextRedis(evt.Context())
 
 	err := client.Cmd("ZADD", "guild_stats_members_left_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID).Err
@@ -162,12 +162,12 @@ func HandleMemberRemove(evt *eventsystem.EventData) {
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 
-	m := evt.MessageCreate
+	m := evt.MessageCreate()
 	client := bot.ContextRedis(evt.Context())
 	channel := bot.State.Channel(true, m.ChannelID)
 
 	if channel == nil {
-		log.WithField("channel", evt.MessageCreate.ChannelID).Warn("Channel not in state")
+		log.WithField("channel", m.ChannelID).Warn("Channel not in state")
 		return
 	}
 

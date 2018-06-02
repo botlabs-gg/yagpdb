@@ -22,14 +22,14 @@ func (p *Plugin) InitBot() {
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
 func handleMessageCreate(evt *eventsystem.EventData) {
-	msg := evt.MessageCreate
+	msg := evt.MessageCreate()
 	client := bot.ContextRedis(evt.Context())
 
 	if len(msg.Mentions) < 1 {
 		return
 	}
 
-	if !thanksRegex.MatchString(evt.MessageCreate.Content) {
+	if !thanksRegex.MatchString(msg.Content) {
 		return
 	}
 
