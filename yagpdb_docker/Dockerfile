@@ -29,6 +29,9 @@ EXPOSE 80 443
 # We need the X.509 certificates for client TLS to work.
 RUN apk --no-cache add ca-certificates
 
+# Add ffmpeg for soundboard support
+RUN apk --no-cache add ffmpeg
+
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/templates templates/
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/posts posts/
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/static static/
