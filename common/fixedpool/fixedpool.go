@@ -1,7 +1,6 @@
 package fixedpool
 
 import (
-	"errors"
 	"github.com/sirupsen/logrus"
 	"os"
 	"runtime"
@@ -105,11 +104,10 @@ func NewCustom(network, addr string, size int, df DialFunc) (*Pool, error) {
 
 	if os.Getenv("YAGPDB_DISABLE_REDIS_POOL_DEBUG") == "" {
 		go func() {
-			t := time.NewTicker(time.Second * 10)
+			t := time.NewTicker(time.Second * 60)
 			for {
 				<-t.C
 				logrus.Println("Redis pool size: ", len(p.pool))
-				runtime.GC()
 			}
 		}()
 	}
@@ -128,17 +126,7 @@ func New(network, addr string, size int) (*Pool, error) {
 // Get retrieves an available redis client. If there are none available it will
 // create a new one on the fly
 func (p *Pool) Get() (*redis.Client, error) {
-	after := time.NewTimer(time.Second * 30)
-
-	select {
-	case conn := <-p.pool:
-		after.Stop()
-		return conn, nil
-	case <-after.C:
-		panic("Ran out of connections?")
-	}
-
-	return nil, errors.New("Pool is empty")
+	return <-p.pool, nil
 }
 
 // Put returns a client back to the pool. If the pool is full the client is
