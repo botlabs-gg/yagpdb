@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/docs"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
@@ -32,7 +31,6 @@ type Plugin struct{}
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
-	docs.AddPage("Custom Commands", FSMustString(false, "/assets/help-page.md"), nil)
 
 	RegexCache = ccache.New(ccache.Configure())
 }

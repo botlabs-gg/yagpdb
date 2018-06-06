@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/docs"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
@@ -54,8 +53,6 @@ func RegisterPlugin() {
 
 	common.RegisterPluginL(p)
 	mqueue.RegisterSource("youtube", p)
-
-	docs.AddPage("Youtube Feeds", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 type ChannelSubscription struct {
