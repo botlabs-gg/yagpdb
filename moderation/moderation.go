@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/jonas747/yagpdb/docs"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -56,8 +55,6 @@ func RegisterPlugin() {
 	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{}, &MuteModel{})
-
-	docs.AddPage("Moderation", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 func getConfigIfNotSet(guildID int64, config *Config) (*Config, error) {

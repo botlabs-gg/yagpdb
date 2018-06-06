@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/sirupsen/logrus"
@@ -55,8 +54,6 @@ func RegisterPlugin() {
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initializing db schema")
 	}
-
-	docs.AddPage("Role Commands / Self assignable roles", FSMustString(false, "/assets/help.md"), nil)
 }
 
 type CommandGroupPair struct {
