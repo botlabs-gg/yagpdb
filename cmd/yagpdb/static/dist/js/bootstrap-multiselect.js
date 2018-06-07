@@ -165,7 +165,7 @@
         this.buildButton();
         this.buildDropdown();
         this.buildSelectAll();
-        this.buildDropdownOptions();
+        // this.buildDropdownOptions();
         this.buildFilter();
 
         this.updateButtonText();
@@ -361,6 +361,13 @@
          */
         buildButton: function() {
             this.$button = $(this.options.templates.button).addClass(this.options.buttonClass);
+            var that = this;
+            this.$button.on("click", function(){
+                if(!that.dropdownOptionsBuilt){
+                    that.buildDropdownOptions();
+                }
+            })
+
             if (this.$select.attr('class') && this.options.inheritClass) {
                 this.$button.addClass(this.$select.attr('class'));
             }
@@ -424,6 +431,7 @@
          * Uses createDivider and createOptionValue to create the necessary options.
          */
         buildDropdownOptions: function() {
+            this.dropdownOptionsBuilt = true;
 
             this.$select.children().each($.proxy(function(index, element) {
 
