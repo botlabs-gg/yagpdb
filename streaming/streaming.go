@@ -33,6 +33,10 @@ type Config struct {
 	AnnounceChannel int64 `json:"announce_channel,string" schema:"announce_channel" valid:"channel,true"`
 	// The message
 	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:"template,2000"`
+
+	// Match the game name or title against these to filter users out
+	GameRegex  string `json:"game_regex" schema:"game_regex" valid:"regex,2000"`
+	TitleRegex string `json:"title_regex" schema:"title_regex" valid:"regex,2000"`
 }
 
 type LegacyConfig struct {
@@ -49,6 +53,10 @@ type LegacyConfig struct {
 	AnnounceChannel string `json:"announce_channel" schema:"announce_channel" valid:"channel,true"`
 	// The message
 	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:"template,2000"`
+
+	// Match the game name or title against these to filter users out
+	GameRegex  string `json:"game_regex" schema:"game_regex" valid:"regex,2000"`
+	TitleRegex string `json:"title_regex" schema:"title_regex" valid:"regex,2000"`
 }
 
 func (c *Config) UnmarshalJSON(b []byte) error {
@@ -63,6 +71,8 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	c.RequireRole, _ = strconv.ParseInt(tmp.RequireRole, 10, 64)
 	c.AnnounceChannel, _ = strconv.ParseInt(tmp.AnnounceChannel, 10, 64)
 
+	c.GameRegex = tmp.GameRegex
+	c.TitleRegex = tmp.TitleRegex
 	c.Enabled = tmp.Enabled
 	c.AnnounceMessage = tmp.AnnounceMessage
 

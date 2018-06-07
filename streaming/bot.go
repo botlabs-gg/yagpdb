@@ -10,6 +10,8 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
+	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -213,18 +215,15 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 }
 
 func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, member *discordgo.Member, gs *dstate.GuildState) error {
+	if !config.Enabled {
+		// RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
+		return nil
+	}
 
 	// Now the real fun starts
 	// Either add or remove the stream
 	if p.Status != "offline" && p.Game != nil && p.Game.URL != "" {
 		// Streaming
-
-		// Only do these checks here to ensure we cleanup the user from the streaming set
-		// even if the plugin was disabled or the user ended up on the ignored roles
-		if !config.Enabled {
-			RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
-			return nil
-		}
 
 		if member == nil {
 			// Member is required from on here
@@ -237,30 +236,9 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 			}
 		}
 
-		if config.RequireRole != 0 {
-			found := false
-			for _, role := range member.Roles {
-				if role == config.RequireRole {
-					found = true
-					break
-				}
-			}
-
-			// Dosen't the required role
-			if !found {
-				RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
-				return nil
-			}
-		}
-
-		if config.IgnoreRole != 0 {
-			for _, role := range member.Roles {
-				// We ignore people with this role.. :')
-				if role == config.IgnoreRole {
-					RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
-					return nil
-				}
-			}
+		if !config.MeetsRequirements(member, p) {
+			RemoveStreaming(client, config, gs.ID(), p.User.ID, member)
+			return nil
 		}
 
 		if config.GiveRole != 0 {
@@ -287,6 +265,58 @@ func CheckPresence(client *redis.Client, config *Config, p *discordgo.Presence, 
 	}
 
 	return nil
+}
+
+func (config *Config) MeetsRequirements(member *discordgo.Member, p *discordgo.Presence) bool {
+	// Check if they have the required role
+	if config.RequireRole != 0 {
+		found := false
+		for _, role := range member.Roles {
+			if role == config.RequireRole {
+				found = true
+				break
+			}
+		}
+
+		// Dosen't have atleast one required role
+		if !found {
+			return false
+		}
+	}
+
+	// Check if they have a ignored role
+	if config.IgnoreRole != 0 {
+		for _, role := range member.Roles {
+			// We ignore people with this role.. :')
+			if role == config.IgnoreRole {
+				return false
+			}
+		}
+	}
+
+	if strings.TrimSpace(config.GameRegex) != "" {
+		gameName := p.Game.Details
+		compiledRegex, err := regexp.Compile(strings.TrimSpace(config.GameRegex))
+		if err == nil {
+			// It should be verified before this that its valid
+			if !compiledRegex.MatchString(gameName) {
+				return false
+			}
+		}
+	}
+
+	if strings.TrimSpace(config.TitleRegex) != "" {
+		streamTitle := p.Game.Name
+		compiledRegex, err := regexp.Compile(strings.TrimSpace(config.TitleRegex))
+		if err == nil {
+			// It should be verified before this that its valid
+			if !compiledRegex.MatchString(streamTitle) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func RemoveStreaming(client *redis.Client, config *Config, guildID int64, userID int64, member *discordgo.Member) {
