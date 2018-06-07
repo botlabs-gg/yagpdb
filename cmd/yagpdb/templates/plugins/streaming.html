@@ -41,6 +41,11 @@
                                 <textarea class="form-control" rows="3" name="announce_message">{{.StreamingConfig.AnnounceMessage}}</textarea>
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and <code>{{"{{"}}.URL {{"}}"}}</code> (The stream link)</p>
                             </div>
+                            <div class="form-group">
+                                <label>Game regex</label>
+                                <input type="text" class="form-control" name="game_regex" value="{{.StreamingConfig.GameRegex}}"></input>
+                                <p class="help-block">Filter out the people streaming by their game name (prepend with <code>(?i)</code> for case insensitivity)</p>
+                            </div>
                         </div>
                         <div class="col-lg-6">
                             <div class="form-group">
@@ -63,6 +68,11 @@
                                     {{roleOptions .ActiveGuild.Roles nil .StreamingConfig.IgnoreRole "None"}}
                                 </select>
                                 <p class="help-block">Ignore people with this role</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Stream title regex</label>
+                                <input type="text" class="form-control" name="title_regex" value="{{.StreamingConfig.TitleRegex}}"></input>
+                                <p class="help-block">Filter out the people streaming by the stream title (prepend with <code>(?i)</code> for case insensitivity)</p>
                             </div>
                         </div>
                     </div>
