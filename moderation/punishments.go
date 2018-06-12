@@ -25,7 +25,7 @@ const (
 )
 
 // Kick or bans someone, uploading a hasebin log, and sending the report message in the action channel
-func punish(config *Config, p Punishment, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
+func punish(config *Config, p Punishment, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, sendDM bool) error {
 	if author == nil {
 		author = &discordgo.User{
 			ID:            0,
@@ -75,19 +75,21 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 	}
 
 	// Execute the DM message template
-	ctx := templates.NewContext(bot.State.User(true).User, gs, nil, member)
-	ctx.Data["Reason"] = reason
-	ctx.Data["Duration"] = duration
-	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
-	ctx.Data["Author"] = author
+	if sendDM {
+		ctx := templates.NewContext(bot.State.User(true).User, gs, nil, member)
+		ctx.Data["Reason"] = reason
+		ctx.Data["Duration"] = duration
+		ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
+		ctx.Data["Author"] = author
 
-	executed, err := ctx.Execute(nil, dmMsg)
-	if err != nil {
-		logrus.WithError(err).WithField("guild", gs.ID()).Warn("Failed executing pusnishment DM")
-		executed = "Failed executing template."
+		executed, err := ctx.Execute(nil, dmMsg)
+		if err != nil {
+			logrus.WithError(err).WithField("guild", gs.ID()).Warn("Failed executing pusnishment DM")
+			executed = "Failed executing template."
+		}
+
+		go bot.SendDM(user.ID, bot.GuildName(guildID)+executed)
 	}
-
-	go bot.SendDM(user.ID, bot.GuildName(guildID)+executed)
 
 	logLink := ""
 	if channelID != 0 {
@@ -117,7 +119,7 @@ func KickUser(config *Config, guildID, channelID int64, author *discordgo.User, 
 		return common.ErrWithCaller(err)
 	}
 
-	err = punish(config, PunishmentKick, guildID, channelID, author, reason, user, 0)
+	err = punish(config, PunishmentKick, guildID, channelID, author, reason, user, 0, true)
 	if err != nil {
 		return err
 	}
@@ -170,10 +172,10 @@ func DeleteMessages(channelID int64, filterUser int64, deleteNum, fetchNum int) 
 	return len(toDelete), err
 }
 
-func BanUserWithDuration(client *redis.Client, config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
+func BanUserWithDuration(client *redis.Client, config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, sendDM bool) error {
 	// Set a key in redis that marks that this user has appeared in the modlog already
 	client.Cmd("SETEX", RedisKeyBannedUser(guildID, user.ID), 60, 1)
-	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration)
+	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration, sendDM)
 	if err != nil {
 		return err
 	}
@@ -188,8 +190,8 @@ func BanUserWithDuration(client *redis.Client, config *Config, guildID, channelI
 	return nil
 }
 
-func BanUser(client *redis.Client, config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User) error {
-	return BanUserWithDuration(client, config, guildID, channelID, author, reason, user, 0)
+func BanUser(client *redis.Client, config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, sendDM bool) error {
+	return BanUserWithDuration(client, config, guildID, channelID, author, reason, user, 0, sendDM)
 }
 
 var (
