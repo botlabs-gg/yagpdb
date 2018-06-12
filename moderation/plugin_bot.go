@@ -362,7 +362,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
-			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration))
+			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), true)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -405,7 +405,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				target = targetMember.User
 			}
 
-			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration))
+			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
