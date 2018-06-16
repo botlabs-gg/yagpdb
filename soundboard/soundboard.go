@@ -94,7 +94,7 @@ const (
 func (s TranscodingStatus) String() string {
 	switch s {
 	case TranscodingStatusQueued:
-		return "Qeued"
+		return "Queued"
 	case TranscodingStatusReady:
 		return "Ready"
 	case TranscodingStatusFailedLong:
