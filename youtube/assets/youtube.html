@@ -51,6 +51,10 @@
                 <h2 class="card-title">Current subscribed channels</h2>
             </header>
             <div class="card-body">
+                {{$dot := .}}
+                {{range .Subs}}
+                <form id="sub-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text" class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
+
                 <table class="table table-responsive-md table-sm mb-0">
                     <thead>
                         <tr>
@@ -61,29 +65,25 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {{$dot := .}}
                         {{range .Subs}}
                         <tr>
-                            <form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update">
-                                <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
-                                <td>
-                                    <p class="form-control-static"><b>{{.YoutubeChannelName}}</b> - <code>{{.YoutubeChannelID}}</code></p>
-                                </td>
-                                <td>
-                                    <select id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
-                                        {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
-                                    </select>
-                                </td>
-                                <td>
-                                    <div class="form-check">
-                                        <input type="checkbox" name="MentionEveryone" class="form-check-input position-static ml-auto" {{if .MentionEveryone}} checked {{end}}>
-                                    </div>
-                                </td>
-                                <td>
-                                    <button type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update">Save</button>
-                                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
-                                </td>
-                            </form>
+                            <td>
+                                <p class="form-control-static"><b>{{.YoutubeChannelName}}</b> - <code>{{.YoutubeChannelID}}</code></p>
+                            </td>
+                            <td>
+                                <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
+                                    {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
+                                </select>
+                            </td>
+                            <td>
+                                <div class="form-check">
+                                    <input form="sub-item-{{.ID}}" type="checkbox" name="MentionEveryone" class="form-check-input position-static ml-auto" {{if .MentionEveryone}} checked {{end}}>
+                                </div>
+                            </td>
+                            <td>
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update">Save</button>
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
+                            </td>
                         </tr>
                         {{end}}
                     </tbody>

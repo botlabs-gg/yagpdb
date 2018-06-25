@@ -79,7 +79,7 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 	_, ag, templateData := web.GetBaseCPContextData(ctx)
 
 	var subs []*ChannelSubscription
-	err := common.GORM.Where("guild_id = ?", ag.ID).Find(&subs).Error
+	err := common.GORM.Where("guild_id = ?", ag.ID).Order("id desc").Find(&subs).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return templateData, err
 	}
