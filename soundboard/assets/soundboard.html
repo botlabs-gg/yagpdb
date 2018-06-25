@@ -47,6 +47,10 @@
                 <h2 class="card-title">Existing sounds</h2>
             </div>
             <div class="card-body">
+                {{$dot := .}}
+                {{range .Config.Sounds}}
+                <form id="sound-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/soundboard/update"><input type="text" class="hidden form-control" name="ID" value="{{.ID}}"></form>{{end}}
+
                 <table class="table table-responsive-md table-sm mb-0">
                     <thead>
                         <tr>
@@ -61,29 +65,25 @@
                         {{$roles := .ActiveGuild.Roles}}
                         {{$highest := .HighestRole}}
                         {{range .Config.Sounds}}
-                        <tr class="well well-sm">
-                            <form class="form-inline" method="post" action="update">
-                                <input type="text" name="ID" class="hidden" value="{{.ID}}">
+                        <tr>
+                            <td>
+                                <input form="sound-item-{{.ID}}" type="text" class="form-control" name="Name" placeholder="" value="{{.Name}}">
+                            </td>
 
-                                <td>
-                                    <input type="text" class="form-control" name="Name" placeholder="" value="{{.Name}}">
-                                </td>
+                            <td>
+                                <select form="sound-item-{{.ID}}" class="form-control" name="RequiredRole">
+                                    {{roleOptions $roles nil .RequiredRole "None"}}
+                                </select>
+                            </td>
 
-                                <td>
-                                    <select class="form-control" name="RequiredRole">
-                                        {{roleOptions $roles nil .RequiredRole "None"}}
-                                    </select>
-                                </td>
- 
-                                <td>
-                                    <p class="form-control-static">{{.Status}}</p>
-                                </td>
-                                
-                                <td>
-                                    <button type="submit" class="btn btn-success" formaction="update">Save</button>
-                                    <button type="submit" class="btn btn-danger" formaction="delete">Delete</button>
-                                </td>
-                            </form>
+                            <td>
+                                <p class="form-control-static">{{.Status}}</p>
+                            </td>
+                            
+                            <td>
+                                <button form="sound-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/soundboard/update">Save</button>
+                                <button form="sound-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/soundboard/delete">Delete</button>
+                            </td>
                         </tr>
                         {{end}}
                     </tbody>
