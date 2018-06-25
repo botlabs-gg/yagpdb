@@ -52,7 +52,7 @@ func setWaitingGuildReady(g int64) {
 		}
 
 		go scheduledevents.Run()
-		go checkConnectedGuilds()
+		// go checkConnectedGuilds()
 	}
 }
 
