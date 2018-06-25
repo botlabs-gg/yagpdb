@@ -49,6 +49,7 @@
 
         <span class="separator"></span>
 
+        {{if .User}}
         <div id="server-selection" class="userbox">
             <a href="#" data-toggle="dropdown">
                 <figure class="profile-picture">
@@ -94,7 +95,6 @@
 
         <span class="separator"></span>
 
-        {{if .User}}
         <div id="userbox" class="userbox">
             <a href="#" data-toggle="dropdown">
                 <figure class="profile-picture">
@@ -118,7 +118,9 @@
             </div>
         </div>
         {{else}}
-        <a href="/login?goto={{urlquery .RequestURI}}"><i class="fas fa-power-off"></i> Login using discord</a>
+        <div class="userbox">
+            <a href="/login?goto={{urlquery .RequestURI}}"><i class="fas fa-power-off"></i> Login using discord</a>
+        </div>
         <span class="separator"></span>
         {{end}}
     </div>
