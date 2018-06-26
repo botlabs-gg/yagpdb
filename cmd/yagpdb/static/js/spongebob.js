@@ -131,6 +131,8 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly){
 
 function showAlerts(alertsJson){
 	var alerts = JSON.parse(alertsJson);
+	if(!alerts) return;
+
 	const stack_bar_top = {"dir1": "down", "dir2": "right", "push": "top", "spacing1": 0, "spacing2": 0};
 
 	for (var i = 0; i < alerts.length; i++) {
@@ -459,7 +461,7 @@ function formSubmissionEvents(){
 	 	}
 		console.log("Should submit with defualt shizz " + action, event);
 
-	 	submitForm($(event.target), action);
+	 	submitForm($(event.target), action, false);
 	});
 
 	$(document).on("click", 'button', function( event ) {
@@ -497,18 +499,27 @@ function formSubmissionEvents(){
 			console.log("Not a button!", target);
 		}
 
+		var alertsOnly = false;
+		if(target.attr("data-async-form-alertsonly") !== undefined){
+			alertsOnly = true;
+		}
+
 		if(!target.attr("formaction")) return;
 
 		event.preventDefault();
 		console.log("Should submit using " + target.attr("formaction"), event, parentForm);
-	 	submitForm(parentForm, target.attr("formaction"));
+	 	submitForm(parentForm, target.attr("formaction"), alertsOnly);
 	
 	});
 
-	function submitForm(form, url){
+	function submitForm(form, url, alertsOnly){
 		var serialized = form.serialize();
 		console.log(serialized);
-		var alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
+		
+		if(!alertsOnly){
+			alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
+		}
+		
 		navigate(url, "POST", serialized, false, true, alertsOnly);
 	}
 

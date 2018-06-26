@@ -136,9 +136,9 @@
 */}}
 {{define "commands_channel_override"}}
 {{if .Override}}
-<form data-async-form  method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Override.Global}}global{{else}}{{.Override.ID}}{{end}}/update">
+<form data-async-form method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Override.Global}}global{{else}}{{.Override.ID}}{{end}}/update">
 {{else}}
-<form data-async-form  method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/new">
+<form data-async-form method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/new">
 {{end}}
 
     {{if not .Override.Global}}
@@ -203,7 +203,7 @@
         </div>
     </div>
     {{if .Override}}
-    <button type="submit" class="btn btn-success" value="Save">Save channel override</button>
+    <button type="submit" class="btn btn-success" value="Save" data-async-form-alertsonly>Save channel override</button>
     {{if not .Override.Global}}
         <button type="submit" class="btn btn-danger" value="Delete" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{.Override.ID}}/delete">Delete Channel override</button>
     {{end}}
@@ -311,7 +311,7 @@
                 </div>
             </div>
             {{if .Override}}
-            <button type="submit" class="btn btn-success" value="Save command override">Save command override</button>
+            <button type="submit" class="btn btn-success" value="Save command override" data-async-form-alertsonly>Save command override</button>
             <button type="submit" class="btn btn-danger" value="Delete command override" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/delete">Delete command override</button>
             {{else}}
             <input type="submit" class="btn btn-success" value="Create command override">
