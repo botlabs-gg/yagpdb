@@ -477,7 +477,12 @@ type CustomHandlerFunc func(w http.ResponseWriter, r *http.Request) interface{}
 // A helper wrapper that renders a template
 func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		alertsOnly := r.URL.Query().Get("alertsonly") == "1"
+		if alertsOnly {
+			w.Header().Set("Content-Type", "application/json")
+		} else {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		}
 
 		var out interface{}
 		if inner != nil {
@@ -490,10 +495,28 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 			}
 		}
 
-		err := Templates.ExecuteTemplate(w, tmpl, out)
-		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Warn("Failed executing template")
-			return
+		if !alertsOnly {
+			err := Templates.ExecuteTemplate(w, tmpl, out)
+			if err != nil {
+				CtxLogger(r.Context()).WithError(err).Warn("Failed executing template")
+				return
+			}
+		} else {
+			if outCast, ok := out.(TemplateData); ok {
+				alertsInterface, ok := outCast["Alerts"]
+				var alerts []*Alert
+				if ok {
+					alerts = alertsInterface.([]*Alert)
+				}
+
+				encoded, err := json.Marshal(alerts)
+				if err != nil {
+					CtxLogger(r.Context()).WithError(err).Warn("Failed encoding alerts")
+					return
+				}
+
+				w.Write(encoded)
+			}
 		}
 	}
 	return http.HandlerFunc(mw)

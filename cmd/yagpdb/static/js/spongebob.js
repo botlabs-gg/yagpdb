@@ -42,7 +42,7 @@ $(function(){
 })
 
 var currentlyLoading = false;
-function navigate(url, method, data, updateHistory, maintainScroll){
+function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly){
     if (currentlyLoading) {return;}
     closeSidebar();
 	
@@ -69,6 +69,12 @@ function navigate(url, method, data, updateHistory, maintainScroll){
 		url += "?partial=1"	
 	}
 
+	if (alertsOnly) {
+		url += "&alertsonly=1"
+	}
+
+	PNotify.removeAll();
+
 	updateSelectedMenuItem(url);
 
 	var req = new XMLHttpRequest();
@@ -79,12 +85,20 @@ function navigate(url, method, data, updateHistory, maintainScroll){
 	    	return;
 		}
 
-		$("#main-content").html(this.responseText);
 		if (updateHistory) {	
 			window.history.pushState("", "", shownURL);
 		}
 		lastLoc = shownURL;
 		lastHash = window.location.hash;
+		
+		if(alertsOnly){
+			var stack_bar_top = {"dir1": "down", "dir2": "right", "push": "top", "spacing1": 0, "spacing2": 0};
+			showAlerts(this.responseText)
+			$("#loading-overlay").addClass("hidden");
+			return
+		}
+
+		$("#main-content").html(this.responseText);
 			
 		initPlugins(true);
 		$(document.body).trigger('ready');
@@ -113,6 +127,54 @@ function navigate(url, method, data, updateHistory, maintainScroll){
     }else{
         req.send();
     }
+}
+
+function showAlerts(alertsJson){
+	var alerts = JSON.parse(alertsJson);
+	const stack_bar_top = {"dir1": "down", "dir2": "right", "push": "top", "spacing1": 0, "spacing2": 0};
+
+	for (var i = 0; i < alerts.length; i++) {
+		var alert = alerts[i];
+
+		var notice;
+		if(alert.Style === "success"){
+			notice = new PNotify({
+				title: alert.Message,
+				type: 'success',
+				addclass: 'stack-bar-top click-2-close',
+				stack: stack_bar_top,
+				width: "100%",
+				delay: 2000,
+				buttons: {
+					closer: false,
+					sticker: false
+				}
+			});
+		}else if(alert.Style === "danger"){
+			notice = new PNotify({
+				title: alert.Message,
+				text: "Read the docs and contact support if you don't know what went wrong.",
+				type: 'error',
+				addclass: 'stack-bar-top click-2-close',
+				stack: stack_bar_top,
+				width: "100%",
+				hide: false,
+				buttons: {
+					closer: false,
+					sticker: false
+				}
+			});
+		}else{
+			continue;
+		}
+
+		(function(){
+			var noticeCop = notice;
+			noticeCop.get().click(function() {
+				noticeCop.remove();
+			});
+		})()
+	}
 }
 
 function closeSidebar(){
@@ -418,15 +480,17 @@ function formSubmissionEvents(){
 			if(target.attr("form")){
 				parentForm = $("#" + target.attr("form"));
 				if(parentForm.length == 0){
-					console.log("Not found");
 					return;
 				}
 			}else{
-				console.log("Boooo");
 				return
 			}
 		}
-		console.log(event);
+
+		if(parentForm.attr("data-async-form") === undefined){
+			return;
+		}
+
 
 		if(target.prop("tagName") !== "BUTTON"){
 			target = target.parents("button");
@@ -444,7 +508,8 @@ function formSubmissionEvents(){
 	function submitForm(form, url){
 		var serialized = form.serialize();
 		console.log(serialized);
-		navigate(url, "POST", serialized, false, true);
+		var alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
+		navigate(url, "POST", serialized, false, true, alertsOnly);
 	}
 
 }

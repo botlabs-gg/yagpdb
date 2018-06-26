@@ -45,6 +45,7 @@
     <link rel="stylesheet" href="/static/vendor/select2/css/select2.css" />
     <link rel="stylesheet" href="/static/vendor/select2-bootstrap-theme/select2-bootstrap.min.css" />
     <link rel="stylesheet" href="/static/vendor/bootstrap-multiselect/bootstrap-multiselect.css" />
+    <link rel="stylesheet" href="/static/vendor/pnotify/pnotify.custom.css" />
 
     <!-- Theme CSS -->
     <link rel="stylesheet" href="/static/css/theme.css?{{.StartedAtUnix}}" />
@@ -116,7 +117,8 @@
     <script src="/static/vendor/select2/js/select2.js"></script>
     <script src="/static/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
     <script src="/static/vendor/autosize/autosize.js"></script>
-    
+    <script src="/static/vendor/pnotify/pnotify.custom.js"></script>
+
     <!-- Theme Base, Components and Settings -->
     <script src="/static/js/theme.js"></script>
     
@@ -136,16 +138,22 @@
 
 {{/*Displays alerts*/}}
 {{define "cp_alerts"}}
+<script>
+$(function(){
+    showAlerts("{{json .Alerts}}")
+})
+</script>
 <div id="alerts">
     {{if .Alerts}}
     <div class="row">
         <div class="col-lg-12">
             {{range .Alerts}}
+            {{if and (ne .Style "success") (ne .Style "danger")}}
             <div class="alert alert-{{.Style}}">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                 {{.Message}}
             </div>
-            {{end}}   
+            {{end}}{{end}}  
         </div>
     </div>
     {{end}}
