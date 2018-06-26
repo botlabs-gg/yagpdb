@@ -1,0 +1,81 @@
+{{define "cp_reddit"}}
+
+{{template "cp_head" .}}
+<header class="page-header">
+    <h2>Reddit feeds</h2>
+</header>
+
+{{template "cp_alerts" .}}
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Add new feed</h2>
+            </header>
+            <div class="card-body">
+                <p>Reddit feeds will post posts from subreddits in your discord server</p>
+                <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter"
+                <form class="form-inline" method="post" action="/manage/{{.ActiveGuild.ID}}/reddit" data-async-form>
+                    <label for="new-subreddit">Subreddit</label>
+                    <input type="text" class="form-control mx-2" id="new-subreddit" name="subreddit" placeholder="discord_irl">
+
+                    <label for="new-channel">Server Channel</label>
+                    <select id="new-channel" class="form-control mx-2" name="channel" data-requireperms-embed>
+                        {{textChannelOptions .ActiveGuild.Channels 0 false ""}}
+                    </select>
+
+                    <button type="submit" class="btn btn-success ml-4">Add</button>
+                </form>
+            </div>
+        </section>
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Current subreddits</h2>
+            </header>
+            <div class="card-body">
+                {{$guild := .ActiveGuild.ID}}
+                {{$channels := .ActiveGuild.Channels}}
+                {{range .RedditConfig}}
+                <form id="feed-item-{{.ID}}" data-async-form method="post" action="/manage/{{$guild}}/reddit/{{.ID}}/update"><input type="text" class="hidden" name="id" value="{{.ID}}"></form>
+                {{end}}
+
+                <table class="table table-responsive-md table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Subreddit</th>
+                            <th>Discord channel</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .RedditConfig}}
+                        <tr>
+                            <td>
+                                <input form="feed-item-{{.ID}}" type="text" class="form-control" id="subreddit-{{.ID}}" name="subreddit" placeholder="" value="{{.Sub}}">
+                            </td>
+                            <td>
+                                <select form="feed-item-{{.ID}}" id="channel" class="form-control" name="channel" data-requireperms-embed>
+                                   {{textChannelOptions $channels .Channel false ""}}
+                                </select>
+                            </td>
+                            <td>
+                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update">Save</button>
+                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                            </td>
+                        </tr>
+                        {{end}}
+
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
+{{template "cp_footer" .}}
+
+{{end}}

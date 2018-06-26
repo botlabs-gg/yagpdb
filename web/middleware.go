@@ -86,11 +86,19 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
+		lightTheme := false
+		if cookie, err := r.Cookie("X-Light-Theme"); err == nil {
+			if cookie.Value != "false" {
+				lightTheme = true
+			}
+		}
+
 		baseData := map[string]interface{}{
 			"BotRunning":    botrest.BotIsRunning(),
 			"RequestURI":    r.RequestURI,
 			"StartedAtUnix": StartedAt.Unix(),
 			"CurrentAd":     CurrentAd,
+			"LightTheme":    lightTheme,
 		}
 
 		for k, v := range globalTemplateData {
@@ -310,6 +318,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		fullGuild := &discordgo.Guild{
 			ID:   userGuild.ID,
 			Name: userGuild.Name,
+			Icon: userGuild.Icon,
 		}
 
 		entry := CtxLogger(ctx).WithField("g", fullGuild.ID)

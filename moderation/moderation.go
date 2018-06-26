@@ -1,7 +1,5 @@
 package moderation
 
-//go:generate esc -o assets_gen.go -pkg moderation -ignore ".go" assets/
-
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"

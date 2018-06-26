@@ -13,7 +13,12 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/customcommands.html")))
+	tmplPathSettings := "templates/plugins/customcommands.html"
+	if common.Testing {
+		tmplPathSettings = "../../customcommands/assets/customcommands.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
 

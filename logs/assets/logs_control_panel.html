@@ -1,0 +1,123 @@
+{{define "cp_logging"}}
+{{template "cp_head" .}}
+
+<header class="page-header">
+    <h2>Message and username/nickname logs</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">General settings</h2>
+            </header>
+            <div class="card-body">
+                <form role="form" method="post" data-async-form>
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="UsernameLoggingEnabled" {{if .Config.UsernameLoggingEnabled}} checked{{end}}>
+                                Enable/disable username logging<br/>
+                                You can check a user's logged usernames with the whois command.<br/>
+                                <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another server with the bot on with this enabled, then their usernames will be logged even if you disable it on your server.<br/></div>
+                              </label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="NicknameLoggingEnabled" {{if .Config.NicknameLoggingEnabled}} checked{{end}}>
+                                Enable/disable nickname logging<br/>
+                                You can check a user's logged nicknames with the whois command.<br/>
+                              </label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label>Blacklist channels from message logs</label><br/>
+                                <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels" multiple="multiple" data-plugin-multiselect>
+                                    {{textChannelOptionsMulti .ActiveGuild.Channels .Config.ParsedBlacklistedchannels}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="ManageMessagesCanViewDeleted" {{if .Config.ManageMessagesCanViewDeleted}} checked{{end}}>
+                                Allow members with <code>Manage Messages</code> permissions to view deleted messages
+                              </label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" name="EveryoneCanViewDeleted" {{if .Config.EveryoneCanViewDeleted}} checked{{end}}>
+                                Allow everyone to view deleted messages
+                              </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <button type="submit" class="btn btn-success btn-lg btn-block" >Save All Settings</button>   
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+        <!-- /.card -->
+        <section class="card">
+            <header class="card-header clearfix">
+                <h2 class="card-title">
+                    Public message logs on this server
+                    <div class="pull-right">{{if not .FirstPage}}<a href="?after={{.Newest}}" class="nav-link btn btn-sm btn-primary">Newer</a>{{end}}<a class="nav-link btn btn-sm btn-primary" href="?before={{.Oldest}}">Older</a></div>
+                </h2> 
+            </header>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <tr>
+                            <th>ID</th>
+                            <th>Created</th>
+                            <th>Author</th>
+                            <th>Channel</th>
+                            <th>Actions</th>
+                        </tr>
+                        {{$g := .ActiveGuild.ID}}
+                        {{range .Logs}}
+                        <tr>
+                            <td>#{{.ID}}</td>
+                            <td>{{formatTime .CreatedAt}}</td>
+                            <td>{{.Author}} ({{.AuthorID}})</td>
+                            <td>#{{.ChannelName}}</td>
+                            <td>
+                                <form method="post">
+                                    <input class="hidden" type="text" name="id" value="{{.ID}}" />
+                                    <input type="submit" formaction="fulldelete" class="btn btn-sm btn-danger" value="Delete" />
+                                    <a class="btn btn-sm btn-primary" href="/public/{{$g}}/logs/{{.ID}}">View</a>
+                                </form>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer clearfix">
+                Logs My man
+                <div class="pull-right">{{if not .FirstPage}}<a href="?after={{.Newest}}" class="nav-link btn btn-sm btn-primary">Newer</a>{{end}}<a class="nav-link btn btn-sm btn-primary" href="?before={{.Oldest}}">Older</a></div>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->            
+
+{{template "cp_footer" .}}
+
+{{end}}

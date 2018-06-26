@@ -1,7 +1,5 @@
 package serverstats
 
-//go:generate esc -o assets_gen.go -pkg serverstats -ignore ".go" assets/
-
 import (
 	"context"
 	"github.com/jonas747/discordgo"
@@ -34,7 +32,9 @@ func RegisterPlugin() {
 	common.GORM.AutoMigrate(&ServerStatsConfig{})
 	configstore.RegisterConfig(configstore.SQL, &ServerStatsConfig{})
 	ServerStatsPeriodStore = models.NewStatsPeriodStore(common.PQ)
-	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
+
+	common.ValidateSQLSchema(DBSchema)
+	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {
 		panic("Failed initializing db schema: " + err.Error())
 	}
@@ -328,7 +328,7 @@ type ServerStatsConfig struct {
 	Public         bool
 	IgnoreChannels string
 
-	ParsedChannels []string `gorm:"-"`
+	ParsedChannels []int64 `gorm:"-"`
 }
 
 func (c *ServerStatsConfig) GetName() string {
@@ -336,7 +336,13 @@ func (c *ServerStatsConfig) GetName() string {
 }
 
 func (s *ServerStatsConfig) PostFetch() {
-	s.ParsedChannels = strings.Split(s.IgnoreChannels, ",")
+	split := strings.Split(s.IgnoreChannels, ",")
+	for _, v := range split {
+		parsed, err := strconv.ParseInt(v, 10, 64)
+		if err == nil {
+			s.ParsedChannels = append(s.ParsedChannels, parsed)
+		}
+	}
 }
 
 func GetConfig(ctx context.Context, GuildID int64) (*ServerStatsConfig, error) {

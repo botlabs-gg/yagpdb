@@ -1,7 +1,5 @@
 package logs
 
-//go:generate esc -o assets_gen.go -pkg logs -ignore ".go" assets/
-
 import (
 	"errors"
 	"fmt"
@@ -11,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"golang.org/x/net/context"
+	"strconv"
 	"strings"
 )
 
@@ -47,11 +46,19 @@ type GuildLoggingConfig struct {
 	ManageMessagesCanViewDeleted bool
 	EveryoneCanViewDeleted       bool
 
-	ParsedBlacklistedchannels []string `gorm:"-"`
+	ParsedBlacklistedchannels []int64 `gorm:"-"`
 }
 
 func (g *GuildLoggingConfig) PostFetch() {
-	g.ParsedBlacklistedchannels = strings.Split(g.BlacklistedChannels, ",")
+	split := strings.Split(g.BlacklistedChannels, ",")
+	for _, v := range split {
+		if v != "" && v != "0" {
+			parsed, err := strconv.ParseInt(v, 10, 64)
+			if err == nil {
+				g.ParsedBlacklistedchannels = append(g.ParsedBlacklistedchannels, parsed)
+			}
+		}
+	}
 }
 
 func (g *GuildLoggingConfig) GetName() string {
@@ -116,7 +123,7 @@ func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID int64, auth
 
 	if len(config.ParsedBlacklistedchannels) > 0 {
 		for _, v := range config.ParsedBlacklistedchannels {
-			if v == discordgo.StrID(channelID) {
+			if v == channelID {
 				return nil, ErrChannelBlacklisted
 			}
 		}

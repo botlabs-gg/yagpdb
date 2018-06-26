@@ -1,7 +1,5 @@
 package youtube
 
-//go:generate esc -o assets_gen.go -pkg youtube -ignore ".go" assets/
-
 import (
 	"fmt"
 	"github.com/jonas747/discordgo"

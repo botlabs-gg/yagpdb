@@ -1,171 +1,81 @@
 {{define "cp_commands"}}
-
 {{template "cp_head" .}}
-<div class="row">
-    <div class="col-lg-12">
-        <h1 class="page-header">Global Command settings</h1>
-        <p>Settings such as blacklists and whatnot affect all YAGPDB commands</p>
-    </div>
-    <!-- /.col-lg-12 -->
-</div>
+<header class="page-header">
+    <h2>Command settings</h2>
+</header>
+
 {{template "cp_alerts" .}}
+
 <!-- /.row -->
-<form role="form" method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/">
     <div class="row">
         <div class="col-lg-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    General settings
-                </div>
-                <div class="panel-body">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="form-group">
-                                <label for="prefix">Prefix</label>
-                                <input type="text" class="form-control" id="prefix" name="prefix" value="{{.CommandConfig.Prefix}}">
+            <div class="tabs">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item active">
+                        <a class="nav-link show active" href="#global-settings" data-toggle="tab">Global settings</a>
+                    </li>
+                    {{range $i, $v := .ChannelOverrides}}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#override-{{.ID}}" data-toggle="tab">Override #{{add $i 1}}</a>
+                    </li>
+                    {{end}}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#new-override" data-toggle="tab">New channel override</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div id="global-settings" class="tab-pane active show">
+                        <form method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/general" data-async-form>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label for="prefix">Prefix</label>
+                                        <input type="text" class="form-control" id="prefix" name="Prefix" value="{{.CommandPrefix}}">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <i>...dust...</i>
+                                </div>
+                            </div>
+                            <div class="row mt-4">
+                                <div class="col-lg-12">
+                                    <button type="submit" class="btn btn-primary btn-lg btn-block" >Save Prefix</button>   
+                                </div>
+                            </div>
+                        </form>
+                        <div class="row mt-4 border-top border-info pt-4">
+                            <div class="col-lg-12">
+                                {{mTemplate "commands_channel_override" "ActiveGuild" .ActiveGuild "Commands" .SortedCommands "Override" .GlobalCommandSettings}}
                             </div>
                         </div>
-                        <div class="col-lg-6">
-                            <i>...dust...</i>
+                    </div>
+                    {{$dot := .}}
+                    {{range .ChannelOverrides}}
+                    <div id="override-{{.ID}}" class="tab-pane">
+                        <div class="row mt-4">
+                            <div class="col-lg-12">
+                                {{mTemplate "commands_channel_override" "ActiveGuild" $dot.ActiveGuild "Commands" $dot.SortedCommands "Override" .}}
+                            </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary btn-lg btn-block" >Save all Settings</button>   
+                    {{end}}
+                    <div id="new-override" class="tab-pane">
+                        <div class="row mt-4">
+                            <div class="col-lg-12">
+                                {{mTemplate "commands_channel_override" "ActiveGuild" .ActiveGuild "Commands" .SortedCommands}}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- /.panel -->
+            <!-- /.card -->
         </div>
         <!-- /.col-lg-12 -->
     </div>
-    <div class="row">
-        <!-- The global command settings -->
-        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-            <div class="panel panel-default">
-                <div class="panel-heading clearfix" role="tab" id=".Channel">
-                    <div class="pull-right">
-                        <button type="button" class="btn btn-success btn-sm" onclick="checkAll('global-enabled')">Enable all</button>
-                        <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('global-enabled')">Disable all</button>
-                        <button type="button" class="btn btn-success btn-sm" onclick="checkAll('global-autodelete')">Autodelete all</button>
-                        <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('global-autodelete')">Autodelete none</button>
-                    </div>
-                    <h4 class="panel-title">
-                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd_global" aria-expanded="false" aria-controls="collapse_cmd_global">
-                            Global server-wide settings <small>(click to drop-down)</small>
-                        </a>
-                    </h4>
-                </div>
-                <div id="collapse_cmd_global" class="panel-collapse collapse" role="tabpanel" aria-labelledby="{{.Channel}}">
-                    <table class="table table-condensed table-hover">
-                        <thead>
-                            <tr>
-                                <th>Command</th>
-                                <th>Enabled</th>
-                                <th>Required Role</th>
-                                <th>Auto delete response and trigger (if any) after 10 seconds</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{$roles := .ActiveGuild.Roles}}
-                            {{range .CommandConfig.Global}}{{if not .Info.HideFromCommandsPage}}
-                            <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
-                                <td>{{.Cmd}}</td>
-                                <td>
-                                    {{if or .Info.Key .Info.CustomEnabled}}
-                                    This command can be toggled on/off on its own page.
-                                    {{else}}
-                                    <label class="checkbox-inline">
-                                        <input type="checkbox" class="global-enabled" name="global_enabled_{{.Cmd}}" {{if .CommandEnabled}} checked {{end}}> Enabled
-                                    </label>
-                                    {{end}}
-                                </td>
-                                <td>
-                                    <select class="form-control" name="global_required_role_{{.Cmd}}">
-                                        {{roleOptions $roles nil .RequiredRole "None"}}
-                                    </select>
-                                </td>
-                                <td>
-                                    <label class="checkbox-inline">
-                                        <input type="checkbox" class="global-autodelete" name="global_autodelete_{{.Cmd}}" {{if .AutoDelete}} checked {{end}}> Auto delete response and trigger
-                                    </label>
-                                </td>
-                            </tr>
-                            {{end}}{{end}}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>  <!-- /panel-group -->
-
-        {{$guild := .ActiveGuild.ID}}
-        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-            {{range .CommandConfig.ChannelOverrides}}
-            <div class="panel panel-{{if .OverrideEnabled}}success{{else}}default{{end}}">
-                <div class="panel-heading clearfix" role="tab" id=".Channel">
-                    <div class="pull-right">
-                        <button type="button" class="btn btn-success btn-sm" onclick="checkAll('{{.Channel}}-enabled')">Enable All</button>
-                        <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('{{.Channel}}-enabled')">Disable All</button>
-                        <button type="button" class="btn btn-success btn-sm" onclick="checkAll('{{.Channel}}-autodelete')">Autodelete All</button>
-                        <button type="button" class="btn btn-warning btn-sm" onclick="uncheckAll('{{.Channel}}-autodelete')">Autodelete None</button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="copy('{{.Channel}}')">Copy</button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="paste('{{.Channel}}')">Paste</button>
-                    </div>
-                    <h4 class="panel-title">
-                        <label>
-                            <input type="checkbox" name="{{.Channel}}_override_enabled" {{if .OverrideEnabled}} checked{{end}}>
-                        </label>
-                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd_{{.Channel}}" aria-expanded="false" aria-controls="collapse_cmd_{{.Channel}}">Override Settings #{{.ChannelName}} <small>(click to drop-down)</small></a>
-                    </h4>
-                </div>
-                <div id="collapse_cmd_{{.Channel}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby=".Channel">
-                    <table class="table table-condensed table-hover">
-                        <thead>
-                            <tr>
-                                <th>Command</th>
-                                <th>Enabled</th>
-                                <th>Required Role</th>
-                                <th>Auto delete response and trigger (if any) after 10 seconds</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{$Channel := .Channel}}
-                            {{range .Settings}}{{if not .Info.HideFromCommandsPage}}
-                            <tr class="{{if .CommandEnabled}}success{{else}}danger{{end}}">
-                                <td>{{.Cmd}}</td>
-                                <td>
-                                    <label class="checkbox-inline">
-                                        <input type="checkbox" class="{{$Channel}}-enabled" name="{{$Channel}}_enabled_{{.Cmd}}" {{if .CommandEnabled}} checked {{end}}> Enabled
-                                    </label>
-                                </td>
-                                <td>
-                                    <select class="form-control {{$Channel}}-role" name="{{$Channel}}_required_role_{{.Cmd}}">
-                                        {{roleOptions $roles nil .RequiredRole "None"}}
-                                    </select>
-                                </td>
-                                <td>
-                                    <label class="checkbox-inline">
-                                        <input type="checkbox" class="{{$Channel}}-autodelete" name="{{$Channel}}_autodelete_{{.Cmd}}" {{if .AutoDelete}} checked {{end}}> Auto delete response and trigger
-                                    </label>
-                                </td>
-                            </tr>
-                            {{end}}{{end}}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {{end}}
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <button type="submit" class="btn btn-primary btn-lg btn-block">Save all command settings</button>   
-            </div>
-        </div>
-    </div>
-</form>
 <!-- /.row -->            
 <script type="text/javascript">
+    var commands = JSON.parse("{{json .Commands}}")
+
     function checkAll(what){
         console.log("Enabling all", what)
         $("."+what).each(function(i, item){
@@ -217,4 +127,196 @@
 
 {{template "cp_footer" .}}
 
+{{end}}
+
+{{/*Expects: 
+    .Override (or nil)
+    .ActiveGuild
+    .Commands
+*/}}
+{{define "commands_channel_override"}}
+{{if .Override}}
+<form data-async-form method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Override.Global}}global{{else}}{{.Override.ID}}{{end}}/update">
+{{else}}
+<form data-async-form method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/new">
+{{end}}
+
+    {{if not .Override.Global}}
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label>Channels this override affects</label><br>
+            <select multiple="multiple" class="form-control" data-plugin-multiselect name="Channels">
+                {{textChannelOptionsMulti .ActiveGuild.Channels .Override.Channels }}
+            </select>
+        </div>
+        <div class="form-group col-md-6">
+            <label>Include current and future channels from the following categories</label><br>
+            <select multiple="multiple" class="form-control" data-plugin-multiselect name="ChannelCategories">
+                {{catChannelOptionsMulti .ActiveGuild.Channels .Override.ChannelCategories}}
+            </select>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label>Require one of these roles</label><br>
+            <select multiple="multiple" class="form-control" data-plugin-multiselect name="RequireRoles">
+                {{roleOptionsMulti .ActiveGuild.Roles nil .Override.RequireRoles}}
+            </select>
+        </div>
+        <div class="form-group col-md-6">
+            <label>Ignore users with one of these roles</label><br>
+            <select multiple="multiple" class="form-control" data-plugin-multiselect name="IgnoreRoles">
+                {{roleOptionsMulti .ActiveGuild.Roles nil .Override.IgnoreRoles}}
+            </select>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-2">
+            <div class="checkbox-custom checkbox-primary mt-3">
+                <input type="checkbox" id="commands-enabled-{{.Parent.ID}}-{{.Override.ID}}" name="CommandsEnabled" {{if .Override.CommandsEnabled}}checked{{end}}>
+                <label for="commands-enabled-{{.Parent.ID}}-{{.Override.ID}}">Commands enabled</label>
+            </div>
+        </div>
+        <div class="form-group col-md-5">
+            <label>Autodelete trigger after (seconds)</label>
+            <div class="input-group mb-3">
+                <span class="input-group-prepend">
+                    <span class="input-group-text">
+                        <input type="checkbox" name="AutodeleteTrigger" {{if .Override.AutodeleteTrigger}}checked{{end}}>
+                    </span>
+                </span>
+                <input type="number" class="form-control" placeholder="Seconds..." value="{{if .Override}}{{.Override.AutodeleteTriggerDelay}}{{else}}10{{end}}" name="AutodeleteTriggerDelay">
+            </div>
+        </div>
+        <div class="form-group col-md-5">
+            <label>Autodelete response after (seconds)</label>
+            <div class="input-group mb-3">
+                <span class="input-group-prepend">
+                    <span class="input-group-text">
+                        <input type="checkbox" name="AutodeleteResponse" {{if .Override.AutodeleteResponse}}checked{{end}}>
+                    </span>
+                </span>
+                <input type="number" class="form-control" placeholder="Seconds..." value="{{if .Override}}{{.Override.AutodeleteResponseDelay}}{{else}}10{{end}}" name="AutodeleteResponseDelay">
+            </div>
+        </div>
+    </div>
+    {{if .Override}}
+    <button type="submit" class="btn btn-success" value="Save">Save channel override</button>
+    {{if not .Override.Global}}
+        <button type="submit" class="btn btn-danger" value="Delete" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{.Override.ID}}/delete">Delete Channel override</button>
+    {{end}}
+    {{else}}
+    <input type="submit" class="btn btn-success" value="Create">
+    {{end}}
+</form>
+{{if .Override}}
+    <div class="row pt-4">
+        <div class="col">
+            {{mTemplate "commands_command_override" "ActiveGuild" .ActiveGuild "Parent" .Override "Commands" .Commands}}
+        </div>
+    </div>
+    {{$dot := .}}
+    {{if .Override.R}}{{range $i, $v := .Override.R.CommandsCommandOverrides}}
+    <div class="row pt-4">
+        <div class="col">
+            {{mTemplate "commands_command_override" "ActiveGuild" $dot.ActiveGuild "Parent" $dot.Override "Commands" $dot.Commands "Override" . "Index" $i}}
+        </div>
+    </div>
+    {{end}}{{end}}
+{{end}}
+{{end}}
+
+{{/*Expects: 
+    .Parent (ChannelOverride)
+    .Override (or nil)
+    .ActiveGuild
+    .Commands
+    .ID
+*/}}
+{{define "commands_command_override"}}
+{{if .Override}}
+<form data-async-form method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/update">
+{{else}}
+<form data-async-form method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/new">
+{{end}}
+
+    <div class="card border border-secondary rounded">
+        <header class="card-header">
+            {{if .Override}}
+            <h2 class="card-title">Cmd Override #{{add .Index 1}}</h2>
+            {{else}}
+            <h2 class="card-title">New command override</h2>
+            {{end}}
+        </header>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label>Apply to the following commands</label><br>
+                    <select multiple="multiple" class="form-control" name="Commands" data-plugin-multiselect>
+                        {{$selected := .Override.Commands}}
+                        {{range .Commands}}
+                            <optgroup label="{{.Category}}">>
+                                {{range .Commands}}
+                                <option value="{{.}}" {{if in $selected .}}selected{{end}}>{{.}}</option>
+                                {{end}}
+                            </optgroup>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-2">
+                    <div class="checkbox-custom checkbox-primary mt-4">
+                        <input type="checkbox" {{if .Override.CommandsEnabled}}checked{{end}} id="commands-enabled" name="CommandsEnabled">
+                        <label for="commands-enabled">Commands enabled</label>
+                    </div>
+                </div>
+                <div class="form-group col-md-5">
+                    <label>Autodelete trigger after (seconds)</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-prepend">
+                            <span class="input-group-text">
+                                <input type="checkbox" name="AutodeleteTrigger" {{if .Override.AutodeleteTrigger}}checked{{end}}>
+                            </span>
+                        </span>
+                        <input type="number" class="form-control" placeholder="Seconds..." value="{{if .Override}}{{.Override.AutodeleteTriggerDelay}}{{else}}10{{end}}" name="AutodeleteTriggerDelay">
+                    </div>
+                </div>
+                <div class="form-group col-md-5">
+                    <label>Autodelete response after (seconds)</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-prepend">
+                            <span class="input-group-text">
+                                <input type="checkbox" name="AutodeleteResponse" {{if .Override.AutodeleteResponse}}checked{{end}}>
+                            </span>
+                        </span>
+                        <input type="number" class="form-control" placeholder="Seconds..." value="{{if .Override}}{{.Override.AutodeleteResponseDelay}}{{else}}10{{end}}" name="AutodeleteResponseDelay">
+                    </div>
+                </div>
+            </div>                
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label>Require one of these roles</label><br>
+                    <select multiple="multiple" class="form-control" data-plugin-multiselect name="RequireRoles">
+                        {{roleOptionsMulti .ActiveGuild.Roles nil .Override.RequireRoles}}
+                    </select>
+                </div>
+                <div class="form-group col-md-6">
+                    <label>Ignore users with one of these roles</label><br>
+                    <select multiple="multiple" class="form-control" data-plugin-multiselect name="IgnoreRoles">
+                        {{roleOptionsMulti .ActiveGuild.Roles nil .Override.IgnoreRoles}}
+                    </select>
+                </div>
+            </div>
+            {{if .Override}}
+            <button type="submit" class="btn btn-success" value="Save command override">Save command override</button>
+            <button type="submit" class="btn btn-danger" value="Delete command override" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/delete">Delete command override</button>
+            {{else}}
+            <input type="submit" class="btn btn-success" value="Create command override">
+            {{end}}
+        </div>
+    </div>
+</form>
 {{end}}

@@ -1,21 +1,17 @@
 {{define "cp_custom_commands"}}
-
 {{template "cp_head" .}}
-<div class="row">
-    <div class="col-lg-12">
-        <h1 class="page-header">Custom Commands</h1>
-        <p>Add automatic responses, custom commands, memes and so on...</p>
-        {{template "template_help"}}
-    </div>
-    <!-- /.col-lg-12 -->
-</div>
+<header class="page-header">
+    <h2>Custom commands</h2>
+</header>
+
 {{template "cp_alerts" .}}
- <div class="panel panel-default">
-    <div class="panel-heading">
-        Add new
-    </div>
-    <div class="panel-body">
-        <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands">
+
+<section class="card">
+    <header class="card-header">
+        Create new custom command
+    </header>
+    <div class="card-body">
+        <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands" data-async-form>
             <div class="row">
                 <div class="col-sm-4">
                     <div class="form-group">
@@ -43,82 +39,80 @@
             </div>
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="form-group">
-                        <label for="responses">Response</label>
-                        <div class="entry input-group">
-                            <textarea rows="5" class="form-control" name="responses" placeholder="^ Smells!"></textarea>
-                            <span class="input-group-btn">
-                                <button class="btn btn-success btn-add btn-circle" type="button">
-                                    <span class="glyphicon glyphicon-plus"></span>
-                                </button>
-                            </span>
-                        </div>
-                        {{template "custom_command_help"}}
+                    <label for="responses">Response</label>
+                    <div class="entry input-group">
+                        <textarea class="form-control" name="responses" placeholder="^ Smells!" data-plugin-textarea-autosize></textarea>
+                        <span class="input-group-btn">
+                            <button class="btn btn-success btn-add btn-circle" type="button">
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </button>
+                        </span>
                     </div>
-                    <div class="form-group">
-                        <div class="col-sm-6">
-                            <div class="radio">
-                              <label>
-                                <input type="radio" name="require_roles" value="on">
-                                Require at least one of the roles in the following lists
-                              </label>
-                            </div>
-                            <div class="radio">
-                              <label>
-                                <input type="radio" name="require_roles" value="" checked>
-                                Ignore the roles in the following list
-                              </label>
-                            </div>
-                            <label for="new-command-roles">Roles</label><br>
-                            <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles">
-                                {{roleOptions .ActiveGuild.Roles nil}}
-                            </select>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="radio">
-                              <label>
-                                <input type="radio" name="require_channels" value="on">
-                                Only run in the following channels
-                              </label>
-                            </div>
-                            <div class="radio">
-                              <label>
-                                <input type="radio" name="require_channels" value="" checked>
-                                Ignore the channels in the following list
-                              </label>
-                            </div>
-                            <label for="new-command-roles">Channels</label><br>
-                            <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles">
-                                {{textChannelOptions .ActiveGuild.Channels}}
-                            </select>
-                        </div>
-                    </div>            
-                    <button type="submit" class="btn btn-success">Add</button>
+                    {{template "custom_command_help"}}
                 </div>
             </div>
+            <div class="row mb-4">
+                <div class="col-sm-6">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="require_roles" value="on">
+                        Require at least one of the roles in the following lists
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="require_roles" value="" checked>
+                        Ignore the roles in the following list
+                      </label>
+                    </div>
+                    <label for="new-command-roles">Roles</label><br>
+                    <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                        {{roleOptions .ActiveGuild.Roles nil}}
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="require_channels" value="on">
+                        Only run in the following channels
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="require_channels" value="" checked>
+                        Ignore the channels in the following list
+                      </label>
+                    </div>
+                    <label for="new-command-roles">Channels</label><br>
+                    <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                        {{textChannelOptionsMulti .ActiveGuild.Channels nil}}
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success btn-block">Add</button>
         </form>
     </div>
-</div>
-<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+</section>
+<div class="accordion accordion-primary" id="accordion" role="tablist">
     {{$guild := .ActiveGuild.ID}}
     {{$g := .ActiveGuild}}
     {{range .CustomCommands}}
-    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix" role="tab" id="headingOne">
+    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form>
+        <div class="card">
+            <div class="card-header clearfix">
                 <div class="pull-right">
-                    <button type="submit" class="btn btn-danger btn-sm" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
+                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
                 </div>
-                <h4 class="panel-title">
+                <h2 class="card-title">
 
-                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.ID}}" aria-expanded="false" aria-controls="collapse_cmd{{.ID}}">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.ID}}" aria-expanded="false" aria-controls="collapse_cmd{{.ID}}">
                         #{{.ID}} - {{.Trigger}}
                     </a>
-                </h4>
+                </h2>
             </div>
-            <div id="collapse_cmd{{.ID}}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+            <div id="collapse_cmd{{.ID}}" class="collapse">
                 <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
-                <div class="panel-body">
+                <div class="card-body">
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="form-group">
@@ -151,7 +145,7 @@
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .Responses}}
                                 <div class="entry input-group">
-                                    <textarea rows="5" class="form-control" name="responses" placeholder="^ Smells!">{{.}}</textarea>
+                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" data-plugin-textarea-autosize>{{.}}</textarea>
                                     <span class="input-group-btn">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <span class="glyphicon glyphicon-plus"></span>
@@ -161,47 +155,46 @@
                                 {{end}}
                                 {{template "custom_command_help"}}
                             </div>
-                            <div class="form-group">
-                                <div class="col-sm-6">
-                                    <div class="radio">
-                                      <label>
-                                        <input type="radio" name="require_roles" value="on" {{if .RequireRoles}}checked{{end}}>
-                                        Require at least one of the roles in the following lists
-                                      </label>
-                                    </div>
-                                    <div class="radio">
-                                      <label>
-                                        <input type="radio" name="require_roles" value="" {{if not .RequireRoles}}checked{{end}}>
-                                        Ignore the roles in the following list
-                                      </label>
-                                    </div>
-                                    <label for="new-command-roles">Roles</label><br>
-                                    <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles">
-                                        {{roleOptionsMulti $g.Roles nil .Roles}}
-                                    </select>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="radio">
-                                        <label>
-                                            <input type="radio" name="require_channels" value="on" {{if .RequireChannels}}checked{{end}}>
-                                            Only run in the following channels
-                                            </label>
-                                        </div>
-                                    <div class="radio">
-                                        <label>
-                                            <input type="radio" name="require_channels" value="" {{if not .RequireChannels}}checked{{end}}>
-                                            Ignore the channels in the following list
-                                        </label>
-                                    </div>
-                                    <label for="new-command-roles">Channels</label><br>
-                                    <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles">
-                                        {{mTemplate "channel_options_multi_int" "Channels" $g.Channels "Selections" .Channels}}
-                                    </select>
-                                </div>
-                            </div>   
-                                <!-- Fucking html only allows get and post asduiojasdiojasdiojaodi this is 2016 for fucks sake -->
-                            <button type="submit" class="btn btn-success" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
                         </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="radio">
+                              <label>
+                                <input type="radio" name="require_roles" value="on" {{if .RequireRoles}}checked{{end}}>
+                                Require at least one of the roles in the following lists
+                              </label>
+                            </div>
+                            <div class="radio">
+                              <label>
+                                <input type="radio" name="require_roles" value="" {{if not .RequireRoles}}checked{{end}}>
+                                Ignore the roles in the following list
+                              </label>
+                            </div>
+                            <label for="new-command-roles">Roles</label><br>
+                            <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                                {{roleOptionsMulti $g.Roles nil .Roles}}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="require_channels" value="on" {{if .RequireChannels}}checked{{end}}>
+                                    Only run in the following channels
+                                    </label>
+                                </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="require_channels" value="" {{if not .RequireChannels}}checked{{end}}>
+                                    Ignore the channels in the following list
+                                </label>
+                            </div>
+                            <label for="new-command-roles">Channels</label><br>
+                            <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                                {{textChannelOptionsMulti $g.Channels .Channels}}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-block" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update">Save</button>
                     </div>
                 </div>
             </div>

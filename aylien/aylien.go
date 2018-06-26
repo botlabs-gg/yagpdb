@@ -60,9 +60,6 @@ func (p *Plugin) InitBot() {
 			&dcmd.ArgDef{Name: "text", Type: dcmd.String},
 		},
 		RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
-			// Were working hard!
-			common.BotSession.ChannelTyping(cmd.CS.ID())
-
 			var responses []*textapi.SentimentResponse
 			if cmd.Args[0].Value != nil {
 				resp, err := p.aylien.Sentiment(&textapi.SentimentParams{
