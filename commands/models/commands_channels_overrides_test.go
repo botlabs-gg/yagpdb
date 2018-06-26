@@ -541,7 +541,7 @@ func testCommandsChannelsOverridesSelect(t *testing.T) {
 }
 
 var (
-	commandsChannelsOverrideDBTypes = map[string]string{`AutodeleteResponse`: `boolean`, `AutodeleteResponseDelay`: `integer`, `AutodeleteTrigger`: `boolean`, `AutodeleteTriggerDelay`: `integer`, `Channels`: `ARRAYbigint`, `CommandsEnabled`: `boolean`, `Global`: `boolean`, `GuildID`: `bigint`, `ID`: `bigint`, `IgnoreRoles`: `ARRAYbigint`, `RequireRoles`: `ARRAYbigint`}
+	commandsChannelsOverrideDBTypes = map[string]string{`AutodeleteResponse`: `boolean`, `AutodeleteResponseDelay`: `integer`, `AutodeleteTrigger`: `boolean`, `AutodeleteTriggerDelay`: `integer`, `ChannelCategories`: `ARRAYbigint`, `Channels`: `ARRAYbigint`, `CommandsEnabled`: `boolean`, `Global`: `boolean`, `GuildID`: `bigint`, `ID`: `bigint`, `IgnoreRoles`: `ARRAYbigint`, `RequireRoles`: `ARRAYbigint`}
 	_                               = bytes.MinRead
 )
 

@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS commands_channels_overrides (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
 
-	channels BIGINT[] NOT NULL,
+	channels BIGINT[],
+	channel_categories BIGINT[],
 	global bool NOT NULL,
 
 	commands_enabled BOOL NOT NULL,

@@ -20,7 +20,6 @@ import (
 )
 
 var flagDebugMode = flag.Bool("test.sqldebug", false, "Turns on debug mode for SQL statements")
-var flagConfigFile = flag.String("test.config", "", "Overrides the default config")
 
 var (
 	dbMain tester
@@ -39,9 +38,6 @@ func TestMain(m *testing.M) {
 	}
 
 	rand.Seed(time.Now().UnixNano())
-
-	flag.Parse()
-
 	var err error
 
 	// Load configuration
@@ -58,6 +54,7 @@ func TestMain(m *testing.M) {
 	}
 
 	// Set DebugMode so we can see generated sql statements
+	flag.Parse()
 	boil.DebugMode = *flagDebugMode
 
 	if err = dbMain.setup(); err != nil {
@@ -83,14 +80,6 @@ func TestMain(m *testing.M) {
 }
 
 func initViper() error {
-	if flagConfigFile != nil && *flagConfigFile != "" {
-		viper.SetConfigFile(*flagConfigFile)
-		if err := viper.ReadInConfig(); err != nil {
-			return err
-		}
-		return nil
-	}
-
 	var err error
 
 	viper.SetConfigName("sqlboiler")

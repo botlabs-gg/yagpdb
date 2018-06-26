@@ -24,7 +24,8 @@ import (
 type CommandsChannelsOverride struct {
 	ID                      int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
 	GuildID                 int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	Channels                types.Int64Array `boil:"channels" json:"channels" toml:"channels" yaml:"channels"`
+	Channels                types.Int64Array `boil:"channels" json:"channels,omitempty" toml:"channels" yaml:"channels,omitempty"`
+	ChannelCategories       types.Int64Array `boil:"channel_categories" json:"channel_categories,omitempty" toml:"channel_categories" yaml:"channel_categories,omitempty"`
 	Global                  bool             `boil:"global" json:"global" toml:"global" yaml:"global"`
 	CommandsEnabled         bool             `boil:"commands_enabled" json:"commands_enabled" toml:"commands_enabled" yaml:"commands_enabled"`
 	AutodeleteResponse      bool             `boil:"autodelete_response" json:"autodelete_response" toml:"autodelete_response" yaml:"autodelete_response"`
@@ -42,6 +43,7 @@ var CommandsChannelsOverrideColumns = struct {
 	ID                      string
 	GuildID                 string
 	Channels                string
+	ChannelCategories       string
 	Global                  string
 	CommandsEnabled         string
 	AutodeleteResponse      string
@@ -54,6 +56,7 @@ var CommandsChannelsOverrideColumns = struct {
 	ID:                      "id",
 	GuildID:                 "guild_id",
 	Channels:                "channels",
+	ChannelCategories:       "channel_categories",
 	Global:                  "global",
 	CommandsEnabled:         "commands_enabled",
 	AutodeleteResponse:      "autodelete_response",
@@ -73,8 +76,8 @@ type commandsChannelsOverrideR struct {
 type commandsChannelsOverrideL struct{}
 
 var (
-	commandsChannelsOverrideColumns               = []string{"id", "guild_id", "channels", "global", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
-	commandsChannelsOverrideColumnsWithoutDefault = []string{"guild_id", "channels", "global", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
+	commandsChannelsOverrideColumns               = []string{"id", "guild_id", "channels", "channel_categories", "global", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
+	commandsChannelsOverrideColumnsWithoutDefault = []string{"guild_id", "channels", "channel_categories", "global", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
 	commandsChannelsOverrideColumnsWithDefault    = []string{"id"}
 	commandsChannelsOverridePrimaryKeyColumns     = []string{"id"}
 )

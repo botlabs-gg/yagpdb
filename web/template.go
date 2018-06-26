@@ -160,153 +160,160 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 	return template.HTML(output)
 }
 
-func tmplChannelOpts(channels []*discordgo.Channel, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
+func tmplChannelOpts(channelType discordgo.ChannelType, optionPrefix string) interface{} {
+	optsBuilder := tmplChannelOptsMulti(channelType, optionPrefix)
+	return func(channels []*discordgo.Channel, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
 
-	const unknownName = "Deleted channel"
+		const unknownName = "Deleted channel"
 
-	var builder strings.Builder
+		var builder strings.Builder
 
-	if allowEmpty {
-		if emptyName == "" {
-			emptyName = "None"
-		}
+		if allowEmpty {
+			if emptyName == "" {
+				emptyName = "None"
+			}
 
-		builder.WriteString(`<option value=""`)
-		if selection == 0 {
-			builder.WriteString(" selected")
-		}
-
-		builder.WriteString(">" + template.HTMLEscapeString(emptyName) + "</option>")
-	}
-
-	var selections []int64
-	intSel := templates.ToInt64(selection)
-	if intSel != 0 {
-		selections = []int64{intSel}
-	}
-
-	// Generate the rest of the options, which is the same as multi but with a single selections
-	builder.WriteString(string(tmplChannelOptsMulti(channels, selections)))
-
-	return template.HTML(builder.String())
-}
-
-func tmplChannelOptsMulti(channels []*discordgo.Channel, selections []int64) template.HTML {
-
-	const unknownName = "Deleted channel"
-
-	var builder strings.Builder
-
-	channelOpt := func(id int64, name string) {
-		builder.WriteString(`<option value="` + discordgo.StrID(id) + "\"")
-		for _, selected := range selections {
-			if selected == id {
+			builder.WriteString(`<option value=""`)
+			if selection == 0 {
 				builder.WriteString(" selected")
 			}
+
+			builder.WriteString(">" + template.HTMLEscapeString(emptyName) + "</option>")
 		}
 
-		builder.WriteString(">" + template.HTMLEscapeString(name) + "</option>")
-	}
+		var selections []int64
+		intSel := templates.ToInt64(selection)
+		if intSel != 0 {
+			selections = []int64{intSel}
+		}
 
-	// Add options for missing channels (deleted channels and such)
-OUTER:
-	for _, sel := range selections {
-		for _, c := range channels {
-			if sel == c.ID {
-				continue OUTER
+		// Generate the rest of the options, which is the same as multi but with a single selections
+		builder.WriteString(string(optsBuilder(channels, selections)))
+
+		return template.HTML(builder.String())
+	}
+}
+
+func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string) func(channels []*discordgo.Channel, selections []int64) template.HTML {
+	return func(channels []*discordgo.Channel, selections []int64) template.HTML {
+
+		const unknownName = "Deleted channel"
+
+		var builder strings.Builder
+
+		channelOpt := func(id int64, name string) {
+			builder.WriteString(`<option value="` + discordgo.StrID(id) + "\"")
+			for _, selected := range selections {
+				if selected == id {
+					builder.WriteString(" selected")
+				}
 			}
+
+			builder.WriteString(">" + template.HTMLEscapeString(name) + "</option>")
 		}
 
-		// Not found, a deleted channel
-		channelOpt(sel, unknownName)
-	}
+		// Add options for missing channels (deleted channels and such)
+	OUTER:
+		for _, sel := range selections {
+			for _, c := range channels {
+				if sel == c.ID {
+					continue OUTER
+				}
+			}
 
-	// Channels without a category
-	for _, c := range channels {
-		if c.ParentID != 0 || c.Type != discordgo.ChannelTypeGuildText {
-			continue
+			// Not found, a deleted channel
+			channelOpt(sel, unknownName)
 		}
 
-		channelOpt(c.ID, "#"+c.Name)
-	}
-
-	// Group channels by category
-	for _, cat := range channels {
-		if cat.Type != discordgo.ChannelTypeGuildCategory {
-			continue
-		}
-
-		builder.WriteString("<optgroup label=" + template.HTMLEscapeString(cat.Name) + ">")
+		// Channels without a category
 		for _, c := range channels {
-			if c.Type != discordgo.ChannelTypeGuildText || c.ParentID != cat.ID {
+			if c.ParentID != 0 || c.Type != channelType {
 				continue
 			}
 
-			channelOpt(c.ID, "#"+c.Name)
-		}
-		builder.WriteString("</optgroup>")
-	}
-
-	return template.HTML(builder.String())
-}
-
-// DEPRECATED
-// tmplChannelDropdown is a template function for generating channel dropdown options
-// channels: slice of channels to display options for
-// args are optinal and in this order:
-// 1. current selected channelID
-// 2. default empty display name
-// 3. default unknown display name
-func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
-
-	return func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
-		hasCurrentSelected := len(args) > 0
-		var currentSelected int64
-		if hasCurrentSelected {
-			currentSelected = templates.ToInt64(args[0])
+			channelOpt(c.ID, optionPrefix+c.Name)
 		}
 
-		hasEmptyName := len(args) > 1
-		emptyName := ""
-		if hasEmptyName {
-			emptyName = templates.ToString(args[1])
-		}
+		// Group channels by category
+		if channelType != discordgo.ChannelTypeGuildCategory {
+			for _, cat := range channels {
+				if cat.Type != discordgo.ChannelTypeGuildCategory {
+					continue
+				}
 
-		hasUnknownName := len(args) > 2
-		unknownName := "Unknown channel (deleted most likely)"
-		if hasUnknownName {
-			unknownName = templates.ToString(args[2])
-		}
+				builder.WriteString("<optgroup label=" + template.HTMLEscapeString(cat.Name) + ">")
+				for _, c := range channels {
+					if c.Type != channelType || c.ParentID != cat.ID {
+						continue
+					}
 
-		output := ""
-		if hasEmptyName {
-			output += `<option value=""`
-			if currentSelected == 0 {
-				output += `selected`
+					channelOpt(c.ID, optionPrefix+c.Name)
+				}
+				builder.WriteString("</optgroup>")
 			}
-			output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
 		}
 
-		found := false
-		for _, channel := range channels {
-			if channel.Type != channelType {
-				continue
-			}
-
-			output += `<option value="` + discordgo.StrID(channel.ID) + `"`
-			if channel.ID == currentSelected {
-				output += " selected"
-				found = true
-			}
-
-			optName := template.HTMLEscapeString(channel.Name)
-			output += ">#" + optName + "</option>\n"
-		}
-
-		if !found && currentSelected != 0 {
-			output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
-		}
-
-		return template.HTML(output)
+		return template.HTML(builder.String())
 	}
 }
+
+// // DEPRECATED
+// // tmplChannelDropdown is a template function for generating channel dropdown options
+// // channels: slice of channels to display options for
+// // args are optinal and in this order:
+// // 1. current selected channelID
+// // 2. default empty display name
+// // 3. default unknown display name
+// func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
+
+// 	return func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
+// 		hasCurrentSelected := len(args) > 0
+// 		var currentSelected int64
+// 		if hasCurrentSelected {
+// 			currentSelected = templates.ToInt64(args[0])
+// 		}
+
+// 		hasEmptyName := len(args) > 1
+// 		emptyName := ""
+// 		if hasEmptyName {
+// 			emptyName = templates.ToString(args[1])
+// 		}
+
+// 		hasUnknownName := len(args) > 2
+// 		unknownName := "Unknown channel (deleted most likely)"
+// 		if hasUnknownName {
+// 			unknownName = templates.ToString(args[2])
+// 		}
+
+// 		output := ""
+// 		if hasEmptyName {
+// 			output += `<option value=""`
+// 			if currentSelected == 0 {
+// 				output += `selected`
+// 			}
+// 			output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
+// 		}
+
+// 		found := false
+// 		for _, channel := range channels {
+// 			if channel.Type != channelType {
+// 				continue
+// 			}
+
+// 			output += `<option value="` + discordgo.StrID(channel.ID) + `"`
+// 			if channel.ID == currentSelected {
+// 				output += " selected"
+// 				found = true
+// 			}
+
+// 			optName := template.HTMLEscapeString(channel.Name)
+// 			output += ">#" + optName + "</option>\n"
+// 		}
+
+// 		if !found && currentSelected != 0 {
+// 			output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
+// 		}
+
+// 		return template.HTML(output)
+// 	}
+// }

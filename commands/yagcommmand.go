@@ -256,7 +256,9 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 			return
 		}
 
-		settings, err = cs.GetSettings(client, cState.ID(), guild.ID())
+		cop := cState.Copy(true, false)
+
+		settings, err = cs.GetSettings(client, cState.ID(), cop.ParentID, guild.ID())
 		if err != nil {
 			err = errors.WithMessage(err, "cs.GetSettings")
 			resp = "Bot is having isssues, contact the bot owner."
@@ -391,7 +393,7 @@ type CommandSettings struct {
 }
 
 // GetSettings returns the settings from the command, generated from the servers channel and command overrides
-func (cs *YAGCommand) GetSettings(client *redis.Client, channelID int64, guildID int64) (settings *CommandSettings, err error) {
+func (cs *YAGCommand) GetSettings(client *redis.Client, channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
 
 	settings = &CommandSettings{}
 
@@ -412,7 +414,7 @@ func (cs *YAGCommand) GetSettings(client *redis.Client, channelID int64, guildID
 	}
 
 	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
-	channelOverrides, err := models.CommandsChannelsOverridesG(qm.Where("(? = ANY (channels) OR global=true) AND guild_id=?", channelID, guildID), qm.Load("CommandsCommandOverrides")).All()
+	channelOverrides, err := models.CommandsChannelsOverridesG(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", channelID, channelParentID, guildID), qm.Load("CommandsCommandOverrides")).All()
 	if err != nil {
 		err = errors.WithMessage(err, "query channel overrides")
 		return

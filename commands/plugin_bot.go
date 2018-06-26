@@ -53,7 +53,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Check if the user can execute the command
 		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, client, data.CS)
 		if resp != "" {
-			yc.PostCommandExecuted(settings, data, resp, errors.WithMessage(err, "checkCanExecuteCommand"))
+			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
 			// m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
 			// go yc.deleteResponse([]*discordgo.Message{m})
 			return nil, nil

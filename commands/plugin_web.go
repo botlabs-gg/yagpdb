@@ -19,6 +19,7 @@ import (
 
 type ChannelOverrideForm struct {
 	Channels                []int64 `valid:"channel,true`
+	ChannelCategories       []int64 `valid:"channel,true`
 	Global                  bool
 	CommandsEnabled         bool
 	AutodeleteResponse      bool
@@ -122,13 +123,7 @@ OUTER:
 
 	var global *models.CommandsChannelsOverride
 	for i, v := range channelOverrides {
-		logrus.Printf("override %#v", v)
 		if v.Global {
-			logrus.Println("global", v)
-			if v.R != nil {
-				logrus.Println("global R", len(v.R.CommandsCommandOverrides))
-			}
-
 			global = v
 			channelOverrides = append(channelOverrides[:i], channelOverrides[i+1:]...)
 			break
@@ -177,7 +172,6 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 		var err error
 
 		id := pat.Param(r, "channelOverride")
-		logrus.Println("CH ID: ", id)
 		if id == "global" {
 			override, err = models.CommandsChannelsOverridesG(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).One()
 			if err == sql.ErrNoRows {
@@ -224,10 +218,18 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 		return templateData.AddAlerts(web.ErrorAlert("One of the selected channels is already used in another override")), nil
 	}
 
+	count, err = models.CommandsChannelsOverridesG(qm.Where("guild_id = ?", activeGuild.ID)).Count()
+	if err != nil {
+		return templateData, errors.WithMessage(err, "count2")
+	}
+	if count > 100 {
+		return templateData.AddAlerts(web.ErrorAlert("Max 100 channel overrides allowed")), nil
+	}
+
 	model := &models.CommandsChannelsOverride{
 		GuildID:                 activeGuild.ID,
 		Channels:                formData.Channels,
-		Global:                  formData.Global,
+		ChannelCategories:       formData.ChannelCategories,
 		CommandsEnabled:         formData.CommandsEnabled,
 		AutodeleteResponse:      formData.AutodeleteResponse,
 		AutodeleteTrigger:       formData.AutodeleteTrigger,
@@ -258,7 +260,7 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	}
 
 	currentOverride.Channels = formData.Channels
-	currentOverride.Global = formData.Global
+	currentOverride.ChannelCategories = formData.ChannelCategories
 	currentOverride.CommandsEnabled = formData.CommandsEnabled
 	currentOverride.AutodeleteResponse = formData.AutodeleteResponse
 	currentOverride.AutodeleteTrigger = formData.AutodeleteTrigger
@@ -291,6 +293,15 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 
 	if count > 0 {
 		return templateData, web.NewPublicError("One of the selected commands is already used in another command override for this channel override")
+	}
+
+	count, err = models.CommandsCommandOverridesG(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).Count()
+	if err != nil {
+		return templateData, errors.WithMessage(err, "count2")
+	}
+
+	if count > 250 {
+		return templateData, web.NewPublicError("Max 250 command overrides")
 	}
 
 	model := &models.CommandsCommandOverride{

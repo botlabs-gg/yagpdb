@@ -14,9 +14,9 @@
                     <li class="nav-item active">
                         <a class="nav-link show active" href="#global-settings" data-toggle="tab">Global settings</a>
                     </li>
-                    {{range .ChannelOverrides}}
+                    {{range $i, $v := .ChannelOverrides}}
                     <li class="nav-item">
-                        <a class="nav-link" href="#override-{{.ID}}" data-toggle="tab">Override #{{.ID}}</a>
+                        <a class="nav-link" href="#override-{{.ID}}" data-toggle="tab">Override #{{add $i 1}}</a>
                     </li>
                     {{end}}
                     <li class="nav-item">
@@ -151,8 +151,8 @@
         </div>
         <div class="form-group col-md-6">
             <label>Include current and future channels from the following categories</label><br>
-            <select multiple="multiple" class="form-control" data-plugin-multiselect name="Categories">
-                <option>TODO</option>
+            <select multiple="multiple" class="form-control" data-plugin-multiselect name="ChannelCategories">
+                {{catChannelOptionsMulti .ActiveGuild.Channels .Override.ChannelCategories}}
             </select>
         </div>
     </div>
@@ -203,8 +203,10 @@
         </div>
     </div>
     {{if .Override}}
-    <input type="submit" class="btn btn-success" value="Save">
-    <input type="submit" class="btn btn-danger" value="Delete" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Override.Global}}global{{else}}{{.Override.ID}}{{end}}/delete">
+    <button type="submit" class="btn btn-success" value="Save">Save channel override</button>
+    {{if not .Override.Global}}
+        <button type="submit" class="btn btn-danger" value="Delete" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{.Override.ID}}/delete">Delete Channel override</button>
+    {{end}}
     {{else}}
     <input type="submit" class="btn btn-success" value="Create">
     {{end}}
@@ -216,10 +218,10 @@
         </div>
     </div>
     {{$dot := .}}
-    {{if .Override.R}}{{range .Override.R.CommandsCommandOverrides}}
+    {{if .Override.R}}{{range $i, $v := .Override.R.CommandsCommandOverrides}}
     <div class="row pt-4">
         <div class="col">
-            {{mTemplate "commands_command_override" "ActiveGuild" $dot.ActiveGuild "Parent" $dot.Override "Commands" $dot.Commands "Override" .}}
+            {{mTemplate "commands_command_override" "ActiveGuild" $dot.ActiveGuild "Parent" $dot.Override "Commands" $dot.Commands "Override" . "Index" $i}}
         </div>
     </div>
     {{end}}{{end}}
@@ -243,7 +245,7 @@
     <div class="card border border-secondary rounded">
         <header class="card-header">
             {{if .Override}}
-            <h2 class="card-title">Override #{{.Override.ID}}</h2>
+            <h2 class="card-title">Cmd Override #{{add .Index 1}}</h2>
             {{else}}
             <h2 class="card-title">New command override</h2>
             {{end}}
@@ -309,8 +311,8 @@
                 </div>
             </div>
             {{if .Override}}
-            <input type="submit" class="btn btn-success" value="Save command override">
-            <input type="submit" class="btn btn-danger" value="Delete command override" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/delete">
+            <button type="submit" class="btn btn-success" value="Save command override">Save command override</button>
+            <button type="submit" class="btn btn-danger" value="Delete command override" formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/delete">Delete command override</button>
             {{else}}
             <input type="submit" class="btn btn-success" value="Create command override">
             {{end}}
