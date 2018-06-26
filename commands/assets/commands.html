@@ -136,9 +136,9 @@
 */}}
 {{define "commands_channel_override"}}
 {{if .Override}}
-<form data-async-form method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Override.Global}}global{{else}}{{.Override.ID}}{{end}}/update">
+<form data-async-form  method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Override.Global}}global{{else}}{{.Override.ID}}{{end}}/update">
 {{else}}
-<form data-async-form method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/new">
+<form data-async-form  method="POST" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/new">
 {{end}}
 
     {{if not .Override.Global}}
