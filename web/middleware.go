@@ -87,7 +87,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 		}
 
 		lightTheme := false
-		if cookie, err := r.Cookie("X-Light-Theme"); err == nil {
+		if cookie, err := r.Cookie("light_theme"); err == nil {
 			if cookie.Value != "false" {
 				lightTheme = true
 			}

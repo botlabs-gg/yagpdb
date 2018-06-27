@@ -40,11 +40,11 @@
             <div class="row">
                 <div class="col-lg-12">
                     <label for="responses">Response</label>
-                    <div class="entry input-group">
+                    <div class="entry input-group input-group-sm">
                         <textarea class="form-control" name="responses" placeholder="^ Smells!" data-plugin-textarea-autosize></textarea>
-                        <span class="input-group-btn">
+                        <span class="input-group-append">
                             <button class="btn btn-success btn-add btn-circle" type="button">
-                                <span class="glyphicon glyphicon-plus"></span>
+                                <i class="fas fa-plus"></i>
                             </button>
                         </span>
                     </div>
@@ -144,11 +144,11 @@
                                 <label for="responses">Response</label>
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .Responses}}
-                                <div class="entry input-group">
+                                <div class="entry input-group  input-group-sm">
                                     <textarea class="form-control" name="responses" placeholder="^ Smells!" data-plugin-textarea-autosize>{{.}}</textarea>
-                                    <span class="input-group-btn">
+                                    <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
-                                            <span class="glyphicon glyphicon-plus"></span>
+                                            <i class="fas fa-plus"></i>
                                         </button>
                                     </span>
                                 </div>
@@ -194,7 +194,7 @@
                                 {{textChannelOptionsMulti $g.Channels .Channels}}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success btn-block" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                        <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form-alertsonly>Save</button>
                     </div>
                 </div>
             </div>

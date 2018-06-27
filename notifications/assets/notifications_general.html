@@ -39,20 +39,20 @@
                                 <label>Message</label>
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.JoinServerMsgs}}
-                                <div class="entry input-group">
-                                    <textarea class="form-control" rows="3" name="join_server_msgs">{{.}}</textarea>
-                                    <span class="input-group-btn">
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="join_server_msgs">{{.}}</textarea>
+                                    <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
-                                            <span class="glyphicon glyphicon-plus"></span>
+                                            <i class="fas fa-plus"></i>
                                         </button>
                                     </span>
                                 </div>
                                 {{else}}
-                                <div class="entry input-group">
-                                    <textarea class="form-control" rows="3" name="join_server_msgs"></textarea>
-                                    <span class="input-group-btn">
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="join_server_msgs"></textarea>
+                                    <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
-                                            <span class="glyphicon glyphicon-plus"></span>
+                                            <i class="fas fa-plus"></i>
                                         </button>
                                     </span>
                                 </div>
@@ -83,20 +83,20 @@
                                 <label>Message</label>
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.LeaveMsgs}}
-                                <div class="entry input-group">
-                                    <textarea class="form-control" rows="3" name="leave_msgs">{{.}}</textarea>
-                                    <span class="input-group-btn">
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="leave_msgs">{{.}}</textarea>
+                                    <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
-                                            <span class="glyphicon glyphicon-plus"></span>
+                                            <i class="fas fa-plus"></i>
                                         </button>
                                     </span>
                                 </div>
                                 {{else}}
-                                <div class="entry input-group">
-                                    <textarea class="form-control" rows="3" name="leave_msgs"></textarea>
-                                    <span class="input-group-btn">
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="leave_msgs"></textarea>
+                                    <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
-                                            <span class="glyphicon glyphicon-plus"></span>
+                                            <i class="fas fa-plus"></i>
                                         </button>
                                     </span>
                                 </div>
@@ -122,7 +122,7 @@
                         <div class="card-body">
                             <div class="form-group">
                                 <label>Message</label>
-                                <textarea class="form-control" rows="3" name="join_dm_msg">{{.NotifyConfig.JoinDMMsg}}</textarea>
+                                <textarea data-plugin-textarea-autosize class="form-control" name="join_dm_msg">{{.NotifyConfig.JoinDMMsg}}</textarea>
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
                             </div>
                         </div>

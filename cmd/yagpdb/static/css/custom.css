@@ -147,3 +147,7 @@ code {
     transform: rotate(360deg);
   }
 }
+
+.entry {
+  margin-bottom: 5px;
+}

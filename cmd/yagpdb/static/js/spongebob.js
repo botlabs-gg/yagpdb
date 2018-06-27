@@ -260,6 +260,25 @@ function addListeners(){
     
 	    navigateToAnchor($.attr(this, "href"));
  	})
+
+
+ 	$(document).on('click', '.btn-add', function(e){
+        e.preventDefault();
+
+        var currentEntry = $(this).parent().parent(),
+            newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
+
+        newEntry.find('input, textarea').val('');
+        newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
+            .removeClass('btn-add').addClass('btn-remove')
+            .removeClass('btn-success').addClass('btn-danger')
+            .html('<i class="fas fa-minus"></i>');
+    }).on('click', '.btn-remove', function(e){
+    	$(this).parents('.entry:first').remove();
+
+    	e.preventDefault();
+    	return false;
+  	});
 }
 
 // Initializes plugins such as multiselect, we have to do this on the new elements each time we load a partial page
@@ -270,6 +289,11 @@ function initPlugins(partial){
 	}
 
 	$(selectorPrefix + '[data-toggle="popover"]').popover()
+
+	$('.entry:not(:last-of-type) .btn-add')
+          .removeClass('btn-add').addClass('btn-remove')
+          .removeClass('btn-success').addClass('btn-danger')
+          .html('<i class="fas fa-minus"></i>');
 
 	// The uitlity that checks wether the bot has permissions to send messages in the selected channel
 	channelRequirepermsDropdown(selectorPrefix);
@@ -468,6 +492,18 @@ function formSubmissionEvents(){
 		// console.log("Clicked the link");
 		var target = $(event.target);
 
+		if(target.prop("tagName") !== "BUTTON"){
+			target = target.parents("button");
+			console.log("Not a button!", target);
+		}
+
+		var alertsOnly = false;
+		if(target.attr("data-async-form-alertsonly") !== undefined){
+			alertsOnly = true;
+		}
+
+		if(!target.attr("formaction")) return;
+
 		if(target.hasClass("btn-danger") || target.attr("data-open-confirm") || target.hasClass("delete-button")){
 			if(!confirm("Are you sure you want to do this?")){
 				event.preventDefault(true);
@@ -492,19 +528,6 @@ function formSubmissionEvents(){
 		if(parentForm.attr("data-async-form") === undefined){
 			return;
 		}
-
-
-		if(target.prop("tagName") !== "BUTTON"){
-			target = target.parents("button");
-			console.log("Not a button!", target);
-		}
-
-		var alertsOnly = false;
-		if(target.attr("data-async-form-alertsonly") !== undefined){
-			alertsOnly = true;
-		}
-
-		if(!target.attr("formaction")) return;
 
 		event.preventDefault();
 		console.log("Should submit using " + target.attr("formaction"), event, parentForm);
@@ -564,10 +587,10 @@ function toggleTheme(){
 	if(elem.classList.contains("dark")){
 		elem.classList.remove("dark");
 		elem.classList.add("sidebar-light")
-		document.cookie = "X-Light-Theme=true; max-age=3153600000; path=/"
+		document.cookie = "light_theme=true; max-age=3153600000; path=/"
 	}else{		
 		elem.classList.add("dark");
 		elem.classList.remove("sidebar-light")
-		document.cookie = "X-Light-Theme=false; max-age=3153600000; path=/"
+		document.cookie = "light_theme=false; max-age=3153600000; path=/"
 	}
 }
