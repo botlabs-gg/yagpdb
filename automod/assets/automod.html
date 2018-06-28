@@ -63,11 +63,9 @@
 {{define "automod_general"}}
 <div class="row">
     <div class="col-lg-12">
-        <br/>
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" name="Enabled" {{if .AutomodConfig.Enabled }} checked{{end}}> Enable/Disable Automoderator
-            </label>
+        <div class="form-check pt-2">
+            <input id="automod-enabled" class="form-check-input" type="checkbox" name="Enabled" {{if .AutomodConfig.Enabled }} checked{{end}}>
+            <label class="form-check-label" for="automod-enabled"><b>Enable/Disable automoderator</b></label>
         </div>
     </div>
 </div>
@@ -83,7 +81,8 @@
             <li><b>Bad words/websites:</b> YAGPDB comes with a built-in list of bad sites and swear words you can use if you want, or you can define your own.</li>
         </ul>
         <p><b>TIP:</b> The ban and kick message from the moderation settings will be used when the bot kicks and bans</p>
-        <p>If you need any help setting up a rule, join the support server above.</p>            
+        <p><b>Check out the documentation for more info: <a href="https://docs.yagpdb.xyz/automoderator">docs.yagpdb.xyz/automoderator</a></b>
+        <p>If you need any help setting up a rule, join the support server above.</p>
     </div>
 </div>
 {{end}}
