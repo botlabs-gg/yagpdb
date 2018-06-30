@@ -42,7 +42,7 @@ $(function(){
 })
 
 var currentlyLoading = false;
-function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly){
+function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, cb){
     if (currentlyLoading) {return;}
     closeSidebar();
 	
@@ -92,7 +92,6 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly){
 		lastHash = window.location.hash;
 		
 		if(alertsOnly){
-			var stack_bar_top = {"dir1": "down", "dir2": "right", "push": "top", "spacing1": 0, "spacing2": 0};
 			showAlerts(this.responseText)
 			$("#loading-overlay").addClass("hidden");
 			return
@@ -107,6 +106,9 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly){
 			ga('send', 'pageview', window.location.pathname);
 			console.log("Sent pageview")
 		}
+
+		if(cb)
+			cb();
 
 		if(maintainScroll)
 			document.documentElement.scrollTop = scrollBeforeNav;
@@ -537,13 +539,23 @@ function formSubmissionEvents(){
 
 	function submitForm(form, url, alertsOnly){
 		var serialized = form.serialize();
-		console.log(serialized);
 		
 		if(!alertsOnly){
 			alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
 		}
-		
-		navigate(url, "POST", serialized, false, true, alertsOnly);
+
+		// Keep the current tab selected
+		var currentTab = null
+		var tabElements = $(".tabs");
+		if(tabElements.length > 0){
+			currentTab = $(".tabs a.active").attr("href")
+		}
+			
+		navigate(url, "POST", serialized, false, true, alertsOnly, function(){
+			if(currentTab){
+				$(".tabs a[href='"+currentTab+"']").tab("show");
+			}	
+		});
 	}
 
 }
