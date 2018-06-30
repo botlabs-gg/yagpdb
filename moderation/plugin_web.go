@@ -3,6 +3,7 @@ package moderation
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -61,5 +62,7 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	templateData["ModConfig"] = newConfig
 
 	err := newConfig.Save(client, activeGuild.ID)
+	go pubsub.Publish(client, "mod_refresh_mute_override", activeGuild.ID, nil)
+
 	return templateData, err
 }

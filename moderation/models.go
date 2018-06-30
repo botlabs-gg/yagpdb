@@ -16,18 +16,21 @@ type Config struct {
 
 	// Kick command
 	KickEnabled          bool
+	KickCmdRoles         pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	DeleteMessagesOnKick bool
 	KickReasonOptional   bool
 	KickMessage          string `valid:"template,1900"`
 
 	// Ban
 	BanEnabled        bool
+	BanCmdRoles       pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	BanReasonOptional bool
 	BanMessage        string `valid:"template,1900"`
 
 	// Mute/unmute
 	MuteEnabled          bool
-	MuteRole             string `valid:"role,true"`
+	MuteCmdRoles         pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	MuteRole             string        `valid:"role,true"`
 	MuteReasonOptional   bool
 	UnmuteReasonOptional bool
 	MuteManageRole       bool
@@ -36,6 +39,7 @@ type Config struct {
 
 	// Warn
 	WarnCommandsEnabled    bool
+	WarnCmdRoles           pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	WarnIncludeChannelLogs bool
 	WarnSendToModlog       bool
 
