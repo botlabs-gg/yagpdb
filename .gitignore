@@ -7,9 +7,9 @@ cmd/yagpdb/access_log
 cmd/yagpdb/access.log
 cmd/yagpdb/static/report.html
 cmd/yagpdb/yagpdb
+cmd/yagpdb/plugins/*.html
 
 # We don't want filthy pre-configured config files here ! >:O
 # THe graw agent file
 *.agent
-*.sh
 *.exe
