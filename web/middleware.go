@@ -15,11 +15,16 @@ import (
 	"goji.io/pat"
 	"io"
 	"net/http"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+)
+
+var (
+	GAID = os.Getenv("YAGPDB_GA_ID")
 )
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
@@ -99,6 +104,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"StartedAtUnix": StartedAt.Unix(),
 			"CurrentAd":     CurrentAd,
 			"LightTheme":    lightTheme,
+			"GAID":          GAID,
 		}
 
 		for k, v := range globalTemplateData {

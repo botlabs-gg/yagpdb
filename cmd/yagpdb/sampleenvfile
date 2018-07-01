@@ -58,3 +58,6 @@ export YAGPDB_AD_LINK=
 #Dimensions
 export YAGPDB_AD_H=
 export YAGPDB_AD_W=
+
+# Google analytics ID
+export YAGPDB_GA_ID=""
