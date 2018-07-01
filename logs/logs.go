@@ -158,6 +158,9 @@ func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID int64, auth
 			body += fmt.Sprintf("(%d embeds is not shown)", len(v.Embeds))
 		}
 
+		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
+		body = strings.Replace(body, string(0), "", -1)
+
 		logMsgs[k] = Message{
 			MessageID:      discordgo.StrID(v.ID),
 			Content:        body,
