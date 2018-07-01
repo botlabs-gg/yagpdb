@@ -12,7 +12,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CurrentTime",
 	Aliases:        []string{"ctime", "gettime"},
-	Description:    "Shows current time in different timezones",
+	Description:    "Shows current time in different timezones. [Available timezones](https://pastebin.com/ZqSPUhc7)",
 	ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Zone", Type: dcmd.String},
