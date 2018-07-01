@@ -130,13 +130,22 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
 <!-- /#wrapper -->
+<style>
+.stats-widget{
+    min-width: 250px !important;
+    word-break: normal !important;
+}
 
+.stats-widget h4{
+    word-break: normal !important;
+}
+
+</style>
 {{template "cp_footer" .}}
-
 {{end}}
 
 {{define "serverstats_stats_widget"}}
-<div class="col">
+<div class="col-lg-3 stats-widget">
     <section class="card">
         <div class="card-body bg-{{.BG}}">
             <div class="widget-summary">

@@ -182,3 +182,9 @@ html.dark p  {
   bottom: 200px;
   left: 5px;
 }
+
+@media(max-width: 767px) {
+  #nav-footer {
+    display: none;
+  }
+}
