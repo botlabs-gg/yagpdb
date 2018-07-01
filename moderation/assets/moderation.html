@@ -189,7 +189,7 @@ It is highly recommended to couple the moderation actions with the message logs,
                 You still need to create and assign a mute role above.
             </label>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="mute-ignore-channels">
             <label>Have the auto management of the mute role ignore the following channels</label><br>
             <select class="multiselect" name="MuteIgnoreChannels" data-plugin-multiselect multiple="multiple">
                 {{textChannelOptionsMulti .ActiveGuild.Channels .ModConfig.MuteIgnoreChannels}}

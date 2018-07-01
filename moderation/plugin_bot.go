@@ -29,31 +29,33 @@ const (
 	ContextKeyConfig ContextKey = iota
 )
 
+const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
+
 func (p *Plugin) InitBot() {
 	commands.AddRootCommands(ModerationCommands...)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
 	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleMemberJoin)), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleGuildMemberUpdate)), eventsystem.EventGuildMemberUpdate)
+
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
 }
 
 func (p *Plugin) BotStarted() {
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
-
-	bot.State.RLock()
-	defer bot.State.RUnlock()
-
-	for _, v := range bot.State.Guilds {
-		go RefreshMuteOverrides(v.ID())
-	}
 }
 
 func HandleRefreshMuteOverrides(evt *pubsub.Event) {
 	RefreshMuteOverrides(evt.TargetGuildInt)
 }
 
+func HandleGuildCreate(evt *eventsystem.EventData) {
+	gc := evt.GuildCreate()
+	RefreshMuteOverrides(gc.ID)
+}
+
 // Refreshes the mute override on the channel, currently it only adds it.
 func RefreshMuteOverrides(guildID int64) {
-	const DeniedPermissions = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
 
 	config, err := GetConfig(guildID)
 	if err != nil {
@@ -69,21 +71,74 @@ func RefreshMuteOverrides(guildID int64) {
 	guild.RLock()
 	defer guild.RUnlock()
 	for _, v := range guild.Channels {
-		// Ignore the channel
-		if common.ContainsInt64Slice(config.MuteIgnoreChannels, v.ID()) {
-			continue
+		RefreshMuteOverrideForChannel(config, v.Channel)
+	}
+}
+
+func HandleChannelCreateUpdate(evt *eventsystem.EventData) {
+	var channel *discordgo.Channel
+	if evt.Type == eventsystem.EventChannelCreate {
+		channel = evt.ChannelCreate().Channel
+	} else {
+		channel = evt.ChannelUpdate().Channel
+	}
+
+	if channel.GuildID == 0 {
+		return
+	}
+
+	config, err := GetConfig(channel.GuildID)
+	if err != nil {
+		return
+	}
+
+	if config.MuteRole == "" || !config.MuteManageRole {
+		return
+	}
+
+	RefreshMuteOverrideForChannel(config, channel)
+}
+
+func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
+	// Ignore the channel
+	if common.ContainsInt64Slice(config.MuteIgnoreChannels, channel.ID) {
+		return
+	}
+
+	var override *discordgo.PermissionOverwrite
+
+	// Check for existing override
+	for _, v := range channel.PermissionOverwrites {
+		if v.Type == "role" && v.ID == config.IntMuteRole() {
+			override = v
+			break
+		}
+	}
+
+	allows := 0
+	denies := MuteDeniedChannelPerms
+	changed := true
+
+	if override != nil {
+		allows = override.Allow
+		denies = override.Deny
+		changed = false
+
+		if (allows & MuteDeniedChannelPerms) != 0 {
+			// One of the mute permissions was in the allows, remove it
+			allows &= ^MuteDeniedChannelPerms
+			changed = true
 		}
 
-		// Check for existing override
-		for _, override := range v.Channel.PermissionOverwrites {
-			if override.Type == "role" && override.ID == config.IntMuteRole() {
-				if (override.Deny & DeniedPermissions) == DeniedPermissions {
-					continue
-				}
-			}
+		if (denies & MuteDeniedChannelPerms) != MuteDeniedChannelPerms {
+			// Missing one of the mute permissions
+			denies |= MuteDeniedChannelPerms
+			changed = true
 		}
+	}
 
-		go common.BotSession.ChannelPermissionSet(v.ID(), config.IntMuteRole(), "role", 0, DeniedPermissions)
+	if changed {
+		go common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
 	}
 }
 
@@ -328,24 +383,22 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 			panic("Unknown command")
 		}
 
+		requiredRoleFound := false
 		if len(requiredRoles) > 0 {
 			// Check if the user has one of the required roles
 			member, err := bot.GetMember(guildID, userID)
 			if err != nil {
 				return "Failed fetching member", err
 			}
-			found := false
 			for _, r := range member.Roles {
 				if common.ContainsInt64Slice(requiredRoles, r) {
-					found = true
+					requiredRoleFound = true
 					break
 				}
 			}
+		}
 
-			if !found {
-				return "You're missing a required role for this command", nil
-			}
-		} else if neededPerm != 0 {
+		if !requiredRoleFound && neededPerm != 0 {
 			// Fallback to legacy permissions
 			hasPerms, err := bot.AdminOrPerm(neededPerm, userID, channelID)
 			if err != nil || !hasPerms {
