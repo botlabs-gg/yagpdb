@@ -159,3 +159,26 @@ html.dark p  {
 .content-body {
   padding: 15px !important;
 }
+
+#nav-footer {
+  position: fixed;
+  bottom: 0;
+  width: 300px;
+  text-align: center;
+  /*border: 2px solid black;*/
+}
+
+#nav-footer p {
+  margin-bottom: 1px;
+}
+
+#nav-footer-img{
+  max-width: 100%;
+  max-height: 100%;
+}
+
+#nav-footer-overlay{
+  position: fixed;
+  bottom: 200px;
+  left: 5px;
+}
