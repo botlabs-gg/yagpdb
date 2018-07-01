@@ -248,9 +248,12 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 	if !cmd.CaseSensitive {
 		cmdMatch += "(?i)"
 	}
+
 	switch cmd.TriggerType {
 	case CommandTriggerCommand:
-		cmdMatch += "^" + regexp.QuoteMeta(globalPrefix+trigger) + "($|[[:space:]])"
+		// Regex is:
+		// ^(<@!?bot_id> ?|server_cmd_prefix)trigger($|[[:space:]])
+		cmdMatch += "^(<@!?" + discordgo.StrID(common.BotUser.ID) + "> ?|" + regexp.QuoteMeta(globalPrefix) + ")" + regexp.QuoteMeta(trigger) + "($|[[:space:]])"
 	case CommandTriggerStartsWith:
 		cmdMatch += "^" + regexp.QuoteMeta(trigger)
 	case CommandTriggerContains:
