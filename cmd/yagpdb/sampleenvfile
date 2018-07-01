@@ -61,3 +61,6 @@ export YAGPDB_AD_W=
 
 # Google analytics ID
 export YAGPDB_GA_ID=""
+
+# The feed on /managed
+export YAGPDB_ANNOUNCEMENTS_CHANNEL=""

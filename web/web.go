@@ -9,7 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/web/blog"
+	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/natefinch/lumberjack"
 	log "github.com/sirupsen/logrus"
 	"goji.io"
@@ -108,9 +108,10 @@ func Run() {
 	// Start monitoring the bot
 	go botrest.RunPinger()
 
-	err := blog.LoadPosts()
-	if err != nil {
-		log.WithError(err).Error("Web: Failed loading blog posts")
+	blogChannel := os.Getenv("YAGPDB_ANNOUNCEMENTS_CHANNEL")
+	parsedBlogChannel, _ := strconv.ParseInt(blogChannel, 10, 64)
+	if parsedBlogChannel != 0 {
+		go discordblog.RunPoller(common.BotSession, parsedBlogChannel, time.Minute)
 	}
 
 	LoadAd()

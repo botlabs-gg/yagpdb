@@ -28,8 +28,7 @@
         {{range .Posts}}
         <secton class="card">
             <header class="card-header">
-                <h2 class="card-title">{{.Meta.Title}}</h2>
-                <h2 class="card-subtitle">{{.Meta.Date}}</h2>
+                <h2 class="card-title">{{.Message.Author.Username}} - <small>{{.ParsedTimestamp.Format "02 Jan 06 15:04"}}</small></h2>
             </header>
             <div class="card-body">
                 {{.RenderedBody}}
