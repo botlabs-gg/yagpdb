@@ -294,7 +294,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 			_, err = common.BotSession.ChannelMessageSend(ra.ChannelID, "Role menu setup: "+resp)
 			if err != nil {
 				logrus.WithError(err).Error("RoleCommandsMenu: Failed sending new response")
-			}n
+			}
 		}
 
 		return

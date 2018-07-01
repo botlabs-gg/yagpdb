@@ -25,7 +25,7 @@ const (
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Testing"
+	VERSION       = VERSIONNUMBER + " Tight"
 
 	GORM *gorm.DB
 	PQ   *sql.DB
