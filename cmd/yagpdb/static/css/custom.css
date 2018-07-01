@@ -188,3 +188,7 @@ html.dark p  {
     display: none;
   }
 }
+
+html.sidebar-left-collapsed #nav-footer {
+  display: none;
+}
