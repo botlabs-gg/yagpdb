@@ -264,7 +264,7 @@ func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, clien
 type WordsRule struct {
 	BaseRule          `valid:"traverse"`
 	BuiltinSwearWords bool
-	BannedWords       string          `valid:",10000"`
+	BannedWords       string          `valid:",25000"`
 	compiledWords     map[string]bool `json:"-"`
 }
 
