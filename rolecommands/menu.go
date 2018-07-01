@@ -24,7 +24,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 
 	ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, member.User.ID, parsed.CS.ID())
 	if err != nil {
-		return "Failed checkign your perms", err
+		return "Failed checking your perms", err
 	}
 
 	if !ok {
@@ -115,7 +115,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 
 func UpdateMenu(parsed *dcmd.Data, existing *models.RoleMenu) (interface{}, error) {
 	if existing.State == RoleMenuStateSettingUp {
-		return "Already setting this menun up", nil
+		return "Already setting this menu up", nil
 	}
 
 	existing.State = RoleMenuStateSettingUp
@@ -176,7 +176,7 @@ func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, f
 	if first && rm.OwnMessage {
 		return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on this message\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 	}
-	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the original message\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
+	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the **original message**\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 }
 
 func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) error {
@@ -279,7 +279,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	// menu, err := .FindByMessageID(common.MustParseInt(ra.MessageID)).WithOptions(nil).WithNextRoleCommand().WithGroup())
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logrus.WithError(err).Error("RoleCommnadsMenu: Failed finding menu")
+			logrus.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
 		}
 		return
 	}
@@ -287,14 +287,14 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	if menu.State == RoleMenuStateSettingUp {
 		resp, err := ContinueRoleMenuSetup(menu, ra)
 		if err != nil {
-			logrus.WithError(err).Error("RoleCommnadsMenu: Failed continuing role menu setup")
+			logrus.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup")
 		}
 
 		if resp != "" {
 			_, err = common.BotSession.ChannelMessageSend(ra.ChannelID, "Role menu setup: "+resp)
 			if err != nil {
-				logrus.WithError(err).Error("RoleCommnadsMenu: Failed sending new response")
-			}
+				logrus.WithError(err).Error("RoleCommandsMenu: Failed sending new response")
+			}n
 		}
 
 		return
@@ -302,7 +302,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 
 	opts, err := menu.RoleMenuOptionsG().All()
 	if err != nil && err != sql.ErrNoRows {
-		logrus.WithError(err).Error("Failed retrieving rolemenu options")
+		logrus.WithError(err).Error("Failed retrieving role menu options")
 		return
 	}
 
