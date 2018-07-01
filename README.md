@@ -8,22 +8,23 @@ YAGPDB is a multifunctional modular discord bot, it's modular in that plugins ex
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
  - [For updates and support join my discord server](https://discord.gg/Cj6kCba)
+ - [The documentation of YAGPDB](https://docs.yagpdb.xyz/)
 
 ### Running YAGPDB yourself
 
-Running this bot may seem challenging and that's because I don't have time to make it easy to run for everyone, for the most part it should run fine after the initial work has been done.
+Running this bot may seem challenging and that's because I don't have time to make it easy to run for everyone, for the most part, it should run fine after the initial work has been done.
 
 There's also some struggle when you update, as in the past at least I've been bad at announcing what needs to be done to migrate certain data, in most cases `-a "migrate"` will do the trick though.
 
 With that said running this bot requires knowledge of:
 
  - Basic batch/shell scripting (as in setting environment variables and such, really basic stuff)
- - Basic knowledge of postgresql (being able to create the database and user for yagpdb)
+ - Basic knowledge of PostgreSQL (being able to create the database and user for yagpdb)
  - Basic knowledge of redis (being able to install and run it)
  - Basic knowledge of go (being able to compile things)
  - Basic knowledge of git (being able to change branches and such)
 
-**I will not help you if you're missing one of these, I simply do not have time. You can expect little to no support on helping it get set up, unless the purpose of you setting it up is to help out the project.**
+**I will not help you if you're missing one of these, I simply do not have time. You can expect little to no support on helping it get set up unless the purpose of you setting it up is to help out the project.**
 
 (There's still a lot of contributing you can do without this though, such as writing docs, fixing my horrible typos and so on)
 
@@ -67,11 +68,11 @@ Make sure ports 80 and 443 are accessible on your network and launch:
 The bot will connect automatically and the control panel will be available via
 your host after a short setup.
 
-If you are running several bots (or other web sites alongside the bot), consider
+If you are running several bots (or other websites alongside the bot), consider
 running a proxy such as jrcs/letsencrypt-nginx-proxy-companion.
 
-First start the proxy. This needs to be started only once and is shared by all
-web sites:
+First, start the proxy. This needs to be started only once and is shared by all
+websites:
 
     docker network create proxy-tier
     docker-compose -p proxy yagpdb/yagpdb_docker/docker-compose.proxy.yml up
@@ -89,7 +90,7 @@ Required databases:
  - Redis
      + Defaults are fine
 
-First step is to set those up, and get them running.
+First step is to set those up and get them running.
 
 **Steps for building:**
 
@@ -108,12 +109,12 @@ You can now run `./yagpdb`
 
 Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfile` for what environment variables are available.
 
-You can run the webserver, bot, reddit and youtube parts as seperate processes (haven't tested on different physical machines yet, doubt it'll work well atm for the webserver and bot at least)
+You can run the web server, bot, reddit and youtube parts as separate processes (haven't tested on different physical machines yet, doubt it'll work well atm for the web server and bot at least)
 
-You specify `-bot` to run the bot, `-web` to run the webserver and so on.
+You specify `-bot` to run the bot, `-web` to run the web server and so on.
 And it should be running now.
 
-The webserver by default (unless `-pa`) listens on 5000(http) and 5001(https)
+The web server by default (unless `-pa`) listens on 5000(http) and 5001(https)
 So if you're behind a NAT, forward those, if not you can either use the `-pa` switch or add an entry to iptables.
 
 ### Plugins
@@ -139,19 +140,19 @@ So if you're behind a NAT, forward those, if not you can either use the `-pa` sw
 
 ### Core packages:
 
-- Web: The core webserver package, in charge of authentication.
+- Web: The core web server package, in charge of authentication.
 - Bot: Core bot package, delegates events to plugins.
 - Common: Handles all the common stuff between web and bot (config, discord session, redis pool etc).
 - Feeds: Handles all feeds, personally I like to run each feed as its own service, that way I can start and stop individual feeds without taking everything down.
 - Commands: Handles all commands.
 
-Currently YAGPDB builds everything into one executable and you run the bot with the -bot switch, the webserver with the -web switch and so on (see -h for help).
+Currently, YAGPDB builds everything into one executable and you run the bot with the -bot switch, the web server with the -web switch and so on (see -h for help).
 
 ### Databases
 
 YAGPDB uses redis for light data and caching (and some remnants of configuration).
 
-It uses postgresql for most configuration and more heavy data (logs and such).
+It uses PostgreSQL for most configuration and more heavy data (logs and such).
 
 ### Contributing new features
 
@@ -159,6 +160,6 @@ See bot/plugin for info about bot plugins, web/plugin for web plugins and feeds/
 
 Expect web, bot and feed instances to be run separately.
 
-For basic utility/fun commands you can just jam them in stdcommands, use the existing commands there as an example of how to add one.
+For basic utility/fun commands, you can just jam them in stdcommands. Use the existing commands there as an example of how to add one.
 
 **If you need any help finding things in the source or have any other questions, don't be afraid of messaging me**
