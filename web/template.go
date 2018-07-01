@@ -90,7 +90,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 		if k == len(roles)-1 {
 			break
 		}
-		if role.Managed {
+		if role.Managed && highestBotRole != nil {
 			continue
 		}
 
@@ -131,7 +131,7 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 		if k == len(roles)-1 {
 			break
 		}
-		if role.Managed {
+		if role.Managed && highestBotRole != nil {
 			continue
 		}
 
