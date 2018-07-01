@@ -1,13 +1,16 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 var (
@@ -15,30 +18,73 @@ var (
 )
 
 func (p *Plugin) InitBot() {
-	CommandSystem = dcmd.NewStandardSystem("")
-	CommandSystem.Prefix = p
-	CommandSystem.State = bot.State
-	CommandSystem.Root.RunInDM = true
-	CommandSystem.Root.IgnoreBots = true
+	// Setup the command system
+	CommandSystem = &dcmd.System{
+		Root: &dcmd.Container{
+			HelpTitleEmoji: "ℹ️",
+			HelpColor:      0xbeff7a,
+			RunInDM:        true,
+			IgnoreBots:     true,
+		},
 
-	// CommandSystem = commandsystem.NewSystem(nil, "")
-	// CommandSystem.SendError = false
-	// CommandSystem.CensorError = CensorError
-	// CommandSystem.State = bot.State
+		ResponseSender: &dcmd.StdResponseSender{LogErrors: true},
+		Prefix:         p,
+		State:          bot.State,
+	}
 
-	// CommandSystem.DefaultDMHandler = &commandsystem.Command{
-	// 	Run: func(data *commandsystem.ExecData) (interface{}, error) {
-	// 		return "Unknwon command, only a subset of commands are available in dms.", nil
-	// 	},
-	// }
-
-	// CommandSystem.Prefix = p
-	// CommandSystem.RegisterCommands(cmdHelp)
-
+	// We have our own middleware before the argument parsing, this is to check for things such as wether the command is enabled at all
+	CommandSystem.Root.AddMidlewares(YAGCommandMiddleware, dcmd.ArgParserMW)
 	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
 
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
+}
+
+func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
+	return func(data *dcmd.Data) (interface{}, error) {
+		client := common.MustGetRedisClient()
+		defer common.RedisPool.Put(client)
+
+		yc, ok := data.Cmd.Command.(*YAGCommand)
+		if !ok {
+			return inner(data)
+		}
+
+		// Check if the user can execute the command
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, client, data.CS)
+		if resp != "" {
+			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
+			// m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
+			// go yc.deleteResponse([]*discordgo.Message{m})
+			return nil, nil
+		}
+
+		if !canExecute {
+			return nil, nil
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		data = data.WithContext(context.WithValue(data.Context(), CtxKeyCmdSettings, settings))
+
+		// Lock the command for execution
+		err = common.BlockingLockRedisKey(client, RKeyCommandLock(data.Msg.Author.ID, yc.Name), CommandExecTimeout*2, int((CommandExecTimeout + time.Second).Seconds()))
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed locking command")
+		}
+		defer common.UnlockRedisKey(client, RKeyCommandLock(data.Msg.Author.ID, yc.Name))
+
+		data = data.WithContext(context.WithValue(data.Context(), common.ContextKeyRedis, client))
+
+		innerResp, err := inner(data)
+
+		// Send the response
+		yc.PostCommandExecuted(settings, data, innerResp, err)
+
+		return nil, nil
+	}
 }
 
 func AddRootCommands(cmds ...*YAGCommand) {

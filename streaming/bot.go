@@ -348,6 +348,8 @@ func SendStreamingAnnouncement(client *redis.Client, config *Config, guild *dsta
 	ctx := templates.NewContext(bot.State.User(true).User, guild, nil, member)
 	ctx.Data["URL"] = common.EscapeSpecialMentions(p.Game.URL)
 	ctx.Data["url"] = common.EscapeSpecialMentions(p.Game.URL)
+	ctx.Data["Game"] = p.Game.Details
+	ctx.Data["StreamTitle"] = p.Game.Name
 
 	guild.RUnlock()
 	out, err := ctx.Execute(client, config.AnnounceMessage)

@@ -15,18 +15,16 @@ import (
 // dictionary creates a map[string]interface{} from the given parameters by
 // walking the parameters and treating them as key-value pairs.  The number
 // of parameters must be even.
-func Dictionary(values ...interface{}) (map[string]interface{}, error) {
+func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
-	dict := make(map[string]interface{}, len(values)/2)
+	dict := make(map[interface{}]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
-		key, ok := values[i].(string)
-		if !ok {
-			return nil, errors.New("dict keys must be strings")
-		}
+		key := values[i]
 		dict[key] = values[i+1]
 	}
+
 	return dict, nil
 }
 
@@ -94,14 +92,14 @@ func roleIsAbove(a, b *discordgo.Role) bool {
 	return dutil.IsRoleAbove(a, b)
 }
 
-func randInt(args ...int64) int64 {
+func randInt(args ...interface{}) int64 {
 	min := int64(0)
 	max := int64(10)
 	if len(args) >= 2 {
-		min = args[0]
-		max = args[1]
+		min = ToInt64(args[0])
+		max = ToInt64(args[1])
 	} else if len(args) == 1 {
-		max = args[0]
+		max = ToInt64(args[0])
 	}
 
 	r := rand.Int63n(max - min)

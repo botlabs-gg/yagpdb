@@ -2,7 +2,6 @@ package reddit
 
 import (
 	"fmt"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
@@ -110,55 +109,31 @@ OUTER:
 		"subreddit":    post.Subreddit,
 	}).Info("Found matched reddit post")
 
-	embed := CreatePostEmbed(post)
+	message := CreatePostMessage(post)
 
 	for _, item := range filteredItems {
-		mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, embed)
+		mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, message)
 	}
 
 	return nil
 }
 
-func CreatePostEmbed(post *reddit.Link) *discordgo.MessageEmbed {
-	//body := fmt.Sprintf("**/u/%s Posted a new %s in /r/%s**:\n<%s>\n\n__%s__\n", author, typeStr, sub, "https://redd.it/"+post.GetId(), post.GetTitle())
-	embed := &discordgo.MessageEmbed{
-		Author: &discordgo.MessageEmbedAuthor{
-			URL:     "https://reddit.com/u/" + post.Author,
-			Name:    post.Author,
-			IconURL: "https://" + common.Conf.Host + "/static/img/reddit_icon.png",
-		},
-		Provider: &discordgo.MessageEmbedProvider{
-			Name: "Reddit",
-			URL:  "https://reddit.com",
-		},
-		Description: "**" + post.Title + "**\n",
+func CreatePostMessage(post *reddit.Link) string {
+	typeStr := "link"
+	if post.IsSelf {
+		typeStr = "self post"
 	}
-	embed.URL = "https://redd.it/" + post.ID
+
+	body := fmt.Sprintf("<:reddit:462994034428870656> **/u/%s** posted a new %s in **/r/%s**\n**%s** - <%s>\n",
+		post.Author, typeStr, post.Subreddit, post.Title, "https://redd.it/"+post.ID)
 
 	if post.IsSelf {
-		embed.Title = "New self post in /r/" + post.Subreddit
-		embed.Description += common.CutStringShort(post.Selftext, 250)
-		embed.Color = 0xc3fc7e
+		body += common.CutStringShort(post.Selftext, 250)
 	} else {
-		embed.Color = 0x718aed
-		embed.Title = "New link post in /r/" + post.Subreddit
-		embed.Description += post.URL
-
-		if post.Media.Type != "" {
-			embed.Video = &discordgo.MessageEmbedVideo{
-				URL: post.URL,
-			}
-			// embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-			// 	URL: post.Thumbnail,
-			// }
-		} else {
-			embed.Image = &discordgo.MessageEmbedImage{
-				URL: post.URL,
-			}
-		}
+		body += post.URL
 	}
 
-	return embed
+	return body
 }
 
 type RedditIdSlice []string

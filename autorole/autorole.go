@@ -1,7 +1,5 @@
 package autorole
 
-//go:generate esc -o assets_gen.go -pkg autorole -ignore ".go" assets/
-
 import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"

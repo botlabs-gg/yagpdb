@@ -1,7 +1,5 @@
 package automod
 
-//go:generate esc -o assets_gen.go -pkg automod -ignore ".go" assets/
-
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"

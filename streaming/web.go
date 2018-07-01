@@ -19,7 +19,12 @@ const (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/streaming.html"))
+	tmplPath := "templates/plugins/streaming.html"
+	if common.Testing {
+		tmplPath = "../../streaming/assets/streaming.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	streamingMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/streaming/*"), streamingMux)

@@ -1,52 +1,50 @@
 {{define "cp_automod"}}
-
 {{template "cp_head" .}}
-<div class="row">
-    <div class="col-lg-12">
-        <h1 class="page-header">Automoderator {{if .AutomodConfig.Enabled}}<span class="label label-success">Enabled</span>{{else}}<span class="label label-danger">Disabled</span>{{end}}</h1> 
-    </div>
-    <!-- /.col-lg-12 -->
-</div>
+<header class="page-header">
+    <h2>Automoderator {{if .AutomodConfig.Enabled}}<span class="bg-success">Enabled</span>{{else}}<span class="bg-danger">Disabled</span>{{end}}</h2> 
+</header>
 
 {{template "cp_alerts" .}}
 <!-- /.row -->
-<form method="post">
+<form method="post" data-async-form>
 <div class="row">
     <div class="col-lg-12">
         <!-- Nav tabs -->
-        <ul class="nav nav-tabs tabs" role="tablist">
-            <li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">
-                General 
-            </a></li>
-            <li role="presentation"><a href="#spam" aria-controls="spam" role="tab" data-toggle="tab">
-                Slowmode <span class="label {{if .AutomodConfig.Spam.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
-            </a></li>
-            <li role="presentation"><a href="#mass-mention" aria-controls="mass-mention" role="tab" data-toggle="tab">
-                Mass Mention <span class="label {{if .AutomodConfig.Mention.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
-            </a></li>
-            <li role="presentation"><a href="#invites" aria-controls="invites" role="tab" data-toggle="tab">
-                Server Invites <span class="label {{if .AutomodConfig.Invite.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
-            </a></li>
-            <li role="presentation"><a href="#links" aria-controls="links" role="tab" data-toggle="tab">
-                Links <span class="label {{if .AutomodConfig.Links.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
-            </a></li>
-            <li role="presentation"><a href="#banned-words" aria-controls="banned-words" role="tab" data-toggle="tab">
-                Banned words <span class="label {{if .AutomodConfig.Words.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
-            </a></li>
-            <li role="presentation"><a href="#banned-websites" aria-controls="banned-websites" role="tab" data-toggle="tab">
-                Banned websites <span class="label {{if .AutomodConfig.Sites.Enabled}}label-success">Enabled{{else}}label-danger">Disabled{{end}}</span>
-            </a></li>
-        </ul>
+        <div class="tabs">
+            <ul class="nav nav-tabs">
+                <li class="nav-item active"><a class="nav-link show active" href="#general" aria-controls="general" role="tab" data-toggle="tab">
+                    General 
+                </a></li>
+                <li class="nav-item"><a class="nav-link" href="#spam" aria-controls="spam" role="tab" data-toggle="tab">
+                    Slowmode <span class="indicator {{if .AutomodConfig.Spam.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
+                </a></li>
+                <li class="nav-item"><a class="nav-link" href="#mass-mention" aria-controls="mass-mention" role="tab" data-toggle="tab">
+                    Mass Mention <span class="indicator {{if .AutomodConfig.Mention.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
+                </a></li>
+                <li class="nav-item"><a class="nav-link" href="#invites" aria-controls="invites" role="tab" data-toggle="tab">
+                    Server Invites <span class="indicator {{if .AutomodConfig.Invite.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
+                </a></li>
+                <li class="nav-item"><a class="nav-link" href="#links" aria-controls="links" role="tab" data-toggle="tab">
+                    Links <span class="indicator {{if .AutomodConfig.Links.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
+                </a></li>
+                <li class="nav-item"><a class="nav-link" href="#banned-words" aria-controls="banned-words" role="tab" data-toggle="tab">
+                    Banned words <span class="indicator {{if .AutomodConfig.Words.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
+                </a></li>
+                <li class="nav-item"><a class="nav-link" href="#banned-websites" aria-controls="banned-websites" role="tab" data-toggle="tab">
+                    Banned websites <span class="indicator {{if .AutomodConfig.Sites.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
+                </a></li>
+            </ul>
 
-        <!-- Tab panesy -->
-        <div class="tab-content">
-            <div role="tabpanel" class="tab-pane active" id="general">{{template "automod_general" .}}</div>
-            <div role="tabpanel" class="tab-pane" id="spam">{{template "automod_spam" .}}</div>
-            <div role="tabpanel" class="tab-pane" id="mass-mention">{{template "automod_mention" .}}</div>
-            <div role="tabpanel" class="tab-pane" id="invites">{{template "automod_invite" .}}</div>
-            <div role="tabpanel" class="tab-pane" id="links">{{template "automod_links" .}}</div>
-            <div role="tabpanel" class="tab-pane" id="banned-words">{{template "automod_banned_words" .}}</div>
-            <div role="tabpanel" class="tab-pane" id="banned-websites">{{template "automod_banned_websites" .}}</div>
+            <!-- Tab panesy -->
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="general">{{template "automod_general" .}}</div>
+                <div role="tabpanel" class="tab-pane" id="spam">{{template "automod_spam" .}}</div>
+                <div role="tabpanel" class="tab-pane" id="mass-mention">{{template "automod_mention" .}}</div>
+                <div role="tabpanel" class="tab-pane" id="invites">{{template "automod_invite" .}}</div>
+                <div role="tabpanel" class="tab-pane" id="links">{{template "automod_links" .}}</div>
+                <div role="tabpanel" class="tab-pane" id="banned-words">{{template "automod_banned_words" .}}</div>
+                <div role="tabpanel" class="tab-pane" id="banned-websites">{{template "automod_banned_websites" .}}</div>
+            </div>
         </div>
     </div>
     <!-- /.col-lg-12 -->
@@ -65,11 +63,9 @@
 {{define "automod_general"}}
 <div class="row">
     <div class="col-lg-12">
-        <br/>
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" name="Enabled" {{if .AutomodConfig.Enabled }} checked{{end}}> Enable/Disable Automoderator
-            </label>
+        <div class="form-check pt-2">
+            <input id="automod-enabled" class="form-check-input" type="checkbox" name="Enabled" {{if .AutomodConfig.Enabled }} checked{{end}}>
+            <label class="form-check-label" for="automod-enabled"><b>Enable/Disable automoderator</b></label>
         </div>
     </div>
 </div>
@@ -85,7 +81,8 @@
             <li><b>Bad words/websites:</b> YAGPDB comes with a built-in list of bad sites and swear words you can use if you want, or you can define your own.</li>
         </ul>
         <p><b>TIP:</b> The ban and kick message from the moderation settings will be used when the bot kicks and bans</p>
-        <p>If you need any help setting up a rule, join the support server above and ask in #HELP.</p>            
+        <p><b>Check out the documentation for more info: <a href="https://docs.yagpdb.xyz/automoderator">docs.yagpdb.xyz/automoderator</a></b>
+        <p>If you need any help setting up a rule, join the support server above.</p>
     </div>
 </div>
 {{end}}
@@ -251,8 +248,8 @@
 
 <div class="form-group">
     <label for="IgnoreChannels">Ignore channels</label>
-    <select name="{{.Name}}.IgnoreChannels" class="multiselect" multiple="multiple" id="{{.Name}}">
-        {{mTemplate "channel_options_multi" "Channels" .Guild.Channels "Selections" .Rule.IgnoreChannels}}
+    <select name="{{.Name}}.IgnoreChannels" class="multiselect" multiple="multiple" id="{{.Name}}" data-plugin-multiselect>
+        {{textChannelOptionsMulti .Guild.Channels (.Rule.IgnoreChannelsParsed)}}        
     </select>
 </div>
 {{end}}

@@ -226,6 +226,7 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 	} else {
 		tmplCtx.Data["CmdArgs"] = []string{}
 	}
+	tmplCtx.Data["Message"] = m
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(client, chanMsg)
@@ -248,9 +249,12 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 	if !cmd.CaseSensitive {
 		cmdMatch += "(?i)"
 	}
+
 	switch cmd.TriggerType {
 	case CommandTriggerCommand:
-		cmdMatch += "^" + regexp.QuoteMeta(globalPrefix+trigger) + "($|[[:space:]])"
+		// Regex is:
+		// ^(<@!?bot_id> ?|server_cmd_prefix)trigger($|[[:space:]])
+		cmdMatch += "^(<@!?" + discordgo.StrID(common.BotUser.ID) + "> ?|" + regexp.QuoteMeta(globalPrefix) + ")" + regexp.QuoteMeta(trigger) + "($|[[:space:]])"
 	case CommandTriggerStartsWith:
 		cmdMatch += "^" + regexp.QuoteMeta(trigger)
 	case CommandTriggerContains:

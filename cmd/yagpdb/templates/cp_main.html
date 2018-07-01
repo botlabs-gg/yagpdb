@@ -1,76 +1,105 @@
 {{define "cp_head"}}{{if not .PartialRequest}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="fixed {{if not .LightTheme}}dark{{else}}sidebar-light{{end}}">
 
 <head>
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" href="/static/icons/favicon-32x32.png" sizes="32x32">
-    <link rel="icon" type="image/png" href="/static/icons/favicon-16x16.png" sizes="16x16">
-    <link rel="manifest" href="/static/icons/manifest.json">
-    <link rel="mask-icon" href="/static/icons/safari-pinned-tab.svg" color="#00c7ff">
-    <link rel="shortcut icon" href="/static/icons/favicon.ico">
+    <!-- Mobile Metas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png?v=6">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png?v=6">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png?v=6">
+    <link rel="manifest" href="/static/icons/site.webmanifest?v=6">
+    <link rel="mask-icon" href="/static/icons/safari-pinned-tab.svg?v=6" color="#5bbad5">
+    <link rel="shortcut icon" href="/static/icons/favicon.ico?v=6">
+    <meta name="msapplication-TileColor" content="#2b5797">
+    <meta name="msapplication-config" content="/static/icons/browserconfig.xml?v=6">
+    <meta name="theme-color" content="#ffffff">
+    
+    <!-- More meta stuff -->
     <meta name="apple-mobile-web-app-title" content="YAGPDB">
     <meta name="application-name" content="YAGPDB">
     <meta name="msapplication-config" content="/static/icons/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
-
+    
     <meta property="og:title" content="YAGPDB" />
     <meta property="og:description" content="Yet another general purpose discord bot" />
 
+    <title>YAGPDB - Control panel</title>
+    <meta name="keywords" content="YAGPDB Discord bot control panel" />
+    <meta name="description" content="YAGPDB - Yet another general purpose discord bot">
+    <meta name="author" content="jonas747">
+ 
+    <!-- Web Fonts  -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
 
-    <title>YAGPDB - Yet another general purpose discord bot control panel</title>
+    <!-- Vendor CSS -->
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.css" />
+    <link rel="stylesheet" href="/static/vendor/animate/animate.css">
 
-    <!-- Bootstrap Core CSS -->
-    <!-- <link href="/static/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"> -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/vendor/font-awesome/css/fontawesome-all.min.css" />
+    <link rel="stylesheet" href="/static/vendor/magnific-popup/magnific-popup.css" />
+    <link rel="stylesheet" href="/static/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.css" />
 
-    <!-- MetisMenu CSS -->
-    <!-- <link href="/static/bower_components/metisMenu/dist/metisMenu.min.css" rel="stylesheet"> -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.metismenu/2.5.2/metisMenu.min.css" integrity="sha256-XjZ0z1dEt5rG6mqMEhy+ssUiX+83tigMsRhQX1nqvKs=" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/vendor/select2/css/select2.css" />
+    <link rel="stylesheet" href="/static/vendor/select2-bootstrap-theme/select2-bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/vendor/bootstrap-multiselect/bootstrap-multiselect.css" />
+    <link rel="stylesheet" href="/static/vendor/pnotify/pnotify.custom.css" />
 
-    <!-- Timeline CSS -->
-    <link href="/static/dist/css/timeline.css?{{.StartedAtUnix}}" rel="stylesheet">
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="/static/css/theme.css?{{.StartedAtUnix}}" />
 
-    <!-- Custom CSS -->
-    <link href="/static/dist/css/sb-admin-2.css?{{.StartedAtUnix}}" rel="stylesheet">
-    
-    <link href="/static/dist/css/yagpdb.css?{{.StartedAtUnix}}" rel="stylesheet">
+    <!-- Skin CSS -->
+    <link rel="stylesheet" href="/static/css/skins/default.css" />
 
-    <!-- Morris Charts CSS -->
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
-    
-    <link rel="stylesheet" href="/static/dist/css/bootstrap-multiselect.css?{{.StartedAtUnix}}"></script>
+    <!-- Theme Custom CSS -->
+    <link rel="stylesheet" href="/static/css/custom.css?{{.StartedAtUnix}}">
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <!-- Head Libs -->
+    <script src="/static/vendor/modernizr/modernizr.js"></script>
 
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
+    <script src="/static/vendor/jquery/jquery.js"></script>
+
+    {{if .ExtraHead}}
+        {{.ExtraHead}}
+    {{end}}
 
     <!-- Sam is an okay guy i think, i was forced to say this -->
     <!-- deus name is actually dave -->
     <!-- What are these comments even they are wasted bandwidth, thats what they are -->
+    <!-- The current time is 4:14 am on the 21st of may, maybe i just like adding onto this whenever i come across this section after forgetting about it? -->
 </head>
 <body>
-    <div id="wrapper">
-    {{template "cp_nav" .}}
-        <div id="main-content">
+    <div id="loading-overlay">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">
+                    Loading...
+                </h2>
+            </header>
+            <div class="card-body d-flex align-items-center">
+                <div class="loader"></div>
+            </div>
+        </section>
+    </div>
+    <section class="body">
+        {{template "cp_nav_header" .}}
 
+        <div class="inner-wrapper">
+            {{template "cp_nav_sidebar" .}}
+
+            <section role="main" id="main-content" class="content-body">
 {{end}}{{end}}
 
 {{define "cp_footer"}}{{if not .PartialRequest}}
-    </div>
-    </div>
-    </div>
+            </section>
+        </div>
+    </section>
+    
     <script>
     var visibleURL;
     {{if .VisibleURL }}visibleURL = {{.VisibleURL}};{{end}}
@@ -79,28 +108,30 @@
     {{end}}
     </script>
 
-    <!-- Bootstrap Core JavaScript -->
-    <!-- <script src="/static/bower_components/bootstrap/dist/js/bootstrap.min.js"></script> -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!-- Vendor -->
+    <script src="/static/vendor/jquery-browser-mobile/jquery.browser.mobile.js"></script>
+    <script src="/static/vendor/popper/umd/popper.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/static/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="/static/vendor/common/common.js"></script>
+    <script src="/static/vendor/nanoscroller/nanoscroller.js"></script>
+    <script src="/static/vendor/magnific-popup/jquery.magnific-popup.js"></script>
+    <script src="/static/vendor/jquery-placeholder/jquery-placeholder.js"></script>
+    <script src="/static/vendor/select2/js/select2.js"></script>
+    <script src="/static/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="/static/vendor/autosize/autosize.js"></script>
+    <script src="/static/vendor/pnotify/pnotify.custom.js"></script>
 
-    <!-- Metis Menu Plugin JavaScript -->
-    <!-- <script src="/static/bower_components/metisMenu/dist/metisMenu.min.js"></script> -->
-    <script src="https://cdn.jsdelivr.net/jquery.metismenu/2.5.2/metisMenu.min.js" integrity="sha256-FvtGTJgCbPmWr0DdIsMWeukxoOxWhWTCjT345wTj5Y8=" crossorigin="anonymous"></script>
+    <!-- Theme Base, Components and Settings -->
+    <script src="/static/js/theme.js"></script>
+    
+    <!-- Theme Custom -->
+    <script src="/static/js/custom.js"></script>
+    
+    <!-- Theme Initialization Files -->
+    <script src="/static/js/theme.init.js"></script>
 
-    <!-- Morris Charts JavaScript -->
-    <!-- <script src="/static/bower_components/raphael/raphael-min.js"></script> -->
-    <!-- <script src="/static/bower_components/morrisjs/morris.min.js"></script> -->
-    <!-- <script src="/static/js/morris-data.js"></script> -->
-
-    <!-- Custom Theme JavaScript -->
-    <script src="/static/dist/js/sb-admin-2.js?{{.StartedAtUnix}}"></script>
-
-    <!-- ;)))) -->
-    <script src="/static/dist/js/spongebob.js?{{.StartedAtUnix}}"></script>
-    <!-- Custom Fonts -->
-    <script src="https://use.fontawesome.com/e3f4515047.js"></script>
-
-    <script type="text/javascript" src="/static/dist/js/bootstrap-multiselect.js?{{.StartedAtUnix}}"></script>
+    <script src="/static/js/spongebob.js?{{.StartedAtUnix}}"></script>
 
     {{template "googleAnalytics" .}}
 </body>
@@ -110,44 +141,35 @@
 
 {{/*Displays alerts*/}}
 {{define "cp_alerts"}}
+<script>
+$(function(){
+    showAlerts("{{json .Alerts}}")
+})
+</script>
 <div id="alerts">
     {{if .Alerts}}
     <div class="row">
         <div class="col-lg-12">
             {{range .Alerts}}
-            <div class="bs-callout bs-callout-{{.Style}}">
+            {{if and (ne .Style "success") (ne .Style "danger")}}
+            <div class="alert alert-{{.Style}}">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                 {{.Message}}
             </div>
-            {{end}}   
+            {{end}}{{end}}  
         </div>
     </div>
     {{end}}
 </div>
 {{end}}
 
-{{/*
-Argumens
-Channels - list of channels
-Selections - List of selections
-<li><input type="radio" id="ID" name="NAME" value="VALUE"><label for="ID">Label</label></li>
-*/}}
-{{define "channel_options_multi"}}
-    {{$selections := .Selections}}
-    {{range .Channels}}{{if eq .Type 0}}<option value="{{.ID}}" {{if $selections}}{{if in $selections (toString .ID)}}selected {{end}}{{end}}>#{{.Name}}</option>
-    {{end}}{{end}}
-{{end}}
-
-{{define "channel_options_multi_int"}}
-    {{$selections := .Selections}}
-    {{range .Channels}}{{if eq .Type 0}}<option value="{{.ID}}" {{if $selections}}{{if in $selections (toInt64 .ID)}}selected {{end}}{{end}}>#{{.Name}}</option>
-    {{end}}{{end}}
-{{end}}
-
 {{/*Help block for templating*/}}
 {{define "template_help"}}
-<p>To include the user or server in the message you can use the template data included, the templating engine used is go's text/template<br/>
+<p class="mb-0">To include the user or server in the message you can use the template data included<br/>
 Some quick examples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - Will be replaced by server name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - The users id and so on..<br/>
-To mention the user for example you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code></p>
+To mention the user for example you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code><br/>
+<a href="https://docs.yagpdb.xyz" target="_blank">See the documentation for more details</a>
+</p>
 {{end}}
 
 {{/*Specific template helpers*/}}

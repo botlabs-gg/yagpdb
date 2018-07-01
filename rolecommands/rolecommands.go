@@ -1,6 +1,8 @@
 // rolecommands is a plugin which allows users to assign roles to themselves
 package rolecommands
 
+//go:generate sqlboiler --no-hooks -w "role_groups,role_commands,role_menus,role_menu_options" postgres
+
 import (
 	"fmt"
 	"github.com/jonas747/discordgo"
@@ -15,8 +17,6 @@ import (
 	"strconv"
 	"time"
 )
-
-//go:generate esc -o assets_gen.go -pkg rolecommands -ignore ".go" assets/
 
 type Plugin struct {
 }
@@ -50,7 +50,7 @@ func RegisterPlugin() {
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
-	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
+	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initializing db schema")
 	}

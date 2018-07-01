@@ -9,6 +9,7 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -26,7 +27,12 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
+	tmplPathSettings := "templates/plugins/reddit.html"
+	if common.Testing {
+		tmplPathSettings = "../../reddit/assets/reddit.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
 	redditMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
@@ -59,6 +65,10 @@ func baseData(inner http.Handler) http.Handler {
 		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+discordgo.StrID(activeGuild.ID))
 		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
+		} else {
+			sort.Slice(currentConfig, func(i, j int) bool {
+				return currentConfig[i].Sub < currentConfig[j].Sub
+			})
 		}
 
 		inner.ServeHTTP(w, r.WithContext(context.WithValue(ctx, CurrentConfig, currentConfig)))
@@ -116,6 +126,10 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	currentConfig = append(currentConfig, watchItem)
+	sort.Slice(currentConfig, func(i, j int) bool {
+		return currentConfig[i].Sub < currentConfig[j].Sub
+	})
+
 	templateData["RedditConfig"] = currentConfig
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Sub))
 

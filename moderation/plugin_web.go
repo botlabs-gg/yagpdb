@@ -11,7 +11,11 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/moderation.html")))
+	tmplPath := "templates/plugins/moderation.html"
+	if common.Testing {
+		tmplPath = "../../moderation/assets/moderation.html"
+	}
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/moderation"), subMux)
@@ -57,5 +61,6 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	templateData["ModConfig"] = newConfig
 
 	err := newConfig.Save(client, activeGuild.ID)
+
 	return templateData, err
 }

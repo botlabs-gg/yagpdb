@@ -40,8 +40,14 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/leaderboard.html")))
+	tmplPathSettings := "templates/plugins/reputation_settings.html"
+	tmplPathLeaderboard := "templates/plugins/reputation_leaderboard.html"
+	if common.Testing {
+		tmplPathSettings = "../../reputation/assets/reputation_settings.html"
+		tmplPathLeaderboard = "../../reputation/assets/reputation_leaderboard.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathLeaderboard))
 
 	subMux := goji.SubMux()
 	subMux.Use(web.RequireFullGuildMW)

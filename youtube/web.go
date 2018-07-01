@@ -36,7 +36,12 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/youtube.html")))
+	tmplPath := "templates/plugins/youtube.html"
+	if common.Testing {
+		tmplPath = "../../youtube/assets/youtube.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	ytMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/youtube/*"), ytMux)
@@ -74,7 +79,7 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 	_, ag, templateData := web.GetBaseCPContextData(ctx)
 
 	var subs []*ChannelSubscription
-	err := common.GORM.Where("guild_id = ?", ag.ID).Find(&subs).Error
+	err := common.GORM.Where("guild_id = ?", ag.ID).Order("id desc").Find(&subs).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return templateData, err
 	}

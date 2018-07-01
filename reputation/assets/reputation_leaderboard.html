@@ -1,0 +1,93 @@
+{{define "cp_reputation_leaderboard"}}
+
+{{template "cp_head" .}}
+<style type="text/css">
+    @media(min-width: 768px) {
+        table {
+            table-layout:fixed;
+            /*width:100%;*/
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        
+        #avatar-col {width:70px;}
+        #pos-col {width:70px;}
+        #username-col {width:100%; min-width: 100px;} 
+        #points-col {width:100px;}
+    }
+    
+    .deleted-message{
+        color: red;
+    }
+</style>
+<header class="page-header">
+    <h2>Reputation leaderboard for {{.ActiveGuild.Name}}</h2>
+</header>
+
+{{if not .RepSettings.Enabled}}
+<h1>Reputation disabled on this server</h1>
+{{else}}
+{{template "cp_alerts" .}}
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <div class="card-body">
+                <table class="table table-hover table-striped" id="log-table">
+                    <thead>
+                        <tr>
+                            <th id="avatar-col">Avatar</th>
+                            <th id="pos-col">Rank</th>
+                            <th id="username-col">User</th>
+                            <th id="points-col">Points</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="leaderboard-body">
+                        <!-- The table is filled by javascript below -->
+                    </tbody>
+                </table>
+                <button id="load-more-button" class="btn btn-primary btn-block" onclick="reputationLoadMore(10)" disabled>Load more entries</button>
+            </div>
+        </section>
+    </div>
+</div>
+<!-- /.row -->
+
+<script type="text/javascript">
+
+var repNumRows = 0;
+
+function reputationLoadMore(limit, offset){
+    if(!offset)
+        offset = repNumRows;
+
+    $("#load-more-button").prop("disabled", true);
+
+    console.log("Loading more rows");
+    createRequest("GET", "/api/{{.ActiveGuild.ID}}/reputation/leaderboard?limit="+limit+"&offset="+offset, null, leaderboardCB);
+}
+
+function leaderboardCB(){
+    var parsed = JSON.parse(this.responseText);
+    for(var i = 0; i < parsed.length; i++){
+        var row = $("<tr>")
+        row.append($('<td><img class="avatar" src="' + parsed[i].avatar + '"></td>'))
+        row.append($("<td>").text(parsed[i].rank))
+        row.append($("<td>").text(parsed[i].username))
+        row.append($("<td>").text(parsed[i].points))
+        $("#leaderboard-body").append(row);
+    }
+    repNumRows += parsed.length;
+
+    $("#load-more-button").prop("disabled", false);
+} 
+
+$(function(){
+    reputationLoadMore(25, 0);
+})
+
+</script>
+{{end}}
+{{template "cp_footer"}}
+
+{{end}}

@@ -1,47 +1,43 @@
 {{define "cp_action_logs"}}
 
 {{template "cp_head" .}}
-<div class="row">
-    <div class="col-lg-12">
-        <h1 class="page-header">Control panel logs</h1>
-        <p>Logs who changed settings, and in most (95%) cases what. (This isn't where kicks and bans are logged, set those up under moderation settings).</p>
-        <div class="bs-callout bs-callout-info">
-            <p>Note: If you see someone with the name jonas747 and the id <code>105487308693757952</code>, then don't be scared because that is me (the bot owner). The bot is very large and if something is causing me issues I might have to change update something to fix those issues, join the support server above if you have more questions.</p>
-        </div>
-    </div>
-    <!-- /.col-lg-12 -->
-</div>
+<header class="page-header">
+    <h2>Control panel logs</h2>
+</header>
+
+
+
 {{template "cp_alerts" .}}
+
 <!-- /.row -->
 <div class="row">
     <div class="col-lg-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                Logs
-            </div>
-            <div class="panel-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{range .entries}}
-                            <tr>
-                                <td>{{.TimestampString}}</td>
-                                <td>{{.Action}}</td>
-                            </tr>
-                            {{end}}
-                        </tbody>
-                    </table>
+        <section class="card">
+            <div class="card-body">
+                <p>Logs who changed settings, and in most (95%) cases what. (This isn't where kicks and bans are logged, set those up under moderation settings).</p>
+                <div class="bs-callout bs-callout-info">
+                    <p>Note: If you see someone with the name jonas747 and the id <code>105487308693757952</code>, then don't be scared because that is me (the bot owner). The bot is very large and if something is causing me issues I might have to change update something to fix those issues, join the support server above if you have more questions.</p>
                 </div>
+                <table class="table table-responsive-lg table-bordered table-striped table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .entries}}
+                        <tr>
+                            <td>{{.TimestampString}}</td>
+                            <td>{{.Action}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
                 <!-- /.table-responsive -->
             </div>
             <!-- /.panel-body -->
-        </div>
+        </section>
         <!-- /.panel -->
     </div>
     <!-- /.col-lg-12 -->

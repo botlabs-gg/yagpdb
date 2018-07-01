@@ -1,7 +1,5 @@
 package customcommands
 
-//go:generate esc -o assets_gen.go -pkg customcommands -ignore ".go" assets/
-
 import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
@@ -31,7 +29,6 @@ type Plugin struct{}
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
-
 	RegexCache = ccache.New(ccache.Configure())
 }
 

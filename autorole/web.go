@@ -32,7 +32,12 @@ func (f Form) Name() string {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
+	tmplPathSettings := "templates/plugins/autorole.html"
+	if common.Testing {
+		tmplPathSettings = "../../autorole/assets/autorole.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
 	muxer := goji.SubMux()
 
