@@ -83,6 +83,7 @@ func HandleStatus(w http.ResponseWriter, r *http.Request) (TemplateData, error) 
 
 func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	ctx, tmpl := GetCreateTemplateData(r.Context())
+	tmpl["VisibleURL"] = "/status"
 
 	if user := ctx.Value(common.ContextKeyUser); user != nil {
 		cast := user.(*discordgo.User)
@@ -93,16 +94,21 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 		return HandleStatus(w, r)
 	}
 
-	CtxLogger(ctx).Info("Triggering reconnect...")
+	CtxLogger(ctx).Info("Triggering reconnect...", r.FormValue("reidentify"))
+	identify := r.FormValue("reidentify") == "1"
 
+	var err error
 	sID := pat.Param(r, "shard")
-	parsed, _ := strconv.ParseInt(sID, 10, 32)
-
-	err := botrest.SendReconnectShard(int(parsed))
-	if err != nil {
-		return tmpl, err
+	if sID != "*" {
+		parsed, _ := strconv.ParseInt(sID, 10, 32)
+		err = botrest.SendReconnectShard(int(parsed), identify)
+	} else {
+		err = botrest.SendReconnectAll(identify)
 	}
 
+	if err != nil {
+		tmpl.AddAlerts(ErrorAlert(err.Error()))
+	}
 	return HandleStatus(w, r)
 }
 

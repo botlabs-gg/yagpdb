@@ -1,7 +1,13 @@
 {{define "cp_status"}}
 {{$botOwner := .IsBotOwner}}
-
 {{template "cp_head" .}}
+
+<header class="page-header">
+	<h2>Bot status</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
 {{if not .BotRunning}}
 <div class="row">
     <div class="col-lg-12">
@@ -9,9 +15,20 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
-{{else}}{{range $i, $v := .Shards}}
-<form action="/shard/{{$i}}/reconnect" method="POST">
+{{else}}
+{{if $botOwner}}
 <div class="row">
+	<div class="col">
+		<form action="/shard/*/reconnect" method="POST">
+			<button class="btn btn-danger" type="submit">Resume all shards</button>
+			<button class="btn btn-danger" type="submit" formaction="/shard/*/reconnect?reidentify=1">Reidentify all shards</button>
+		</form>
+	</div>
+</div>
+{{end}}
+{{range $i, $v := .Shards}}
+<form action="/shard/{{$i}}/reconnect" method="POST">
+	<div class="row">
 	    <div class="col-lg-1">
 	    Shard: {{$i}}
 	    </div>
@@ -35,21 +52,24 @@
 	    Total Events: {{.TotalEvents}}
 	    </div>
 	    
-	    <div class="col-lg-2">
-	    Events Per Second: {{.EventsPerSecond}}
+	    <div class="col-lg-1">
+	    Events/s: {{.EventsPerSecond}}
 	    </div>
 	    
 	    <div class="col-lg-2">
-	    Last Heartbeat Send: {{formatTime .LastHeartbeatSend.UTC "02 15:04:05"}}
+	    Heartbeat Send: {{formatTime .LastHeartbeatSend.UTC "02 15:04:05"}}
 	    </div>
 	    
 	    <div class="col-lg-2">
-	    Last Heartbeat Ack: {{formatTime .LastHeartbeatAck "02 15:04:05"}}
+	    Heartbeat Ack: {{formatTime .LastHeartbeatAck "02 15:04:05"}}
 	    </div>
 	    
 	    {{if $botOwner}}
-	    <div class="col-lg-1">
-	 			<button class="btn btn-danger" type="submit">Reconnect</button>
+	    <div class="col-lg-2">
+	 		<div class="btn-group flex-wrap">
+		 		<button class="btn btn-danger" type="submit">Resume</button>
+		 		<button class="btn btn-danger" type="submit" formaction="/shard/{{$i}}/reconnect?reidentify=1">Re-identify</button>
+		 	</div>
 	    </div>
 	    {{end}}
 	</div>

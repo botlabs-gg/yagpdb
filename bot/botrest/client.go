@@ -103,8 +103,23 @@ func GetShardStatuses() (st []*ShardStatus, err error) {
 	return
 }
 
-func SendReconnectShard(shardID int) (err error) {
-	err = post(fmt.Sprintf("shard/%d/reconnect", shardID), nil, nil)
+func SendReconnectShard(shardID int, reidentify bool) (err error) {
+	queryParams := ""
+	if reidentify {
+		queryParams = "?reidentify=1"
+	}
+
+	err = post(fmt.Sprintf("shard/%d/reconnect"+queryParams, shardID), nil, nil)
+	return
+}
+
+func SendReconnectAll(reidentify bool) (err error) {
+	queryParams := ""
+	if reidentify {
+		queryParams = "?reidentify=1"
+	}
+
+	err = post("shard/*/reconnect"+queryParams, nil, nil)
 	return
 }
 
