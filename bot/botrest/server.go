@@ -217,6 +217,13 @@ func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
 
 func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	sID := pat.Param(r, "shard")
+	forceReidentify := r.FormValue("reidentify") == "1"
+	if sID == "*" {
+		go RestartAll(forceReidentify)
+		ServeJson(w, r, "ok")
+		return
+	}
+
 	parsed, _ := strconv.ParseInt(sID, 10, 32)
 	shardcount := bot.ShardManager.GetNumShards()
 	if parsed < 0 || int(parsed) >= shardcount {
@@ -224,11 +231,22 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := bot.ShardManager.Sessions[parsed].GatewayManager.Reconnect(false)
+	err := bot.ShardManager.Sessions[parsed].GatewayManager.Reconnect(forceReidentify)
 	if err != nil {
 		ServerError(w, r, errors.WithMessage(err, "Reconnect"))
 		return
 	}
 
 	ServeJson(w, r, "ok")
+}
+
+func RestartAll(reidentify bool) {
+	logrus.Println("Reconnecting all shards re-identify:", reidentify)
+	for _, v := range bot.ShardManager.Sessions {
+		err := v.GatewayManager.Reconnect(reidentify)
+		if err != nil {
+			logrus.WithError(err).Error("Failed reconnecting shard")
+		}
+		time.Sleep(time.Second * 5)
+	}
 }
