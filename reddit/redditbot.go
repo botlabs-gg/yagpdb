@@ -133,6 +133,8 @@ func CreatePostMessage(post *reddit.Link) string {
 		body += post.URL
 	}
 
+	body = common.EscapeSpecialMentions(body)
+
 	return body
 }
 
