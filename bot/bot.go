@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/master/slave"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
@@ -21,6 +22,21 @@ var (
 	ShardManager *dshardmanager.Manager
 
 	StateHandlerPtr *eventsystem.Handler
+
+	SlaveClient *slave.Conn
+
+	state     int
+	stateLock sync.Mutex
+)
+
+const (
+	StateRunningNoMaster   int = iota
+	StateRunningWithMaster     // Fully started
+
+	StateWaitingHelloMaster
+	StateSoftStarting
+	StateShardMigrationTo
+	StateShardMigrationFrom
 )
 
 func Setup() {
@@ -102,18 +118,39 @@ func Run() {
 	// State.Debug = true
 	Running = true
 
-	go ShardManager.Start()
+	// go ShardManager.Start()
 	go MemberFetcher.Run()
 	go mergedMessageSender()
 	go MonitorLoading()
 
-	for _, p := range common.Plugins {
-		starter, ok := p.(BotStarterHandler)
-		if ok {
-			starter.StartBot()
-			log.Debug("Ran StartBot for ", p.Name())
+	masterAddr := os.Getenv("YAGPDB_MASTER_CONNECT_ADDR")
+	if masterAddr != "" {
+		stateLock.Lock()
+		state = StateWaitingHelloMaster
+		stateLock.Unlock()
+
+		log.Println("Attempting to connect to master at ", masterAddr)
+		SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
+		if err != nil {
+			log.WithError(err).Error("Failed connecting to master")
+			os.Exit(1)
 		}
+	} else {
+		stateLock.Lock()
+		state = StateRunningNoMaster
+		stateLock.Unlock()
+
+		log.Println("Running normally without a master")
+		go ShardManager.Start()
 	}
+
+	// for _, p := range common.Plugins {
+	// 	starter, ok := p.(BotStarterHandler)
+	// 	if ok {
+	// 		starter.StartBot()
+	// 		log.Debug("Ran StartBot for ", p.Name())
+	// 	}
+	// }
 }
 
 func MonitorLoading() {
