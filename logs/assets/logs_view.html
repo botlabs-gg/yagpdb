@@ -1,6 +1,11 @@
 {{define "public_server_logs"}}
 
 {{template "cp_head" .}}
+<style>
+.deleted-message{
+    color: red;
+}
+</style>
 <header class="page-header">
     <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete" method="post">
         <h2>Message logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName}} <small>(ID: {{.Logs.ChannelID}})</small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h2>
@@ -28,7 +33,9 @@
                 <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID}} Message ID: {{.MessageID}}">
                     <td class="text-nowrap">{{.Timestamp}}</td>
                     <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
-                    <td id="msg-cell-{{.ID}}" {{if .Deleted}} class="deleted-message" {{end}}>{{if or (not .Deleted) $CanViewDeleted}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}</td>{{if $IsAdmin}}
+                    <td id="msg-cell-{{.ID}}" {{if .Deleted}} class="deleted-message" {{end}}>
+                        {{if .Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Deleted) $CanViewDeleted}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}
+                    </td>{{if $IsAdmin}}
                     <td>{{if not .Deleted}}<button id="msg-button-{{.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
                 </tr>
                 {{end}}
