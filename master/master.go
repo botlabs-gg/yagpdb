@@ -1,10 +1,17 @@
 package master
 
 import (
-	"encoding/binary"
 	"github.com/sirupsen/logrus"
 	"net"
+	"os"
+	"os/exec"
 	"sync"
+)
+
+var (
+	mainSlave *SlaveConn
+	newSlave  *SlaveConn
+	mu        sync.Mutex
 )
 
 func Listen(addr string) {
@@ -18,7 +25,13 @@ func Listen(addr string) {
 }
 
 func StartSlave() {
-
+	logrus.Println("Starting slave")
+	cmd := exec.Command("yagpdb", "-bot", "-slave")
+	cmd.Env = os.Environ()
+	err := cmd.Start()
+	if err != nil {
+		logrus.Println("Error starting slave: ", err)
+	}
 }
 
 func waitForClients(listener net.Listener) {
@@ -33,4 +46,9 @@ func waitForClients(listener net.Listener) {
 		client := NewSlaveConn(conn)
 		go client.listen()
 	}
+}
+
+type Message struct {
+	EvtID uint32
+	Body  []byte
 }
