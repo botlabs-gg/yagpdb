@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"runtime"
 	"time"
@@ -367,7 +368,11 @@ func HandleQueueEvt(evt *eventsystem.EventData) {
 }
 
 func HandleGC(evt *eventsystem.EventData) {
-	evtChanGC <- evt.EvtInterface
+	gc := evt.GuildCreate()
+	evtChanGC <- &LightGC{
+		GuildID: gc.ID,
+		Members: gc.Members,
+	}
 }
 
 type UsernameListing struct {
@@ -433,9 +438,133 @@ func CheckNickname(gDB *gorm.DB, nicknameStmt *sql.Stmt, userID, guildID int64, 
 	}
 }
 
+func CheckNicknameBulk(gDB *gorm.DB, guildID int64, members []*discordgo.Member) {
+
+	ids := make([]int64, 0, len(members))
+	for _, v := range members {
+		ids = append(ids, v.User.ID)
+	}
+
+	rows, err := gDB.CommonDB().Query(
+		"select distinct on(user_id) nickname,user_id from nickname_listings where user_id = ANY ($1) AND guild_id=$2 order by user_id,id desc;", pq.Int64Array(ids), guildID)
+	if err != nil {
+		logrus.WithError(err).Error("Failed querying current nicknames")
+	}
+
+	// Value is wether the nickname was identical
+	queriedUsers := make(map[int64]bool)
+
+	for rows.Next() {
+		var nickname string
+		var userID int64
+		err = rows.Scan(&nickname, &userID)
+		if err != nil {
+			logrus.WithError(err).Error("Error while scanning")
+			continue
+		}
+
+		for _, member := range members {
+			if member.User.ID == userID {
+				if member.Nick == nickname {
+					// Already have the last username tracked
+					queriedUsers[userID] = true
+				} else {
+					queriedUsers[userID] = false
+					logrus.Debug("CHANGED Nick: ", nickname, " : ", member.Nick)
+				}
+
+				break
+			}
+		}
+	}
+	rows.Close()
+
+	for _, member := range members {
+		unchanged, queried := queriedUsers[member.User.ID]
+		if queried && unchanged {
+			continue
+		}
+
+		if !queried && member.Nick == "" {
+			// don't need to be putting this in the database as the first record for the user
+			continue
+		}
+
+		logrus.Debug("User changed nickname, new: ", member.Nick)
+
+		listing := NicknameListing{
+			UserID:   member.User.ID,
+			GuildID:  discordgo.StrID(guildID),
+			Nickname: member.Nick,
+		}
+
+		err = gDB.Create(&listing).Error
+		if err != nil {
+			logrus.WithError(err).Error("Failed setting nickname")
+		}
+	}
+
+}
+func CheckUsernameBulk(gDB *gorm.DB, users []*discordgo.User) {
+
+	ids := make([]int64, 0, len(users))
+	for _, v := range users {
+		ids = append(ids, v.ID)
+	}
+
+	rows, err := gDB.CommonDB().Query(
+		"select distinct on(user_id) username,user_id from username_listings where user_id = ANY ($1) order by user_id,id desc;", pq.Int64Array(ids))
+	if err != nil {
+		logrus.WithError(err).Error("Failed querying current usernames")
+	}
+
+	unchangedUsers := make(map[int64]bool)
+
+	for rows.Next() {
+		var username string
+		var userID int64
+		err = rows.Scan(&username, &userID)
+		if err != nil {
+			logrus.WithError(err).Error("Error while scanning")
+			continue
+		}
+
+		// var foundUser *discordgo.User
+		for _, user := range users {
+			if user.ID == userID {
+				if user.Username == username {
+					// Already have the last username tracked
+					unchangedUsers[userID] = true
+				}
+
+				break
+			}
+		}
+	}
+	rows.Close()
+
+	for _, user := range users {
+		if unchanged, ok := unchangedUsers[user.ID]; ok && unchanged {
+			continue
+		}
+
+		logrus.Debug("User changed username, new: ", user.Username)
+
+		listing := UsernameListing{
+			UserID:   user.ID,
+			Username: user.Username,
+		}
+
+		err = gDB.Create(&listing).Error
+		if err != nil {
+			logrus.WithError(err).Error("Failed setting username")
+		}
+	}
+}
+
 var (
 	evtChan   = make(chan interface{})
-	evtChanGC = make(chan interface{})
+	evtChanGC = make(chan *LightGC)
 )
 
 // Queue up all the events and process them one by one, because of limited connections
@@ -496,48 +625,50 @@ func EvtProcesser() {
 	}
 }
 
+type LightGC struct {
+	GuildID int64
+	Members []*discordgo.Member
+}
+
 func EvtProcesserGCs() {
 	for {
-		e := <-evtChanGC
+		gc := <-evtChanGC
 
-		switch t := e.(type) {
-		case *discordgo.GuildCreate:
-			tx := common.GORM.Begin()
+		tx := common.GORM.Begin()
 
-			rawTX := tx.CommonDB().(*sql.Tx)
-			nickStmt := rawTX.Stmt(nicknameQueryStatement)
-			usernameStmt := rawTX.Stmt(usernameQueryStatement)
-			// nickStmt := rawTX.Stmt(rawTX)
+		conf, err := GetConfig(gc.GuildID)
+		if err != nil {
+			logrus.WithError(err).Error("Failed fetching config")
+			continue
+		}
 
-			conf, err := GetConfig(t.ID)
-			if err != nil {
-				logrus.WithError(err).Error("Failed fetching config")
-				continue
-			}
+		started := time.Now()
 
-			started := time.Now()
-			for _, v := range t.Members {
-				if conf.NicknameLoggingEnabled {
-					CheckNickname(tx, nickStmt, v.User.ID, t.Guild.ID, v.Nick)
-				}
-				if conf.UsernameLoggingEnabled {
-					CheckUsername(tx, usernameStmt, v.User)
-				}
-			}
+		users := make([]*discordgo.User, len(gc.Members))
+		for i, m := range gc.Members {
+			users[i] = m.User
+		}
 
-			err = tx.Commit().Error
-			if err != nil {
-				logrus.WithError(err).Error("Failed committing transaction")
-				continue
-			}
+		if conf.NicknameLoggingEnabled {
+			CheckNicknameBulk(tx, gc.GuildID, gc.Members)
+		}
 
-			if len(t.Members) > 100 {
-				logrus.Infof("Checked %d members in %s", len(t.Members), time.Since(started).String())
-				// Make sure this dosen't use all our resources
-				time.Sleep(time.Millisecond * 10)
-			} else {
-				runtime.Gosched()
-			}
+		if conf.UsernameLoggingEnabled {
+			CheckUsernameBulk(tx, users)
+		}
+
+		err = tx.Commit().Error
+		if err != nil {
+			logrus.WithError(err).Error("Failed committing transaction")
+			continue
+		}
+
+		if len(gc.Members) > 100 {
+			logrus.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
+			// Make sure this dosen't use all our resources
+			time.Sleep(time.Millisecond * 10)
+		} else {
+			runtime.Gosched()
 		}
 	}
 }
