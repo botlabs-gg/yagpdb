@@ -103,13 +103,16 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	botUser := bot.State.User(true)
-
-	member := guild.MemberCopy(true, botUser.ID, true)
-	if member == nil {
+	guild.RLock()
+	ms := guild.Member(false, common.BotUser.ID)
+	if ms == nil {
+		guild.RUnlock()
 		ServerError(w, r, errors.New("Bot Member not found"))
 		return
 	}
+
+	member := ms.DGoCopy()
+	guild.RUnlock()
 
 	ServeJson(w, r, member)
 }
@@ -140,7 +143,11 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 		uIDsParsed = append(uIDsParsed, parsed)
 	}
 
-	members, _ := bot.GetMembers(gId, uIDsParsed...)
+	memberStates, _ := bot.GetMembers(gId, uIDsParsed...)
+	members := make([]*discordgo.Member, len(memberStates))
+	for i, v := range memberStates {
+		members[i] = v.DGoCopy()
+	}
 
 	ServeJson(w, r, members)
 }

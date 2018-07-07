@@ -141,26 +141,6 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 	go EmitGuildRemoved(evt.GuildDelete().ID)
 }
 
-// Makes sure the member is always in state when coming online
-func HandlePresenceUpdate(evt *eventsystem.EventData) {
-	p := evt.PresenceUpdate()
-	if p.Status == discordgo.StatusOffline {
-		return
-	}
-
-	gs := State.Guild(true, p.GuildID)
-	if gs == nil {
-		return
-	}
-
-	m := gs.Member(true, p.User.ID)
-	if m != nil && m.Member != nil {
-		return
-	}
-
-	GetMember(p.GuildID, p.User.ID)
-}
-
 // StateHandler updates the world state
 // use AddHandlerBefore to add handler before this one, otherwise they will alwyas be after
 func StateHandler(evt *eventsystem.EventData) {

@@ -26,7 +26,8 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled && !evt.User.Bot {
 
-		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.Member).Execute(client, config.JoinDMMsg)
+		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(client, config.JoinDMMsg)
+
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing dm template")
 		} else {
@@ -43,7 +44,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 			return
 		}
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.Member).Execute(client, chanMsg)
+		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(client, chanMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing join template")
 		} else {
@@ -77,7 +78,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	client := bot.ContextRedis(evt.Context())
 
-	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, memberRemove.Member).Execute(client, chanMsg)
+	msg, err := templates.NewContext(gs, nil, dstate.MSFromDGoMember(gs, memberRemove.Member)).Execute(client, chanMsg)
 	if err != nil {
 		log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing leave template")
 		return
@@ -95,7 +96,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	}
 
 	curChannel.Owner.RLock()
-	oldTopic := curChannel.Channel.Topic
+	oldTopic := curChannel.Topic
 	curChannel.Owner.RUnlock()
 
 	if oldTopic == cu.Topic {
@@ -111,7 +112,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	if config.TopicChannelInt() != 0 {
 		c := curChannel.Guild.Channel(true, config.TopicChannelInt())
 		if c != nil {
-			topicChannel = c.ID()
+			topicChannel = c.ID
 		}
 	}
 
@@ -128,5 +129,5 @@ func GetChannel(guild *dstate.GuildState, channel int64) int64 {
 		return 0
 	}
 
-	return c.ID()
+	return c.ID
 }

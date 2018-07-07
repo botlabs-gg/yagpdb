@@ -22,7 +22,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		return "Failed retrieving member", err
 	}
 
-	ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, member.User.ID, parsed.CS.ID())
+	ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, member.ID, parsed.CS.ID)
 	if err != nil {
 		return "Failed checking your perms", err
 	}
@@ -64,7 +64,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		model.OwnMessage = false
 
 		id := parsed.Switches["m"].Int64()
-		msg, err = common.BotSession.ChannelMessage(parsed.CS.ID(), id)
+		msg, err = common.BotSession.ChannelMessage(parsed.CS.ID, id)
 		if err != nil {
 			return "Couldn't find the message", err
 		}
@@ -84,7 +84,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		}
 
 		// set up the message if not provided
-		msg, err = common.BotSession.ChannelMessageSend(parsed.CS.ID(), "Role menu\nSetting up...")
+		msg, err = common.BotSession.ChannelMessageSend(parsed.CS.ID, "Role menu\nSetting up...")
 		if err != nil {
 			_, dErr := common.DiscordError(err)
 			errStr := "Failed creating the menu message, check the permissions on the channel"
@@ -106,7 +106,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 
 	if model.OwnMessage {
 		content := msg.Content + "\n" + resp
-		_, err = common.BotSession.ChannelMessageEdit(parsed.CS.ID(), msg.ID, content)
+		_, err = common.BotSession.ChannelMessageEdit(parsed.CS.ID, msg.ID, content)
 		return "", err
 	}
 

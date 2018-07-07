@@ -25,7 +25,7 @@ const (
 
 type Rule interface {
 	Check(m *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error)
-	ShouldIgnore(msg *discordgo.Message, m *discordgo.Member) bool
+	ShouldIgnore(msg *discordgo.Message, m *dstate.MemberState) bool
 	GetMuteDuration() int
 }
 
@@ -91,7 +91,7 @@ func (r BaseRule) PushViolation(client *redis.Client, key string) (p Punishment,
 }
 
 // Returns true if this rule should be ignored
-func (r BaseRule) ShouldIgnore(evt *discordgo.Message, m *discordgo.Member) bool {
+func (r BaseRule) ShouldIgnore(evt *discordgo.Message, ms *dstate.MemberState) bool {
 	if !r.Enabled {
 		return true
 	}
@@ -103,7 +103,7 @@ func (r BaseRule) ShouldIgnore(evt *discordgo.Message, m *discordgo.Member) bool
 		}
 	}
 
-	for _, role := range m.Roles {
+	for _, role := range ms.Roles {
 		if r.IgnoreRoleInt() == role {
 			return true
 		}

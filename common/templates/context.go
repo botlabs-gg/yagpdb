@@ -50,8 +50,8 @@ type Context struct {
 	GS *dstate.GuildState
 	CS *dstate.ChannelState
 
-	Member *discordgo.Member
-	Msg    *discordgo.Message
+	MS  *dstate.MemberState
+	Msg *discordgo.Message
 
 	BotUser *discordgo.User
 
@@ -73,13 +73,13 @@ type Context struct {
 	Counters map[string]int
 }
 
-func NewContext(botUser *discordgo.User, gs *dstate.GuildState, cs *dstate.ChannelState, member *discordgo.Member) *Context {
+func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
 	ctx := &Context{
 		GS: gs,
 		CS: cs,
+		MS: ms,
 
-		BotUser: botUser,
-		Member:  member,
+		BotUser: common.BotUser,
 
 		ContextFuncs: make(map[string]interface{}),
 		Data:         make(map[string]interface{}),
@@ -112,10 +112,10 @@ func (c *Context) setupBaseData() {
 		c.Data["channel"] = channel
 	}
 
-	if c.Member != nil {
-		c.Data["Member"] = c.Member
-		c.Data["User"] = c.Member.User
-		c.Data["user"] = c.Member.User
+	if c.MS != nil {
+		c.Data["Member"] = c.MS.DGoCopy()
+		c.Data["User"] = c.MS.DGoUser()
+		c.Data["user"] = c.Data["User"]
 	}
 }
 

@@ -67,7 +67,7 @@ var cmdLogs = &commands.YAGCommand{
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
 
-		l, err := CreateChannelLog(nil, cmd.GS.ID(), cmd.CS.ID(), cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
+		l, err := CreateChannelLog(nil, cmd.GS.ID(), cmd.CS.ID, cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
 				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
@@ -111,15 +111,15 @@ var cmdWhois = &commands.YAGCommand{
 
 		joinedAtStr := ""
 		joinedAtDurStr := ""
-		joinedAt, err := discordgo.Timestamp(member.JoinedAt).Parse()
-		if err != nil {
-			joinedAtStr = "Uh oh something baddy happening parsing time"
-			logrus.WithError(err).Error("Failed parsing joinedat")
+		if !member.MemberSet {
+			joinedAtStr = "Couldn't find out"
+			joinedAtDurStr = "Couldn't find out"
 		} else {
-			joinedAtStr = joinedAt.UTC().Format(time.RFC822)
-			dur := time.Since(joinedAt)
+			joinedAtStr = member.JoinedAt.UTC().Format(time.RFC822)
+			dur := time.Since(member.JoinedAt)
 			joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionHours, dur)
 		}
+
 		if joinedAtDurStr == "" {
 			joinedAtDurStr = "Lesss than an hour ago"
 		}
@@ -337,21 +337,21 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	gs.RLock()
 	ms := gs.Member(false, pu.User.ID)
-	if ms == nil || ms.Presence == nil || ms.Member == nil {
+	if ms == nil || !ms.PresenceSet || !ms.MemberSet {
 		gs.RUnlock()
 		go func() { evtChan <- evt }()
 		return
 	}
 
 	if pu.User.Username != "" {
-		if pu.User.Username != ms.Member.User.Username {
+		if pu.User.Username != ms.Username {
 			gs.RUnlock()
 			go func() { evtChan <- evt }()
 			return
 		}
 	}
 
-	if pu.Nick != ms.Presence.Nick {
+	if pu.Nick != ms.Nick {
 		gs.RUnlock()
 		go func() { evtChan <- evt }()
 		return

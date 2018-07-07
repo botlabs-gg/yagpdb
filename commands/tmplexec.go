@@ -33,7 +33,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 			// Assume it's an id
 			member, _ := bot.GetMember(tmplCtx.GS.ID(), num)
 			if member != nil {
-				return member.User, nil
+				return member.DGoUser(), nil
 			}
 
 			return nil, errors.New("User not found")
@@ -57,7 +57,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 				member, _ := bot.GetMember(tmplCtx.GS.ID(), id)
 				if member != nil {
 					// Found member
-					return member.User, nil
+					return member.DGoUser(), nil
 				}
 
 			}

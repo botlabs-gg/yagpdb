@@ -20,7 +20,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 
 	c.GS.RLock()
 	gName := c.GS.Guild.Name
-	memberID := c.Member.User.ID
+	memberID := c.MS.ID
 	c.GS.RUnlock()
 
 	msg := fmt.Sprint(s...)
@@ -110,7 +110,7 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	}
 
 	c.GS.RLock()
-	contains := common.ContainsInt64Slice(c.Member.Roles, role)
+	contains := common.ContainsInt64Slice(c.MS.Roles, role)
 	c.GS.RUnlock()
 	return contains
 }
@@ -124,7 +124,7 @@ func (c *Context) tmplHasRoleName(name string) bool {
 
 	for _, r := range c.GS.Guild.Roles {
 		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(c.Member.Roles, r.ID) {
+			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
 				c.GS.RUnlock()
 				return true
 			}
@@ -148,7 +148,7 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleAdd(c.GS.ID(), c.Member.User.ID, rid)
+	err := common.BotSession.GuildMemberRoleAdd(c.GS.ID(), c.MS.ID, rid)
 	if err != nil {
 		return "", err
 	}
@@ -166,7 +166,7 @@ func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleRemove(c.GS.ID(), c.Member.User.ID, rid)
+	err := common.BotSession.GuildMemberRoleRemove(c.GS.ID(), c.MS.ID, rid)
 	if err != nil {
 		return "", err
 	}
