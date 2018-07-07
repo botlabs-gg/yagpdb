@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"strings"
+	"time"
 )
 
 var Command = &commands.YAGCommand{
@@ -23,7 +24,7 @@ var Command = &commands.YAGCommand{
 }
 
 func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
-	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageRoles, data.Msg.Author.ID, data.CS.ID()); err != nil {
+	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageRoles, data.Msg.Author.ID, data.CS.ID); err != nil {
 		return "Failed checking perms", err
 	} else if !ok {
 		return "You need manage server perms to use this commmand", nil
@@ -52,7 +53,9 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
-	_, err = common.BotSession.ChannelMessageSend(data.CS.ID(), "<@&"+discordgo.StrID(role.ID)+">")
+	_, err = common.BotSession.ChannelMessageSend(data.CS.ID, "<@&"+discordgo.StrID(role.ID)+">")
+
+	time.Sleep(time.Second * 2)
 
 	common.BotSession.GuildRoleEdit(data.GS.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
 	return "", err

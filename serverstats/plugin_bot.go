@@ -181,23 +181,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	for _, v := range config.ParsedChannels {
-		if channel.ID() == v {
-			return
-		}
-	}
-
-	if channel == nil {
-		ch, err := common.BotSession.Channel(m.ChannelID)
-		if err != nil {
-			log.WithField("channel", m.ChannelID).WithField("msg", m.Content).Error("nil channel")
-		} else {
-			log.Println("Found channel but nil in state? ", m.ChannelID, ch.Name, ch.GuildID)
-		}
-		return
-	}
-
-	if channel.IsPrivate() {
+	if common.ContainsInt64Slice(config.ParsedChannels, channel.ID) {
 		return
 	}
 

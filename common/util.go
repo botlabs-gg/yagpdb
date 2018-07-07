@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -296,10 +297,32 @@ func AddRole(member *discordgo.Member, role int64, guildID int64) error {
 	return BotSession.GuildMemberRoleAdd(guildID, member.User.ID, role)
 }
 
+func AddRoleDS(ms *dstate.MemberState, role int64) error {
+	for _, v := range ms.Roles {
+		if v == role {
+			// Already has the role
+			return nil
+		}
+	}
+
+	return BotSession.GuildMemberRoleAdd(ms.Guild.ID(), ms.ID, role)
+}
+
 func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
 	for _, r := range member.Roles {
 		if r == role {
 			return BotSession.GuildMemberRoleRemove(guildID, member.User.ID, r)
+		}
+	}
+
+	// Never had the role in the first place if we got here
+	return nil
+}
+
+func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
+	for _, r := range ms.Roles {
+		if r == role {
+			return BotSession.GuildMemberRoleRemove(ms.Guild.ID(), ms.ID, r)
 		}
 	}
 

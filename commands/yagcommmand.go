@@ -118,7 +118,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send typing to indicate the bot's working
-	common.BotSession.ChannelTyping(data.CS.ID())
+	common.BotSession.ChannelTyping(data.CS.ID)
 
 	logger := yc.Logger(data)
 
@@ -138,7 +138,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	// Set up log entry for later use
 	logEntry := &common.LoggedExecutedCommand{
 		UserID:    discordgo.StrID(data.Msg.Author.ID),
-		ChannelID: discordgo.StrID(cState.ID()),
+		ChannelID: discordgo.StrID(cState.ID),
 
 		Command:    yc.Name,
 		RawCommand: data.Msg.Content,
@@ -192,7 +192,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		if settings.DelTrigger {
 			go func() {
 				time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
-				common.BotSession.ChannelMessageDelete(cmdData.CS.ID(), cmdData.Msg.ID)
+				common.BotSession.ChannelMessageDelete(cmdData.CS.ID, cmdData.Msg.ID)
 			}()
 		}
 		return // Don't bother sending the reponse if it has no delete delay
@@ -223,9 +223,9 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 			}
 
 			if len(ids) == 1 {
-				common.BotSession.ChannelMessageDelete(cmdData.CS.ID(), ids[0])
+				common.BotSession.ChannelMessageDelete(cmdData.CS.ID, ids[0])
 			} else if len(ids) > 1 {
-				common.BotSession.ChannelMessagesBulkDelete(cmdData.CS.ID(), ids)
+				common.BotSession.ChannelMessagesBulkDelete(cmdData.CS.ID, ids)
 			}
 		}()
 	}
@@ -234,7 +234,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	if settings.DelTrigger && (!settings.DelResponse || settings.DelTriggerDelay != settings.DelResponseDelay) {
 		go func() {
 			time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
-			common.BotSession.ChannelMessageDelete(cmdData.CS.ID(), cmdData.Msg.ID)
+			common.BotSession.ChannelMessageDelete(cmdData.CS.ID, cmdData.Msg.ID)
 		}()
 	}
 
@@ -258,7 +258,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 
 		cop := cState.Copy(true, false)
 
-		settings, err = cs.GetSettings(client, cState.ID(), cop.ParentID, guild.ID())
+		settings, err = cs.GetSettings(client, cState.ID, cop.ParentID, guild.ID())
 		if err != nil {
 			err = errors.WithMessage(err, "cs.GetSettings")
 			resp = "Bot is having isssues, contact the bot owner."
@@ -272,7 +272,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 
 		// Check the required and ignored roles
 		if len(settings.RequiredRoles) > 0 || len(settings.IgnoreRoles) > 0 {
-			var member *discordgo.Member
+			var member *dstate.MemberState
 			member, err = bot.GetMember(guild.ID(), data.Msg.Author.ID)
 			if err != nil {
 				err = errors.WithMessage(err, "bot.GetMember")
@@ -515,7 +515,7 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *log.Entry {
 		}
 
 		if data.CS != nil {
-			l = l.WithField("channel", data.CS.ID())
+			l = l.WithField("channel", data.CS.ID)
 		}
 	}
 

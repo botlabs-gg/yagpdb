@@ -148,10 +148,11 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send full help in DM
-	channel, err := bot.GetCreatePrivateChannel(data.Msg.Author.ID)
+	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
 	if err != nil {
 		return "Something went wrong", err
 	}
+
 	for _, v := range resp {
 		common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
 	}

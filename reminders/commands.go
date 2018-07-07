@@ -47,7 +47,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-			_, err := NewReminder(client, parsed.Msg.Author.ID, parsed.CS.ID(), parsed.Args[1].Str(), when)
+			_, err := NewReminder(client, parsed.Msg.Author.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
 			if err != nil {
 				return err, err
 			}
@@ -76,7 +76,7 @@ var cmds = []*commands.YAGCommand{
 		Name:        "CReminders",
 		Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, parsed.CS.ID())
+			ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, parsed.CS.ID)
 			if err != nil {
 				return "An eror occured checkign for perms", err
 			}
@@ -84,7 +84,7 @@ var cmds = []*commands.YAGCommand{
 				return "You do not have access to this command (requires manage channel permission)", nil
 			}
 
-			currentReminders, err := GetChannelReminders(parsed.CS.ID())
+			currentReminders, err := GetChannelReminders(parsed.CS.ID)
 			if err != nil {
 				return "Failed fetching reminders, contact bot owner", err
 			}
@@ -169,14 +169,14 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		if !displayUsernames {
 			channel := "Unknown channel"
 			if cs != nil {
-				channel = "<#" + discordgo.StrID(cs.ID()) + ">"
+				channel = "<#" + discordgo.StrID(cs.ID) + ">"
 			}
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
 			member, _ := bot.GetMember(cs.Guild.ID(), v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
-				username = member.User.Username
+				username = member.Username
 			}
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
 		}

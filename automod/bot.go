@@ -157,13 +157,13 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
 	switch highestPunish {
 	case PunishNone:
-		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, member.User, "Automoderator: "+punishMsg)
+		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, member.DGoUser(), "Automoderator: "+punishMsg)
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
-		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User)
+		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member.DGoUser())
 	case PunishBan:
-		err = moderation.BanUser(client, nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User, true)
+		err = moderation.BanUser(client, nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member.DGoUser(), true)
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs

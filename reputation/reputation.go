@@ -132,7 +132,7 @@ var (
 	ErrCooldown           = UserError("You're still on cooldown")
 )
 
-func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID int64, sender, receiver *discordgo.Member, amount int64) (err error) {
+func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID int64, sender, receiver *dstate.MemberState, amount int64) (err error) {
 	if conf == nil {
 		conf, err = GetConfig(guildID)
 		if err != nil {
@@ -152,7 +152,7 @@ func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID
 		return
 	}
 
-	ok, err := CheckSetCooldown(conf, redisClient, sender.User.ID)
+	ok, err := CheckSetCooldown(conf, redisClient, sender.ID)
 	if err != nil || !ok {
 		if err == nil {
 			err = ErrCooldown
@@ -160,18 +160,18 @@ func ModifyRep(conf *models.ReputationConfig, redisClient *redis.Client, guildID
 		return
 	}
 
-	err = insertUpdateUserRep(guildID, receiver.User.ID, amount)
+	err = insertUpdateUserRep(guildID, receiver.ID, amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
-		ClearCooldown(redisClient, guildID, sender.User.ID)
+		ClearCooldown(redisClient, guildID, sender.ID)
 		return
 	}
 
 	// Add the log element
 	entry := &models.ReputationLog{
 		GuildID:        guildID,
-		SenderID:       sender.User.ID,
-		ReceiverID:     sender.User.ID,
+		SenderID:       sender.ID,
+		ReceiverID:     receiver.ID,
 		SetFixedAmount: false,
 		Amount:         amount,
 	}
@@ -208,7 +208,7 @@ func insertUpdateUserRep(guildID, userID int64, amount int64) (err error) {
 
 // Returns a user error if the sender can not modify the rep of receiver
 // Admins are always able to modify the rep of everyone
-func CanModifyRep(conf *models.ReputationConfig, sender, receiver *discordgo.Member) error {
+func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.MemberState) error {
 	parsedAdminRole, _ := strconv.ParseInt(conf.AdminRole.String, 10, 64)
 	if conf.AdminRole.String != "" && common.ContainsInt64Slice(sender.Roles, parsedAdminRole) {
 		return nil
@@ -237,8 +237,8 @@ func CanModifyRep(conf *models.ReputationConfig, sender, receiver *discordgo.Mem
 	return nil
 }
 
-func IsAdmin(gs *dstate.GuildState, member *discordgo.Member, config *models.ReputationConfig) bool {
-	memberPerms, _ := gs.MemberPermissions(false, gs.ID(), member.User.ID)
+func IsAdmin(gs *dstate.GuildState, member *dstate.MemberState, config *models.ReputationConfig) bool {
+	memberPerms, _ := gs.MemberPermissions(false, gs.ID(), member.ID)
 
 	if memberPerms&discordgo.PermissionManageServer != 0 {
 		return true
@@ -330,7 +330,13 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 	}
 
 	if bot.Running {
-		members, err = bot.GetMembers(guildID, userIDs...)
+		var tmp []*dstate.MemberState
+		tmp, err = bot.GetMembers(guildID, userIDs...)
+		if tmp != nil {
+			for _, v := range tmp {
+				members = append(members, v.DGoCopy())
+			}
+		}
 	} else {
 		members, err = botrest.GetMembers(guildID, userIDs...)
 	}

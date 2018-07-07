@@ -61,7 +61,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 	gs.RLock()
 	m := gs.Member(false, p.User.ID)
-	if m != nil && m.Member != nil {
+	if m != nil && m.MemberSet {
 		gs.RUnlock()
 		return
 	}
@@ -203,24 +203,18 @@ func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 	now := time.Now()
 OUTER:
 	for _, ms := range gs.Members {
-		if ms.Member == nil {
+		if !ms.MemberSet {
 			continue
 		}
 
-		parsedJoined, err := discordgo.Timestamp(ms.Member.JoinedAt).Parse()
-		if err != nil {
-			logrus.WithError(err).Warn("Failed parsing join timestamp")
-			continue
-		}
-
-		if now.Sub(parsedJoined) > time.Duration(config.RequiredDuration)*time.Minute && config.CanAssignTo(ms.Member) {
-			for _, r := range ms.Member.Roles {
+		if now.Sub(ms.JoinedAt) > time.Duration(config.RequiredDuration)*time.Minute && config.CanAssignTo(ms) {
+			for _, r := range ms.Roles {
 				if r == config.Role {
 					continue OUTER
 				}
 			}
 
-			membersToGiveRole = append(membersToGiveRole, ms.ID())
+			membersToGiveRole = append(membersToGiveRole, ms.ID)
 		}
 	}
 
@@ -284,18 +278,25 @@ func OnMemberJoin(evt *eventsystem.EventData) {
 		return
 	}
 
-	if config.Role != 0 && config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Member) {
+	gs := bot.State.Guild(true, addEvt.GuildID)
+	ms := gs.MemberCopy(true, addEvt.User.ID)
+	if ms == nil {
+		logrus.Error("Member not found in add event")
+		return
+	}
+
+	if config.Role != 0 && config.RequiredDuration < 1 && config.CanAssignTo(ms) {
 		common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
 	}
 }
 
-func (conf *GeneralConfig) CanAssignTo(member *discordgo.Member) bool {
+func (conf *GeneralConfig) CanAssignTo(ms *dstate.MemberState) bool {
 	if len(conf.IgnoreRoles) < 1 && len(conf.RequiredRoles) < 1 {
 		return true
 	}
 
 	for _, ignoreRole := range conf.IgnoreRoles {
-		if common.ContainsInt64Slice(member.Roles, ignoreRole) {
+		if common.ContainsInt64Slice(ms.Roles, ignoreRole) {
 			return false
 		}
 	}
@@ -303,7 +304,7 @@ func (conf *GeneralConfig) CanAssignTo(member *discordgo.Member) bool {
 	// If require roles are set up, make sure the member has one of them
 	if len(conf.RequiredRoles) > 0 {
 		for _, reqRole := range conf.RequiredRoles {
-			if common.ContainsInt64Slice(member.Roles, reqRole) {
+			if common.ContainsInt64Slice(ms.Roles, reqRole) {
 				return true
 			}
 		}
