@@ -91,6 +91,7 @@ func StartPolling() {
 	startedLock.Unlock()
 
 	ticker := time.NewTicker(time.Second)
+	tickerClean := time.NewTicker(time.Hour)
 	for {
 		select {
 		case wg := <-stopChan:
@@ -98,6 +99,18 @@ func StartPolling() {
 			return
 		case <-ticker.C:
 			poll()
+		case <-tickerClean.C:
+			go func() {
+				result, err := common.PQ.Exec("DELETE FROM mqueue WHERE processed=true")
+				if err != nil {
+					logrus.WithError(err).Error("Failed cleaning mqueue db")
+				} else {
+					rows, err := result.RowsAffected()
+					if err == nil {
+						logrus.Println("mqueue cleaned up ", rows, " rows")
+					}
+				}
+			}()
 		}
 	}
 }
