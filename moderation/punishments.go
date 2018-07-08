@@ -106,7 +106,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 			executed = "Failed executing template."
 		}
 
-		go bot.SendDM(user.ID, bot.GuildName(guildID)+executed)
+		go bot.SendDM(user.ID, "**"+bot.GuildName(guildID)+":** "+executed)
 	}
 
 	logLink := ""
