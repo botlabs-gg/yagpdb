@@ -211,7 +211,6 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 	// Check if this was previously attempted and failed
 	failedCacheKey := discordgo.StrID(guildID) + ":" + discordgo.StrID(elem.Member)
 	if failedUsersCache.Get(failedCacheKey) == nil {
-		var err error
 		var member *discordgo.Member
 		member, err = common.BotSession.GuildMember(guildID, elem.Member)
 		if err != nil {
@@ -233,6 +232,10 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 		}
 	} else {
 		err = errors.New("Member is in failed fetching cache")
+	}
+
+	if ms == nil && err == nil {
+		err = errors.New("Member not found (left guild perhaps?)")
 	}
 
 	m.Lock()

@@ -93,6 +93,9 @@ func handleUnMute(data string) error {
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 			return nil // Discord api ok, something else went wrong (like the user not being on the server). do not reschedule
 		}
+		if err == bot.ErrGuildNotFound {
+			return nil
+		}
 
 		return err
 	}
