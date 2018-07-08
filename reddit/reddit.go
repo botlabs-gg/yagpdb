@@ -84,10 +84,11 @@ func RegisterPlugin() {
 }
 
 type SubredditWatchItem struct {
-	Sub     string `json:"sub"`
-	Guild   string `json:"guild"`
-	Channel string `json:"channel"`
-	ID      int    `json:"id"`
+	Sub       string `json:"sub"`
+	Guild     string `json:"guild"`
+	Channel   string `json:"channel"`
+	ID        int    `json:"id"`
+	UseEmbeds bool   `json:"use_embeds"`
 }
 
 func FindWatchItem(source []*SubredditWatchItem, id int) *SubredditWatchItem {

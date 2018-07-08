@@ -3,6 +3,7 @@ package customcommands
 import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -115,7 +116,7 @@ func (cc *CustomCommand) RunsInChannel(channel int64) bool {
 	return true
 }
 
-func (cc *CustomCommand) RunsForUser(m *discordgo.Member) bool {
+func (cc *CustomCommand) RunsForUser(ms *dstate.MemberState) bool {
 
 	if len(cc.Roles) == 0 {
 		// Fast path
@@ -127,7 +128,7 @@ func (cc *CustomCommand) RunsForUser(m *discordgo.Member) bool {
 	}
 
 	for _, v := range cc.Roles {
-		if common.ContainsInt64Slice(m.Roles, v) {
+		if common.ContainsInt64Slice(ms.Roles, v) {
 			if cc.RequireRoles {
 				return true
 			}

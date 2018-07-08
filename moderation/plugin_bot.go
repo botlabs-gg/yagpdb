@@ -71,7 +71,7 @@ func RefreshMuteOverrides(guildID int64) {
 	guild.RLock()
 	defer guild.RUnlock()
 	for _, v := range guild.Channels {
-		RefreshMuteOverrideForChannel(config, v.Channel)
+		RefreshMuteOverrideForChannel(config, v.DGoCopy())
 	}
 }
 
@@ -282,7 +282,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 
 	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
 
-	removedRoles, err := AddMemberMuteRole(config, c.Member)
+	removedRoles, err := AddMemberMuteRole(config, c.Member.User.ID, c.Member.Roles)
 	if err != nil {
 		logrus.WithError(err).Error("Failed adding mute role to user in member update")
 	}
@@ -332,7 +332,7 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 
 		userID := data.Msg.Author.ID
-		channelID := data.CS.ID()
+		channelID := data.CS.ID
 		guildID := data.GS.ID()
 
 		cmdName := data.Cmd.Trigger.Names[0]
@@ -483,16 +483,16 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason := SafeArgString(parsed, 1)
 
 			targetID := parsed.Args[0].Int64()
-			targetMember := parsed.GS.MemberCopy(true, targetID, false)
+			targetMember := parsed.GS.MemberCopy(true, targetID)
 			var target *discordgo.User
-			if targetMember == nil {
+			if targetMember == nil || !targetMember.MemberSet {
 				target = &discordgo.User{
 					Username:      "unknown",
 					Discriminator: "????",
 					ID:            targetID,
 				}
 			} else {
-				target = targetMember.User
+				target = targetMember.DGoUser()
 			}
 
 			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
@@ -624,7 +624,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RunFunc: ModBaseCmd(0, ModCmdReport, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
-			logLink := CreateLogs(parsed.GS.ID(), parsed.CS.ID(), parsed.Msg.Author)
+			logLink := CreateLogs(parsed.GS.ID(), parsed.CS.ID, parsed.Msg.Author)
 
 			channelID := config.IntReportChannel()
 			if channelID == 0 {
@@ -778,7 +778,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
-			err := WarnUser(config, parsed.GS.ID(), parsed.CS.ID(), parsed.Msg.Author, parsed.Args[0].Value.(*discordgo.User), parsed.Args[1].Str())
+			err := WarnUser(config, parsed.GS.ID(), parsed.CS.ID, parsed.Msg.Author, parsed.Args[0].Value.(*discordgo.User), parsed.Args[1].Str())
 			if err != nil {
 				return "Seomthing went wrong warning this user, make sure the bot has all the proper perms. (if you have the modlog enabled the bot need to be able to send messages in the modlog for example)", err
 			}

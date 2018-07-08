@@ -124,6 +124,10 @@
 		function resize() {
 			if (ta.scrollHeight === 0) {
 				// If the scrollHeight is 0, then the element probably has display:none or is detached from the DOM.
+				var txtLen = ta.value.split(/\r\n|\r|\n/).length;
+				if (txtLen > 0) {
+					ta.style.height = (txtLen*2) + "em";
+				}
 				return;
 			}
 

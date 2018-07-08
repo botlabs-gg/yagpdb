@@ -87,10 +87,11 @@ func handleUnMute(data string) error {
 	guildID, _ := strconv.ParseInt(split[0], 10, 64)
 	userID, _ := strconv.ParseInt(split[1], 10, 64)
 
-	member, err := common.BotSession.GuildMember(guildID, userID)
+	member, err := bot.GetMember(guildID, userID)
 	if err != nil {
+		err = errors.Cause(err)
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-			return nil // Discord api ok, something else went wrong. do not reschedule
+			return nil // Discord api ok, something else went wrong (like the user not being on the server). do not reschedule
 		}
 
 		return err

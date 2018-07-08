@@ -41,35 +41,27 @@ func RedisWrapper(inner eventsystem.Handler) eventsystem.Handler {
 	}
 }
 
-func GetCreatePrivateChannel(user int64) (*discordgo.Channel, error) {
-
-	State.RLock()
-	defer State.RUnlock()
-	for _, c := range State.PrivateChannels {
-		if c.Recipient() != nil && c.Recipient().ID == user {
-			return c.Copy(true, false), nil
-		}
-	}
-
-	channel, err := common.BotSession.UserChannelCreate(user)
-	if err != nil {
-		return nil, err
-	}
-
-	return channel, nil
-}
-
 func SendDM(user int64, msg string) error {
 	if strings.TrimSpace(msg) == "" {
 		return nil
 	}
 
-	channel, err := GetCreatePrivateChannel(user)
+	channel, err := common.BotSession.UserChannelCreate(user)
 	if err != nil {
 		return err
 	}
 
 	_, err = common.BotSession.ChannelMessageSend(channel.ID, msg)
+	return err
+}
+
+func SendDMEmbed(user int64, embed *discordgo.MessageEmbed) error {
+	channel, err := common.BotSession.UserChannelCreate(user)
+	if err != nil {
+		return err
+	}
+
+	_, err = common.BotSession.ChannelMessageSendEmbed(channel.ID, embed)
 	return err
 }
 

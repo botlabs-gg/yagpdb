@@ -3,6 +3,7 @@ package bot
 import (
 	"errors"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
@@ -20,14 +21,14 @@ var (
 	failedUsersCache = ccache.New(ccache.Configure())
 )
 
-func GetMember(guildID, userID int64) (*discordgo.Member, error) {
+func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 	gs := State.Guild(true, guildID)
 	if gs == nil {
 		return nil, ErrGuildNotFound
 	}
 
-	cop := gs.MemberCopy(true, userID, true)
-	if cop != nil {
+	cop := gs.MemberCopy(true, userID)
+	if cop != nil && cop.MemberSet {
 		return cop, nil
 	}
 
@@ -35,8 +36,8 @@ func GetMember(guildID, userID int64) (*discordgo.Member, error) {
 	return result.Member, result.Err
 }
 
-func GetMembers(guildID int64, userIDs ...int64) ([]*discordgo.Member, error) {
-	resultChan := make(chan *discordgo.Member)
+func GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberState, error) {
+	resultChan := make(chan *dstate.MemberState)
 	for _, v := range userIDs {
 		go func(id int64) {
 			m, _ := GetMember(guildID, id)
@@ -44,7 +45,7 @@ func GetMembers(guildID int64, userIDs ...int64) ([]*discordgo.Member, error) {
 		}(v)
 	}
 
-	result := make([]*discordgo.Member, 0, len(userIDs))
+	result := make([]*dstate.MemberState, 0, len(userIDs))
 	for i := 0; i < len(userIDs); i++ {
 		m := <-resultChan
 		if m != nil {
@@ -90,7 +91,7 @@ func (req *MemberFetchRequest) sendResult(result MemberFetchResult) {
 
 type MemberFetchResult struct {
 	Err    error
-	Member *discordgo.Member
+	Member *dstate.MemberState
 }
 
 func (m *memberFetcher) RequestMember(guildID, userID int64) <-chan MemberFetchResult {
@@ -191,7 +192,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 	logrus.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
 
 	if gs := State.Guild(true, guildID); gs != nil {
-		if member := gs.MemberCopy(true, elem.Member, true); member != nil {
+		if member := gs.MemberCopy(true, elem.Member); member != nil && member.MemberSet {
 			// Member is already in state, no need to request it
 			m.Lock()
 
@@ -205,12 +206,13 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 		}
 	}
 
-	var member *discordgo.Member
+	var ms *dstate.MemberState
 	var err error
 	// Check if this was previously attempted and failed
 	failedCacheKey := discordgo.StrID(guildID) + ":" + discordgo.StrID(elem.Member)
 	if failedUsersCache.Get(failedCacheKey) == nil {
-
+		var err error
+		var member *discordgo.Member
 		member, err = common.BotSession.GuildMember(guildID, elem.Member)
 		if err != nil {
 			logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
@@ -226,6 +228,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 
 			if gs := State.Guild(true, guildID); gs != nil {
 				gs.MemberAddUpdate(true, member)
+				ms = gs.MemberCopy(true, member.User.ID)
 			}
 		}
 	} else {
@@ -235,7 +238,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 	m.Lock()
 	result := MemberFetchResult{
 		Err:    err,
-		Member: member,
+		Member: ms,
 	}
 
 	elem.sendResult(result)

@@ -102,9 +102,9 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dst
 		return true
 	}
 
-	channelPerms, err := cState.Guild.MemberPermissions(true, cState.ID(), userID)
+	channelPerms, err := cState.Guild.MemberPermissions(true, cState.ID, userID)
 	if err != nil {
-		log.WithFields(log.Fields{"guild": cState.Guild.ID(), "channel": cState.ID()}).WithError(err).Error("Failed checking channel perms")
+		log.WithFields(log.Fields{"guild": cState.Guild.ID(), "channel": cState.ID}).WithError(err).Error("Failed checking channel perms")
 		return true
 	}
 
@@ -171,13 +171,13 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	log.WithFields(log.Fields{
 		"trigger":      matched.Trigger,
 		"trigger_type": matched.TriggerType,
-		"guild":        channel.GuildID,
+		"guild":        channel.Guild.ID(),
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
 	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, client, bot.ContextSession(evt.Context()), mc)
 	if err != nil {
-		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
+		log.WithField("guild", channel.Guild.ID()).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
 		out += common.EscapeSpecialMentions(err.Error())
 	}
@@ -207,7 +207,7 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 		return
 	}
 
-	tmplCtx = templates.NewContext(bot.State.User(true).User, cs.Guild, cs, member)
+	tmplCtx = templates.NewContext(cs.Guild, cs, member)
 	tmplCtx.Redis = client
 	tmplCtx.Msg = m.Message
 

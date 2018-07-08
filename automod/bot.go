@@ -1,6 +1,7 @@
 package automod
 
 import (
+	"github.com/google/safebrowsing"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -10,6 +11,7 @@ import (
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
+	"os"
 	"time"
 )
 
@@ -21,12 +23,28 @@ func (p *Plugin) InitBot() {
 var _ bot.BotStarterHandler = (*Plugin)(nil)
 var (
 	// cache configs because they are used often
-	confCache *ccache.Cache
+	confCache   *ccache.Cache
+	safeBrowser *safebrowsing.SafeBrowser
 )
 
 func (p *Plugin) StartBot() {
 	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
 	confCache = ccache.New(ccache.Configure().MaxSize(1000))
+
+	safeBrosingAPIKey := os.Getenv("YAGPDB_GOOGLE_SAFEBROWSING_API_KEY")
+	if safeBrosingAPIKey != "" {
+		conf := safebrowsing.Config{
+			APIKey: safeBrosingAPIKey,
+			DBPath: "safebrowsing_db",
+			Logger: logrus.StandardLogger().Writer(),
+		}
+		sb, err := safebrowsing.NewSafeBrowser(conf)
+		if err != nil {
+			logrus.WithError(err).Error("Failed initializing google safebrowsing client, integration will be disabled")
+		} else {
+			safeBrowser = sb
+		}
+	}
 }
 
 // Invalidate the cache when the rules have changed
@@ -157,13 +175,13 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
 	switch highestPunish {
 	case PunishNone:
-		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, member.User, "Automoderator: "+punishMsg)
+		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, member.DGoUser(), "Automoderator: "+punishMsg)
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
-		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User)
+		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member.DGoUser())
 	case PunishBan:
-		err = moderation.BanUser(client, nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User, true)
+		err = moderation.BanUser(client, nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member.DGoUser(), true)
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs

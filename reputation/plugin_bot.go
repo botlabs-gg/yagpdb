@@ -130,7 +130,7 @@ var cmds = []*commands.YAGCommand{
 			parsed.GS.RUnlock()
 
 			target := parsed.Args[0].Value.(*discordgo.User)
-			err = SetRep(parsed.GS.ID(), member.User.ID, target.ID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.GS.ID(), member.ID, target.ID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return "Failed setting rep, contact bot owner", err
 			}
@@ -164,7 +164,7 @@ var cmds = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Int64()
 
-			err = SetRep(parsed.GS.ID(), member.User.ID, target, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.GS.ID(), member.ID, target, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return "Failed setting rep, contact bot owner", err
 			}

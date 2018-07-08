@@ -3,7 +3,7 @@ package soundboard
 import (
 	"errors"
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -72,12 +72,12 @@ func (p *Plugin) InitBot() {
 	})
 }
 
-func ListSounds(config *SoundboardConfig, member *discordgo.Member) string {
+func ListSounds(config *SoundboardConfig, ms *dstate.MemberState) string {
 	canPlay := ""
 	restricted := ""
 
 	for _, sound := range config.Sounds {
-		if sound.CanPlay(member.Roles) {
+		if sound.CanPlay(ms.Roles) {
 			canPlay += "`" + sound.Name + "`, "
 		} else {
 			restricted += "`" + sound.Name + "`, "
