@@ -24,6 +24,7 @@ type Form struct {
 	Subreddit string `schema:"subreddit" valid:",1,100"`
 	Channel   string `schema:"channel" valid:"channel,false`
 	ID        int    `schema:"id"`
+	UseEmbeds bool   `schema:"use_embeds"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -114,10 +115,11 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	watchItem := &SubredditWatchItem{
-		Sub:     strings.TrimSpace(newElem.Subreddit),
-		Channel: newElem.Channel,
-		Guild:   discordgo.StrID(activeGuild.ID),
-		ID:      highest + 1,
+		Sub:       strings.TrimSpace(newElem.Subreddit),
+		Channel:   newElem.Channel,
+		Guild:     discordgo.StrID(activeGuild.ID),
+		ID:        highest + 1,
+		UseEmbeds: newElem.UseEmbeds,
 	}
 
 	err := watchItem.Set(client)
@@ -160,6 +162,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 	subIsNew := !strings.EqualFold(updated.Subreddit, item.Sub)
 	item.Channel = updated.Channel
+	item.UseEmbeds = updated.UseEmbeds
 
 	var err error
 	if !subIsNew {

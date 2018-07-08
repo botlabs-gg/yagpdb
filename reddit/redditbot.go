@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"fmt"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
@@ -109,31 +110,65 @@ OUTER:
 		"subreddit":    post.Subreddit,
 	}).Info("Found matched reddit post")
 
-	message := CreatePostMessage(post)
+	message, embed := CreatePostMessage(post)
 
 	for _, item := range filteredItems {
-		mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, message)
+		if item.UseEmbeds {
+			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, embed)
+		} else {
+			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, message)
+		}
 	}
 
 	return nil
 }
 
-func CreatePostMessage(post *reddit.Link) string {
+func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	typeStr := "link"
 	if post.IsSelf {
 		typeStr = "self post"
 	}
 
-	body := fmt.Sprintf("<:reddit:462994034428870656> **/u/%s** posted a new %s in **/r/%s**\n**%s** - <%s>\n",
+	plainMessage := fmt.Sprintf("<:reddit:462994034428870656> **/u/%s** posted a new %s in **/r/%s**\n**%s** - <%s>\n",
 		post.Author, typeStr, post.Subreddit, post.Title, "https://redd.it/"+post.ID)
 
 	if post.IsSelf {
-		body += common.CutStringShort(post.Selftext, 250)
+		plainMessage += common.CutStringShort(post.Selftext, 250)
 	} else {
-		body += post.URL
+		plainMessage += post.URL
 	}
 
-	return body
+	embed := &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://reddit.com/u/" + post.Author,
+			Name:    post.Author,
+			IconURL: "https://" + common.Conf.Host + "/static/img/reddit_icon.png",
+		},
+		Provider: &discordgo.MessageEmbedProvider{
+			Name: "Reddit",
+			URL:  "https://reddit.com",
+		},
+		Description: "**" + post.Title + "**\n",
+	}
+	embed.URL = "https://redd.it/" + post.ID
+
+	if post.IsSelf {
+		embed.Title = "New self post in /r/" + post.Subreddit
+		embed.Description += common.CutStringShort(post.Selftext, 250)
+		embed.Color = 0xc3fc7e
+	} else {
+		embed.Color = 0x718aed
+		embed.Title = "New link post in /r/" + post.Subreddit
+		embed.Description += post.URL
+
+		if post.Media.Type == "" {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: post.URL,
+			}
+		}
+	}
+
+	return plainMessage, embed
 }
 
 type RedditIdSlice []string

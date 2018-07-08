@@ -25,6 +25,11 @@
                         {{textChannelOptions .ActiveGuild.Channels 0 false ""}}
                     </select>
 
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="format-new" name="use_embeds">
+                        <label for="format-new" class="form-check-label">Use embeds<small class="ml-2">(Videos and such wont be attached, but just linked)</small></label>
+                    </div>
+
                     <button type="submit" class="btn btn-success ml-4">Add</button>
                 </form>
             </div>
@@ -45,6 +50,7 @@
                         <tr>
                             <th>Subreddit</th>
                             <th>Discord channel</th>
+                            <th>Format <small>(videos wont show if using embeds)</small></th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -60,8 +66,16 @@
                                 </select>
                             </td>
                             <td>
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update" data-async-form-alertsonly>Save</button>
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                                <div class="form-check">
+                                    <input form="feed-item-{{.ID}}" type="checkbox" class="form-check-input" id="format-{{.ID}}" name="use_embeds" {{if .UseEmbeds}}checked{{end}}>
+                                    <label for="format-{{.ID}}" class="form-check-label">Use embed</label>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                                    <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                                </div>
                             </td>
                         </tr>
                         {{end}}
@@ -75,7 +89,6 @@
     <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
-
 {{template "cp_footer" .}}
 
 {{end}}
