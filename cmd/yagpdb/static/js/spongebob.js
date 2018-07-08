@@ -281,6 +281,13 @@ function addListeners(){
     	e.preventDefault();
     	return false;
   	});
+
+	$(document).on('click', '.modal-dismiss', function (e) {
+		e.preventDefault();
+		$.magnificPopup.close();
+	});
+
+
 }
 
 // Initializes plugins such as multiselect, we have to do this on the new elements each time we load a partial page
@@ -303,6 +310,13 @@ function initPlugins(partial){
 	yagInitMultiSelect(selectorPrefix)
 	yagInitAutosize(selectorPrefix);
 	// initializeMultiselect(selectorPrefix);
+
+
+	$(selectorPrefix + '.modal-basic').magnificPopup({
+		type: 'inline',
+		preloader: false,
+		modal: true
+	});
 }
 
 var discordPermissions = {
