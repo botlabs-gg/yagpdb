@@ -18,14 +18,14 @@ import (
 
 const (
 	VERSIONMAJOR = 1
-	VERSIONMINOR = 0
-	VERSIONPATCH = 1
-	Testing      = false // Disables stuff like command cooldowns
+	VERSIONMINOR = 1
+	VERSIONPATCH = 0
+	Testing      = true // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Tight"
+	VERSION       = VERSIONNUMBER + " Unforgettable"
 
 	GORM *gorm.DB
 	PQ   *sql.DB
