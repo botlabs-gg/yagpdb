@@ -320,8 +320,8 @@ func (w *WordsRule) CheckMessage(content string) (word string) {
 type SitesRule struct {
 	BaseRule `valid:"traverse"`
 
-	BuiltinBadSites  bool
-	BuiltinPornSites bool
+	BuiltinBadSites           bool
+	GoogleSafeBrowsingEnabled bool
 
 	BannedWebsites   string `valid:",10000"`
 	compiledWebsites []string
@@ -344,19 +344,23 @@ func (w *SitesRule) GetCompiled() []string {
 }
 
 func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client *redis.Client) (del bool, punishment Punishment, msg string, err error) {
-	banned, item := s.checkMessage(evt.Content)
-
+	banned, item, threatList := s.checkMessage(evt.Content)
 	if !banned {
 		return
 	}
 
 	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badlink"))
-	msg = fmt.Sprintf("The website `%s` is banned. Contact an admin if you think this was a mistake.", item)
+	extraInfo := ""
+	if threatList != "" {
+		extraInfo = "(sb: " + threatList + ")"
+	}
+
+	msg = fmt.Sprintf("The website `%s` is banned %s", item, extraInfo)
 	del = true
 	return
 }
 
-func (s *SitesRule) checkMessage(message string) (banned bool, item string) {
+func (s *SitesRule) checkMessage(message string) (banned bool, item string, threatList string) {
 	matches := linkRegex.FindAllString(message, -1)
 
 	for _, v := range matches {
@@ -365,12 +369,29 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string) {
 			logrus.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
 		} else {
 			if banned, item := s.isBanned(parsed.Host); banned {
-				return true, item
+				return true, item, ""
 			}
+		}
+
+	}
+
+	// Check safebrowsing
+	if safeBrowser == nil || !s.GoogleSafeBrowsingEnabled {
+		return false, "", ""
+	}
+
+	urlThreats, err := safeBrowser.LookupURLs(matches)
+	if err != nil {
+		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
+	}
+
+	for _, link := range urlThreats {
+		for _, threat := range link {
+			return true, threat.Pattern, threat.ThreatType.String()
 		}
 	}
 
-	return false, ""
+	return false, "", ""
 }
 
 func (s *SitesRule) isBanned(host string) (bool, string) {
