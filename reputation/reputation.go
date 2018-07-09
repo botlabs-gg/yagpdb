@@ -238,7 +238,7 @@ func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.Member
 }
 
 func IsAdmin(gs *dstate.GuildState, member *dstate.MemberState, config *models.ReputationConfig) bool {
-	memberPerms, _ := gs.MemberPermissions(false, gs.ID(), member.ID)
+	memberPerms, _ := gs.MemberPermissions(false, gs.ID, member.ID)
 
 	if memberPerms&discordgo.PermissionManageServer != 0 {
 		return true

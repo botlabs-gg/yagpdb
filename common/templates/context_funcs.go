@@ -148,7 +148,7 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleAdd(c.GS.ID(), c.MS.ID, rid)
+	err := common.BotSession.GuildMemberRoleAdd(c.GS.ID, c.MS.ID, rid)
 	if err != nil {
 		return "", err
 	}
@@ -166,7 +166,7 @@ func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleRemove(c.GS.ID(), c.MS.ID, rid)
+	err := common.BotSession.GuildMemberRoleRemove(c.GS.ID, c.MS.ID, rid)
 	if err != nil {
 		return "", err
 	}

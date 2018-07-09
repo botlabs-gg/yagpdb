@@ -31,7 +31,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 
 		if num := templates.ToInt64(v); num != 0 {
 			// Assume it's an id
-			member, _ := bot.GetMember(tmplCtx.GS.ID(), num)
+			member, _ := bot.GetMember(tmplCtx.GS.ID, num)
 			if member != nil {
 				return member.DGoUser(), nil
 			}
@@ -54,7 +54,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 				}
 
 				id, _ := strconv.ParseInt(trimmed, 10, 64)
-				member, _ := bot.GetMember(tmplCtx.GS.ID(), id)
+				member, _ := bot.GetMember(tmplCtx.GS.ID, id)
 				if member != nil {
 					// Found member
 					return member.DGoUser(), nil

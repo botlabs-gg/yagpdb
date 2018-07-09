@@ -17,7 +17,7 @@ import (
 )
 
 func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
-	member, err := bot.GetMember(parsed.GS.ID(), parsed.Msg.Author.ID)
+	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
 	if err != nil {
 		return "Failed retrieving member", err
 	}
@@ -33,7 +33,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 
 	var group *models.RoleGroup
 	if parsed.Args[0].Value != nil {
-		group, err = models.RoleGroupsG(qm.Where("guild_id=?", parsed.GS.ID()), qm.Where("name ILIKE ?", parsed.Args[0].Str())).One()
+		group, err = models.RoleGroupsG(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str())).One()
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return "Did not find the role command group specified, make sure you typed it right", nil
@@ -48,7 +48,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 	}
 
 	model := &models.RoleMenu{
-		GuildID:   parsed.GS.ID(),
+		GuildID:   parsed.GS.ID,
 		OwnerID:   parsed.Msg.Author.ID,
 		ChannelID: parsed.Msg.ChannelID,
 
@@ -356,7 +356,7 @@ func MemberChooseOption(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd, g
 		}
 	}
 
-	member, err := bot.GetMember(gs.ID(), ra.UserID)
+	member, err := bot.GetMember(gs.ID, ra.UserID)
 	if err != nil {
 		return "An error occured giving you the role", err
 	}

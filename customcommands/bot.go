@@ -30,7 +30,7 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		ccs, _, err := GetCommands(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID())
+		ccs, _, err := GetCommands(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID)
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
@@ -104,7 +104,7 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dst
 
 	channelPerms, err := cState.Guild.MemberPermissions(true, cState.ID, userID)
 	if err != nil {
-		log.WithFields(log.Fields{"guild": cState.Guild.ID(), "channel": cState.ID}).WithError(err).Error("Failed checking channel perms")
+		log.WithFields(log.Fields{"guild": cState.Guild.ID, "channel": cState.ID}).WithError(err).Error("Failed checking channel perms")
 		return true
 	}
 
@@ -119,16 +119,16 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dst
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	client := bot.ContextRedis(evt.Context())
 	mc := evt.MessageCreate()
-	botUser := bot.State.User(true)
+	botUser := common.BotUser
 	cs := bot.State.Channel(true, mc.ChannelID)
 
 	if shouldIgnoreChannel(mc, botUser.ID, cs) {
 		return
 	}
 
-	cmds, _, err := GetCommands(client, cs.Guild.ID())
+	cmds, _, err := GetCommands(client, cs.Guild.ID)
 	if err != nil {
-		log.WithError(err).WithField("guild", cs.Guild.ID()).Error("Failed retrieving comamnds")
+		log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
 		return
 	}
 
@@ -136,13 +136,13 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix, err := commands.GetCommandPrefix(client, cs.Guild.ID())
+	prefix, err := commands.GetCommandPrefix(client, cs.Guild.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed getting prefix")
 		return
 	}
 
-	member, err := bot.GetMember(cs.Guild.ID(), mc.Author.ID)
+	member, err := bot.GetMember(cs.Guild.ID, mc.Author.ID)
 	if err != nil {
 		return
 	}
@@ -171,13 +171,13 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	log.WithFields(log.Fields{
 		"trigger":      matched.Trigger,
 		"trigger_type": matched.TriggerType,
-		"guild":        channel.Guild.ID(),
+		"guild":        channel.Guild.ID,
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
 	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, client, bot.ContextSession(evt.Context()), mc)
 	if err != nil {
-		log.WithField("guild", channel.Guild.ID()).WithError(err).Error("Error executing custom command")
+		log.WithField("guild", channel.Guild.ID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
 		out += common.EscapeSpecialMentions(err.Error())
 	}
@@ -201,7 +201,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
 
 	cs := bot.State.Channel(true, m.ChannelID)
-	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
+	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
 	if err != nil {
 		err = err
 		return

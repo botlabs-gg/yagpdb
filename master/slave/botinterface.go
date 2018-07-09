@@ -1,5 +1,9 @@
 package slave
 
+import (
+	"github.com/jonas747/yagpdb/master"
+)
+
 type Bot interface {
 	// Called when a soft start is initiated, make sure to send a EvtSoftStartComplete when completed
 	SoftStart()
@@ -13,4 +17,5 @@ type Bot interface {
 	StartShardTransferFrom() (numShards int)
 	StopShard(shard int) (sessionID string, sequence int64)
 	StartShard(shard int, sessionID string, sequence int64)
+	LoadGuildState(data *master.GuildStateData)
 }

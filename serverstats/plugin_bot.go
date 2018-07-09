@@ -43,7 +43,7 @@ func (p *Plugin) InitBot() {
 		Name:          "Stats",
 		Description:   "Shows server stats (if public stats are enabled)",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			config, err := GetConfig(data.Context(), data.GS.ID())
+			config, err := GetConfig(data.Context(), data.GS.ID)
 			if err != nil {
 				return "Failed retreiving guild config", err
 			}
@@ -52,7 +52,7 @@ func (p *Plugin) InitBot() {
 				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.Conf.Host), nil
 			}
 
-			stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID())
+			stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID)
 			if err != nil {
 				return "Error retrieving stats", err
 			}
@@ -64,7 +64,7 @@ func (p *Plugin) InitBot() {
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%d/stats)", common.Conf.Host, data.GS.ID()),
+				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%d/stats)", common.Conf.Host, data.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
 					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
@@ -175,9 +175,9 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := GetConfig(evt.Context(), channel.Guild.ID())
+	config, err := GetConfig(evt.Context(), channel.Guild.ID)
 	if err != nil {
-		log.WithError(err).WithField("guild", channel.Guild.ID()).Error("Failed retrieving config")
+		log.WithError(err).WithField("guild", channel.Guild.ID).Error("Failed retrieving config")
 		return
 	}
 
@@ -190,7 +190,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	MarkGuildAsToBeChecked(channel.Guild.ID())
+	MarkGuildAsToBeChecked(channel.Guild.ID)
 }
 
 func ApplyPresences(client *redis.Client, guildID int64, presences []*discordgo.Presence) error {

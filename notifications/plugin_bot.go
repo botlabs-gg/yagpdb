@@ -29,11 +29,11 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(client, config.JoinDMMsg)
 
 		if err != nil {
-			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing dm template")
+			log.WithError(err).WithField("guild", gs.ID).Warn("Failed parsing/executing dm template")
 		} else {
 			err = bot.SendDM(evt.User.ID, msg)
 			if err != nil {
-				log.WithError(err).WithField("guild", gs.ID()).Error("Failed sending join dm")
+				log.WithError(err).WithField("guild", gs.ID).Error("Failed sending join dm")
 			}
 		}
 	}
@@ -46,7 +46,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
 		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(client, chanMsg)
 		if err != nil {
-			log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing join template")
+			log.WithError(err).WithField("guild", gs.ID).Warn("Failed parsing/executing join template")
 		} else {
 			bot.QueueMergedMessage(channel, msg)
 		}
@@ -80,7 +80,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	msg, err := templates.NewContext(gs, nil, dstate.MSFromDGoMember(gs, memberRemove.Member)).Execute(client, chanMsg)
 	if err != nil {
-		log.WithError(err).WithField("guild", gs.ID()).Warn("Failed parsing/executing leave template")
+		log.WithError(err).WithField("guild", gs.ID).Warn("Failed parsing/executing leave template")
 		return
 	}
 

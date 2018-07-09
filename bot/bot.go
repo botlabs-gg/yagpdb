@@ -104,6 +104,8 @@ func Run() {
 	if err != nil {
 		panic("Failed getting shard count: " + err.Error())
 	}
+	shardCount = 5
+	ShardManager.SetNumShards(5)
 
 	EventLogger.init(shardCount)
 	go EventLogger.run()
@@ -120,7 +122,6 @@ func Run() {
 	// go ShardManager.Start()
 	go MemberFetcher.Run()
 	go mergedMessageSender()
-	go MonitorLoading()
 
 	masterAddr := os.Getenv("YAGPDB_MASTER_CONNECT_ADDR")
 	if masterAddr != "" {
@@ -141,6 +142,7 @@ func Run() {
 
 		log.Println("Running normally without a master")
 		go ShardManager.Start()
+		go MonitorLoading()
 	}
 
 	// for _, p := range common.Plugins {
@@ -248,7 +250,7 @@ func GuildCountsFunc() []int {
 	result := make([]int, numShards)
 	State.RLock()
 	for _, v := range State.Guilds {
-		shard := (v.ID() >> 22) % int64(numShards)
+		shard := (v.ID >> 22) % int64(numShards)
 		result[shard]++
 	}
 	State.RUnlock()

@@ -173,7 +173,7 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 			}
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
-			member, _ := bot.GetMember(cs.Guild.ID(), v.UserIDInt())
+			member, _ := bot.GetMember(cs.Guild.ID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.Username

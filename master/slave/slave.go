@@ -1,7 +1,9 @@
 package slave
 
 import (
+	"encoding/json"
 	"github.com/jonas747/yagpdb/master"
+	"github.com/sirupsen/logrus"
 	"net"
 	"sync"
 	"time"
@@ -34,6 +36,7 @@ type Conn struct {
 	baseConn *master.Conn
 	mu       sync.Mutex
 
+	numShards    int
 	address      string
 	bot          Bot
 	reconnecting bool
@@ -85,7 +88,10 @@ func (c *Conn) TryReconnect() bool {
 	}
 
 	c.mu.Lock()
-	c.baseConn.Send(master.EvtSlaveHello, master.SlaveHelloData{Running: true})
+	c.baseConn.SendNoLock(master.EvtSlaveHello, master.SlaveHelloData{Running: true})
+	for _, v := range c.sendQueue {
+		c.baseConn.SendNoLock(v.EvtID, v.Data)
+	}
 	c.reconnecting = false
 	c.mu.Unlock()
 
@@ -93,13 +99,76 @@ func (c *Conn) TryReconnect() bool {
 }
 
 func (c *Conn) HandleMessage(m *master.Message) {
+
+	dataInterfaceF, ok := master.EvtDataMap[m.EvtID]
+	var dataInterface interface{}
+	if ok {
+		dataInterface = dataInterfaceF()
+		err := json.Unmarshal(m.Body, dataInterface)
+		if err != nil {
+			logrus.WithError(err).Error("Failed decoding incoming event")
+			return
+		}
+	}
+
 	switch m.EvtID {
 	case master.EvtFullStart:
 		c.bot.FullStart()
+
 	case master.EvtSoftStart:
 		c.bot.SoftStart()
+
 	case master.EvtShutdown:
 		c.bot.Shutdown()
+
+	case master.EvtShardMigrationStart:
+		// Master is telling us to prepare for shard migration, either to this slave or from this slave
+		logrus.Println("Got shard migration start event, starting shard migration")
+		data := dataInterface.(*master.ShardMigrationStartData)
+		if data.FromThisSlave {
+			numShards := c.bot.StartShardTransferFrom()
+			c.mu.Lock()
+			c.numShards = numShards
+			c.mu.Unlock()
+
+			data.NumShards = numShards
+		} else {
+			c.bot.StartShardTransferTo(data.NumShards)
+		}
+
+		c.Send(master.EvtShardMigrationStart, data, true)
+
+	case master.EvtStopShard:
+		logrus.Println("Got stopshard event")
+		data := dataInterface.(*master.StopShardData)
+
+		// Master is telling us to stop a shard
+		c.mu.Lock()
+		if data.Shard >= c.numShards {
+			logrus.Println("Shard migration is done!")
+			c.mu.Unlock()
+			c.bot.Shutdown()
+			return
+		}
+		c.mu.Unlock()
+
+		sessionID, sequence := c.bot.StopShard(data.Shard)
+		data.SessionID = sessionID
+		data.Sequence = sequence
+		c.Send(master.EvtStopShard, data, true)
+
+	case master.EvtResume:
+		// Master is telling us to resume a shard
+		logrus.Println("Got resume event")
+		data := dataInterface.(*master.ResumeShardData)
+		c.bot.StartShard(data.Shard, data.SessionID, data.Sequence)
+		time.Sleep(time.Second)
+		c.Send(master.EvtResume, data, true)
+
+	case master.EvtGuildState:
+		logrus.Println("Got guildstate event")
+		data := dataInterface.(*master.GuildStateData)
+		c.bot.LoadGuildState(data)
 	}
 }
 

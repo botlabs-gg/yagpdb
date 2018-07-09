@@ -84,7 +84,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 
 func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
-	if m.Author == nil || m.Author.ID == bot.State.User(true).ID {
+	if m.Author == nil || m.Author.ID == common.BotUser.ID {
 		return // Pls no panicerinos or banerinos self
 	}
 
@@ -175,13 +175,13 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
 	switch highestPunish {
 	case PunishNone:
-		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, member.DGoUser(), "Automoderator: "+punishMsg)
+		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID, common.BotUser.User, member.DGoUser(), "Automoderator: "+punishMsg)
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID, common.BotUser.User, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
-		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member.DGoUser())
+		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID, common.BotUser.User, "Automoderator: "+punishMsg, member.DGoUser())
 	case PunishBan:
-		err = moderation.BanUser(client, nil, cs.Guild.ID(), cs.ID, bot.State.User(true).User, "Automoderator: "+punishMsg, member.DGoUser(), true)
+		err = moderation.BanUser(client, nil, cs.Guild.ID(), cs.ID, common.BotUser.User, "Automoderator: "+punishMsg, member.DGoUser(), true)
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs

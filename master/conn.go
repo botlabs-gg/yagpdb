@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net"
 	"sync"
 )
@@ -28,12 +29,12 @@ func ConnFromNetCon(conn net.Conn) *Conn {
 
 // Listen starts listening for events on the connections
 func (c *Conn) Listen() {
-	logrus.Info("Received new client ", c.ID)
+	logrus.Info("Master/Slave connection: starting listening for events ", c.ID)
 
 	var err error
 	defer func() {
 		if err != nil {
-			logrus.WithError(err).Error("An error occured while handling a slave connection")
+			logrus.WithError(err).Error("An error occured while handling a connection")
 		}
 		c.netConn.Close()
 
@@ -62,7 +63,7 @@ func (c *Conn) Listen() {
 		l := binary.LittleEndian.Uint32(lenBuf)
 		body := make([]byte, int(l))
 		if l > 0 {
-			_, err = c.netConn.Read(body)
+			_, err = io.ReadFull(c.netConn, body)
 			if err != nil {
 				logrus.WithError(err).Error("Failed reading body")
 				return

@@ -178,7 +178,7 @@ func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID int64, auth
 		ChannelName: channel.Name,
 		Author:      author,
 		AuthorID:    discordgo.StrID(authorID),
-		GuildID:     discordgo.StrID(channel.Guild.ID()),
+		GuildID:     discordgo.StrID(channel.Guild.ID),
 	}
 
 	err = common.GORM.Create(log).Error

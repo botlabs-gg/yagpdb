@@ -20,6 +20,15 @@ func NewSlaveConn(netConn net.Conn) *SlaveConn {
 	}
 
 	sc.Conn.MessageHandler = sc.HandleMessage
+	sc.Conn.ConnClosedHanlder = func() {
+		mu.Lock()
+		if mainSlave == sc {
+			mainSlave = newSlave
+			newSlave = nil
+		}
+		mu.Unlock()
+	}
+
 	return sc
 }
 
@@ -48,15 +57,53 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 	case EvtSlaveHello:
 		hello := dataInterface.(*SlaveHelloData)
 		s.HandleHello(hello)
-	case EvtSoftStartComplete:
-		go mainSlave.Conn.Send(EvtShutdown, nil)
-	case EvtShutdown:
-		if s == mainSlave {
-			mainSlave = newSlave
-			newSlave = nil
-			go mainSlave.Conn.Send(EvtFullStart, nil)
+
+	// Full slave migration with shard rescaling not implemented yet
+	// case EvtSoftStartComplete:
+	// 	go mainSlave.Conn.Send(EvtShutdown, nil)
+
+	case EvtShardMigrationStart:
+		data := dataInterface.(*ShardMigrationStartData)
+		if data.FromThisSlave {
+			logrus.Println("Main slave is ready for migration, readying slave, numshards: ", data.NumShards)
+			// The main slave is ready for migration, prepare the new slave
+			data.FromThisSlave = false
+
+			newSlave.Conn.Send(EvtShardMigrationStart, data)
+		} else {
+			logrus.Println("Both slaves are ready for migration, starting with shard 0")
+			// Both slaves are ready, start the transfer
+			mainSlave.Conn.Send(EvtStopShard, &StopShardData{Shard: 0})
 		}
+
+	case EvtStopShard:
+		// The main slave stopped a shard, resume it on the new slave
+		data := dataInterface.(*StopShardData)
+
+		logrus.Printf("Shard %d stopped, sending resume on new slave... (%d, %s) ", data.Shard, data.Sequence, data.SessionID)
+
+		newSlave.Conn.Send(EvtResume, &ResumeShardData{
+			Shard:     data.Shard,
+			SessionID: data.SessionID,
+			Sequence:  data.Sequence,
+		})
+
+	case EvtResume:
+		data := dataInterface.(*ResumeShardData)
+		logrus.Printf("Shard %d resumed, Stopping next shard", data.Shard)
+
+		data.Shard++
+		mainSlave.Conn.Send(EvtStopShard, &StopShardData{
+			Shard:     data.Shard,
+			SessionID: data.SessionID,
+			Sequence:  data.Sequence,
+		})
+
+	case EvtGuildState:
+		newSlave.Conn.Send(EvtGuildState, dataInterface)
+
 	}
+
 }
 
 func (s *SlaveConn) HandleHello(hello *SlaveHelloData) {
@@ -84,5 +131,5 @@ func (s *SlaveConn) HandleHello(hello *SlaveHelloData) {
 
 	// Start transfer
 	newSlave = s
-	s.Conn.Send(EvtSoftStart, nil)
+	mainSlave.Conn.Send(EvtShardMigrationStart, &ShardMigrationStartData{FromThisSlave: true})
 }

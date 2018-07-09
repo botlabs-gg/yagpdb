@@ -105,7 +105,7 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 	}
 	defer common.RedisPool.Put(client)
 
-	prefix, err := GetCommandPrefix(client, data.GS.ID())
+	prefix, err := GetCommandPrefix(client, data.GS.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving commands prefix")
 	}

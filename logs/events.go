@@ -68,7 +68,7 @@ var cmdLogs = &commands.YAGCommand{
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
 
-		l, err := CreateChannelLog(nil, cmd.GS.ID(), cmd.CS.ID, cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
+		l, err := CreateChannelLog(nil, cmd.GS.ID, cmd.CS.ID, cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
 				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
@@ -90,7 +90,7 @@ var cmdWhois = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.GS.ID())
+		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
 			return "Failed retrieving config for this server", err
 		}
@@ -100,7 +100,7 @@ var cmdWhois = &commands.YAGCommand{
 			target = parsed.Args[0].Value.(*discordgo.User)
 		}
 
-		member, err := bot.GetMember(parsed.GS.ID(), target.ID)
+		member, err := bot.GetMember(parsed.GS.ID, target.ID)
 		if err != nil {
 			return "An error occured fetching guild member, contact bot owner", err
 		}
@@ -194,7 +194,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled {
 
-			nicknames, err := GetNicknames(target.ID, parsed.GS.ID(), 5)
+			nicknames, err := GetNicknames(target.ID, parsed.GS.ID, 5)
 			if err != nil {
 				return err, err
 			}
@@ -234,7 +234,7 @@ var cmdUsernames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.GS.ID())
+		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
 			return "AAAAA", err
 		}
@@ -275,7 +275,7 @@ var cmdNicknames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.GS.ID())
+		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
 			return "AAAAA", err
 		}
@@ -289,7 +289,7 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		nicknames, err := GetNicknames(target.ID, parsed.GS.ID(), 25)
+		nicknames, err := GetNicknames(target.ID, parsed.GS.ID, 25)
 		if err != nil {
 			return err, err
 		}

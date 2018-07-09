@@ -100,7 +100,7 @@ func handleUnMute(data string) error {
 	rc := common.MustGetRedisClient()
 	defer common.RedisPool.Put(rc)
 
-	err = MuteUnmuteUser(nil, rc, false, guildID, 0, bot.State.User(true).User, "Mute Duration Expired", member, 0)
+	err = MuteUnmuteUser(nil, rc, false, guildID, 0, common.BotUser, "Mute Duration Expired", member, 0)
 	if errors.Cause(err) != ErrNoMuteRole {
 
 		if cast, ok := errors.Cause(err).(*discordgo.RESTError); ok && cast.Message != nil {

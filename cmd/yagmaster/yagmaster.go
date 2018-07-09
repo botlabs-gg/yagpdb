@@ -2,11 +2,14 @@ package main
 
 import (
 	"github.com/jonas747/yagpdb/master"
-	"time"
+	"github.com/sirupsen/logrus"
+	"os"
 )
 
 func main() {
-	go master.StartSlave()
+	logrus.SetFormatter(&logrus.TextFormatter{
+		ForceColors: true,
+	})
 
-	time.Sleep(d)
+	master.Listen(os.Getenv("YAGPDB_MASTER_LISTEN_ADDR"))
 }
