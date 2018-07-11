@@ -34,7 +34,6 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleReady), eventsystem.EventReady)
 
 	go UpdateStatsLoop()
-
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {

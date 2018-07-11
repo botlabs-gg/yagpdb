@@ -1,0 +1,1 @@
+Yagmaster manages the zero downtime restarts of the bot process, it can only be used if the processes are just running with `-bot`, since at some point there will be 2 processes running and you will run into issues with 2 processes trying to listen on the same port¨.

@@ -28,7 +28,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 
-	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutomodRules, nil)
+	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
 }
 
 func (p *Plugin) BotStarted() {
@@ -49,7 +49,7 @@ var roleCommands = []*commands.YAGCommand{
 }
 
 // Stop updating
-func HandleUpdateAutomodRules(event *pubsub.Event) {
+func HandleUpdateAutoroles(event *pubsub.Event) {
 	stopProcessing(event.TargetGuildInt)
 }
 

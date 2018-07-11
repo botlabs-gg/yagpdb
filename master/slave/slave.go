@@ -15,14 +15,7 @@ func ConnectToMaster(bot Bot, addr string) (*Conn, error) {
 		address: addr,
 	}
 
-	err := conn.Connect()
-	if err != nil {
-		return nil, err
-	}
-
-	conn.baseConn.SendNoLock(master.EvtSlaveHello, master.SlaveHelloData{
-		Running: false,
-	})
+	go conn.ReconnectLoop(false)
 
 	return conn, nil
 }
@@ -61,6 +54,10 @@ func (c *Conn) Connect() error {
 }
 
 func (c *Conn) OnClosedConn() {
+	go c.ReconnectLoop(true)
+}
+
+func (c *Conn) ReconnectLoop(running bool) {
 	c.mu.Lock()
 	if c.reconnecting {
 		c.mu.Unlock()
@@ -72,23 +69,23 @@ func (c *Conn) OnClosedConn() {
 
 	go func() {
 		for {
-			if c.TryReconnect() {
+			if c.TryReconnect(running) {
 				break
 			}
 
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 5)
 		}
 	}()
 }
 
-func (c *Conn) TryReconnect() bool {
+func (c *Conn) TryReconnect(running bool) bool {
 	err := c.Connect()
 	if err != nil {
 		return false
 	}
 
 	c.mu.Lock()
-	c.baseConn.SendNoLock(master.EvtSlaveHello, master.SlaveHelloData{Running: true})
+	c.baseConn.SendNoLock(master.EvtSlaveHello, master.SlaveHelloData{Running: running})
 	for _, v := range c.sendQueue {
 		c.baseConn.SendNoLock(v.EvtID, v.Data)
 	}

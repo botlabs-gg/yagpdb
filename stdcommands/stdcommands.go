@@ -1,6 +1,7 @@
 package stdcommands
 
 import (
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -36,9 +37,14 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/yagstatus"
 )
 
+var (
+	_ bot.BotInitHandler       = (*Plugin)(nil)
+	_ commands.CommandProvider = (*Plugin)(nil)
+)
+
 type Plugin struct{}
 
-func (p *Plugin) InitBot() {
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(
 		// Info
 		info.Command,
@@ -76,6 +82,10 @@ func (p *Plugin) InitBot() {
 		memberfetcher.Command,
 		yagstatus.Command,
 	)
+
+}
+
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(ping.HandleMessageCreate, eventsystem.EventMessageCreate)
 }
 

@@ -2,6 +2,7 @@ package bot
 
 import (
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
@@ -35,6 +36,10 @@ type BotStartedHandler interface {
 
 type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)
+}
+
+type ShardMigrationHandler interface {
+	GuildMigrated(guild *dstate.GuildState, toThisSlave bool)
 }
 
 func EmitGuildRemoved(guildID int64) {

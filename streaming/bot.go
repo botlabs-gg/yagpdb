@@ -18,6 +18,7 @@ import (
 func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.ShardMigrationHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(bot.RedisWrapper(HandleGuildCreate)), eventsystem.EventGuildCreate)
@@ -26,9 +27,28 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 
+func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
+	if !toThisSlave {
+		return
+	}
+
+	go CheckGuildFull(gs)
+}
+
 // YAGPDB event
 func HandleUpdateStreaming(event *pubsub.Event) {
-	log.Info("Received the streaming event boi ", event.TargetGuild)
+	log.Info("Received update streaming event ", event.TargetGuild)
+
+	gs := bot.State.Guild(true, event.TargetGuildInt)
+	if gs == nil {
+		return
+	}
+
+	CheckGuildFull(gs)
+}
+
+func CheckGuildFull(gs *dstate.GuildState) {
+	log.Info("Streaming Checking full guild: ", gs.ID)
 
 	client, err := common.RedisPool.Get()
 	if err != nil {
@@ -36,11 +56,6 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 		return
 	}
 	defer common.RedisPool.Put(client)
-
-	gs := bot.State.Guild(true, event.TargetGuildInt)
-	if gs == nil {
-		return
-	}
 
 	config, err := GetConfig(client, gs.ID)
 	if err != nil {

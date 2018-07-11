@@ -22,6 +22,8 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
+
+	CommandSystem.State = bot.State
 }
 
 func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {

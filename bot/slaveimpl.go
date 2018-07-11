@@ -2,6 +2,7 @@ package bot
 
 import (
 	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/master"
 	"github.com/jonas747/yagpdb/master/slave"
 	"github.com/sirupsen/logrus"
@@ -154,4 +155,12 @@ func (s *SlaveImpl) LoadGuildState(gs *master.GuildStateData) {
 		State.Channels[c.ID] = c
 	}
 	State.Unlock()
+
+	for _, v := range common.Plugins {
+		if guildMigrationHandler, ok := v.(ShardMigrationHandler); ok {
+			if ok {
+				guildMigrationHandler.GuildMigrated(guild, true)
+			}
+		}
+	}
 }

@@ -19,6 +19,17 @@ import (
 	"unicode/utf8"
 )
 
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
+	commands.AddRootCommands(cmdListCommands)
+}
+
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+}
+
 var cmdListCommands = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CustomCommands",

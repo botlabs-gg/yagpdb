@@ -127,7 +127,7 @@ func Run() {
 		state = StateWaitingHelloMaster
 		stateLock.Unlock()
 
-		log.Println("Attempting to connect to master at ", masterAddr)
+		log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
 		SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
 		if err != nil {
 			log.WithError(err).Error("Failed connecting to master")

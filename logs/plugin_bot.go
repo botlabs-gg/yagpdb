@@ -51,9 +51,7 @@ func (p *Plugin) BotInit() {
 	if err != nil {
 		panic("Failed preparing statement: " + err.Error())
 	}
-}
 
-func (p *Plugin) StartBot() {
 	go EvtProcesser()
 	go EvtProcesserGCs()
 }
@@ -280,7 +278,7 @@ var cmdNicknames = &commands.YAGCommand{
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
-			return "AAAAA", err
+			return "Failed retrieving config", err
 		}
 
 		target := parsed.Msg.Author

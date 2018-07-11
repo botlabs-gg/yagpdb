@@ -6,7 +6,6 @@ package commands
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
@@ -53,7 +52,6 @@ func InitCommands() {
 
 		ResponseSender: &dcmd.StdResponseSender{LogErrors: true},
 		Prefix:         &Plugin{},
-		State:          bot.State,
 	}
 
 	// We have our own middleware before the argument parsing, this is to check for things such as wether the command is enabled at all
