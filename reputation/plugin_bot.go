@@ -14,8 +14,14 @@ import (
 	"strconv"
 )
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(cmds...)
+}
+
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(handleMessageCreate), eventsystem.EventMessageCreate)
 }
 

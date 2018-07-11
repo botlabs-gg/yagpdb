@@ -5,7 +5,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -49,8 +48,6 @@ func RegisterPlugin() {
 
 	common.RegisterPlugin(plugin)
 
-	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
-	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
 	configstore.RegisterConfig(configstore.SQL, &Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{}, &MuteModel{})
 }

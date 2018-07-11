@@ -17,17 +17,12 @@ import (
 
 func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
 
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(bot.RedisWrapper(HandleGuildCreate)), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
-
-}
-
-var _ bot.BotStarterHandler = (*Plugin)(nil)
-
-func (p *Plugin) StartBot() {
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 
@@ -44,7 +39,6 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 
 	gs := bot.State.Guild(true, event.TargetGuildInt)
 	if gs == nil {
-		log.WithField("guild", event.TargetGuild).Error("Guild not found in state")
 		return
 	}
 

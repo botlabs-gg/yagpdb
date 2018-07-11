@@ -25,6 +25,9 @@ var (
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
 
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
 type Plugin struct{}
 
 func RegisterPlugin() {
@@ -33,9 +36,12 @@ func RegisterPlugin() {
 	RegexCache = ccache.New(ccache.Configure())
 }
 
-func (p *Plugin) InitBot() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(cmdListCommands)
+}
+
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
 }
 
 func (p *Plugin) Name() string {

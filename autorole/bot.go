@@ -16,10 +16,23 @@ import (
 	"time"
 )
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.BotStartedHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(roleCommands...)
+}
+
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+
+	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutomodRules, nil)
+}
+
+func (p *Plugin) BotStarted() {
+	go runDurationChecker()
 }
 
 var roleCommands = []*commands.YAGCommand{
@@ -33,13 +46,6 @@ var roleCommands = []*commands.YAGCommand{
 			return fmt.Sprintf("Processing %d users.", processing), nil
 		},
 	},
-}
-
-var _ bot.BotStarterHandler = (*Plugin)(nil)
-
-func (p *Plugin) StartBot() {
-	go runDurationChecker()
-	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutomodRules, nil)
 }
 
 // Stop updating

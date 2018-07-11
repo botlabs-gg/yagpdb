@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/master/slave"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -39,7 +40,7 @@ const (
 	StateShardMigrationFrom
 )
 
-func Setup() {
+func setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
@@ -59,19 +60,10 @@ func Setup() {
 	eventsystem.AddHandler(RedisWrapper(HandleChannelUpdate), eventsystem.EventChannelUpdate)
 	eventsystem.AddHandler(RedisWrapper(HandleChannelDelete), eventsystem.EventChannelDelete)
 	eventsystem.AddHandler(RedisWrapper(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
-
-	log.Info("Initializing bot plugins")
-	for _, plugin := range common.Plugins {
-		if botPlugin, ok := plugin.(Plugin); ok {
-			botPlugin.InitBot()
-			log.Info("Initialized bot plugin ", plugin.Name())
-		}
-	}
-
-	log.Printf("Registered %d event handlers", eventsystem.NumHandlers(eventsystem.EventAll))
 }
 
 func Run() {
+	setup()
 
 	log.Println("Running bot")
 
@@ -104,8 +96,6 @@ func Run() {
 	if err != nil {
 		panic("Failed getting shard count: " + err.Error())
 	}
-	shardCount = 5
-	ShardManager.SetNumShards(5)
 
 	EventLogger.init(shardCount)
 	go EventLogger.run()
@@ -117,11 +107,19 @@ func Run() {
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
+
 	Running = true
 
 	// go ShardManager.Start()
 	go MemberFetcher.Run()
 	go mergedMessageSender()
+
+	// Initialize all plugins
+	for _, plugin := range common.Plugins {
+		if initBot, ok := plugin.(BotInitHandler); ok {
+			initBot.BotInit()
+		}
+	}
 
 	masterAddr := os.Getenv("YAGPDB_MASTER_CONNECT_ADDR")
 	if masterAddr != "" {
@@ -174,18 +172,39 @@ func MonitorLoading() {
 	}
 }
 
-func Stop(wg *sync.WaitGroup) {
-
-	for _, v := range common.Plugins {
-		stopper, ok := v.(BotStopperHandler)
-		if !ok {
-			continue
+func BotStarted() {
+	for _, p := range common.Plugins {
+		starter, ok := p.(BotStartedHandler)
+		if ok {
+			starter.BotStarted()
+			log.Debug("Ran BotStarted for ", p.Name())
 		}
-		wg.Add(1)
-		log.Debug("Sending stop event to stopper: ", v.Name())
-		go stopper.StopBot(wg)
 	}
 
+	go scheduledevents.Run()
+}
+
+var stopOnce sync.Once
+
+func StopAllPlugins(wg *sync.WaitGroup) {
+	stopOnce.Do(func() {
+		for _, v := range common.Plugins {
+			stopper, ok := v.(BotStopperHandler)
+			if !ok {
+				continue
+			}
+			wg.Add(1)
+			log.Debug("Calling bot stopper for: ", v.Name())
+			go stopper.StopBot(wg)
+		}
+
+		wg.Add(1)
+		go scheduledevents.Stop(wg)
+	})
+}
+
+func Stop(wg *sync.WaitGroup) {
+	StopAllPlugins(wg)
 	ShardManager.StopAll()
 	wg.Done()
 }

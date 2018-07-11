@@ -12,8 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/rolecommands/models"
 )
 
-func (p *Plugin) InitBot() {
-
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
@@ -36,7 +35,9 @@ func (p *Plugin) InitBot() {
 			RunFunc: CmdFuncRoleMenu,
 		},
 	)
+}
 
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(handleReactionAdd, eventsystem.EventMessageReactionAdd)
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 }

@@ -14,8 +14,15 @@ import (
 	"time"
 )
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(cmds...)
+}
+
+func (p *Plugin) BotInit() {
+	scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandler)
 }
 
 // Reminder management commands

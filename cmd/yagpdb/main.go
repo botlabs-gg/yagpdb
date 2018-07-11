@@ -20,11 +20,10 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 	// Plugin imports
-	// "github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/commands"
@@ -131,7 +130,7 @@ func main() {
 	reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
-	// automod.RegisterPlugin()
+	automod.RegisterPlugin()
 	logs.InitPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
@@ -145,7 +144,7 @@ func main() {
 	}
 
 	// Setup plugins for bot, but run later if enabled
-	bot.Setup()
+	commands.InitCommands()
 	mqueue.InitStores()
 
 	// RUN FORREST RUN
@@ -214,10 +213,9 @@ func listenSignal() {
 
 	if flagRunBot || flagRunEverything {
 
-		wg.Add(2)
+		wg.Add(1)
 
 		go bot.Stop(&wg)
-		go scheduledevents.Stop(&wg)
 		mqueue.Stop(&wg)
 
 		shouldWait = true

@@ -11,7 +11,11 @@ import (
 	"strings"
 )
 
-func (p *Plugin) InitBot() {
+func (p *Plugin) BotInit() {
+	go transcoderLoop()
+}
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Soundboard",

@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"regexp"
@@ -31,17 +32,24 @@ const (
 
 const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
 
-func (p *Plugin) InitBot() {
+var _ commands.CommandProvider = (*Plugin)(nil)
+var _ bot.BotInitHandler = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(ModerationCommands...)
+}
+
+func (p *Plugin) BotInit() {
+	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
+	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
+
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
 	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleMemberJoin)), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleGuildMemberUpdate)), eventsystem.EventGuildMemberUpdate)
 
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
-}
 
-func (p *Plugin) BotStarted() {
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 }
 
@@ -67,6 +75,9 @@ func RefreshMuteOverrides(guildID int64) {
 	}
 
 	guild := bot.State.Guild(true, guildID)
+	if guild == nil {
+		return // Still starting up and haven't received the guild yet
+	}
 
 	guild.RLock()
 	defer guild.RUnlock()

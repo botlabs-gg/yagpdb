@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
@@ -38,9 +39,10 @@ const (
 )
 
 var (
-	_ common.Plugin = (*Plugin)(nil)
-	_ web.Plugin    = (*Plugin)(nil)
-	_ bot.Plugin    = (*Plugin)(nil)
+	_ common.Plugin            = (*Plugin)(nil)
+	_ web.Plugin               = (*Plugin)(nil)
+	_ bot.BotInitHandler       = (*Plugin)(nil)
+	_ commands.CommandProvider = (*Plugin)(nil)
 
 	cooldownsDB *buntdb.DB
 )

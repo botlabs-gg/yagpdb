@@ -13,13 +13,6 @@ const (
 	GuildRemoveConfigExpire = 60 * 60 * 24 // <- 1 day
 )
 
-type Plugin interface {
-	// Called when the plugin is supposed to be initialized
-	// That is add comnands, discord event handlers
-	InitBot()
-	Name() string
-}
-
 // Used for deleting configuration about servers
 type RemoveGuildHandler interface {
 	RemoveGuild(client *redis.Client, guildID int64) error
@@ -31,8 +24,8 @@ type NewGuildHandler interface {
 }
 
 // Fired when the bot it starting up, not for the webserver
-type BotStarterHandler interface {
-	StartBot()
+type BotInitHandler interface {
+	BotInit()
 }
 
 // Fired after the bot has connected all shards

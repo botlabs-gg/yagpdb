@@ -17,25 +17,9 @@ var (
 	CommandSystem *dcmd.System
 )
 
-func (p *Plugin) InitBot() {
-	// Setup the command system
-	CommandSystem = &dcmd.System{
-		Root: &dcmd.Container{
-			HelpTitleEmoji: "ℹ️",
-			HelpColor:      0xbeff7a,
-			RunInDM:        true,
-			IgnoreBots:     true,
-		},
+var _ bot.BotInitHandler = (*Plugin)(nil)
 
-		ResponseSender: &dcmd.StdResponseSender{LogErrors: true},
-		Prefix:         p,
-		State:          bot.State,
-	}
-
-	// We have our own middleware before the argument parsing, this is to check for things such as wether the command is enabled at all
-	CommandSystem.Root.AddMidlewares(YAGCommandMiddleware, dcmd.ArgParserMW)
-	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
-
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
 }

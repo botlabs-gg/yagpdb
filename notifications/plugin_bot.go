@@ -11,6 +11,14 @@ import (
 	"math/rand"
 )
 
+var _ bot.BotInitHandler = (*Plugin)(nil)
+
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberAdd), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerBefore(HandleChannelUpdate, eventsystem.EventChannelUpdate, bot.StateHandlerPtr)
+}
+
 func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 	evt := evtData.GuildMemberAdd()
 

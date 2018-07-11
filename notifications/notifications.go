@@ -1,8 +1,6 @@
 package notifications
 
 import (
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	log "github.com/sirupsen/logrus"
@@ -29,12 +27,6 @@ func RegisterPlugin() {
 
 func (p *Plugin) Name() string {
 	return "Notifications"
-}
-
-func (p *Plugin) InitBot() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberAdd), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandlerBefore(HandleChannelUpdate, eventsystem.EventChannelUpdate, bot.StateHandlerPtr)
 }
 
 type Config struct {

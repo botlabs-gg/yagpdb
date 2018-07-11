@@ -16,7 +16,6 @@ import (
 type Plugin struct{}
 
 func RegisterPlugin() {
-	scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandler)
 	err := common.GORM.AutoMigrate(&Reminder{}).Error
 	if err != nil {
 		panic(err)

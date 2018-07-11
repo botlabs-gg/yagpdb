@@ -27,14 +27,19 @@ func init() {
 	snowflake.Epoch = 1420070400000
 }
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
+	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames)
+}
+
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
-
-	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames)
 
 	var err error
 	nicknameQueryStatement, err = common.PQ.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
@@ -47,8 +52,6 @@ func (p *Plugin) InitBot() {
 		panic("Failed preparing statement: " + err.Error())
 	}
 }
-
-var _ bot.BotStarterHandler = (*Plugin)(nil)
 
 func (p *Plugin) StartBot() {
 	go EvtProcesser()

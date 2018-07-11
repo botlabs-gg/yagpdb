@@ -6,11 +6,13 @@ import (
 	"github.com/jonas747/yagpdb/master/slave"
 	"github.com/sirupsen/logrus"
 	"os"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // Slave implementation
-type SlaveImpl struct {
-}
+type SlaveImpl struct{}
 
 var _ slave.Bot = (*SlaveImpl)(nil)
 
@@ -46,6 +48,10 @@ func (s *SlaveImpl) StartShardTransferFrom() int {
 	state = StateShardMigrationFrom
 	stateLock.Unlock()
 
+	var wg sync.WaitGroup
+	StopAllPlugins(&wg)
+	wg.Wait()
+
 	return ShardManager.GetNumShards()
 }
 
@@ -59,6 +65,8 @@ func (s *SlaveImpl) StartShardTransferTo(numShards int) {
 	stateLock.Lock()
 	state = StateShardMigrationTo
 	stateLock.Unlock()
+
+	atomic.StoreInt32(botStartedFired, 1)
 }
 
 func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
@@ -66,6 +74,9 @@ func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
 	if err != nil {
 		logrus.WithError(err).Error("Failed stopping shard: ", err)
 	}
+
+	// Wait a second to be sure we dont have any event handlers still running populating the state for this shard
+	time.Sleep(time.Second)
 
 	numShards := ShardManager.GetNumShards()
 
@@ -86,8 +97,19 @@ func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
 		State.Unlock()
 
 		v.RLock()
+		channels := make([]int64, 0, len(v.Channels))
+		for _, c := range v.Channels {
+			channels = append(channels, c.ID)
+		}
+
 		SlaveClient.Send(master.EvtGuildState, &master.GuildStateData{GuildState: v}, true)
 		v.RUnlock()
+
+		State.Lock()
+		for _, c := range channels {
+			delete(State.Channels, c)
+		}
+		State.Unlock()
 	}
 
 	sessionID, sequence = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
@@ -108,11 +130,12 @@ func (s *SlaveImpl) StartShard(shard int, sessionID string, sequence int64) {
 		stateLock.Lock()
 		state = StateRunningWithMaster
 		stateLock.Unlock()
+
+		BotStarted()
 	}
 }
 
 func (s *SlaveImpl) LoadGuildState(gs *master.GuildStateData) {
-	// TODO
 	logrus.Println("Received guild state for ", gs.GuildState.ID)
 
 	guild := gs.GuildState

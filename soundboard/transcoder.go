@@ -3,6 +3,7 @@ package soundboard
 import (
 	"github.com/jonas747/dca"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -26,12 +27,9 @@ func init() {
 	transcoderOptions = &cp
 }
 
-var _ bot.BotStarterHandler = (*Plugin)(nil)
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotStopperHandler = (*Plugin)(nil)
-
-func (p *Plugin) StartBot() {
-	go transcoderLoop()
-}
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	logrus.Info("Stopping soundboard transcoder...")
