@@ -96,7 +96,6 @@ func (c *Conn) TryReconnect(running bool) bool {
 }
 
 func (c *Conn) HandleMessage(m *master.Message) {
-
 	dataInterfaceF, ok := master.EvtDataMap[m.EvtID]
 	var dataInterface interface{}
 	if ok {

@@ -28,7 +28,6 @@ func NewSlaveConn(netConn net.Conn) *SlaveConn {
 		}
 		mu.Unlock()
 	}
-
 	return sc
 }
 
@@ -57,7 +56,6 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 	case EvtSlaveHello:
 		hello := dataInterface.(*SlaveHelloData)
 		s.HandleHello(hello)
-
 	// Full slave migration with shard rescaling not implemented yet
 	// case EvtSoftStartComplete:
 	// 	go mainSlave.Conn.Send(EvtShutdown, nil)
@@ -103,7 +101,6 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 		newSlave.Conn.Send(EvtGuildState, dataInterface)
 
 	}
-
 }
 
 func (s *SlaveConn) HandleHello(hello *SlaveHelloData) {

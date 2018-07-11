@@ -47,6 +47,7 @@ func setWaitingGuildReady(g int64) {
 		stateLock.Lock()
 		currentState := state
 		stateLock.Unlock()
+
 		if currentState == StateSoftStarting {
 			SlaveClient.Send(master.EvtSoftStartComplete, nil, true)
 		}
