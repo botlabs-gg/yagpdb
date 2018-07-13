@@ -26,9 +26,16 @@ func Listen(addr string) {
 
 func StartSlave() {
 	logrus.Println("Starting slave")
-	cmd := exec.Command("yagpdb", "-bot", "-slave")
+	cmd := exec.Command("yagpdb", "-bot")
 	cmd.Env = os.Environ()
-	err := cmd.Start()
+
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	cmd.Dir = wd
+
+	err = cmd.Start()
 	if err != nil {
 		logrus.Println("Error starting slave: ", err)
 	}
@@ -49,6 +56,6 @@ func waitForClients(listener net.Listener) {
 }
 
 type Message struct {
-	EvtID uint32
+	EvtID EventType
 	Body  []byte
 }

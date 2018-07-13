@@ -114,13 +114,6 @@ func Run() {
 	go MemberFetcher.Run()
 	go mergedMessageSender()
 
-	// Initialize all plugins
-	for _, plugin := range common.Plugins {
-		if initBot, ok := plugin.(BotInitHandler); ok {
-			initBot.BotInit()
-		}
-	}
-
 	masterAddr := os.Getenv("YAGPDB_MASTER_CONNECT_ADDR")
 	if masterAddr != "" {
 		stateLock.Lock()
@@ -137,6 +130,8 @@ func Run() {
 		stateLock.Lock()
 		state = StateRunningNoMaster
 		stateLock.Unlock()
+
+		InitPlugins()
 
 		log.Println("Running normally without a master")
 		go ShardManager.Start()
@@ -168,6 +163,15 @@ func MonitorLoading() {
 
 		if numWaitingGuilds == 0 && numWaitingShards == 0 {
 			return
+		}
+	}
+}
+
+func InitPlugins() {
+	// Initialize all plugins
+	for _, plugin := range common.Plugins {
+		if initBot, ok := plugin.(BotInitHandler); ok {
+			initBot.BotInit()
 		}
 	}
 }

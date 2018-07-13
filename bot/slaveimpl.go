@@ -21,12 +21,14 @@ func (s *SlaveImpl) FullStart() {
 	logrus.Println("Starting full start")
 
 	stateLock.Lock()
-	if state != StateSoftStarting {
-		go ShardManager.Start()
-	}
-
+	stateTmp := state
 	state = StateRunningWithMaster
 	stateLock.Unlock()
+
+	if stateTmp != StateSoftStarting {
+		InitPlugins()
+		go ShardManager.Start()
+	}
 }
 
 func (s *SlaveImpl) SoftStart() {
@@ -35,6 +37,8 @@ func (s *SlaveImpl) SoftStart() {
 	stateLock.Lock()
 	state = StateSoftStarting
 	stateLock.Unlock()
+
+	InitPlugins()
 
 	go ShardManager.Start()
 }
@@ -58,6 +62,9 @@ func (s *SlaveImpl) StartShardTransferFrom() int {
 
 func (s *SlaveImpl) StartShardTransferTo(numShards int) {
 	ShardManager.SetNumShards(numShards)
+
+	InitPlugins()
+
 	err := ShardManager.Init()
 	if err != nil {
 		panic("Failed initializing shard manager: " + err.Error())
@@ -80,6 +87,8 @@ func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
 	time.Sleep(time.Second)
 
 	numShards := ShardManager.GetNumShards()
+
+	started := time.Now()
 
 	// Send the guilds on this shard
 	guildsToSend := make([]*dstate.GuildState, 0)
@@ -112,6 +121,8 @@ func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
 		}
 		State.Unlock()
 	}
+
+	logrus.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
 
 	sessionID, sequence = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
 	return

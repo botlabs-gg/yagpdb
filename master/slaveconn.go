@@ -36,7 +36,7 @@ func (s *SlaveConn) listen() {
 }
 
 func (s *SlaveConn) HandleMessage(msg *Message) {
-	logrus.Println("Got event ", msg.EvtID, " blen: ", len(msg.Body))
+	logrus.Println("Got event ", msg.EvtID.String(), " blen: ", len(msg.Body))
 
 	dataInterfaceF, ok := EvtDataMap[msg.EvtID]
 	var dataInterface interface{}

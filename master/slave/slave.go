@@ -21,7 +21,7 @@ func ConnectToMaster(bot Bot, addr string) (*Conn, error) {
 }
 
 type QueuedMessage struct {
-	EvtID uint32
+	EvtID master.EventType
 	Data  interface{}
 }
 
@@ -169,7 +169,7 @@ func (c *Conn) HandleMessage(m *master.Message) {
 }
 
 // Send sends the message to the master, if the connection is closed it will queue the message if queueFailed is set
-func (c *Conn) Send(evtID uint32, body interface{}, queueFailed bool) error {
+func (c *Conn) Send(evtID master.EventType, body interface{}, queueFailed bool) error {
 	c.mu.Lock()
 	if c.reconnecting {
 		if queueFailed {

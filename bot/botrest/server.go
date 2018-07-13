@@ -13,12 +13,31 @@ import (
 	"net/http/pprof"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 var serverAddr = ":5002"
 
-func StartServer() {
+func RegisterPlugin() {
+	common.RegisterPlugin(&Plugin{})
+}
+
+var (
+	_ bot.BotInitHandler    = (*Plugin)(nil)
+	_ bot.BotStopperHandler = (*Plugin)(nil)
+)
+
+type Plugin struct {
+	srv *http.Server
+}
+
+func (p *Plugin) Name() string {
+	return "botrest"
+}
+
+func (p *Plugin) BotInit() {
+
 	muxer := goji.NewMux()
 	muxer.Use(dropNonLocal)
 
@@ -38,7 +57,23 @@ func StartServer() {
 	muxer.HandleFunc(pat.Get("/debug2/pproff/symbol"), pprof.Symbol)
 	muxer.HandleFunc(pat.Get("/debug2/pproff/trace"), pprof.Trace)
 
-	http.ListenAndServe(serverAddr, muxer)
+	p.srv = &http.Server{
+		Addr:    serverAddr,
+		Handler: muxer,
+	}
+
+	go func() {
+		logrus.Println("starting botrest on ", serverAddr)
+		err := p.srv.ListenAndServe()
+		if err != nil {
+			logrus.Println("Failed starting botrest http server")
+		}
+	}()
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	p.srv.Shutdown(nil)
+	wg.Done()
 }
 
 func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {

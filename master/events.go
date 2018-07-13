@@ -20,31 +20,50 @@ import (
 // 3. once out of shards the old slave exits and the new slave starts fully
 
 // The event IDs are hardcoded to preserve compatibility between versions
+type EventType uint32
+
 const (
 	// Master -> slave
-	EvtSoftStart uint32 = 1 // Sent to signal the slave to not start anything other than start updating the state
-	EvtFullStart uint32 = 2 // Sent after a soft start event to start up everything other than the state
+	EvtSoftStart EventType = 1 // Sent to signal the slave to not start anything other than start updating the state
+	EvtFullStart EventType = 2 // Sent after a soft start event to start up everything other than the state
 
 	// Common, sent by both master and slaves
 
 	// Sent to tell a shard that shard migration is about to happen, either to or from this shard
 	// If from this shard to a new one, then responds with the session info needed
 	// Otherwise, responds with no data once ready
-	EvtShardMigrationStart uint32 = 3
+	EvtShardMigrationStart EventType = 3
 
 	// Sent to tell the slave to stop a shard, responds with EvtStopShard once all state has been transfered and shard has been stopped
-	EvtStopShard uint32 = 4
+	EvtStopShard EventType = 4
 	// Sent to tell the slave to resume the specified shard, responds with EvtResume once finished
-	EvtResume uint32 = 5
+	EvtResume EventType = 5
 
-	EvtShutdown   uint32 = 6 // Sent to tell a slave to shut down, and immediately stop processing events, responds with the same event once shut down
-	EvtGuildState uint32 = 7
+	EvtShutdown   EventType = 6 // Sent to tell a slave to shut down, and immediately stop processing events, responds with the same event once shut down
+	EvtGuildState EventType = 7
 
 	// Slave -> master
-	EvtSlaveHello        uint32 = 8
-	EvtSoftStartComplete uint32 = 9  // Sent to indicate that all shards has been connected and are waiting for the full start event
-	EvtShardStopped      uint32 = 10 // Send by a slave when the shard has been stopped, includes state information for guilds related to that shardd
+	EvtSlaveHello        EventType = 8
+	EvtSoftStartComplete EventType = 9  // Sent to indicate that all shards has been connected and are waiting for the full start event
+	EvtShardStopped      EventType = 10 // Send by a slave when the shard has been stopped, includes state information for guilds related to that shardd
 )
+
+var EventsToStringMap = map[EventType]string{
+	1:  "EvtSoftStart",
+	2:  "EvtFullStart",
+	3:  "EvtShardMigrationStart",
+	4:  "EvtStopShard",
+	5:  "EvtResume",
+	6:  "EvtShutdown",
+	7:  "EvtGuildState",
+	8:  "EvtSlaveHello",
+	9:  "EvtSoftStartComplete",
+	10: "EvtShardStopped",
+}
+
+func (evt EventType) String() string {
+	return EventsToStringMap[evt]
+}
 
 type SlaveHelloData struct {
 	Running bool // Wether the slave was already running or not
@@ -73,7 +92,7 @@ type GuildStateData struct {
 	GuildState *dstate.GuildState
 }
 
-var EvtDataMap = map[uint32]func() interface{}{
+var EvtDataMap = map[EventType]func() interface{}{
 	EvtSlaveHello:          func() interface{} { return new(SlaveHelloData) },
 	EvtShardMigrationStart: func() interface{} { return new(ShardMigrationStartData) },
 	EvtStopShard:           func() interface{} { return new(StopShardData) },

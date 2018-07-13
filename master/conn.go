@@ -70,13 +70,13 @@ func (c *Conn) Listen() {
 			}
 		}
 
-		c.MessageHandler(&Message{EvtID: id, Body: body})
+		c.MessageHandler(&Message{EvtID: EventType(id), Body: body})
 	}
 }
 
 // Send sends the specified message over the connection, marshaling the data using json
 // this locks the writer
-func (c *Conn) Send(evtID uint32, data interface{}) error {
+func (c *Conn) Send(evtID EventType, data interface{}) error {
 	c.sendmu.Lock()
 	defer c.sendmu.Unlock()
 
@@ -85,12 +85,12 @@ func (c *Conn) Send(evtID uint32, data interface{}) error {
 
 // SendNoLock sends the specified message over the connection, marshaling the data using json
 // This does no locking and the caller is responsible for making sure its not called in multiple goroutines at the same time
-func (c *Conn) SendNoLock(evtID uint32, data interface{}) error {
+func (c *Conn) SendNoLock(evtID EventType, data interface{}) error {
 
 	var buf bytes.Buffer
 
 	tmpBuf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(tmpBuf, evtID)
+	binary.LittleEndian.PutUint32(tmpBuf, uint32(evtID))
 	buf.Write(tmpBuf)
 
 	l := uint32(0)
