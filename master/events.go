@@ -4,7 +4,7 @@ import (
 	"github.com/jonas747/dutil/dstate"
 )
 
-// Shard rescaling graceful restarts:
+// Shard rescaling graceful restarts (This is still very much WIP):
 // 1. new slave connects
 // 2. master sends the new slave EvtSoftStart
 // 		This will make the slave start all the shards, but only process the events in the state handler
@@ -92,6 +92,7 @@ type GuildStateData struct {
 	GuildState *dstate.GuildState
 }
 
+// Mapping of events to structs for their data
 var EvtDataMap = map[EventType]func() interface{}{
 	EvtSlaveHello:          func() interface{} { return new(SlaveHelloData) },
 	EvtShardMigrationStart: func() interface{} { return new(ShardMigrationStartData) },

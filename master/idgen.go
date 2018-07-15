@@ -4,6 +4,7 @@ import (
 	"sync"
 )
 
+// ID generator
 var idgen = make(chan int64)
 var generatorOnce sync.Once
 

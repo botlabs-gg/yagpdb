@@ -11,6 +11,7 @@ type SlaveConn struct {
 	Conn *Conn
 }
 
+// NewSlaveConn creates a new slaveconn (connection from master to slave) from a net.Conn
 func NewSlaveConn(netConn net.Conn) *SlaveConn {
 	sc := &SlaveConn{
 		Conn: &Conn{
@@ -19,7 +20,7 @@ func NewSlaveConn(netConn net.Conn) *SlaveConn {
 		},
 	}
 
-	sc.Conn.MessageHandler = sc.HandleMessage
+	sc.Conn.MessageHandler = sc.handleMessage
 	sc.Conn.ConnClosedHanlder = func() {
 		mu.Lock()
 		if mainSlave == sc {
@@ -35,9 +36,12 @@ func (s *SlaveConn) listen() {
 	s.Conn.Listen()
 }
 
-func (s *SlaveConn) HandleMessage(msg *Message) {
+// Handle incoming messages
+func (s *SlaveConn) handleMessage(msg *Message) {
 	var dataInterface interface{}
 
+	// GuildStates are very large obejcts, would be a very large waste to decode these to only encode them later
+	// so only decode if this wasnt a guild state
 	if msg.EvtID != EvtGuildState {
 		logrus.Println("Got event ", msg.EvtID.String(), " blen: ", len(msg.Body))
 
@@ -58,7 +62,7 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 	switch msg.EvtID {
 	case EvtSlaveHello:
 		hello := dataInterface.(*SlaveHelloData)
-		s.HandleHello(hello)
+		s.handleHello(hello)
 
 	// Full slave migration with shard rescaling not implemented yet
 	// case EvtSoftStartComplete:
@@ -106,7 +110,7 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 	}
 }
 
-func (s *SlaveConn) HandleHello(hello *SlaveHelloData) {
+func (s *SlaveConn) handleHello(hello *SlaveHelloData) {
 	if hello.Running {
 		// Already running, assume this is the main slave
 		mainSlave = s

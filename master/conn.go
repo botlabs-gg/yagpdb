@@ -11,15 +11,20 @@ import (
 	"sync"
 )
 
+// Simple helper to manage the underlying connection using locks
 type Conn struct {
 	netConn net.Conn
 	sendmu  sync.Mutex
 	ID      int64
 
-	MessageHandler    func(*Message)
+	// Called on incoming messages
+	MessageHandler func(*Message)
+
+	// called when the connection is closed
 	ConnClosedHanlder func()
 }
 
+// ConnFromNetCon wraos a Conn around a net.Conn
 func ConnFromNetCon(conn net.Conn) *Conn {
 	return &Conn{
 		netConn: conn,
@@ -27,7 +32,7 @@ func ConnFromNetCon(conn net.Conn) *Conn {
 	}
 }
 
-// Listen starts listening for events on the connections
+// Listen starts listening for events on the connection
 func (c *Conn) Listen() {
 	logrus.Info("Master/Slave connection: starting listening for events ", c.ID)
 
@@ -47,12 +52,14 @@ func (c *Conn) Listen() {
 	lenBuf := make([]byte, 4)
 	for {
 
+		// Read the event id
 		_, err = c.netConn.Read(idBuf)
 		if err != nil {
 			logrus.WithError(err).Error("Failed reading event id")
 			return
 		}
 
+		// Read the body length
 		_, err = c.netConn.Read(lenBuf)
 		if err != nil {
 			logrus.WithError(err).Error("Failed reading event length")
@@ -63,6 +70,7 @@ func (c *Conn) Listen() {
 		l := binary.LittleEndian.Uint32(lenBuf)
 		body := make([]byte, int(l))
 		if l > 0 {
+			// Read the body, if there was one
 			_, err = io.ReadFull(c.netConn, body)
 			if err != nil {
 				logrus.WithError(err).Error("Failed reading body")
@@ -88,6 +96,7 @@ func (c *Conn) Send(evtID EventType, data interface{}) error {
 	return c.SendNoLock(encoded)
 }
 
+// Same as Send but logs the error (usefull for launching send in new goroutines)
 func (c *Conn) SendLogErr(evtID EventType, data interface{}) {
 	err := c.Send(evtID, data)
 	if err != nil {
@@ -103,6 +112,10 @@ func (c *Conn) SendNoLock(data []byte) error {
 	return errors.WithMessage(err, "netConn.Write")
 }
 
+// EncodeEvent encodes the event to the wire format
+// The wire format is pretty basic, first 4 bytes is a uin32 representing what type of event this is
+// next 4 bytes is another uin32 which represents the length of the body
+// next n bytes is the body itself, which can even be empty in some cases
 func EncodeEvent(evtID EventType, data interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 

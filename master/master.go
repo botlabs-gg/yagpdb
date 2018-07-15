@@ -15,6 +15,9 @@ var (
 	mu        sync.Mutex
 )
 
+// Listen starts listening for slave connections,
+// it also starts the monitor that will start new slaves if none has been spotted for 15 seconds
+// (in case of crashes and such)
 func Listen(addr string) {
 	logrus.Println("Starting master on ", addr)
 	listener, err := net.Listen("tcp", addr)
@@ -27,6 +30,8 @@ func Listen(addr string) {
 
 func StartSlave() {
 	logrus.Println("Starting slave")
+
+	// TODO: Make these args configurable
 	cmd := exec.Command("./yagpdb", "-bot", "-syslog")
 	cmd.Env = os.Environ()
 

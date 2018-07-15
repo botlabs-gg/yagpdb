@@ -15,17 +15,19 @@ var (
 	processingGuildStates = new(int64)
 )
 
+// ConnectToMaster attempts to connect to master ,if it fails it will launch a reconnect loop and wait until the master appears
 func ConnectToMaster(bot Bot, addr string) (*Conn, error) {
 	conn := &Conn{
 		bot:     bot,
 		address: addr,
 	}
 
-	go conn.ReconnectLoop(false)
+	go conn.reconnectLoop(false)
 
 	return conn, nil
 }
 
+// Conn is a wrapper around master.Conn, and represents a connection to the master
 type Conn struct {
 	baseConn *master.Conn
 	mu       sync.Mutex
@@ -37,7 +39,7 @@ type Conn struct {
 	sendQueue    [][]byte
 }
 
-func (c *Conn) Connect() error {
+func (c *Conn) connect() error {
 	netConn, err := net.Dial("tcp", c.address)
 	if err != nil {
 		return err
@@ -45,8 +47,8 @@ func (c *Conn) Connect() error {
 
 	c.mu.Lock()
 	c.baseConn = master.ConnFromNetCon(netConn)
-	c.baseConn.MessageHandler = c.HandleMessage
-	c.baseConn.ConnClosedHanlder = c.OnClosedConn
+	c.baseConn.MessageHandler = c.handleMessage
+	c.baseConn.ConnClosedHanlder = c.onClosedConn
 	go c.baseConn.Listen()
 
 	c.mu.Unlock()
@@ -54,11 +56,11 @@ func (c *Conn) Connect() error {
 	return nil
 }
 
-func (c *Conn) OnClosedConn() {
-	go c.ReconnectLoop(true)
+func (c *Conn) onClosedConn() {
+	go c.reconnectLoop(true)
 }
 
-func (c *Conn) ReconnectLoop(running bool) {
+func (c *Conn) reconnectLoop(running bool) {
 	c.mu.Lock()
 	if c.reconnecting {
 		c.mu.Unlock()
@@ -80,7 +82,7 @@ func (c *Conn) ReconnectLoop(running bool) {
 }
 
 func (c *Conn) TryReconnect(running bool) bool {
-	err := c.Connect()
+	err := c.connect()
 	if err != nil {
 		return false
 	}
@@ -101,7 +103,7 @@ func (c *Conn) TryReconnect(running bool) bool {
 	return true
 }
 
-func (c *Conn) HandleMessage(m *master.Message) {
+func (c *Conn) handleMessage(m *master.Message) {
 	var dataInterface interface{}
 
 	if m.EvtID != master.EvtGuildState {
@@ -166,14 +168,14 @@ func (c *Conn) HandleMessage(m *master.Message) {
 		// Master is telling us to resume a shard
 		data := dataInterface.(*master.ResumeShardData)
 
-		go c.HandleResume(data)
+		go c.handleResume(data)
 	case master.EvtGuildState:
 		atomic.AddInt64(processingGuildStates, 1)
-		go c.HandleGuildState(m.Body)
+		go c.handleGuildState(m.Body)
 	}
 }
 
-func (c *Conn) HandleGuildState(body []byte) {
+func (c *Conn) handleGuildState(body []byte) {
 	defer func() {
 		atomic.AddInt64(processingGuildStates, -1)
 	}()
@@ -187,7 +189,7 @@ func (c *Conn) HandleGuildState(body []byte) {
 	c.bot.LoadGuildState(&dest)
 }
 
-func (c *Conn) HandleResume(data *master.ResumeShardData) {
+func (c *Conn) handleResume(data *master.ResumeShardData) {
 	logrus.Println("Got resume event")
 
 	// Wait for remaining guild states to be loaded before we resume, since they're handled concurrently
