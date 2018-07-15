@@ -6,8 +6,6 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
-func (p *Plugin) InitBot() {}
-
 func (p *Plugin) Status(client *redis.Client) (string, string) {
 	numUnique, _ := client.Cmd("ZCARD", "youtube_subbed_channels").Int()
 

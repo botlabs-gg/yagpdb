@@ -44,7 +44,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		return "No role with the name `" + data.Args[0].Str() + "` found", nil
 	}
 
-	_, err := common.BotSession.GuildRoleEdit(data.GS.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
+	_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
 	if err != nil {
 		if _, dErr := common.DiscordError(err); dErr != "" {
 			return "Failed updating role, discord responded with: " + dErr, err
@@ -57,6 +57,6 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 
 	time.Sleep(time.Second * 2)
 
-	common.BotSession.GuildRoleEdit(data.GS.ID(), role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
+	common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
 	return "", err
 }

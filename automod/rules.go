@@ -146,7 +146,7 @@ func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, client
 
 	del = true
 
-	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "spam"))
+	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID, evt.Author.ID, "spam"))
 	if err != nil {
 		return
 	}
@@ -195,7 +195,7 @@ OUTER:
 		}
 
 		// Ignore invites to this server
-		if invite.Guild.ID == cs.Guild.ID() {
+		if invite.Guild.ID == cs.Guild.ID {
 			continue
 		}
 		badInvite = true
@@ -208,7 +208,7 @@ OUTER:
 
 	del = true
 
-	punishment, err = i.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "invite"))
+	punishment, err = i.PushViolation(client, KeyViolations(cs.Guild.ID, evt.Author.ID, "invite"))
 	if err != nil {
 		return
 	}
@@ -230,7 +230,7 @@ func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, cli
 
 	del = true
 
-	punishment, err = m.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "mention"))
+	punishment, err = m.PushViolation(client, KeyViolations(cs.Guild.ID, evt.Author.ID, "mention"))
 	if err != nil {
 		return
 	}
@@ -251,7 +251,7 @@ func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, clien
 	}
 
 	del = true
-	punishment, err = l.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "links"))
+	punishment, err = l.PushViolation(client, KeyViolations(cs.Guild.ID, evt.Author.ID, "links"))
 	if err != nil {
 		return
 	}
@@ -291,7 +291,7 @@ func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, clien
 
 	// Fonud a bad word!
 	del = true
-	punishment, err = w.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badword"))
+	punishment, err = w.PushViolation(client, KeyViolations(cs.Guild.ID, evt.Author.ID, "badword"))
 
 	msg = fmt.Sprintf("The word `%s` is banned, watch your language.", word)
 	return
@@ -349,7 +349,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState, clien
 		return
 	}
 
-	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID(), evt.Author.ID, "badlink"))
+	punishment, err = s.PushViolation(client, KeyViolations(cs.Guild.ID, evt.Author.ID, "badlink"))
 	extraInfo := ""
 	if threatList != "" {
 		extraInfo = "(sb: " + threatList + ")"

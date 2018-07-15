@@ -6,6 +6,8 @@ import (
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/master/slave"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
@@ -21,9 +23,24 @@ var (
 	ShardManager *dshardmanager.Manager
 
 	StateHandlerPtr *eventsystem.Handler
+
+	SlaveClient *slave.Conn
+
+	state     int
+	stateLock sync.Mutex
 )
 
-func Setup() {
+const (
+	StateRunningNoMaster   int = iota
+	StateRunningWithMaster     // Fully started
+
+	StateWaitingHelloMaster
+	StateSoftStarting
+	StateShardMigrationTo
+	StateShardMigrationFrom
+)
+
+func setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
@@ -43,19 +60,10 @@ func Setup() {
 	eventsystem.AddHandler(RedisWrapper(HandleChannelUpdate), eventsystem.EventChannelUpdate)
 	eventsystem.AddHandler(RedisWrapper(HandleChannelDelete), eventsystem.EventChannelDelete)
 	eventsystem.AddHandler(RedisWrapper(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
-
-	log.Info("Initializing bot plugins")
-	for _, plugin := range common.Plugins {
-		if botPlugin, ok := plugin.(Plugin); ok {
-			botPlugin.InitBot()
-			log.Info("Initialized bot plugin ", plugin.Name())
-		}
-	}
-
-	log.Printf("Registered %d event handlers", eventsystem.NumHandlers(eventsystem.EventAll))
 }
 
 func Run() {
+	setup()
 
 	log.Println("Running bot")
 
@@ -99,20 +107,44 @@ func Run() {
 	State.MaxChannelMessages = 1000
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
+
 	Running = true
 
-	go ShardManager.Start()
+	// go ShardManager.Start()
 	go MemberFetcher.Run()
 	go mergedMessageSender()
-	go MonitorLoading()
 
-	for _, p := range common.Plugins {
-		starter, ok := p.(BotStarterHandler)
-		if ok {
-			starter.StartBot()
-			log.Debug("Ran StartBot for ", p.Name())
+	masterAddr := os.Getenv("YAGPDB_MASTER_CONNECT_ADDR")
+	if masterAddr != "" {
+		stateLock.Lock()
+		state = StateWaitingHelloMaster
+		stateLock.Unlock()
+
+		log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
+		SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
+		if err != nil {
+			log.WithError(err).Error("Failed connecting to master")
+			os.Exit(1)
 		}
+	} else {
+		stateLock.Lock()
+		state = StateRunningNoMaster
+		stateLock.Unlock()
+
+		InitPlugins()
+
+		log.Println("Running normally without a master")
+		go ShardManager.Start()
+		go MonitorLoading()
 	}
+
+	// for _, p := range common.Plugins {
+	// 	starter, ok := p.(BotStarterHandler)
+	// 	if ok {
+	// 		starter.StartBot()
+	// 		log.Debug("Ran StartBot for ", p.Name())
+	// 	}
+	// }
 }
 
 func MonitorLoading() {
@@ -135,18 +167,48 @@ func MonitorLoading() {
 	}
 }
 
-func Stop(wg *sync.WaitGroup) {
-
-	for _, v := range common.Plugins {
-		stopper, ok := v.(BotStopperHandler)
-		if !ok {
-			continue
+func InitPlugins() {
+	// Initialize all plugins
+	for _, plugin := range common.Plugins {
+		if initBot, ok := plugin.(BotInitHandler); ok {
+			initBot.BotInit()
 		}
-		wg.Add(1)
-		log.Debug("Sending stop event to stopper: ", v.Name())
-		go stopper.StopBot(wg)
+	}
+}
+
+func BotStarted() {
+	for _, p := range common.Plugins {
+		starter, ok := p.(BotStartedHandler)
+		if ok {
+			starter.BotStarted()
+			log.Debug("Ran BotStarted for ", p.Name())
+		}
 	}
 
+	go scheduledevents.Run()
+}
+
+var stopOnce sync.Once
+
+func StopAllPlugins(wg *sync.WaitGroup) {
+	stopOnce.Do(func() {
+		for _, v := range common.Plugins {
+			stopper, ok := v.(BotStopperHandler)
+			if !ok {
+				continue
+			}
+			wg.Add(1)
+			log.Debug("Calling bot stopper for: ", v.Name())
+			go stopper.StopBot(wg)
+		}
+
+		wg.Add(1)
+		go scheduledevents.Stop(wg)
+	})
+}
+
+func Stop(wg *sync.WaitGroup) {
+	StopAllPlugins(wg)
 	ShardManager.StopAll()
 	wg.Done()
 }
@@ -211,7 +273,7 @@ func GuildCountsFunc() []int {
 	result := make([]int, numShards)
 	State.RLock()
 	for _, v := range State.Guilds {
-		shard := (v.ID() >> 22) % int64(numShards)
+		shard := (v.ID >> 22) % int64(numShards)
 		result[shard]++
 	}
 	State.RUnlock()

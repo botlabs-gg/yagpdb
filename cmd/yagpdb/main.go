@@ -20,7 +20,6 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 	// Plugin imports
@@ -54,6 +53,8 @@ var (
 	flagAction string
 
 	flagLogTimestamp bool
+
+	flagSysLog bool
 )
 
 func init() {
@@ -62,6 +63,7 @@ func init() {
 	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (currently reddit and youtube)")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
+	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected, migrate")
@@ -76,6 +78,10 @@ func main() {
 		DisableTimestamp: !common.Testing,
 		ForceColors:      true,
 	})
+
+	if flagSysLog {
+		AddSyslogHooks()
+	}
 
 	if os.Getenv("YAGPDB_SENTRY_DSN") != "" {
 		hook, err := logrus_sentry.NewSentryHook(os.Getenv("YAGPDB_SENTRY_DSN"), []log.Level{
@@ -145,7 +151,7 @@ func main() {
 	}
 
 	// Setup plugins for bot, but run later if enabled
-	bot.Setup()
+	// commands.InitCommands()
 	mqueue.InitStores()
 
 	// RUN FORREST RUN
@@ -159,8 +165,8 @@ func main() {
 	}
 
 	if flagRunBot || flagRunEverything {
+		botrest.RegisterPlugin()
 		bot.Run()
-		go botrest.StartServer()
 		go mqueue.StartPolling()
 	}
 
@@ -206,18 +212,17 @@ func listenSignal() {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	<-c
-	log.Info("SHUTTING DOWN...")
+	sig := <-c
+	log.Info("SHUTTING DOWN... ", sig.String())
 
 	shouldWait := false
 	var wg sync.WaitGroup
 
 	if flagRunBot || flagRunEverything {
 
-		wg.Add(2)
+		wg.Add(1)
 
 		go bot.Stop(&wg)
-		go scheduledevents.Stop(&wg)
 		mqueue.Stop(&wg)
 
 		shouldWait = true

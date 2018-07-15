@@ -7,11 +7,13 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"regexp"
@@ -31,18 +33,34 @@ const (
 
 const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
 
-func (p *Plugin) InitBot() {
+var _ commands.CommandProvider = (*Plugin)(nil)
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.ShardMigrationHandler = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(ModerationCommands...)
+}
+
+func (p *Plugin) BotInit() {
+	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
+	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
+
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
 	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleMemberJoin)), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleGuildMemberUpdate)), eventsystem.EventGuildMemberUpdate)
 
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
+
+	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 }
 
-func (p *Plugin) BotStarted() {
-	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
+func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
+	if !toThisSlave {
+		return
+	}
+
+	go RefreshMuteOverrides(gs.ID)
 }
 
 func HandleRefreshMuteOverrides(evt *pubsub.Event) {
@@ -67,6 +85,9 @@ func RefreshMuteOverrides(guildID int64) {
 	}
 
 	guild := bot.State.Guild(true, guildID)
+	if guild == nil {
+		return // Still starting up and haven't received the guild yet
+	}
 
 	guild.RLock()
 	defer guild.RUnlock()
@@ -333,7 +354,7 @@ func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
 
 		userID := data.Msg.Author.ID
 		channelID := data.CS.ID
-		guildID := data.GS.ID()
+		guildID := data.GS.ID
 
 		cmdName := data.Cmd.Trigger.Names[0]
 
@@ -452,7 +473,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
-			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), true)
+			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), true)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -495,7 +516,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				target = targetMember.DGoUser()
 			}
 
-			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
+			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -524,7 +545,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
-			err := KickUser(config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
+			err := KickUser(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -557,12 +578,12 @@ var ModerationCommands = []*commands.YAGCommand{
 			muteDuration := parsed.Args[1].Int()
 			reason := parsed.Args[2].Str()
 
-			member, err := bot.GetMember(parsed.GS.ID(), target.ID)
+			member, err := bot.GetMember(parsed.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
+			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err
@@ -593,12 +614,12 @@ var ModerationCommands = []*commands.YAGCommand{
 			target := parsed.Args[0].Value.(*discordgo.User)
 			reason := parsed.Args[1].Str()
 
-			member, err := bot.GetMember(parsed.GS.ID(), target.ID)
+			member, err := bot.GetMember(parsed.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
+			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err
@@ -624,7 +645,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RunFunc: ModBaseCmd(0, ModCmdReport, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
-			logLink := CreateLogs(parsed.GS.ID(), parsed.CS.ID, parsed.Msg.Author)
+			logLink := CreateLogs(parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author)
 
 			channelID := config.IntReportChannel()
 			if channelID == 0 {
@@ -778,7 +799,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 
-			err := WarnUser(config, parsed.GS.ID(), parsed.CS.ID, parsed.Msg.Author, parsed.Args[0].Value.(*discordgo.User), parsed.Args[1].Str())
+			err := WarnUser(config, parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author, parsed.Args[0].Value.(*discordgo.User), parsed.Args[1].Str())
 			if err != nil {
 				return "Seomthing went wrong warning this user, make sure the bot has all the proper perms. (if you have the modlog enabled the bot need to be able to send messages in the modlog for example)", err
 			}
@@ -798,7 +819,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
 			var result []*WarningModel
-			err := common.GORM.Where("user_id = ? AND guild_id = ?", parsed.Args[0].Value.(*discordgo.User).ID, parsed.GS.ID()).Order("id desc").Find(&result).Error
+			err := common.GORM.Where("user_id = ? AND guild_id = ?", parsed.Args[0].Value.(*discordgo.User).ID, parsed.GS.ID).Order("id desc").Find(&result).Error
 			if err != nil && err != gorm.ErrRecordNotFound {
 				return "An error occured...", err
 			}
@@ -830,7 +851,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
 
-			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GS.ID(), parsed.Args[0].Int()).Update(
+			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Args[0].Int()).Update(
 				"message", fmt.Sprintf("%s (updated by %s#%s (%s))", parsed.Args[1].Str(), parsed.Msg.Author.Username, parsed.Msg.Author.Discriminator, parsed.Msg.Author.ID)).RowsAffected
 
 			if rows < 1 {
@@ -852,7 +873,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
 
-			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GS.ID(), parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
+			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
 			if rows < 1 {
 				return "Failed deleting, most likely couldn't find the warning", nil
 			}
@@ -872,7 +893,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
 
-			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GS.ID(), parsed.Args[0].Value.(*discordgo.User).ID).Delete(WarningModel{}).RowsAffected
+			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, parsed.Args[0].Value.(*discordgo.User).ID).Delete(WarningModel{}).RowsAffected
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil
 		}),
 	},

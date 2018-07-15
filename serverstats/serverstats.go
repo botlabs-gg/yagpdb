@@ -3,7 +3,6 @@ package serverstats
 import (
 	"context"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/serverstats/models"
@@ -12,6 +11,7 @@ import (
 	"gopkg.in/src-d/go-kallax.v1"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -40,11 +40,7 @@ func RegisterPlugin() {
 	}
 }
 
-var _ bot.BotStarterHandler = (*Plugin)(nil)
-
-func (p *Plugin) StartBot() {
-	go UpdateStatsLoop()
-}
+var stopStatsLoop = make(chan *sync.WaitGroup)
 
 func UpdateStatsLoop() {
 
@@ -60,6 +56,9 @@ func UpdateStatsLoop() {
 			ProcessTempStats(false)
 		case <-longTicker.C:
 			go UpdateOldStats()
+		case wg := <-stopStatsLoop:
+			wg.Done()
+			return
 		}
 	}
 }
@@ -71,28 +70,36 @@ func ProcessTempStats(full bool) {
 
 	started := time.Now()
 
-	guildsToCheckMU.Lock()
-	guilds := guildsToCheck
-	guildsToCheck = make([]int64, 0, len(guilds))
-	guildsToCheckMU.Unlock()
+	var strGuilds []string
 	if full {
-		tmpGuilds, err := client.Cmd("SMEMBERS", "connected_guilds").List()
+		var err error
+		strGuilds, err = client.Cmd("SMEMBERS", "connected_guilds").List()
 		if err != nil {
-			log.WithError(err).Error("Failed retrieving connected guilds", err)
+			log.WithError(err).Error("Failed retrieving connected guilds")
 		}
-		guilds = make([]int64, 0, len(tmpGuilds))
-		for _, v := range tmpGuilds {
-			id, _ := strconv.ParseInt(v, 10, 64)
-			guilds = append(guilds, id)
+	} else {
+		err := client.Cmd("RENAME", "serverstats_active_guilds", "serverstats_active_guilds_processing").Err
+		if err != nil {
+			log.WithError(err).Error("Failed renaming temp stats")
+			return
 		}
+
+		strGuilds, err = client.Cmd("SMEMBERS", "serverstats_active_guilds_processing").List()
+		if err != nil {
+			log.WithError(err).Error("Failed retrieving active guilds")
+		}
+
+		client.Cmd("DEL", "serverstats_active_guilds_processing")
 	}
 
-	if len(guilds) < 1 {
+	if len(strGuilds) < 1 {
 		log.Info("Skipped updating stats, no activity")
 		return
 	}
 
-	for _, g := range guilds {
+	for _, strGID := range strGuilds {
+		g, _ := strconv.ParseInt(strGID, 10, 64)
+
 		err := UpdateGuildStats(client, g)
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -104,7 +111,7 @@ func ProcessTempStats(full bool) {
 
 	log.WithFields(log.Fields{
 		"duration":    time.Since(started).Seconds(),
-		"num_servers": len(guilds),
+		"num_servers": len(strGuilds),
 	}).Info("Updated temp stats")
 }
 

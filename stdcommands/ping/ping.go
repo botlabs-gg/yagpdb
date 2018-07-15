@@ -3,7 +3,6 @@ package ping
 import (
 	"fmt"
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -25,7 +24,7 @@ var Command = &commands.YAGCommand{
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate()
 
-	bUser := bot.State.User(true)
+	bUser := common.BotUser
 	if bUser == nil {
 		return
 	}

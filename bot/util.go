@@ -77,7 +77,7 @@ func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 	}
 
 	// Ensure the member is in state
-	GetMember(channel.Guild.ID(), userID)
+	GetMember(channel.Guild.ID, userID)
 	perms, err := channel.Guild.MemberPermissions(true, channelID, userID)
 	if err != nil {
 		return false, err

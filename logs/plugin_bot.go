@@ -27,14 +27,19 @@ func init() {
 	snowflake.Epoch = 1420070400000
 }
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
+	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames)
+}
+
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
-
-	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames)
 
 	var err error
 	nicknameQueryStatement, err = common.PQ.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
@@ -46,11 +51,7 @@ func (p *Plugin) InitBot() {
 	if err != nil {
 		panic("Failed preparing statement: " + err.Error())
 	}
-}
 
-var _ bot.BotStarterHandler = (*Plugin)(nil)
-
-func (p *Plugin) StartBot() {
 	go EvtProcesser()
 	go EvtProcesserGCs()
 }
@@ -68,7 +69,7 @@ var cmdLogs = &commands.YAGCommand{
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
 
-		l, err := CreateChannelLog(nil, cmd.GS.ID(), cmd.CS.ID, cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
+		l, err := CreateChannelLog(nil, cmd.GS.ID, cmd.CS.ID, cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
 				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
@@ -90,7 +91,7 @@ var cmdWhois = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.GS.ID())
+		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
 			return "Failed retrieving config for this server", err
 		}
@@ -100,7 +101,7 @@ var cmdWhois = &commands.YAGCommand{
 			target = parsed.Args[0].Value.(*discordgo.User)
 		}
 
-		member, err := bot.GetMember(parsed.GS.ID(), target.ID)
+		member, err := bot.GetMember(parsed.GS.ID, target.ID)
 		if err != nil {
 			return "An error occured fetching guild member, contact bot owner", err
 		}
@@ -194,7 +195,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled {
 
-			nicknames, err := GetNicknames(target.ID, parsed.GS.ID(), 5)
+			nicknames, err := GetNicknames(target.ID, parsed.GS.ID, 5)
 			if err != nil {
 				return err, err
 			}
@@ -234,7 +235,7 @@ var cmdUsernames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.GS.ID())
+		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
 			return "AAAAA", err
 		}
@@ -275,9 +276,9 @@ var cmdNicknames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.GS.ID())
+		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
-			return "AAAAA", err
+			return "Failed retrieving config", err
 		}
 
 		target := parsed.Msg.Author
@@ -289,7 +290,7 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		nicknames, err := GetNicknames(target.ID, parsed.GS.ID(), 25)
+		nicknames, err := GetNicknames(target.ID, parsed.GS.ID, 25)
 		if err != nil {
 			return err, err
 		}

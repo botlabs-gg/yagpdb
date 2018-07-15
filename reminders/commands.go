@@ -14,8 +14,15 @@ import (
 	"time"
 )
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(cmds...)
+}
+
+func (p *Plugin) BotInit() {
+	scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandler)
 }
 
 // Reminder management commands
@@ -173,7 +180,7 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 			}
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
-			member, _ := bot.GetMember(cs.Guild.ID(), v.UserIDInt())
+			member, _ := bot.GetMember(cs.Guild.ID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.Username

@@ -13,8 +13,6 @@ const (
 	GuildMaxFeeds = 100
 )
 
-func (p *Plugin) InitBot() {}
-
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 
 func (p *Plugin) RemoveGuild(c *redis.Client, g int64) error {

@@ -14,20 +14,17 @@ import (
 	"time"
 )
 
-var (
-	guildsToCheck   = make([]int64, 0)
-	guildsToCheckMU sync.Mutex
-)
-
-func MarkGuildAsToBeChecked(guildID int64) {
-	guildsToCheckMU.Lock()
-	if !common.ContainsInt64Slice(guildsToCheck, guildID) {
-		guildsToCheck = append(guildsToCheck, guildID)
-	}
-	guildsToCheckMU.Unlock()
+func MarkGuildAsToBeChecked(rcli *redis.Client, guildID int64) {
+	rcli.Cmd("SADD", "serverstats_active_guilds", guildID)
 }
 
-func (p *Plugin) InitBot() {
+var (
+	_ bot.BotInitHandler       = (*Plugin)(nil)
+	_ bot.BotStopperHandler    = (*Plugin)(nil)
+	_ commands.CommandProvider = (*Plugin)(nil)
+)
+
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberAdd), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberRemove), eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
@@ -36,6 +33,14 @@ func (p *Plugin) InitBot() {
 	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(bot.RedisWrapper(HandleReady), eventsystem.EventReady)
 
+	go UpdateStatsLoop()
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	stopStatsLoop <- wg
+}
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryTool,
@@ -43,7 +48,7 @@ func (p *Plugin) InitBot() {
 		Name:          "Stats",
 		Description:   "Shows server stats (if public stats are enabled)",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			config, err := GetConfig(data.Context(), data.GS.ID())
+			config, err := GetConfig(data.Context(), data.GS.ID)
 			if err != nil {
 				return "Failed retreiving guild config", err
 			}
@@ -52,7 +57,7 @@ func (p *Plugin) InitBot() {
 				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.Conf.Host), nil
 			}
 
-			stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID())
+			stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID)
 			if err != nil {
 				return "Error retrieving stats", err
 			}
@@ -64,7 +69,7 @@ func (p *Plugin) InitBot() {
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%d/stats)", common.Conf.Host, data.GS.ID()),
+				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%d/stats)", common.Conf.Host, data.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
 					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
@@ -77,6 +82,7 @@ func (p *Plugin) InitBot() {
 			return embed, nil
 		},
 	})
+
 }
 
 func HandleReady(evt *eventsystem.EventData) {
@@ -175,9 +181,9 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := GetConfig(evt.Context(), channel.Guild.ID())
+	config, err := GetConfig(evt.Context(), channel.Guild.ID)
 	if err != nil {
-		log.WithError(err).WithField("guild", channel.Guild.ID()).Error("Failed retrieving config")
+		log.WithError(err).WithField("guild", channel.Guild.ID).Error("Failed retrieving config")
 		return
 	}
 
@@ -190,7 +196,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	MarkGuildAsToBeChecked(channel.Guild.ID())
+	MarkGuildAsToBeChecked(client, channel.Guild.ID)
 }
 
 func ApplyPresences(client *redis.Client, guildID int64, presences []*discordgo.Presence) error {
