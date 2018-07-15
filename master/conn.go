@@ -3,9 +3,9 @@ package master
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack"
 	"io"
 	"net"
 	"sync"
@@ -77,16 +77,33 @@ func (c *Conn) Listen() {
 // Send sends the specified message over the connection, marshaling the data using json
 // this locks the writer
 func (c *Conn) Send(evtID EventType, data interface{}) error {
+	encoded, err := EncodeEvent(evtID, data)
+	if err != nil {
+		return errors.WithMessage(err, "EncodeEvent")
+	}
+
 	c.sendmu.Lock()
 	defer c.sendmu.Unlock()
 
-	return c.SendNoLock(evtID, data)
+	return c.SendNoLock(encoded)
+}
+
+func (c *Conn) SendLogErr(evtID EventType, data interface{}) {
+	err := c.Send(evtID, data)
+	if err != nil {
+		logrus.WithError(err).Error("[MASTER] Failed sending message to slave")
+	}
 }
 
 // SendNoLock sends the specified message over the connection, marshaling the data using json
 // This does no locking and the caller is responsible for making sure its not called in multiple goroutines at the same time
-func (c *Conn) SendNoLock(evtID EventType, data interface{}) error {
+func (c *Conn) SendNoLock(data []byte) error {
 
+	_, err := c.netConn.Write(data)
+	return errors.WithMessage(err, "netConn.Write")
+}
+
+func EncodeEvent(evtID EventType, data interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 
 	tmpBuf := make([]byte, 4)
@@ -95,13 +112,21 @@ func (c *Conn) SendNoLock(evtID EventType, data interface{}) error {
 
 	l := uint32(0)
 	if data != nil {
-		serialized, err := json.Marshal(data)
-		if err != nil {
-			return errors.WithMessage(err, "json.Marshal")
+		var serialized []byte
+		if byteSlice, ok := data.([]byte); ok {
+			serialized = byteSlice
+		} else {
+			var err error
+			serialized, err = msgpack.Marshal(data)
+			if err != nil {
+				return nil, errors.WithMessage(err, "msgpack.Marshal")
+			}
 		}
+
 		l = uint32(len(serialized))
 
 		binary.LittleEndian.PutUint32(tmpBuf, l)
+
 		buf.Write(tmpBuf)
 
 		buf.Write(serialized)
@@ -109,6 +134,5 @@ func (c *Conn) SendNoLock(evtID EventType, data interface{}) error {
 		buf.Write(make([]byte, 4))
 	}
 
-	_, err := c.netConn.Write(buf.Bytes())
-	return errors.WithMessage(err, "netConn.Write")
+	return buf.Bytes(), nil
 }

@@ -1,12 +1,18 @@
 package slave
 
 import (
-	"encoding/json"
 	"github.com/jonas747/yagpdb/master"
 	"github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack"
 	"net"
+	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
+)
+
+var (
+	processingGuildStates = new(int64)
 )
 
 func ConnectToMaster(bot Bot, addr string) (*Conn, error) {
@@ -20,11 +26,6 @@ func ConnectToMaster(bot Bot, addr string) (*Conn, error) {
 	return conn, nil
 }
 
-type QueuedMessage struct {
-	EvtID master.EventType
-	Data  interface{}
-}
-
 type Conn struct {
 	baseConn *master.Conn
 	mu       sync.Mutex
@@ -33,7 +34,7 @@ type Conn struct {
 	address      string
 	bot          Bot
 	reconnecting bool
-	sendQueue    []*QueuedMessage
+	sendQueue    [][]byte
 }
 
 func (c *Conn) Connect() error {
@@ -84,10 +85,15 @@ func (c *Conn) TryReconnect(running bool) bool {
 		return false
 	}
 
+	encoded, err := master.EncodeEvent(master.EvtSlaveHello, master.SlaveHelloData{Running: running})
+	if err != nil {
+		panic("Failed encoding hello " + err.Error())
+	}
+
 	c.mu.Lock()
-	c.baseConn.SendNoLock(master.EvtSlaveHello, master.SlaveHelloData{Running: running})
+	c.baseConn.SendNoLock(encoded)
 	for _, v := range c.sendQueue {
-		c.baseConn.SendNoLock(v.EvtID, v.Data)
+		c.baseConn.SendNoLock(v)
 	}
 	c.reconnecting = false
 	c.mu.Unlock()
@@ -96,14 +102,17 @@ func (c *Conn) TryReconnect(running bool) bool {
 }
 
 func (c *Conn) HandleMessage(m *master.Message) {
-	dataInterfaceF, ok := master.EvtDataMap[m.EvtID]
 	var dataInterface interface{}
-	if ok {
-		dataInterface = dataInterfaceF()
-		err := json.Unmarshal(m.Body, dataInterface)
-		if err != nil {
-			logrus.WithError(err).Error("Failed decoding incoming event")
-			return
+
+	if m.EvtID != master.EvtGuildState {
+		dataInterfaceF, ok := master.EvtDataMap[m.EvtID]
+		if ok {
+			dataInterface = dataInterfaceF()
+			err := msgpack.Unmarshal(m.Body, dataInterface)
+			if err != nil {
+				logrus.WithError(err).Error("Failed decoding incoming event")
+				return
+			}
 		}
 	}
 
@@ -132,7 +141,7 @@ func (c *Conn) HandleMessage(m *master.Message) {
 			c.bot.StartShardTransferTo(data.NumShards)
 		}
 
-		c.Send(master.EvtShardMigrationStart, data, true)
+		go c.SendLogErr(master.EvtShardMigrationStart, data, true)
 
 	case master.EvtStopShard:
 		logrus.Println("Got stopshard event")
@@ -151,37 +160,72 @@ func (c *Conn) HandleMessage(m *master.Message) {
 		sessionID, sequence := c.bot.StopShard(data.Shard)
 		data.SessionID = sessionID
 		data.Sequence = sequence
-		c.Send(master.EvtStopShard, data, true)
+		go c.SendLogErr(master.EvtStopShard, data, true)
 
 	case master.EvtResume:
 		// Master is telling us to resume a shard
-		logrus.Println("Got resume event")
 		data := dataInterface.(*master.ResumeShardData)
-		c.bot.StartShard(data.Shard, data.SessionID, data.Sequence)
-		time.Sleep(time.Second)
-		c.Send(master.EvtResume, data, true)
 
+		go c.HandleResume(data)
 	case master.EvtGuildState:
-		logrus.Println("Got guildstate event")
-		data := dataInterface.(*master.GuildStateData)
-		c.bot.LoadGuildState(data)
+		atomic.AddInt64(processingGuildStates, 1)
+		go c.HandleGuildState(m.Body)
 	}
+}
+
+func (c *Conn) HandleGuildState(body []byte) {
+	defer func() {
+		atomic.AddInt64(processingGuildStates, -1)
+	}()
+
+	var dest master.GuildStateData
+	err := msgpack.Unmarshal(body, &dest)
+	if err != nil {
+		logrus.WithError(err).Error("Failed decoding guildstate")
+	}
+
+	c.bot.LoadGuildState(&dest)
+}
+
+func (c *Conn) HandleResume(data *master.ResumeShardData) {
+	logrus.Println("Got resume event")
+
+	// Wait for remaining guild states to be loaded before we resume, since they're handled concurrently
+	for atomic.LoadInt64(processingGuildStates) > 0 {
+		runtime.Gosched()
+	}
+
+	c.bot.StartShard(data.Shard, data.SessionID, data.Sequence)
+	time.Sleep(time.Second)
+	c.SendLogErr(master.EvtResume, data, true)
 }
 
 // Send sends the message to the master, if the connection is closed it will queue the message if queueFailed is set
 func (c *Conn) Send(evtID master.EventType, body interface{}, queueFailed bool) error {
+	encoded, err := master.EncodeEvent(evtID, body)
+	if err != nil {
+		return err
+	}
+
 	c.mu.Lock()
 	if c.reconnecting {
 		if queueFailed {
-			c.sendQueue = append(c.sendQueue, &QueuedMessage{EvtID: evtID, Data: body})
+			c.sendQueue = append(c.sendQueue, encoded)
 		}
 		c.mu.Unlock()
 		return nil
 	}
 
-	err := c.baseConn.SendNoLock(evtID, body)
+	err = c.baseConn.SendNoLock(encoded)
 
 	c.mu.Unlock()
 
 	return err
+}
+
+func (c *Conn) SendLogErr(evtID master.EventType, body interface{}, queueFailed bool) {
+	err := c.Send(evtID, body, queueFailed)
+	if err != nil {
+		logrus.WithError(err).Error("[SLAVE] Failed sending message to master")
+	}
 }

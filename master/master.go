@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"time"
 )
 
 var (
@@ -20,13 +21,13 @@ func Listen(addr string) {
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed starting master")
 	}
-
+	go monitorSlaves()
 	waitForClients(listener)
 }
 
 func StartSlave() {
 	logrus.Println("Starting slave")
-	cmd := exec.Command("yagpdb", "-bot")
+	cmd := exec.Command("./yagpdb", "-bot", "-syslog")
 	cmd.Env = os.Environ()
 
 	wd, err := os.Getwd()
@@ -52,6 +53,26 @@ func waitForClients(listener net.Listener) {
 		logrus.Println("New client connected")
 		client := NewSlaveConn(conn)
 		go client.listen()
+	}
+}
+
+func monitorSlaves() {
+	ticker := time.NewTicker(time.Second)
+	lastTimeSawSlave := time.Now()
+
+	for {
+		<-ticker.C
+		mu.Lock()
+		if mainSlave != nil {
+			lastTimeSawSlave = time.Now()
+		}
+		mu.Unlock()
+
+		if time.Since(lastTimeSawSlave) > time.Second*15 {
+			logrus.Println("Haven't seen a slave in 15 seconds, starting a new one now")
+			go StartSlave()
+			lastTimeSawSlave = time.Now()
+		}
 	}
 }
 

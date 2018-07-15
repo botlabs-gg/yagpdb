@@ -1,8 +1,8 @@
 package master
 
 import (
-	"encoding/json"
 	"github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack"
 	"net"
 )
 
@@ -36,16 +36,19 @@ func (s *SlaveConn) listen() {
 }
 
 func (s *SlaveConn) HandleMessage(msg *Message) {
-	logrus.Println("Got event ", msg.EvtID.String(), " blen: ", len(msg.Body))
-
-	dataInterfaceF, ok := EvtDataMap[msg.EvtID]
 	var dataInterface interface{}
-	if ok {
-		dataInterface = dataInterfaceF()
-		err := json.Unmarshal(msg.Body, dataInterface)
-		if err != nil {
-			logrus.WithError(err).Error("Failed decoding incoming event")
-			return
+
+	if msg.EvtID != EvtGuildState {
+		logrus.Println("Got event ", msg.EvtID.String(), " blen: ", len(msg.Body))
+
+		dataInterfaceF, ok := EvtDataMap[msg.EvtID]
+		if ok {
+			dataInterface = dataInterfaceF()
+			err := msgpack.Unmarshal(msg.Body, dataInterface)
+			if err != nil {
+				logrus.WithError(err).Error("Failed decoding incoming event")
+				return
+			}
 		}
 	}
 
@@ -56,6 +59,7 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 	case EvtSlaveHello:
 		hello := dataInterface.(*SlaveHelloData)
 		s.HandleHello(hello)
+
 	// Full slave migration with shard rescaling not implemented yet
 	// case EvtSoftStartComplete:
 	// 	go mainSlave.Conn.Send(EvtShutdown, nil)
@@ -67,11 +71,11 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 			// The main slave is ready for migration, prepare the new slave
 			data.FromThisSlave = false
 
-			newSlave.Conn.Send(EvtShardMigrationStart, data)
+			go newSlave.Conn.SendLogErr(EvtShardMigrationStart, data)
 		} else {
 			logrus.Println("Both slaves are ready for migration, starting with shard 0")
 			// Both slaves are ready, start the transfer
-			mainSlave.Conn.Send(EvtStopShard, &StopShardData{Shard: 0})
+			go mainSlave.Conn.SendLogErr(EvtStopShard, &StopShardData{Shard: 0})
 		}
 
 	case EvtStopShard:
@@ -80,7 +84,7 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 
 		logrus.Printf("Shard %d stopped, sending resume on new slave... (%d, %s) ", data.Shard, data.Sequence, data.SessionID)
 
-		newSlave.Conn.Send(EvtResume, &ResumeShardData{
+		go newSlave.Conn.SendLogErr(EvtResume, &ResumeShardData{
 			Shard:     data.Shard,
 			SessionID: data.SessionID,
 			Sequence:  data.Sequence,
@@ -91,15 +95,14 @@ func (s *SlaveConn) HandleMessage(msg *Message) {
 		logrus.Printf("Shard %d resumed, Stopping next shard", data.Shard)
 
 		data.Shard++
-		mainSlave.Conn.Send(EvtStopShard, &StopShardData{
+		go mainSlave.Conn.SendLogErr(EvtStopShard, &StopShardData{
 			Shard:     data.Shard,
 			SessionID: data.SessionID,
 			Sequence:  data.Sequence,
 		})
 
 	case EvtGuildState:
-		newSlave.Conn.Send(EvtGuildState, dataInterface)
-
+		newSlave.Conn.Send(EvtGuildState, msg.Body)
 	}
 }
 
@@ -113,7 +116,7 @@ func (s *SlaveConn) HandleHello(hello *SlaveHelloData) {
 	if mainSlave == nil {
 		// No slave was running, just signal this new slave to fully start
 		mainSlave = s
-		mainSlave.Conn.Send(EvtFullStart, nil)
+		go mainSlave.Conn.SendLogErr(EvtFullStart, nil)
 		return
 	}
 

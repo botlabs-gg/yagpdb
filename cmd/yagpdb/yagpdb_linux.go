@@ -7,6 +7,8 @@ import (
 )
 
 func AddSyslogHooks() {
+	logrus.Println("Adding syslog hook")
+
 	hook, err := lsyslog.NewSyslogHook("", "", syslog.LOG_INFO, "")
 
 	if err == nil {

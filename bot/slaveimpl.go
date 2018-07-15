@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/master/slave"
 	"github.com/sirupsen/logrus"
 	"os"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -86,6 +87,13 @@ func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
 	// Wait a second to be sure we dont have any event handlers still running populating the state for this shard
 	time.Sleep(time.Second)
 
+	s.SendGuilds(shard)
+
+	sessionID, sequence = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
+	return
+}
+
+func (s *SlaveImpl) SendGuilds(shard int) {
 	numShards := ShardManager.GetNumShards()
 
 	started := time.Now()
@@ -101,31 +109,50 @@ func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
 	}
 	State.RUnlock()
 
-	for _, v := range guildsToSend {
-		State.Lock()
-		delete(State.Guilds, v.ID)
-		State.Unlock()
+	workChan := make(chan *dstate.GuildState)
+	var wg sync.WaitGroup
 
-		v.RLock()
-		channels := make([]int64, 0, len(v.Channels))
-		for _, c := range v.Channels {
-			channels = append(channels, c.ID)
+	// To speed this up we use multiple workers, this has to be done in a relatively short timespan otherwise we won't be able to resume
+	worker := func() {
+		for gs := range workChan {
+			State.Lock()
+			delete(State.Guilds, gs.ID)
+			State.Unlock()
+
+			gs.RLock()
+			channels := make([]int64, 0, len(gs.Channels))
+			for _, c := range gs.Channels {
+				channels = append(channels, c.ID)
+			}
+
+			SlaveClient.Send(master.EvtGuildState, &master.GuildStateData{GuildState: gs}, true)
+			gs.RUnlock()
+
+			State.Lock()
+			for _, c := range channels {
+				delete(State.Channels, c)
+			}
+			State.Unlock()
 		}
 
-		SlaveClient.Send(master.EvtGuildState, &master.GuildStateData{GuildState: v}, true)
-		v.RUnlock()
-
-		State.Lock()
-		for _, c := range channels {
-			delete(State.Channels, c)
-		}
-		State.Unlock()
+		wg.Done()
 	}
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go worker()
+	}
+
+	for _, v := range guildsToSend {
+		workChan <- v
+	}
+	close(workChan)
+	wg.Wait()
+
+	runtime.GC()
 
 	logrus.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
 
-	sessionID, sequence = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
-	return
 }
 
 func (s *SlaveImpl) StartShard(shard int, sessionID string, sequence int64) {
@@ -148,7 +175,6 @@ func (s *SlaveImpl) StartShard(shard int, sessionID string, sequence int64) {
 }
 
 func (s *SlaveImpl) LoadGuildState(gs *master.GuildStateData) {
-	logrus.Println("Received guild state for ", gs.GuildState.ID)
 
 	guild := gs.GuildState
 	for _, c := range guild.Channels {

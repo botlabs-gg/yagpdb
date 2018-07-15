@@ -2,4 +2,10 @@
 
 package main
 
-func AddSyslogHooks() {}
+import (
+	"github.com/sirupsen/logrus"
+)
+
+func AddSyslogHooks() {
+	logrus.Warn("Not on linux, cannot add syslog hooks")
+}
