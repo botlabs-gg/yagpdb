@@ -150,8 +150,7 @@ func main() {
 		return
 	}
 
-	// Setup plugins for bot, but run later if enabled
-	// commands.InitCommands()
+	commands.InitCommands()
 	mqueue.InitStores()
 
 	// RUN FORREST RUN
