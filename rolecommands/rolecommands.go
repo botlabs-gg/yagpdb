@@ -86,16 +86,18 @@ func AssignRole(guildID int64, ms *dstate.MemberState, cmd *CommandGroupPair) (g
 	onCD := false
 
 	// First check cooldown
-	err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
-		_, replaced, _ := tx.Set(discordgo.StrID(ms.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
-		if replaced {
-			onCD = true
-		}
-		return nil
-	})
+	if cmd.Group != nil && cmd.Group.Mode == GroupModeSingle {
+		err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
+			_, replaced, _ := tx.Set(discordgo.StrID(ms.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
+			if replaced {
+				onCD = true
+			}
+			return nil
+		})
 
-	if onCD {
-		return false, NewSimpleError("You're on cooldown")
+		if onCD {
+			return false, NewSimpleError("You're on cooldown")
+		}
 	}
 
 	if err := CanAssignRoleCmdTo(cmd.Command, ms.Roles); err != nil {
