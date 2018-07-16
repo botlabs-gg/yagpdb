@@ -160,9 +160,9 @@ func main() {
 	}
 
 	if flagRunBot || flagRunEverything {
+		mqueue.RegisterPlugin()
 		botrest.RegisterPlugin()
 		bot.Run()
-		go mqueue.StartPolling()
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
@@ -218,7 +218,6 @@ func listenSignal() {
 		wg.Add(1)
 
 		go bot.Stop(&wg)
-		mqueue.Stop(&wg)
 
 		shouldWait = true
 	}
@@ -244,7 +243,7 @@ func listenSignal() {
 
 	if !common.Testing {
 		log.Info("Sleeping a little longer")
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 4)
 	}
 
 	log.Info("Bye..")

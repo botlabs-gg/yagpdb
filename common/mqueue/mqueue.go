@@ -3,6 +3,7 @@ package mqueue
 import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
@@ -10,10 +11,6 @@ import (
 	"sync"
 	"time"
 )
-
-type PluginWithErrorHandler interface {
-	HandleMQueueError(elem *QueuedElement, err error)
-}
 
 var (
 	sources  = make(map[string]PluginWithErrorHandler)
@@ -27,6 +24,27 @@ var (
 	startedLock sync.Mutex
 	started     bool
 )
+
+type PluginWithErrorHandler interface {
+	HandleMQueueError(elem *QueuedElement, err error)
+}
+
+var (
+	_ bot.BotInitHandler    = (*Plugin)(nil)
+	_ bot.BotStopperHandler = (*Plugin)(nil)
+)
+
+type Plugin struct {
+}
+
+func (p *Plugin) Name() string {
+	return "mqueue"
+}
+
+func RegisterPlugin() {
+	p := &Plugin{}
+	common.RegisterPlugin(p)
+}
 
 func InitStores() {
 	// Init table
@@ -81,7 +99,22 @@ func QueueMessageEmbed(source, sourceID, channel string, embed *discordgo.Messag
 	store.Insert(elem)
 }
 
-func StartPolling() {
+func (p *Plugin) BotInit() {
+	go startPolling()
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	startedLock.Lock()
+	if !started {
+		startedLock.Unlock()
+		wg.Done()
+		return
+	}
+	startedLock.Unlock()
+	stopChan <- wg
+}
+
+func startPolling() {
 	startedLock.Lock()
 	if started {
 		startedLock.Unlock()
@@ -126,17 +159,6 @@ func shutdown(wg *sync.WaitGroup) {
 		time.Sleep(time.Second)
 	}
 	wg.Done()
-}
-
-func Stop(wg *sync.WaitGroup) {
-	startedLock.Lock()
-	if !started {
-		startedLock.Unlock()
-		return
-	}
-	startedLock.Unlock()
-	wg.Add(1)
-	stopChan <- wg
 }
 
 func poll() {
