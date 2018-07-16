@@ -98,10 +98,6 @@ func main() {
 		}
 	}
 
-	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
-	//log.AddHook(&journalhook.JournalHook{})
-	//journalhook.Enable()
-
 	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && flagAction == "" && !flagDryRun {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
