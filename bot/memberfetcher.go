@@ -211,6 +211,10 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 	// Check if this was previously attempted and failed
 	failedCacheKey := discordgo.StrID(guildID) + ":" + discordgo.StrID(elem.Member)
 	if failedUsersCache.Get(failedCacheKey) == nil {
+		if common.Statsd != nil {
+			go common.Statsd.Incr("yagpdb.memfetch.requests", nil, 1)
+		}
+
 		var member *discordgo.Member
 		member, err = common.BotSession.GuildMember(guildID, elem.Member)
 		if err != nil {
