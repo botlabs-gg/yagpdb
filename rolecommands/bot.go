@@ -12,8 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/rolecommands/models"
 )
 
-func (p *Plugin) InitBot() {
-
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
@@ -36,7 +35,9 @@ func (p *Plugin) InitBot() {
 			RunFunc: CmdFuncRoleMenu,
 		},
 	)
+}
 
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(handleReactionAdd, eventsystem.EventMessageReactionAdd)
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 }
@@ -46,12 +47,12 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return CmdFuncListCommands(parsed)
 	}
 
-	member, err := bot.GetMember(parsed.GS.ID(), parsed.Msg.Author.ID)
+	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
 	if err != nil {
 		return "Failed retrieving you?", err
 	}
 
-	given, err := FindAssignRole(parsed.GS.ID(), member, parsed.Args[0].Str())
+	given, err := FindAssignRole(parsed.GS.ID, member, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
@@ -98,7 +99,7 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 }
 
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
-	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.GS.ID())
+	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.GS.ID)
 	if err != nil {
 		return "Failed retrieving role commands", err
 	}

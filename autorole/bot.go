@@ -16,10 +16,23 @@ import (
 	"time"
 )
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.BotStartedHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(roleCommands...)
+}
+
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+
+	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
+}
+
+func (p *Plugin) BotStarted() {
+	go runDurationChecker()
 }
 
 var roleCommands = []*commands.YAGCommand{
@@ -29,21 +42,14 @@ var roleCommands = []*commands.YAGCommand{
 		Description: "Debug debug debug autorole assignment",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-			processing, _ := client.Cmd("GET", KeyProcessing(parsed.GS.ID())).Int()
+			processing, _ := client.Cmd("GET", KeyProcessing(parsed.GS.ID)).Int()
 			return fmt.Sprintf("Processing %d users.", processing), nil
 		},
 	},
 }
 
-var _ bot.BotStarterHandler = (*Plugin)(nil)
-
-func (p *Plugin) StartBot() {
-	go runDurationChecker()
-	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutomodRules, nil)
-}
-
 // Stop updating
-func HandleUpdateAutomodRules(event *pubsub.Event) {
+func HandleUpdateAutoroles(event *pubsub.Event) {
 	stopProcessing(event.TargetGuildInt)
 }
 
@@ -70,13 +76,13 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	client := common.MustGetRedisClient()
 	defer common.RedisPool.Put(client)
 
-	config, err := GetGeneralConfig(client, gs.ID())
+	config, err := GetGeneralConfig(client, gs.ID)
 	if err != nil {
 		return
 	}
 
 	if !config.OnlyOnJoin && config.Role != 0 {
-		go bot.GetMember(gs.ID(), p.User.ID)
+		go bot.GetMember(gs.ID, p.User.ID)
 	}
 }
 
@@ -133,9 +139,9 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 		return
 	}
 
-	logger := logrus.WithField("guild", gs.ID())
+	logger := logrus.WithField("guild", gs.ID)
 
-	perms, err := gs.MemberPermissions(false, 0, bot.State.User(true).ID)
+	perms, err := gs.MemberPermissions(false, 0, common.BotUser.ID)
 	if err != nil && err != dstate.ErrChannelNotFound {
 		logger.WithError(err).Error("Error checking perms")
 		return
@@ -146,7 +152,7 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 		return
 	}
 
-	conf, err := GetGeneralConfig(client, gs.ID())
+	conf, err := GetGeneralConfig(client, gs.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieivng general config")
 		return
@@ -167,19 +173,19 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 	// If not remove it
 	logger.Info("Autorole role dosen't exist, removing config...")
 	conf.Role = 0
-	saveGeneral(client, gs.ID(), conf)
+	saveGeneral(client, gs.ID, conf)
 }
 
 func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 	processingLock.Lock()
 
-	if _, ok := processingGuilds[gs.ID()]; ok {
+	if _, ok := processingGuilds[gs.ID]; ok {
 		// Still processing this guild
 		processingLock.Unlock()
 		return
 	}
 	stopChan := make(chan bool, 1)
-	processingGuilds[gs.ID()] = stopChan
+	processingGuilds[gs.ID] = stopChan
 	processingLock.Unlock()
 
 	var client *redis.Client
@@ -187,11 +193,11 @@ func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 	// Reset the processing state
 	defer func() {
 		processingLock.Lock()
-		delete(processingGuilds, gs.ID())
+		delete(processingGuilds, gs.ID)
 		processingLock.Unlock()
 
 		if client != nil {
-			client.Cmd("DEL", KeyProcessing(gs.ID()))
+			client.Cmd("DEL", KeyProcessing(gs.ID))
 			common.RedisPool.Put(client)
 		}
 	}()
@@ -227,32 +233,32 @@ OUTER:
 			logrus.WithError(err).Error("Failed retrieving redis client from pool")
 			return
 		}
-		client.Cmd("SET", KeyProcessing(gs.ID()), len(membersToGiveRole))
+		client.Cmd("SET", KeyProcessing(gs.ID), len(membersToGiveRole))
 	}
 
 	for i, userID := range membersToGiveRole {
 		select {
 		case <-stopChan:
-			logrus.WithField("guild", gs.ID()).Info("Stopping autorole assigning...")
+			logrus.WithField("guild", gs.ID).Info("Stopping autorole assigning...")
 			return
 		default:
 		}
 
-		err := common.BotSession.GuildMemberRoleAdd(gs.ID(), userID, config.Role)
+		err := common.BotSession.GuildMemberRoleAdd(gs.ID, userID, config.Role)
 		if err != nil {
 			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
 				// No perms, remove autorole
 				logrus.WithError(err).Info("No perms to add autorole, removing from config")
 				config.Role = 0
-				saveGeneral(client, gs.ID(), config)
+				saveGeneral(client, gs.ID, config)
 				return
 			}
-			logrus.WithError(err).WithField("guild", gs.ID()).Error("Failed adding autorole role")
+			logrus.WithError(err).WithField("guild", gs.ID).Error("Failed adding autorole role")
 		} else {
 			if client != nil {
-				client.Cmd("SET", KeyProcessing(gs.ID()), len(membersToGiveRole)-i)
+				client.Cmd("SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i)
 			}
-			logrus.WithField("guild", gs.ID()).WithField("user", userID).Debug("Gave autorole role")
+			logrus.WithField("guild", gs.ID).WithField("user", userID).Debug("Gave autorole role")
 		}
 	}
 }

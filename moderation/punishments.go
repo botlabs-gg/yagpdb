@@ -26,10 +26,10 @@ const (
 )
 
 func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) *dstate.MemberState {
-	ms, err := bot.GetMember(gs.ID(), user.ID)
+	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
 		// Fallback
-		logrus.WithError(err).WithField("guild", gs.ID()).Info("Failed retrieving member")
+		logrus.WithError(err).WithField("guild", gs.ID).Info("Failed retrieving member")
 		ms = &dstate.MemberState{
 			ID:       user.ID,
 			Guild:    gs,
@@ -102,7 +102,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 
 		executed, err := ctx.Execute(nil, dmMsg)
 		if err != nil {
-			logrus.WithError(err).WithField("guild", gs.ID()).Warn("Failed executing pusnishment DM")
+			logrus.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
 			executed = "Failed executing template."
 		}
 

@@ -3,6 +3,7 @@ package common
 import (
 	"database/sql"
 	"fmt"
+	"github.com/DataDog/datadog-go/statsd"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
@@ -38,6 +39,8 @@ var (
 	Conf       *CoreConfig
 
 	RedisPoolSize = 25
+
+	Statsd *statsd.Client
 )
 
 // Initalizes all database connections, config loading and so on
@@ -62,6 +65,8 @@ func Init() error {
 	}
 	BotSession.MaxRestRetries = 3
 
+	ConnectDatadog()
+
 	err = connectRedis(config.Redis)
 	if err != nil {
 		return err
@@ -78,6 +83,23 @@ func Init() error {
 	}
 
 	return err
+}
+
+func ConnectDatadog() {
+	if Conf.DogStatsdAddress == "" {
+		return
+	}
+
+	client, err := statsd.New(Conf.DogStatsdAddress)
+	if err != nil {
+		logrus.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
+		return
+	}
+
+	Statsd = client
+
+	currentTransport := BotSession.Client.HTTPClient.Transport
+	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: currentTransport}
 }
 
 func InitTest() {

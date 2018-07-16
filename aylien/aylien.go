@@ -49,7 +49,9 @@ func (p *Plugin) Name() string {
 	return "ALYIEN"
 }
 
-func (p *Plugin) InitBot() {
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Cooldown:    5,

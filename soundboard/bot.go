@@ -11,7 +11,11 @@ import (
 	"strings"
 )
 
-func (p *Plugin) InitBot() {
+func (p *Plugin) BotInit() {
+	go transcoderLoop()
+}
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Soundboard",
@@ -22,13 +26,13 @@ func (p *Plugin) InitBot() {
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			config := &SoundboardConfig{}
-			err := configstore.Cached.GetGuildConfig(context.Background(), data.GS.ID(), config)
+			err := configstore.Cached.GetGuildConfig(context.Background(), data.GS.ID, config)
 			if err != nil {
 				return "Something bad is happenings..", err
 			}
 
 			// Get member from api or state
-			member, err := bot.GetMember(data.GS.ID(), data.Msg.Author.ID)
+			member, err := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
 			if err != nil {
 				return "Something went wrong, we couldn't find you?", errors.New("Failed finding guild member")
 			}
@@ -63,7 +67,7 @@ func (p *Plugin) InitBot() {
 				return "You're not in a voice channel stopid.", nil
 			}
 
-			if RequestPlaySound(data.GS.ID(), voiceChannel, data.Msg.ChannelID, sound.ID) {
+			if RequestPlaySound(data.GS.ID, voiceChannel, data.Msg.ChannelID, sound.ID) {
 				return "Sure why not", nil
 			}
 

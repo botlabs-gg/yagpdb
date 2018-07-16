@@ -124,7 +124,7 @@ func (c *Context) Execute(redisClient *redis.Client, source string) (string, err
 		// Construct a fake message
 		c.Msg = new(discordgo.Message)
 		c.Msg.Author = c.BotUser
-		c.Msg.ChannelID = c.GS.ID()
+		c.Msg.ChannelID = c.GS.ID
 	}
 
 	if c.GS != nil {

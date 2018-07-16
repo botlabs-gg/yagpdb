@@ -146,7 +146,11 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if cState.Guild != nil {
-		logEntry.GuildID = discordgo.StrID(cState.Guild.ID())
+		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
+	}
+
+	if common.Statsd != nil {
+		go common.Statsd.Incr("yagpdb.cmd.executed", nil, 1)
 	}
 
 	logger.Info("Handling command: " + data.Msg.Content)
@@ -258,7 +262,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 
 		cop := cState.Copy(true, false)
 
-		settings, err = cs.GetSettings(client, cState.ID, cop.ParentID, guild.ID())
+		settings, err = cs.GetSettings(client, cState.ID, cop.ParentID, guild.ID)
 		if err != nil {
 			err = errors.WithMessage(err, "cs.GetSettings")
 			resp = "Bot is having isssues, contact the bot owner."
@@ -273,7 +277,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 		// Check the required and ignored roles
 		if len(settings.RequiredRoles) > 0 || len(settings.IgnoreRoles) > 0 {
 			var member *dstate.MemberState
-			member, err = bot.GetMember(guild.ID(), data.Msg.Author.ID)
+			member, err = bot.GetMember(guild.ID, data.Msg.Author.ID)
 			if err != nil {
 				err = errors.WithMessage(err, "bot.GetMember")
 				resp = "Bot is having issues retrieving your member state"

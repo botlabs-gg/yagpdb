@@ -60,7 +60,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 
 	numScheduledEvent, _ := scheduledevents.NumScheduledEvents(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client))
 
-	botUser := bot.State.User(true)
+	botUser := common.BotUser
 
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{

@@ -4,7 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/master"
 	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -43,16 +43,16 @@ func setWaitingGuildReady(g int64) {
 
 	if shouldFireStarted {
 		log.Println("Bot is now fully ready")
-		for _, p := range common.Plugins {
-			starter, ok := p.(BotStartedHandler)
-			if ok {
-				starter.BotStarted()
-				log.Debug("Ran BotStarted for ", p.Name())
-			}
+
+		stateLock.Lock()
+		currentState := state
+		stateLock.Unlock()
+
+		if currentState == StateSoftStarting {
+			SlaveClient.Send(master.EvtSoftStartComplete, nil, true)
 		}
 
-		go scheduledevents.Run()
-		// go checkConnectedGuilds()
+		BotStarted()
 	}
 }
 

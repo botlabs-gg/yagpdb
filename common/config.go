@@ -18,6 +18,8 @@ type CoreConfig struct {
 	PQUsername string
 	PQPassword string
 	Redis      string
+
+	DogStatsdAddress string
 }
 
 func LoadConfig() (c *CoreConfig, err error) {

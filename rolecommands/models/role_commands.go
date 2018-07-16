@@ -1087,7 +1087,6 @@ func FindRoleCommandGP(id int64, selectCols ...string) *RoleCommand {
 // FindRoleCommand retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
 func FindRoleCommand(exec boil.Executor, id int64, selectCols ...string) (*RoleCommand, error) {
-
 	roleCommandObj := &RoleCommand{}
 
 	sel := "*"

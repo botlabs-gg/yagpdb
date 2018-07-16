@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix.v2/redis"
@@ -31,11 +28,6 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
 	RegexCache = ccache.New(ccache.Configure())
-}
-
-func (p *Plugin) InitBot() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
-	commands.AddRootCommands(cmdListCommands)
 }
 
 func (p *Plugin) Name() string {

@@ -2,6 +2,7 @@ package bot
 
 import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/common"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -74,15 +75,23 @@ func (e *eventLogger) GetStats() (total [][]int64, perPeriod [][]int64) {
 }
 
 func (e *eventLogger) flushStats() {
+	totalPerPeriod := int64(0)
+
 	e.Lock()
 	for i := 0; i < len(e.totalStats); i++ {
 		for j := 0; j < len(e.totalStats[i]); j++ {
 			currentVal := atomic.LoadInt64(e.totalStats[i][j])
 			e.perPeriod[i][j] = currentVal - e.lastPeriod[i][j]
 			e.lastPeriod[i][j] = currentVal
+
+			totalPerPeriod += e.perPeriod[i][j]
 		}
 	}
 	e.Unlock()
+
+	if common.Statsd != nil {
+		common.Statsd.Gauge("discord.events.second", float64(totalPerPeriod)/EventLoggerPeriodDuration.Seconds(), nil, 1)
+	}
 }
 
 func (e *eventLogger) handleEvent(evt *eventsystem.EventData) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/pkg/errors"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -137,7 +137,7 @@ func RunPinger() {
 		err := get("ping", &dest)
 		if err != nil {
 			if !lastFailed {
-				log.Println("Ping failed", err)
+				logrus.Warn("Ping failed: ", err)
 				lastFailed = true
 			}
 			continue
