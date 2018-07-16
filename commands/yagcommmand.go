@@ -149,6 +149,10 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
 	}
 
+	if common.Statsd != nil {
+		go common.Statsd.Incr("yagpdb.cmd.executed", nil, 1)
+	}
+
 	logger.Info("Handling command: " + data.Msg.Content)
 
 	runCtx, cancelExec := context.WithTimeout(data.Context(), CommandExecTimeout)

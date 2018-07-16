@@ -178,6 +178,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	if common.Statsd != nil {
+		go common.Statsd.Incr("yagpdb.cc.executed", nil, 1)
+	}
+
 	channel := cs.Copy(true, true)
 	log.WithFields(log.Fields{
 		"trigger":      matched.Trigger,

@@ -305,6 +305,10 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 		for _, sub := range subs {
 			go p.sendNewVidMessage(sub.ChannelID, item.Snippet.ChannelTitle, item.Snippet.ResourceId.VideoId, sub.MentionEveryone)
 		}
+
+		if common.Statsd != nil {
+			go common.Statsd.Count("yagpdb.youtube.matches", int64(len(subs)), nil, 1)
+		}
 	}
 
 	return

@@ -66,7 +66,7 @@ func (p *Plugin) BotInit() {
 		logrus.Println("starting botrest on ", serverAddr)
 		err := p.srv.ListenAndServe()
 		if err != nil {
-			logrus.Println("Failed starting botrest http server")
+			logrus.WithError(err).Error("Failed starting botrest http server")
 		}
 	}()
 }

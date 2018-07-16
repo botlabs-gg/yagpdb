@@ -120,6 +120,10 @@ OUTER:
 		}
 	}
 
+	if common.Statsd != nil {
+		go common.Statsd.Count("yagpdb.reddit.matches", int64(len(filteredItems)), nil, 1)
+	}
+
 	return nil
 }
 
