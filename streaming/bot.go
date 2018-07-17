@@ -32,7 +32,7 @@ func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
 		return
 	}
 
-	go CheckGuildFull(gs)
+	go CheckGuildFull(gs, false)
 }
 
 // YAGPDB event
@@ -44,12 +44,10 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 		return
 	}
 
-	CheckGuildFull(gs)
+	CheckGuildFull(gs, true)
 }
 
-func CheckGuildFull(gs *dstate.GuildState) {
-	log.Info("Streaming Checking full guild: ", gs.ID)
-
+func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 	client, err := common.RedisPool.Get()
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving redis connection from pool")
@@ -70,7 +68,10 @@ func CheckGuildFull(gs *dstate.GuildState) {
 	for _, ms := range gs.Members {
 
 		if !ms.MemberSet || !ms.PresenceSet {
-			if ms.PresenceSet {
+
+			if ms.PresenceSet && fetchMembers {
+				// If were fetching members, then fetch the missing members
+				// TODO: Maybe use the gateway request for this?
 				slowCheck = append(slowCheck, ms)
 				wg.Add(1)
 				go func(gID, uID int64) {
@@ -92,7 +93,11 @@ func CheckGuildFull(gs *dstate.GuildState) {
 
 	gs.RUnlock()
 
-	wg.Wait()
+	if fetchMembers {
+		wg.Wait()
+	} else {
+		return
+	}
 
 	log.WithField("guild", gs.ID).Info("Starting slowcheck")
 	gs.RLock()
