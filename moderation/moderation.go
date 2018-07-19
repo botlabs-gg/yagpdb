@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -97,10 +98,7 @@ func handleUnMute(data string) error {
 		return err
 	}
 
-	rc := common.MustGetRedisClient()
-	defer common.RedisPool.Put(rc)
-
-	err = MuteUnmuteUser(nil, rc, false, guildID, 0, common.BotUser, "Mute Duration Expired", member, 0)
+	err = MuteUnmuteUser(nil, false, guildID, 0, common.BotUser, "Mute Duration Expired", member, 0)
 	if errors.Cause(err) != ErrNoMuteRole {
 
 		if cast, ok := errors.Cause(err).(*discordgo.RESTError); ok && cast.Message != nil {
@@ -129,7 +127,7 @@ func handleUnban(data string) error {
 		return nil
 	}
 
-	common.RedisPool.Cmd("SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1)
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
 
 	err := common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {

@@ -63,7 +63,7 @@ func (lp *Plugin) InitWeb() {
 
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	beforeID := 0
 	beforeStr := r.URL.Query().Get("before")
@@ -109,7 +109,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 
 func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	form := ctx.Value(common.ContextKeyParsedForm).(*GeneralFormData)
 
@@ -131,7 +131,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*DeleteData)
 	if data.ID == "" {
@@ -154,7 +154,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 }
 
 func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	idString := pat.Param(r, "id")
 
@@ -201,7 +201,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 }
 
 func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{} {
-	_, g, _ := web.GetBaseCPContextData(r.Context())
+	g, _ := web.GetBaseCPContextData(r.Context())
 
 	logsId := r.FormValue("LogID")
 	msgID := r.FormValue("MessageID")

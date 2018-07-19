@@ -9,7 +9,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -76,7 +76,7 @@ func (p *Plugin) InitWeb() {
 
 func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, ag, templateData := web.GetBaseCPContextData(ctx)
+	ag, templateData := web.GetBaseCPContextData(ctx)
 
 	var subs []*ChannelSubscription
 	err := common.GORM.Where("guild_id = ?", ag.ID).Order("id desc").Find(&subs).Error
@@ -92,7 +92,7 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 
 func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	// limit it to max 25 feeds
 	var count int
@@ -108,7 +108,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert("Neither channelid or username specified.")), errors.New("ChannelID and username not specified")
 	}
 
-	_, err := p.AddFeed(client, activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser, data.MentionEveryone)
+	_, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser, data.MentionEveryone)
 	if err != nil {
 		if err == ErrNoChannel {
 			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("Channel not found")
@@ -128,7 +128,7 @@ const (
 func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 		ctx := r.Context()
-		_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+		activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 		id := pat.Param(r, "item")
 
@@ -151,7 +151,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 
 func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
 	ctx := r.Context()
-	_, _, templateData = web.GetBaseCPContextData(ctx)
+	_, templateData = web.GetBaseCPContextData(ctx)
 
 	sub := ctx.Value(ContextKeySub).(*ChannelSubscription)
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
@@ -165,7 +165,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 
 func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
 	ctx := r.Context()
-	_, _, templateData = web.GetBaseCPContextData(ctx)
+	_, templateData = web.GetBaseCPContextData(ctx)
 
 	sub := ctx.Value(ContextKeySub).(*ChannelSubscription)
 	err = common.GORM.Delete(sub).Error
@@ -179,8 +179,6 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateD
 
 func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-
-	client := web.RedisClientFromContext(r.Context())
 
 	switch query.Get("hub.mode") {
 	case "subscribe":
@@ -204,8 +202,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		client.Cmd("ZREM", RedisKeyWebSubChannels, topicURI.Query().Get("channel_id"))
-
+		common.RedisPool.Do(radix.Cmd(nil, "ZREM", RedisKeyWebSubChannels, topicURI.Query().Get("channel_id")))
 		return
 	}
 
@@ -227,20 +224,21 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
+	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		p.Logger().WithError(err).Error("Failed locking channels lock")
 		return
 	}
-	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
-	reply := client.Cmd("ZSCORE", "youtube_subbed_channels", parsed.ChannelID)
-	if reply.IsType(redis.Nil) {
+	var mn radix.MaybeNil
+	common.RedisPool.Do(radix.Cmd(&mn, "ZSCORE", "youtube_subbed_channels", parsed.ChannelID))
+	if mn.Nil {
 		return
 	}
 
 	// Reset the score to be instantly scanned
-	client.Cmd("ZADD", "youtube_subbed_channels", 0, parsed.ChannelID)
+	common.RedisPool.Do(radix.Cmd(nil, "ZADD", "youtube_subbed_channels", "0", parsed.ChannelID))
 }
 
 func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, query url.Values) {
@@ -254,7 +252,6 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 			return
 		}
 
-		client := web.RedisClientFromContext(r.Context())
 		expires := time.Now().Unix() + parsed
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
@@ -263,6 +260,6 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 			return
 		}
 
-		client.Cmd("ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id"))
+		common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id")))
 	}
 }

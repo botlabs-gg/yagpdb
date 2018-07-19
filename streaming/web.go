@@ -48,8 +48,8 @@ func (p *Plugin) InitWeb() {
 // Adds the current config to the context
 func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		client, guild, tmpl := web.GetBaseCPContextData(r.Context())
-		config, err := GetConfig(client, guild.ID)
+		guild, tmpl := web.GetBaseCPContextData(r.Context())
+		config, err := GetConfig(guild.ID)
 		if web.CheckErr(tmpl, err, "Failed retrieving streaming config :'(", web.CtxLogger(r.Context()).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_streaming", tmpl))
 			return
@@ -63,7 +63,7 @@ func baseData(inner http.Handler) http.Handler {
 
 func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, guild, tmpl := web.GetBaseCPContextData(ctx)
+	guild, tmpl := web.GetBaseCPContextData(ctx)
 	tmpl["VisibleURL"] = "/manage/" + discordgo.StrID(guild.ID) + "/streaming/"
 
 	ok := ctx.Value(common.ContextKeyFormOk).(bool)
@@ -75,12 +75,12 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
-	err := newConf.Save(client, guild.ID)
+	err := newConf.Save(guild.ID)
 	if web.CheckErr(tmpl, err, "Failed saving config :'(", web.CtxLogger(ctx).Error) {
 		return tmpl
 	}
 
-	err = pubsub.Publish(client, "update_streaming", guild.ID, nil)
+	err = pubsub.Publish("update_streaming", guild.ID, nil)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed sending update streaming event")
 	}

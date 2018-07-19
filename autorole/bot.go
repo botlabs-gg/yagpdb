@@ -10,7 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -25,7 +25,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.RedisWrapper(OnMemberJoin), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(OnMemberJoin, eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
@@ -41,8 +41,8 @@ var roleCommands = []*commands.YAGCommand{
 		Name:        "roledbg",
 		Description: "Debug debug debug autorole assignment",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-			processing, _ := client.Cmd("GET", KeyProcessing(parsed.GS.ID)).Int()
+			var processing int
+			common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
 			return fmt.Sprintf("Processing %d users.", processing), nil
 		},
 	},
@@ -73,10 +73,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 	gs.RUnlock()
 
-	client := common.MustGetRedisClient()
-	defer common.RedisPool.Put(client)
-
-	config, err := GetGeneralConfig(client, gs.ID)
+	config, err := GetGeneralConfig(gs.ID)
 	if err != nil {
 		return
 	}
@@ -107,9 +104,6 @@ func stopProcessing(guildID int64) {
 
 func runDurationChecker() {
 
-	client := common.MustGetRedisClient()
-	defer common.RedisPool.Put(client)
-
 	ticker := time.NewTicker(time.Minute)
 	state := bot.State
 
@@ -127,12 +121,12 @@ func runDurationChecker() {
 		state.RUnlock()
 
 		for _, g := range guildStates {
-			checkGuild(client, g)
+			checkGuild(g)
 		}
 	}
 }
 
-func checkGuild(client *redis.Client, gs *dstate.GuildState) {
+func checkGuild(gs *dstate.GuildState) {
 	gs.RLock()
 	defer gs.RUnlock()
 	if gs.Guild.Unavailable {
@@ -152,7 +146,7 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 		return
 	}
 
-	conf, err := GetGeneralConfig(client, gs.ID)
+	conf, err := GetGeneralConfig(gs.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieivng general config")
 		return
@@ -173,7 +167,7 @@ func checkGuild(client *redis.Client, gs *dstate.GuildState) {
 	// If not remove it
 	logger.Info("Autorole role dosen't exist, removing config...")
 	conf.Role = 0
-	saveGeneral(client, gs.ID, conf)
+	saveGeneral(gs.ID, conf)
 }
 
 func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
@@ -188,17 +182,15 @@ func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 	processingGuilds[gs.ID] = stopChan
 	processingLock.Unlock()
 
-	var client *redis.Client
-
+	var setProcessingRedis bool
 	// Reset the processing state
 	defer func() {
 		processingLock.Lock()
 		delete(processingGuilds, gs.ID)
 		processingLock.Unlock()
 
-		if client != nil {
-			client.Cmd("DEL", KeyProcessing(gs.ID))
-			common.RedisPool.Put(client)
+		if setProcessingRedis {
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyProcessing(gs.ID)))
 		}
 	}()
 
@@ -227,15 +219,11 @@ OUTER:
 	gs.RUnlock()
 
 	if len(membersToGiveRole) > 10 {
-		var err error
-		client, err = common.RedisPool.Get()
-		if err != nil {
-			logrus.WithError(err).Error("Failed retrieving redis client from pool")
-			return
-		}
-		client.Cmd("SET", KeyProcessing(gs.ID), len(membersToGiveRole))
+		setProcessingRedis = true
+		common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)))
 	}
 
+	cntSinceLastRedisUpdate := 0
 	for i, userID := range membersToGiveRole {
 		select {
 		case <-stopChan:
@@ -244,32 +232,31 @@ OUTER:
 		default:
 		}
 
+		cntSinceLastRedisUpdate++
+
 		err := common.BotSession.GuildMemberRoleAdd(gs.ID, userID, config.Role)
 		if err != nil {
 			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
 				// No perms, remove autorole
 				logrus.WithError(err).Info("No perms to add autorole, removing from config")
 				config.Role = 0
-				saveGeneral(client, gs.ID, config)
+				saveGeneral(gs.ID, config)
 				return
 			}
 			logrus.WithError(err).WithField("guild", gs.ID).Error("Failed adding autorole role")
 		} else {
-			if client != nil {
-				client.Cmd("SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i)
+			if setProcessingRedis && cntSinceLastRedisUpdate > 10 {
+				common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
+				cntSinceLastRedisUpdate = 0
 			}
 			logrus.WithField("guild", gs.ID).WithField("user", userID).Debug("Gave autorole role")
 		}
 	}
 }
 
-func saveGeneral(client *redis.Client, guildID int64, config *GeneralConfig) {
-	if client == nil {
-		client = common.MustGetRedisClient()
-		defer common.RedisPool.Put(client)
-	}
+func saveGeneral(guildID int64, config *GeneralConfig) {
 
-	err := common.SetRedisJson(client, KeyGeneral(guildID), config)
+	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
 		logrus.WithError(err).Error("Failed saving autorole config")
 	}
@@ -278,8 +265,7 @@ func saveGeneral(client *redis.Client, guildID int64, config *GeneralConfig) {
 func OnMemberJoin(evt *eventsystem.EventData) {
 	addEvt := evt.GuildMemberAdd()
 
-	client := bot.ContextRedis(evt.Context())
-	config, err := GetGeneralConfig(client, addEvt.GuildID)
+	config, err := GetGeneralConfig(addEvt.GuildID)
 	if err != nil {
 		return
 	}

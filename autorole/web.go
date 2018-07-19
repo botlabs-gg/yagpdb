@@ -5,7 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -16,10 +16,12 @@ type Form struct {
 	GeneralConfig `valid:"traverse"`
 }
 
-func (f Form) Save(client *redis.Client, guildID int64) error {
-	pubsub.Publish(client, "autorole_stop_processing", guildID, nil)
+var _ web.SimpleConfigSaver = (*Form)(nil)
 
-	err := common.SetRedisJson(client, KeyGeneral(guildID), f.GeneralConfig)
+func (f Form) Save(guildID int64) error {
+	pubsub.Publish("autorole_stop_processing", guildID, nil)
+
+	err := common.SetRedisJson(KeyGeneral(guildID), f.GeneralConfig)
 	if err != nil {
 		return err
 	}
@@ -59,13 +61,14 @@ func (p *Plugin) InitWeb() {
 
 func HandleAutoroles(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, activeGuild, tmpl := web.GetBaseCPContextData(ctx)
+	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
-	general, err := GetGeneralConfig(client, activeGuild.ID)
+	general, err := GetGeneralConfig(activeGuild.ID)
 	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
-	proc, _ := client.Cmd("GET", KeyProcessing(activeGuild.ID)).Int()
+	var proc int
+	common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 

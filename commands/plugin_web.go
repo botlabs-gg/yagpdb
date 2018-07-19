@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -86,7 +87,7 @@ func (p *Plugin) InitWeb() {
 // Servers the command page with current config
 func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	type SortedCommands struct {
 		Category string
@@ -140,7 +141,7 @@ OUTER:
 	templateData["GlobalCommandSettings"] = global
 	templateData["ChannelOverrides"] = channelOverrides
 
-	prefix, _ := GetCommandPrefix(client, activeGuild.ID)
+	prefix, _ := GetCommandPrefix(activeGuild.ID)
 
 	templateData["CommandPrefix"] = prefix
 
@@ -152,13 +153,13 @@ OUTER:
 // Handles the updating of global and per channel command settings
 func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	newPrefix := r.FormValue("Prefix")
 	if len(newPrefix) < 1 || len(newPrefix) > 100 {
 		return templateData, web.NewPublicError("Prefix is smaller than 1 or larger than 100 characters")
 	}
 
-	client.Cmd("SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix)
+	common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
 
 	return templateData, nil
 }
@@ -206,7 +207,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 }
 
 func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*ChannelOverrideForm)
 
 	count, err := models.CommandsChannelsOverridesG(qm.Where("guild_id = ?", activeGuild.ID), qm.Where("channels && ?", types.Int64Array(formData.Channels))).Count()
@@ -244,7 +245,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 }
 
 func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, currentOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*ChannelOverrideForm)
 
@@ -274,7 +275,7 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 }
 
 func HandleDeleteChannelsOverride(w http.ResponseWriter, r *http.Request, currentOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
-	_, _, templateData := web.GetBaseCPContextData(r.Context())
+	_, templateData := web.GetBaseCPContextData(r.Context())
 
 	err := currentOverride.DeleteG()
 	return templateData, errors.WithMessage(err, "DeleteG")
@@ -282,7 +283,7 @@ func HandleDeleteChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 
 // Command handlers
 func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channelOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*CommandOverrideForm)
 
@@ -323,7 +324,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	return templateData, errors.WithMessage(err, "InsertG")
 }
 func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channelOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	id := pat.Param(r, "commandsOverride")
 	idParsed, _ := strconv.ParseInt(id, 10, 64)
@@ -358,7 +359,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 }
 
 func HandleDeleteCommandOverride(w http.ResponseWriter, r *http.Request, channelOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	id := pat.Param(r, "commandsOverride")
 	idParsed, _ := strconv.ParseInt(id, 10, 64)

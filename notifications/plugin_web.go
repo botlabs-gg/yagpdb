@@ -30,7 +30,7 @@ func (p *Plugin) InitWeb() {
 
 func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	formConfig, ok := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	if ok {
@@ -44,7 +44,7 @@ func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} 
 
 func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/notifications/general/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)

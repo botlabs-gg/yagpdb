@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -39,7 +38,6 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 
 func transcoderLoop() {
 	ticker := time.NewTicker(time.Second)
-	redisClient := common.MustGetRedisClient()
 	for {
 		select {
 		case wg := <-transcoderStop:
@@ -50,7 +48,7 @@ func transcoderLoop() {
 			for _, v := range items {
 				started := time.Now()
 				logrus.Println("handling queue item")
-				err := handleQueueItem(redisClient, v)
+				err := handleQueueItem(v)
 				logrus.Println("done handling queue item")
 				if err != nil {
 					logrus.WithError(err).WithField("soundid", v).Error("Failed processing transcode queue item")
@@ -77,14 +75,14 @@ func getQueue() []string {
 	return out
 }
 
-func handleQueueItem(client *redis.Client, item string) error {
+func handleQueueItem(item string) error {
 	parsedId, err := strconv.ParseInt(item, 10, 32)
 	if err != nil {
 		return err
 	}
 
 	// lock it for max 10 minutes, after that something must've gone wrong
-	locked, err := common.TryLockRedisKey(client, KeySoundLock(uint(parsedId)), 10*60)
+	locked, err := common.TryLockRedisKey(KeySoundLock(uint(parsedId)), 10*60)
 	if err != nil {
 		return err
 	}
@@ -92,7 +90,7 @@ func handleQueueItem(client *redis.Client, item string) error {
 		logrus.WithField("sound", parsedId).Warn("Sound is busy, handling it later")
 		return nil
 	}
-	defer common.UnlockRedisKey(client, KeySoundLock(uint(parsedId)))
+	defer common.UnlockRedisKey(KeySoundLock(uint(parsedId)))
 
 	var sound SoundboardSound
 	err = common.GORM.Where(uint(parsedId)).First(&sound).Error
@@ -110,7 +108,7 @@ func handleQueueItem(client *redis.Client, item string) error {
 		common.GORM.Model(&sound).Update("Status", TranscodingStatusReady)
 	}
 
-	configstore.InvalidateGuildCache(client, sound.GuildID, &SoundboardConfig{})
+	configstore.InvalidateGuildCache(sound.GuildID, &SoundboardConfig{})
 	err = os.Remove(SoundFilePath(sound.ID, TranscodingStatusQueued))
 	return err
 }

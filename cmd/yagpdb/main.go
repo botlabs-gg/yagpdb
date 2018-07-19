@@ -3,11 +3,9 @@ package main
 import (
 	"flag"
 	"github.com/evalphobia/logrus_sentry"
-	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -22,6 +20,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
+
 	// Plugin imports
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
@@ -50,8 +49,6 @@ var (
 	flagRunEverything bool
 	flagDryRun        bool
 
-	flagAction string
-
 	flagLogTimestamp bool
 
 	flagSysLog bool
@@ -66,7 +63,6 @@ func init() {
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
-	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected, migrate")
 }
 
 func main() {
@@ -98,7 +94,7 @@ func main() {
 		}
 	}
 
-	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && flagAction == "" && !flagDryRun {
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
@@ -134,7 +130,7 @@ func main() {
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	automod.RegisterPlugin()
-	logs.InitPlugin()
+	logs.RegisterPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
@@ -148,12 +144,6 @@ func main() {
 
 	commands.InitCommands()
 	mqueue.InitStores()
-
-	// RUN FORREST RUN
-	if flagAction != "" {
-		runAction(flagAction)
-		return
-	}
 
 	if flagRunWeb || flagRunEverything {
 		go web.Run()
@@ -172,34 +162,6 @@ func main() {
 	go pubsub.PollEvents()
 
 	listenSignal()
-}
-
-func runAction(str string) {
-	log.Info("Running action", str)
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		log.WithError(err).Error("Failed to get redis connection")
-		return
-	}
-	defer common.RedisPool.Put(client)
-
-	switch str {
-	case "connected":
-		err = common.RefreshConnectedGuilds(common.BotSession, client)
-	case "rsconnected":
-		err = client.Cmd("DEL", "connected_guilds").Err
-	case "migrate":
-		err = migrate(client)
-	default:
-		log.Error("Unknown action")
-		return
-	}
-
-	if err != nil {
-		log.WithError(err).Error("Error running action")
-	} else {
-		log.Info("Sucessfully ran action", str)
-	}
 }
 
 // Gracefull shutdown
@@ -250,44 +212,44 @@ func listenSignal() {
 	os.Exit(0)
 }
 
-type SQLMigrater interface {
-	MigrateStorage(client *redis.Client, guildIDInt int64) error
-	Name() string
-}
+// type SQLMigrater interface {
+// 	MigrateStorage(guildIDInt int64) error
+// 	Name() string
+// }
 
-func migrate(client *redis.Client) error {
-	plugins := make([]SQLMigrater, 0)
+// func migrate() error {
+// 	plugins := make([]SQLMigrater, 0)
 
-	for _, v := range common.Plugins {
-		cast, ok := v.(SQLMigrater)
-		if ok {
-			plugins = append(plugins, cast)
-			log.Info("Migrating ", cast.Name())
-		}
-	}
+// 	for _, v := range common.Plugins {
+// 		cast, ok := v.(SQLMigrater)
+// 		if ok {
+// 			plugins = append(plugins, cast)
+// 			log.Info("Migrating ", cast.Name())
+// 		}
+// 	}
 
-	guilds, err := client.Cmd("SMEMBERS", "connected_guilds").List()
-	if err != nil {
-		return err
-	}
+// 	guilds, err := client.Cmd("SMEMBERS", "connected_guilds").List()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	started := time.Now()
-	for _, g := range guilds {
+// 	started := time.Now()
+// 	for _, g := range guilds {
 
-		parsed, err := strconv.ParseInt(g, 10, 64)
-		if err != nil {
-			return err
-		}
+// 		parsed, err := strconv.ParseInt(g, 10, 64)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		for _, p := range plugins {
-			err = p.MigrateStorage(client, parsed)
-			if err != nil {
-				log.WithError(err).Error("Error migrating ", p.Name())
-			}
-		}
-	}
-	elapsed := time.Since(started)
-	log.Info("Migrated ", len(guilds), " guilds in ", elapsed.String())
+// 		for _, p := range plugins {
+// 			err = p.MigrateStorage(client, parsed)
+// 			if err != nil {
+// 				log.WithError(err).Error("Error migrating ", p.Name())
+// 			}
+// 		}
+// 	}
+// 	elapsed := time.Since(started)
+// 	log.Info("Migrated ", len(guilds), " guilds in ", elapsed.String())
 
-	return nil
-}
+// 	return nil
+// }

@@ -54,13 +54,7 @@ func (p *Postgres) SetGuildConfig(ctx context.Context, conf GuildConfig) error {
 		return err
 	}
 
-	redisClient := RedisClientCtx(ctx)
-	if redisClient == nil {
-		redisClient = common.MustGetRedisClient()
-		defer common.RedisPool.Put(redisClient)
-	}
-
-	InvalidateGuildCache(redisClient, conf, conf)
+	InvalidateGuildCache(conf, conf)
 	return nil
 }
 
@@ -70,13 +64,7 @@ func (p *Postgres) SetIfLatest(ctx context.Context, conf GuildConfig) (updated b
 	err = result.Error
 
 	if err == nil {
-		redisClient := RedisClientCtx(ctx)
-		if redisClient == nil {
-			redisClient = common.MustGetRedisClient()
-			defer common.RedisPool.Put(redisClient)
-		}
-
-		InvalidateGuildCache(redisClient, conf, conf)
+		InvalidateGuildCache(conf, conf)
 	}
 
 	return

@@ -67,7 +67,7 @@ func (p *Plugin) InitWeb() {
 }
 
 func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	if _, ok := templateData["RepSettings"]; !ok {
 		settings, err := GetConfig(activeGuild.ID)
@@ -80,7 +80,7 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 }
 
 func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*PostConfigForm)
@@ -105,7 +105,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 }
 
 func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
-	_, activeGuild, _ := web.GetBaseCPContextData(r.Context())
+	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	conf, err := GetConfig(activeGuild.ID)
 	if err != nil {

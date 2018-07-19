@@ -4,11 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -19,26 +16,6 @@ var (
 
 func ContextSession(ctx context.Context) *discordgo.Session {
 	return ctx.Value(common.ContextKeyDiscordSession).(*discordgo.Session)
-}
-
-func ContextRedis(ctx context.Context) *redis.Client {
-	return ctx.Value(common.ContextKeyRedis).(*redis.Client)
-}
-
-func RedisWrapper(inner eventsystem.Handler) eventsystem.Handler {
-	return func(evt *eventsystem.EventData) {
-		r, err := common.RedisPool.Get()
-		if err != nil {
-			logrus.WithError(err).WithField("evt", evt.Type.String()).Error("Failed retrieving redis client")
-			return
-		}
-
-		defer func() {
-			common.RedisPool.Put(r)
-		}()
-
-		inner(evt.WithContext(context.WithValue(evt.Context(), common.ContextKeyRedis, r)))
-	}
 }
 
 func SendDM(user int64, msg string) error {

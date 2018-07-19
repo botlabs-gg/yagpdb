@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"os"
 	"sync"
@@ -26,8 +25,8 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageUpdate), eventsystem.EventMessageUpdate)
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(HandleMessageUpdate, eventsystem.EventMessageUpdate)
 
 	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
 	confCache = ccache.New(ccache.Configure().MaxSize(1000))
@@ -65,9 +64,9 @@ func HandleUpdateAutomodRules(event *pubsub.Event) {
 }
 
 // CachedGetConfig either retrieves from local application cache or redis
-func CachedGetConfig(client *redis.Client, gID int64) (*Config, error) {
+func CachedGetConfig(gID int64) (*Config, error) {
 	confItem, err := confCache.Fetch(KeyConfig(gID), time.Minute*5, func() (interface{}, error) {
-		c, err := GetConfig(client, gID)
+		c, err := GetConfig(gID)
 		if err != nil {
 			return nil, err
 		}
@@ -87,14 +86,14 @@ func CachedGetConfig(client *redis.Client, gID int64) (*Config, error) {
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageCreate().Message, bot.ContextRedis(evt.Context()))
+	CheckMessage(evt.MessageCreate().Message)
 }
 
 func HandleMessageUpdate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageUpdate().Message, bot.ContextRedis(evt.Context()))
+	CheckMessage(evt.MessageUpdate().Message)
 }
 
-func CheckMessage(m *discordgo.Message, client *redis.Client) {
+func CheckMessage(m *discordgo.Message) {
 
 	if m.Author == nil || m.Author.ID == common.BotUser.ID {
 		return // Pls no panicerinos or banerinos self
@@ -114,7 +113,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		return
 	}
 
-	config, err := CachedGetConfig(client, cs.Guild.ID)
+	config, err := CachedGetConfig(cs.Guild.ID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed retrieving config")
 		return
@@ -151,7 +150,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 			continue
 		}
 
-		d, punishment, msg, err := r.Check(m, cs, client)
+		d, punishment, msg, err := r.Check(m, cs)
 		if d {
 			del = true
 		}
@@ -189,11 +188,11 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 	case PunishNone:
 		err = moderation.WarnUser(nil, cs.Guild.ID, cs.ID, common.BotUser, member.DGoUser(), "Automoderator: "+punishMsg)
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, true, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
 		err = moderation.KickUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
 	case PunishBan:
-		err = moderation.BanUser(client, nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser(), true)
+		err = moderation.BanUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser(), true)
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs

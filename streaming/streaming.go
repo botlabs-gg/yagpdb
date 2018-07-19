@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 )
 
@@ -79,13 +78,8 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Config) Save(client *redis.Client, guildID int64) error {
-	encoded, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	return client.Cmd("SET", "streaming_config:"+discordgo.StrID(guildID), encoded).Err
+func (c *Config) Save(guildID int64) error {
+	return common.SetRedisJson("streaming_config:"+discordgo.StrID(guildID), c)
 }
 
 var DefaultConfig = &Config{
@@ -94,18 +88,12 @@ var DefaultConfig = &Config{
 }
 
 // Returns he guild's conifg, or the defaul one if not set
-func GetConfig(client *redis.Client, guildID int64) (*Config, error) {
-	reply := client.Cmd("GET", "streaming_config:"+discordgo.StrID(guildID))
-	if reply.IsType(redis.Nil) {
+func GetConfig(guildID int64) (*Config, error) {
+	var config *Config
+	err := common.GetRedisJson("streaming_config:"+discordgo.StrID(guildID), &config)
+	if err == nil && config == nil {
 		return DefaultConfig, nil
 	}
 
-	b, err := reply.Bytes()
-	if err != nil {
-		return nil, err
-	}
-
-	var config *Config
-	err = json.Unmarshal(b, &config)
 	return config, err
 }

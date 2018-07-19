@@ -4,7 +4,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"sync"
 )
@@ -16,12 +15,12 @@ const (
 
 // Used for deleting configuration about servers
 type RemoveGuildHandler interface {
-	RemoveGuild(client *redis.Client, guildID int64) error
+	RemoveGuild(guildID int64) error
 }
 
 // Used for intializing stuff for new servers
 type NewGuildHandler interface {
-	NewGuild(client *redis.Client, guild *discordgo.Guild) error
+	NewGuild(guild *discordgo.Guild) error
 }
 
 // Fired when the bot it starting up, not for the webserver
@@ -43,12 +42,9 @@ type ShardMigrationHandler interface {
 }
 
 func EmitGuildRemoved(guildID int64) {
-	client := common.MustGetRedisClient()
-	defer common.RedisPool.Put(client)
-
 	for _, v := range common.Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {
-			err := remover.RemoveGuild(client, guildID)
+			err := remover.RemoveGuild(guildID)
 			if err != nil {
 				logrus.WithError(err).Error("Error Running RemoveGuild on ", v.Name())
 			}

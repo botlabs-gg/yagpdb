@@ -9,8 +9,9 @@ package scheduledevents
 
 import (
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -29,13 +30,13 @@ func RegisterEventHandler(evt string, handler EvtHandler) {
 	handlers[evt] = handler
 }
 
-func ScheduleEvent(client *redis.Client, evt, data string, when time.Time) error {
-	reply := client.Cmd("ZADD", "scheduled_events", when.Unix(), evt+":"+data)
-	return reply.Err
+func ScheduleEvent(evt, data string, when time.Time) error {
+	err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", "scheduled_events", strconv.FormatInt(when.Unix(), 10), evt+":"+data))
+	return err
 }
 
-func RemoveEvent(client *redis.Client, evt, data string) error {
-	return client.Cmd("ZREM", "scheduled_events", evt+":"+data).Err
+func RemoveEvent(evt, data string) error {
+	return common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events", evt+":"+data))
 }
 
 var stopScheduledEventsChan = make(chan *sync.WaitGroup)
@@ -44,17 +45,13 @@ func Stop(wg *sync.WaitGroup) {
 	stopScheduledEventsChan <- wg
 }
 
-func NumScheduledEvents(client *redis.Client) (int, error) {
-	return client.Cmd("ZCARD", "scheduled_events").Int()
+func NumScheduledEvents() (n int, err error) {
+	err = common.RedisPool.Do(radix.Cmd(&n, "ZCARD", "scheduled_events"))
+	return
 }
 
 // Checks for and handles scheduled events every minute
 func Run() {
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		panic(err)
-	}
-
 	ticker := time.NewTicker(time.Second * 10)
 	for {
 		select {
@@ -64,7 +61,7 @@ func Run() {
 			return
 		case <-ticker.C:
 			started := time.Now()
-			n, err := checkScheduledEvents(client)
+			n, err := checkScheduledEvents()
 			if err != nil {
 				logrus.WithError(err).Error("Failed checking scheduled events")
 			}
@@ -90,15 +87,15 @@ func NumCurrentlyProcessing() int64 {
 	return atomic.LoadInt64(currentlyProcessingHandlers)
 }
 
-func checkScheduledEvents(client *redis.Client) (int, error) {
-	now := time.Now().Unix()
-	reply := client.Cmd("ZRANGEBYSCORE", "scheduled_events", "-inf", now)
-	evts, err := reply.List()
+func checkScheduledEvents() (int, error) {
+	now := strconv.FormatInt(time.Now().Unix(), 10)
+	var evts []string
+	err := common.RedisPool.Do(radix.Cmd(&evts, "ZRANGEBYSCORE", "scheduled_events", "-inf", now))
 	if err != nil {
 		return 0, err
 	}
 
-	err = client.Cmd("ZREMRANGEBYSCORE", "scheduled_events", "-inf", now).Err
+	err = common.RedisPool.Do(radix.Cmd(nil, "ZREMRANGEBYSCORE", "scheduled_events", "-inf", now))
 	if err != nil {
 		return 0, err
 	}
@@ -131,14 +128,7 @@ func handleScheduledEvent(evt string) {
 	if handlerErr != nil {
 		logrus.WithError(handlerErr).WithField("sevt", split[0]).Error("Failed handling scheduled event, re-scheduling.")
 
-		client, err := common.RedisPool.Get()
-		if err != nil {
-			logrus.WithError(err).Error("Failed retrieving redis connection from pool")
-			return
-		}
-		defer common.RedisPool.Put(client)
-
-		err = ScheduleEvent(client, split[0], rest, time.Now())
+		err := ScheduleEvent(split[0], rest, time.Now())
 		if err != nil {
 			logrus.WithError(err).Error("Failed re-scheduling failed event")
 		}

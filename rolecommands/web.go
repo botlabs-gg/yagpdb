@@ -81,7 +81,7 @@ func (p *Plugin) InitWeb() {
 			return HandleGetGroup(parsed, w, r)
 		}
 
-		_, _, tmpl = web.GetBaseCPContextData(r.Context())
+		_, tmpl = web.GetBaseCPContextData(r.Context())
 		if idInterface, ok := tmpl["GroupID"]; ok {
 			return HandleGetGroup(idInterface.(int64), w, r)
 		}
@@ -100,7 +100,7 @@ func (p *Plugin) InitWeb() {
 }
 
 func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	ungroupedCommands, err := models.RoleCommandsG(qm.Where("guild_id = ?", g.ID), qm.Where("role_group_id is null")).All()
 	if err != nil {
@@ -121,7 +121,7 @@ func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateDa
 }
 
 func HandleGetGroup(groupID int64, w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 	groups, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+" = ?", g.ID), qm.OrderBy("id asc")).All()
 	if err != nil {
 		return tmpl, err
@@ -155,7 +155,7 @@ func HandleGetGroup(groupID int64, w http.ResponseWriter, r *http.Request) (tmpl
 }
 
 func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
 	form.Name = strings.TrimSpace(form.Name)
@@ -194,7 +194,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 }
 
 func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	formCmd := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
 
@@ -237,7 +237,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 }
 
 func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 	commands, err := models.RoleCommandsG(qm.Where("guild_id=?", g.ID)).All()
 	if err != nil {
 		return tmpl, err
@@ -310,7 +310,7 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 }
 
 func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
 	err := models.RoleCommandsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll()
@@ -322,7 +322,7 @@ func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 }
 
 func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
 	form.Name = strings.TrimSpace(form.Name)
@@ -362,7 +362,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 }
 
 func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	formGroup := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
 
@@ -387,7 +387,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 }
 
 func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, g, _ := web.GetBaseCPContextData(r.Context())
+	g, _ := web.GetBaseCPContextData(r.Context())
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
 	err := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll()

@@ -50,9 +50,9 @@ func (p *Plugin) InitWeb() {
 }
 
 func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
-	client, g, templateData := web.GetBaseCPContextData(r.Context())
+	g, templateData := web.GetBaseCPContextData(r.Context())
 
-	config, err := GetConfig(client, g.ID)
+	config, err := GetConfig(g.ID)
 	web.CheckErr(templateData, err, "Failed retrieving rules", web.CtxLogger(r.Context()).Error)
 
 	templateData["AutomodConfig"] = config
@@ -64,8 +64,8 @@ func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
 // Invalidates the cache
 func ExtraPostMW(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		client, activeGuild, _ := web.GetBaseCPContextData(r.Context())
-		pubsub.Publish(client, "update_automod_rules", activeGuild.ID, nil)
+		activeGuild, _ := web.GetBaseCPContextData(r.Context())
+		pubsub.Publish("update_automod_rules", activeGuild.ID, nil)
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)

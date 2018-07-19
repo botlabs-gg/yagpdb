@@ -10,7 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -100,7 +100,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		ctx.Data["Author"] = author
 
-		executed, err := ctx.Execute(nil, dmMsg)
+		executed, err := ctx.Execute(dmMsg)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
 			executed = "Failed executing template."
@@ -190,16 +190,16 @@ func DeleteMessages(channelID int64, filterUser int64, deleteNum, fetchNum int) 
 	return len(toDelete), err
 }
 
-func BanUserWithDuration(client *redis.Client, config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, sendDM bool) error {
+func BanUserWithDuration(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, sendDM bool) error {
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	client.Cmd("SETEX", RedisKeyBannedUser(guildID, user.ID), 60, 1)
+	common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
 	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration, sendDM)
 	if err != nil {
 		return err
 	}
 
 	if duration > 0 {
-		err = scheduledevents.ScheduleEvent(client, "mod_unban", discordgo.StrID(guildID)+":"+discordgo.StrID(user.ID), time.Now().Add(duration))
+		err = scheduledevents.ScheduleEvent("mod_unban", discordgo.StrID(guildID)+":"+discordgo.StrID(user.ID), time.Now().Add(duration))
 		if err != nil {
 			return errors.WithMessage(err, "pusnish,sched_unban")
 		}
@@ -208,8 +208,8 @@ func BanUserWithDuration(client *redis.Client, config *Config, guildID, channelI
 	return nil
 }
 
-func BanUser(client *redis.Client, config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, sendDM bool) error {
-	return BanUserWithDuration(client, config, guildID, channelID, author, reason, user, 0, sendDM)
+func BanUser(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, sendDM bool) error {
+	return BanUserWithDuration(config, guildID, channelID, author, reason, user, 0, sendDM)
 }
 
 var (
@@ -217,7 +217,7 @@ var (
 )
 
 // Unmut or mute a user, ignore duration if unmuting
-func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, channelID int64, author *discordgo.User, reason string, member *dstate.MemberState, duration int) error {
+func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author *discordgo.User, reason string, member *dstate.MemberState, duration int) error {
 	config, err := getConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
@@ -228,12 +228,8 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 	}
 
 	// To avoid unexpected things from happening, make sure were only updating the mute of the player 1 place at a time
-	lockKey := RedisKeyLockedMute(guildID, member.ID)
-	err = common.BlockingLockRedisKey(client, lockKey, time.Second*15, 15)
-	if err != nil {
-		return common.ErrWithCaller(err)
-	}
-	defer common.UnlockRedisKey(client, lockKey)
+	LockMute(member.ID)
+	defer UnlockMute(member.ID)
 
 	// Look for existing mute
 	currentMute := MuteModel{}
@@ -288,8 +284,9 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 			return errors.WithMessage(err, "failed inserting/updating mute")
 		}
 
-		err = scheduledevents.ScheduleEvent(client, "unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(member.ID), time.Now().Add(time.Minute*time.Duration(duration)))
-		client.Cmd("SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1)
+		err = scheduledevents.ScheduleEvent("unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(member.ID), time.Now().Add(time.Minute*time.Duration(duration)))
+		common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1))
+		// client.Cmd("SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1)
 		if err != nil {
 			return errors.WithMessage(err, "failed scheduling unmute")
 		}
@@ -302,10 +299,10 @@ func MuteUnmuteUser(config *Config, client *redis.Client, mute bool, guildID, ch
 
 		if alreadyMuted {
 			common.GORM.Delete(&currentMute)
-			client.Cmd("DEL", RedisKeyMutedUser(guildID, member.ID))
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.ID)))
 		}
 
-		err = scheduledevents.RemoveEvent(client, "unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(member.ID))
+		err = scheduledevents.RemoveEvent("unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(member.ID))
 		if err != nil {
 			logrus.WithError(err).Error("Failed scheduling/removing unmute event")
 		}

@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"goji.io/pat"
@@ -14,9 +15,9 @@ import (
 )
 
 func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
-	client, activeGuild, templateData := GetBaseCPContextData(r.Context())
+	activeGuild, templateData := GetBaseCPContextData(r.Context())
 
-	logs, err := common.GetCPLogEntries(client, activeGuild.ID)
+	logs, err := common.GetCPLogEntries(activeGuild.ID)
 	if err != nil {
 		templateData.AddAlerts(ErrorAlert("Failed retrieving logs", err))
 	} else {
@@ -46,9 +47,9 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	_, tmpl := GetCreateTemplateData(r.Context())
-	redis := RedisClientFromContext(r.Context())
 
-	joinedServers, _ := redis.Cmd("SCARD", "connected_guilds").Int()
+	var joinedServers int
+	common.RedisPool.Do(radix.Cmd(&joinedServers, "SCARD", "connected_guilds"))
 
 	tmpl["JoinedServers"] = joinedServers
 

@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"os"
@@ -44,9 +43,7 @@ func setupClient() *reddit.Client {
 func (p *Plugin) runBot() {
 
 	redditClient := setupClient()
-	redisClient := common.MustGetRedisClient()
-
-	fetcher := NewPostFetcher(redditClient, redisClient)
+	fetcher := NewPostFetcher(redditClient)
 
 	ticker := time.NewTicker(time.Second * 5)
 	for {
@@ -69,17 +66,17 @@ func (p *Plugin) runBot() {
 		for _, v := range links {
 			// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
 			// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-			p.handlePost(v, redisClient)
+			p.handlePost(v)
 		}
 	}
 }
 
-func (p *Plugin) handlePost(post *reddit.Link, redisClient *redis.Client) error {
+func (p *Plugin) handlePost(post *reddit.Link) error {
 
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
 	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
-	config, err := GetConfig(redisClient, "global_subreddit_watch:"+strings.ToLower(post.Subreddit))
+	config, err := GetConfig("global_subreddit_watch:" + strings.ToLower(post.Subreddit))
 	if err != nil {
 		logrus.WithError(err).Error("Failed getting config from redis")
 		return err

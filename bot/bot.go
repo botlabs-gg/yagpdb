@@ -49,17 +49,17 @@ func setup() {
 
 	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
 
-	eventsystem.AddHandler(RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(RedisWrapper(HandleGuildDelete), eventsystem.EventGuildDelete)
+	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(HandleGuildDelete, eventsystem.EventGuildDelete)
 
-	eventsystem.AddHandler(RedisWrapper(HandleGuildUpdate), eventsystem.EventGuildUpdate)
-	eventsystem.AddHandler(RedisWrapper(HandleGuildRoleCreate), eventsystem.EventGuildRoleCreate)
-	eventsystem.AddHandler(RedisWrapper(HandleGuildRoleUpdate), eventsystem.EventGuildRoleUpdate)
-	eventsystem.AddHandler(RedisWrapper(HandleGuildRoleRemove), eventsystem.EventGuildRoleDelete)
-	eventsystem.AddHandler(RedisWrapper(HandleChannelCreate), eventsystem.EventChannelCreate)
-	eventsystem.AddHandler(RedisWrapper(HandleChannelUpdate), eventsystem.EventChannelUpdate)
-	eventsystem.AddHandler(RedisWrapper(HandleChannelDelete), eventsystem.EventChannelDelete)
-	eventsystem.AddHandler(RedisWrapper(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(HandleGuildUpdate, eventsystem.EventGuildUpdate)
+	eventsystem.AddHandler(HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
+	eventsystem.AddHandler(HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
+	eventsystem.AddHandler(HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
+	eventsystem.AddHandler(HandleChannelCreate, eventsystem.EventChannelCreate)
+	eventsystem.AddHandler(HandleChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
+	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 }
 
 func Run() {
@@ -211,61 +211,6 @@ func Stop(wg *sync.WaitGroup) {
 	StopAllPlugins(wg)
 	ShardManager.StopAll()
 	wg.Done()
-}
-
-// checks all connected guilds and emites guildremoved on those no longer connected
-func checkConnectedGuilds() {
-	log.Info("Checking joined guilds")
-
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		log.WithError(err).Error("Failed retrieving connection from redis pool")
-		return
-	}
-
-	defer common.RedisPool.Put(client)
-
-	currentlyConnected, err := client.Cmd("SMEMBERS", "connected_guilds").List()
-	if err != nil {
-		log.WithError(err).Error("Failed retrieving currently connected guilds")
-		return
-	}
-
-	guilds := make([]*discordgo.UserGuild, 0)
-	var after int64
-
-	for {
-		g, err := common.BotSession.UserGuilds(100, 0, after)
-		if err != nil {
-			log.WithError(err).Error("Userguilds failed")
-			return
-		}
-
-		guilds = append(guilds, g...)
-		if len(g) < 100 {
-			break
-		}
-
-		after = g[len(g)-1].ID
-	}
-
-OUTER:
-	for _, gID := range currentlyConnected {
-		parsedGID, _ := strconv.ParseInt(gID, 10, 64)
-		for _, g := range guilds {
-			if g.ID == parsedGID {
-				continue OUTER
-			}
-		}
-
-		err := client.Cmd("SREM", "connected_guilds", gID).Err
-		if err != nil {
-			log.WithError(err).Error("Failed removing guild from connected guilds")
-		} else {
-			go EmitGuildRemoved(parsedGID)
-			log.WithField("guild", gID).Info("Removed from guild when offline")
-		}
-	}
 }
 
 func GuildCountsFunc() []int {

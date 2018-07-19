@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -76,10 +75,6 @@ type cmdExecFunc func(cmd string, args ...interface{}) (string, error)
 // Returns 2 functions to execute commands in user or bot context with limited about of commands executed
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
 	execUser := func(cmd string, args ...interface{}) (string, error) {
-		if ctx.Redis == nil {
-			return "Exec cannot be used here", nil
-		}
-
 		mc := &discordgo.MessageCreate{ctx.Msg}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
@@ -89,9 +84,6 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	}
 
 	execBot := func(cmd string, args ...interface{}) (string, error) {
-		if ctx.Redis == nil {
-			return "Exec cannot be used here", nil
-		}
 
 		botUserCopy := *common.BotUser
 		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.Username + "#" + ctx.Msg.Author.Discriminator + ")"
@@ -194,46 +186,10 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 		return "", errors.WithMessage(err, "exec/exedamin, parseArgs")
 	}
 
-	resp, err := cast.RunFunc(data.WithContext(context.WithValue(data.Context(), CtxKeyRedisClient, ctx.Redis)))
+	resp, err := cast.RunFunc(data)
 	if err != nil {
 		return "", errors.WithMessage(err, "exec/execadmin, run")
 	}
-
-	// for _, command := range CommandSystem.Commands {
-	// 	if !command.CheckMatch(cmdLine, triggerData) {
-	// 		continue
-	// 	}
-	// 	matchedCmd = command
-	// 	break
-	// }
-
-	// if matchedCmd == nil {
-	// 	return "", errors.New("Couldn't find command")
-	// }
-
-	// cast, ok := matchedCmd.(*CustomCommand)
-	// if !ok {
-	// 	return "", errors.New("Unsopported command")
-	// }
-
-	// // Do not actually execute the command if it's a dry-run
-	// if dryRun {
-	// 	return "", nil
-	// }
-
-	// parsed, err := cast.ParseCommand(cmdLine, triggerData)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// parsed.Source = triggerData.Source
-	// parsed.Channel = ctx.CS
-	// if ctx.CS == nil {
-	// 	parsed.Channel = ctx.GS.Channel(true, ctx.GS.ID())
-	// }
-	// parsed.Guild = parsed.Channel.Guild
-
-	// resp, err := cast.Run(parsed.WithContext()
 
 	switch v := resp.(type) {
 	case error:

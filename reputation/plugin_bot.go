@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"regexp"
 	"strconv"
@@ -22,14 +21,13 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.RedisWrapper(handleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
-	client := bot.ContextRedis(evt.Context())
 
 	if len(msg.Mentions) < 1 {
 		return
@@ -69,7 +67,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = ModifyRep(conf, client, cs.Guild.ID, sender, target, 1)
+	err = ModifyRep(conf, cs.Guild.ID, sender, target, 1)
 	if err != nil {
 		if err == ErrCooldown {
 			// Ignore this error silently
@@ -265,8 +263,6 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 		return fmt.Sprintf("You can't modify your own %s... **Silly**", pointsName), nil
 	}
 
-	client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-
 	sender, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
 	receiver, err2 := bot.GetMember(parsed.GS.ID, target.ID)
 	if err != nil || err2 != nil {
@@ -279,7 +275,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	amount := parsed.Args[1].Int()
 
-	err = ModifyRep(conf, client, parsed.GS.ID, sender, receiver, int64(amount))
+	err = ModifyRep(conf, parsed.GS.ID, sender, receiver, int64(amount))
 	if err != nil {
 		if cast, ok := err.(UserError); ok {
 			return cast, nil
