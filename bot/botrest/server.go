@@ -1,6 +1,7 @@
 package botrest
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -72,7 +73,7 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
-	p.srv.Shutdown(nil)
+	p.srv.Shutdown(context.TODO())
 	wg.Done()
 }
 
