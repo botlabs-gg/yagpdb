@@ -298,8 +298,6 @@ function yagInitMultiSelect(selectorPrefix) {
 			var pluginOptions = $this.data('plugin-options');
 			if (pluginOptions){
 				opts = pluginOptions;
-			}else{
-				opts = { "maxHeight": window.innerHeight-25 > 300 ? window.innerHeight-25 : 300};
 			}
 
 			$this.themePluginMultiSelect(opts);
