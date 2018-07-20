@@ -8,14 +8,14 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
-func MarkGuildAsToBeChecked(rcli *redis.Client, guildID int64) {
-	rcli.Cmd("SADD", "serverstats_active_guilds", guildID)
+func MarkGuildAsToBeChecked(guildID int64) {
+	common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "serverstats_active_guilds", guildID))
 }
 
 var (
@@ -25,13 +25,13 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberAdd), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberRemove), eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(HandleMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(HandleMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
 
-	eventsystem.AddHandler(bot.RedisWrapper(HandlePresenceUpdate), eventsystem.EventPresenceUpdate)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleReady), eventsystem.EventReady)
+	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 
 	go UpdateStatsLoop()
 }
@@ -57,7 +57,7 @@ func (p *Plugin) AddCommands() {
 				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.Conf.Host), nil
 			}
 
-			stats, err := RetrieveFullStats(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID)
+			stats, err := RetrieveFullStats(data.GS.ID)
 			if err != nil {
 				return "Error retrieving stats", err
 			}
@@ -87,14 +87,13 @@ func (p *Plugin) AddCommands() {
 
 func HandleReady(evt *eventsystem.EventData) {
 	r := evt.Ready()
-	client := bot.ContextRedis(evt.Context())
 
 	for _, guild := range r.Guilds {
 		if guild.Unavailable {
 			continue
 		}
 
-		err := ApplyPresences(client, guild.ID, guild.Presences)
+		err := ApplyPresences(guild.ID, guild.Presences)
 		if err != nil {
 			log.WithError(err).Error("Failed applying presences")
 		}
@@ -103,14 +102,13 @@ func HandleReady(evt *eventsystem.EventData) {
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	g := evt.GuildCreate()
-	client := bot.ContextRedis(evt.Context())
 
-	err := client.Cmd("SET", "guild_stats_num_members:"+discordgo.StrID(g.ID), g.MemberCount).Err
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "guild_stats_num_members:"+discordgo.StrID(g.ID), g.MemberCount))
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
 	}
 
-	err = ApplyPresences(client, g.ID, g.Presences)
+	err = ApplyPresences(g.ID, g.Presences)
 	if err != nil {
 		log.WithError(err).Error("Failed applying presences")
 	}
@@ -118,14 +116,13 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 func HandleMemberAdd(evt *eventsystem.EventData) {
 	g := evt.GuildMemberAdd()
-	client := bot.ContextRedis(evt.Context())
 
-	err := client.Cmd("ZADD", "guild_stats_members_joined_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID).Err
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "guild_stats_members_joined_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID))
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	err = client.Cmd("INCR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)).Err
+	err = common.RedisPool.Do(radix.Cmd(nil, "INCR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
 	if err != nil {
 		log.WithError(err).Error("Failed Increasing members")
 	}
@@ -133,17 +130,19 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	p := evt.PresenceUpdate()
-	client := bot.ContextRedis(evt.Context())
 
 	if p.Status == "" { // Not a status update
 		return
 	}
 
+	key := "guild_stats_online:" + discordgo.StrID(p.GuildID)
+	uID := discordgo.StrID(p.User.ID)
+
 	var err error
 	if p.Status == "offline" {
-		err = client.Cmd("SREM", "guild_stats_online:"+discordgo.StrID(p.GuildID), p.User.ID).Err
+		err = common.RedisPool.Do(radix.Cmd(nil, "SREM", key, uID))
 	} else {
-		err = client.Cmd("SADD", "guild_stats_online:"+discordgo.StrID(p.GuildID), p.User.ID).Err
+		err = common.RedisPool.Do(radix.Cmd(nil, "SADD", key, uID))
 	}
 
 	if err != nil {
@@ -153,14 +152,13 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 func HandleMemberRemove(evt *eventsystem.EventData) {
 	g := evt.GuildMemberRemove()
-	client := bot.ContextRedis(evt.Context())
 
-	err := client.Cmd("ZADD", "guild_stats_members_left_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID).Err
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "guild_stats_members_left_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID))
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	err = client.Cmd("DECR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)).Err
+	err = common.RedisPool.Do(radix.Cmd(nil, "DECR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
 	if err != nil {
 		log.WithError(err).Error("Failed decreasing members")
 	}
@@ -169,7 +167,6 @@ func HandleMemberRemove(evt *eventsystem.EventData) {
 func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	m := evt.MessageCreate()
-	client := bot.ContextRedis(evt.Context())
 	channel := bot.State.Channel(true, m.ChannelID)
 
 	if channel == nil {
@@ -191,25 +188,33 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = client.Cmd("ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), channel.StrID()+":"+discordgo.StrID(m.ID)+":"+discordgo.StrID(m.Author.ID)).Err
+	val := channel.StrID() + ":" + discordgo.StrID(m.ID) + ":" + discordgo.StrID(m.Author.ID)
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), val))
 	if err != nil {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	MarkGuildAsToBeChecked(client, channel.Guild.ID)
+	MarkGuildAsToBeChecked(channel.Guild.ID)
 }
 
-func ApplyPresences(client *redis.Client, guildID int64, presences []*discordgo.Presence) error {
-	client.PipeAppend("DEL", "guild_stats_online:"+discordgo.StrID(guildID))
-	count := 1
-	for _, p := range presences {
-		if p.Status == "offline" {
-			continue
-		}
-		count++
-		client.PipeAppend("SADD", "guild_stats_online:"+discordgo.StrID(guildID), p.User.ID)
-	}
+func ApplyPresences(guildID int64, presences []*discordgo.Presence) error {
+	key := "guild_stats_online:" + discordgo.StrID(guildID)
 
-	_, err := common.GetRedisReplies(client, count)
+	err := common.RedisPool.Do(radix.WithConn(key, func(c radix.Conn) error {
+		c.Do(radix.Cmd(nil, "DEL", key))
+
+		values := make([]string, 1, len(presences)+1)
+		values[0] = key
+		for _, p := range presences {
+			if p.Status == "offline" {
+				continue
+			}
+
+			values = append(values, discordgo.StrID(p.User.ID))
+		}
+
+		return c.Do(radix.Cmd(nil, "SADD", values...))
+	}))
+
 	return err
 }

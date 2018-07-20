@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -76,7 +75,7 @@ func GetChannelReminders(channel int64) (results []*Reminder, err error) {
 	return
 }
 
-func NewReminder(client *redis.Client, userID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
+func NewReminder(userID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
 	whenUnix := when.Unix()
 	reminder := &Reminder{
 		UserID:    discordgo.StrID(userID),
@@ -90,7 +89,7 @@ func NewReminder(client *redis.Client, userID int64, channelID int64, message st
 		return nil, err
 	}
 
-	err = scheduledevents.ScheduleEvent(client, "reminders_check_user:"+strconv.FormatInt(whenUnix, 10), discordgo.StrID(userID), when)
+	err = scheduledevents.ScheduleEvent("reminders_check_user:"+strconv.FormatInt(whenUnix, 10), discordgo.StrID(userID), when)
 	return reminder, err
 }
 

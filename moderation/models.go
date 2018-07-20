@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/lib/pq"
-	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"time"
 )
@@ -75,14 +74,14 @@ func (c *Config) TableName() string {
 	return "moderation_configs"
 }
 
-func (c *Config) Save(client *redis.Client, guildID int64) error {
+func (c *Config) Save(guildID int64) error {
 	c.GuildID = guildID
 	err := configstore.SQL.SetGuildConfig(context.Background(), c)
 	if err != nil {
 		return err
 	}
 
-	pubsub.Publish(client, "mod_refresh_mute_override", guildID, nil)
+	pubsub.Publish("mod_refresh_mute_override", guildID, nil)
 	return nil
 }
 

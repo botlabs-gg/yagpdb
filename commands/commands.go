@@ -7,7 +7,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -69,14 +69,8 @@ func (p *Plugin) Name() string {
 	return "Commands"
 }
 
-func GetCommandPrefix(client *redis.Client, guild int64) (string, error) {
-	reply := client.Cmd("GET", "command_prefix:"+discordgo.StrID(guild))
-	if reply.Err != nil {
-		return "", reply.Err
-	}
-	if reply.IsType(redis.Nil) {
-		return "", nil
-	}
-
-	return reply.Str()
+func GetCommandPrefix(guild int64) (string, error) {
+	var prefix string
+	err := common.RedisPool.Do(radix.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
+	return prefix, err
 }

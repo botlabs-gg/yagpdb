@@ -2,7 +2,8 @@ package reddit
 
 import (
 	"github.com/jonas747/go-reddit"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -18,27 +19,23 @@ type PostFetcher struct {
 	hasCaughtUp bool
 
 	redditClient *reddit.Client
-	redisClient  *redis.Client
 }
 
-func NewPostFetcher(redditClient *reddit.Client, redisClient *redis.Client) *PostFetcher {
+func NewPostFetcher(redditClient *reddit.Client) *PostFetcher {
 	return &PostFetcher{
 		redditClient: redditClient,
-		redisClient:  redisClient,
 	}
 }
 
 func (p *PostFetcher) InitCursor() (int64, error) {
-	storedId, err := p.redisClient.Cmd("GET", KeyLastScannedPostID).Int64()
-	if err != nil {
-		logrus.WithError(err).Error("Reddit plugin failed resuming, starting from the new position")
-	} else {
-		if storedId == 0 {
-			logrus.Error("Reddit plugin has 0 as cursor?, starting from the new position")
-		} else {
-			return storedId, nil
-		}
+	var storedID int64
+	common.RedisPool.Do(radix.Cmd(&storedID, "GET", KeyLastScannedPostID))
+	if storedID != 0 {
+		logrus.Info("Reddit continuing from ", storedID)
+		return storedID, nil
 	}
+
+	logrus.Error("Reddit plugin failed resuming, starting from a new position")
 
 	// Start from new
 	newPosts, err := p.redditClient.GetNewLinks("all", "", "")
@@ -97,7 +94,7 @@ func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 
 	if highestID != -1 {
 		p.LastID = highestID
-		p.redisClient.Cmd("SET", KeyLastScannedPostID, highestID)
+		common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastScannedPostID, highestID))
 	}
 
 	if !p.hasCaughtUp {

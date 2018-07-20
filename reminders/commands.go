@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 	"time"
 )
@@ -53,8 +52,7 @@ var cmds = []*commands.YAGCommand{
 				return "Can be max 365 days from now...", nil
 			}
 
-			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-			_, err := NewReminder(client, parsed.Msg.Author.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
+			_, err := NewReminder(parsed.Msg.Author.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
 			if err != nil {
 				return err, err
 			}
@@ -154,9 +152,8 @@ var cmds = []*commands.YAGCommand{
 				}
 			}
 
-			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
 			// No other reminder for this user at this timestamp, remove the scheduled event
-			scheduledevents.RemoveEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
+			scheduledevents.RemoveEvent(fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
 
 			return delMsg, nil
 		},

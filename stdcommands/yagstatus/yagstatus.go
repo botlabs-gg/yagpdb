@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/sirupsen/logrus"
@@ -58,7 +57,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 
 	numGoroutines := runtime.NumGoroutine()
 
-	numScheduledEvent, _ := scheduledevents.NumScheduledEvents(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client))
+	numScheduledEvent, _ := scheduledevents.NumScheduledEvents()
 
 	botUser := common.BotUser
 
@@ -84,7 +83,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	for _, v := range common.Plugins {
 		if cast, ok := v.(PluginStatus); ok {
 			started := time.Now()
-			name, val := cast.Status(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client))
+			name, val := cast.Status()
 			if name == "" || val == "" {
 				continue
 			}
@@ -99,5 +98,5 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 }
 
 type PluginStatus interface {
-	Status(client *redis.Client) (string, string)
+	Status() (string, string)
 }

@@ -7,10 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common/fixedpool"
-	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/mediocregopher/radix.v2/redis"
-	// "github.com/mediocregopher/radix.v2/pool"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
@@ -20,7 +17,7 @@ import (
 const (
 	VERSIONMAJOR = 1
 	VERSIONMINOR = 2
-	VERSIONPATCH = 0
+	VERSIONPATCH = 1
 	Testing      = false // Disables stuff like command cooldowns
 )
 
@@ -31,8 +28,7 @@ var (
 	GORM *gorm.DB
 	PQ   *sql.DB
 
-	// RedisPool   *pool.Pool
-	RedisPool redisPool
+	RedisPool *radix.Pool
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
@@ -116,16 +112,17 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	if os.Getenv("YAGPDB_LEGACY_REDIS_POOL") != "" {
-		logrus.Info("Using legacy redis pool")
-		RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
-	} else {
-		logrus.Info("Using new redis pool, set YAGPDB_LEGACY_REDIS_POOL=yes if it's broken")
-		RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
-	}
+	// if os.Getenv("YAGPDB_LEGACY_REDIS_POOL") != "" {
+	// 	logrus.Info("Using legacy redis pool")
+	// 	RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
+	// } else {
+	// 	logrus.Info("Using new redis pool, set YAGPDB_LEGACY_REDIS_POOL=yes if it's broken")
+	// 	RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
+	// }
 
+	RedisPool, err = radix.NewPool("tcp", addr, RedisPoolSize, radix.PoolOnEmptyWait())
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed initilizing redis pool")
+		logrus.WithError(err).Fatal("Failed intitializing redis pool")
 	}
 
 	return
@@ -145,10 +142,4 @@ func connectDB(host, user, pass, dbName string) error {
 	}
 
 	return err
-}
-
-type redisPool interface {
-	Cmd(cmd string, args ...interface{}) *redis.Resp
-	Put(conn *redis.Client)
-	Get() (*redis.Client, error)
 }

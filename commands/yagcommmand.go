@@ -9,7 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -128,8 +128,6 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		yc.logExecutionTime(time.Since(started), data.Msg.Content, data.Msg.Author.Username)
 	}()
 
-	client := data.Context().Value(common.ContextKeyRedis).(*redis.Client)
-
 	cState := bot.State.Channel(true, data.Msg.ChannelID)
 	if cState == nil {
 		return nil, errors.New("Channel not found")
@@ -159,7 +157,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	defer cancelExec()
 
 	// Run the command
-	r, cmdErr := yc.RunFunc(data.WithContext(context.WithValue(runCtx, CtxKeyRedisClient, client)))
+	r, cmdErr := yc.RunFunc(data.WithContext(runCtx))
 	if cmdErr != nil {
 		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
 			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + common.EscapeSpecialMentions(data.Msg.Content) + "`, Cancelled the command."
@@ -170,7 +168,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Log errors
 	if cmdErr == nil {
-		err := yc.SetCooldown(client, data.Msg.Author.ID)
+		err := yc.SetCooldown(data.Msg.Author.ID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
 		}
@@ -246,7 +244,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 }
 
 // checks if the specified user can execute the command, and if so returns the settings for said command
-func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Client, cState *dstate.ChannelState) (canExecute bool, resp string, settings *CommandSettings, err error) {
+func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.ChannelState) (canExecute bool, resp string, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
 	var guild *dstate.GuildState
 
@@ -262,7 +260,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 
 		cop := cState.Copy(true, false)
 
-		settings, err = cs.GetSettings(client, cState.ID, cop.ParentID, guild.ID)
+		settings, err = cs.GetSettings(cState.ID, cop.ParentID, guild.ID)
 		if err != nil {
 			err = errors.WithMessage(err, "cs.GetSettings")
 			resp = "Bot is having isssues, contact the bot owner."
@@ -313,7 +311,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Clie
 	}
 
 	// Check the command cooldown
-	cdLeft, err := cs.CooldownLeft(client, data.Msg.Author.ID)
+	cdLeft, err := cs.CooldownLeft(data.Msg.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
 		log.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
@@ -359,19 +357,18 @@ func (cs *YAGCommand) deleteResponse(msgs []*discordgo.Message) {
 }
 
 // customEnabled returns wether the command is enabled by it's custom key or not
-func (cs *YAGCommand) customEnabled(client *redis.Client, guildID int64) (bool, error) {
+func (cs *YAGCommand) customEnabled(guildID int64) (bool, error) {
 	// No special key so it's automatically enabled
 	if cs.Key == "" || cs.CustomEnabled {
 		return true, nil
 	}
 
 	// Check redis for settings
-	reply := client.Cmd("GET", cs.Key+discordgo.StrID(guildID))
-	if reply.Err != nil {
-		return false, reply.Err
+	var enabled bool
+	err := common.RedisPool.Do(radix.Cmd(&enabled, "GET", cs.Key+discordgo.StrID(guildID)))
+	if err != nil {
+		return false, err
 	}
-
-	enabled, _ := common.RedisBool(reply)
 
 	if cs.Default {
 		enabled = !enabled
@@ -397,12 +394,12 @@ type CommandSettings struct {
 }
 
 // GetSettings returns the settings from the command, generated from the servers channel and command overrides
-func (cs *YAGCommand) GetSettings(client *redis.Client, channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
+func (cs *YAGCommand) GetSettings(channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
 
 	settings = &CommandSettings{}
 
 	// Some commands have custom places to toggle their enabled status
-	ce, err := cs.customEnabled(client, guildID)
+	ce, err := cs.customEnabled(guildID)
 	if err != nil {
 		err = errors.WithMessage(err, "customEnabled")
 		return
@@ -487,26 +484,28 @@ OUTER:
 }
 
 // CooldownLeft returns the number of seconds before a command can be used again
-func (cs *YAGCommand) CooldownLeft(client *redis.Client, userID int64) (int, error) {
+func (cs *YAGCommand) CooldownLeft(userID int64) (int, error) {
 	if cs.Cooldown < 1 || common.Testing {
 		return 0, nil
 	}
 
-	ttl, err := client.Cmd("TTL", RKeyCommandCooldown(userID, cs.Name)).Int64()
+	var ttl int
+	err := common.RedisPool.Do(radix.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.Name)))
 	if ttl < 1 {
 		return 0, nil
 	}
 
-	return int(ttl), err
+	return ttl, err
 }
 
 // SetCooldown sets the cooldown of the command as it's defined in the struct
-func (cs *YAGCommand) SetCooldown(client *redis.Client, userID int64) error {
+func (cs *YAGCommand) SetCooldown(userID int64) error {
 	if cs.Cooldown < 1 {
 		return nil
 	}
 	now := time.Now().Unix()
-	err := client.Cmd("SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown).Err
+
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown))
 	return err
 }
 

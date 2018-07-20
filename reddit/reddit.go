@@ -8,7 +8,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -47,14 +47,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	guildID := split[0]
 	itemID := split[1]
 
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		log.WithError(err).Error("Failed retrieving redis client from pool")
-		return
-	}
-	defer common.RedisPool.Put(client)
-
-	currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+guildID)
+	currentConfig, err := GetConfig("guild_subreddit_watch:" + guildID)
 	if err != nil {
 		log.WithError(err).Error("Failed fetching config to remove")
 		return
@@ -68,7 +61,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	parsedGID, _ := strconv.ParseInt(guildID, 10, 64)
 	for _, v := range currentConfig {
 		if v.ID == parsed {
-			v.Remove(client)
+			v.Remove()
 			common.AddCPLogEntry(common.BotUser, parsedGID, "Removed reddit feed from "+v.Sub+", Channel does not exist or no perms")
 			break
 		}
@@ -101,34 +94,34 @@ func FindWatchItem(source []*SubredditWatchItem, id int) *SubredditWatchItem {
 	return nil
 }
 
-func (item *SubredditWatchItem) Set(client *redis.Client) error {
+func (item *SubredditWatchItem) Set() error {
 	serialized, err := json.Marshal(item)
 	if err != nil {
 		return err
 	}
 	guild := item.Guild
 
-	cmds := []*common.RedisCmd{
-		&common.RedisCmd{Name: "HSET", Args: []interface{}{"guild_subreddit_watch:" + guild, item.ID, serialized}},
-		&common.RedisCmd{Name: "HSET", Args: []interface{}{"global_subreddit_watch:" + strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID), serialized}},
-	}
+	err = common.RedisPool.Do(radix.Pipeline(
+		radix.FlatCmd(nil, "HSET", "guild_subreddit_watch:"+guild, item.ID, serialized),
+		radix.FlatCmd(nil, "HSET", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID), serialized),
+	))
 
-	_, err = common.SafeRedisCommands(client, cmds)
 	return err
 }
 
-func (item *SubredditWatchItem) Remove(client *redis.Client) error {
+func (item *SubredditWatchItem) Remove() error {
 	guild := item.Guild
-	cmds := []*common.RedisCmd{
-		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"guild_subreddit_watch:" + guild, item.ID}},
-		&common.RedisCmd{Name: "HDEL", Args: []interface{}{"global_subreddit_watch:" + strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID)}},
-	}
-	_, err := common.SafeRedisCommands(client, cmds)
+
+	err := common.RedisPool.Do(radix.Pipeline(
+		radix.FlatCmd(nil, "HDEL", "guild_subreddit_watch:"+guild, item.ID),
+		radix.FlatCmd(nil, "HDEL", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID)),
+	))
 	return err
 }
 
-func GetConfig(client *redis.Client, key string) ([]*SubredditWatchItem, error) {
-	rawItems, err := client.Cmd("HGETALL", key).Map()
+func GetConfig(key string) ([]*SubredditWatchItem, error) {
+	var rawItems map[string]string
+	err := common.RedisPool.Do(radix.Cmd(&rawItems, "HGETALL", key))
 	if err != nil {
 		return nil, err
 	}

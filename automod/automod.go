@@ -3,7 +3,7 @@ package automod
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/jonas747/yagpdb/web"
 )
 
 type Condition string
@@ -50,14 +50,17 @@ func NewConfig() *Config {
 	}
 }
 
-// Behold the almighty number of return values on this one!
-func GetConfig(client *redis.Client, guildID int64) (config *Config, err error) {
+func GetConfig(guildID int64) (config *Config, err error) {
 
 	config = NewConfig()
-	err = common.GetRedisJson(client, KeyConfig(guildID), &config)
+	err = common.GetRedisJson(KeyConfig(guildID), &config)
 	return
 }
 
-func (c Config) Save(client *redis.Client, guildID int64) error {
-	return common.SetRedisJson(client, KeyConfig(guildID), c)
+var (
+	_ web.SimpleConfigSaver = (*Config)(nil)
+)
+
+func (c Config) Save(guildID int64) error {
+	return common.SetRedisJson(KeyConfig(guildID), c)
 }

@@ -23,7 +23,7 @@ func (p *Plugin) Name() string {
 	return "Logs"
 }
 
-func InitPlugin() {
+func RegisterPlugin() {
 	//p := &Plugin{}
 	err := common.GORM.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
 	if err != nil {

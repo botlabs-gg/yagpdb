@@ -10,7 +10,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"regexp"
@@ -27,7 +26,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -41,7 +40,7 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		ccs, _, err := GetCommands(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID)
+		ccs, _, err := GetCommands(data.GS.ID)
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
@@ -128,7 +127,6 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dst
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
-	client := bot.ContextRedis(evt.Context())
 	mc := evt.MessageCreate()
 	botUser := common.BotUser
 	cs := bot.State.Channel(true, mc.ChannelID)
@@ -137,7 +135,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	cmds, _, err := GetCommands(client, cs.Guild.ID)
+	cmds, _, err := GetCommands(cs.Guild.ID)
 	if err != nil {
 		log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
 		return
@@ -147,7 +145,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix, err := commands.GetCommandPrefix(client, cs.Guild.ID)
+	prefix, err := commands.GetCommandPrefix(cs.Guild.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed getting prefix")
 		return
@@ -190,7 +188,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, client, bot.ContextSession(evt.Context()), mc)
+	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, bot.ContextSession(evt.Context()), mc)
 	if err != nil {
 		log.WithField("guild", channel.Guild.ID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
@@ -213,7 +211,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 }
 
-func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
+func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
 
 	cs := bot.State.Channel(true, m.ChannelID)
 	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
@@ -223,7 +221,6 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 	}
 
 	tmplCtx = templates.NewContext(cs.Guild, cs, member)
-	tmplCtx.Redis = client
 	tmplCtx.Msg = m.Message
 
 	args := dcmd.SplitArgs(m.Content)
@@ -244,7 +241,7 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 	tmplCtx.Data["Message"] = m
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
-	out, err := tmplCtx.Execute(client, chanMsg)
+	out, err := tmplCtx.Execute(chanMsg)
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"

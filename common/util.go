@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
@@ -21,44 +21,34 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-// RefreshConnectedGuilds deletes the connected_guilds set and fill it up again
-// This is incase servers are removed/bot left servers while it was offline
-func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) error {
-	panic("REFRESH CONNECTED DOSEN'T WORK")
-}
-
 type WrappedGuild struct {
 	*discordgo.UserGuild
 	Connected bool
 }
 
 // GetWrapped Returns a wrapped guild with connected set
-func GetWrapped(in []*discordgo.UserGuild, client *redis.Client) ([]*WrappedGuild, error) {
+func GetWrapped(in []*discordgo.UserGuild) ([]*WrappedGuild, error) {
 	if len(in) < 1 {
 		return []*WrappedGuild{}, nil
 	}
 
-	for _, g := range in {
-		client.PipeAppend("SISMEMBER", "connected_guilds", g.ID)
+	out := make([]*WrappedGuild, len(in))
+
+	actions := make([]radix.CmdAction, len(in))
+	for i, g := range in {
+		out[i] = &WrappedGuild{
+			UserGuild: g,
+			Connected: false,
+		}
+
+		actions[i] = radix.Cmd(&out[i].Connected, "SISMEMBER", "connected_guilds", strconv.FormatInt(g.ID, 10))
 	}
 
-	replies, err := GetRedisReplies(client, len(in))
+	err := RedisPool.Do(radix.Pipeline(actions...))
 	if err != nil {
 		return nil, err
 	}
 
-	out := make([]*WrappedGuild, len(in))
-	for k, g := range in {
-		isConnected, err := RedisBool(replies[k])
-		if err != nil {
-			return nil, err
-		}
-
-		out[k] = &WrappedGuild{
-			UserGuild: g,
-			Connected: isConnected,
-		}
-	}
 	return out, nil
 }
 
@@ -82,13 +72,13 @@ func SendTempMessage(session *discordgo.Session, duration time.Duration, cID int
 }
 
 // GetGuildChannels returns the guilds channels either from cache or api
-func GetGuildChannels(client *redis.Client, guildID int64) (channels []*discordgo.Channel, err error) {
+func GetGuildChannels(guildID int64) (channels []*discordgo.Channel, err error) {
 	// Check cache first
-	err = GetCacheDataJson(client, KeyGuildChannels(guildID), &channels)
+	err = GetCacheDataJson(KeyGuildChannels(guildID), &channels)
 	if err != nil {
 		channels, err = BotSession.GuildChannels(guildID)
 		if err == nil {
-			SetCacheDataJsonSimple(client, KeyGuildChannels(guildID), channels)
+			SetCacheDataJsonSimple(KeyGuildChannels(guildID), channels)
 		}
 	}
 
@@ -96,13 +86,13 @@ func GetGuildChannels(client *redis.Client, guildID int64) (channels []*discordg
 }
 
 // GetGuild returns the guild from guildid either from cache or api
-func GetGuild(client *redis.Client, guildID int64) (guild *discordgo.Guild, err error) {
+func GetGuild(guildID int64) (guild *discordgo.Guild, err error) {
 	// Check cache first
-	err = GetCacheDataJson(client, KeyGuild(guildID), &guild)
+	err = GetCacheDataJson(KeyGuild(guildID), &guild)
 	if err != nil {
 		guild, err = BotSession.Guild(guildID)
 		if err == nil {
-			SetCacheDataJsonSimple(client, KeyGuild(guildID), guild)
+			SetCacheDataJsonSimple(KeyGuild(guildID), guild)
 		}
 	}
 

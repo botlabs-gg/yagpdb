@@ -214,7 +214,6 @@ func setupRoutes() *goji.Mux {
 	// General middleware
 	mux.Use(gziphandler.GzipHandler)
 	mux.Use(MiscMiddleware)
-	mux.Use(RedisMiddleware)
 	mux.Use(BaseTemplateDataMiddleware)
 	mux.Use(SessionMiddleware)
 	mux.Use(UserInfoMiddleware)

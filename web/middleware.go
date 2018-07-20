@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/miolini/datacounter"
 	log "github.com/sirupsen/logrus"
 	"goji.io/pat"
@@ -53,30 +52,6 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
-		inner.ServeHTTP(w, r.WithContext(ctx))
-	}
-
-	return http.HandlerFunc(mw)
-}
-
-// Will put a redis client in the context if available
-func RedisMiddleware(inner http.Handler) http.Handler {
-	mw := func(w http.ResponseWriter, r *http.Request) {
-		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			inner.ServeHTTP(w, r)
-			return
-		}
-
-		client, err := common.RedisPool.Get()
-		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed retrieving client from redis pool")
-			// Redis is unavailable, just server without then
-			inner.ServeHTTP(w, r)
-			return
-		}
-		defer common.RedisPool.Put(client)
-
-		ctx := context.WithValue(r.Context(), common.ContextKeyRedis, client)
 		inner.ServeHTTP(w, r.WithContext(ctx))
 	}
 
@@ -185,16 +160,15 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		session := DiscordSessionFromContext(ctx)
-		redisClient := RedisClientFromContext(ctx)
 
-		if session == nil || redisClient == nil {
+		if session == nil {
 			// We can't find any info if a session or redis client is not avialable to just skiddadle our way out
 			inner.ServeHTTP(w, r)
 			return
 		}
 
 		var user *discordgo.User
-		err := common.GetCacheDataJson(redisClient, session.Token+":user", &user)
+		err := common.GetCacheDataJson(session.Token+":user", &user)
 		if err != nil {
 			// nothing in cache...
 			user, err = session.UserMe()
@@ -205,11 +179,11 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			}
 
 			// Give the little rascal to the cache
-			LogIgnoreErr(common.SetCacheDataJson(redisClient, session.Token+":user", 3600, user))
+			LogIgnoreErr(common.SetCacheDataJson(session.Token+":user", 3600, user))
 		}
 
 		var guilds []*discordgo.UserGuild
-		err = common.GetCacheDataJson(redisClient, discordgo.StrID(user.ID)+":guilds", &guilds)
+		err = common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
 		if err != nil {
 			guilds, err = session.UserGuilds(100, 0, 0)
 			if err != nil {
@@ -218,10 +192,10 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 				return
 			}
 
-			LogIgnoreErr(common.SetCacheDataJson(redisClient, discordgo.StrID(user.ID)+":guilds", 10, guilds))
+			LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
 		}
 
-		wrapped, err := common.GetWrapped(guilds, redisClient)
+		wrapped, err := common.GetWrapped(guilds)
 		if err != nil {
 			CtxLogger(r.Context()).WithError(err).Error("Failed wrapping guilds")
 			http.Redirect(w, r, "/?err=rediserr", http.StatusTemporaryRedirect)
@@ -258,7 +232,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 }
 
 func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
-	fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guildID)
+	fullGuild, err := common.GetGuild(guildID)
 	if err != nil {
 		CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
 		return ctx, err
@@ -367,7 +341,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
-		channels, err := common.GetGuildChannels(RedisClientFromContext(ctx), guild.ID)
+		channels, err := common.GetGuildChannels(guild.ID)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed retrieving channels")
 			http.Redirect(w, r, "/?err=retrievingchannels", http.StatusTemporaryRedirect)
@@ -395,7 +369,7 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		fullGuild, err := common.GetGuild(RedisClientFromContext(ctx), guild.ID)
+		fullGuild, err := common.GetGuild(guild.ID)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
 			http.Redirect(w, r, "/?err=errretrievingguild", http.StatusTemporaryRedirect)
@@ -604,8 +578,9 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 		if err != nil {
 			panic(err)
 		}
+
 		ctx := r.Context()
-		_, guild, tmpl := GetBaseCPContextData(ctx)
+		guild, tmpl := GetBaseCPContextData(ctx)
 
 		typ := reflect.TypeOf(dst)
 
@@ -634,7 +609,7 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 }
 
 type SimpleConfigSaver interface {
-	Save(client *redis.Client, guildID int64) error
+	Save(guildID int64) error
 	Name() string // Returns this config's name, as it will be logged in the server's control panel log
 }
 
@@ -642,7 +617,7 @@ type SimpleConfigSaver interface {
 func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) http.Handler {
 	return FormParserMW(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		client, g, templateData := GetBaseCPContextData(ctx)
+		g, templateData := GetBaseCPContextData(ctx)
 
 		if extraHandler != nil {
 			defer extraHandler.ServeHTTP(w, r)
@@ -654,7 +629,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) ht
 			return
 		}
 
-		err := form.Save(client, g.ID)
+		err := form.Save(g.ID)
 		if !CheckErr(templateData, err, "Failed saving config", log.Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
@@ -703,7 +678,7 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		_, g, templateData := GetBaseCPContextData(ctx)
+		g, templateData := GetBaseCPContextData(ctx)
 
 		if extraHandler != nil {
 			defer func() {

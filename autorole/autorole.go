@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
 )
 
@@ -58,8 +57,8 @@ func (l *GeneralConfig) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func GetGeneralConfig(client *redis.Client, guildID int64) (*GeneralConfig, error) {
+func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
-	err := common.GetRedisJson(client, KeyGeneral(guildID), conf)
+	err := common.GetRedisJson(KeyGeneral(guildID), conf)
 	return conf, err
 }

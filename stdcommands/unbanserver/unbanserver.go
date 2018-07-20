@@ -3,8 +3,9 @@ package unbanserver
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/stdcommands/util"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 )
 
 var Command = &commands.YAGCommand{
@@ -19,13 +20,14 @@ var Command = &commands.YAGCommand{
 		{Name: "server", Type: dcmd.String},
 	},
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
-		client := data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-		unbanned, err := client.Cmd("SREM", "banned_servers", data.Args[0].Str()).Int()
+
+		var unbanned bool
+		err := common.RedisPool.Do(radix.Cmd(&unbanned, "SREM", "banned_servers", data.Args[0].Str()))
 		if err != nil {
 			return err, err
 		}
 
-		if unbanned < 1 {
+		if !unbanned {
 			return "Server wasnt banned", nil
 		}
 

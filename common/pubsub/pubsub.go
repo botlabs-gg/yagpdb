@@ -8,8 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/pubsub"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"reflect"
 	"runtime/debug"
@@ -51,7 +50,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 }
 
 // PublishEvent publishes the specified event
-func Publish(client *redis.Client, evt string, target int64, data interface{}) error {
+func Publish(evt string, target int64, data interface{}) error {
 	dataStr := ""
 	if data != nil {
 		encoded, err := json.Marshal(data)
@@ -62,33 +61,34 @@ func Publish(client *redis.Client, evt string, target int64, data interface{}) e
 	}
 
 	value := fmt.Sprintf("%d,%s,%s", target, evt, dataStr)
-	return client.Cmd("PUBLISH", "events", value).Err
+	return common.RedisPool.Do(radix.Cmd(nil, "PUBLISH", "events", value))
 }
 
 func PollEvents() {
 	// Create a new client for pubsub
-	client, err := redis.Dial("tcp", common.Conf.Redis)
+	// radix.PersistentPubSub("tcp", common.Conf.Redis, radix.Dial)
+
+	client, err := radix.Dial("tcp", common.Conf.Redis)
 	if err != nil {
 		panic(err)
 	}
 
-	subClient := pubsub.NewSubClient(client)
-	err = subClient.Subscribe("events").Err
-	if err != nil {
-		panic(err)
+	pubsubClient := radix.PubSub(client)
+
+	msgChan := make(chan radix.PubSubMessage)
+	if err := pubsubClient.Subscribe(msgChan, "events"); err != nil {
+		logrus.WithError(err).Fatal("Failed subscribing to events")
+		return
+	}
+
+	for msg := range msgChan {
+		if len(msg.Message) > 0 {
+			logrus.WithField("evt", string(msg.Message)).Info("Handling PubSub event")
+			handleEvent(string(msg.Message))
+		}
 	}
 
 	for {
-		reply := subClient.Receive()
-		if reply.Err != nil {
-			logrus.WithError(reply.Err).Error("PubSub Error")
-			continue
-		}
-
-		if reply.Message != "" {
-			logrus.WithField("evt", reply.Message).Info("Handling PubSub event")
-			handleEvent(reply.Message)
-		}
 	}
 }
 

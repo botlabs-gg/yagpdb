@@ -3,10 +3,8 @@ package configstore
 import (
 	"errors"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"reflect"
@@ -53,14 +51,6 @@ type GuildConfig interface {
 	GetGuildID() int64
 	GetUpdatedAt() time.Time
 	GetName() string
-}
-
-func RedisClientCtx(ctx context.Context) *redis.Client {
-	if client := ctx.Value(common.ContextKeyRedis); client != nil {
-		return client.(*redis.Client)
-	}
-
-	return nil
 }
 
 type PostFetchHandler interface {
@@ -143,7 +133,7 @@ func HandleInvalidateCacheEvt(event *pubsub.Event) {
 
 // InvalidateGuildCache is a helper that both instantly invalides the local application cache
 // As well as sending the pusub event
-func InvalidateGuildCache(client *redis.Client, guildID interface{}, conf GuildConfig) {
+func InvalidateGuildCache(guildID interface{}, conf GuildConfig) {
 	var gID int64
 	switch t := guildID.(type) {
 	case int64:
@@ -157,7 +147,7 @@ func InvalidateGuildCache(client *redis.Client, guildID interface{}, conf GuildC
 	}
 
 	Cached.InvalidateCache(gID, conf.GetName())
-	err := pubsub.Publish(client, "invalidate_guild_config_cache", gID, conf.GetName())
+	err := pubsub.Publish("invalidate_guild_config_cache", gID, conf.GetName())
 	if err != nil {
 		logrus.WithError(err).Error("FAILED INVALIDATING CACHE")
 	}

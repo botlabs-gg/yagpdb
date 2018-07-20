@@ -60,10 +60,10 @@ func (p *Plugin) InitWeb() {
 func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+		activeGuild, templateData := web.GetBaseCPContextData(ctx)
 		templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reddit/"
 
-		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+discordgo.StrID(activeGuild.ID))
+		currentConfig, err := GetConfig("guild_subreddit_watch:" + discordgo.StrID(activeGuild.ID))
 		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		} else {
@@ -80,7 +80,7 @@ func baseData(inner http.Handler) http.Handler {
 
 func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	_, _, templateData := web.GetBaseCPContextData(ctx)
+	_, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
@@ -90,7 +90,7 @@ func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 
@@ -122,7 +122,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		UseEmbeds: newElem.UseEmbeds,
 	}
 
-	err := watchItem.Set(client)
+	err := watchItem.Set()
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
@@ -143,7 +143,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
@@ -167,12 +167,12 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	var err error
 	if !subIsNew {
 		// Pretty simple then
-		err = item.Set(client)
+		err = item.Set()
 	} else {
-		err = item.Remove(client)
+		err = item.Remove()
 		if err == nil {
 			item.Sub = strings.ToLower(r.FormValue("subreddit"))
-			err = item.Set(client)
+			err = item.Set()
 		}
 	}
 
@@ -189,7 +189,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
@@ -207,7 +207,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
 
-	err = item.Remove(client)
+	err = item.Remove()
 	if web.CheckErr(templateData, err, "Failed removing item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}

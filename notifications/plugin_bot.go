@@ -14,8 +14,8 @@ import (
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberAdd), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerBefore(HandleChannelUpdate, eventsystem.EventChannelUpdate, bot.StateHandlerPtr)
 }
 
@@ -29,12 +29,10 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 
 	gs := bot.State.Guild(true, evt.GuildID)
 
-	client := bot.ContextRedis(evtData.Context())
-
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled && !evt.User.Bot {
 
-		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(client, config.JoinDMMsg)
+		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(config.JoinDMMsg)
 
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID).Warn("Failed parsing/executing dm template")
@@ -52,7 +50,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 			return
 		}
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(client, chanMsg)
+		msg, err := templates.NewContext(gs, nil, gs.MemberCopy(true, evt.Member.User.ID)).Execute(chanMsg)
 		if err != nil {
 			log.WithError(err).WithField("guild", gs.ID).Warn("Failed parsing/executing join template")
 		} else {
@@ -84,9 +82,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 	}
 	chanMsg := config.LeaveMsgs[rand.Intn(len(config.LeaveMsgs))]
 
-	client := bot.ContextRedis(evt.Context())
-
-	msg, err := templates.NewContext(gs, nil, dstate.MSFromDGoMember(gs, memberRemove.Member)).Execute(client, chanMsg)
+	msg, err := templates.NewContext(gs, nil, dstate.MSFromDGoMember(gs, memberRemove.Member)).Execute(chanMsg)
 	if err != nil {
 		log.WithError(err).WithField("guild", gs.ID).Warn("Failed parsing/executing leave template")
 		return

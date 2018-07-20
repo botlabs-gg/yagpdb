@@ -5,7 +5,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/pkg/errors"
 	"strings"
 	"text/template"
@@ -57,7 +56,6 @@ type Context struct {
 
 	ContextFuncs map[string]interface{}
 	Data         map[string]interface{}
-	Redis        *redis.Client
 
 	MentionEveryone  bool
 	MentionHere      bool
@@ -119,7 +117,7 @@ func (c *Context) setupBaseData() {
 	}
 }
 
-func (c *Context) Execute(redisClient *redis.Client, source string) (string, error) {
+func (c *Context) Execute(source string) (string, error) {
 	if c.Msg == nil {
 		// Construct a fake message
 		c.Msg = new(discordgo.Message)
@@ -134,8 +132,6 @@ func (c *Context) Execute(redisClient *redis.Client, source string) (string, err
 	if c.GS != nil {
 		c.GS.RUnlock()
 	}
-
-	c.Redis = redisClient
 
 	tmpl := template.New("")
 	tmpl.Funcs(StandardFuncMap)

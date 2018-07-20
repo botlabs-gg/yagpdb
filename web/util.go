@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
@@ -36,16 +35,6 @@ func DiscordSessionFromContext(ctx context.Context) *discordgo.Session {
 			return cast
 		}
 	}
-	return nil
-}
-
-func RedisClientFromContext(ctx context.Context) *redis.Client {
-	if val := ctx.Value(common.ContextKeyRedis); val != nil {
-		if cast, ok := val.(*redis.Client); ok {
-			return cast
-		}
-	}
-
 	return nil
 }
 
@@ -131,12 +120,11 @@ func SucessAlert(args ...interface{}) *Alert {
 }
 
 // Returns base context data for control panel plugins
-func GetBaseCPContextData(ctx context.Context) (*redis.Client, *discordgo.Guild, TemplateData) {
-	client := RedisClientFromContext(ctx)
+func GetBaseCPContextData(ctx context.Context) (*discordgo.Guild, TemplateData) {
 	guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 	templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
 
-	return client, guild, templateData
+	return guild, templateData
 }
 
 // Checks and error and logs it aswell as adding it to the alerts

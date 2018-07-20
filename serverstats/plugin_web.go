@@ -33,7 +33,7 @@ func (p *Plugin) InitWeb() {
 	statsCPMux.Handle(pat.Get(""), cpGetHandler)
 	statsCPMux.Handle(pat.Get("/"), cpGetHandler)
 
-	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
+	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
 	statsCPMux.Handle(pat.Get("/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
 
 	// Public
@@ -53,7 +53,7 @@ func publicHandler(inner publicHandlerFunc, public bool) web.ControllerHandlerFu
 
 // Somewhat dirty - should clean up this mess sometime
 func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	var config ServerStatsConfig
 	err := configstore.Cached.GetGuildConfig(r.Context(), activeGuild.ID, &config)
@@ -70,8 +70,8 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	return templateData, nil
 }
 
-func HandleStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, ag, templateData := web.GetBaseCPContextData(r.Context())
+func HandleSaveStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
 
@@ -98,7 +98,7 @@ func publicHandlerJson(inner publicHandlerFuncJson, public bool) web.CustomHandl
 }
 
 func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
-	client, activeGuild, _ := web.GetBaseCPContextData(r.Context())
+	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	conf, err := GetConfig(r.Context(), activeGuild.ID)
 	if err != nil {
@@ -111,7 +111,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return nil
 	}
 
-	stats, err := RetrieveFullStats(client, activeGuild.ID)
+	stats, err := RetrieveFullStats(activeGuild.ID)
 	if err != nil {
 		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)

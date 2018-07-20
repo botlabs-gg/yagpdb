@@ -38,7 +38,7 @@ func (p *Plugin) InitWeb() {
 
 // The moderation page itself
 func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	if _, ok := templateData["ModConfig"]; !ok {
 		config, err := GetConfig(activeGuild.ID)
@@ -54,13 +54,13 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 // Update the settings
 func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/moderation/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	templateData["ModConfig"] = newConfig
 
-	err := newConfig.Save(client, activeGuild.ID)
+	err := newConfig.Save(activeGuild.ID)
 
 	return templateData, err
 }

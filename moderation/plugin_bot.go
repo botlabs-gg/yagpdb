@@ -14,7 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
@@ -45,9 +45,9 @@ func (p *Plugin) BotInit() {
 	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
 	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
 
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleMemberJoin)), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(bot.RedisWrapper(LockMemberMuteMW(HandleGuildMemberUpdate)), eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandler(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
@@ -177,19 +177,24 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		user = evt.GuildBanAdd().User
 		action = MABanned
 
-		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyBannedUser(guildID, user.ID)).Int(); i > 0 {
+		var i int
+		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
+		if i > 0 {
 			// The bot banned the user earlier, don't make duplicate entries in the modlog
-			bot.ContextRedis(evt.Context()).Cmd("DEL", RedisKeyBannedUser(guildID, user.ID))
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
 			return
 		}
+
 	case eventsystem.EventGuildBanRemove:
 		action = MAUnbanned
 		user = evt.GuildBanRemove().User
 		guildID = evt.GuildBanRemove().GuildID
 
-		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyUnbannedUser(guildID, user.ID)).Int(); i > 0 {
-			// The bot wa the one that performed the unban
-			bot.ContextRedis(evt.Context()).Cmd("DEL", RedisKeyUnbannedUser(guildID, user.ID))
+		var i int
+		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
+		if i > 0 {
+			// The bot was the one that performed the unban
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
 			botPerformed = true
 		}
 
@@ -243,26 +248,19 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 			panic("Unknown event in lock memebr mute middleware")
 		}
 
-		client := bot.ContextRedis(evt.Context())
-
 		// If there's less than 2 seconds of the mute left, don't bother doing anything
-		muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(guild, userID)).Int()
-		if muteLeft < 2 {
+		var muteLeft int
+		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		if muteLeft < 5 {
 			return
 		}
 
-		lockKey := RedisKeyLockedMute(guild, userID)
-		err := common.BlockingLockRedisKey(client, lockKey, time.Second*15, 15)
-		if err != nil {
-			logrus.WithError(err).WithField("guild", guild).WithField("user", userID).Error("Failed locking mute")
-			return
-		}
+		LockMute(userID)
+		defer UnlockMute(userID)
 
-		defer common.UnlockRedisKey(client, lockKey)
-
-		// The situation may have changed at th is point, check again
-		muteLeft, _ = client.Cmd("TTL", RedisKeyMutedUser(guild, userID)).Int()
-		if muteLeft < 10 {
+		// The situation may have changed at this point, check again
+		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		if muteLeft < 5 {
 			return
 		}
 
@@ -473,7 +471,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
-			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), true)
+			err := BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), true)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -516,7 +514,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				target = targetMember.DGoUser()
 			}
 
-			err := BanUserWithDuration(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
+			err := BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return cast.Message.Message, err
@@ -583,7 +581,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
+			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err
@@ -619,7 +617,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
+			err = MuteUnmuteUser(config, false, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
 			if err != nil {
 				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
 					return "API Error: " + cast.Message.Message, err
@@ -852,7 +850,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
 
 			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Args[0].Int()).Update(
-				"message", fmt.Sprintf("%s (updated by %s#%s (%s))", parsed.Args[1].Str(), parsed.Msg.Author.Username, parsed.Msg.Author.Discriminator, parsed.Msg.Author.ID)).RowsAffected
+				"message", fmt.Sprintf("%s (updated by %s#%s (%d))", parsed.Args[1].Str(), parsed.Msg.Author.Username, parsed.Msg.Author.Discriminator, parsed.Msg.Author.ID)).RowsAffected
 
 			if rows < 1 {
 				return "Failed updating, most likely couldn't find the warning", nil

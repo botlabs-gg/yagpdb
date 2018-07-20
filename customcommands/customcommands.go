@@ -6,7 +6,7 @@ import (
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"sort"
 )
@@ -77,13 +77,13 @@ type CustomCommand struct {
 	Roles        []int64 `json:"roles" schema:"roles"`
 }
 
-func (cc *CustomCommand) Save(client *redis.Client, guildID int64) error {
+func (cc *CustomCommand) Save(guildID int64) error {
 	serialized, err := json.Marshal(cc.Migrate())
 	if err != nil {
 		return err
 	}
 
-	err = client.Cmd("HSET", KeyCommands(guildID), cc.ID, serialized).Err
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", KeyCommands(guildID), cc.ID, serialized))
 	return err
 }
 
@@ -148,18 +148,20 @@ func (cc *CustomCommand) Migrate() *CustomCommand {
 	return cc
 }
 
-func GetCommands(client *redis.Client, guild int64) ([]*CustomCommand, int, error) {
-	hash, err := client.Cmd("HGETALL", "custom_commands:"+discordgo.StrID(guild)).Map()
+func GetCommands(guild int64) ([]*CustomCommand, int, error) {
+	var hashMap map[string]string
+
+	err := common.RedisPool.Do(radix.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
 	if err != nil {
 		return nil, 0, err
 	}
 
 	highest := 0
-	result := make([]*CustomCommand, len(hash))
+	result := make([]*CustomCommand, len(hashMap))
 
 	// Decode the commands, and also calculate the highest id
 	i := 0
-	for k, raw := range hash {
+	for k, raw := range hashMap {
 		var decoded *CustomCommand
 		err = json.Unmarshal([]byte(raw), &decoded)
 		if err != nil {
