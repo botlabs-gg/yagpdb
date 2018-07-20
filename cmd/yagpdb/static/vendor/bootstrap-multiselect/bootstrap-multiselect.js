@@ -474,6 +474,14 @@
                 if(!that.dropdownOptionsBuilt){
                     that.buildDropdownOptions();
                 }
+
+                that.$ul.css({
+                    'max-height': window.innerHeight-25 > 300 ? window.innerHeight-25 : 300,
+                    'overflow-y': 'auto',
+                    'overflow-x': 'hidden'
+                });
+
+                opts = { };
             })
             
             if (this.$select.attr('class') && this.options.inheritClass) {

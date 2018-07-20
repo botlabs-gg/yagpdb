@@ -192,3 +192,14 @@ html.dark p  {
 html.sidebar-left-collapsed #nav-footer {
   display: none;
 }
+
+/*FUCK YOU SHITTY HTML STANDARDS YOU PIECE OF FUCKING SHIT*/
+.multiselect-popout-hack .dropdown-menu {
+  position: fixed !important;
+  left: 10% !important;
+  right: 10% !important;
+  top: 0px !important;
+  bottom: 0px !important;
+
+  transform: translate3d(0px, 0px, 0px) !important;
+}
