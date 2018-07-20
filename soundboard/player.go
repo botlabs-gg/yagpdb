@@ -126,7 +126,7 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 			if err != io.EOF {
 				return vc, common.ErrWithCaller(err)
 			}
-			return vc, nil
+			break
 		}
 
 		err = sendAudio(vc, frame)
