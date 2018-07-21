@@ -28,6 +28,44 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 	return dict, nil
 }
 
+func StringKeyDictionary(values ...interface{}) (map[string]interface{}, error) {
+	if len(values)%2 != 0 {
+		return nil, errors.New("invalid dict call")
+	}
+	dict := make(map[string]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key := values[i]
+		s, ok := key.(string)
+		if !ok {
+			return nil, errors.New("Only string keys supported in sdict")
+		}
+
+		dict[s] = values[i+1]
+	}
+
+	return dict, nil
+}
+
+func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
+	dict, err := StringKeyDictionary(values...)
+	if err != nil {
+		return nil, err
+	}
+
+	encoded, err := json.Marshal(dict)
+	if err != nil {
+		return nil, err
+	}
+
+	var embed *discordgo.MessageEmbed
+	err = json.Unmarshal(encoded, &embed)
+	if err != nil {
+		return nil, err
+	}
+
+	return embed, nil
+}
+
 // indirect is taken from 'text/template/exec.go'
 func indirect(v reflect.Value) (rv reflect.Value, isNil bool) {
 	for ; v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface; v = v.Elem() {

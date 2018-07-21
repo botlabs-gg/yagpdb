@@ -195,6 +195,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		out += common.EscapeSpecialMentions(err.Error())
 	}
 
+	for _, v := range tmplCtx.EmebdsToSend {
+		common.BotSession.ChannelMessageSendEmbed(mc.ChannelID, v)
+	}
+
 	if tmplCtx.DelTrigger {
 		go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelTriggerDelay), mc.ChannelID, mc.ID)
 	}

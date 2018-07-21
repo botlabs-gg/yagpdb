@@ -14,7 +14,7 @@ import (
 var ErrTooManyCalls = errors.New("Too many calls to this function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
-	if c.IncreaseCheckCallCounter("send_dm", 1) {
+	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) {
 		return ""
 	}
 
@@ -23,9 +23,83 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	memberID := c.MS.ID
 	c.GS.RUnlock()
 
+	info := fmt.Sprintf("Custom Command DM From the server **%s**", gName)
+
+	// Send embed
+	if embed, ok := s[0].(*discordgo.MessageEmbed); ok {
+		embed.Footer = &discordgo.MessageEmbedFooter{
+			Text: info,
+		}
+
+		bot.SendDMEmbed(memberID, embed)
+		return ""
+	}
+
 	msg := fmt.Sprint(s...)
-	msg = fmt.Sprintf("Custom Command DM From the server **%s**:\n%s", gName, msg)
+	msg = fmt.Sprintf("%s\n%s", info, msg)
 	bot.SendDM(memberID, msg)
+	return ""
+}
+
+func (c *Context) tmplSendMessage(channel interface{}, msg interface{}) string {
+	if c.IncreaseCheckCallCounter("send_message", 3) {
+		return ""
+	}
+
+	var cid int64
+	verifiedExistence := false
+
+	c.GS.RLock()
+	// Look for the channel
+	if channel == nil && c.CS != nil {
+		// No channel passed, assume current channel
+		cid = c.CS.ID
+	} else if channel != nil {
+		switch t := channel.(type) {
+		case int, int64:
+			// Channel id passed
+			cid = ToInt64(t)
+		case string:
+			parsed, err := strconv.ParseInt(t, 10, 64)
+			if err == nil {
+				// Channel id passed in string format
+				cid = parsed
+			} else {
+				// Channel name, look for it
+				for _, v := range c.GS.Channels {
+					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
+						cid = v.ID
+						verifiedExistence = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if !verifiedExistence {
+		// Make sure the channel is part of the guild
+		for k, _ := range c.GS.Channels {
+			if k == cid {
+				verifiedExistence = true
+				break
+			}
+		}
+	}
+	c.GS.RUnlock()
+
+	if cid == 0 || !verifiedExistence {
+		return ""
+	}
+
+	if embed, ok := msg.(*discordgo.MessageEmbed); ok {
+		common.BotSession.ChannelMessageSendEmbed(cid, embed)
+		return ""
+	}
+
+	strMsg := fmt.Sprint(msg)
+	common.BotSession.ChannelMessageSend(cid, strMsg)
+
 	return ""
 }
 

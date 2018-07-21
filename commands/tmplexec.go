@@ -178,6 +178,7 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 	data.MsgStrippedPrefix = rest
 
 	data.Cmd = foundCmd
+	data.ContainerChain = []*dcmd.Container{CommandSystem.Root}
 
 	cast := foundCmd.Command.(*YAGCommand)
 
@@ -197,7 +198,11 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 	case string:
 		return v, nil
 	case *discordgo.MessageEmbed:
-		return common.FallbackEmbed(v), nil
+		ctx.EmebdsToSend = append(ctx.EmebdsToSend, v)
+		return "", nil
+	case []*discordgo.MessageEmbed:
+		ctx.EmebdsToSend = append(ctx.EmebdsToSend, v...)
+		return "", nil
 	}
 
 	return "", nil

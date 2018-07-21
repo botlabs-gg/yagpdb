@@ -13,6 +13,8 @@ import (
 var (
 	StandardFuncMap = map[string]interface{}{
 		"dict":       Dictionary,
+		"sdict":      StringKeyDictionary,
+		"cembed":     CreateEmbed,
 		"json":       tmplJson,
 		"in":         in,
 		"title":      strings.Title,
@@ -69,6 +71,8 @@ type Context struct {
 	DelResponseDelay int
 
 	Counters map[string]int
+
+	EmebdsToSend []*discordgo.MessageEmbed
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -168,6 +172,7 @@ func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 
 func baseContextFuncs(c *Context) {
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
+	c.ContextFuncs["sendMessage"] = c.tmplSendMessage
 	c.ContextFuncs["mentionEveryone"] = c.tmplMentionEveryone
 	c.ContextFuncs["mentionHere"] = c.tmplMentionHere
 	c.ContextFuncs["mentionRoleName"] = c.tmplMentionRoleName
