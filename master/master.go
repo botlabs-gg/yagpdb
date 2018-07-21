@@ -32,7 +32,7 @@ func StartSlave() {
 	logrus.Println("Starting slave")
 
 	// TODO: Make these args configurable
-	cmd := exec.Command("./yagpdb", "-bot", "-syslog")
+	cmd := exec.Command("./capturepanics", "./yagpdb", "-bot", "-syslog")
 	cmd.Env = os.Environ()
 
 	wd, err := os.Getwd()
