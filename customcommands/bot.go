@@ -96,7 +96,7 @@ func FindCommands(ccs []*CustomCommand, data *dcmd.Data) (foundCCS []*CustomComm
 func StringCommands(ccs []*CustomCommand) string {
 	out := ""
 	for _, cc := range ccs {
-		out += fmt.Sprintf("%s: `%s`\n", cc.Trigger, cc.TriggerType.String())
+		out += fmt.Sprintf("`%s`: %s\n", cc.Trigger, cc.TriggerType.String())
 	}
 
 	return out
