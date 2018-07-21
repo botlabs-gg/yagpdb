@@ -32,6 +32,7 @@ var (
 		"toInt64":    ToInt64,
 		"formatTime": tmplFormatTime,
 		"slice":      slice,
+		"cslice":     CreateSlice,
 	}
 
 	contextSetupFuncs = []ContextSetupFunc{

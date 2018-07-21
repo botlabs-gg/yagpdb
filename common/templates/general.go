@@ -46,6 +46,15 @@ func StringKeyDictionary(values ...interface{}) (map[string]interface{}, error) 
 	return dict, nil
 }
 
+func CreateSlice(values ...interface{}) ([]interface{}, error) {
+	slice := make([]interface{}, len(values))
+	for i := 0; i < len(values); i++ {
+		slice[i] = values[i]
+	}
+
+	return slice, nil
+}
+
 func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 	dict, err := StringKeyDictionary(values...)
 	if err != nil {
