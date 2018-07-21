@@ -72,58 +72,7 @@
         </div>
         <!-- /.col-lg-12 -->
     </div>
-<!-- /.row -->            
-<script type="text/javascript">
-    var commands = JSON.parse("{{json .Commands}}")
-
-    function checkAll(what){
-        console.log("Enabling all", what)
-        $("."+what).each(function(i, item){
-            item.checked = true;
-        })
-    }   
-
-    function uncheckAll(what){
-        $("."+what).each(function(i, item){
-            item.checked = false;
-        })
-    }
-
-    var copybufEnable = null;
-    var copybufAutoDel = null;
-    var copybufRole = null;
-    function copy(channel){
-        copybufEnable = [];
-        copybufAutoDel = [];
-        copybufRole = [];
-        $("."+channel+"-enabled").each(function(i, item){
-            copybufEnable[i] = item.checked;
-        })
-        $("."+channel+"-autodelete").each(function(i, item){
-            copybufAutoDel[i] = item.checked;
-        })
-        $("."+channel+"-role").each(function(i, item){
-            copybufRole[i] = $(item).val();
-        })
-    }
-
-    function paste(channel){
-        if(copybufAutoDel == null){
-            alert("Nothing is copied"); 
-            return;
-        }
-
-        $("."+channel+"-enabled").each(function(i, item){
-            item.checked = copybufEnable[i];
-        })
-        $("."+channel+"-autodelete").each(function(i, item){
-            item.checked = copybufAutoDel[i];
-        })
-        $("."+channel+"-role").each(function(i, item){
-            $(item).val(copybufRole[i]);
-        })
-    }
-</script>
+<!-- /.row -->
 
 {{template "cp_footer" .}}
 
@@ -175,7 +124,9 @@
     <div class="form-row">
         <div class="form-check col-md-2 mt-3">
             <input type="checkbox" id="commands-enabled-{{.Override.ID}}" name="CommandsEnabled" {{if .Override.CommandsEnabled}}checked{{end}}>
-            <label for="commands-enabled-{{.Override.ID}}">All commands enabled in this channel override?</label>
+            <label for="commands-enabled-{{.Override.ID}}">
+                All commands enabled?{{if.Override.Global}}<br><b>Warning: disabling this will disable all commands unless enabled in other overrides</b>{{end}}
+            </label>
         </div>
         <div class="form-group col-md-5">
             <label>Autodelete trigger after (seconds)</label>
@@ -238,8 +189,6 @@
 {{else}}
 <form data-async-form method="post" action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/new">
 {{end}}
-    
-
     <div class="card card-default border border-rounded border-secondary">
         <header class="card-header">
             <h4 class="card-title m-0">
@@ -272,7 +221,9 @@
             <div class="form-row">
                 <div class="form-check col-md-2 pt-4 pl-4">
                     <input class="form-check-input"  type="checkbox" {{if .Override.CommandsEnabled}}checked{{end}} id="cmd-override-commands-enabled-{{if.Override}}{{.Override.ID}}{{else}}{{.Parent.ID}}-new{{end}}" name="CommandsEnabled">
-                    <label class="form-check-label" for="cmd-override-commands-enabled-{{if.Override}}{{.Override.ID}}{{else}}{{.Parent.ID}}-new{{end}}">Specified commands enabled in this command override?</label>
+                    <label class="form-check-label" for="cmd-override-commands-enabled-{{if.Override}}{{.Override.ID}}{{else}}{{.Parent.ID}}-new{{end}}">
+                        Specified commands enabled in this command override?
+                    </label>
                 </div>
                 <div class="form-group col-md-5">
                     <label>Autodelete trigger after (seconds)</label>
