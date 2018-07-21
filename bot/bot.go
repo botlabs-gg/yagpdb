@@ -86,6 +86,14 @@ func Run() {
 		session.LogLevel = discordgo.LogInformational
 		session.SyncEvents = true
 
+		// Certain discordgo internals expect this to be present
+		// but in case of shard migration it's not, so manually assign it here
+		session.State.Ready = discordgo.Ready{
+			User: &discordgo.SelfUser{
+				User: common.BotUser,
+			},
+		}
+
 		return
 	}
 
