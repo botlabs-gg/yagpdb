@@ -107,7 +107,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
-			if dutil.IsRoleAbove(role, highestBotRole) {
+			if dutil.IsRoleAbove(role, highestBotRole) || role.ID == highestBotRole.ID {
 				output += " disabled"
 				optName += " (role is above bot)"
 			}
@@ -131,6 +131,8 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 		if k == len(roles)-1 {
 			break
 		}
+
+		// Allow the selection of managed roles in cases where we do not assign them (for filters and such for example)
 		if role.Managed && highestBotRole != nil {
 			continue
 		}
@@ -151,7 +153,7 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
-			if dutil.IsRoleAbove(role, highestBotRole) {
+			if dutil.IsRoleAbove(role, highestBotRole) || highestBotRole.ID == role.ID {
 				if !optIsSelected {
 					output += " disabled"
 				}
@@ -202,8 +204,6 @@ func tmplChannelOpts(channelType discordgo.ChannelType, optionPrefix string) int
 func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string) func(channels []*discordgo.Channel, selections []int64) template.HTML {
 	return func(channels []*discordgo.Channel, selections []int64) template.HTML {
 
-		const unknownName = "Deleted channel"
-
 		var builder strings.Builder
 
 		channelOpt := func(id int64, name string) {
@@ -215,19 +215,6 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 			}
 
 			builder.WriteString(">" + template.HTMLEscapeString(name) + "</option>")
-		}
-
-		// Add options for missing channels (deleted channels and such)
-	OUTER:
-		for _, sel := range selections {
-			for _, c := range channels {
-				if sel == c.ID {
-					continue OUTER
-				}
-			}
-
-			// Not found, a deleted channel
-			channelOpt(sel, unknownName)
 		}
 
 		// Channels without a category
@@ -261,64 +248,3 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 		return template.HTML(builder.String())
 	}
 }
-
-// // DEPRECATED
-// // tmplChannelDropdown is a template function for generating channel dropdown options
-// // channels: slice of channels to display options for
-// // args are optinal and in this order:
-// // 1. current selected channelID
-// // 2. default empty display name
-// // 3. default unknown display name
-// func tmplChannelDropdown(channelType discordgo.ChannelType) func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
-
-// 	return func(channels []*discordgo.Channel, args ...interface{}) template.HTML {
-// 		hasCurrentSelected := len(args) > 0
-// 		var currentSelected int64
-// 		if hasCurrentSelected {
-// 			currentSelected = templates.ToInt64(args[0])
-// 		}
-
-// 		hasEmptyName := len(args) > 1
-// 		emptyName := ""
-// 		if hasEmptyName {
-// 			emptyName = templates.ToString(args[1])
-// 		}
-
-// 		hasUnknownName := len(args) > 2
-// 		unknownName := "Unknown channel (deleted most likely)"
-// 		if hasUnknownName {
-// 			unknownName = templates.ToString(args[2])
-// 		}
-
-// 		output := ""
-// 		if hasEmptyName {
-// 			output += `<option value=""`
-// 			if currentSelected == 0 {
-// 				output += `selected`
-// 			}
-// 			output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
-// 		}
-
-// 		found := false
-// 		for _, channel := range channels {
-// 			if channel.Type != channelType {
-// 				continue
-// 			}
-
-// 			output += `<option value="` + discordgo.StrID(channel.ID) + `"`
-// 			if channel.ID == currentSelected {
-// 				output += " selected"
-// 				found = true
-// 			}
-
-// 			optName := template.HTMLEscapeString(channel.Name)
-// 			output += ">#" + optName + "</option>\n"
-// 		}
-
-// 		if !found && currentSelected != 0 {
-// 			output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
-// 		}
-
-// 		return template.HTML(output)
-// 	}
-// }
