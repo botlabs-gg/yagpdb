@@ -205,51 +205,9 @@ func listenSignal() {
 
 	if !common.Testing {
 		log.Info("Sleeping a little longer")
-		time.Sleep(time.Second * 4)
+		time.Sleep(time.Second * 2)
 	}
 
 	log.Info("Bye..")
 	os.Exit(0)
 }
-
-// type SQLMigrater interface {
-// 	MigrateStorage(guildIDInt int64) error
-// 	Name() string
-// }
-
-// func migrate() error {
-// 	plugins := make([]SQLMigrater, 0)
-
-// 	for _, v := range common.Plugins {
-// 		cast, ok := v.(SQLMigrater)
-// 		if ok {
-// 			plugins = append(plugins, cast)
-// 			log.Info("Migrating ", cast.Name())
-// 		}
-// 	}
-
-// 	guilds, err := client.Cmd("SMEMBERS", "connected_guilds").List()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	started := time.Now()
-// 	for _, g := range guilds {
-
-// 		parsed, err := strconv.ParseInt(g, 10, 64)
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		for _, p := range plugins {
-// 			err = p.MigrateStorage(client, parsed)
-// 			if err != nil {
-// 				log.WithError(err).Error("Error migrating ", p.Name())
-// 			}
-// 		}
-// 	}
-// 	elapsed := time.Since(started)
-// 	log.Info("Migrated ", len(guilds), " guilds in ", elapsed.String())
-
-// 	return nil
-// }
