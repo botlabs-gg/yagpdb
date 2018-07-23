@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS role_menus (
 	role_group_id bigint REFERENCES role_groups(id) ON DELETE CASCADE
 );
 
+ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS disable_send_dm BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS remove_role_on_reaction_remove BOOLEAN NOT NULL DEFAULT false;
+
 CREATE TABLE IF NOT EXISTS role_menu_options (
 	id bigserial NOT NULL PRIMARY KEY,
 	role_command_id bigint REFERENCES role_commands(id) ON DELETE CASCADE,
@@ -51,4 +54,5 @@ CREATE TABLE IF NOT EXISTS role_menu_options (
 );
 
 CREATE INDEX IF NOT EXISTS role_menu_options_role_command_idx ON role_menu_options(role_command_id);
+
 `

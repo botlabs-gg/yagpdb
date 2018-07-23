@@ -52,7 +52,8 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		OwnerID:   parsed.Msg.Author.ID,
 		ChannelID: parsed.Msg.ChannelID,
 
-		OwnMessage: true,
+		OwnMessage:    true,
+		DisableSendDM: parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool),
 	}
 
 	if group != nil {
@@ -119,6 +120,11 @@ func UpdateMenu(parsed *dcmd.Data, existing *models.RoleMenu) (interface{}, erro
 	}
 
 	existing.State = RoleMenuStateSettingUp
+
+	if parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool) {
+		existing.DisableSendDM = !existing.DisableSendDM
+	}
+
 	existing.UpdateG()
 
 	opts, err := existing.RoleMenuOptionsG().All()
@@ -168,7 +174,9 @@ func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, f
 	if nextCmd == nil {
 		rm.State = RoleMenuStateDone
 		rm.UpdateG()
-		return "Done setting up!", nil
+
+		nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu -nodm -m %d`", rm.DisableSendDM, rm.MessageID)
+		return fmt.Sprintf("Done setting up! you can delete all the messages now (except for the menu itself)\n\n%s", nodmFlagHelp), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
@@ -365,14 +373,20 @@ func MemberChooseOption(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd, g
 	if err != nil {
 		resp, err = HumanizeAssignError(gs, err)
 	} else {
-		if given {
-			resp = "Gave you the role!"
-		} else {
-			resp = "Took away the role!"
+		if !rm.DisableSendDM {
+			if given {
+				resp = "Gave you the role!"
+			} else {
+				resp = "Took away the role!"
+			}
 		}
 	}
 
-	return cmd.Name + ": " + resp, err
+	if resp != "" {
+		resp = cmd.Name + ": " + resp
+	}
+
+	return
 }
 
 func OptionCommandPairLessFunc(slice []*OptionCommandPair) func(int, int) bool {

@@ -22,37 +22,43 @@ import (
 
 // RoleMenu is an object representing the database table.
 type RoleMenu struct {
-	MessageID         int64      `boil:"message_id" json:"message_id" toml:"message_id" yaml:"message_id"`
-	GuildID           int64      `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	ChannelID         int64      `boil:"channel_id" json:"channel_id" toml:"channel_id" yaml:"channel_id"`
-	OwnerID           int64      `boil:"owner_id" json:"owner_id" toml:"owner_id" yaml:"owner_id"`
-	OwnMessage        bool       `boil:"own_message" json:"own_message" toml:"own_message" yaml:"own_message"`
-	State             int64      `boil:"state" json:"state" toml:"state" yaml:"state"`
-	NextRoleCommandID null.Int64 `boil:"next_role_command_id" json:"next_role_command_id,omitempty" toml:"next_role_command_id" yaml:"next_role_command_id,omitempty"`
-	RoleGroupID       null.Int64 `boil:"role_group_id" json:"role_group_id,omitempty" toml:"role_group_id" yaml:"role_group_id,omitempty"`
+	MessageID                  int64      `boil:"message_id" json:"message_id" toml:"message_id" yaml:"message_id"`
+	GuildID                    int64      `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	ChannelID                  int64      `boil:"channel_id" json:"channel_id" toml:"channel_id" yaml:"channel_id"`
+	OwnerID                    int64      `boil:"owner_id" json:"owner_id" toml:"owner_id" yaml:"owner_id"`
+	OwnMessage                 bool       `boil:"own_message" json:"own_message" toml:"own_message" yaml:"own_message"`
+	State                      int64      `boil:"state" json:"state" toml:"state" yaml:"state"`
+	NextRoleCommandID          null.Int64 `boil:"next_role_command_id" json:"next_role_command_id,omitempty" toml:"next_role_command_id" yaml:"next_role_command_id,omitempty"`
+	RoleGroupID                null.Int64 `boil:"role_group_id" json:"role_group_id,omitempty" toml:"role_group_id" yaml:"role_group_id,omitempty"`
+	DisableSendDM              bool       `boil:"disable_send_dm" json:"disable_send_dm" toml:"disable_send_dm" yaml:"disable_send_dm"`
+	RemoveRoleOnReactionRemove bool       `boil:"remove_role_on_reaction_remove" json:"remove_role_on_reaction_remove" toml:"remove_role_on_reaction_remove" yaml:"remove_role_on_reaction_remove"`
 
 	R *roleMenuR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L roleMenuL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var RoleMenuColumns = struct {
-	MessageID         string
-	GuildID           string
-	ChannelID         string
-	OwnerID           string
-	OwnMessage        string
-	State             string
-	NextRoleCommandID string
-	RoleGroupID       string
+	MessageID                  string
+	GuildID                    string
+	ChannelID                  string
+	OwnerID                    string
+	OwnMessage                 string
+	State                      string
+	NextRoleCommandID          string
+	RoleGroupID                string
+	DisableSendDM              string
+	RemoveRoleOnReactionRemove string
 }{
-	MessageID:         "message_id",
-	GuildID:           "guild_id",
-	ChannelID:         "channel_id",
-	OwnerID:           "owner_id",
-	OwnMessage:        "own_message",
-	State:             "state",
-	NextRoleCommandID: "next_role_command_id",
-	RoleGroupID:       "role_group_id",
+	MessageID:                  "message_id",
+	GuildID:                    "guild_id",
+	ChannelID:                  "channel_id",
+	OwnerID:                    "owner_id",
+	OwnMessage:                 "own_message",
+	State:                      "state",
+	NextRoleCommandID:          "next_role_command_id",
+	RoleGroupID:                "role_group_id",
+	DisableSendDM:              "disable_send_dm",
+	RemoveRoleOnReactionRemove: "remove_role_on_reaction_remove",
 }
 
 // roleMenuR is where relationships are stored.
@@ -66,9 +72,9 @@ type roleMenuR struct {
 type roleMenuL struct{}
 
 var (
-	roleMenuColumns               = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id"}
+	roleMenuColumns               = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "disable_send_dm", "remove_role_on_reaction_remove"}
 	roleMenuColumnsWithoutDefault = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id"}
-	roleMenuColumnsWithDefault    = []string{}
+	roleMenuColumnsWithDefault    = []string{"disable_send_dm", "remove_role_on_reaction_remove"}
 	roleMenuPrimaryKeyColumns     = []string{"message_id"}
 )
 

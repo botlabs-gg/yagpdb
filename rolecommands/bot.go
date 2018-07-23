@@ -31,6 +31,7 @@ func (p *Plugin) AddCommands() {
 			},
 			ArgSwitches: []*dcmd.ArgDef{
 				&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
+				&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
 			},
 			RunFunc: CmdFuncRoleMenu,
 		},
