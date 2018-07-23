@@ -203,3 +203,7 @@ html.sidebar-left-collapsed #nav-footer {
 
   transform: translate3d(0px, 0px, 0px) !important;
 }
+
+.multiselect-container {
+  top: 125px !important;
+}

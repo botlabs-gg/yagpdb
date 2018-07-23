@@ -476,7 +476,7 @@
                 }
 
                 that.$ul.css({
-                    'max-height': window.innerHeight-25 > 300 ? window.innerHeight-25 : 300,
+                    'max-height': window.innerHeight-125 > 300 ? window.innerHeight-125 : 300,
                     'overflow-y': 'auto',
                     'overflow-x': 'hidden'
                 });
