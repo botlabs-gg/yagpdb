@@ -570,6 +570,8 @@ function formSubmissionEvents(){
 				$(".tabs a[href='"+currentTab+"']").tab("show");
 			}	
 		});
+
+		$.magnificPopup.close();
 	}
 
 }

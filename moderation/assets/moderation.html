@@ -10,18 +10,6 @@
 
 <!-- /.row -->
 <form role="form" method="post" data-async-form>
-    <!-- <div class="row mb-4">
-        <div class="col-lg-12">
-            <section class="card">
-                <div class="card-body">
-                    <p>An set of moderation tools and commands to help you run a server.</p>
-                    <p>Commands for performing moderation actions such as kick and ban, as well as mutes, timed bans, warning, mass deleting messages and so on.<br>
-                    It is highly recommended to couple the moderation actions with the message logs, this was whenever your mods decide to perform actions on someone, a message log of the channel they ran the command in will be recorded and added to the mod log.</p>
-                    <p>The moderation actions coupled with the message logs has been one of the most useful tools for me personally when running servers with thousands of members.</p>
-                </div>
-            </section>
-        </div>
-    </div> -->
     <div class="row">
         <div class="col">
             <div class="tabs">
@@ -59,6 +47,34 @@
     </div>
     <!-- /.row -->            
 </form>
+<div id="clear-server-warnings-modal" class="modal-block modal-full-color modal-block-danger mfp-hide">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title">Danger!</h2>
+        </header>
+        <div class="card-body">
+            <div class="modal-wrapper">
+                <div class="modal-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="modal-text">
+                    <h4>Delete ALL server warnings?</h4>
+                    <p>This cannot be undone.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="card-footer">
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <form action="/manage/{{.ActiveGuild.ID}}/moderation/clear_server_warnings" data-async-form method="post">
+                        <button class="btn btn-default modal-dismiss">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete them all!</button>
+                    </form>
+                </div>
+            </div>
+        </footer>
+    </section>
+</div>
 <script>
 function MuteManagedChanged(){
     if($("#mute-managed").prop("checked")){
@@ -299,33 +315,44 @@ It is highly recommended to couple the moderation actions with the message logs,
 
 {{define "moderation_warn"}}
 <p>Allows you to put warnings on users that shows up in the modlog. Warnings of a user can be accessed through <code>warnings @user</code></p>
-<div class="form-check mb-2">
-    <input class="form-check-input" id="warn-cmd-enabled" type="checkbox" name="WarnCommandsEnabled" {{if .ModConfig.WarnCommandsEnabled}} checked{{end}}>
-    <label class="form-check-label" for="warn-cmd-enabled">
-        Warn commands enabled<br/>
-        Only users with manage messages permission can use this.(or with roles specified below)<br/>
-        <code>warn @user some reason</code><br/>
-        Creates a new warning for the user<br/>
-        <code>warnings @user</code><br/>
-        Displays a list of a specified user's warnings<br/>
-    </label>
+<div class="row">
+    <div class="col">
+        <div class="form-check mb-2">
+            <input class="form-check-input" id="warn-cmd-enabled" type="checkbox" name="WarnCommandsEnabled" {{if .ModConfig.WarnCommandsEnabled}} checked{{end}}>
+            <label class="form-check-label" for="warn-cmd-enabled">
+                Warn commands enabled<br/>
+                Only users with manage messages permission can use this.(or with roles specified below)<br/>
+                <code>warn @user some reason</code><br/>
+                Creates a new warning for the user<br/>
+                <code>warnings @user</code><br/>
+                Displays a list of a specified user's warnings<br/>
+            </label>
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label>Allow users with the following roles to use the warning commands</label><br>
+            <select class="multiselect" name="WarnCmdRoles" data-plugin-multiselect multiple="multiple">
+                {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.WarnCmdRoles}}
+            </select>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" id="warn-include-logs" type="checkbox" name="WarnIncludeChannelLogs" {{if .ModConfig.WarnIncludeChannelLogs}} checked{{end}}>
+            <label class="form-check-label" for="warn-include-logs">
+                Create logs in the channel that the command was run in when a user is warned
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" id="warn-add-modlog" type="checkbox" name="WarnSendToModlog" {{if .ModConfig.WarnSendToModlog}} checked{{end}}>
+            <label class="form-check-label" for="warn-add-modlog">
+                Send warnings to the modlog
+            </label>
+        </div>
+    </div>
 </div>
-<div class="form-group">
-    <label>Allow users with the following roles to use the warning commands</label><br>
-    <select class="multiselect" name="WarnCmdRoles" data-plugin-multiselect multiple="multiple">
-        {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.WarnCmdRoles}}
-    </select>
-</div>
-<div class="form-check">
-    <input class="form-check-input" id="warn-include-logs" type="checkbox" name="WarnIncludeChannelLogs" {{if .ModConfig.WarnIncludeChannelLogs}} checked{{end}}>
-    <label class="form-check-label" for="warn-include-logs">
-        Create logs in the channel that the command was run in when a user is warned
-    </label>
-</div>
-<div class="form-check">
-    <input class="form-check-input" id="warn-add-modlog" type="checkbox" name="WarnSendToModlog" {{if .ModConfig.WarnSendToModlog}} checked{{end}}>
-    <label class="form-check-label" for="warn-add-modlog">
-        Send warnings to the modlog
-    </label>
+<div class="row">
+    <div class="col">
+        <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#clear-server-warnings-modal">Delete all warnings</a>
+    </div>
 </div>
 {{end}}

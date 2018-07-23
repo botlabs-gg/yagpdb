@@ -29,11 +29,13 @@ func (p *Plugin) InitWeb() {
 
 	getHandler := web.ControllerHandler(HandleModeration, "cp_moderation")
 	postHandler := web.ControllerPostHandler(HandlePostModeration, getHandler, Config{}, "Updated moderation config")
+	clearServerWarnings := web.ControllerPostHandler(HandleClearServerWarnings, getHandler, nil, "Cleared all server warnings")
 
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
 	subMux.Handle(pat.Post(""), postHandler)
 	subMux.Handle(pat.Post("/"), postHandler)
+	subMux.Handle(pat.Post("/clear_server_warnings"), clearServerWarnings)
 }
 
 // The moderation page itself
@@ -63,4 +65,16 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	err := newConfig.Save(activeGuild.ID)
 
 	return templateData, err
+}
+
+// Clear all server warnigns
+func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/moderation/"
+
+	rows := common.GORM.Where("guild_id = ?", activeGuild.ID).Delete(WarningModel{}).RowsAffected
+	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " warnings!"))
+
+	return templateData, nil
 }
