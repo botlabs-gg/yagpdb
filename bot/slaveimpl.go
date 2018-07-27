@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -29,6 +30,7 @@ func (s *SlaveImpl) FullStart() {
 	if stateTmp != StateSoftStarting {
 		InitPlugins()
 		go ShardManager.Start()
+		go MonitorLoading()
 	}
 }
 
@@ -150,6 +152,7 @@ func (s *SlaveImpl) SendGuilds(shard int) {
 	wg.Wait()
 
 	runtime.GC()
+	debug.FreeOSMemory()
 
 	logrus.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
 
