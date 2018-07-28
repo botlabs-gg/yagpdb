@@ -32,6 +32,9 @@ RUN apk --no-cache add ca-certificates
 # Add ffmpeg for soundboard support
 RUN apk --no-cache add ffmpeg
 
+# Handle templates for plugins automatically
+COPY --from=builder /go/src/github.com/jonas747/yagpdb/*/assets/*.html templates/plugins/
+
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/templates templates/
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/posts posts/
 COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/static static/
