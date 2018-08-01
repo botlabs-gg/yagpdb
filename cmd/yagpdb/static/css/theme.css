@@ -1295,7 +1295,7 @@ a:active {
 }
 
 .sidebar-left .sidebar-header .sidebar-title {
-	background: #1D2127;
+	background: #171717;
 	color: #465162;
 	padding: 15px;
 	font-size: 12.8px;
@@ -6324,6 +6324,7 @@ html:not(.sidebar-left-collapsed).boxed .call-to-action .call-to-action-btn > sp
 	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 	        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 	border-radius: 5px;
+	margin: 5px 0;
 }
 
 .card-body-nopadding {
@@ -7995,6 +7996,12 @@ html:not(.sidebar-light) .datepicker.datepicker-dark table tbody tr td.day.new:h
 
 html.dark .input-daterange .input-group-addon {
 	text-shadow: none;
+}
+
+html.dark .input-group-text {
+    background-color: #282d36;
+    border: #282d36;
+    color: #eee;
 }
 
 html.dark .datepicker-dropdown {
@@ -13249,6 +13256,10 @@ html.dark .table .actions-hover a {
 	border-bottom-color: #EEE;
 }
 
+.nav-tabs .nav-item {
+  margin-bottom: 0;
+}
+
 .nav-tabs li:last-child .nav-link {
 	margin-right: 0;
 }
@@ -14418,7 +14429,9 @@ p.drop-caps.drop-caps-style-2:first-letter {
 	.userbox.show .dropdown-menu {
 		left: -5px !important;
 		padding: 43px 0 0 0;
-	}
+        top: -15px !important;
+        min-width: 9rem;
+    }
 }
 /* Header Dark - Userbox */
 html.dark .userbox:after,
