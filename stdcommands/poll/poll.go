@@ -57,7 +57,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 
 	author := data.Msg.Author
 	authorName := author.Username
-	if member, err := bot.GetMember(data.GS.ID, author.ID); err == nil && member.Nick != "" {
+	if member, err := bot.GetMember(data.GS.ID, author.ID); err == nil {
 		authorName = member.Nick
 	}
 
