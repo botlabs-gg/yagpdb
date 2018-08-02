@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/xml"
 	"errors"
-	"github.com/didip/tollbooth"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -59,10 +58,6 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
 	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed")
-	tbLimiter := tollbooth.NewLimiter(10, nil)
-	tbLimiter = tbLimiter.SetTokenBucketExpirationTTL(time.Second * 60)
-	tbLimiter = tbLimiter.SetMessage("You're doing that too much, wait a minute and try again")
-	addHandler = tollbooth.LimitHandler(tbLimiter, addHandler)
 
 	ytMux.Handle(pat.Post(""), addHandler)
 	ytMux.Handle(pat.Post("/"), addHandler)

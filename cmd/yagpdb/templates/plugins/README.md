@@ -1,1 +1,0 @@
-Run the "copy-templates" script to copy templates for all plugins into this dir

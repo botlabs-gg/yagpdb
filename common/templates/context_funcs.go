@@ -208,8 +208,9 @@ func (c *Context) tmplHasRoleName(name string) bool {
 		}
 	}
 
+	// Role not found, default to false
 	c.GS.RUnlock()
-	return true
+	return false
 }
 
 func (c *Context) tmplAddRoleID(role interface{}) (string, error) {

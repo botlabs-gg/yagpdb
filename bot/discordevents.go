@@ -123,6 +123,8 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 		return
 	}
 
+	setWaitingGuildReady(evt.GuildDelete().ID)
+
 	log.WithFields(log.Fields{
 		"g_name": evt.GuildDelete().Name,
 	}).Info("Left guild")
