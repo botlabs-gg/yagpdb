@@ -59,6 +59,26 @@
                 <p>If you stumble into any issue and need help then join the support server. (link at the top of the page)</p>
             </div>
         </section>
+        {{if .patreonActive}}
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Thanks to my patrons!</h2>
+            </header>
+            <div class="card-body">
+                <b>Quality patrons</b><br>
+                {{range .qualityPatrons}}
+                <img class="avatar" src="{{.Attributes.ImageURL}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{or .Attributes.Vanity .Attributes.FirstName}}"></img>
+                {{end}}
+                
+                <br>
+
+                <b>Patrons</b><br>
+                {{range .normalPatrons}}
+                <img class="avatar" src="{{.Attributes.ImageURL}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{or .Attributes.Vanity .Attributes.FirstName}}"></img>
+                {{end}}
+            </div>
+        </section>
+        {{end}}
         <section class="card">
             <header class="card-header">
                 <h2 class="card-title">Check out...</h2>

@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/jonas747/yagpdb/web/patreon"
 	"github.com/natefinch/lumberjack"
 	log "github.com/sirupsen/logrus"
 	"goji.io"
@@ -113,6 +114,8 @@ func Run() {
 	if parsedBlogChannel != 0 {
 		go discordblog.RunPoller(common.BotSession, parsedBlogChannel, time.Minute)
 	}
+
+	patreon.Run()
 
 	LoadAd()
 
