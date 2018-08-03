@@ -216,6 +216,10 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 			time.Sleep(time.Second * time.Duration(settings.DelResponseDelay))
 			ids := make([]int64, 0, len(replies))
 			for _, v := range replies {
+				if v == nil {
+					continue
+				}
+
 				ids = append(ids, v.ID)
 			}
 
