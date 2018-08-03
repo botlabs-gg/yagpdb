@@ -244,7 +244,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 }
 
 // checks if the specified user can execute the command, and if so returns the settings for said command
-func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.ChannelState) (canExecute bool, resp string, settings *CommandSettings, err error) {
+func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.ChannelState) (canExecute bool, resp string, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
 	var guild *dstate.GuildState
 
@@ -260,7 +260,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 
 		cop := cState.Copy(true, false)
 
-		settings, err = cs.GetSettings(cState.ID, cop.ParentID, guild.ID)
+		settings, err = yc.GetSettings(data, cState.ID, cop.ParentID, guild.ID)
 		if err != nil {
 			err = errors.WithMessage(err, "cs.GetSettings")
 			resp = "Bot is having isssues, contact the bot owner."
@@ -268,7 +268,7 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 		}
 
 		if !settings.Enabled {
-			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host)
+			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", yc.Name, common.Conf.Host)
 			return
 		}
 
@@ -311,14 +311,14 @@ func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 	}
 
 	// Check the command cooldown
-	cdLeft, err := cs.CooldownLeft(data.Msg.Author.ID)
+	cdLeft, err := yc.CooldownLeft(data.Msg.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
 		log.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
-		resp = fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeSpecialMentions(data.Msg.Author.Username), cdLeft, cs.Name)
+		resp = fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeSpecialMentions(data.Msg.Author.Username), cdLeft, yc.Name)
 		return
 	}
 
@@ -394,7 +394,7 @@ type CommandSettings struct {
 }
 
 // GetSettings returns the settings from the command, generated from the servers channel and command overrides
-func (cs *YAGCommand) GetSettings(channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
+func (cs *YAGCommand) GetSettings(data *dcmd.Data, channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
 
 	settings = &CommandSettings{}
 
@@ -438,21 +438,27 @@ func (cs *YAGCommand) GetSettings(channelID, channelParentID, guildID int64) (se
 		}
 	}
 
+	cmdFullName := cs.Name
+	if len(data.ContainerChain) > 1 {
+		lastContainer := data.ContainerChain[len(data.ContainerChain)-1]
+		cmdFullName = lastContainer.Names[0] + " " + cmdFullName
+	}
+
 	// Assign the global settings, if existing
 	if global != nil {
-		cs.fillSettings(global, settings)
+		cs.fillSettings(cmdFullName, global, settings)
 	}
 
 	// Assign the channel override, if existing
 	if channelOverride != nil {
-		cs.fillSettings(channelOverride, settings)
+		cs.fillSettings(cmdFullName, channelOverride, settings)
 	}
 
 	return
 }
 
 // Fills the command settings from a channel override, and if a matching command override is found, the command override
-func (cs *YAGCommand) fillSettings(override *models.CommandsChannelsOverride, settings *CommandSettings) {
+func (cs *YAGCommand) fillSettings(cmdFullName string, override *models.CommandsChannelsOverride, settings *CommandSettings) {
 	settings.Enabled = override.CommandsEnabled
 
 	settings.IgnoreRoles = override.IgnoreRoles
@@ -466,7 +472,7 @@ func (cs *YAGCommand) fillSettings(override *models.CommandsChannelsOverride, se
 OUTER:
 	for _, cmdOverride := range override.R.CommandsCommandOverrides {
 		for _, cmd := range cmdOverride.Commands {
-			if cmd == cs.Name {
+			if cmd == cmdFullName {
 				settings.Enabled = cmdOverride.CommandsEnabled
 
 				settings.IgnoreRoles = cmdOverride.IgnoreRoles
