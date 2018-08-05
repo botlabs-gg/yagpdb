@@ -520,6 +520,7 @@ function formSubmissionEvents(){
 
 		if(!target.attr("formaction")) return;
 
+
 		if(target.hasClass("btn-danger") || target.attr("data-open-confirm") || target.hasClass("delete-button")){
 			if(!confirm("Are you sure you want to do this?")){
 				event.preventDefault(true);
