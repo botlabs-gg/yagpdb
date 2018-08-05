@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/cardsagainstdiscord"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
+	"strings"
 )
 
 func (p *Plugin) AddCommands() {
@@ -13,22 +14,24 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Aliases:     []string{"c"},
 		Description: "Creates a cards against humanity game in this channel",
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space"},
+		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			_, err := p.Manager.CreateGame(data.GS.ID, data.CS.ID, data.Msg.Author.ID, data.Msg.Author.Username, []string{"main"})
+			pStr := data.Args[0].Str()
+			packs := strings.Fields(pStr)
+
+			_, err := p.Manager.CreateGame(data.GS.ID, data.CS.ID, data.Msg.Author.ID, data.Msg.Author.Username, packs...)
 			if err == nil {
 				p.Logger().Info("Created a new game in ", data.CS.ID, ":", data.GS.ID)
 				return "", nil
 			}
 
-			if err == cardsagainstdiscord.ErrGameAlreadyInChanenl {
-				return "Already a active game in this channel", nil
-			} else if err == cardsagainstdiscord.ErrPlayerAlreadyInGame {
-				return "You're alrady playing in another game", nil
-			} else {
-				return "Something went wrong", err
+			if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
+				return cahErr, nil
 			}
 
-			return "", nil
+			return "Something went wrong", err
 		},
 	}
 
@@ -48,11 +51,11 @@ func (p *Plugin) AddCommands() {
 
 			err := p.Manager.RemoveGame(data.CS.ID)
 			if err != nil {
-				if err == cardsagainstdiscord.ErrGameNotFound {
-					return "Couldn't find any game you're part of", nil
-				} else {
-					return "Something bad happened", err
+				if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
+					return cahErr, nil
 				}
+
+				return "Something went wrong", err
 			}
 
 			return "Stopped the game", nil
@@ -81,14 +84,29 @@ func (p *Plugin) AddCommands() {
 
 			err := p.Manager.PlayerTryLeaveGame(userID)
 			if err != nil {
-				if err == cardsagainstdiscord.ErrGameNotFound {
-					return "This user is not part of any game anymore", nil
-				} else {
-					return "Something bad happened", err
+				if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
+					return cahErr, nil
 				}
+
+				return "Something went wrong", err
 			}
 
 			return "User removed", nil
+		},
+	}
+
+	cmdPacks := &commands.YAGCommand{
+		Name:         "packs",
+		CmdCategory:  commands.CategoryFun,
+		RequiredArgs: 0,
+		Description:  "Lists available packs",
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			resp := "Available packs: \n\n"
+			for _, v := range cardsagainstdiscord.Packs {
+				resp += "`" + v.Name + "` - " + v.Description
+			}
+
+			return resp, nil
 		},
 	}
 
@@ -96,4 +114,5 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())
 	container.AddCommand(cmdKick, cmdKick.GetTrigger())
+	container.AddCommand(cmdPacks, cmdPacks.GetTrigger())
 }
