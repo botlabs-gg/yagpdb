@@ -307,7 +307,10 @@ It is highly recommended to couple the moderation actions with the message logs,
             <p class="help-block">Available template data:<br/>
             {{template "template_helper_user"}} - The user being banned/kicked<br/>
             <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br/>
-            {{template "template_helper_mod_author"}}</p>
+            {{template "template_helper_mod_author"}}<br>
+            <code>{{"{{.Duration}}"}}</code> - The duration<br>
+            <code>{{"{{.HumanDuration}}"}}</code> - The duration in a human friendly format (<code>1 hour and 3 minutes</code> for example)<br>
+            </p>
         </div>
     </div>
 </div>
