@@ -29,6 +29,9 @@ export YAGPDB_SQLSTATE_ADDR=""
 export YAGPDB_SQLSTATE_USER=""
 export YAGPDB_SQLSTATE_PW=""
 export YAGPDB_SQLSTATE_DB=""
+	
+# Set to anything to disable the request logging of the webserver
+export YAGPDB_DISABLE_REQUEST_LOGGING=""
 
 # Plugins below, not required
 

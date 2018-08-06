@@ -202,14 +202,18 @@ func runServers(mainMuxer *goji.Mux) {
 }
 
 func setupRoutes() *goji.Mux {
-	requestLogger := &lumberjack.Logger{
-		Filename: "access.log",
-		MaxSize:  10,
-	}
 
 	mux := goji.NewMux()
 	RootMux = mux
-	mux.Use(RequestLogger(requestLogger))
+
+	if os.Getenv("YAGPDB_DISABLE_REQUEST_LOGGING") != "" {
+		requestLogger := &lumberjack.Logger{
+			Filename: "access.log",
+			MaxSize:  10,
+		}
+
+		mux.Use(RequestLogger(requestLogger))
+	}
 
 	// Setup fileserver
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
