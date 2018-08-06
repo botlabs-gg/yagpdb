@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/jonas747/yagpdb/web/patreon"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -36,6 +37,15 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 			logrus.WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed fetching guild")
 		} else {
 			tmpl["JoinedGuild"] = guild
+		}
+	}
+
+	if patreon.ActivePoller != nil {
+		normalPatrons, qualityPatrons := patreon.ActivePoller.GetPatrons()
+		if len(normalPatrons) > 0 || len(qualityPatrons) > 0 {
+			tmpl["patreonActive"] = true
+			tmpl["normalPatrons"] = normalPatrons
+			tmpl["qualityPatrons"] = qualityPatrons
 		}
 	}
 

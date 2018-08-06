@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"errors"
+	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/patrickmn/go-cache"
@@ -13,6 +14,11 @@ import (
 var (
 	Cache = cache.New(time.Minute, time.Minute)
 )
+
+func init() {
+	// Discord epoch
+	snowflake.Epoch = 1420070400000
+}
 
 func ContextSession(ctx context.Context) *discordgo.Session {
 	return ctx.Value(common.ContextKeyDiscordSession).(*discordgo.Session)
@@ -83,4 +89,10 @@ func GuildName(gID int64) (name string) {
 	g.RUnlock()
 
 	return
+}
+
+func SnowflakeToTime(i int64) time.Time {
+	flake := snowflake.ID(i)
+	t := time.Unix(flake.Time()/1000, 0)
+	return t
 }

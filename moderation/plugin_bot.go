@@ -2,6 +2,7 @@ package moderation
 
 import (
 	"errors"
+	"time"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
@@ -40,6 +41,7 @@ func (p *Plugin) BotInit() {
 	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
 
 	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandler(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
@@ -202,6 +204,26 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
+	if config.IntActionChannel() == 0 {
+		return
+	}
+
+	var author *discordgo.User
+	reason := ""
+
+	if !botPerformed {
+		auditlogAction := discordgo.AuditLogActionMemberBanAdd
+		if evt.Type == eventsystem.EventGuildBanRemove {
+			auditlogAction = discordgo.AuditLogActionMemberBanRemove
+		}
+
+		var entry *discordgo.AuditLogEntry
+		author, entry = FindAuditLogEntry(guildID, auditlogAction, user.ID, -1)
+		if entry != nil {
+			reason = entry.Reason
+		}
+	}
+
 	if config.ActionChannel == "" {
 		// No modlog channel set up
 		return
@@ -212,8 +234,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	var author *discordgo.User
-	reason := ""
+	// The bot only unbans people in the case of timed bans
 	if botPerformed {
 		author = common.BotUser
 		reason = "Timed ban expired"
@@ -222,6 +243,35 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	err = CreateModlogEmbed(config.IntActionChannel(), author, action, user, reason, "")
 	if err != nil {
 		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
+	}
+}
+
+func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+	data := evt.GuildMemberRemove()
+
+	config, err := GetConfig(data.GuildID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed retrieving config")
+		return
+	}
+
+	if config.IntActionChannel() == 0 {
+		return
+	}
+
+	author, entry := FindAuditLogEntry(data.GuildID, discordgo.AuditLogActionMemberKick, data.User.ID, time.Second*5)
+	if entry == nil || author == nil {
+		return
+	}
+
+	if author.ID == common.BotUser.ID {
+		// Bot performed the kick, don't make duplicate modlog entries
+		return
+	}
+
+	err = CreateModlogEmbed(config.IntActionChannel(), author, MAKick, data.User, entry.Reason, "")
+	if err != nil {
+		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
 	}
 }
 
@@ -324,4 +374,34 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	if err != nil {
 		logrus.WithError(err).Error("Failed comitting transaction")
 	}
+}
+
+func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
+	auditlog, err := common.BotSession.GuildAuditLog(guildID, 0, 0, typ, 10)
+	if err != nil {
+		return nil, nil
+	}
+
+	for _, entry := range auditlog.AuditLogEntries {
+		if entry.TargetID == targetUser {
+
+			if within != -1 {
+				t := bot.SnowflakeToTime(entry.ID)
+				if time.Since(t) > within {
+					return nil, nil
+				}
+			}
+
+			// Find the user details from the id
+			for _, v := range auditlog.Users {
+				if v.ID == entry.UserID {
+					return v, entry
+				}
+			}
+
+			break
+		}
+	}
+
+	return nil, nil
 }

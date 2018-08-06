@@ -29,6 +29,9 @@ export YAGPDB_SQLSTATE_ADDR=""
 export YAGPDB_SQLSTATE_USER=""
 export YAGPDB_SQLSTATE_PW=""
 export YAGPDB_SQLSTATE_DB=""
+	
+# Set to anything to disable the request logging of the webserver
+export YAGPDB_DISABLE_REQUEST_LOGGING=""
 
 # Plugins below, not required
 
@@ -72,3 +75,10 @@ export YAGPDB_ANNOUNCEMENTS_CHANNEL=""
 
 # Datadog integration
 export YAGPDB_DOGSTATSDADDRESS="127.0.0.1:8125"
+
+# Pass a api key to list pledges on your patreon on the website
+# This refresh token will only work and will only be used once, the api returns a new token which we store in redis
+# under the patreon_refresh_token key, therefor if you wipe redis you will have to update this refresh token again
+export YAGPDB_PATREON_API_REFRESH_TOKEN=""
+export YAGPDB_PATREON_API_CLIENT_ID=""
+export YAGPDB_PATREON_API_CLIENT_SECRET=""

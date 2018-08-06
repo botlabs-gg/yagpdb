@@ -83,6 +83,7 @@ func Init() error {
 
 func ConnectDatadog() {
 	if Conf.DogStatsdAddress == "" {
+		logrus.Warn("No datadog info provided, not connecting to datadog aggregator")
 		return
 	}
 

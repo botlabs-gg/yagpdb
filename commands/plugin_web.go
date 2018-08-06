@@ -2,6 +2,7 @@ package commands
 
 import (
 	"database/sql"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
@@ -94,25 +95,40 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		Commands []string
 	}
 
+	// Compile all the commands into a sorted list by category
 	commands := make([]*SortedCommands, 0, len(CommandSystem.Root.Commands))
-OUTER:
-	for _, cmd := range CommandSystem.Root.Commands {
-		cast := cmd.Command.(*YAGCommand)
-		if cast.HideFromHelp {
-			continue
-		}
-
+	addCommand := func(cmd *YAGCommand, name string) {
 		for _, v := range commands {
-			if v.Category == cast.CmdCategory.Name {
-				v.Commands = append(v.Commands, cmd.Trigger.Names[0])
-				continue OUTER
+			if v.Category == cmd.CmdCategory.Name {
+				v.Commands = append(v.Commands, name)
+				return
 			}
 		}
 
 		commands = append(commands, &SortedCommands{
-			Category: cast.CmdCategory.Name,
-			Commands: []string{cmd.Trigger.Names[0]},
+			Category: cmd.CmdCategory.Name,
+			Commands: []string{name},
 		})
+	}
+
+	for _, cmd := range CommandSystem.Root.Commands {
+		switch t := cmd.Command.(type) {
+		case *YAGCommand:
+			if t.HideFromHelp {
+				continue
+			}
+			addCommand(t, cmd.Trigger.Names[0])
+		case *dcmd.Container:
+			for _, containerCmd := range t.Commands {
+				cast := containerCmd.Command.(*YAGCommand)
+
+				if cast.HideFromHelp {
+					continue
+				}
+
+				addCommand(cast, t.Names[0]+" "+containerCmd.Trigger.Names[0])
+			}
+		}
 	}
 
 	templateData["SortedCommands"] = commands

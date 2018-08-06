@@ -3,6 +3,7 @@ package serverstats
 import (
 	"context"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/serverstats/models"
@@ -240,20 +241,26 @@ func RetrieveRedisStats(guildID int64) (*FullStats, error) {
 	var messageStatsRaw []string
 	var joined int
 	var left int
-	var online int
+	var online int64
 	var members int
 
 	pipeCmd := radix.Pipeline(
 		radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, unixYesterday, "+inf"),
 		radix.Cmd(&joined, "ZCOUNT", "guild_stats_members_joined_day:"+strGID, unixYesterday, "+inf"),
 		radix.Cmd(&left, "ZCOUNT", "guild_stats_members_left_day:"+strGID, unixYesterday, "+inf"),
-		radix.Cmd(&online, "SCARD", "guild_stats_online:"+strGID),
 		radix.Cmd(&members, "GET", "guild_stats_num_members:"+strGID),
 	)
 
 	err := common.RedisPool.Do(pipeCmd)
 	if err != nil {
 		return nil, err
+	}
+
+	online, err = botrest.GetOnlineCount(guildID)
+	if err != nil {
+		if botrest.BotIsRunning() {
+			log.WithError(err).Error("Failed fetching online count")
+		}
 	}
 
 	channelResult, err := GetChannelMessageStats(messageStatsRaw, guildID)
@@ -265,7 +272,7 @@ func RetrieveRedisStats(guildID int64) (*FullStats, error) {
 		ChannelsHour: channelResult,
 		JoinedDay:    joined,
 		LeftDay:      left,
-		Online:       online,
+		Online:       int(online),
 		TotalMembers: members,
 	}
 

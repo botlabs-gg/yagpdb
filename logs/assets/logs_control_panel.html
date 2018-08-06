@@ -96,9 +96,9 @@
                             <td>{{.Author}} ({{.AuthorID}})</td>
                             <td>#{{.ChannelName}}</td>
                             <td>
-                                <form method="post">
+                                <form method="post" data-async-form>
                                     <input class="hidden" type="text" name="id" value="{{.ID}}" />
-                                    <input type="submit" formaction="fulldelete" class="btn btn-sm btn-danger" value="Delete" />
+                                    <button type="submit" formaction="fulldelete" class="btn btn-sm btn-danger" value="Delete" data-async-form>Delete</button>
                                     <a class="btn btn-sm btn-primary" href="/public/{{$g}}/logs/{{.ID}}">View</a>
                                 </form>
                             </td>

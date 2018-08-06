@@ -29,9 +29,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(HandleMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
 
-	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 
 	go UpdateStatsLoop()
 }
@@ -85,32 +83,12 @@ func (p *Plugin) AddCommands() {
 
 }
 
-func HandleReady(evt *eventsystem.EventData) {
-	r := evt.Ready()
-
-	for _, guild := range r.Guilds {
-		if guild.Unavailable {
-			continue
-		}
-
-		err := ApplyPresences(guild.ID, guild.Presences)
-		if err != nil {
-			log.WithError(err).Error("Failed applying presences")
-		}
-	}
-}
-
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	g := evt.GuildCreate()
 
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "guild_stats_num_members:"+discordgo.StrID(g.ID), g.MemberCount))
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
-	}
-
-	err = ApplyPresences(g.ID, g.Presences)
-	if err != nil {
-		log.WithError(err).Error("Failed applying presences")
 	}
 }
 
@@ -125,28 +103,6 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 	err = common.RedisPool.Do(radix.Cmd(nil, "INCR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
 	if err != nil {
 		log.WithError(err).Error("Failed Increasing members")
-	}
-}
-
-func HandlePresenceUpdate(evt *eventsystem.EventData) {
-	p := evt.PresenceUpdate()
-
-	if p.Status == "" { // Not a status update
-		return
-	}
-
-	key := "guild_stats_online:" + discordgo.StrID(p.GuildID)
-	uID := discordgo.StrID(p.User.ID)
-
-	var err error
-	if p.Status == "offline" {
-		err = common.RedisPool.Do(radix.Cmd(nil, "SREM", key, uID))
-	} else {
-		err = common.RedisPool.Do(radix.Cmd(nil, "SADD", key, uID))
-	}
-
-	if err != nil {
-		log.WithError(err).Error("Failed updating a presence")
 	}
 }
 
@@ -195,26 +151,4 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	MarkGuildAsToBeChecked(channel.Guild.ID)
-}
-
-func ApplyPresences(guildID int64, presences []*discordgo.Presence) error {
-	key := "guild_stats_online:" + discordgo.StrID(guildID)
-
-	err := common.RedisPool.Do(radix.WithConn(key, func(c radix.Conn) error {
-		c.Do(radix.Cmd(nil, "DEL", key))
-
-		values := make([]string, 1, len(presences)+1)
-		values[0] = key
-		for _, p := range presences {
-			if p.Status == "offline" {
-				continue
-			}
-
-			values = append(values, discordgo.StrID(p.User.ID))
-		}
-
-		return c.Do(radix.Cmd(nil, "SADD", values...))
-	}))
-
-	return err
 }

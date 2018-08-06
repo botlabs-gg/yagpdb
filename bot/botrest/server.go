@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
@@ -45,6 +46,7 @@ func (p *Plugin) BotInit() {
 	muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
 	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
 	muxer.HandleFunc(pat.Get("/:guild/members"), HandleGetMembers)
+	muxer.HandleFunc(pat.Get("/:guild/onlinecount"), HandleGetOnlineCount)
 	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
 	muxer.HandleFunc(pat.Get("/gw_status"), HandleGWStatus)
 	muxer.HandleFunc(pat.Post("/shard/:shard/reconnect"), HandleReconnectShard)
@@ -186,6 +188,27 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ServeJson(w, r, members)
+}
+
+func HandleGetOnlineCount(w http.ResponseWriter, r *http.Request) {
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
+
+	guild := bot.State.Guild(true, gId)
+	if guild == nil {
+		ServerError(w, r, errors.New("Guild not found"))
+		return
+	}
+
+	count := 0
+	guild.RLock()
+	for _, ms := range guild.Members {
+		if ms.PresenceSet && ms.PresenceStatus != dstate.StatusNotSet && ms.PresenceStatus != dstate.StatusOffline {
+			count++
+		}
+	}
+	guild.RUnlock()
+
+	ServeJson(w, r, count)
 }
 
 func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {

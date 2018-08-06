@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/jonas747/yagpdb/web/patreon"
 	"github.com/natefinch/lumberjack"
 	log "github.com/sirupsen/logrus"
 	"goji.io"
@@ -114,6 +115,8 @@ func Run() {
 		go discordblog.RunPoller(common.BotSession, parsedBlogChannel, time.Minute)
 	}
 
+	patreon.Run()
+
 	LoadAd()
 
 	log.Info("Running webservers")
@@ -199,14 +202,18 @@ func runServers(mainMuxer *goji.Mux) {
 }
 
 func setupRoutes() *goji.Mux {
-	requestLogger := &lumberjack.Logger{
-		Filename: "access.log",
-		MaxSize:  10,
-	}
 
 	mux := goji.NewMux()
 	RootMux = mux
-	mux.Use(RequestLogger(requestLogger))
+
+	if os.Getenv("YAGPDB_DISABLE_REQUEST_LOGGING") != "" {
+		requestLogger := &lumberjack.Logger{
+			Filename: "access.log",
+			MaxSize:  10,
+		}
+
+		mux.Use(RequestLogger(requestLogger))
+	}
 
 	// Setup fileserver
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))

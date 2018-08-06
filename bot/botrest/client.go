@@ -80,6 +80,11 @@ func GetBotMember(guildID int64) (m *discordgo.Member, err error) {
 	return
 }
 
+func GetOnlineCount(guildID int64) (c int64, err error) {
+	err = get(discordgo.StrID(guildID)+"/onlinecount", &c)
+	return
+}
+
 func GetMembers(guildID int64, members ...int64) (m []*discordgo.Member, err error) {
 	stringed := make([]string, 0, len(members))
 	for _, v := range members {

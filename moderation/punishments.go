@@ -25,7 +25,7 @@ const (
 	PunishmentBan
 )
 
-func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) *dstate.MemberState {
+func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) (ms *dstate.MemberState, notFound bool) {
 	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
 		// Fallback
@@ -41,21 +41,14 @@ func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) *dstate.
 		ms.Discriminator = int32(parsedDiscrim)
 		ms.ParseAvatar(user.Avatar)
 
-		return ms
+		return ms, true
 	}
 
-	return ms
+	return ms, false
 }
 
 // Kick or bans someone, uploading a hasebin log, and sending the report message in the action channel
 func punish(config *Config, p Punishment, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, sendDM bool) error {
-	if author == nil {
-		author = &discordgo.User{
-			ID:            0,
-			Username:      "Unknown",
-			Discriminator: "????",
-		}
-	}
 
 	config, err := getConfigIfNotSet(guildID, config)
 	if err != nil {
@@ -90,7 +83,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 
 	gs := bot.State.Guild(true, guildID)
 
-	member := getMemberWithFallback(gs, user)
+	member, memberNotFound := getMemberWithFallback(gs, user)
 
 	// Execute the DM message template
 	if sendDM {
@@ -126,6 +119,25 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 	}
 
 	logrus.Println("MODERATION:", author.Username, action.Prefix, user.Username, "cause", reason)
+
+	if memberNotFound {
+		// Pull user details from audit log if we can
+		auditLog, err := common.BotSession.GuildAuditLog(gs.ID, common.BotUser.ID, 0, discordgo.AuditLogActionMemberBanAdd, 10)
+		if err == nil {
+			for _, v := range auditLog.Users {
+				if v.ID == user.ID {
+					user = &discordgo.User{
+						ID:            v.ID,
+						Username:      v.Username,
+						Discriminator: v.Discriminator,
+						Bot:           v.Bot,
+						Avatar:        v.Avatar,
+					}
+					break
+				}
+			}
+		}
+	}
 
 	err = CreateModlogEmbed(actionChannel, author, action, user, reason, logLink)
 	return err

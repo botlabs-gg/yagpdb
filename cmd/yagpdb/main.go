@@ -25,6 +25,7 @@ import (
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
+	"github.com/jonas747/yagpdb/cah"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/discordlogger"
@@ -136,6 +137,7 @@ func main() {
 	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
 	rolecommands.RegisterPlugin()
+	cah.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")

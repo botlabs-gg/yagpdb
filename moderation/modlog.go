@@ -45,6 +45,10 @@ func CreateModlogEmbed(channelID int64, author *discordgo.User, action ModlogAct
 		}
 	}
 
+	if reason == "" {
+		reason = "(no reason specified)"
+	}
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    fmt.Sprintf("%s#%s (ID %d)", author.Username, author.Discriminator, author.ID),

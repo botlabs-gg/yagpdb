@@ -3,7 +3,6 @@ package logs
 import (
 	"database/sql"
 	"fmt"
-	"github.com/bwmarrin/snowflake"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -21,11 +20,6 @@ var (
 	nicknameQueryStatement *sql.Stmt
 	usernameQueryStatement *sql.Stmt
 )
-
-func init() {
-	// Discord epoch
-	snowflake.Epoch = 1420070400000
-}
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
@@ -126,8 +120,7 @@ var cmdWhois = &commands.YAGCommand{
 			joinedAtDurStr = "Lesss than an hour ago"
 		}
 
-		flake := snowflake.ID(target.ID)
-		t := time.Unix(flake.Time()/1000, 0)
+		t := bot.SnowflakeToTime(target.ID)
 		createdDurStr := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
 		if createdDurStr == "" {
 			createdDurStr = "Less than an hour ago"
