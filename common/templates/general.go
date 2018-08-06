@@ -139,7 +139,7 @@ func roleIsAbove(a, b *discordgo.Role) bool {
 	return dutil.IsRoleAbove(a, b)
 }
 
-func randInt(args ...interface{}) int64 {
+func randInt(args ...interface{}) int {
 	min := int64(0)
 	max := int64(10)
 	if len(args) >= 2 {
@@ -150,7 +150,7 @@ func randInt(args ...interface{}) int64 {
 	}
 
 	r := rand.Int63n(max - min)
-	return r + min
+	return int(r + min)
 }
 
 func joinStrings(sep string, args ...interface{}) string {
