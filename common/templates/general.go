@@ -173,6 +173,8 @@ func joinStrings(sep string, args ...interface{}) string {
 
 				out += s
 			}
+		case int, int32, uint32, int64, uint64:
+			out += ToString(v)
 		}
 	}
 
