@@ -48,6 +48,8 @@ func (p *Plugin) BotInit() {
 
 func (p *Plugin) Status() (string, string) {
 	p.Manager.RLock()
+	defer p.Manager.RUnlock()
+
 	var countedGames []int64
 
 	games := 0
