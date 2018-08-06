@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var ErrTooManyCalls = errors.New("Too many calls to this function")
@@ -440,4 +441,27 @@ func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, erro
 	}
 
 	return callVariadic(f, values...)
+}
+
+func (c *Context) tmplCurrentUserAgeHuman() string {
+	t := bot.SnowflakeToTime(c.MS.ID)
+
+	humanized := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
+	if humanized == "" {
+		humanized = "Less than an hour"
+	}
+
+	return humanized
+}
+
+func (c *Context) tmplCurrentUserAgeMinutes() int {
+	t := bot.SnowflakeToTime(c.MS.ID)
+	d := time.Since(t)
+
+	return int(d.Seconds() / 60)
+}
+
+func (c *Context) tmplCurrentUserCreated() time.Time {
+	t := bot.SnowflakeToTime(c.MS.ID)
+	return t
 }

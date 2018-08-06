@@ -174,10 +174,14 @@ func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 func baseContextFuncs(c *Context) {
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
 	c.ContextFuncs["sendMessage"] = c.tmplSendMessage
+
+	// Mentions
 	c.ContextFuncs["mentionEveryone"] = c.tmplMentionEveryone
 	c.ContextFuncs["mentionHere"] = c.tmplMentionHere
 	c.ContextFuncs["mentionRoleName"] = c.tmplMentionRoleName
 	c.ContextFuncs["mentionRoleID"] = c.tmplMentionRoleID
+
+	// Role functions
 	c.ContextFuncs["hasRoleName"] = c.tmplHasRoleName
 	c.ContextFuncs["hasRoleID"] = c.tmplHasRoleID
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
@@ -186,7 +190,12 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
 	c.ContextFuncs["takeRoleID"] = c.tmplTakeRoleID
 	c.ContextFuncs["takeRoleName"] = c.tmplTakeRoleName
+
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
 	c.ContextFuncs["addReactions"] = c.tmplAddReactions
+
+	c.ContextFuncs["currentUserCreated"] = c.tmplCurrentUserCreated
+	c.ContextFuncs["currentUserAgeHuman"] = c.tmplCurrentUserAgeHuman
+	c.ContextFuncs["currentUserAgeMinutes"] = c.tmplCurrentUserAgeMinutes
 }
