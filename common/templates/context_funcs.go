@@ -171,15 +171,8 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 		return false
 	}
 
-	var role int64
-	switch r := roleID.(type) {
-	case int64:
-		role = r
-	case int:
-		role = int64(r)
-	case string:
-		role, _ = strconv.ParseInt(r, 10, 64)
-	default:
+	role := ToInt64(roleID)
+	if role == 0 {
 		return false
 	}
 
@@ -211,6 +204,161 @@ func (c *Context) tmplHasRoleName(name string) bool {
 	// Role not found, default to false
 	c.GS.RUnlock()
 	return false
+}
+
+func targetUserID(input interface{}) int64 {
+	switch t := input.(type) {
+	case *discordgo.User:
+		return t.ID
+	default:
+		return ToInt64(input)
+	}
+}
+
+func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
+	if c.IncreaseCheckCallCounter("add_role", 10) {
+		return ""
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return ""
+	}
+
+	role := ToInt64(roleID)
+	if role == 0 {
+		return ""
+	}
+
+	// Check to see if we can save a API request here
+	c.GS.RLock()
+	ms := c.GS.Member(false, targetID)
+	hasRole := false
+	if ms != nil {
+		hasRole = common.ContainsInt64Slice(ms.Roles, role)
+	}
+	c.GS.RUnlock()
+
+	if !hasRole {
+		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role)
+	}
+
+	return ""
+}
+
+func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
+	if c.IncreaseCheckCallCounter("add_role", 10) {
+		return ""
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return ""
+	}
+
+	role := int64(0)
+	c.GS.RLock()
+	for _, r := range c.GS.Guild.Roles {
+		if strings.EqualFold(r.Name, name) {
+			role = r.ID
+
+			// Maybe save a api request
+			ms := c.GS.Member(false, targetID)
+			hasRole := false
+			if ms != nil {
+				hasRole = common.ContainsInt64Slice(ms.Roles, role)
+			}
+
+			if hasRole {
+				c.GS.RUnlock()
+				return ""
+			}
+
+			break
+		}
+	}
+	c.GS.RUnlock()
+
+	if role == 0 {
+		return ""
+	}
+
+	common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role)
+
+	return ""
+}
+
+func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}) string {
+	if c.IncreaseCheckCallCounter("add_role", 10) {
+		return ""
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return ""
+	}
+
+	role := ToInt64(roleID)
+	if role == 0 {
+		return ""
+	}
+
+	// Check to see if we can save a API request here
+	c.GS.RLock()
+	ms := c.GS.Member(false, targetID)
+	hasRole := true
+	if ms != nil && ms.MemberSet {
+		hasRole = common.ContainsInt64Slice(ms.Roles, role)
+	}
+	c.GS.RUnlock()
+
+	if hasRole {
+		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+	}
+
+	return ""
+}
+
+func (c *Context) tmplTakeRoleName(target interface{}, name string) string {
+	if c.IncreaseCheckCallCounter("add_role", 10) {
+		return ""
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return ""
+	}
+
+	role := int64(0)
+	c.GS.RLock()
+	for _, r := range c.GS.Guild.Roles {
+		if strings.EqualFold(r.Name, name) {
+			role = r.ID
+
+			// Maybe save a api request
+			ms := c.GS.Member(false, targetID)
+			hasRole := true
+			if ms != nil && ms.MemberSet {
+				hasRole = common.ContainsInt64Slice(ms.Roles, role)
+			}
+
+			if !hasRole {
+				c.GS.RUnlock()
+				return ""
+			}
+
+			break
+		}
+	}
+	c.GS.RUnlock()
+
+	if role == 0 {
+		return ""
+	}
+
+	common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+
+	return ""
 }
 
 func (c *Context) tmplAddRoleID(role interface{}) (string, error) {

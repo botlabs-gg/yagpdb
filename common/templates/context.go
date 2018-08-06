@@ -182,6 +182,10 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["hasRoleID"] = c.tmplHasRoleID
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
+	c.ContextFuncs["giveRoleID"] = c.tmplGiveRoleID
+	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
+	c.ContextFuncs["takeRoleID"] = c.tmplTakeRoleID
+	c.ContextFuncs["takeRoleName"] = c.tmplTakeRoleName
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
 	c.ContextFuncs["addReactions"] = c.tmplAddReactions
