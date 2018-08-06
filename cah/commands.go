@@ -103,7 +103,7 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			resp := "Available packs: \n\n"
 			for _, v := range cardsagainstdiscord.Packs {
-				resp += "`" + v.Name + "` - " + v.Description
+				resp += "`" + v.Name + "` - " + v.Description + "\n"
 			}
 
 			return resp, nil
