@@ -206,7 +206,7 @@ func setupRoutes() *goji.Mux {
 	mux := goji.NewMux()
 	RootMux = mux
 
-	if os.Getenv("YAGPDB_DISABLE_REQUEST_LOGGING") != "" {
+	if os.Getenv("YAGPDB_DISABLE_REQUEST_LOGGING") == "" {
 		requestLogger := &lumberjack.Logger{
 			Filename: "access.log",
 			MaxSize:  10,
