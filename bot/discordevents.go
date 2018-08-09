@@ -28,7 +28,7 @@ func setWaitingGuildReady(g int64) {
 
 	waitingGuildsMU.Lock()
 	delete(waitingGuilds, g)
-	shouldFireStarted := len(waitingGuilds) < 1
+	shouldFireStarted := len(waitingReadies) < 1
 
 	// Some shards aren't ready yet
 	if len(waitingReadies) > 0 {

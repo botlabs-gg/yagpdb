@@ -169,7 +169,7 @@ func MonitorLoading() {
 
 		log.Infof("Starting up... GC's Remaining: %d, Shards remaining: %d", numWaitingGuilds, numWaitingShards)
 
-		if numWaitingGuilds == 0 && numWaitingShards == 0 {
+		if numWaitingShards == 0 {
 			return
 		}
 	}
