@@ -40,16 +40,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a cards against humanity game thats ongoing in this channel",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			game := p.Manager.FindGameFromChannelOrUser(data.Msg.Author.ID)
-			if game == nil {
-				return "Couln't find any game you're part of", nil
-			}
-
-			if game.GameMaster != data.Msg.Author.ID {
-				return "You're not the game master of this game", nil
-			}
-
-			err := p.Manager.RemoveGame(data.CS.ID)
+			err := p.Manager.TryAdminRemoveGame(data.Msg.Author.ID)
 			if err != nil {
 				if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
 					return cahErr, nil
@@ -71,18 +62,8 @@ func (p *Plugin) AddCommands() {
 		},
 		Description: "Kicks a player from the ongoing cards against humanity game in this channel",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			game := p.Manager.FindGameFromChannelOrUser(data.Msg.Author.ID)
-			if game == nil {
-				return "Couln't find any game you're part of", nil
-			}
-
-			if game.GameMaster != data.Msg.Author.ID {
-				return "You're not the game master of this game", nil
-			}
-
 			userID := data.Args[0].Int64()
-
-			err := p.Manager.PlayerTryLeaveGame(userID)
+			err := p.Manager.AdminKickUser(data.Msg.Author.ID, userID)
 			if err != nil {
 				if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
 					return cahErr, nil
