@@ -1,20 +1,73 @@
 package commands
 
 import (
-	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"strconv"
+	"strings"
 )
 
 func init() {
 	templates.RegisterSetupFunc(func(ctx *templates.Context) {
 		execUser, execBot := TmplExecCmdFuncs(ctx, 5, false)
 		ctx.ContextFuncs["exec"] = execUser
-		ctx.ContextFuncs["execBot"] = execBot
+		ctx.ContextFuncs["execAdmin"] = execBot
+		ctx.ContextFuncs["userArg"] = tmplUserArg(ctx)
 	})
+}
+
+// Returns a user from either id, mention string or if the input is just a user, a user...
+func tmplUserArg(tmplCtx *templates.Context) interface{} {
+	return func(v interface{}) (interface{}, error) {
+		if tmplCtx.IncreaseCheckCallCounter("commands_user_arg", 2) {
+			return nil, errors.New("Max calls to userarg (2) reached")
+		}
+
+		if num := templates.ToInt64(v); num != 0 {
+			// Assume it's an id
+			member, _ := bot.GetMember(tmplCtx.GS.ID, num)
+			if member != nil {
+				return member.DGoUser(), nil
+			}
+
+			return nil, errors.New("User not found")
+		}
+
+		if str, ok := v.(string); ok {
+			// Mention string
+			if len(str) < 5 {
+				return nil, errors.New("Mention string too short")
+			}
+
+			str = strings.TrimSpace(str)
+
+			if strings.HasPrefix(str, "<@") && strings.HasSuffix(str, ">") {
+				trimmed := str[2 : len(str)-1]
+				if trimmed[0] == '!' {
+					trimmed = trimmed[1:]
+				}
+
+				id, _ := strconv.ParseInt(trimmed, 10, 64)
+				member, _ := bot.GetMember(tmplCtx.GS.ID, id)
+				if member != nil {
+					// Found member
+					return member.DGoUser(), nil
+				}
+
+			}
+
+			// No more cases we can handle
+			return nil, errors.New("User not found")
+		}
+
+		// Just return whatever we passed
+		return v, nil
+	}
 }
 
 type cmdExecFunc func(cmd string, args ...interface{}) (string, error)
@@ -22,10 +75,6 @@ type cmdExecFunc func(cmd string, args ...interface{}) (string, error)
 // Returns 2 functions to execute commands in user or bot context with limited about of commands executed
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
 	execUser := func(cmd string, args ...interface{}) (string, error) {
-		if ctx.Redis == nil {
-			return "Exec cannot be used here", nil
-		}
-
 		mc := &discordgo.MessageCreate{ctx.Msg}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
@@ -35,11 +84,14 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	}
 
 	execBot := func(cmd string, args ...interface{}) (string, error) {
-		if ctx.Redis == nil {
-			return "Exec cannot be used here", nil
-		}
 
-		mc := &discordgo.MessageCreate{ctx.Msg}
+		botUserCopy := *common.BotUser
+		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.Username + "#" + ctx.Msg.Author.Discriminator + ")"
+
+		messageCopy := *ctx.Msg
+		messageCopy.Author = &botUserCopy
+
+		mc := &discordgo.MessageCreate{&messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
@@ -51,12 +103,27 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 }
 
 func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *discordgo.MessageCreate, cmd string, args ...interface{}) (string, error) {
-	cmdLine := cmd
+	fakeMsg := *m.Message
+	fakeMsg.Mentions = make([]*discordgo.User, 0)
+
+	cmdLine := cmd + " "
 
 	for _, arg := range args {
+		if arg == nil {
+			return "", errors.New("Nil arg passed")
+		}
+
 		switch t := arg.(type) {
 		case string:
-			cmdLine += " \"" + t + "\""
+			if strings.HasPrefix(t, "-") {
+				// Don't put quotes around switches
+				cmdLine += t
+			} else if strings.HasPrefix(t, "\\-") {
+				// Escaped -
+				cmdLine += "\"" + t[1:] + "\""
+			} else {
+				cmdLine += "\"" + t + "\""
+			}
 		case int:
 			cmdLine += strconv.FormatInt(int64(t), 10)
 		case int32:
@@ -77,15 +144,24 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 			cmdLine += strconv.FormatFloat(float64(t), 'E', -1, 32)
 		case float64:
 			cmdLine += strconv.FormatFloat(t, 'E', -1, 64)
+		case *discordgo.User:
+			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
+			fakeMsg.Mentions = append(fakeMsg.Mentions, t)
+		case []string:
+			for i, str := range t {
+				if i != 0 {
+					cmdLine += " "
+				}
+				cmdLine += str
+			}
 		default:
-			return "", errors.New("Unknown type in exec, contact bot owner")
+			return "", errors.New("Unknown type in exec, only strings, numbers, users and string slices are supported")
 		}
 		cmdLine += " "
 	}
 
 	logrus.Info("Custom template is executing a command:", cmdLine)
 
-	fakeMsg := *m.Message
 	fakeMsg.Content = cmdLine
 
 	data, err := CommandSystem.FillData(common.BotSession, &fakeMsg)
@@ -94,46 +170,27 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 	}
 	data.MsgStrippedPrefix = fakeMsg.Content
 
-	resp, err := CommandSystem.Root.Run(data)
-	if err != nil {
-		return "", errors.WithMessage(err, "tmplExecCmd, Run")
+	foundCmd, rest := CommandSystem.Root.FindCommand(cmdLine)
+	if foundCmd == nil {
+		return "Unknown command", nil
 	}
 
-	// for _, command := range CommandSystem.Commands {
-	// 	if !command.CheckMatch(cmdLine, triggerData) {
-	// 		continue
-	// 	}
-	// 	matchedCmd = command
-	// 	break
-	// }
+	data.MsgStrippedPrefix = rest
 
-	// if matchedCmd == nil {
-	// 	return "", errors.New("Couldn't find command")
-	// }
+	data.Cmd = foundCmd
+	data.ContainerChain = []*dcmd.Container{CommandSystem.Root}
 
-	// cast, ok := matchedCmd.(*CustomCommand)
-	// if !ok {
-	// 	return "", errors.New("Unsopported command")
-	// }
+	cast := foundCmd.Command.(*YAGCommand)
 
-	// // Do not actually execute the command if it's a dry-run
-	// if dryRun {
-	// 	return "", nil
-	// }
+	err = dcmd.ParseCmdArgs(data)
+	if err != nil {
+		return "", errors.WithMessage(err, "exec/exedamin, parseArgs")
+	}
 
-	// parsed, err := cast.ParseCommand(cmdLine, triggerData)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// parsed.Source = triggerData.Source
-	// parsed.Channel = ctx.CS
-	// if ctx.CS == nil {
-	// 	parsed.Channel = ctx.GS.Channel(true, ctx.GS.ID())
-	// }
-	// parsed.Guild = parsed.Channel.Guild
-
-	// resp, err := cast.Run(parsed.WithContext(context.WithValue(parsed.Context(), CtxKeyRedisClient, ctx.Redis)))
+	resp, err := cast.RunFunc(data)
+	if err != nil {
+		return "", errors.WithMessage(err, "exec/execadmin, run")
+	}
 
 	switch v := resp.(type) {
 	case error:
@@ -141,7 +198,11 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 	case string:
 		return v, nil
 	case *discordgo.MessageEmbed:
-		return common.FallbackEmbed(v), nil
+		ctx.EmebdsToSend = append(ctx.EmebdsToSend, v)
+		return "", nil
+	case []*discordgo.MessageEmbed:
+		ctx.EmebdsToSend = append(ctx.EmebdsToSend, v...)
+		return "", nil
 	}
 
 	return "", nil

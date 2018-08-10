@@ -3,14 +3,16 @@ package commands
 import (
 	"context"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
 	"time"
 )
@@ -24,12 +26,12 @@ const (
 var (
 	CategoryGeneral = &dcmd.Category{
 		Name:        "General",
-		Description: "General commands",
+		Description: "General & informational commands",
 		HelpEmoji:   "ℹ️",
 		EmbedColor:  0xe53939,
 	}
 	CategoryTool = &dcmd.Category{
-		Name:        "Tools",
+		Name:        "Tools & Utilities",
 		Description: "Various miscellaneous commands",
 		HelpEmoji:   "🔨",
 		EmbedColor:  0xeaed40,
@@ -47,7 +49,7 @@ var (
 		EmbedColor:  0x5ae26c,
 	}
 	CategoryDebug = &dcmd.Category{
-		Name:        "Debug",
+		Name:        "Debug & Maintenance",
 		Description: "Debug and other commands to inspect the bot",
 		HelpEmoji:   "🖥",
 		EmbedColor:  0,
@@ -55,8 +57,8 @@ var (
 )
 
 var (
-	RKeyCommandCooldown = func(uID, cmd string) string { return "cmd_cd:" + uID + ":" + cmd }
-	RKeyCommandLock     = func(uID, cmd string) string { return "cmd_lock:" + uID + ":" + cmd }
+	RKeyCommandCooldown = func(uID int64, cmd string) string { return "cmd_cd:" + discordgo.StrID(uID) + ":" + cmd }
+	RKeyCommandLock     = func(uID int64, cmd string) string { return "cmd_lock:" + discordgo.StrID(uID) + ":" + cmd }
 
 	CommandExecTimeout = time.Minute
 )
@@ -99,7 +101,7 @@ func (yc *YAGCommand) Category() *dcmd.Category {
 }
 
 func (yc *YAGCommand) Descriptions(data *dcmd.Data) (short, long string) {
-	return yc.Description, yc.LongDescription
+	return yc.Description, yc.Description + "\n" + yc.LongDescription
 }
 
 func (yc *YAGCommand) ArgDefs(data *dcmd.Data) (args []*dcmd.ArgDef, required int, combos [][]int) {
@@ -115,6 +117,9 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		return nil, nil
 	}
 
+	// Send typing to indicate the bot's working
+	common.BotSession.ChannelTyping(data.CS.ID)
+
 	logger := yc.Logger(data)
 
 	// Track how long execution of a command took
@@ -123,20 +128,6 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		yc.logExecutionTime(time.Since(started), data.Msg.Content, data.Msg.Author.Username)
 	}()
 
-	// Need a redis client to check cooldowns and retrieve command settings
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		logger.WithError(err).Error("Failed retrieving redis client")
-		return nil, errors.New("Failed retrieving redis client")
-	}
-	defer common.RedisPool.Put(client)
-
-	err = common.BlockingLockRedisKey(client, RKeyCommandLock(data.Msg.Author.ID, yc.Name), CommandExecTimeout*2, int((CommandExecTimeout + time.Second).Seconds()))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed locking command")
-	}
-	defer common.UnlockRedisKey(client, RKeyCommandLock(data.Msg.Author.ID, yc.Name))
-
 	cState := bot.State.Channel(true, data.Msg.ChannelID)
 	if cState == nil {
 		return nil, errors.New("Channel not found")
@@ -144,8 +135,8 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Set up log entry for later use
 	logEntry := &common.LoggedExecutedCommand{
-		UserID:    data.Msg.Author.ID,
-		ChannelID: cState.ID(),
+		UserID:    discordgo.StrID(data.Msg.Author.ID),
+		ChannelID: discordgo.StrID(cState.ID),
 
 		Command:    yc.Name,
 		RawCommand: data.Msg.Content,
@@ -153,14 +144,11 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if cState.Guild != nil {
-		logEntry.GuildID = cState.Guild.ID()
+		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
 	}
 
-	resp, autoDel := yc.checkCanExecuteCommand(data, client, cState)
-	if resp != "" {
-		m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
-		go yc.deleteResponse([]*discordgo.Message{m})
-		return nil, err
+	if common.Statsd != nil {
+		go common.Statsd.Incr("yagpdb.cmd.executed", nil, 1)
 	}
 
 	logger.Info("Handling command: " + data.Msg.Content)
@@ -169,122 +157,177 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	defer cancelExec()
 
 	// Run the command
-	r, err := yc.RunFunc(data.WithContext(context.WithValue(runCtx, CtxKeyRedisClient, client)))
-	if err != nil {
-		if errors.Cause(err) == context.Canceled || errors.Cause(err) == context.DeadlineExceeded {
+	r, cmdErr := yc.RunFunc(data.WithContext(runCtx))
+	if cmdErr != nil {
+		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
 			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + common.EscapeSpecialMentions(data.Msg.Content) + "`, Cancelled the command."
-			err = nil
 		}
-	}
-
-	// Send the reponse
-	replies, err := yc.SendResponse(data, r, err)
-	if err != nil {
-		logger.WithError(err).Error("Failed sending response")
 	}
 
 	logEntry.ResponseTime = int64(time.Since(started))
 
-	if len(replies) > 0 && autoDel {
-		go yc.deleteResponse(append(replies, data.Msg))
-	} else if autoDel {
-		go yc.deleteResponse([]*discordgo.Message{data.Msg})
-	}
-
 	// Log errors
-	if err == nil {
-		err = yc.SetCooldown(client, data.Msg.Author.ID)
+	if cmdErr == nil {
+		err := yc.SetCooldown(data.Msg.Author.ID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
 		}
 	}
 
 	// Create command log entry
-	err = common.GORM.Create(logEntry).Error
+	err := common.GORM.Create(logEntry).Error
 	if err != nil {
 		logger.WithError(err).Error("Failed creating command execution log")
 	}
 
-	return nil, nil
+	return r, cmdErr
 }
 
-func (yc *YAGCommand) SendResponse(cmdData *dcmd.Data, resp interface{}, err error) (replies []*discordgo.Message, errR error) {
+// PostCommandExecuted sends the response and handles the trigger and response deletions
+func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dcmd.Data, resp interface{}, err error) {
 	if err != nil {
 		yc.Logger(cmdData).WithError(err).Error("Command returned error")
 	}
 
+	if settings.DelResponse && settings.DelResponseDelay < 1 {
+		// Set up the trigger deletion if set
+		if settings.DelTrigger {
+			go func() {
+				time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
+				common.BotSession.ChannelMessageDelete(cmdData.CS.ID, cmdData.Msg.ID)
+			}()
+		}
+		return // Don't bother sending the reponse if it has no delete delay
+	}
+
+	// Use the error as the response if no response was provided
 	if resp == nil && err != nil {
-		replies, errR = dcmd.SendResponseInterface(cmdData, fmt.Sprintf("%q command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err), true)
-	} else if resp != nil {
-		replies, errR = dcmd.SendResponseInterface(cmdData, resp, true)
+		resp = fmt.Sprintf("%q command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err)
+	}
+
+	// Send the response
+	var replies []*discordgo.Message
+	if resp != nil {
+		replies, err = dcmd.SendResponseInterface(cmdData, resp, true)
+	}
+
+	if settings.DelResponse {
+		go func() {
+			time.Sleep(time.Second * time.Duration(settings.DelResponseDelay))
+			ids := make([]int64, 0, len(replies))
+			for _, v := range replies {
+				if v == nil {
+					continue
+				}
+
+				ids = append(ids, v.ID)
+			}
+
+			// If trigger deletion had the same delay, delete the trigger in the same batch
+			if settings.DelTrigger && settings.DelTriggerDelay == settings.DelResponseDelay {
+				ids = append(ids, cmdData.Msg.ID)
+			}
+
+			if len(ids) == 1 {
+				common.BotSession.ChannelMessageDelete(cmdData.CS.ID, ids[0])
+			} else if len(ids) > 1 {
+				common.BotSession.ChannelMessagesBulkDelete(cmdData.CS.ID, ids)
+			}
+		}()
+	}
+
+	// If were deleting the trigger in a seperate call from the response deletion
+	if settings.DelTrigger && (!settings.DelResponse || settings.DelTriggerDelay != settings.DelResponseDelay) {
+		go func() {
+			time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
+			common.BotSession.ChannelMessageDelete(cmdData.CS.ID, cmdData.Msg.ID)
+		}()
 	}
 
 	return
 }
 
-// checkCanExecuteCommand returns a non empty string if this user cannot execute this command
-func (cs *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, client *redis.Client, cState *dstate.ChannelState) (resp string, autoDel bool) {
+// checks if the specified user can execute the command, and if so returns the settings for said command
+func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.ChannelState) (canExecute bool, resp string, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
 	var guild *dstate.GuildState
 
 	if data.Source != dcmd.DMSource {
 
+		canExecute = false
 		guild = cState.Guild
+
 		if guild == nil {
-			return "You're not on a server?", false
+			resp = "You're not on a server?"
+			return
 		}
 
-		var enabled bool
-		var err error
-		var role string
-		// Check wether it's enabled or not
-		enabled, role, autoDel, err = cs.Enabled(client, cState.ID(), guild)
+		cop := cState.Copy(true, false)
+
+		settings, err = yc.GetSettings(data, cState.ID, cop.ParentID, guild.ID)
 		if err != nil {
-			return "Bot is having isssues, contact the bot owner.", false
+			err = errors.WithMessage(err, "cs.GetSettings")
+			resp = "Bot is having isssues, contact the bot owner."
+			return
 		}
 
-		if !enabled {
-			return fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", cs.Name, common.Conf.Host), false
+		if !settings.Enabled {
+			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", yc.Name, common.Conf.Host)
+			return
 		}
 
-		if role != "" {
-			member, err := bot.GetMember(guild.ID(), data.Msg.Author.ID)
+		// Check the required and ignored roles
+		if len(settings.RequiredRoles) > 0 || len(settings.IgnoreRoles) > 0 {
+			var member *dstate.MemberState
+			member, err = bot.GetMember(guild.ID, data.Msg.Author.ID)
 			if err != nil {
-				log.WithError(err).WithField("user", data.Msg.Author.ID).WithField("guild", guild.ID()).Error("Failed fetchign guild member")
-				return "Bot is having issues retrieving your member state", false
+				err = errors.WithMessage(err, "bot.GetMember")
+				resp = "Bot is having issues retrieving your member state"
+				return
 			}
 
-			found := false
-			for _, v := range member.Roles {
-				if v == role {
-					found = true
+			if len(settings.RequiredRoles) > 0 {
+				found := false
+				for _, r := range member.Roles {
+					if common.ContainsInt64Slice(settings.RequiredRoles, r) {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					resp = "Missing a required role set up by the server admins for this command."
+					return
 				}
 			}
 
-			if !found {
-				guild.RLock()
-				required := guild.Role(false, role)
-				name := "Unknown?? (deleted maybe?)"
-				if required != nil {
-					name = required.Name
+			for _, ignored := range settings.IgnoreRoles {
+				if common.ContainsInt64Slice(member.Roles, ignored) {
+					resp = "One of your roles is set up to be ignored by the server admins."
+					return
 				}
-				guild.RUnlock()
-				return common.EscapeSpecialMentions(fmt.Sprintf("The **%s** role is required to use this command.", name)), false
 			}
+		}
+	} else {
+		settings = &CommandSettings{
+			Enabled: true,
 		}
 	}
 
 	// Check the command cooldown
-	cdLeft, err := cs.CooldownLeft(client, data.Msg.Author.ID)
+	cdLeft, err := yc.CooldownLeft(data.Msg.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
 		log.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
-		return fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeSpecialMentions(data.Msg.Author.Username), cdLeft, cs.Name), false
+		resp = fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeSpecialMentions(data.Msg.Author.Username), cdLeft, yc.Name)
+		return
 	}
 
+	// If we got here then we can execute the command
+	canExecute = true
 	return
 }
 
@@ -293,8 +336,8 @@ func (cs *YAGCommand) logExecutionTime(dur time.Duration, raw string, sender str
 }
 
 func (cs *YAGCommand) deleteResponse(msgs []*discordgo.Message) {
-	ids := make([]string, 0, len(msgs))
-	cID := ""
+	ids := make([]int64, 0, len(msgs))
+	var cID int64
 	for _, msg := range msgs {
 		if msg == nil {
 			continue
@@ -318,19 +361,18 @@ func (cs *YAGCommand) deleteResponse(msgs []*discordgo.Message) {
 }
 
 // customEnabled returns wether the command is enabled by it's custom key or not
-func (cs *YAGCommand) customEnabled(client *redis.Client, guildID string) (bool, error) {
+func (cs *YAGCommand) customEnabled(guildID int64) (bool, error) {
 	// No special key so it's automatically enabled
 	if cs.Key == "" || cs.CustomEnabled {
 		return true, nil
 	}
 
 	// Check redis for settings
-	reply := client.Cmd("GET", cs.Key+guildID)
-	if reply.Err != nil {
-		return false, reply.Err
+	var enabled bool
+	err := common.RedisPool.Do(radix.Cmd(&enabled, "GET", cs.Key+discordgo.StrID(guildID)))
+	if err != nil {
+		return false, err
 	}
-
-	enabled, _ := common.RedisBool(reply)
 
 	if cs.Default {
 		enabled = !enabled
@@ -343,85 +385,137 @@ func (cs *YAGCommand) customEnabled(client *redis.Client, guildID string) (bool,
 	return enabled, nil
 }
 
-// Enabled returns wether the command is enabled or not
-func (cs *YAGCommand) Enabled(client *redis.Client, channel string, gState *dstate.GuildState) (enabled bool, requiredRole string, autodel bool, err error) {
-	gState.RLock()
-	defer gState.RUnlock()
+type CommandSettings struct {
+	Enabled bool
 
-	if cs.HideFromCommandsPage {
-		return true, "", false, nil
-	}
+	DelTrigger       bool
+	DelResponse      bool
+	DelTriggerDelay  int
+	DelResponseDelay int
 
-	ce, err := cs.customEnabled(client, gState.ID())
+	RequiredRoles []int64
+	IgnoreRoles   []int64
+}
+
+// GetSettings returns the settings from the command, generated from the servers channel and command overrides
+func (cs *YAGCommand) GetSettings(data *dcmd.Data, channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
+
+	settings = &CommandSettings{}
+
+	// Some commands have custom places to toggle their enabled status
+	ce, err := cs.customEnabled(guildID)
 	if err != nil {
+		err = errors.WithMessage(err, "customEnabled")
 		return
 	}
+
 	if !ce {
-		return false, "", false, nil
+		return
 	}
 
-	channels := make([]*discordgo.Channel, len(gState.Channels))
-	i := 0
-	for _, v := range gState.Channels {
-		channels[i] = v.Channel
-		i++
+	if cs.HideFromCommandsPage {
+		settings.Enabled = true
+		return
 	}
 
-	config := GetConfig(client, gState.ID(), channels)
+	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
+	channelOverrides, err := models.CommandsChannelsOverridesG(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", channelID, channelParentID, guildID), qm.Load("CommandsCommandOverrides")).All()
+	if err != nil {
+		err = errors.WithMessage(err, "query channel overrides")
+		return
+	}
 
-	// Check overrides first to see if one was enabled, and if so determine if the command is available
-	for _, override := range config.ChannelOverrides {
-		if override.Channel == channel {
-			if override.OverrideEnabled {
-				// Find settings for this command
-				for _, cmd := range override.Settings {
-					if cmd.Cmd == cs.Name {
-						return cmd.CommandEnabled, cmd.RequiredRole, cmd.AutoDelete, nil
-					}
-				}
+	if len(channelOverrides) < 1 {
+		settings.Enabled = true
+		return // No overrides
+	}
 
-			}
-			break
+	// Find the global and per channel override
+	var global *models.CommandsChannelsOverride
+	var channelOverride *models.CommandsChannelsOverride
+
+	for _, v := range channelOverrides {
+		if v.Global {
+			global = v
+		} else {
+			channelOverride = v
 		}
 	}
 
-	// Return from global settings then
-	for _, cmd := range config.Global {
-		if cmd.Cmd == cs.Name {
-			if cs.Key != "" || cs.CustomEnabled {
-				return true, cmd.RequiredRole, cmd.AutoDelete, nil
-			}
-
-			return cmd.CommandEnabled, cmd.RequiredRole, cmd.AutoDelete, nil
-		}
+	cmdFullName := cs.Name
+	if len(data.ContainerChain) > 1 {
+		lastContainer := data.ContainerChain[len(data.ContainerChain)-1]
+		cmdFullName = lastContainer.Names[0] + " " + cmdFullName
 	}
 
-	log.WithField("command", cs.Name).WithField("guild", gState.ID()).Error("Command not in global commands")
+	// Assign the global settings, if existing
+	if global != nil {
+		cs.fillSettings(cmdFullName, global, settings)
+	}
 
-	return false, "", false, nil
+	// Assign the channel override, if existing
+	if channelOverride != nil {
+		cs.fillSettings(cmdFullName, channelOverride, settings)
+	}
+
+	return
+}
+
+// Fills the command settings from a channel override, and if a matching command override is found, the command override
+func (cs *YAGCommand) fillSettings(cmdFullName string, override *models.CommandsChannelsOverride, settings *CommandSettings) {
+	settings.Enabled = override.CommandsEnabled
+
+	settings.IgnoreRoles = override.IgnoreRoles
+	settings.RequiredRoles = override.RequireRoles
+
+	settings.DelResponse = override.AutodeleteResponse
+	settings.DelTrigger = override.AutodeleteTrigger
+	settings.DelResponseDelay = override.AutodeleteResponseDelay
+	settings.DelTriggerDelay = override.AutodeleteTriggerDelay
+
+OUTER:
+	for _, cmdOverride := range override.R.CommandsCommandOverrides {
+		for _, cmd := range cmdOverride.Commands {
+			if cmd == cmdFullName {
+				settings.Enabled = cmdOverride.CommandsEnabled
+
+				settings.IgnoreRoles = cmdOverride.IgnoreRoles
+				settings.RequiredRoles = cmdOverride.RequireRoles
+
+				settings.DelResponse = cmdOverride.AutodeleteResponse
+				settings.DelTrigger = cmdOverride.AutodeleteTrigger
+				settings.DelResponseDelay = cmdOverride.AutodeleteResponseDelay
+				settings.DelTriggerDelay = cmdOverride.AutodeleteTriggerDelay
+
+				break OUTER
+			}
+		}
+	}
 }
 
 // CooldownLeft returns the number of seconds before a command can be used again
-func (cs *YAGCommand) CooldownLeft(client *redis.Client, userID string) (int, error) {
+func (cs *YAGCommand) CooldownLeft(userID int64) (int, error) {
 	if cs.Cooldown < 1 || common.Testing {
 		return 0, nil
 	}
 
-	ttl, err := client.Cmd("TTL", RKeyCommandCooldown(userID, cs.Name)).Int64()
+	var ttl int
+	err := common.RedisPool.Do(radix.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.Name)))
 	if ttl < 1 {
 		return 0, nil
 	}
 
-	return int(ttl), err
+	return ttl, err
 }
 
 // SetCooldown sets the cooldown of the command as it's defined in the struct
-func (cs *YAGCommand) SetCooldown(client *redis.Client, userID string) error {
+func (cs *YAGCommand) SetCooldown(userID int64) error {
 	if cs.Cooldown < 1 {
 		return nil
 	}
 	now := time.Now().Unix()
-	err := client.Cmd("SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown).Err
+
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown))
 	return err
 }
 
@@ -434,7 +528,7 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *log.Entry {
 		}
 
 		if data.CS != nil {
-			l = l.WithField("channel", data.CS.ID())
+			l = l.WithField("channel", data.CS.ID)
 		}
 	}
 

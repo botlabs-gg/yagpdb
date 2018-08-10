@@ -3,12 +3,11 @@ package bot
 import (
 	"context"
 	"errors"
-	"github.com/Sirupsen/logrus"
+	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/patrickmn/go-cache"
+	"strings"
 	"time"
 )
 
@@ -16,50 +15,21 @@ var (
 	Cache = cache.New(time.Minute, time.Minute)
 )
 
+func init() {
+	// Discord epoch
+	snowflake.Epoch = 1420070400000
+}
+
 func ContextSession(ctx context.Context) *discordgo.Session {
 	return ctx.Value(common.ContextKeyDiscordSession).(*discordgo.Session)
 }
 
-func ContextRedis(ctx context.Context) *redis.Client {
-	return ctx.Value(common.ContextKeyRedis).(*redis.Client)
-}
-
-func RedisWrapper(inner eventsystem.Handler) eventsystem.Handler {
-	return func(evt *eventsystem.EventData) {
-		r, err := common.RedisPool.Get()
-		if err != nil {
-			logrus.WithError(err).WithField("evt", evt.Type.String()).Error("Failed retrieving redis client")
-			return
-		}
-
-		defer func() {
-			common.RedisPool.Put(r)
-		}()
-
-		inner(evt.WithContext(context.WithValue(evt.Context(), common.ContextKeyRedis, r)))
-	}
-}
-
-func GetCreatePrivateChannel(user string) (*discordgo.Channel, error) {
-
-	State.RLock()
-	defer State.RUnlock()
-	for _, c := range State.PrivateChannels {
-		if c.Recipient() != nil && c.Recipient().ID == user {
-			return c.Copy(true, false), nil
-		}
+func SendDM(user int64, msg string) error {
+	if strings.TrimSpace(msg) == "" {
+		return nil
 	}
 
 	channel, err := common.BotSession.UserChannelCreate(user)
-	if err != nil {
-		return nil, err
-	}
-
-	return channel, nil
-}
-
-func SendDM(user string, msg string) error {
-	channel, err := GetCreatePrivateChannel(user)
 	if err != nil {
 		return err
 	}
@@ -68,19 +38,29 @@ func SendDM(user string, msg string) error {
 	return err
 }
 
+func SendDMEmbed(user int64, embed *discordgo.MessageEmbed) error {
+	channel, err := common.BotSession.UserChannelCreate(user)
+	if err != nil {
+		return err
+	}
+
+	_, err = common.BotSession.ChannelMessageSendEmbed(channel.ID, embed)
+	return err
+}
+
 var (
 	ErrStartingUp    = errors.New("Starting up, caches are being filled...")
 	ErrGuildNotFound = errors.New("Guild not found")
 )
 
-func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
+func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 	channel := State.Channel(true, channelID)
 	if channel == nil {
 		return false, errors.New("Channel not found")
 	}
 
 	// Ensure the member is in state
-	GetMember(channel.Guild.ID(), userID)
+	GetMember(channel.Guild.ID, userID)
 	perms, err := channel.Guild.MemberPermissions(true, channelID, userID)
 	if err != nil {
 		return false, err
@@ -99,4 +79,20 @@ func AdminOrPerm(needed int, userID, channelID string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// GuildName is a convenience function for getting the name of a guild
+func GuildName(gID int64) (name string) {
+	g := State.Guild(true, gID)
+	g.RLock()
+	name = g.Guild.Name
+	g.RUnlock()
+
+	return
+}
+
+func SnowflakeToTime(i int64) time.Time {
+	flake := snowflake.ID(i)
+	t := time.Unix(flake.Time()/1000, 0)
+	return t
 }

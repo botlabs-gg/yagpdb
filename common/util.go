@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/jonas747/dutil/dstate"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"path/filepath"
 	"regexp"
@@ -17,14 +18,8 @@ import (
 	"time"
 )
 
-func KeyGuild(guildID string) string         { return "guild:" + guildID }
-func KeyGuildChannels(guildID string) string { return "channels:" + guildID }
-
-// RefreshConnectedGuilds deletes the connected_guilds set and fill it up again
-// This is incase servers are removed/bot left servers while it was offline
-func RefreshConnectedGuilds(session *discordgo.Session, client *redis.Client) error {
-	panic("REFRESH CONNECTED DOSEN'T WORK")
-}
+func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
+func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
 type WrappedGuild struct {
 	*discordgo.UserGuild
@@ -32,46 +27,42 @@ type WrappedGuild struct {
 }
 
 // GetWrapped Returns a wrapped guild with connected set
-func GetWrapped(in []*discordgo.UserGuild, client *redis.Client) ([]*WrappedGuild, error) {
+func GetWrapped(in []*discordgo.UserGuild) ([]*WrappedGuild, error) {
 	if len(in) < 1 {
 		return []*WrappedGuild{}, nil
 	}
 
-	for _, g := range in {
-		client.PipeAppend("SISMEMBER", "connected_guilds", g.ID)
+	out := make([]*WrappedGuild, len(in))
+
+	actions := make([]radix.CmdAction, len(in))
+	for i, g := range in {
+		out[i] = &WrappedGuild{
+			UserGuild: g,
+			Connected: false,
+		}
+
+		actions[i] = radix.Cmd(&out[i].Connected, "SISMEMBER", "connected_guilds", strconv.FormatInt(g.ID, 10))
 	}
 
-	replies, err := GetRedisReplies(client, len(in))
+	err := RedisPool.Do(radix.Pipeline(actions...))
 	if err != nil {
 		return nil, err
 	}
 
-	out := make([]*WrappedGuild, len(in))
-	for k, g := range in {
-		isConnected, err := RedisBool(replies[k])
-		if err != nil {
-			return nil, err
-		}
-
-		out[k] = &WrappedGuild{
-			UserGuild: g,
-			Connected: isConnected,
-		}
-	}
 	return out, nil
 }
 
 // DelayedMessageDelete Deletes a message after delay
-func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, mID string) {
+func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, mID int64) {
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
 	if err != nil {
-		log.WithError(err).Error("Failed deleing message")
+		log.WithError(err).Error("Failed deleting message")
 	}
 }
 
 // SendTempMessage sends a message that gets deleted after duration
-func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, msg string) {
+func SendTempMessage(session *discordgo.Session, duration time.Duration, cID int64, msg string) {
 	m, err := BotSession.ChannelMessageSend(cID, EscapeSpecialMentions(msg))
 	if err != nil {
 		return
@@ -81,13 +72,13 @@ func SendTempMessage(session *discordgo.Session, duration time.Duration, cID, ms
 }
 
 // GetGuildChannels returns the guilds channels either from cache or api
-func GetGuildChannels(client *redis.Client, guildID string) (channels []*discordgo.Channel, err error) {
+func GetGuildChannels(guildID int64) (channels []*discordgo.Channel, err error) {
 	// Check cache first
-	err = GetCacheDataJson(client, KeyGuildChannels(guildID), &channels)
+	err = GetCacheDataJson(KeyGuildChannels(guildID), &channels)
 	if err != nil {
 		channels, err = BotSession.GuildChannels(guildID)
 		if err == nil {
-			SetCacheDataJsonSimple(client, KeyGuildChannels(guildID), channels)
+			SetCacheDataJsonSimple(KeyGuildChannels(guildID), channels)
 		}
 	}
 
@@ -95,13 +86,13 @@ func GetGuildChannels(client *redis.Client, guildID string) (channels []*discord
 }
 
 // GetGuild returns the guild from guildid either from cache or api
-func GetGuild(client *redis.Client, guildID string) (guild *discordgo.Guild, err error) {
+func GetGuild(guildID int64) (guild *discordgo.Guild, err error) {
 	// Check cache first
-	err = GetCacheDataJson(client, KeyGuild(guildID), &guild)
+	err = GetCacheDataJson(KeyGuild(guildID), &guild)
 	if err != nil {
 		guild, err = BotSession.Guild(guildID)
 		if err == nil {
-			SetCacheDataJsonSimple(client, KeyGuild(guildID), guild)
+			SetCacheDataJsonSimple(KeyGuild(guildID), guild)
 		}
 	}
 
@@ -215,7 +206,7 @@ func HumanizeTime(precision DurationFormatPrecision, in time.Time) string {
 	}
 }
 
-func SendEmbedWithFallback(s *discordgo.Session, channelID string, embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
+func SendEmbedWithFallback(s *discordgo.Session, channelID int64, embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
 	perms, err := s.State.UserChannelPermissions(s.State.User.ID, channelID)
 	if err != nil {
 		return nil, err
@@ -285,7 +276,7 @@ func MustParseInt(s string) int64 {
 	return i
 }
 
-func AddRole(member *discordgo.Member, role string, guildID string) error {
+func AddRole(member *discordgo.Member, role int64, guildID int64) error {
 	for _, v := range member.Roles {
 		if v == role {
 			// Already has the role
@@ -296,10 +287,32 @@ func AddRole(member *discordgo.Member, role string, guildID string) error {
 	return BotSession.GuildMemberRoleAdd(guildID, member.User.ID, role)
 }
 
-func RemoveRole(member *discordgo.Member, role string, guildID string) error {
+func AddRoleDS(ms *dstate.MemberState, role int64) error {
+	for _, v := range ms.Roles {
+		if v == role {
+			// Already has the role
+			return nil
+		}
+	}
+
+	return BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, role)
+}
+
+func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
 	for _, r := range member.Roles {
 		if r == role {
 			return BotSession.GuildMemberRoleRemove(guildID, member.User.ID, r)
+		}
+	}
+
+	// Never had the role in the first place if we got here
+	return nil
+}
+
+func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
+	for _, r := range ms.Roles {
+		if r == role {
+			return BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, r)
 		}
 	}
 
@@ -355,7 +368,7 @@ func EscapeSpecialMentions(in string) string {
 }
 
 // EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
-func EscapeSpecialMentionsConditional(s string, allowEveryone, allowHere bool, allowRoles []string) string {
+func EscapeSpecialMentionsConditional(s string, allowEveryone, allowHere bool, allowRoles []int64) string {
 	if !allowEveryone {
 		s = everyoneReplacer.Replace(s)
 	}
@@ -370,7 +383,8 @@ func EscapeSpecialMentionsConditional(s string, allowEveryone, allowHere bool, a
 		}
 
 		id := x[3 : len(x)-1]
-		if ContainsStringSlice(allowRoles, id) {
+		parsed, _ := strconv.ParseInt(id, 10, 64)
+		if ContainsInt64Slice(allowRoles, parsed) {
 			// This role is allowed to be mentioned
 			return x
 		}
@@ -382,7 +396,7 @@ func EscapeSpecialMentionsConditional(s string, allowEveryone, allowHere bool, a
 	return s
 }
 
-func RetrySendMessage(channel string, msg interface{}, maxTries int) error {
+func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
 	var err error
 	for currentTries := 0; currentTries < maxTries; currentTries++ {
 
@@ -459,11 +473,26 @@ func ValidateSQLSchema(input string) {
 
 // DiscordError extracts the errorcode discord sent us
 func DiscordError(err error) (code int, msg string) {
+	err = errors.Cause(err)
+
 	if rError, ok := err.(*discordgo.RESTError); ok && rError.Message != nil {
 		return rError.Message.Code, rError.Message.Message
 	}
 
 	return 0, ""
+}
+
+// IsDiscordErr returns true if this was a discord error and one of the codes matches
+func IsDiscordErr(err error, codes ...int) bool {
+	code, _ := DiscordError(err)
+
+	for _, v := range codes {
+		if code == v {
+			return true
+		}
+	}
+
+	return false
 }
 
 type LoggedExecutedCommand struct {

@@ -2,11 +2,10 @@ package configstore
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"reflect"
 	"strconv"
@@ -18,7 +17,6 @@ var (
 	ErrInvalidConfig = errors.New("Invalid config")
 
 	SQL      = &Postgres{}
-	Redis    = &redisDatabase{}
 	Cached   = NewCached()
 	storages = make(map[reflect.Type]Storage)
 )
@@ -27,8 +25,12 @@ func RegisterConfig(stor Storage, conf GuildConfig) {
 	storages[reflect.TypeOf(conf)] = stor
 }
 
-func KeyGuildConfig(guildID string, configName string) string {
-	return "guild_config:" + configName + ":" + guildID
+func StrID(id int64) string {
+	return strconv.FormatInt(id, 10)
+}
+
+func KeyGuildConfig(guildID int64, configName string) string {
+	return "guild_config:" + configName + ":" + StrID(guildID)
 }
 
 type GuildConfigModel struct {
@@ -59,7 +61,7 @@ type PostFetchHandler interface {
 
 type Storage interface {
 	// GetGuildConfig returns a GuildConfig item from db
-	GetGuildConfig(ctx context.Context, guildID string, dest GuildConfig) (err error)
+	GetGuildConfig(ctx context.Context, guildID int64, dest GuildConfig) (err error)
 
 	// SetGuildConfig saves the GuildConfig struct
 	SetGuildConfig(ctx context.Context, conf GuildConfig) error
@@ -78,11 +80,11 @@ func NewCached() *CachedStorage {
 	}
 }
 
-func (c *CachedStorage) InvalidateCache(guildID string, config string) {
+func (c *CachedStorage) InvalidateCache(guildID int64, config string) {
 	c.cache.Delete(KeyGuildConfig(guildID, config))
 }
 
-func (c *CachedStorage) GetGuildConfig(ctx context.Context, guildID string, dest GuildConfig) error {
+func (c *CachedStorage) GetGuildConfig(ctx context.Context, guildID int64, dest GuildConfig) error {
 	cached := true
 	item, err := c.cache.Fetch(KeyGuildConfig(guildID, dest.GetName()), time.Minute*10, func() (interface{}, error) {
 		underlying, ok := storages[reflect.TypeOf(dest)]
@@ -125,27 +127,27 @@ func HandleInvalidateCacheEvt(event *pubsub.Event) {
 		return
 	}
 
-	Cached.InvalidateCache(event.TargetGuild, *conf)
+	tg, _ := strconv.ParseInt(event.TargetGuild, 10, 64)
+	Cached.InvalidateCache(tg, *conf)
 }
 
 // InvalidateGuildCache is a helper that both instantly invalides the local application cache
 // As well as sending the pusub event
-func InvalidateGuildCache(client *redis.Client, guildID interface{}, conf GuildConfig) {
-	gStr := ""
+func InvalidateGuildCache(guildID interface{}, conf GuildConfig) {
+	var gID int64
 	switch t := guildID.(type) {
 	case int64:
-		gStr = strconv.FormatInt(t, 10)
+		gID = t
 	case string:
-		gStr = t
+		gID, _ = strconv.ParseInt(t, 10, 64)
 	case GuildConfig:
-		idInt := t.GetGuildID()
-		gStr = strconv.FormatInt(idInt, 10)
+		gID = t.GetGuildID()
 	default:
 		panic("Invalid guildID passed to InvalidateGuildCache")
 	}
 
-	Cached.InvalidateCache(gStr, conf.GetName())
-	err := pubsub.Publish(client, "invalidate_guild_config_cache", gStr, conf.GetName())
+	Cached.InvalidateCache(gID, conf.GetName())
+	err := pubsub.Publish("invalidate_guild_config_cache", gID, conf.GetName())
 	if err != nil {
 		logrus.WithError(err).Error("FAILED INVALIDATING CACHE")
 	}

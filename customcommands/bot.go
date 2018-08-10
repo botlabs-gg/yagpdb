@@ -2,7 +2,6 @@ package customcommands
 
 import (
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
@@ -11,11 +10,24 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/mediocregopher/radix.v2/redis"
+	log "github.com/sirupsen/logrus"
+	"math/rand"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
+
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
+	commands.AddRootCommands(cmdListCommands)
+}
+
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+}
 
 var cmdListCommands = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
@@ -28,7 +40,7 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		ccs, _, err := GetCommands(data.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), data.GS.ID())
+		ccs, _, err := GetCommands(data.GS.ID)
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
@@ -49,7 +61,7 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, cc.Response), nil
+		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
 
 	},
 }
@@ -84,13 +96,13 @@ func FindCommands(ccs []*CustomCommand, data *dcmd.Data) (foundCCS []*CustomComm
 func StringCommands(ccs []*CustomCommand) string {
 	out := ""
 	for _, cc := range ccs {
-		out += fmt.Sprintf("%s: `%s`\n", cc.Trigger, cc.TriggerType.String())
+		out += fmt.Sprintf("`%s`: %s\n", cc.Trigger, cc.TriggerType.String())
 	}
 
 	return out
 }
 
-func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID string, cState *dstate.ChannelState) bool {
+func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dstate.ChannelState) bool {
 	if cState == nil {
 		log.Warn("Channel not found in state")
 		return true
@@ -100,9 +112,9 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID string, cState *ds
 		return true
 	}
 
-	channelPerms, err := cState.Guild.MemberPermissions(true, cState.ID(), userID)
+	channelPerms, err := cState.Guild.MemberPermissions(true, cState.ID, userID)
 	if err != nil {
-		log.WithFields(log.Fields{"guild": cState.Guild.ID(), "channel": cState.ID()}).WithError(err).Error("Failed checking channel perms")
+		log.WithFields(log.Fields{"guild": cState.Guild.ID, "channel": cState.ID}).WithError(err).Error("Failed checking channel perms")
 		return true
 	}
 
@@ -115,18 +127,17 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID string, cState *ds
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
-	client := bot.ContextRedis(evt.Context())
+	mc := evt.MessageCreate()
+	botUser := common.BotUser
+	cs := bot.State.Channel(true, mc.ChannelID)
 
-	botUser := bot.State.User(true)
-	cs := bot.State.Channel(true, evt.MessageCreate.ChannelID)
-
-	if shouldIgnoreChannel(evt.MessageCreate, botUser.ID, cs) {
+	if shouldIgnoreChannel(mc, botUser.ID, cs) {
 		return
 	}
 
-	cmds, _, err := GetCommands(client, cs.Guild.ID())
+	cmds, _, err := GetCommands(cs.Guild.ID)
 	if err != nil {
-		log.WithError(err).WithField("guild", cs.Guild.ID()).Error("Failed retrieving comamnds")
+		log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
 		return
 	}
 
@@ -134,59 +145,86 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix, err := commands.GetCommandPrefix(client, cs.Guild.ID())
+	prefix, err := commands.GetCommandPrefix(cs.Guild.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed getting prefix")
 		return
 	}
 
+	member, err := bot.GetMember(cs.Guild.ID, mc.Author.ID)
+	if err != nil {
+		return
+	}
+
 	var matched *CustomCommand
 	var stripped string
+	var args []string
 	for _, cmd := range cmds {
-		if m, s := CheckMatch(prefix, cmd, evt.MessageCreate.Content); m {
+		if !cmd.RunsInChannel(mc.ChannelID) || !cmd.RunsForUser(member) {
+			continue
+		}
+
+		if m, s, a := CheckMatch(prefix, cmd, mc.Content); m {
 			matched = cmd
 			stripped = s
+			args = a
 			break
 		}
 	}
 
-	if matched == nil || matched.Response == "" {
+	if matched == nil || len(matched.Responses) == 0 {
 		return
+	}
+
+	if common.Statsd != nil {
+		go common.Statsd.Incr("yagpdb.cc.executed", nil, 1)
 	}
 
 	channel := cs.Copy(true, true)
 	log.WithFields(log.Fields{
 		"trigger":      matched.Trigger,
 		"trigger_type": matched.TriggerType,
-		"guild":        channel.GuildID,
+		"guild":        channel.Guild.ID,
 		"channel_name": channel.Name,
 	}).Info("Custom command triggered")
 
-	out, err := ExecuteCustomCommand(matched, stripped, client, bot.ContextSession(evt.Context()), evt.MessageCreate)
+	out, tmplCtx, err := ExecuteCustomCommand(matched, args, stripped, bot.ContextSession(evt.Context()), mc)
 	if err != nil {
-		log.WithField("guild", channel.GuildID).WithError(err).Error("Error executing custom command")
+		log.WithField("guild", channel.Guild.ID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
 		out += common.EscapeSpecialMentions(err.Error())
 	}
 
-	if out != "" {
-		_, err = common.BotSession.ChannelMessageSend(evt.MessageCreate.ChannelID, out)
+	for _, v := range tmplCtx.EmebdsToSend {
+		common.BotSession.ChannelMessageSendEmbed(mc.ChannelID, v)
+	}
+
+	if tmplCtx.DelTrigger {
+		go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelTriggerDelay), mc.ChannelID, mc.ID)
+	}
+
+	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
+		m, err := common.BotSession.ChannelMessageSend(mc.ChannelID, out)
 		if err != nil {
 			log.WithError(err).Error("Failed sending message")
+		} else {
+			if tmplCtx.DelResponse {
+				go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelResponseDelay), m.ChannelID, m.ID)
+			}
 		}
 	}
 }
 
-func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Client, s *discordgo.Session, m *discordgo.MessageCreate) (string, error) {
+func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
 
 	cs := bot.State.Channel(true, m.ChannelID)
-	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
+	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
 	if err != nil {
-		return "", err
+		err = err
+		return
 	}
 
-	tmplCtx := templates.NewContext(bot.State.User(true).User, cs.Guild, cs, member)
-	tmplCtx.Redis = client
+	tmplCtx = templates.NewContext(cs.Guild, cs, member)
 	tmplCtx.Msg = m.Message
 
 	args := dcmd.SplitArgs(m.Content)
@@ -195,67 +233,101 @@ func ExecuteCustomCommand(cmd *CustomCommand, stripped string, client *redis.Cli
 		argsStr[k] = v.Str
 	}
 
+	// TODO: Potentially retire undocumented StrippedMsg.
 	tmplCtx.Data["Args"] = argsStr
 	tmplCtx.Data["StrippedMsg"] = stripped
+	tmplCtx.Data["Cmd"] = cmdArgs[0]
+	if len(cmdArgs) > 1 {
+		tmplCtx.Data["CmdArgs"] = cmdArgs[1:]
+	} else {
+		tmplCtx.Data["CmdArgs"] = []string{}
+	}
+	tmplCtx.Data["Message"] = m
 
-	out, err := tmplCtx.Execute(client, cmd.Response)
+	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
+	out, err := tmplCtx.Execute(chanMsg)
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
 	}
+	resp = out
 
-	return out, err
+	return
 }
 
-func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool, stripped string) {
-	// set to globalprefix+" "+localprefix for command, and just local prefix for startwith
-	startsWith := ""
-
+// CheckMatch returns true if the given cmd matches, as well as the arguments
+// following the command trigger (arg 0 being the message up to, and including,
+// the trigger).
+func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool, stripped string, args []string) {
 	trigger := cmd.Trigger
 
-	if !cmd.CaseSensitive && cmd.TriggerType != CommandTriggerRegex {
-		msg = strings.ToLower(msg)
-		trigger = strings.ToLower(cmd.Trigger)
-		globalPrefix = strings.ToLower(globalPrefix)
+	cmdMatch := "(?m)"
+	if !cmd.CaseSensitive {
+		cmdMatch += "(?i)"
 	}
 
 	switch cmd.TriggerType {
-	// Simpler triggers
-	case CommandTriggerStartsWith:
-		startsWith = trigger
 	case CommandTriggerCommand:
-		split := strings.SplitN(msg, " ", 2)
-		if len(split) > 0 && split[0] == globalPrefix+trigger {
-			if len(split) > 1 {
-				stripped = strings.TrimSpace(split[1])
-			}
-
-			return true, stripped
-		} else {
-			return false, ""
-		}
-	// Special trigger types
+		// Regex is:
+		// ^(<@!?bot_id> ?|server_cmd_prefix)trigger($|[[:space:]])
+		cmdMatch += "^(<@!?" + discordgo.StrID(common.BotUser.ID) + "> ?|" + regexp.QuoteMeta(globalPrefix) + ")" + regexp.QuoteMeta(trigger) + "($|[[:space:]])"
+	case CommandTriggerStartsWith:
+		cmdMatch += "^" + regexp.QuoteMeta(trigger)
 	case CommandTriggerContains:
-		return strings.Contains(msg, trigger), msg
+		cmdMatch += "^.*" + regexp.QuoteMeta(trigger)
 	case CommandTriggerRegex:
-		rTrigger := cmd.Trigger
-		if !cmd.CaseSensitive && !strings.HasPrefix(rTrigger, "(?i)") {
-			rTrigger = "(?i)" + rTrigger
-		}
-		ok, err := regexp.Match(rTrigger, []byte(msg))
-		if err != nil {
-			log.WithError(err).Error("Failed compiling regex")
-		}
-
-		return ok, msg
+		cmdMatch += trigger
 	case CommandTriggerExact:
-		return msg == trigger, ""
+		cmdMatch += "^" + regexp.QuoteMeta(trigger) + "$"
+	default:
+		panic(fmt.Sprintf("Unknown TriggerType %s", cmd.TriggerType))
 	}
 
-	if strings.HasPrefix(msg, startsWith) {
-		stripped = msg[:len(startsWith)]
-		return true, stripped
+	item, err := RegexCache.Fetch(cmdMatch, time.Minute*10, func() (interface{}, error) {
+		re, err := regexp.Compile(cmdMatch)
+		if err != nil {
+			return nil, err
+		}
+
+		return re, nil
+	})
+
+	if err != nil {
+		return false, "", nil
 	}
 
-	return false, ""
+	re := item.Value().(*regexp.Regexp)
+
+	idx := re.FindStringIndex(msg)
+	if idx == nil {
+		return false, "", nil
+	}
+
+	argsRaw := dcmd.SplitArgs(msg[idx[1]:])
+	args = make([]string, len(argsRaw)+1)
+	args[0] = msg[:idx[1]]
+	for i, v := range argsRaw {
+		args[i+1] = v.Str
+	}
+
+	// The following simply matches the legacy behavior as I'm not sure if anyone is relying on it.
+	if !cmd.CaseSensitive && cmd.TriggerType != CommandTriggerRegex {
+		stripped = strings.ToLower(msg)
+	}
+	switch cmd.TriggerType {
+	case CommandTriggerStartsWith:
+		stripped = args[0]
+	case CommandTriggerCommand:
+		stripped = strings.TrimSpace(stripped)
+	case CommandTriggerContains:
+	case CommandTriggerRegex:
+		break
+	case CommandTriggerExact:
+		stripped = ""
+	default:
+		panic(fmt.Sprintf("Unknown TriggerType %s", cmd.TriggerType))
+	}
+
+	match = true
+	return
 }

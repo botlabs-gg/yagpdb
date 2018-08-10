@@ -1,9 +1,7 @@
 package reminders
 
 import (
-	"errors"
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -11,15 +9,19 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/mediocregopher/radix.v2/redis"
 	"strconv"
-	"strings"
 	"time"
-	"unicode"
 )
 
-func (p *Plugin) InitBot() {
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(cmds...)
+}
+
+func (p *Plugin) BotInit() {
+	scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandler)
 }
 
 // Reminder management commands
@@ -31,7 +33,7 @@ var cmds = []*commands.YAGCommand{
 		Aliases:      []string{"remind"},
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Time", Type: dcmd.String},
+			&dcmd.ArgDef{Name: "Time", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Name: "Message", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -40,25 +42,22 @@ var cmds = []*commands.YAGCommand{
 				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
 			}
 
-			when, err := parseReminderTime(parsed.Args[0].Str())
-			if err != nil {
-				return err, err
-			}
+			fromNow := parsed.Args[0].Value.(time.Duration)
 
-			timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, when)
+			durString := common.HumanizeDuration(common.DurationPrecisionSeconds, fromNow)
+			when := time.Now().Add(fromNow)
 			tStr := when.Format(time.RFC822)
 
 			if when.After(time.Now().Add(time.Hour * 24 * 366)) {
 				return "Can be max 365 days from now...", nil
 			}
 
-			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
-			_, err = NewReminder(client, parsed.Msg.Author.ID, parsed.CS.ID(), parsed.Args[1].Str(), when)
+			_, err := NewReminder(parsed.Msg.Author.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
 			if err != nil {
 				return err, err
 			}
 
-			return "Set a reminder " + timeFromNow + " from now (" + tStr + ")\nView reminders with the reminders command", nil
+			return "Set a reminder in " + durString + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 		},
 	},
 	&commands.YAGCommand{
@@ -82,7 +81,7 @@ var cmds = []*commands.YAGCommand{
 		Name:        "CReminders",
 		Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, parsed.CS.ID())
+			ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, parsed.CS.ID)
 			if err != nil {
 				return "An eror occured checkign for perms", err
 			}
@@ -90,7 +89,7 @@ var cmds = []*commands.YAGCommand{
 				return "You do not have access to this command (requires manage channel permission)", nil
 			}
 
-			currentReminders, err := GetChannelReminders(parsed.CS.ID())
+			currentReminders, err := GetChannelReminders(parsed.CS.ID)
 			if err != nil {
 				return "Failed fetching reminders, contact bot owner", err
 			}
@@ -122,8 +121,8 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			// Check perms
-			if reminder.UserID != parsed.Msg.Author.ID {
-				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, reminder.ChannelID)
+			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
+				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, reminder.ChannelIDInt())
 				if err != nil {
 					return "An eror occured checkign for perms", err
 				}
@@ -139,7 +138,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			// Check if we should remove the scheduled event
-			currentReminders, err := GetUserReminders(reminder.UserID)
+			currentReminders, err := GetUserReminders(reminder.UserIDInt())
 			if err != nil {
 				return "Failed fetching reminders, contact bot owner", err
 			}
@@ -153,9 +152,8 @@ var cmds = []*commands.YAGCommand{
 				}
 			}
 
-			client := parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client)
 			// No other reminder for this user at this timestamp, remove the scheduled event
-			scheduledevents.RemoveEvent(client, fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
+			scheduledevents.RemoveEvent(fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
 
 			return delMsg, nil
 		},
@@ -165,7 +163,9 @@ var cmds = []*commands.YAGCommand{
 func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 	out := ""
 	for _, v := range reminders {
-		cs := bot.State.Channel(true, v.ChannelID)
+		parsedCID, _ := strconv.ParseInt(v.ChannelID, 10, 64)
+
+		cs := bot.State.Channel(true, parsedCID)
 
 		t := time.Unix(v.When, 0)
 		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
@@ -173,95 +173,17 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		if !displayUsernames {
 			channel := "Unknown channel"
 			if cs != nil {
-				channel = "<#" + cs.ID() + ">"
+				channel = "<#" + discordgo.StrID(cs.ID) + ">"
 			}
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
-			member, _ := bot.GetMember(cs.Guild.ID(), v.UserID)
+			member, _ := bot.GetMember(cs.Guild.ID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
-				username = member.User.Username
+				username = member.Username
 			}
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
 		}
 	}
 	return out
-}
-
-// Parses a time string like 1day3h
-func parseReminderTime(str string) (time.Time, error) {
-	logrus.Info(str)
-
-	t := time.Now()
-
-	currentNumBuf := ""
-	currentModifierBuf := ""
-
-	// Parse the time
-	for _, v := range str {
-		if unicode.Is(unicode.White_Space, v) {
-			continue
-		}
-
-		if unicode.IsNumber(v) {
-			if currentModifierBuf != "" {
-				if currentNumBuf == "" {
-					currentNumBuf = "1"
-				}
-				d, err := parseDuration(currentNumBuf, currentModifierBuf)
-				if err != nil {
-					return t, err
-				}
-
-				t = t.Add(d)
-
-				currentNumBuf = ""
-				currentModifierBuf = ""
-			}
-
-			currentNumBuf += string(v)
-
-		} else {
-			currentModifierBuf += string(v)
-		}
-	}
-
-	if currentNumBuf != "" {
-		d, err := parseDuration(currentNumBuf, currentModifierBuf)
-		if err == nil {
-			t = t.Add(d)
-		}
-	}
-
-	return t, nil
-}
-
-func parseDuration(numStr, modifierStr string) (time.Duration, error) {
-	parsedNum, err := strconv.ParseInt(numStr, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	parsedDur := time.Duration(parsedNum)
-
-	if strings.HasPrefix(modifierStr, "s") {
-		parsedDur = parsedDur * time.Second
-	} else if modifierStr == "" || (strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o')) {
-		parsedDur = parsedDur * time.Minute
-	} else if strings.HasPrefix(modifierStr, "h") {
-		parsedDur = parsedDur * time.Hour
-	} else if strings.HasPrefix(modifierStr, "d") {
-		parsedDur = parsedDur * time.Hour * 24
-	} else if strings.HasPrefix(modifierStr, "w") {
-		parsedDur = parsedDur * time.Hour * 24 * 7
-	} else if strings.HasPrefix(modifierStr, "mo") {
-		parsedDur = parsedDur * time.Hour * 24 * 30
-	} else if strings.HasPrefix(modifierStr, "y") {
-		parsedDur = parsedDur * time.Hour * 24 * 365
-	} else {
-		return parsedDur, errors.New("Couldn't figure out what '" + numStr + modifierStr + "` was")
-	}
-
-	return parsedDur, nil
-
 }

@@ -4,6 +4,8 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix.v3"
+	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
@@ -12,26 +14,38 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/customcommands.html")))
+	tmplPathSettings := "templates/plugins/customcommands.html"
+	if common.Testing {
+		tmplPathSettings = "../../customcommands/assets/customcommands.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
 
-	web.CPMux.Handle(pat.Get("/customcommands"), getHandler)
-	web.CPMux.Handle(pat.Get("/customcommands/"), getHandler)
+	subMux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/customcommands"), subMux)
+	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
+
+	subMux.Use(web.RequireGuildChannelsMiddleware)
+	subMux.Use(web.RequireFullGuildMW)
+
+	subMux.Handle(pat.Get(""), getHandler)
+	subMux.Handle(pat.Get("/"), getHandler)
 
 	newHandler := web.ControllerPostHandler(HandleNewCommand, getHandler, CustomCommand{}, "Created a new custom command")
-	web.CPMux.Handle(pat.Post("/customcommands"), newHandler)
-	web.CPMux.Handle(pat.Post("/customcommands/"), newHandler)
-	web.CPMux.Handle(pat.Post("/customcommands/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
-	web.CPMux.Handle(pat.Post("/customcommands/:cmd/delete"), web.ControllerHandler(HandleDeleteCommand, "cp_custom_commands"))
+	subMux.Handle(pat.Post(""), newHandler)
+	subMux.Handle(pat.Post("/"), newHandler)
+	subMux.Handle(pat.Post("/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
+	subMux.Handle(pat.Post("/:cmd/delete"), web.ControllerHandler(HandleDeleteCommand, "cp_custom_commands"))
 }
 
 func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	client, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	_, ok := templateData["CustomCommands"]
 	if !ok {
-		commands, _, err := GetCommands(client, activeGuild.ID)
+		commands, _, err := GetCommands(activeGuild.ID)
 		if err != nil {
 			return templateData, err
 		}
@@ -43,12 +57,12 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/customcommands/"
 
 	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
-	currentCommands, highest, err := GetCommands(client, activeGuild.ID)
+	currentCommands, highest, err := GetCommands(activeGuild.ID)
 	if err != nil {
 		return templateData, err
 	}
@@ -62,7 +76,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	newCmd.TriggerType = TriggerTypeFromForm(newCmd.TriggerTypeForm)
 	newCmd.ID = highest + 1
 
-	err = newCmd.Save(client, activeGuild.ID)
+	err = newCmd.Save(activeGuild.ID)
 	if err != nil {
 		return templateData, err
 	}
@@ -73,32 +87,33 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/customcommands/"
 
 	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
 	// Validate that they haven't messed with the id
-	exists, _ := common.RedisBool(client.Cmd("HEXISTS", KeyCommands(activeGuild.ID), cmd.ID))
+	var exists bool
+	common.RedisPool.Do(radix.FlatCmd(&exists, "HEXISTS", KeyCommands(activeGuild.ID), cmd.ID))
 	if !exists {
 		return templateData, web.NewPublicError("That command dosen't exist?")
 	}
 
 	cmd.TriggerType = TriggerTypeFromForm(cmd.TriggerTypeForm)
 
-	err := cmd.Save(client, activeGuild.ID)
+	err := cmd.Save(activeGuild.ID)
 
 	return templateData, err
 }
 
 func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/customcommands/"
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/customcommands/"
 
 	cmdIndex := pat.Param(r, "cmd")
 
-	err := client.Cmd("HDEL", KeyCommands(activeGuild.ID), cmdIndex).Err
+	err := common.RedisPool.Do(radix.Cmd(nil, "HDEL", KeyCommands(activeGuild.ID), cmdIndex))
 	if err != nil {
 		return templateData, err
 	}

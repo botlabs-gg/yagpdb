@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"database/sql"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
@@ -8,10 +9,10 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"gopkg.in/src-d/go-kallax.v1"
+	"github.com/jonas747/yagpdb/rolecommands/models"
 )
 
-func (p *Plugin) InitBot() {
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
@@ -22,17 +23,22 @@ func (p *Plugin) InitBot() {
 			},
 			RunFunc: CmdFuncRole,
 		}, &commands.YAGCommand{
-			CmdCategory:  commands.CategoryTool,
-			Name:         "RoleMenu",
-			Description:  "Set up a role menu",
-			RequiredArgs: 1,
+			CmdCategory: commands.CategoryTool,
+			Name:        "RoleMenu",
+			Description: "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one, if there's already a menu on this message it will be updated with the missing options.",
 			Arguments: []*dcmd.ArgDef{
 				&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
+			},
+			ArgSwitches: []*dcmd.ArgDef{
+				&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
+				&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
 			},
 			RunFunc: CmdFuncRoleMenu,
 		},
 	)
+}
 
+func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(handleReactionAdd, eventsystem.EventMessageReactionAdd)
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 }
@@ -42,17 +48,17 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return CmdFuncListCommands(parsed)
 	}
 
-	member, err := bot.GetMember(parsed.GS.ID(), parsed.Msg.Author.ID)
+	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
 	if err != nil {
 		return "Failed retrieving you?", err
 	}
 
-	given, err := FindAssignRole(parsed.GS.ID(), member, parsed.Args[0].Str())
+	given, err := FindAssignRole(parsed.GS.ID, member, parsed.Args[0].Str())
 	if err != nil {
-		if err == kallax.ErrNotFound {
+		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
 			if v, ok := resp.(string); ok {
-				return "Role not round, " + v, err
+				return "Role not found, " + v, err
 			}
 
 			return resp, err
@@ -79,18 +85,22 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 		return err.Error(), nil
 	}
 
-	if code, _ := common.DiscordError(err); code != 0 {
+	if code, msg := common.DiscordError(err); code != 0 {
 		if code == discordgo.ErrCodeMissingPermissions {
-			return "Bot does not have enough permissions to assign you this role", err
+			return "The bot is below the role, contact the server admin", err
+		} else if code == discordgo.ErrCodeMissingAccess {
+			return "Bot does not have enough permissions to assign you this role, contact the server admin", err
 		}
+
+		return "An error occured while assigning the role: " + msg, err
 	}
 
-	return "An error occured assignign the role", err
+	return "An error occurred while assigning the role", err
 
 }
 
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
-	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(common.MustParseInt(parsed.GS.ID()))
+	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.GS.ID)
 	if err != nil {
 		return "Failed retrieving role commands", err
 	}
@@ -124,7 +134,7 @@ func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
 }
 
 // StringCommands pretty formats a bunch of commands into  a string
-func StringCommands(cmds []*RoleCommand) string {
+func StringCommands(cmds []*models.RoleCommand) string {
 	stringedCommands := make([]int64, 0, len(cmds))
 
 	output := "```\n"

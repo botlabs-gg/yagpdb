@@ -24,7 +24,7 @@ package bot
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"runtime/debug"
 )

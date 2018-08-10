@@ -2,17 +2,15 @@ package mqueue
 
 import (
 	"encoding/json"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
+	"strconv"
 	"sync"
 	"time"
 )
-
-type PluginWithErrorHandler interface {
-	HandleMQueueError(elem *QueuedElement, err error)
-}
 
 var (
 	sources  = make(map[string]PluginWithErrorHandler)
@@ -26,6 +24,27 @@ var (
 	startedLock sync.Mutex
 	started     bool
 )
+
+type PluginWithErrorHandler interface {
+	HandleMQueueError(elem *QueuedElement, err error)
+}
+
+var (
+	_ bot.BotInitHandler    = (*Plugin)(nil)
+	_ bot.BotStopperHandler = (*Plugin)(nil)
+)
+
+type Plugin struct {
+}
+
+func (p *Plugin) Name() string {
+	return "mqueue"
+}
+
+func RegisterPlugin() {
+	p := &Plugin{}
+	common.RegisterPlugin(p)
+}
 
 func InitStores() {
 	// Init table
@@ -80,7 +99,22 @@ func QueueMessageEmbed(source, sourceID, channel string, embed *discordgo.Messag
 	store.Insert(elem)
 }
 
-func StartPolling() {
+func (p *Plugin) BotInit() {
+	go startPolling()
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	startedLock.Lock()
+	if !started {
+		startedLock.Unlock()
+		wg.Done()
+		return
+	}
+	startedLock.Unlock()
+	stopChan <- wg
+}
+
+func startPolling() {
 	startedLock.Lock()
 	if started {
 		startedLock.Unlock()
@@ -90,6 +124,7 @@ func StartPolling() {
 	startedLock.Unlock()
 
 	ticker := time.NewTicker(time.Second)
+	tickerClean := time.NewTicker(time.Hour)
 	for {
 		select {
 		case wg := <-stopChan:
@@ -97,6 +132,18 @@ func StartPolling() {
 			return
 		case <-ticker.C:
 			poll()
+		case <-tickerClean.C:
+			go func() {
+				result, err := common.PQ.Exec("DELETE FROM mqueue WHERE processed=true")
+				if err != nil {
+					logrus.WithError(err).Error("Failed cleaning mqueue db")
+				} else {
+					rows, err := result.RowsAffected()
+					if err == nil {
+						logrus.Println("mqueue cleaned up ", rows, " rows")
+					}
+				}
+			}()
 		}
 	}
 }
@@ -112,17 +159,6 @@ func shutdown(wg *sync.WaitGroup) {
 		time.Sleep(time.Second)
 	}
 	wg.Done()
-}
-
-func Stop(wg *sync.WaitGroup) {
-	startedLock.Lock()
-	if !started {
-		startedLock.Unlock()
-		return
-	}
-	startedLock.Unlock()
-	wg.Add(1)
-	stopChan <- wg
 }
 
 func poll() {
@@ -180,12 +216,16 @@ func process(elem *QueuedElement) {
 		}
 	}
 
+	parsedChannel, err := strconv.ParseInt(elem.Channel, 10, 64)
+	if err != nil {
+		queueLogger.WithError(err).Error("Failed parsing Channel")
+	}
 	for {
 		var err error
 		if elem.MessageStr != "" {
-			_, err = common.BotSession.ChannelMessageSend(elem.Channel, elem.MessageStr)
+			_, err = common.BotSession.ChannelMessageSend(parsedChannel, elem.MessageStr)
 		} else if embed != nil {
-			_, err = common.BotSession.ChannelMessageSendEmbed(elem.Channel, embed)
+			_, err = common.BotSession.ChannelMessageSendEmbed(parsedChannel, embed)
 		} else {
 			queueLogger.Error("MQueue: Both MessageEmbed and MessageStr empty")
 			break

@@ -1,12 +1,12 @@
 package reminders
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +15,6 @@ import (
 type Plugin struct{}
 
 func RegisterPlugin() {
-	scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandler)
 	err := common.GORM.AutoMigrate(&Reminder{}).Error
 	if err != nil {
 		panic(err)
@@ -37,6 +36,16 @@ type Reminder struct {
 	When      int64
 }
 
+func (r *Reminder) UserIDInt() (i int64) {
+	i, _ = strconv.ParseInt(r.UserID, 10, 64)
+	return
+}
+
+func (r *Reminder) ChannelIDInt() (i int64) {
+	i, _ = strconv.ParseInt(r.ChannelID, 10, 64)
+	return
+}
+
 func (r *Reminder) Trigger() error {
 	// remove the actual reminder
 	rows := common.GORM.Delete(r).RowsAffected
@@ -50,27 +59,27 @@ func (r *Reminder) Trigger() error {
 	return nil
 }
 
-func GetUserReminders(userID string) (results []*Reminder, err error) {
-	err = common.GORM.Where(&Reminder{UserID: userID}).Find(&results).Error
+func GetUserReminders(userID int64) (results []*Reminder, err error) {
+	err = common.GORM.Where(&Reminder{UserID: discordgo.StrID(userID)}).Find(&results).Error
 	if err == gorm.ErrRecordNotFound {
 		err = nil
 	}
 	return
 }
 
-func GetChannelReminders(channel string) (results []*Reminder, err error) {
-	err = common.GORM.Where(&Reminder{ChannelID: channel}).Find(&results).Error
+func GetChannelReminders(channel int64) (results []*Reminder, err error) {
+	err = common.GORM.Where(&Reminder{ChannelID: discordgo.StrID(channel)}).Find(&results).Error
 	if err == gorm.ErrRecordNotFound {
 		err = nil
 	}
 	return
 }
 
-func NewReminder(client *redis.Client, userID string, channelID string, message string, when time.Time) (*Reminder, error) {
+func NewReminder(userID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
 	whenUnix := when.Unix()
 	reminder := &Reminder{
-		UserID:    userID,
-		ChannelID: channelID,
+		UserID:    discordgo.StrID(userID),
+		ChannelID: discordgo.StrID(channelID),
 		Message:   message,
 		When:      whenUnix,
 	}
@@ -80,7 +89,7 @@ func NewReminder(client *redis.Client, userID string, channelID string, message 
 		return nil, err
 	}
 
-	err = scheduledevents.ScheduleEvent(client, "reminders_check_user:"+strconv.FormatInt(whenUnix, 10), userID, when)
+	err = scheduledevents.ScheduleEvent("reminders_check_user:"+strconv.FormatInt(whenUnix, 10), discordgo.StrID(userID), when)
 	return reminder, err
 }
 
@@ -91,7 +100,8 @@ func checkUserEvtHandler(evt string) error {
 		return nil
 	}
 
-	reminders, err := GetUserReminders(split[1])
+	parsed, _ := strconv.ParseInt(split[1], 10, 64)
+	reminders, err := GetUserReminders(parsed)
 	if err != nil {
 		return err
 	}

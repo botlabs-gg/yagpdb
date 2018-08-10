@@ -1,7 +1,7 @@
 package automod
 
 import (
-	"github.com/Sirupsen/logrus"
+	"github.com/google/safebrowsing"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -9,35 +9,64 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/sirupsen/logrus"
+	"os"
+	"sync"
 	"time"
 )
 
-func (p *Plugin) InitBot() {
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageCreate), eventsystem.EventMessageCreate)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMessageUpdate), eventsystem.EventMessageUpdate)
-}
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.BotStopperHandler = (*Plugin)(nil)
 
-var _ bot.BotStarterHandler = (*Plugin)(nil)
 var (
 	// cache configs because they are used often
-	confCache *ccache.Cache
+	confCache   *ccache.Cache
+	safeBrowser *safebrowsing.SafeBrowser
 )
 
-func (p *Plugin) StartBot() {
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(HandleMessageUpdate, eventsystem.EventMessageUpdate)
+
 	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
 	confCache = ccache.New(ccache.Configure().MaxSize(1000))
+
+	safeBrosingAPIKey := os.Getenv("YAGPDB_GOOGLE_SAFEBROWSING_API_KEY")
+	if safeBrosingAPIKey != "" {
+		conf := safebrowsing.Config{
+			APIKey: safeBrosingAPIKey,
+			DBPath: "safebrowsing_db",
+			Logger: logrus.StandardLogger().Writer(),
+		}
+		sb, err := safebrowsing.NewSafeBrowser(conf)
+		if err != nil {
+			logrus.WithError(err).Error("Failed initializing google safebrowsing client, integration will be disabled")
+		} else {
+			safeBrowser = sb
+		}
+	}
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	if safeBrowser != nil {
+		err := safeBrowser.Close()
+		if err != nil {
+			logrus.WithError(err).Error("Failed closing safebrowser")
+		}
+	}
+
+	wg.Done()
 }
 
 // Invalidate the cache when the rules have changed
 func HandleUpdateAutomodRules(event *pubsub.Event) {
-	confCache.Delete(KeyConfig(event.TargetGuild))
+	confCache.Delete(KeyConfig(event.TargetGuildInt))
 }
 
 // CachedGetConfig either retrieves from local application cache or redis
-func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
+func CachedGetConfig(gID int64) (*Config, error) {
 	confItem, err := confCache.Fetch(KeyConfig(gID), time.Minute*5, func() (interface{}, error) {
-		c, err := GetConfig(client, gID)
+		c, err := GetConfig(gID)
 		if err != nil {
 			return nil, err
 		}
@@ -57,17 +86,21 @@ func CachedGetConfig(client *redis.Client, gID string) (*Config, error) {
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageCreate.Message, bot.ContextRedis(evt.Context()))
+	CheckMessage(evt.MessageCreate().Message)
 }
 
 func HandleMessageUpdate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageUpdate.Message, bot.ContextRedis(evt.Context()))
+	CheckMessage(evt.MessageUpdate().Message)
 }
 
-func CheckMessage(m *discordgo.Message, client *redis.Client) {
+func CheckMessage(m *discordgo.Message) {
 
-	if m.Author == nil || m.Author.ID == bot.State.User(true).ID {
+	if m.Author == nil || m.Author.ID == common.BotUser.ID {
 		return // Pls no panicerinos or banerinos self
+	}
+
+	if m.Author.Bot {
+		return
 	}
 
 	cs := bot.State.Channel(true, m.ChannelID)
@@ -80,7 +113,7 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		return
 	}
 
-	config, err := CachedGetConfig(client, cs.Guild.ID())
+	config, err := CachedGetConfig(cs.Guild.ID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed retrieving config")
 		return
@@ -90,9 +123,9 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 		return
 	}
 
-	member, err := bot.GetMember(cs.Guild.ID(), m.Author.ID)
+	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", cs.Guild.ID()).Error("Member not found in state, automod ignoring")
+		logrus.WithError(err).WithField("guild", cs.Guild.ID).Warn("Member not found in state, automod ignoring")
 		return
 	}
 
@@ -117,16 +150,16 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 			continue
 		}
 
-		d, punishment, msg, err := r.Check(m, cs, client)
+		d, punishment, msg, err := r.Check(m, cs)
 		if d {
 			del = true
 		}
 		if err != nil {
-			logrus.WithError(err).WithField("guild", cs.Guild.ID()).Error("Failed checking aumod rule:", err)
+			logrus.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed checking aumod rule:", err)
 			continue
 		}
 
-		// If the rule did not trigger a deletion there wasnt any violation
+		// If the rule did not trigger a deletion there wasn't any violation
 		if !d {
 			continue
 		}
@@ -153,19 +186,19 @@ func CheckMessage(m *discordgo.Message, client *redis.Client) {
 
 	switch highestPunish {
 	case PunishNone:
-		err = moderation.WarnUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, member.User, "Automoderator: "+punishMsg)
+		err = moderation.WarnUser(nil, cs.Guild.ID, cs.ID, common.BotUser, member.DGoUser(), "Automoderator: "+punishMsg)
 	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, client, true, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member, muteDuration)
+		err = moderation.MuteUnmuteUser(nil, true, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
 	case PunishKick:
-		err = moderation.KickUser(nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User)
+		err = moderation.KickUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
 	case PunishBan:
-		err = moderation.BanUser(client, nil, cs.Guild.ID(), cs.ID(), bot.State.User(true).User, "Automoderator: "+punishMsg, member.User)
+		err = moderation.BanUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser(), true)
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs
 	common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
 
-	if err != nil {
+	if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
 		logrus.WithError(err).Error("Error carrying out punishment")
 	}
 

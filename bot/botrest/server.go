@@ -1,29 +1,55 @@
 package botrest
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
 	"net/http"
 	"net/http/pprof"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 var serverAddr = ":5002"
 
-func StartServer() {
+func RegisterPlugin() {
+	common.RegisterPlugin(&Plugin{})
+}
+
+var (
+	_ bot.BotInitHandler    = (*Plugin)(nil)
+	_ bot.BotStopperHandler = (*Plugin)(nil)
+)
+
+type Plugin struct {
+	srv *http.Server
+}
+
+func (p *Plugin) Name() string {
+	return "botrest"
+}
+
+func (p *Plugin) BotInit() {
+
 	muxer := goji.NewMux()
 	muxer.Use(dropNonLocal)
 
 	muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
 	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
 	muxer.HandleFunc(pat.Get("/:guild/members"), HandleGetMembers)
+	muxer.HandleFunc(pat.Get("/:guild/onlinecount"), HandleGetOnlineCount)
 	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
+	muxer.HandleFunc(pat.Get("/gw_status"), HandleGWStatus)
+	muxer.HandleFunc(pat.Post("/shard/:shard/reconnect"), HandleReconnectShard)
 	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
 	// Debug stuff
@@ -34,7 +60,23 @@ func StartServer() {
 	muxer.HandleFunc(pat.Get("/debug2/pproff/symbol"), pprof.Symbol)
 	muxer.HandleFunc(pat.Get("/debug2/pproff/trace"), pprof.Trace)
 
-	http.ListenAndServe(serverAddr, muxer)
+	p.srv = &http.Server{
+		Addr:    serverAddr,
+		Handler: muxer,
+	}
+
+	go func() {
+		logrus.Println("starting botrest on ", serverAddr)
+		err := p.srv.ListenAndServe()
+		if err != nil {
+			logrus.WithError(err).Error("Failed starting botrest http server")
+		}
+	}()
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	p.srv.Shutdown(context.TODO())
+	wg.Done()
 }
 
 func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
@@ -69,7 +111,7 @@ func dropNonLocal(inner http.Handler) http.Handler {
 }
 
 func HandleGuild(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
 	guild := bot.State.Guild(true, gId)
 	if guild == nil {
@@ -91,7 +133,7 @@ func HandleGuild(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleBotMember(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
 	guild := bot.State.Guild(true, gId)
 	if guild == nil {
@@ -99,20 +141,24 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	botUser := bot.State.User(true)
-
-	member := guild.MemberCopy(true, botUser.ID, true)
-	if member == nil {
+	guild.RLock()
+	ms := guild.Member(false, common.BotUser.ID)
+	if ms == nil {
+		guild.RUnlock()
 		ServerError(w, r, errors.New("Bot Member not found"))
 		return
 	}
+
+	member := ms.DGoCopy()
+	guild.RUnlock()
 
 	ServeJson(w, r, member)
 }
 
 func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 	uIDs, ok := r.URL.Query()["users"]
+
 	if !ok || len(uIDs) < 1 {
 		ServerError(w, r, errors.New("No id's provided"))
 		return
@@ -129,14 +175,46 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, _ := GetMembers(gId, uIDs...)
+	uIDsParsed := make([]int64, 0, len(uIDs))
+	for _, v := range uIDs {
+		parsed, _ := strconv.ParseInt(v, 10, 64)
+		uIDsParsed = append(uIDsParsed, parsed)
+	}
+
+	memberStates, _ := bot.GetMembers(gId, uIDsParsed...)
+	members := make([]*discordgo.Member, len(memberStates))
+	for i, v := range memberStates {
+		members[i] = v.DGoCopy()
+	}
 
 	ServeJson(w, r, members)
 }
 
+func HandleGetOnlineCount(w http.ResponseWriter, r *http.Request) {
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
+
+	guild := bot.State.Guild(true, gId)
+	if guild == nil {
+		ServerError(w, r, errors.New("Guild not found"))
+		return
+	}
+
+	count := 0
+	guild.RLock()
+	for _, ms := range guild.Members {
+		if ms.PresenceSet && ms.PresenceStatus != dstate.StatusNotSet && ms.PresenceStatus != dstate.StatusOffline {
+			count++
+		}
+	}
+	guild.RUnlock()
+
+	ServeJson(w, r, count)
+}
+
 func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
-	gId := pat.Param(r, "guild")
-	cId := pat.Param(r, "channel")
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
+	cId, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
+
 	guild := bot.State.Guild(true, gId)
 	if guild == nil {
 		ServerError(w, r, errors.New("Guild not found"))
@@ -155,4 +233,86 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 
 func HandlePing(w http.ResponseWriter, r *http.Request) {
 	ServeJson(w, r, "pong")
+}
+
+type ShardStatus struct {
+	TotalEvents     int64   `json:"total_events"`
+	EventsPerSecond float64 `json:"events_per_second"`
+
+	ConnStatus discordgo.GatewayStatus `json:"conn_status"`
+
+	LastHeartbeatSend time.Time `json:"last_heartbeat_send"`
+	LastHeartbeatAck  time.Time `json:"last_heartbeat_ack"`
+}
+
+func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
+
+	totalEventStats, periodEventStats := bot.EventLogger.GetStats()
+
+	numShards := bot.ShardManager.GetNumShards()
+	result := make([]*ShardStatus, numShards)
+	for i := 0; i < numShards; i++ {
+		shard := bot.ShardManager.Sessions[i]
+
+		sumEvents := int64(0)
+		sumPeriodEvents := int64(0)
+
+		for j, _ := range totalEventStats[i] {
+			sumEvents += totalEventStats[i][j]
+			sumPeriodEvents += periodEventStats[i][j]
+		}
+
+		if shard == nil || shard.GatewayManager == nil {
+			result[i] = &ShardStatus{ConnStatus: discordgo.GatewayStatusDisconnected}
+			continue
+		}
+
+		beat, ack := shard.GatewayManager.HeartBeatStats()
+
+		result[i] = &ShardStatus{
+			ConnStatus:        shard.GatewayManager.Status(),
+			TotalEvents:       sumEvents,
+			EventsPerSecond:   float64(sumPeriodEvents) / bot.EventLoggerPeriodDuration.Seconds(),
+			LastHeartbeatSend: beat,
+			LastHeartbeatAck:  ack,
+		}
+	}
+
+	ServeJson(w, r, result)
+}
+
+func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
+	sID := pat.Param(r, "shard")
+	forceReidentify := r.FormValue("reidentify") == "1"
+	if sID == "*" {
+		go RestartAll(forceReidentify)
+		ServeJson(w, r, "ok")
+		return
+	}
+
+	parsed, _ := strconv.ParseInt(sID, 10, 32)
+	shardcount := bot.ShardManager.GetNumShards()
+	if parsed < 0 || int(parsed) >= shardcount {
+		ServerError(w, r, errors.New("Unknown shard"))
+		return
+	}
+
+	err := bot.ShardManager.Sessions[parsed].GatewayManager.Reconnect(forceReidentify)
+	if err != nil {
+		ServerError(w, r, errors.WithMessage(err, "Reconnect"))
+		return
+	}
+
+	ServeJson(w, r, "ok")
+}
+
+func RestartAll(reidentify bool) {
+	logrus.Println("Reconnecting all shards re-identify:", reidentify)
+	for _, v := range bot.ShardManager.Sessions {
+		err := v.GatewayManager.Reconnect(reidentify)
+		if err != nil {
+			logrus.WithError(err).Error("Failed reconnecting shard")
+		}
+		time.Sleep(time.Second * 5)
+	}
 }

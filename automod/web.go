@@ -2,6 +2,7 @@ package automod
 
 import (
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -21,7 +22,12 @@ type GeneralForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/automod.html")))
+	tmplPath := "templates/plugins/automod.html"
+	if common.Testing {
+		tmplPath = "../../automod/assets/automod.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	autmodMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/automod/*"), autmodMux)
@@ -44,13 +50,13 @@ func (p *Plugin) InitWeb() {
 }
 
 func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
-	client, g, templateData := web.GetBaseCPContextData(r.Context())
+	g, templateData := web.GetBaseCPContextData(r.Context())
 
-	config, err := GetConfig(client, g.ID)
+	config, err := GetConfig(g.ID)
 	web.CheckErr(templateData, err, "Failed retrieving rules", web.CtxLogger(r.Context()).Error)
 
 	templateData["AutomodConfig"] = config
-	templateData["VisibleURL"] = "/manage/" + g.ID + "/automod/"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(g.ID) + "/automod/"
 
 	return templateData
 }
@@ -58,8 +64,8 @@ func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
 // Invalidates the cache
 func ExtraPostMW(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		client, activeGuild, _ := web.GetBaseCPContextData(r.Context())
-		pubsub.Publish(client, "update_automod_rules", activeGuild.ID, nil)
+		activeGuild, _ := web.GetBaseCPContextData(r.Context())
+		pubsub.Publish("update_automod_rules", activeGuild.ID, nil)
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)

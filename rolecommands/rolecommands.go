@@ -1,26 +1,23 @@
 // rolecommands is a plugin which allows users to assign roles to themselves
 package rolecommands
 
+//go:generate sqlboiler --no-hooks -w "role_groups,role_commands,role_menus,role_menu_options" postgres
+
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/docs"
+	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"gopkg.in/src-d/go-kallax.v1"
+	"github.com/sirupsen/logrus"
+	"github.com/tidwall/buntdb"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sort"
 	"strconv"
-)
-
-//go:generate esc -o assets_gen.go -pkg rolecommands -ignore ".go" assets/
-
-var (
-	groupStore          *RoleGroupStore
-	cmdStore            *RoleCommandStore
-	roleMenuStore       *RoleMenuStore
-	roleMenuOptionStore *RoleMenuOptionStore
+	"time"
 )
 
 type Plugin struct {
@@ -30,124 +27,155 @@ func (p *Plugin) Name() string {
 	return "RoleCommands"
 }
 
+const (
+	GroupModeNone = iota
+	GroupModeSingle
+	GroupModeMultiple
+)
+
+const (
+	RoleMenuStateSettingUp = 0
+	RoleMenuStateDone      = 1
+)
+
 var (
-	_ common.Plugin = (*Plugin)(nil)
-	_ web.Plugin    = (*Plugin)(nil)
-	_ bot.Plugin    = (*Plugin)(nil)
+	_ common.Plugin            = (*Plugin)(nil)
+	_ web.Plugin               = (*Plugin)(nil)
+	_ bot.BotInitHandler       = (*Plugin)(nil)
+	_ commands.CommandProvider = (*Plugin)(nil)
+
+	cooldownsDB *buntdb.DB
 )
 
 func RegisterPlugin() {
+	cooldownsDB, _ = buntdb.Open(":memory:")
+
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
-	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
+	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed initializing db schema")
 	}
-
-	groupStore = NewRoleGroupStore(common.PQ)
-	cmdStore = NewRoleCommandStore(common.PQ)
-	roleMenuStore = NewRoleMenuStore(common.PQ)
-	roleMenuOptionStore = NewRoleMenuOptionStore(common.PQ)
-
-	docs.AddPage("Role Commands / Self assignable roles", FSMustString(false, "/assets/help.md"), nil)
 }
 
-func FindAssignRole(guildID string, member *discordgo.Member, name string) (gaveRole bool, err error) {
-	parsedGuildID := common.MustParseInt(guildID)
-	cmd, err := cmdStore.FindOne(NewRoleCommandQuery().FindByGuildID(kallax.Eq, parsedGuildID).Where(kallax.Ilike(Schema.RoleCommand.Name, name)).WithGroup())
+type CommandGroupPair struct {
+	Command *models.RoleCommand
+	Group   *models.RoleGroup
+}
+
+func FindAssignRole(guildID int64, ms *dstate.MemberState, name string) (gaveRole bool, err error) {
+	cmd, err := models.RoleCommandsG(qm.Where("guild_id=?", guildID), qm.Where("name ILIKE ?", name)).One()
 	if err != nil {
 		return false, err
 	}
+	var group *models.RoleGroup
+	if cmd.RoleGroupID.Valid {
+		group, err = cmd.RoleGroupG().One()
+		if err != nil {
+			return false, err
+		}
+	}
 
-	return AssignRole(parsedGuildID, member, cmd)
+	return AssignRole(guildID, ms, &CommandGroupPair{Command: cmd, Group: group})
 }
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
 // or is unable to receie said role
-func AssignRole(guildID int64, member *discordgo.Member, cmd *RoleCommand) (gaveRole bool, err error) {
-	// We work with int64's internally
-	parsedRoles := make([]int64, len(member.Roles))
-	for i, v := range member.Roles {
-		parsedRoles[i], _ = strconv.ParseInt(v, 10, 64)
+func AssignRole(guildID int64, ms *dstate.MemberState, cmd *CommandGroupPair) (gaveRole bool, err error) {
+	onCD := false
+
+	// First check cooldown
+	if cmd.Group != nil && cmd.Group.Mode == GroupModeSingle {
+		err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
+			_, replaced, _ := tx.Set(discordgo.StrID(ms.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
+			if replaced {
+				onCD = true
+			}
+			return nil
+		})
+
+		if onCD {
+			return false, NewSimpleError("You're on cooldown")
+		}
 	}
 
-	if err := cmd.CanAssignTo(parsedRoles); err != nil {
+	if err := CanAssignRoleCmdTo(cmd.Command, ms.Roles); err != nil {
 		return false, err
 	}
 
 	// This command belongs to a group, let the group handle it
 	if cmd.Group != nil {
-		return cmd.Group.AssignRoleToMember(guildID, member, parsedRoles, cmd)
+		return GroupAssignRoleToMember(cmd.Group, guildID, ms, cmd.Command)
 	}
 
 	// This is a single command, just toggle it
-	return ToggleRole(guildID, member, parsedRoles, cmd.Role)
+	return ToggleRole(guildID, ms, cmd.Command.Role)
 }
 
 // ToggleRole toggles the role of a guildmember, adding it if the member does not have the role and removing it if they do
-func ToggleRole(guildID int64, member *discordgo.Member, parsedMemberRoles []int64, role int64) (gaveRole bool, err error) {
-	if common.ContainsInt64Slice(parsedMemberRoles, role) {
-		err = common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(role, 10))
+func ToggleRole(guildID int64, ms *dstate.MemberState, role int64) (gaveRole bool, err error) {
+	if common.ContainsInt64Slice(ms.Roles, role) {
+		err = common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, role)
 		gaveRole = false
 		return
 	}
 
-	err = common.BotSession.GuildMemberRoleAdd(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(role, 10))
+	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, role)
 	gaveRole = true
 	return
 }
 
 // AssignRoleToMember attempts to assign the given role command, part of this group
 // to the member
-func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member, parsedRoles []int64, targetRole *RoleCommand) (gaveRole bool, err error) {
+func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, ms *dstate.MemberState, targetRole *models.RoleCommand) (gaveRole bool, err error) {
 	if len(rg.RequireRoles) > 0 {
-		if !CheckRequiredRoles(rg.RequireRoles, parsedRoles) {
+		if !CheckRequiredRoles(rg.RequireRoles, ms.Roles) {
 			err = NewSimpleError("Missing a required role")
 			return
 		}
 	}
 
 	if len(rg.IgnoreRoles) > 0 {
-		if err = CheckIgnoredRoles(rg.IgnoreRoles, parsedRoles); err != nil {
+		if err = CheckIgnoredRoles(rg.IgnoreRoles, ms.Roles); err != nil {
 			return
 		}
 	}
 
 	// Default behaviour of groups is no more restrictions than reuiqred and ignore roles
 	if rg.Mode == GroupModeNone {
-		return ToggleRole(guildID, member, parsedRoles, targetRole.Role)
+		return ToggleRole(guildID, ms, targetRole.Role)
 	}
 
 	// First retrieve role commands for this group
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().FindByGroup(rg.ID))
+	commands, err := rg.RoleCommandsG().All()
 	if err != nil {
 		return
 	}
 
 	if rg.Mode == GroupModeSingle {
 		// If user already has role it's attempting to give itself
-		if common.ContainsInt64Slice(parsedRoles, targetRole.Role) {
+		if common.ContainsInt64Slice(ms.Roles, targetRole.Role) {
 			if rg.SingleRequireOne {
 				return false, NewGroupError("Need atleast one role in group **%s**", rg)
 			}
-			err = common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(targetRole.Role, 10))
+			err = common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, targetRole.Role)
 			gaveRole = false
 			return
 		}
 
 		// Check if the user has any other role commands in this group
 		for _, v := range commands {
-			if common.ContainsInt64Slice(parsedRoles, v.Role) {
+			if common.ContainsInt64Slice(ms.Roles, v.Role) {
 				if rg.SingleAutoToggleOff {
-					common.BotSession.GuildMemberRoleRemove(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(v.Role, 10))
+					common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, v.Role)
 				} else {
 					return false, NewGroupError("Max 1 role in group **%s** is allowed", rg)
 				}
 			}
 		}
 		// Finally give the role
-		err = common.BotSession.GuildMemberRoleAdd(strconv.FormatInt(guildID, 10), member.User.ID, strconv.FormatInt(targetRole.Role, 10))
+		err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, targetRole.Role)
 		return true, err
 	}
 
@@ -158,7 +186,7 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 	hasRoles := 0
 	hasTargetRole := false
 	for _, role := range commands {
-		if common.ContainsInt64Slice(parsedRoles, role.Role) {
+		if common.ContainsInt64Slice(ms.Roles, role.Role) {
 			hasRoles++
 			if role.ID == targetRole.ID {
 				hasTargetRole = true
@@ -167,21 +195,21 @@ func (rg *RoleGroup) AssignRoleToMember(guildID int64, member *discordgo.Member,
 	}
 
 	if hasTargetRole {
-		if hasRoles-1 < rg.MultipleMin {
-			err = NewLmitError("Minimum of `%d` roles required in this group", rg.MultipleMin)
+		if hasRoles-1 < int(rg.MultipleMin) {
+			err = NewLmitError("Minimum of `%d` roles required in this group", int(rg.MultipleMin))
 			return
 		}
 	} else {
-		if hasRoles+1 > rg.MultipleMax {
-			err = NewLmitError("Maximum of `%d` roles allowed in this group", rg.MultipleMax)
+		if hasRoles+1 > int(rg.MultipleMax) {
+			err = NewLmitError("Maximum of `%d` roles allowed in this group", int(rg.MultipleMax))
 			return
 		}
 	}
 
-	return ToggleRole(guildID, member, parsedRoles, targetRole.Role)
+	return ToggleRole(guildID, ms, targetRole.Role)
 }
 
-func (r *RoleCommand) CanAssignTo(memberRoles []int64) error {
+func CanAssignRoleCmdTo(r *models.RoleCommand, memberRoles []int64) error {
 
 	if len(r.RequireRoles) > 0 {
 		if !CheckRequiredRoles(r.RequireRoles, memberRoles) {
@@ -260,7 +288,7 @@ func (r *RoleError) PrettyError(roles []*discordgo.Role) string {
 	roleStr := ""
 
 	for _, v := range roles {
-		if v.ID == idStr {
+		if v.ID == r.Role {
 			roleStr = "**" + v.Name + "**"
 			break
 		}
@@ -290,11 +318,11 @@ func (r *LmitError) Error() string {
 }
 
 type GroupError struct {
-	Group   *RoleGroup
+	Group   *models.RoleGroup
 	Message string
 }
 
-func NewGroupError(msg string, group *RoleGroup) error {
+func NewGroupError(msg string, group *models.RoleGroup) error {
 	return &GroupError{
 		Group:   group,
 		Message: msg,
@@ -314,7 +342,7 @@ func IsRoleCommandError(err error) bool {
 	}
 }
 
-func RoleCommandsLessFunc(slice []*RoleCommand) func(int, int) bool {
+func RoleCommandsLessFunc(slice []*models.RoleCommand) func(int, int) bool {
 	return func(i, j int) bool {
 		// Compare timestamps if positions are equal, for deterministic output
 		if slice[i].Position == slice[j].Position {
@@ -329,22 +357,25 @@ func RoleCommandsLessFunc(slice []*RoleCommand) func(int, int) bool {
 	}
 }
 
-func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*RoleGroup][]*RoleCommand, unGrouped []*RoleCommand, err error) {
-	commands, err := cmdStore.FindAll(NewRoleCommandQuery().WithGroup().FindByGuildID(kallax.Eq, guildID))
-	if err != nil && err != kallax.ErrNotFound {
+func GetAllRoleCommandsSorted(guildID int64) (groups []*models.RoleGroup, grouped map[*models.RoleGroup][]*models.RoleCommand, unGrouped []*models.RoleCommand, err error) {
+	commands, err := models.RoleCommandsG(qm.Where(models.RoleCommandColumns.GuildID+"=?", guildID)).All()
+	if err != nil {
 		return
 	}
 
-	groups, err = groupStore.FindAll(NewRoleGroupQuery().FindByGuildID(kallax.Eq, guildID))
-	if err != nil && err != kallax.ErrNotFound {
+	grps, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+"=?", guildID)).All()
+	if err != nil {
 		return
 	}
+	groups = grps
 
-	grouped = make(map[*RoleGroup][]*RoleCommand)
+	grouped = make(map[*models.RoleGroup][]*models.RoleCommand)
 	for _, group := range groups {
-		grouped[group] = make([]*RoleCommand, 0, 10)
+
+		grouped[group] = make([]*models.RoleCommand, 0, 10)
+
 		for _, cmd := range commands {
-			if cmd.Group != nil && cmd.Group.ID == group.ID {
+			if cmd.RoleGroupID.Valid && cmd.RoleGroupID.Int64 == group.ID {
 				grouped[group] = append(grouped[group], cmd)
 			}
 		}
@@ -352,9 +383,9 @@ func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*
 		sort.Slice(grouped[group], RoleCommandsLessFunc(grouped[group]))
 	}
 
-	unGrouped = make([]*RoleCommand, 0, 10)
+	unGrouped = make([]*models.RoleCommand, 0, 10)
 	for _, cmd := range commands {
-		if cmd.Group == nil {
+		if !cmd.RoleGroupID.Valid {
 			unGrouped = append(unGrouped, cmd)
 		}
 	}
@@ -362,8 +393,4 @@ func GetAllRoleCommandsSorted(guildID int64) (groups []*RoleGroup, grouped map[*
 
 	err = nil
 	return
-}
-
-func kallaxDebugger(message string, args ...interface{}) {
-	logrus.Debugf("%s, args: %v", message, args)
 }

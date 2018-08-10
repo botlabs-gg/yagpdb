@@ -17,7 +17,12 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/soundboard.html"))
+	tmplPath := "templates/plugins/soundboard.html"
+	if common.Testing {
+		tmplPath = "../../soundboard/assets/soundboard.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	cpMux := goji.SubMux()
 
@@ -38,7 +43,7 @@ func (p *Plugin) InitWeb() {
 
 func HandleGetCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	var config SoundboardConfig
 	err := configstore.Cached.GetGuildConfig(ctx, g.ID, &config)
@@ -53,7 +58,7 @@ func HandleGetCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, erro
 
 func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	isDCA := false
 	var file multipart.File
@@ -79,7 +84,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	if isDCA {
 		data.Status = TranscodingStatusReady
 	}
-	data.GuildID = common.MustParseInt(g.ID)
+	data.GuildID = g.ID
 
 	count := 0
 	err := common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ?", g.ID, data.Name).Count(&count).Error
@@ -107,14 +112,14 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	}
 
 	// Lock it
-	locked, err := common.TryLockRedisKey(client, KeySoundLock(data.ID), 60)
+	locked, err := common.TryLockRedisKey(KeySoundLock(data.ID), 60)
 	if err != nil || !locked {
 		if !locked {
 			tmpl.AddAlerts(web.ErrorAlert("Uh oh failed locking"))
 		}
 		return tmpl, err
 	}
-	defer common.UnlockRedisKey(client, KeySoundLock(data.ID))
+	defer common.UnlockRedisKey(KeySoundLock(data.ID))
 
 	//logrus.Error("CREAte errror:", err)
 	fname := "soundboard/queue/" + strconv.Itoa(int(data.ID))
@@ -128,7 +133,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 
 	tooBig := false
 	if file != nil {
-		tooBig, err = DownloadNewSondFile(file, destFile, 10000000)
+		tooBig, err = DownloadNewSoundFile(file, destFile, 10000000)
 	} else if r.FormValue("SoundURL") != "" {
 		var resp *http.Response
 		resp, err = http.Get(r.FormValue("SoundURL"))
@@ -137,7 +142,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 			destFile.Close()
 		} else {
 			defer resp.Body.Close()
-			tooBig, err = DownloadNewSondFile(resp.Body, destFile, 10000000)
+			tooBig, err = DownloadNewSoundFile(resp.Body, destFile, 10000000)
 		}
 	} else {
 		err = errors.New("No sound!?")
@@ -154,11 +159,11 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		return tmpl, err
 	}
 
-	configstore.InvalidateGuildCache(client, g.ID, &SoundboardConfig{})
+	configstore.InvalidateGuildCache(g.ID, &SoundboardConfig{})
 	return tmpl, err
 }
 
-func DownloadNewSondFile(r io.Reader, w io.Writer, limit int) (tooBig bool, err error) {
+func DownloadNewSoundFile(r io.Reader, w io.Writer, limit int) (tooBig bool, err error) {
 	soundSize := 0
 	for {
 		buf := make([]byte, 1024)
@@ -193,9 +198,9 @@ func DownloadNewSondFile(r io.Reader, w io.Writer, limit int) (tooBig bool, err 
 
 func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
-	data.GuildID = common.MustParseInt(g.ID)
+	data.GuildID = g.ID
 
 	count := 0
 	common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID).Count(&count)
@@ -205,17 +210,17 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	err := common.GORM.Model(data).Updates(map[string]interface{}{"name": data.Name, "required_role": data.RequiredRole}).Error
-	configstore.InvalidateGuildCache(client, g.ID, &SoundboardConfig{})
+	configstore.InvalidateGuildCache(g.ID, &SoundboardConfig{})
 	return tmpl, err
 }
 
 func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	client, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
-	data.GuildID = common.MustParseInt(g.ID)
+	data.GuildID = g.ID
 
-	locked, err := common.TryLockRedisKey(client, KeySoundLock(data.ID), 10)
+	locked, err := common.TryLockRedisKey(KeySoundLock(data.ID), 10)
 	if err != nil {
 		return tmpl, err
 	}
@@ -223,7 +228,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		tmpl.AddAlerts(web.ErrorAlert("This sound is busy, try again in a minute and if it's still busy contact support"))
 		return tmpl, nil
 	}
-	defer common.UnlockRedisKey(client, KeySoundLock(data.ID))
+	defer common.UnlockRedisKey(KeySoundLock(data.ID))
 
 	var storedSound SoundboardSound
 	err = common.GORM.Where("guild_id = ? AND id = ?", g.ID, data.ID).First(&storedSound).Error
@@ -246,7 +251,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	err = common.GORM.Delete(storedSound).Error
-	configstore.InvalidateGuildCache(client, g.ID, &SoundboardConfig{})
+	configstore.InvalidateGuildCache(g.ID, &SoundboardConfig{})
 
 	return tmpl, err
 }

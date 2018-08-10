@@ -7,7 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
+	"strconv"
 )
 
 var (
@@ -18,38 +19,38 @@ var (
 )
 
 // Items in the cache expire after 1 min
-func GetCacheData(client *redis.Client, key string) ([]byte, error) {
-	data, err := client.Cmd("GET", CacheKeyPrefix+key).Bytes()
-	return data, err
+func GetCacheData(key string) (data []byte, err error) {
+	err = RedisPool.Do(radix.Cmd(&data, "GET", CacheKeyPrefix+key))
+	return
 }
 
 // Stores an entry in the cache and sets it to expire after expire
-func SetCacheData(client *redis.Client, key string, expire int, data []byte) error {
-	err := client.Cmd("SET", CacheKeyPrefix+key, data, "EX", expire).Err
+func SetCacheData(key string, expire int, data []byte) error {
+	err := RedisPool.Do(radix.Cmd(nil, "SET", CacheKeyPrefix+key, string(data), "EX", strconv.Itoa(expire)))
 	return err
 }
 
 // Stores an entry in the cache and sets it to expire after a minute
-func SetCacheDataSimple(client *redis.Client, key string, data []byte) error {
-	return SetCacheData(client, key, 60, data)
+func SetCacheDataSimple(key string, data []byte) error {
+	return SetCacheData(key, 60, data)
 }
 
 // Helper methods
-func SetCacheDataJson(client *redis.Client, key string, expire int, data interface{}) error {
+func SetCacheDataJson(key string, expire int, data interface{}) error {
 	encoded, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	return SetCacheData(client, key, expire, encoded)
+	return SetCacheData(key, expire, encoded)
 }
 
-func SetCacheDataJsonSimple(client *redis.Client, key string, data interface{}) error {
-	return SetCacheDataJson(client, key, 60, data)
+func SetCacheDataJsonSimple(key string, data interface{}) error {
+	return SetCacheDataJson(key, 60, data)
 }
 
-func GetCacheDataJson(client *redis.Client, key string, dest interface{}) error {
-	data, err := GetCacheData(client, key)
+func GetCacheDataJson(key string, dest interface{}) error {
+	data, err := GetCacheData(key)
 	if err != nil {
 		return err
 	}

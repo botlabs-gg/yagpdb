@@ -1,19 +1,19 @@
 package moderation
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"github.com/Sirupsen/logrus"
-	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd"
+	"time"
+
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
-	"time"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/mediocregopher/radix.v3"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -26,32 +26,174 @@ const (
 	ContextKeyConfig ContextKey = iota
 )
 
-func (p *Plugin) InitBot() {
+const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
+
+var _ commands.CommandProvider = (*Plugin)(nil)
+var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.ShardMigrationHandler = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(ModerationCommands...)
-	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd)
-	eventsystem.AddHandler(bot.RedisWrapper(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
+}
+
+func (p *Plugin) BotInit() {
+	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
+	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
+
+	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandler(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
+
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
+
+	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
+}
+
+func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
+	if !toThisSlave {
+		return
+	}
+
+	go RefreshMuteOverrides(gs.ID)
+}
+
+func HandleRefreshMuteOverrides(evt *pubsub.Event) {
+	RefreshMuteOverrides(evt.TargetGuildInt)
+}
+
+func HandleGuildCreate(evt *eventsystem.EventData) {
+	gc := evt.GuildCreate()
+	RefreshMuteOverrides(gc.ID)
+}
+
+// Refreshes the mute override on the channel, currently it only adds it.
+func RefreshMuteOverrides(guildID int64) {
+
+	config, err := GetConfig(guildID)
+	if err != nil {
+		return
+	}
+
+	if config.MuteRole == "" || !config.MuteManageRole {
+		return
+	}
+
+	guild := bot.State.Guild(true, guildID)
+	if guild == nil {
+		return // Still starting up and haven't received the guild yet
+	}
+
+	guild.RLock()
+	defer guild.RUnlock()
+	for _, v := range guild.Channels {
+		RefreshMuteOverrideForChannel(config, v.DGoCopy())
+	}
+}
+
+func HandleChannelCreateUpdate(evt *eventsystem.EventData) {
+	var channel *discordgo.Channel
+	if evt.Type == eventsystem.EventChannelCreate {
+		channel = evt.ChannelCreate().Channel
+	} else {
+		channel = evt.ChannelUpdate().Channel
+	}
+
+	if channel.GuildID == 0 {
+		return
+	}
+
+	config, err := GetConfig(channel.GuildID)
+	if err != nil {
+		return
+	}
+
+	if config.MuteRole == "" || !config.MuteManageRole {
+		return
+	}
+
+	RefreshMuteOverrideForChannel(config, channel)
+}
+
+func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
+	// Ignore the channel
+	if common.ContainsInt64Slice(config.MuteIgnoreChannels, channel.ID) {
+		return
+	}
+
+	var override *discordgo.PermissionOverwrite
+
+	// Check for existing override
+	for _, v := range channel.PermissionOverwrites {
+		if v.Type == "role" && v.ID == config.IntMuteRole() {
+			override = v
+			break
+		}
+	}
+
+	allows := 0
+	denies := MuteDeniedChannelPerms
+	changed := true
+
+	if override != nil {
+		allows = override.Allow
+		denies = override.Deny
+		changed = false
+
+		if (allows & MuteDeniedChannelPerms) != 0 {
+			// One of the mute permissions was in the allows, remove it
+			allows &= ^MuteDeniedChannelPerms
+			changed = true
+		}
+
+		if (denies & MuteDeniedChannelPerms) != MuteDeniedChannelPerms {
+			// Missing one of the mute permissions
+			denies |= MuteDeniedChannelPerms
+			changed = true
+		}
+	}
+
+	if changed {
+		go common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
+	}
 }
 
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
-	guildID := ""
-	action := ""
+	var guildID int64
+	var action ModlogAction
+
+	botPerformed := false
 
 	switch evt.Type {
 	case eventsystem.EventGuildBanAdd:
 
-		guildID = evt.GuildBanAdd.GuildID
-		user = evt.GuildBanAdd.User
-		action = ActionBanned
-		if i, _ := bot.ContextRedis(evt.Context()).Cmd("GET", RedisKeyBannedUser(guildID, user.ID)).Int(); i > 0 {
-			bot.ContextRedis(evt.Context()).Cmd("DEL", RedisKeyBannedUser(guildID, user.ID))
+		guildID = evt.GuildBanAdd().GuildID
+		user = evt.GuildBanAdd().User
+		action = MABanned
+
+		var i int
+		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
+		if i > 0 {
+			// The bot banned the user earlier, don't make duplicate entries in the modlog
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
 			return
 		}
+
 	case eventsystem.EventGuildBanRemove:
-		action = ActionUnbanned
-		user = evt.GuildBanRemove.User
-		guildID = evt.GuildBanRemove.GuildID
+		action = MAUnbanned
+		user = evt.GuildBanRemove().User
+		guildID = evt.GuildBanRemove().GuildID
+
+		var i int
+		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
+		if i > 0 {
+			// The bot was the one that performed the unban
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
+			botPerformed = true
+		}
+
 	default:
 		return
 	}
@@ -62,28 +204,116 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
+	if config.IntActionChannel() == 0 {
+		return
+	}
+
+	var author *discordgo.User
+	reason := ""
+
+	if !botPerformed {
+		auditlogAction := discordgo.AuditLogActionMemberBanAdd
+		if evt.Type == eventsystem.EventGuildBanRemove {
+			auditlogAction = discordgo.AuditLogActionMemberBanRemove
+		}
+
+		var entry *discordgo.AuditLogEntry
+		author, entry = FindAuditLogEntry(guildID, auditlogAction, user.ID, -1)
+		if entry != nil {
+			reason = entry.Reason
+		}
+	}
+
 	if config.ActionChannel == "" {
+		// No modlog channel set up
 		return
 	}
 
-	if (action == ActionUnbanned && !config.LogUnbans) || (action == ActionBanned && !config.LogBans) {
+	if (action == MAUnbanned && !config.LogUnbans && !botPerformed) ||
+		(action == MABanned && !config.LogBans) {
 		return
 	}
 
-	err = CreateModlogEmbed(config.ActionChannel, nil, action, user, "", "")
+	// The bot only unbans people in the case of timed bans
+	if botPerformed {
+		author = common.BotUser
+		reason = "Timed ban expired"
+	}
+
+	err = CreateModlogEmbed(config.IntActionChannel(), author, action, user, reason, "")
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action + " log message")
+		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
+	}
+}
+
+func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+	data := evt.GuildMemberRemove()
+
+	config, err := GetConfig(data.GuildID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed retrieving config")
+		return
+	}
+
+	if config.IntActionChannel() == 0 {
+		return
+	}
+
+	author, entry := FindAuditLogEntry(data.GuildID, discordgo.AuditLogActionMemberKick, data.User.ID, time.Second*5)
+	if entry == nil || author == nil {
+		return
+	}
+
+	if author.ID == common.BotUser.ID {
+		// Bot performed the kick, don't make duplicate modlog entries
+		return
+	}
+
+	err = CreateModlogEmbed(config.IntActionChannel(), author, MAKick, data.User, entry.Reason, "")
+	if err != nil {
+		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
+	}
+}
+
+// Since updating mutes are now a complex operation with removing roles and whatnot,
+// to avoid weird bugs from happening we lock it so it can only be updated one place per user
+func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsystem.EventData) {
+	return func(evt *eventsystem.EventData) {
+		var userID int64
+		var guild int64
+		// TODO: add utility functions to the eventdata struct for fetching things like these?
+		if evt.Type == eventsystem.EventGuildMemberAdd {
+			userID = evt.GuildMemberAdd().User.ID
+			guild = evt.GuildMemberAdd().GuildID
+		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
+			userID = evt.GuildMemberUpdate().User.ID
+			guild = evt.GuildMemberUpdate().GuildID
+		} else {
+			panic("Unknown event in lock memebr mute middleware")
+		}
+
+		// If there's less than 2 seconds of the mute left, don't bother doing anything
+		var muteLeft int
+		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		if muteLeft < 5 {
+			return
+		}
+
+		LockMute(userID)
+		defer UnlockMute(userID)
+
+		// The situation may have changed at this point, check again
+		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		if muteLeft < 5 {
+			return
+		}
+
+		next(evt)
 	}
 }
 
 func HandleMemberJoin(evt *eventsystem.EventData) {
-	c := evt.GuildMemberAdd
-	client := bot.ContextRedis(evt.Context())
-
-	muteLeft, _ := client.Cmd("TTL", RedisKeyMutedUser(c.GuildID, c.User.ID)).Int()
-	if muteLeft < 10 {
-		return
-	}
+	c := evt.GuildMemberAdd()
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
@@ -95,496 +325,83 @@ func HandleMemberJoin(evt *eventsystem.EventData) {
 	}
 
 	logrus.WithField("guild", c.GuildID).WithField("user", c.User.ID).Info("Assigning back mute role after member rejoined")
-	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.MuteRole)
+	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.IntMuteRole())
 	if err != nil {
 		logrus.WithField("guild", c.GuildID).WithError(err).Error("Failed assigning mute role")
 	}
 }
 
-const (
-	ModCmdBan int = iota
-	ModCmdKick
-	ModCmdMute
-	ModCmdUnMute
-	ModCmdClean
-	ModCmdReport
-	ModCmdReason
-	ModCmdWarn
-)
+func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
+	c := evt.GuildMemberUpdate()
 
-// ModBaseCmd is the base command for moderation commands, it makes sure proper permissions are there for the user invoking it
-// and that the command is required and the reason is specified if required
-func ModBaseCmd(neededPerm, cmd int, inner dcmd.RunFunc) dcmd.RunFunc {
-	// userID, channelID, guildID string (config *Config, hasPerms bool, err error) {
+	config, err := GetConfig(c.GuildID)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
+		return
+	}
+	if config.MuteRole == "" {
+		return
+	}
 
-	return func(data *dcmd.Data) (interface{}, error) {
+	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
 
-		userID := data.Msg.Author.ID
-		channelID := data.CS.ID()
-		guildID := data.GS.ID()
+	removedRoles, err := AddMemberMuteRole(config, c.Member.User.ID, c.Member.Roles)
+	if err != nil {
+		logrus.WithError(err).Error("Failed adding mute role to user in member update")
+	}
 
-		cmdName := data.Cmd.Trigger.Names[0]
+	if len(removedRoles) < 1 {
+		return
+	}
 
-		if neededPerm != 0 {
-			hasPerms, err := bot.AdminOrPerm(neededPerm, userID, channelID)
-			if err != nil || !hasPerms {
-				return fmt.Sprintf("The **%s** command requires the **%s** permission in this channel, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm]), nil
-			}
-		}
+	tx, err := common.PQ.Begin()
+	if err != nil {
+		logrus.WithError(err).Error("Failed starting transaction")
+		return
+	}
 
-		config, err := GetConfig(guildID)
+	// Append the removed roles to the removed_roles array column, if they don't already exist in it
+	const queryStr = "UPDATE muted_users SET removed_roles = array_append(removed_roles, $3 ) WHERE user_id=$2 AND guild_id=$1 AND NOT ($3 = ANY(removed_roles));"
+	for _, v := range removedRoles {
+		_, err := tx.Exec(queryStr, c.GuildID, c.Member.User.ID, v)
 		if err != nil {
-			return "Error retrieving config", err
+			logrus.WithError(err).Error("Failed updating removed roles")
+			break
 		}
+	}
 
-		enabled := false
-		reasonOptional := false
-		reason := ""
-
-		switch cmd {
-		case ModCmdBan:
-			enabled = config.BanEnabled
-			reasonOptional = config.BanReasonOptional
-			reason = SafeArgString(data, 1)
-		case ModCmdKick:
-			enabled = config.KickEnabled
-			reasonOptional = config.KickReasonOptional
-			reason = SafeArgString(data, 1)
-		case ModCmdMute, ModCmdUnMute:
-			enabled = config.MuteEnabled
-			if cmd == ModCmdMute {
-				reasonOptional = config.MuteReasonOptional
-				reason = SafeArgString(data, 2)
-			} else {
-				reasonOptional = config.UnmuteReasonOptional
-				reason = SafeArgString(data, 1)
-			}
-		case ModCmdClean:
-			reasonOptional = true
-			enabled = config.CleanEnabled
-		case ModCmdReport:
-			reasonOptional = true
-			enabled = config.ReportEnabled
-		case ModCmdReason:
-			reasonOptional = true
-			enabled = true
-		case ModCmdWarn:
-			reasonOptional = true
-			enabled = config.WarnCommandsEnabled
-		default:
-			panic("Unknown command")
-		}
-
-		if !enabled {
-			return fmt.Sprintf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName), nil
-		}
-
-		if !reasonOptional && reason == "" {
-			return "Reason is required.", nil
-		}
-
-		return inner(data.WithContext(context.WithValue(data.Context(), ContextKeyConfig, config)))
-
+	err = tx.Commit()
+	if err != nil {
+		logrus.WithError(err).Error("Failed comitting transaction")
 	}
 }
 
-func SafeArgString(data *dcmd.Data, arg int) string {
-	if arg >= len(data.Args) || data.Args[arg].Value == nil {
-		return ""
+func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
+	auditlog, err := common.BotSession.GuildAuditLog(guildID, 0, 0, typ, 10)
+	if err != nil {
+		return nil, nil
 	}
 
-	return data.Args[arg].Str()
-}
+	for _, entry := range auditlog.AuditLogEntries {
+		if entry.TargetID == targetUser {
 
-var ModerationCommands = []*commands.YAGCommand{
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Ban",
-		Description:   "Bans a member",
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionBanMembers, ModCmdBan, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-
-			reason := SafeArgString(parsed, 1)
-			if reason == "" {
-				reason = "(No reason specified)"
-			}
-
-			target := parsed.Args[0].Value.(*discordgo.User)
-
-			err := BanUser(parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
-			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return cast.Message.Message, err
-				} else {
-					return "An error occurred", err
+			if within != -1 {
+				t := bot.SnowflakeToTime(entry.ID)
+				if time.Since(t) > within {
+					return nil, nil
 				}
 			}
 
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Kick",
-		Description:   "Kicks a member",
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdKick, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-
-			reason := SafeArgString(parsed, 1)
-			if reason == "" {
-				reason = "(No reason specified)"
-			}
-
-			target := parsed.Args[0].Value.(*discordgo.User)
-
-			err := KickUser(config, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
-			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return cast.Message.Message, err
-				} else {
-					return "An error occurred", err
+			// Find the user details from the id
+			for _, v := range auditlog.Users {
+				if v.ID == entry.UserID {
+					return v, entry
 				}
 			}
 
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Mute",
-		Description:   "Mutes a member",
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Minutes", Type: &dcmd.IntArg{Min: 1, Max: 1440}},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
-		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdMute, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-			if config.MuteRole == "" {
-				return "No mute role set up, assign a mute role in the control panel", nil
-			}
+			break
+		}
+	}
 
-			reason := "(No reason specified)"
-			if parsed.Args[2].Str() != "" {
-				reason = parsed.Args[2].Str()
-			}
-
-			muteDuration := 10
-			if parsed.Args[1].Value != nil {
-				muteDuration = parsed.Args[1].Int()
-				if muteDuration < 1 || muteDuration > 1440 {
-					return "Duration out of bounds (min 1, max 1440 - 1 day)", nil
-				}
-			}
-
-			target := parsed.Args[0].Value.(*discordgo.User)
-			member, err := bot.GetMember(parsed.GS.ID(), target.ID)
-			if err != nil || member == nil {
-				return "Member not found", err
-			}
-
-			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), true, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
-			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return "API Error: " + cast.Message.Message, err
-				} else {
-					return "An error occurred", err
-				}
-			}
-
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Unmute",
-		Description:   "unmutes a member",
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdUnMute, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-			if config.MuteRole == "" {
-				return "No mute role set up, assign a mute role in the control panel", nil
-			}
-
-			reason := "(No reason specified)"
-			if parsed.Args[1].Str() != "" {
-				reason = parsed.Args[1].Str()
-			} else if !config.UnmuteReasonOptional {
-				return "No reason specified", nil
-			}
-
-			target := parsed.Args[0].Value.(*discordgo.User)
-			member, err := bot.GetMember(parsed.GS.ID(), target.ID)
-			if err != nil || member == nil {
-				return "Member not found", err
-			}
-
-			err = MuteUnmuteUser(config, parsed.Context().Value(commands.CtxKeyRedisClient).(*redis.Client), false, parsed.GS.ID(), parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
-			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return "API Error: " + cast.Message.Message, err
-				} else {
-					return "An error occurred", err
-				}
-			}
-
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		Cooldown:      5,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Report",
-		Description:   "Reports a member",
-		RequiredArgs:  2,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		RunFunc: ModBaseCmd(0, ModCmdReport, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-
-			logLink := CreateLogs(parsed.GS.ID(), parsed.CS.ID(), parsed.Msg.Author)
-
-			channelID := config.ReportChannel
-			if channelID == "" {
-				return "No report channel set up", nil
-			}
-
-			reportBody := fmt.Sprintf("<@%s> Reported <@%s> in <#%s> For `%s`\nLast 100 messages from channel: <%s>", parsed.Msg.Author.ID, parsed.Args[0].Value.(*discordgo.User).ID, parsed.Msg.ChannelID, parsed.Args[1].Str(), logLink)
-
-			_, err := common.BotSession.ChannelMessageSend(channelID, common.EscapeSpecialMentions(reportBody))
-			if err != nil {
-				return "Failed sending report, check perms for report channel", err
-			}
-
-			// don't bother sending confirmation if it's in the same channel
-			if channelID != parsed.Msg.ChannelID {
-				return "User reported to the proper authorities", nil
-			}
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Clean",
-		Description:   "Deleted the last n messages from chat, optionally filtering by user",
-		Aliases:       []string{"clear", "cl"},
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Num", Type: &dcmd.IntArg{Min: 1, Max: 100}},
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-		},
-		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
-		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdClean, func(parsed *dcmd.Data) (interface{}, error) {
-			filter := ""
-			if parsed.Args[1].Value != nil {
-				filter = parsed.Args[1].Value.(*discordgo.User).ID
-			}
-
-			num := parsed.Args[0].Int()
-			if filter == "" || filter == parsed.Msg.Author.ID {
-				num++ // Automatically include our own message
-			}
-
-			if num > 100 {
-				num = 100
-			}
-
-			if num < 1 {
-				if num < 0 {
-					return errors.New("Bot is having a stroke <https://www.youtube.com/watch?v=dQw4w9WgXcQ>"), nil
-				}
-				return errors.New("Can't delete nothing"), nil
-			}
-
-			limitFetch := num
-			if filter != "" {
-				limitFetch = num * 50 // Maybe just change to full fetch?
-			}
-
-			if limitFetch > 1000 {
-				limitFetch = 1000
-			}
-
-			// Wait a second so the client dosen't gltich out
-			time.Sleep(time.Second)
-
-			numDeleted, err := DeleteMessages(parsed.Msg.ChannelID, filter, num, limitFetch)
-
-			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Reason",
-		Description:   "Add/Edit a modlog reason",
-		RequiredArgs:  2,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdReason, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-			if config.ActionChannel == "" {
-				return "No mod log channel set up", nil
-			}
-			msg, err := common.BotSession.ChannelMessage(config.ActionChannel, parsed.Args[0].Str())
-			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return "Failed retrieving the message: " + cast.Message.Message, nil
-				}
-				return "Failed retrieving the message", err
-			}
-
-			if msg.Author.ID != common.Conf.BotID {
-				return "I didn't make that message", nil
-			}
-
-			if len(msg.Embeds) < 1 {
-				return "This entry is either too old or you're trying to mess with me...", nil
-			}
-
-			embed := msg.Embeds[0]
-			updateEmbedReason(parsed.Msg.Author, parsed.Args[1].Str(), embed)
-			_, err = common.BotSession.ChannelMessageEditEmbed(config.ActionChannel, msg.ID, embed)
-			if err != nil {
-				return "Failed updating the modlog entry", err
-			}
-
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Warn",
-		Description:   "Warn a user, warning are saved.",
-		RequiredArgs:  2,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-
-			err := WarnUser(config, parsed.GS.ID(), parsed.CS.ID(), parsed.Msg.Author, parsed.Args[0].Value.(*discordgo.User), parsed.Args[1].Str())
-			if err != nil {
-				return "Seomthing went wrong warning this user, make sure the bot has all the proper perms. (if you have the modlog enabled the bot need to be able to send messages in the modlog for example)", err
-			}
-
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Warnings",
-		Description:   "Lists warning of a user.",
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
-			var result []*WarningModel
-			err := common.GORM.Where("user_id = ? AND guild_id = ?", parsed.Args[0].Value.(*discordgo.User).ID, parsed.GS.ID()).Order("id desc").Find(&result).Error
-			if err != nil && err != gorm.ErrRecordNotFound {
-				return "An error occured...", err
-			}
-
-			if len(result) < 1 {
-				return "This user has not received any warnings", nil
-			}
-
-			out := ""
-			for _, entry := range result {
-				out += fmt.Sprintf("#%d: `%20s` **%s** (%13s) - **%s**\n", entry.ID, entry.CreatedAt.Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
-				if entry.LogsLink != "" {
-					out += "^logs: <" + entry.LogsLink + ">\n"
-				}
-			}
-
-			return out, nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "EditWarning",
-		Description:   "Edit a warning, id is the first number of each warning from the warnings command",
-		RequiredArgs:  2,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Id", Type: dcmd.Int},
-			&dcmd.ArgDef{Name: "NewMessage", Type: dcmd.String},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
-
-			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GS.ID(), parsed.Args[0].Int()).Update(
-				"message", fmt.Sprintf("%s (updated by %s#%s (%s))", parsed.Args[1].Str(), parsed.Msg.Author.Username, parsed.Msg.Author.Discriminator, parsed.Msg.Author.ID)).RowsAffected
-
-			if rows < 1 {
-				return "Failed updating, most likely couldn't find the warning", nil
-			}
-
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "DelWarning",
-		Aliases:       []string{"dw"},
-		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Id", Type: dcmd.Int},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
-
-			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GS.ID(), parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
-			if rows < 1 {
-				return "Failed deleting, most likely couldn't find the warning", nil
-			}
-
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "ClearWarnings",
-		Aliases:       []string{"clw"},
-		Description:   "Clears the warnings of a user",
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionManageMessages, ModCmdWarn, func(parsed *dcmd.Data) (interface{}, error) {
-
-			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GS.ID(), parsed.Args[0].Value.(*discordgo.User).ID).Delete(WarningModel{}).RowsAffected
-			return fmt.Sprintf("Deleted %d warnings.", rows), nil
-		}),
-	},
+	return nil, nil
 }

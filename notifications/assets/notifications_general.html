@@ -1,0 +1,167 @@
+{{define "cp_notifications_general"}}
+{{template "cp_head" .}}
+<header class="page-header">
+    <h2>General</h2>
+</header>
+
+<section class="card mb-2">
+    <div class="card-body mb-0">
+        {{template "template_help"}}
+    </div>
+    <!-- /.col-lg-12 -->
+</section>
+
+{{template "cp_alerts" .}}
+
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <form role="form" method="post" data-async-form>
+            <div class="row">
+                <div class="col-lg-6">
+                    <section class="card {{if .NotifyConfig.JoinServerEnabled}}card-featured card-featured-success{{end}}">
+                        <header class="card-header">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="join-server-enabled-check" name="join_server_enabled" {{if .NotifyConfig.JoinServerEnabled}} checked{{end}}>
+                                <label class="form-check-label" for="join-server-enabled-check">
+                                    <h2 class="card-title">Join message in server channel</h2>
+                                </label>
+                            </div>
+                        </header>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select class="form-control" name="join_server_channel" data-requireperms-send>
+                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.JoinServerChannel false ""}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Message</label>
+                                {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
+                                {{range .NotifyConfig.JoinServerMsgs}}
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="join_server_msgs">{{.}}</textarea>
+                                    <span class="input-group-append">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{else}}
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="join_server_msgs"></textarea>
+                                    <span class="input-group-append">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{end}}
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}. YAGPDB will pick one message at random from all configured.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="card {{if .NotifyConfig.LeaveEnabled}}card-featured card-featured-success{{end}}">
+                        <header class="card-header">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="leave_enabled" name="leave_enabled" {{if .NotifyConfig.LeaveEnabled}}checked{{end}}>
+                                <label class="form-check-label" for="leave_enabled">
+                                    <h2 class="card-title">User Leave Message</h2>
+                                </label>
+                            </div>
+                        </header>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select class="form-control" name="leave_channel" data-requireperms-send>
+                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.LeaveChannel false ""}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Message</label>
+                                {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
+                                {{range .NotifyConfig.LeaveMsgs}}
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="leave_msgs">{{.}}</textarea>
+                                    <span class="input-group-append">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{else}}
+                                <div class="entry input-group input-group-sm">
+                                    <textarea data-plugin-textarea-autosize class="form-control" name="leave_msgs"></textarea>
+                                    <span class="input-group-append">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{end}}
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}. YAGPDB will pick one message at random from all configured.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <!-- /.col-lg-6 (nested) -->
+            </div>
+            <div class="row mt-4">
+                <div class="col-lg-6">
+                    <section class="card {{if .NotifyConfig.JoinDMEnabled}}card-featured card-featured-success{{end}}">
+                        <header class="card-header">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="join_dm_enabled" name="join_dm_enabled" {{if .NotifyConfig.JoinDMEnabled}}checked{{end}}>
+                                <label class="form-check-label" for="join_dm_enabled">
+                                    <h2 class="card-title">Join message in direct message</h2>
+                                </label>
+                            </div>
+                        </header>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea data-plugin-textarea-autosize class="form-control" name="join_dm_msg">{{.NotifyConfig.JoinDMMsg}}</textarea>
+                                <p class="help-block">Available template data is {{template "template_helper_user"}} and {{template "template_helper_guild"}}</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="panel {{if .NotifyConfig.TopicEnabled}}card-featured card-featured-success{{end}}">
+                        <header class="card-header">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="topic_enabled" name="topic_enabled" {{if .NotifyConfig.TopicEnabled}}checked{{end}}>
+                                <label class="form-check-label" for="topic_enabled">
+                                    <h2 class="card-title">Topic change message</h2>
+                                </label>
+                            </div>
+                        </header>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select class="form-control" name="topic_channel" data-requireperms-send>
+                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.TopicChannel true "Channel topic was changed in"}}
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <!-- /.col-lg-6 (nested) -->
+            </div>
+            <div class="row mt-4">
+                <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
+            </div>
+            <!-- /.row (nested) -->
+            <!-- /.panel-body -->
+        </form>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->            
+
+{{template "cp_footer" .}}
+
+{{end}}

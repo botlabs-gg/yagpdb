@@ -5,7 +5,7 @@ package web
 // depending on struct tags
 //
 // struct: `valid:"traverse"`
-//	  - Validates the struct
+//	  - Validates the struct or slice
 // float/int: `valid:"{min],{max}"` or (for int64's) `valid:"role/channel,{allowEmpty}}"
 //    - Makes sure the float/int is whitin min and max
 // normal string: `valid:",{minLen},{maxLen},opts..."` or `valid:",{maxLen},opts..."`
@@ -25,9 +25,10 @@ package web
 import (
 	"errors"
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -139,19 +140,21 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			}
 			vField.Set(reflect.ValueOf(newSlice))
 		case []int64:
-			newSlice := make([]int64, 0, len(cv))
-			for _, integer := range cv {
-				keep, e := ValidateIntField(integer, validationTag, guild)
-				if e != nil {
-					err = e
-					break
-				}
-				if keep && !common.ContainsInt64Slice(newSlice, integer) {
-					newSlice = append(newSlice, integer)
-				}
+			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			if e != nil {
+				err = e
+				break
 			}
 
 			vField.Set(reflect.ValueOf(newSlice))
+		case pq.Int64Array:
+			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			if e != nil {
+				err = e
+				break
+			}
+
+			vField.Set(reflect.ValueOf(pq.Int64Array(newSlice)))
 		default:
 			// Recurse if it's another struct
 			switch tField.Type.Kind() {
@@ -160,6 +163,12 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 				innerOk := ValidateForm(guild, tmpl, addr.Interface())
 				if !innerOk {
 					ok = false
+				}
+			case reflect.Slice:
+				sl := reflect.Indirect(vField)
+				for i := 0; i < sl.Len(); i++ {
+					innerOk := ValidateForm(guild, tmpl, sl.Index(i).Addr().Interface())
+					ok = ok && innerOk
 				}
 			}
 		}
@@ -195,6 +204,22 @@ func readMinMax(valid *ValidationTag) (float64, float64) {
 	return min, max
 }
 
+func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Guild) (filtered []int64, err error) {
+	filtered = make([]int64, 0, len(is))
+	for _, integer := range is {
+		keep, err := ValidateIntField(integer, tags, guild)
+		if err != nil {
+			return filtered, err
+		}
+
+		if keep && !common.ContainsInt64Slice(filtered, integer) {
+			filtered = append(filtered, integer)
+		}
+	}
+
+	return filtered, nil
+}
+
 func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (keep bool, err error) {
 	kind, _ := tags.Str(0)
 
@@ -219,9 +244,9 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (kee
 	// Check what kind of string field it is, and perform the needed vliadation depending on type
 	switch kind {
 	case "role":
-		err = ValidateRoleField(strconv.FormatInt(i, 10), guild.Roles, allowEmpty)
+		err = ValidateRoleField(i, guild.Roles, allowEmpty)
 	case "channel":
-		err = ValidateChannelField(strconv.FormatInt(i, 10), guild.Channels, allowEmpty)
+		err = ValidateChannelField(i, guild.Channels, allowEmpty)
 	default:
 		logrus.WithField("kind", kind).Error("UNKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
 	}
@@ -292,13 +317,15 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 	case "regex":
 		err = ValidateRegexField(s, maxLen)
 	case "role":
-		err = ValidateRoleField(s, guild.Roles, allowEmpty)
+		parsedID, _ := strconv.ParseInt(s, 10, 64)
+		err = ValidateRoleField(parsedID, guild.Roles, allowEmpty)
 		if err != nil && allowEmpty {
 			str = ""
 			err = nil
 		}
 	case "channel":
-		err = ValidateChannelField(s, guild.Channels, allowEmpty)
+		parsedID, _ := strconv.ParseInt(s, 10, 64)
+		err = ValidateChannelField(parsedID, guild.Channels, allowEmpty)
 		if err != nil && allowEmpty {
 			str = ""
 			err = nil
@@ -325,7 +352,7 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 			}
 		}
 
-		err = ValidateNormalStringField(s, min, maxLen)
+		err = ValidateNormalStringField(str, min, maxLen)
 	default:
 		logrus.WithField("kind", kind).Error("UNKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
 	}
@@ -355,8 +382,8 @@ func ValidateTemplateField(s string, max int) error {
 	return nil
 }
 
-func ValidateChannelField(s string, channels []*discordgo.Channel, allowEmpty bool) error {
-	if s == "" {
+func ValidateChannelField(s int64, channels []*discordgo.Channel, allowEmpty bool) error {
+	if s == 0 {
 		if allowEmpty {
 			return nil
 		} else {
@@ -373,12 +400,12 @@ func ValidateChannelField(s string, channels []*discordgo.Channel, allowEmpty bo
 	return ErrChannelNotFound
 }
 
-func ValidateRoleField(s string, roles []*discordgo.Role, allowEmpty bool) error {
-	if s == "" {
+func ValidateRoleField(s int64, roles []*discordgo.Role, allowEmpty bool) error {
+	if s == 0 {
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("No role specified")
+			return errors.New("No role specified (or role is above bot)")
 		}
 	}
 

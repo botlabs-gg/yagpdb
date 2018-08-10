@@ -1,9 +1,9 @@
 package configstore
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"math/rand"
 	"strings"
@@ -15,7 +15,7 @@ const MaxRetries = 1000
 type Postgres struct{}
 
 // conf is requried to be a pointer value
-func (p *Postgres) GetGuildConfig(ctx context.Context, guildID string, conf GuildConfig) error {
+func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf GuildConfig) error {
 
 	currentRetries := 0
 	for {
@@ -54,12 +54,7 @@ func (p *Postgres) SetGuildConfig(ctx context.Context, conf GuildConfig) error {
 		return err
 	}
 
-	redisClient, err := RedisClientCtx(ctx)
-	if err != nil {
-		return err
-	}
-
-	InvalidateGuildCache(redisClient, conf, conf)
+	InvalidateGuildCache(conf, conf)
 	return nil
 }
 
@@ -69,11 +64,7 @@ func (p *Postgres) SetIfLatest(ctx context.Context, conf GuildConfig) (updated b
 	err = result.Error
 
 	if err == nil {
-		redisClient, err := RedisClientCtx(ctx)
-		if err != nil {
-			return false, err
-		}
-		InvalidateGuildCache(redisClient, conf, conf)
+		InvalidateGuildCache(conf, conf)
 	}
 
 	return

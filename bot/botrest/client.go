@@ -1,12 +1,15 @@
 package botrest
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"github.com/jonas747/discordgo"
-	"log"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -20,6 +23,7 @@ func get(url string, dest interface{}) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		var errDest string
@@ -31,29 +35,96 @@ func get(url string, dest interface{}) error {
 		return errors.New(errDest)
 	}
 
-	return json.NewDecoder(resp.Body).Decode(dest)
+	return errors.WithMessage(json.NewDecoder(resp.Body).Decode(dest), "json.Decode")
 }
 
-func GetGuild(guildID string) (g *discordgo.Guild, err error) {
-	err = get(guildID+"/guild", &g)
+func post(url string, bodyData interface{}, dest interface{}) error {
+	var bodyBuf bytes.Buffer
+	if bodyData != nil {
+		encoder := json.NewEncoder(&bodyBuf)
+		err := encoder.Encode(bodyData)
+		if err != nil {
+			return err
+		}
+	}
+	resp, err := http.Post("http://"+serverAddr+"/"+url, "application/json", &bodyBuf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		var errDest string
+		err := json.NewDecoder(resp.Body).Decode(&errDest)
+		if err != nil {
+			return ErrServerError
+		}
+
+		return errors.New(errDest)
+	}
+
+	if dest == nil {
+		return nil
+	}
+
+	return errors.WithMessage(json.NewDecoder(resp.Body).Decode(dest), "json.Decode")
+}
+
+func GetGuild(guildID int64) (g *discordgo.Guild, err error) {
+	err = get(discordgo.StrID(guildID)+"/guild", &g)
 	return
 }
 
-func GetBotMember(guildID string) (m *discordgo.Member, err error) {
-	err = get(guildID+"/botmember", &m)
+func GetBotMember(guildID int64) (m *discordgo.Member, err error) {
+	err = get(discordgo.StrID(guildID)+"/botmember", &m)
 	return
 }
 
-func GetMembers(guildID string, members ...string) (m []*discordgo.Member, err error) {
-	query := url.Values{"users": members}
+func GetOnlineCount(guildID int64) (c int64, err error) {
+	err = get(discordgo.StrID(guildID)+"/onlinecount", &c)
+	return
+}
+
+func GetMembers(guildID int64, members ...int64) (m []*discordgo.Member, err error) {
+	stringed := make([]string, 0, len(members))
+	for _, v := range members {
+		stringed = append(stringed, strconv.FormatInt(v, 10))
+	}
+
+	query := url.Values{"users": stringed}
 	encoded := query.Encode()
 
-	err = get(guildID+"/members?"+encoded, &m)
+	err = get(discordgo.StrID(guildID)+"/members?"+encoded, &m)
 	return
 }
 
-func GetChannelPermissions(guildID, channelID string) (perms int64, err error) {
-	err = get(guildID+"/channelperms/"+channelID, &perms)
+func GetChannelPermissions(guildID, channelID int64) (perms int64, err error) {
+	err = get(discordgo.StrID(guildID)+"/channelperms/"+discordgo.StrID(channelID), &perms)
+	return
+}
+
+func GetShardStatuses() (st []*ShardStatus, err error) {
+	err = get("gw_status", &st)
+	return
+}
+
+func SendReconnectShard(shardID int, reidentify bool) (err error) {
+	queryParams := ""
+	if reidentify {
+		queryParams = "?reidentify=1"
+	}
+
+	err = post(fmt.Sprintf("shard/%d/reconnect"+queryParams, shardID), nil, nil)
+	return
+}
+
+func SendReconnectAll(reidentify bool) (err error) {
+	queryParams := ""
+	if reidentify {
+		queryParams = "?reidentify=1"
+	}
+
+	err = post("shard/*/reconnect"+queryParams, nil, nil)
 	return
 }
 
@@ -71,7 +142,7 @@ func RunPinger() {
 		err := get("ping", &dest)
 		if err != nil {
 			if !lastFailed {
-				log.Println("Ping failed", err)
+				logrus.Warn("Ping failed: ", err)
 				lastFailed = true
 			}
 			continue

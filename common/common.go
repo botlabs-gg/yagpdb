@@ -3,36 +3,40 @@ package common
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Sirupsen/logrus"
+	"github.com/DataDog/datadog-go/statsd"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/vattle/sqlboiler/boil"
+	"github.com/mediocregopher/radix.v3"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
 	"os"
 )
 
 const (
-	VERSIONMAJOR = 0
-	VERSIONMINOR = 25
-	VERSIONPATCH = 0
-
-	Testing = false // Disables stuff like command cooldowns
+	VERSIONMAJOR = 1
+	VERSIONMINOR = 4
+	VERSIONPATCH = 2
+	Testing      = false // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Naive"
+	VERSION       = VERSIONNUMBER + " Xenophobic"
 
-	GORM        *gorm.DB
-	PQ          *sql.DB
-	RedisPool   *pool.Pool
-	DSQLStateDB *sql.DB
+	GORM *gorm.DB
+	PQ   *sql.DB
+
+	RedisPool *radix.Pool
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
 	Conf       *CoreConfig
+
+	RedisPoolSize = 25
+
+	Statsd *statsd.Client
 )
 
 // Initalizes all database connections, config loading and so on
@@ -57,19 +61,42 @@ func Init() error {
 	}
 	BotSession.MaxRestRetries = 3
 
+	ConnectDatadog()
+
 	err = connectRedis(config.Redis)
 	if err != nil {
 		return err
 	}
 
-	err = connectDB(config.PQUsername, config.PQPassword, "yagpdb")
+	err = connectDB(config.PQHost, config.PQUsername, config.PQPassword, "yagpdb")
+	if err != nil {
+		panic(err)
+	}
 
-	BotUser, err = BotSession.User("@me")
+	BotUser, err = BotSession.UserMe()
 	if err != nil {
 		panic(err)
 	}
 
 	return err
+}
+
+func ConnectDatadog() {
+	if Conf.DogStatsdAddress == "" {
+		logrus.Warn("No datadog info provided, not connecting to datadog aggregator")
+		return
+	}
+
+	client, err := statsd.New(Conf.DogStatsdAddress)
+	if err != nil {
+		logrus.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
+		return
+	}
+
+	Statsd = client
+
+	currentTransport := BotSession.Client.HTTPClient.Transport
+	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: currentTransport}
 }
 
 func InitTest() {
@@ -78,7 +105,7 @@ func InitTest() {
 		return
 	}
 
-	err := connectDB("postgres", "123", testDB)
+	err := connectDB("localhost", "postgres", "123", testDB)
 	if err != nil {
 		panic(err)
 	}
@@ -86,39 +113,33 @@ func InitTest() {
 
 func connectRedis(addr string) (err error) {
 	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	RedisPool, err = pool.NewCustom("tcp", addr, 250, RedisDialFunc)
+	// if os.Getenv("YAGPDB_LEGACY_REDIS_POOL") != "" {
+	// 	logrus.Info("Using legacy redis pool")
+	// 	RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
+	// } else {
+	// 	logrus.Info("Using new redis pool, set YAGPDB_LEGACY_REDIS_POOL=yes if it's broken")
+	// 	RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
+	// }
+
+	RedisPool, err = radix.NewPool("tcp", addr, RedisPoolSize, radix.PoolOnEmptyWait())
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed initilizing redis pool")
+		logrus.WithError(err).Fatal("Failed intitializing redis pool")
 	}
+
 	return
 }
 
-func connectDB(user, pass, dbName string) error {
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=localhost user=%s dbname=%s sslmode=disable password=%s", user, dbName, pass))
+func connectDB(host, user, pass, dbName string) error {
+	if host == "" {
+		host = "localhost"
+	}
+
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password='%s'", host, user, dbName, pass))
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(5)
-	}
-
-	if os.Getenv("YAGPDB_SQLSTATE_ADDR") != "" {
-		logrus.Info("Using special sql state db")
-		addr := os.Getenv("YAGPDB_SQLSTATE_ADDR")
-		user := os.Getenv("YAGPDB_SQLSTATE_USER")
-		pass := os.Getenv("YAGPDB_SQLSTATE_PW")
-		dbName := os.Getenv("YAGPDB_SQLSTATE_DB")
-
-		db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", addr, user, dbName, pass))
-		if err != nil {
-			DSQLStateDB = PQ
-			return err
-		}
-
-		DSQLStateDB = db
-
-	} else {
-		DSQLStateDB = PQ
 	}
 
 	return err

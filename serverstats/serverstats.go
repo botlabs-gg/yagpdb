@@ -1,18 +1,18 @@
 package serverstats
 
-//go:generate esc -o assets_gen.go -pkg serverstats -ignore ".go" assets/
-
 import (
 	"context"
-	log "github.com/Sirupsen/logrus"
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/serverstats/models"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -33,17 +33,15 @@ func RegisterPlugin() {
 	common.GORM.AutoMigrate(&ServerStatsConfig{})
 	configstore.RegisterConfig(configstore.SQL, &ServerStatsConfig{})
 	ServerStatsPeriodStore = models.NewStatsPeriodStore(common.PQ)
-	_, err := common.PQ.Exec(FSMustString(false, "/assets/schema.sql"))
+
+	common.ValidateSQLSchema(DBSchema)
+	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {
 		panic("Failed initializing db schema: " + err.Error())
 	}
 }
 
-var _ bot.BotStarterHandler = (*Plugin)(nil)
-
-func (p *Plugin) StartBot() {
-	go UpdateStatsLoop()
-}
+var stopStatsLoop = make(chan *sync.WaitGroup)
 
 func UpdateStatsLoop() {
 
@@ -59,36 +57,48 @@ func UpdateStatsLoop() {
 			ProcessTempStats(false)
 		case <-longTicker.C:
 			go UpdateOldStats()
+		case wg := <-stopStatsLoop:
+			wg.Done()
+			return
 		}
 	}
 }
 
 // ProcessTempStats moves stats from redis to postgres batched up
 func ProcessTempStats(full bool) {
-	client := common.MustGetRedisClient()
-	defer common.RedisPool.Put(client)
 
 	started := time.Now()
 
-	guildsToCheckMU.Lock()
-	guilds := guildsToCheck
-	guildsToCheck = make([]string, 0, len(guilds))
-	guildsToCheckMU.Unlock()
+	var strGuilds []string
 	if full {
-		var err error
-		guilds, err = client.Cmd("SMEMBERS", "connected_guilds").List()
+		err := common.RedisPool.Do(radix.Cmd(&strGuilds, "SMEMBERS", "connected_guilds"))
 		if err != nil {
-			log.WithError(err).Error("Failed retrieving connected guilds", err)
+			log.WithError(err).Error("Failed retrieving connected guilds")
 		}
+	} else {
+		err := common.RedisPool.Do(radix.Cmd(nil, "RENAME", "serverstats_active_guilds", "serverstats_active_guilds_processing"))
+		if err != nil {
+			log.WithError(err).Error("Failed renaming temp stats")
+			return
+		}
+
+		err = common.RedisPool.Do(radix.Cmd(&strGuilds, "SMEMBERS", "serverstats_active_guilds_processing"))
+		if err != nil {
+			log.WithError(err).Error("Failed retrieving active guilds")
+		}
+
+		common.RedisPool.Do(radix.Cmd(nil, "DEL", "serverstats_active_guilds_processing"))
 	}
 
-	if len(guilds) < 1 {
+	if len(strGuilds) < 1 {
 		log.Info("Skipped updating stats, no activity")
 		return
 	}
 
-	for _, g := range guilds {
-		err := UpdateGuildStats(client, g)
+	for _, strGID := range strGuilds {
+		g, _ := strconv.ParseInt(strGID, 10, 64)
+
+		err := UpdateGuildStats(g)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"guild":      g,
@@ -99,12 +109,12 @@ func ProcessTempStats(full bool) {
 
 	log.WithFields(log.Fields{
 		"duration":    time.Since(started).Seconds(),
-		"num_servers": len(guilds),
+		"num_servers": len(strGuilds),
 	}).Info("Updated temp stats")
 }
 
 // Updates the stats on a specific guild, removing expired stats
-func UpdateGuildStats(client *redis.Client, guildID string) error {
+func UpdateGuildStats(guildID int64) error {
 	now := time.Now()
 	minAgo := now.Add(time.Minute)
 	unixminAgo := minAgo.Unix()
@@ -112,17 +122,17 @@ func UpdateGuildStats(client *redis.Client, guildID string) error {
 	yesterday := now.Add(24 * -time.Hour)
 	unixYesterday := yesterday.Unix()
 
-	client.PipeAppend("ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, "-inf", unixminAgo)
-	client.PipeAppend("ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, "-inf", unixminAgo)
-	client.PipeAppend("ZREMRANGEBYSCORE", "guild_stats_members_joined_day:"+guildID, "-inf", unixYesterday)
-	client.PipeAppend("ZREMRANGEBYSCORE", "guild_stats_members_left_day:"+guildID, "-inf", unixYesterday)
+	cmds := make([]radix.CmdAction, 4)
 
-	replies, err := common.GetRedisReplies(client, 4)
-	if err != nil {
-		return err
-	}
+	strGID := discordgo.StrID(guildID)
 
-	messageStatsRaw, err := replies[0].List()
+	var messageStatsRaw []string
+	cmds[0] = radix.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo)
+	cmds[1] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo)
+	cmds[2] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_members_joined_day:"+strGID, "-inf", unixYesterday)
+	cmds[3] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_members_left_day:"+strGID, "-inf", unixYesterday)
+
+	err := common.RedisPool.Do(radix.Pipeline(cmds...))
 	if err != nil {
 		return err
 	}
@@ -144,7 +154,7 @@ func UpdateGuildStats(client *redis.Client, guildID string) error {
 			model.Count++
 		} else {
 			model = &models.StatsPeriod{
-				GuildID:   common.MustParseInt(guildID),
+				GuildID:   guildID,
 				ChannelID: common.MustParseInt(channel),
 				UserID:    common.MustParseInt(author),
 				Started:   minAgo, // TODO: we should calculate these from the min max snowflake ids
@@ -189,18 +199,18 @@ type FullStats struct {
 	TotalMembers int                      `json:"total_members_now"`
 }
 
-func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error) {
+func RetrieveFullStats(guildID int64) (*FullStats, error) {
 	// Query the short term stats and the long term stats
 	// TODO: If we start moving them over in between we will get somehwat incorrect stats
 	// not sure how to fix other than locking
 
-	stats, err := RetrieveRedisStats(client, guildID)
+	stats, err := RetrieveRedisStats(guildID)
 	if err != nil {
 		return nil, err
 	}
 
 	rows, err := ServerStatsPeriodStore.FindAll(models.NewStatsPeriodQuery().FindByGuildID(
-		kallax.Eq, common.MustParseInt(guildID)).FindByStarted(kallax.Gt, time.Now().Add(time.Hour*-24)))
+		kallax.Eq, guildID).FindByStarted(kallax.Gt, time.Now().Add(time.Hour*-24)))
 
 	if err != nil && err != kallax.ErrNotFound {
 		return nil, err
@@ -222,69 +232,54 @@ func RetrieveFullStats(client *redis.Client, guildID string) (*FullStats, error)
 	return stats, nil
 }
 
-func RetrieveRedisStats(client *redis.Client, guildID string) (*FullStats, error) {
+func RetrieveRedisStats(guildID int64) (*FullStats, error) {
 	now := time.Now()
 	yesterday := now.Add(time.Hour * -24)
-	unixYesterday := yesterday.Unix()
+	unixYesterday := discordgo.StrID(yesterday.Unix())
+	strGID := discordgo.StrID(guildID)
 
-	client.PipeAppend("ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+guildID, unixYesterday, "+inf")
-	client.PipeAppend("ZCOUNT", "guild_stats_members_joined_day:"+guildID, unixYesterday, "+inf")
-	client.PipeAppend("ZCOUNT", "guild_stats_members_left_day:"+guildID, unixYesterday, "+inf")
-	client.PipeAppend("SCARD", "guild_stats_online:"+guildID)
+	var messageStatsRaw []string
+	var joined int
+	var left int
+	var online int64
+	var members int
 
-	replies, err := common.GetRedisReplies(client, 4)
+	pipeCmd := radix.Pipeline(
+		radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, unixYesterday, "+inf"),
+		radix.Cmd(&joined, "ZCOUNT", "guild_stats_members_joined_day:"+strGID, unixYesterday, "+inf"),
+		radix.Cmd(&left, "ZCOUNT", "guild_stats_members_left_day:"+strGID, unixYesterday, "+inf"),
+		radix.Cmd(&members, "GET", "guild_stats_num_members:"+strGID),
+	)
+
+	err := common.RedisPool.Do(pipeCmd)
 	if err != nil {
 		return nil, err
 	}
 
-	messageStatsRaw, err := replies[0].List()
+	online, err = botrest.GetOnlineCount(guildID)
 	if err != nil {
-		return nil, err
-	}
-
-	channelResult, err := GetChannelMessageStats(client, messageStatsRaw, guildID)
-	if err != nil {
-		return nil, err
-	}
-
-	joined, err := replies[1].Int()
-	if err != nil {
-		return nil, err
-	}
-
-	left, err := replies[2].Int()
-	if err != nil {
-		return nil, err
-	}
-
-	online, err := replies[3].Int()
-	if err != nil {
-		return nil, err
-	}
-
-	members := 0
-	reply := client.Cmd("GET", "guild_stats_num_members:"+guildID)
-	if !reply.IsType(redis.Nil) {
-		var err error
-		members, err = reply.Int()
-		if err != nil {
-			return nil, err
+		if botrest.BotIsRunning() {
+			log.WithError(err).Error("Failed fetching online count")
 		}
+	}
 
+	channelResult, err := GetChannelMessageStats(messageStatsRaw, guildID)
+	if err != nil {
+		return nil, err
 	}
 
 	stats := &FullStats{
 		ChannelsHour: channelResult,
 		JoinedDay:    joined,
 		LeftDay:      left,
-		Online:       online,
+		Online:       int(online),
 		TotalMembers: members,
 	}
 
 	return stats, nil
 }
 
-func GetChannelMessageStats(client *redis.Client, raw []string, guildID string) (map[string]*ChannelStats, error) {
+func GetChannelMessageStats(raw []string, guildID int64) (map[string]*ChannelStats, error) {
 
 	channelResult := make(map[string]*ChannelStats)
 	for _, result := range raw {
@@ -321,7 +316,7 @@ type ServerStatsConfig struct {
 	Public         bool
 	IgnoreChannels string
 
-	ParsedChannels []string `gorm:"-"`
+	ParsedChannels []int64 `gorm:"-"`
 }
 
 func (c *ServerStatsConfig) GetName() string {
@@ -329,10 +324,16 @@ func (c *ServerStatsConfig) GetName() string {
 }
 
 func (s *ServerStatsConfig) PostFetch() {
-	s.ParsedChannels = strings.Split(s.IgnoreChannels, ",")
+	split := strings.Split(s.IgnoreChannels, ",")
+	for _, v := range split {
+		parsed, err := strconv.ParseInt(v, 10, 64)
+		if err == nil {
+			s.ParsedChannels = append(s.ParsedChannels, parsed)
+		}
+	}
 }
 
-func GetConfig(ctx context.Context, GuildID string) (*ServerStatsConfig, error) {
+func GetConfig(ctx context.Context, GuildID int64) (*ServerStatsConfig, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}

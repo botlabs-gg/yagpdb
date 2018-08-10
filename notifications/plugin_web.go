@@ -1,20 +1,25 @@
 package notifications
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"strconv"
 )
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.ParseFiles("templates/plugins/notifications_general.html"))
+	tmplPath := "templates/plugins/notifications_general.html"
+	if common.Testing {
+		tmplPath = "../../notifications/assets/notifications_general.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	getHandler := web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")
-	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifiactions config.")
+	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifications config.")
 
 	web.CPMux.Handle(pat.Get("/notifications/general"), web.RequireGuildChannelsMiddleware(getHandler))
 	web.CPMux.Handle(pat.Get("/notifications/general/"), web.RequireGuildChannelsMiddleware(getHandler))
@@ -25,7 +30,7 @@ func (p *Plugin) InitWeb() {
 
 func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	formConfig, ok := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	if ok {
@@ -39,13 +44,12 @@ func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} 
 
 func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/notifications/general/"
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/notifications/general/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 
-	parsed, _ := strconv.ParseInt(activeGuild.ID, 10, 64)
-	newConfig.GuildID = parsed
+	newConfig.GuildID = activeGuild.ID
 
 	err := configstore.SQL.SetGuildConfig(ctx, newConfig)
 	if err != nil {

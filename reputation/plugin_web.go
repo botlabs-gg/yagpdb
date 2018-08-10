@@ -1,12 +1,13 @@
 package reputation
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"gopkg.in/nullbio/null.v6"
+	"gopkg.in/volatiletech/null.v6"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -39,8 +40,14 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/leaderboard.html")))
+	tmplPathSettings := "templates/plugins/reputation_settings.html"
+	tmplPathLeaderboard := "templates/plugins/reputation_leaderboard.html"
+	if common.Testing {
+		tmplPathSettings = "../../reputation/assets/reputation_settings.html"
+		tmplPathLeaderboard = "../../reputation/assets/reputation_leaderboard.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathLeaderboard))
 
 	subMux := goji.SubMux()
 	subMux.Use(web.RequireFullGuildMW)
@@ -60,7 +67,7 @@ func (p *Plugin) InitWeb() {
 }
 
 func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	if _, ok := templateData["RepSettings"]; !ok {
 		settings, err := GetConfig(activeGuild.ID)
@@ -73,12 +80,12 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 }
 
 func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
-	templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/reputation"
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*PostConfigForm)
 	conf := form.RepConfig()
-	conf.GuildID = common.MustParseInt(activeGuild.ID)
+	conf.GuildID = activeGuild.ID
 
 	templateData["RepSettings"] = conf
 
@@ -98,7 +105,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 }
 
 func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
-	_, activeGuild, _ := web.GetBaseCPContextData(r.Context())
+	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	conf, err := GetConfig(activeGuild.ID)
 	if err != nil {

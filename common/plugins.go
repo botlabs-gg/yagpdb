@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -23,8 +23,6 @@ func RegisterPlugin(plugin Plugin) {
 	Plugins = append(Plugins, plugin)
 	if cast, ok := plugin.(PluginWithLogging); ok {
 		cast.SetLogger(logrus.WithField("P", plugin.Name()))
-	} else {
-		logrus.Warn(plugin.Name(), " is not a PluginWithLogging")
 	}
 }
 

@@ -2,85 +2,130 @@ package notifications
 
 import (
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
+	log "github.com/sirupsen/logrus"
+	"math/rand"
+	"strings"
 )
 
-func HandleGuildMemberAdd(evt *eventsystem.EventData) {
-	config := GetConfig(evt.GuildMemberAdd.GuildID)
+var _ bot.BotInitHandler = (*Plugin)(nil)
+
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerBefore(HandleChannelUpdate, eventsystem.EventChannelUpdate, bot.StateHandlerPtr)
+}
+
+func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
+	evt := evtData.GuildMemberAdd()
+
+	config := GetConfig(evt.GuildID)
 	if !config.JoinServerEnabled && !config.JoinDMEnabled {
 		return
 	}
 
-	gs := bot.State.Guild(true, evt.GuildMemberAdd.GuildID)
-
-	client := bot.ContextRedis(evt.Context())
-
-	// Beware of the pyramid and its curses
-	if config.JoinDMEnabled {
-
-		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinDMMsg)
-		if err != nil {
-			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing dm template")
-		} else {
-			err = bot.SendDM(evt.GuildMemberAdd.User.ID, msg)
-			if err != nil {
-				log.WithError(err).WithField("guild", gs.ID()).Error("Failed sending join dm")
-			}
-		}
+	if (!config.JoinDMEnabled || evt.User.Bot) && !config.JoinServerEnabled {
+		return
 	}
 
-	if config.JoinServerEnabled {
-		channel := GetChannel(gs, config.JoinServerChannel)
-		if channel == "" {
+	gs := bot.State.Guild(true, evt.GuildID)
+
+	ms := gs.MemberCopy(true, evt.User.ID)
+
+	// Beware of the pyramid and its curses
+	if config.JoinDMEnabled && !evt.User.Bot {
+		cid, err := common.BotSession.UserChannelCreate(evt.User.ID)
+		if err != nil {
+			log.WithError(err).WithField("user", evt.User.ID).Error("Failed retrieving user channel")
 			return
 		}
-		msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberAdd.Member).Execute(client, config.JoinServerMsg)
-		if err != nil {
-			log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing join template")
-		} else {
-			bot.QueueMergedMessage(channel, msg)
+
+		thinCState := &dstate.ChannelState{
+			Owner: gs,
+			Guild: gs,
+			ID:    cid.ID,
+			Name:  evt.User.Username,
+			Type:  discordgo.ChannelTypeDM,
 		}
+
+		sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm")
+	}
+
+	if config.JoinServerEnabled && len(config.JoinServerMsgs) > 0 {
+		channel := gs.Channel(true, config.JoinServerChannelInt())
+		if channel == nil {
+			return
+		}
+
+		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
+		sendTemplate(channel, chanMsg, ms, "join server msg")
 	}
 }
 
 func HandleGuildMemberRemove(evt *eventsystem.EventData) {
-	config := GetConfig(evt.GuildMemberRemove.GuildID)
-	if !config.LeaveEnabled {
+	memberRemove := evt.GuildMemberRemove()
+
+	config := GetConfig(memberRemove.GuildID)
+	if !config.LeaveEnabled || len(config.LeaveMsgs) == 0 {
 		return
 	}
 
-	gs := bot.State.Guild(true, evt.GuildMemberRemove.GuildID)
+	gs := bot.State.Guild(true, memberRemove.GuildID)
 	if gs == nil {
 		return
 	}
 
-	channel := GetChannel(gs, config.LeaveChannel)
-	if channel == "" {
+	channel := gs.Channel(true, config.LeaveChannelInt())
+	if channel == nil {
 		return
 	}
 
-	client := bot.ContextRedis(evt.Context())
+	ms := dstate.MSFromDGoMember(gs, memberRemove.Member)
 
-	msg, err := templates.NewContext(bot.State.User(true).User, gs, nil, evt.GuildMemberRemove.Member).Execute(client, config.LeaveMsg)
+	chanMsg := config.LeaveMsgs[rand.Intn(len(config.LeaveMsgs))]
+
+	sendTemplate(channel, chanMsg, ms, "leave")
+}
+
+func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string) {
+	msg, err := templates.NewContext(cs.Guild, cs, ms).Execute(tmpl)
+
 	if err != nil {
-		log.WithError(err).WithField("guild", gs.ID()).Error("Failed parsing/executing leave template")
+		log.WithError(err).WithField("guild", cs.Guild.ID).Warnf("Failed parsing/executing %s template", name)
 		return
 	}
 
-	bot.QueueMergedMessage(channel, msg)
+	msg = strings.TrimSpace(msg)
+	if msg == "" {
+		return
+	}
+
+	if cs.Type == discordgo.ChannelTypeDM {
+		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
+		if err != nil {
+			log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
+		}
+	} else {
+		bot.QueueMergedMessage(cs.ID, msg)
+	}
+
 }
 
 func HandleChannelUpdate(evt *eventsystem.EventData) {
-	cu := evt.ChannelUpdate
+	cu := evt.ChannelUpdate()
 
 	curChannel := bot.State.Channel(true, cu.ID)
+	if curChannel == nil {
+		return
+	}
+
 	curChannel.Owner.RLock()
-	oldTopic := curChannel.Channel.Topic
+	oldTopic := curChannel.Topic
 	curChannel.Owner.RUnlock()
 
 	if oldTopic == cu.Topic {
@@ -93,25 +138,15 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	}
 
 	topicChannel := cu.Channel.ID
-	if config.TopicChannel != "" {
-		c := curChannel.Guild.Channel(true, config.TopicChannel)
+	if config.TopicChannelInt() != 0 {
+		c := curChannel.Guild.Channel(true, config.TopicChannelInt())
 		if c != nil {
-			topicChannel = c.ID()
+			topicChannel = c.ID
 		}
 	}
 
-	_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%s> changed to **%s**", cu.ID, cu.Topic)))
+	_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic)))
 	if err != nil {
-		log.WithError(err).WithField("guild", cu.GuildID).Error("Failed sending topic change message")
+		log.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
 	}
-}
-
-// GetChannel makes sure the channel is in the guild, if not it returns no channel
-func GetChannel(guild *dstate.GuildState, channel string) string {
-	c := guild.Channel(true, channel)
-	if c == nil {
-		return ""
-	}
-
-	return c.ID()
 }

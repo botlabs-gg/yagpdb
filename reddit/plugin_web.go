@@ -9,6 +9,7 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -23,10 +24,16 @@ type Form struct {
 	Subreddit string `schema:"subreddit" valid:",1,100"`
 	Channel   string `schema:"channel" valid:"channel,false`
 	ID        int    `schema:"id"`
+	UseEmbeds bool   `schema:"use_embeds"`
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/settings.html")))
+	tmplPathSettings := "templates/plugins/reddit.html"
+	if common.Testing {
+		tmplPathSettings = "../../reddit/assets/reddit.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
 	redditMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
@@ -53,12 +60,16 @@ func (p *Plugin) InitWeb() {
 func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
-		templateData["VisibleURL"] = "/manage/" + activeGuild.ID + "/reddit/"
+		activeGuild, templateData := web.GetBaseCPContextData(ctx)
+		templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reddit/"
 
-		currentConfig, err := GetConfig(client, "guild_subreddit_watch:"+activeGuild.ID)
+		currentConfig, err := GetConfig("guild_subreddit_watch:" + discordgo.StrID(activeGuild.ID))
 		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
+		} else {
+			sort.Slice(currentConfig, func(i, j int) bool {
+				return currentConfig[i].Sub < currentConfig[j].Sub
+			})
 		}
 
 		inner.ServeHTTP(w, r.WithContext(context.WithValue(ctx, CurrentConfig, currentConfig)))
@@ -69,7 +80,7 @@ func baseData(inner http.Handler) http.Handler {
 
 func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	_, _, templateData := web.GetBaseCPContextData(ctx)
+	_, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
@@ -79,7 +90,7 @@ func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 
@@ -104,18 +115,23 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	watchItem := &SubredditWatchItem{
-		Sub:     strings.TrimSpace(newElem.Subreddit),
-		Channel: newElem.Channel,
-		Guild:   activeGuild.ID,
-		ID:      highest + 1,
+		Sub:       strings.TrimSpace(newElem.Subreddit),
+		Channel:   newElem.Channel,
+		Guild:     discordgo.StrID(activeGuild.ID),
+		ID:        highest + 1,
+		UseEmbeds: newElem.UseEmbeds,
 	}
 
-	err := watchItem.Set(client)
+	err := watchItem.Set()
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
 	currentConfig = append(currentConfig, watchItem)
+	sort.Slice(currentConfig, func(i, j int) bool {
+		return currentConfig[i].Sub < currentConfig[j].Sub
+	})
+
 	templateData["RedditConfig"] = currentConfig
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Sub))
 
@@ -127,7 +143,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
@@ -146,16 +162,17 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 	subIsNew := !strings.EqualFold(updated.Subreddit, item.Sub)
 	item.Channel = updated.Channel
+	item.UseEmbeds = updated.UseEmbeds
 
 	var err error
 	if !subIsNew {
 		// Pretty simple then
-		err = item.Set(client)
+		err = item.Set()
 	} else {
-		err = item.Remove(client)
+		err = item.Remove()
 		if err == nil {
 			item.Sub = strings.ToLower(r.FormValue("subreddit"))
-			err = item.Set(client)
+			err = item.Set()
 		}
 	}
 
@@ -172,7 +189,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	client, activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
 	templateData["RedditConfig"] = currentConfig
@@ -190,7 +207,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
 
-	err = item.Remove(client)
+	err = item.Remove()
 	if web.CheckErr(templateData, err, "Failed removing item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}

@@ -1,43 +1,72 @@
 package commands
 
 import (
+	"context"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 var (
 	CommandSystem *dcmd.System
 )
 
-func (p *Plugin) InitBot() {
-	CommandSystem = dcmd.NewStandardSystem("")
-	CommandSystem.Prefix = p
-	CommandSystem.State = bot.State
-	CommandSystem.Root.RunInDM = true
+var _ bot.BotInitHandler = (*Plugin)(nil)
 
-	// CommandSystem = commandsystem.NewSystem(nil, "")
-	// CommandSystem.SendError = false
-	// CommandSystem.CensorError = CensorError
-	// CommandSystem.State = bot.State
-
-	// CommandSystem.DefaultDMHandler = &commandsystem.Command{
-	// 	Run: func(data *commandsystem.ExecData) (interface{}, error) {
-	// 		return "Unknwon command, only a subset of commands are available in dms.", nil
-	// 	},
-	// }
-
-	// CommandSystem.Prefix = p
-	// CommandSystem.RegisterCommands(cmdHelp)
-
-	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
-
-	eventsystem.AddHandler(bot.RedisWrapper(HandleGuildCreate), eventsystem.EventGuildCreate)
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
+
+	CommandSystem.State = bot.State
+}
+
+func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
+	return func(data *dcmd.Data) (interface{}, error) {
+		yc, ok := data.Cmd.Command.(*YAGCommand)
+		if !ok {
+			return inner(data)
+		}
+
+		// Check if the user can execute the command
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, data.CS)
+		if resp != "" {
+			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
+			// m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
+			// go yc.deleteResponse([]*discordgo.Message{m})
+			return nil, nil
+		}
+
+		if !canExecute {
+			return nil, nil
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		data = data.WithContext(context.WithValue(data.Context(), CtxKeyCmdSettings, settings))
+
+		// Lock the command for execution
+		err = common.BlockingLockRedisKey(RKeyCommandLock(data.Msg.Author.ID, yc.Name), CommandExecTimeout*2, int((CommandExecTimeout + time.Second).Seconds()))
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed locking command")
+		}
+		defer common.UnlockRedisKey(RKeyCommandLock(data.Msg.Author.ID, yc.Name))
+
+		innerResp, err := inner(data)
+
+		// Send the response
+		yc.PostCommandExecuted(settings, data, innerResp, err)
+
+		return nil, nil
+	}
 }
 
 func AddRootCommands(cmds ...*YAGCommand) {
@@ -47,18 +76,11 @@ func AddRootCommands(cmds ...*YAGCommand) {
 }
 
 func handleMsgCreate(evt *eventsystem.EventData) {
-	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate)
+	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
 }
 
 func (p *Plugin) Prefix(data *dcmd.Data) string {
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		log.WithError(err).Error("Failed retrieving redis connection from pool")
-		return ""
-	}
-	defer common.RedisPool.Put(client)
-
-	prefix, err := GetCommandPrefix(client, data.GS.ID())
+	prefix, err := GetCommandPrefix(data.GS.ID)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -68,7 +90,8 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 
 var cmdHelp = &YAGCommand{
 	Name:        "Help",
-	Description: "Shows help abut all or one specific command",
+	Aliases:     []string{"commands", "h", "how", "command"},
+	Description: "Shows help about all or one specific command",
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,
 	Arguments: []*dcmd.ArgDef{
@@ -100,10 +123,11 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send full help in DM
-	channel, err := bot.GetCreatePrivateChannel(data.Msg.Author.ID)
+	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
 	if err != nil {
 		return "Something went wrong", err
 	}
+
 	for _, v := range resp {
 		common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
 	}
@@ -112,16 +136,22 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
-	client := bot.ContextRedis(evt.Context())
-	g := evt.GuildCreate
-	prefixExists, err := common.RedisBool(client.Cmd("EXISTS", "command_prefix:"+g.ID))
+	g := evt.GuildCreate()
+
+	var prefixExists bool
+	err := common.RedisPool.Do(radix.Cmd(&prefixExists, "EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
 	if err != nil {
 		log.WithError(err).Error("Failed checking if prefix exists")
 		return
 	}
 
 	if !prefixExists {
-		client.Cmd("SET", "command_prefix:"+g.ID, "-")
-		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (-)")
+		defaultPrefix := "-"
+		if common.Testing {
+			defaultPrefix = "("
+		}
+
+		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
+		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
 }

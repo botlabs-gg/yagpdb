@@ -3,7 +3,7 @@ package soundboard
 import (
 	"errors"
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -11,7 +11,11 @@ import (
 	"strings"
 )
 
-func (p *Plugin) InitBot() {
+func (p *Plugin) BotInit() {
+	go transcoderLoop()
+}
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Soundboard",
@@ -22,13 +26,13 @@ func (p *Plugin) InitBot() {
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			config := &SoundboardConfig{}
-			err := configstore.Cached.GetGuildConfig(context.Background(), data.GS.ID(), config)
+			err := configstore.Cached.GetGuildConfig(context.Background(), data.GS.ID, config)
 			if err != nil {
 				return "Something bad is happenings..", err
 			}
 
 			// Get member from api or state
-			member, err := bot.GetMember(data.GS.ID(), data.Msg.Author.ID)
+			member, err := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
 			if err != nil {
 				return "Something went wrong, we couldn't find you?", errors.New("Failed finding guild member")
 			}
@@ -53,17 +57,17 @@ func (p *Plugin) InitBot() {
 			data.GS.RLock()
 			defer data.GS.RUnlock()
 
-			voiceChannel := ""
+			var voiceChannel int64
 			vs := data.GS.VoiceState(false, data.Msg.Author.ID)
 			if vs != nil {
 				voiceChannel = vs.ChannelID
 			}
 
-			if voiceChannel == "" {
+			if voiceChannel == 0 {
 				return "You're not in a voice channel stopid.", nil
 			}
 
-			if RequestPlaySound(data.GS.ID(), voiceChannel, data.Msg.ChannelID, sound.ID) {
+			if RequestPlaySound(data.GS.ID, voiceChannel, data.Msg.ChannelID, sound.ID) {
 				return "Sure why not", nil
 			}
 
@@ -72,12 +76,12 @@ func (p *Plugin) InitBot() {
 	})
 }
 
-func ListSounds(config *SoundboardConfig, member *discordgo.Member) string {
+func ListSounds(config *SoundboardConfig, ms *dstate.MemberState) string {
 	canPlay := ""
 	restricted := ""
 
 	for _, sound := range config.Sounds {
-		if sound.CanPlay(member.Roles) {
+		if sound.CanPlay(ms.Roles) {
 			canPlay += "`" + sound.Name + "`, "
 		} else {
 			restricted += "`" + sound.Name + "`, "

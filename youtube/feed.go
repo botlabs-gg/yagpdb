@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
@@ -16,7 +17,7 @@ import (
 )
 
 const (
-	MaxChannelsPerPoll  = 20
+	MaxChannelsPerPoll  = 30
 	PollInterval        = time.Second * 10
 	WebSubCheckInterval = time.Second * 10
 	// PollInterval = time.Second * 5 // <- used for debug purposes
@@ -56,7 +57,6 @@ func (p *Plugin) SetupClient() error {
 }
 
 func (p *Plugin) runFeed() {
-	redisClient := common.MustGetRedisClient()
 
 	ticker := time.NewTicker(PollInterval)
 	for {
@@ -66,7 +66,7 @@ func (p *Plugin) runFeed() {
 			return
 		case <-ticker.C:
 			// now := time.Now()
-			err := p.checkChannels(redisClient)
+			err := p.checkChannels()
 			if err != nil {
 				p.Entry.WithError(err).Error("Failed checking youtube channels")
 			}
@@ -78,9 +78,7 @@ func (p *Plugin) runFeed() {
 
 // keeps the subscriptions up to date by updating the ones soon to be expiring
 func (p *Plugin) runWebsubChecker() {
-	redisClient := common.MustGetRedisClient()
-
-	p.syncWebSubs(redisClient)
+	p.syncWebSubs()
 
 	websubTicker := time.NewTicker(WebSubCheckInterval)
 	for {
@@ -89,21 +87,23 @@ func (p *Plugin) runWebsubChecker() {
 			wg.Done()
 			return
 		case <-websubTicker.C:
-			p.checkExpiringWebsubs(redisClient)
+			p.checkExpiringWebsubs()
 		}
 	}
 }
 
-func (p *Plugin) checkExpiringWebsubs(client *redis.Client) {
-	err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
+func (p *Plugin) checkExpiringWebsubs() {
+	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		p.Logger().WithError(err).Error("Failed locking channels lock")
 		return
 	}
-	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
-	maxScore := time.Now().Add(WebSubCheckInterval).Unix()
-	expiring, err := client.Cmd("ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore).List()
+	maxScore := time.Now().Unix()
+
+	var expiring []string
+	err = common.RedisPool.Do(radix.FlatCmd(&expiring, "ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore))
 	if err != nil {
 		p.Logger().WithError(err).Error("Failed checking websubs")
 		return
@@ -112,55 +112,64 @@ func (p *Plugin) checkExpiringWebsubs(client *redis.Client) {
 	for _, v := range expiring {
 		err := p.WebSubSubscribe(v)
 		if err != nil {
-			p.Logger().WithError(err).Error("Failed subscribing to channel", v)
+			p.Logger().WithError(err).WithField("yt_channel", v).Error("Failed subscribing to channel")
 		}
 		time.Sleep(time.Second)
 	}
 }
 
-func (p *Plugin) syncWebSubs(client *redis.Client) {
-	err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5000)
+func (p *Plugin) syncWebSubs() {
+	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
 	if err != nil {
 		p.Logger().WithError(err).Error("Failed locking channels lock")
 		return
 	}
-	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
-	activeChannels, err := client.Cmd("ZRANGEBYSCORE", "youtube_subbed_channels", "-inf", "+inf").List()
+	var activeChannels []string
+	err = common.RedisPool.Do(radix.Cmd(&activeChannels, "ZRANGEBYSCORE", "youtube_subbed_channels", "-inf", "+inf"))
 	if err != nil {
 		p.Logger().WithError(err).Error("Failed syncing websubs, failed retrieving subbed channels")
 		return
 	}
 
-	for _, channel := range activeChannels {
-		reply := client.Cmd("ZSCORE", RedisKeyWebSubChannels, channel)
-		if reply.IsType(redis.Nil) {
-			// Not added
-			err := p.WebSubSubscribe(channel)
-			if err != nil {
-				p.Logger().WithError(err).Error("Failed subscribing to channel", channel)
+	common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
+		for _, channel := range activeChannels {
+			mn := radix.MaybeNil{}
+			client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
+			if mn.Nil {
+				// Not added
+				err := p.WebSubSubscribe(channel)
+				if err != nil {
+					p.Logger().WithError(err).WithField("yt_channel", channel).Error("Failed subscribing to channel")
+				}
+
+				time.Sleep(time.Second)
 			}
-			time.Sleep(time.Second)
 		}
-	}
+
+		return nil
+	}))
 }
 
-func (p *Plugin) checkChannels(client *redis.Client) error {
-	channels, err := client.Cmd("ZRANGE", "youtube_subbed_channels", 0, MaxChannelsPerPoll).List()
+func (p *Plugin) checkChannels() error {
+	var channels []string
+	err := common.RedisPool.Do(radix.FlatCmd(&channels, "ZRANGE", "youtube_subbed_channels", 0, MaxChannelsPerPoll))
 	if err != nil {
 		return err
 	}
 
 	for _, channel := range channels {
-		err = p.checkChannel(client, channel)
+		err = p.checkChannel(channel)
 		if err != nil {
 			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 404 {
+				// This channel has been deleted
 				p.Entry.WithError(err).WithField("yt_channel", channel).Warn("Removing non existant youtube channel")
-				err = common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
-				if err != nil && err != gorm.ErrRecordNotFound {
-					p.Entry.WithError(err).Error("Failed deleting nonexistant channel subs")
-				}
-				go p.MaybeRemoveChannelWatch(channel)
+				p.removeAllSubsForChannel(channel)
+			} else if err == ErrIDNotFound {
+				// This can happen if the channel was terminated because it broke the terms for example, just remove all references to it
+				p.Entry.WithField("channel", channel).Info("Removing youtube feed to channel without playlist")
+				p.removeAllSubsForChannel(channel)
 			} else {
 				p.Entry.WithError(err).WithField("yt_channel", channel).Error("Failed checking youtube channel")
 			}
@@ -170,7 +179,15 @@ func (p *Plugin) checkChannels(client *redis.Client) error {
 	return nil
 }
 
-func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
+func (p *Plugin) removeAllSubsForChannel(channel string) {
+	err := common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
+	if err != nil {
+		p.Entry.WithError(err).WithField("yt_channel", channel).Error("failed removing channel")
+	}
+	go p.MaybeRemoveChannelWatch(channel)
+}
+
+func (p *Plugin) checkChannel(channel string) error {
 	now := time.Now()
 
 	var subs []*ChannelSubscription
@@ -191,23 +208,27 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 		return err
 	}
 
-	nextPage := ""
-	seconds, err := client.Cmd("GET", KeyLastVidTime(channel)).Int64()
+	// Find the last video time for this channel
+	var unixSeconds int64
+	err = common.RedisPool.Do(radix.Cmd(&unixSeconds, "GET", KeyLastVidTime(channel)))
+
 	var lastProcessedVidTime time.Time
-	if err != nil {
-		p.Entry.WithError(err).Error("Failed retrieving last processed vid time, falling back to this time")
+	if err != nil || unixSeconds != 0 {
+		if err != nil {
+			p.Entry.WithError(err).Error("Failed retrieving last processed vid time, falling back to this time")
+		}
 		lastProcessedVidTime = time.Now()
 	} else {
-		lastProcessedVidTime = time.Unix(seconds, 0)
+		lastProcessedVidTime = time.Unix(unixSeconds, 0)
 	}
 
-	lastVidID, _ := client.Cmd("GET", KeyLastVidID(channel)).Str()
+	var lastVidID string
+	common.RedisPool.Do(radix.Cmd(&lastVidID, "GET", KeyLastVidID(channel)))
 
 	// latestVid is used to set the last vid id and time
 	var latestVid *youtube.PlaylistItem
-
 	first := true
-
+	nextPage := ""
 	for {
 		call := p.YTService.PlaylistItems.List("snippet").PlaylistId(playlistID).MaxResults(50)
 		if nextPage != "" {
@@ -254,14 +275,16 @@ func (p *Plugin) checkChannel(client *redis.Client, channel string) error {
 		nextPage = resp.NextPageToken
 	}
 
-	client.Cmd("ZADD", "youtube_subbed_channels", now.Unix(), channel)
+	common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "youtube_subbed_channels", now.Unix(), channel))
 
 	// Update the last vid id and time if needed
 	if latestVid != nil && lastVidID != latestVid.Id {
 		parsedTime, _ := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
 		if !lastProcessedVidTime.After(parsedTime) {
-			client.Cmd("SET", KeyLastVidTime(channel), parsedTime.Unix())
-			client.Cmd("SET", KeyLastVidID(channel), latestVid.Id)
+			common.RedisPool.Do(radix.Pipeline(
+				radix.FlatCmd(nil, "SET", KeyLastVidTime(channel), parsedTime.Unix()),
+				radix.FlatCmd(nil, "SET", KeyLastVidID(channel), latestVid.Id),
+			))
 		}
 	}
 
@@ -293,6 +316,10 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 
 		for _, sub := range subs {
 			go p.sendNewVidMessage(sub.ChannelID, item.Snippet.ChannelTitle, item.Snippet.ResourceId.VideoId, sub.MentionEveryone)
+		}
+
+		if common.Statsd != nil {
+			go common.Statsd.Count("yagpdb.youtube.matches", int64(len(subs)), nil, 1)
 		}
 	}
 
@@ -352,10 +379,10 @@ var (
 	ErrNoChannel = errors.New("No channel with that id found")
 )
 
-func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtubeChannelID, youtubeUsername string, mentionEveryone bool) (*ChannelSubscription, error) {
+func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, youtubeUsername string, mentionEveryone bool) (*ChannelSubscription, error) {
 	sub := &ChannelSubscription{
-		GuildID:         guildID,
-		ChannelID:       discordChannelID,
+		GuildID:         discordgo.StrID(guildID),
+		ChannelID:       discordgo.StrID(discordChannelID),
 		MentionEveryone: mentionEveryone,
 	}
 
@@ -378,34 +405,28 @@ func (p *Plugin) AddFeed(client *redis.Client, guildID, discordChannelID, youtub
 	sub.YoutubeChannelName = cResp.Items[0].Snippet.Title
 	sub.YoutubeChannelID = cResp.Items[0].Id
 
-	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
+	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		return nil, err
 	}
-	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
 	err = common.GORM.Create(sub).Error
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.MaybeAddChannelWatch(false, client, sub.YoutubeChannelID)
+	err = p.MaybeAddChannelWatch(false, sub.YoutubeChannelID)
 	return sub, err
 }
 
 // maybeRemoveChannelWatch checks the channel for subs, if it has none then it removes it from the watchlist in redis.
 func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
-	client, err := common.RedisPool.Get()
+	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
 	if err != nil {
 		return
 	}
-	defer common.RedisPool.Put(client)
-
-	err = common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
-	if err != nil {
-		return
-	}
-	defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
 	var count int
 	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
@@ -416,9 +437,12 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 		return
 	}
 
-	err = client.Cmd("ZREM", "youtube_subbed_channels", channel).Err
-	client.Cmd("DEL", KeyLastVidTime(channel))
-	client.Cmd("DEL", KeyLastVidID(channel))
+	err = common.RedisPool.Do(radix.Pipeline(
+		radix.Cmd(nil, "ZREM", "youtube_subbed_channels", channel),
+		radix.Cmd(nil, "DEL", KeyLastVidTime(channel)),
+		radix.Cmd(nil, "DEL", KeyLastVidID(channel)),
+	))
+
 	if err != nil {
 		return
 	}
@@ -431,34 +455,37 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	p.Entry.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
 }
 
-// maybeAddChannelWatch adds a channel watch to redis, if there wasnt one before
-func (p *Plugin) MaybeAddChannelWatch(lock bool, client *redis.Client, channel string) error {
+// maybeAddChannelWatch adds a channel watch to redis, if there wasn't one before
+func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 	if lock {
-		err := common.BlockingLockRedisKey(client, RedisChannelsLockKey, 0, 5)
+		err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
 		if err != nil {
 			return common.ErrWithCaller(err)
 		}
-		defer common.UnlockRedisKey(client, RedisChannelsLockKey)
+		defer common.UnlockRedisKey(RedisChannelsLockKey)
 	}
 
 	now := time.Now().Unix()
 
-	reply := client.Cmd("ZSCORE", "youtube_subbed_channels", channel)
-	if reply.Err != nil {
-		return common.ErrWithCaller(reply.Err)
+	mn := radix.MaybeNil{}
+	err := common.RedisPool.Do(radix.Cmd(&mn, "ZSCORE", "youtube_subbed_channels", channel))
+	if err != nil {
+		return common.ErrWithCaller(err)
 	}
 
-	if !reply.IsType(redis.Nil) {
+	if !mn.Nil {
 		// already added before, don't need to do anything
-		p.Entry.Info("Not nil reply", reply.String())
+		p.Entry.Debug("Not nil reply")
 		return nil
 	}
 
-	client.Cmd("ZADD", "youtube_subbed_channels", now, channel)
-	client.Cmd("SET", KeyLastVidTime(channel), now)
+	common.RedisPool.Do(radix.Pipeline(
+		radix.FlatCmd(nil, "ZADD", "youtube_subbed_channels", now, channel),
+		radix.FlatCmd(nil, "SET", KeyLastVidTime(channel), now),
+	))
 
 	// Also add websub subscription
-	err := p.WebSubSubscribe(channel)
+	err = p.WebSubSubscribe(channel)
 	if err != nil {
 		p.Entry.WithError(err).Error("Failed subscribing to channel ", channel)
 	}

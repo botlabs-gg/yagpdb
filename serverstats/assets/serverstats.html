@@ -1,117 +1,65 @@
 {{define "cp_serverstats"}}
 
 {{template "cp_head" .}}
+<header class="page-header">
+    <h2>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h2>
+    
+</header>
+
 <div class="row">
     <div class="col-lg-12">
-        <div class="page-header">
-            <h1>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h1>
-            {{if (not .Config.Public | and .Public) }}
-            <h1>Public access has been disabled by the server admins.</h1>
-            {{end}}
-            {{if not .Public}}
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse" aria-expanded="false" aria-controls="stats-settings-collapse">
-            Stats Settings
-            </button>
-            <a class="btn btn-primary" {{if .Config.Public}} href="/public/{{.ActiveGuild.ID}}/stats" {{else}} disabled {{end}}>Public link (only works if stats are set to public)</a>
-            <div class="collapse" id="stats-settings-collapse">
-                <div class="well well-sm">
-                    <form method="post" action="/manage/{{.ActiveGuild.ID}}/stats/settings">
+        {{if (not .Config.Public | and .Public) }}
+        <h1>Public access has been disabled by the server admins.</h1>
+        {{end}}
+        {{if not .Public}}
+        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse" aria-expanded="false" aria-controls="stats-settings-collapse">
+        Stats Settings
+        </button>
+        <a class="btn btn-primary {{if not .Config.Public}}disabled{{end}}" {{if .Config.Public}} href="/public/{{.ActiveGuild.ID}}/stats" {{end}}>Public link (only works if stats are set to public)</a>
+        <div class="collapse" id="stats-settings-collapse">
+            <section class="card">
+                <div class="card-body">
+                    <form method="post" action="/manage/{{.ActiveGuild.ID}}/stats/settings" data-async-form>
                         <div class="checkbox">
                             <label>
                                 <input type="checkbox" name="Public" {{if .Config.Public}} checked{{end}}> Publicly accessible
                             </label>
                         </div>
                         <label>Ignore channels</label>
-                        <div class="form-group">
-                            <select class="multiselect" name="IgnoreChannels" id="IgnoreChannels" multiple="multiple">
-                                {{mTemplate "channel_options_multi" "Channels" .ActiveGuild.Channels "Selections" .Config.ParsedChannels}}
+                        <div class="form-group mb-4">
+                            <select data-plugin-multiselect class="form-control populate" name="IgnoreChannels" id="IgnoreChannels" multiple="multiple">
+                                {{textChannelOptionsMulti .ActiveGuild.Channels .Config.ParsedChannels}}
                             </select>
                         </div>
                         <button type="submit" class="btn btn-success btn-sm">Save</button>
                     </form>
                 </div>
-            </div>
-            {{end}}
+            </section>
         </div>
+        {{end}}
     </div>
     <!-- /.col-lg-12 -->
 </div>
+
 <div class="row">
-    <div class="col-lg-3 col-md-6">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-comments fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <div class="huge" id="messages-24h">...</div>
-                        <div>New messages last 24h!</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="panel panel-green">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-user-plus fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <div class="huge" id="members-changed-24h">...</div>
-                        <div>Members joined/left last 24h!</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> 
-    <div class="col-lg-3 col-md-6">
-        <div class="panel panel-yellow">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-user fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <div class="huge" id="online-members">...</div>
-                        <div>Online members</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-users fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <div class="huge" id="total-members">...</div>
-                        <div>Total members</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Stats widgets -->
+    {{mTemplate "serverstats_stats_widget" "Icon" "comments" "BG" "primary" "Content" "New messages last 24h" "ValueID" "messages-24h"}}
+    {{mTemplate "serverstats_stats_widget" "Icon" "user-plus" "BG" "success" "Content" "Members joined/left last 24h" "ValueID" "members-changed-24h"}}    
+    {{mTemplate "serverstats_stats_widget" "Icon" "user" "BG" "tertiary" "Content" "Online members" "ValueID" "online-members"}}
+    {{mTemplate "serverstats_stats_widget" "Icon" "users" "BG" "quaternary" "Content" "Total members" "ValueID" "total-members"}}
 </div>
 <div class="row">
- <!-- /.col-lg-6 -->
+    <!-- Graph -->
     <div class="col-lg-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                Channels over 24 hours
-            </div>
-            <!-- /.panel-heading -->
-            <div class="panel-body">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Channels over 24 hours</h2>
+            </header>
+
+            <div class="card-body">
                 <div id="channels-chart-24h"></div>
             </div>
-            <!-- /.panel-body -->
-        </div>
-        <!-- /.panel -->
+        </section>
     </div>
 </div>
 <!-- /.row -->
@@ -182,7 +130,40 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
 <!-- /#wrapper -->
+<style>
+.stats-widget{
+    min-width: 250px !important;
+    word-break: normal !important;
+}
 
+.stats-widget h4{
+    word-break: normal !important;
+}
+
+</style>
 {{template "cp_footer" .}}
+{{end}}
 
+{{define "serverstats_stats_widget"}}
+<div class="col-lg-3 stats-widget">
+    <section class="card">
+        <div class="card-body bg-{{.BG}}">
+            <div class="widget-summary">
+                <div class="widget-summary-col widget-summary-col-icon">
+                    <div class="summary-icon">
+                        <i class="fa fa-{{.Icon}}"></i>
+                    </div>
+                </div>
+                <div class="widget-summary-col">
+                    <div class="summary">
+                        <h4 class="title">{{.Content}}</h4>
+                        <div class="info">
+                            <strong class="amount" id="{{.ValueID}}">Loading...</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 {{end}}

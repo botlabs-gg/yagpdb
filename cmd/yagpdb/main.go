@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
-	log "github.com/Sirupsen/logrus"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/evalphobia/logrus_sentry"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -19,7 +18,6 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 
@@ -27,10 +25,10 @@ import (
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
+	"github.com/jonas747/yagpdb/cah"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/customcommands"
 	"github.com/jonas747/yagpdb/discordlogger"
-	"github.com/jonas747/yagpdb/docs"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
@@ -52,9 +50,9 @@ var (
 	flagRunEverything bool
 	flagDryRun        bool
 
-	flagAction string
-
 	flagLogTimestamp bool
+
+	flagSysLog bool
 )
 
 func init() {
@@ -63,9 +61,9 @@ func init() {
 	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (currently reddit and youtube)")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
+	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
-	flag.StringVar(&flagAction, "a", "", "Run a action and exit, available actions: connected, migrate")
 }
 
 func main() {
@@ -75,15 +73,38 @@ func main() {
 
 	log.SetFormatter(&log.TextFormatter{
 		DisableTimestamp: !common.Testing,
+		ForceColors:      true,
 	})
 
-	// log.SetOutput(ansicolor.NewAnsiColorWriter(os.Stdout))
-	//log.AddHook(&journalhook.JournalHook{})
-	//journalhook.Enable()
+	if flagSysLog {
+		AddSyslogHooks()
+	}
 
-	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && flagAction == "" && !flagDryRun {
+	if os.Getenv("YAGPDB_SENTRY_DSN") != "" {
+		hook, err := logrus_sentry.NewSentryHook(os.Getenv("YAGPDB_SENTRY_DSN"), []log.Level{
+			log.PanicLevel,
+			log.FatalLevel,
+			log.ErrorLevel,
+		})
+
+		if err == nil {
+			log.AddHook(hook)
+			log.Info("Added Sentry Hook")
+		} else {
+			log.WithError(err).Error("Failed adding sentry hook")
+		}
+	}
+
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
+	}
+
+	if flagRunWeb || flagRunEverything {
+		common.RedisPoolSize = 25
+	}
+	if flagRunBot || flagRunEverything {
+		common.RedisPoolSize = 100
 	}
 
 	log.Info("YAGPDB is initializing...")
@@ -99,7 +120,6 @@ func main() {
 
 	// Setup plugins
 	discordlogger.Register()
-	docs.RegisterPlugin()
 	commands.RegisterPlugin()
 	stdcommands.RegisterPlugin()
 	serverstats.RegisterPlugin()
@@ -111,37 +131,30 @@ func main() {
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	automod.RegisterPlugin()
-	logs.InitPlugin()
+	logs.RegisterPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
 	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
 	rolecommands.RegisterPlugin()
+	cah.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
 		return
 	}
 
-	// Setup plugins for bot, but run later if enabled
-	bot.Setup()
+	commands.InitCommands()
 	mqueue.InitStores()
-
-	// RUN FORREST RUN
-	if flagAction != "" {
-		runAction(flagAction)
-		return
-	}
 
 	if flagRunWeb || flagRunEverything {
 		go web.Run()
 	}
 
 	if flagRunBot || flagRunEverything {
-		go bot.Run()
-		go scheduledevents.Run()
-		go botrest.StartServer()
-		go mqueue.StartPolling()
+		mqueue.RegisterPlugin()
+		botrest.RegisterPlugin()
+		bot.Run()
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
@@ -153,52 +166,22 @@ func main() {
 	listenSignal()
 }
 
-func runAction(str string) {
-	log.Info("Running action", str)
-	client, err := common.RedisPool.Get()
-	if err != nil {
-		log.WithError(err).Error("Failed to get redis connection")
-		return
-	}
-	defer common.RedisPool.Put(client)
-
-	switch str {
-	case "connected":
-		err = common.RefreshConnectedGuilds(common.BotSession, client)
-	case "rsconnected":
-		err = client.Cmd("DEL", "connected_guilds").Err
-	case "migrate":
-		err = migrate(client)
-	default:
-		log.Error("Unknown action")
-		return
-	}
-
-	if err != nil {
-		log.WithError(err).Error("Error running action")
-	} else {
-		log.Info("Sucessfully ran action", str)
-	}
-}
-
 // Gracefull shutdown
 func listenSignal() {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	<-c
-	log.Info("SHUTTING DOWN...")
+	sig := <-c
+	log.Info("SHUTTING DOWN... ", sig.String())
 
 	shouldWait := false
 	var wg sync.WaitGroup
 
 	if flagRunBot || flagRunEverything {
 
-		wg.Add(2)
+		wg.Add(1)
 
 		go bot.Stop(&wg)
-		go scheduledevents.Stop(&wg)
-		mqueue.Stop(&wg)
 
 		shouldWait = true
 	}
@@ -224,51 +207,9 @@ func listenSignal() {
 
 	if !common.Testing {
 		log.Info("Sleeping a little longer")
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 2)
 	}
 
 	log.Info("Bye..")
 	os.Exit(0)
-}
-
-type SQLMigrater interface {
-	MigrateStorage(client *redis.Client, guildIDInt int64) error
-	Name() string
-}
-
-func migrate(client *redis.Client) error {
-	plugins := make([]SQLMigrater, 0)
-
-	for _, v := range common.Plugins {
-		cast, ok := v.(SQLMigrater)
-		if ok {
-			plugins = append(plugins, cast)
-			log.Info("Migrating ", cast.Name())
-		}
-	}
-
-	guilds, err := client.Cmd("SMEMBERS", "connected_guilds").List()
-	if err != nil {
-		return err
-	}
-
-	started := time.Now()
-	for _, g := range guilds {
-
-		parsed, err := strconv.ParseInt(g, 10, 64)
-		if err != nil {
-			return err
-		}
-
-		for _, p := range plugins {
-			err = p.MigrateStorage(client, parsed)
-			if err != nil {
-				log.WithError(err).Error("Error migrating ", p.Name())
-			}
-		}
-	}
-	elapsed := time.Since(started)
-	log.Info("Migrated ", len(guilds), " guilds in ", elapsed.String())
-
-	return nil
 }

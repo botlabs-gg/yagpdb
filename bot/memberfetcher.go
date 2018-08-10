@@ -1,29 +1,34 @@
 package bot
 
 import (
-	"github.com/Sirupsen/logrus"
+	"errors"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/karlseguin/ccache"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
 var (
 	MemberFetcher = &memberFetcher{
-		fetching:    make(map[string]*MemberFetchGuildQueue),
-		notFetching: make(map[string]*MemberFetchGuildQueue),
+		fetching:    make(map[int64]*MemberFetchGuildQueue),
+		notFetching: make(map[int64]*MemberFetchGuildQueue),
 	}
+
+	failedUsersCache = ccache.New(ccache.Configure())
 )
 
-func GetMember(guildID, userID string) (*discordgo.Member, error) {
+func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 	gs := State.Guild(true, guildID)
 	if gs == nil {
 		return nil, ErrGuildNotFound
 	}
 
-	cop := gs.MemberCopy(true, userID, true)
-	if cop != nil {
+	cop := gs.MemberCopy(true, userID)
+	if cop != nil && cop.MemberSet {
 		return cop, nil
 	}
 
@@ -31,16 +36,16 @@ func GetMember(guildID, userID string) (*discordgo.Member, error) {
 	return result.Member, result.Err
 }
 
-func GetMembers(guildID string, userIDs ...string) ([]*discordgo.Member, error) {
-	resultChan := make(chan *discordgo.Member)
+func GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberState, error) {
+	resultChan := make(chan *dstate.MemberState)
 	for _, v := range userIDs {
-		go func(id string) {
+		go func(id int64) {
 			m, _ := GetMember(guildID, id)
 			resultChan <- m
 		}(v)
 	}
 
-	result := make([]*discordgo.Member, 0, len(userIDs))
+	result := make([]*dstate.MemberState, 0, len(userIDs))
 	for i := 0; i < len(userIDs); i++ {
 		m := <-resultChan
 		if m != nil {
@@ -58,8 +63,8 @@ type memberFetcher struct {
 	sync.RWMutex
 
 	// Queue of guilds to user id's to fetch
-	fetching    map[string]*MemberFetchGuildQueue
-	notFetching map[string]*MemberFetchGuildQueue
+	fetching    map[int64]*MemberFetchGuildQueue
+	notFetching map[int64]*MemberFetchGuildQueue
 
 	// Signal to run immediately
 	RunChan chan bool
@@ -71,8 +76,8 @@ type MemberFetchGuildQueue struct {
 }
 
 type MemberFetchRequest struct {
-	Member          string
-	Guild           string
+	Member          int64
+	Guild           int64
 	WaitingChannels []chan MemberFetchResult
 }
 
@@ -86,10 +91,10 @@ func (req *MemberFetchRequest) sendResult(result MemberFetchResult) {
 
 type MemberFetchResult struct {
 	Err    error
-	Member *discordgo.Member
+	Member *dstate.MemberState
 }
 
-func (m *memberFetcher) RequestMember(guildID, userID string) <-chan MemberFetchResult {
+func (m *memberFetcher) RequestMember(guildID, userID int64) <-chan MemberFetchResult {
 	m.Lock()
 
 	var req *MemberFetchRequest
@@ -161,7 +166,7 @@ func (m *memberFetcher) check() {
 	m.Unlock()
 }
 
-func (m *memberFetcher) runGuild(guildID string) {
+func (m *memberFetcher) runGuild(guildID int64) {
 	for {
 		if !m.next(guildID) {
 			break
@@ -169,7 +174,7 @@ func (m *memberFetcher) runGuild(guildID string) {
 	}
 }
 
-func (m *memberFetcher) next(guildID string) (more bool) {
+func (m *memberFetcher) next(guildID int64) (more bool) {
 	m.Lock()
 
 	if len(m.fetching[guildID].Queue) < 1 {
@@ -184,10 +189,10 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 
 	m.Unlock()
 
-	logrus.WithField("guild", guildID).WithField("user", elem.Member).Info("Requesting guild member")
+	logrus.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
 
 	if gs := State.Guild(true, guildID); gs != nil {
-		if member := gs.MemberCopy(true, elem.Member, true); member != nil {
+		if member := gs.MemberCopy(true, elem.Member); member != nil && member.MemberSet {
 			// Member is already in state, no need to request it
 			m.Lock()
 
@@ -201,26 +206,46 @@ func (m *memberFetcher) next(guildID string) (more bool) {
 		}
 	}
 
-	member, err := common.BotSession.GuildMember(guildID, elem.Member)
-	if err != nil {
-		logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Error("Failed fetching member")
-	} else {
-		go eventsystem.EmitEvent(&eventsystem.EventData{
-			EventDataContainer: &eventsystem.EventDataContainer{
-				GuildMemberAdd: &discordgo.GuildMemberAdd{Member: member},
-			},
-			Type: eventsystem.EventMemberFetched,
-		}, eventsystem.EventMemberFetched)
-
-		if gs := State.Guild(true, guildID); gs != nil {
-			gs.MemberAddUpdate(true, member)
+	var ms *dstate.MemberState
+	var err error
+	// Check if this was previously attempted and failed
+	failedCacheKey := discordgo.StrID(guildID) + ":" + discordgo.StrID(elem.Member)
+	if failedUsersCache.Get(failedCacheKey) == nil {
+		if common.Statsd != nil {
+			go common.Statsd.Incr("yagpdb.memfetch.requests", nil, 1)
 		}
+
+		var member *discordgo.Member
+		member, err = common.BotSession.GuildMember(guildID, elem.Member)
+		if err != nil {
+			logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
+			code, _ := common.DiscordError(err)
+			if code == discordgo.ErrCodeUnknownUser {
+				failedUsersCache.Set(failedCacheKey, 1, time.Hour)
+			}
+		} else {
+			go eventsystem.EmitEvent(&eventsystem.EventData{
+				EvtInterface: &discordgo.GuildMemberAdd{Member: member},
+				Type:         eventsystem.EventMemberFetched,
+			}, eventsystem.EventMemberFetched)
+
+			if gs := State.Guild(true, guildID); gs != nil {
+				gs.MemberAddUpdate(true, member)
+				ms = gs.MemberCopy(true, member.User.ID)
+			}
+		}
+	} else {
+		err = errors.New("Member is in failed fetching cache")
+	}
+
+	if ms == nil && err == nil {
+		err = errors.New("Member not found (left guild perhaps?)")
 	}
 
 	m.Lock()
 	result := MemberFetchResult{
 		Err:    err,
-		Member: member,
+		Member: ms,
 	}
 
 	elem.sendResult(result)

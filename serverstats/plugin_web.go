@@ -1,9 +1,11 @@
 package serverstats
 
 import (
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
+	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
@@ -16,13 +18,23 @@ type FormData struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/serverstats.html")))
+	tmplPath := "templates/plugins/serverstats.html"
+	if common.Testing {
+		tmplPath = "../../serverstats/assets/serverstats.html"
+	}
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
-	cpGetHandler := web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats"))
-	web.CPMux.Handle(pat.Get("/stats"), cpGetHandler)
+	statsCPMux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/stats"), statsCPMux)
+	web.CPMux.Handle(pat.New("/stats/*"), statsCPMux)
+	statsCPMux.Use(web.RequireGuildChannelsMiddleware)
 
-	web.CPMux.Handle(pat.Post("/stats/settings"), web.RequireGuildChannelsMiddleware(web.ControllerPostHandler(HandleStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings")))
-	web.CPMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, false))))
+	cpGetHandler := web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats")
+	statsCPMux.Handle(pat.Get(""), cpGetHandler)
+	statsCPMux.Handle(pat.Get("/"), cpGetHandler)
+
+	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
+	statsCPMux.Handle(pat.Get("/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
 
 	// Public
 	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
@@ -41,7 +53,7 @@ func publicHandler(inner publicHandlerFunc, public bool) web.ControllerHandlerFu
 
 // Somewhat dirty - should clean up this mess sometime
 func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool) (web.TemplateData, error) {
-	_, activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	var config ServerStatsConfig
 	err := configstore.Cached.GetGuildConfig(r.Context(), activeGuild.ID, &config)
@@ -49,21 +61,23 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return templateData, common.ErrWithCaller(err)
 	}
 
-	// publicEnabled, _ := client.Cmd("GET", "stats_settings_public:"+activeGuild.ID).Bool()
-
 	templateData["Config"] = config
+	templateData["ExtraHead"] = template.HTML(`
+<link rel="stylesheet" href="/static/vendor/morris/morris.css" />
+<link rel="stylesheet" href="/static/vendor/chartist/chartist.min.css" />
+	`)
 
 	return templateData, nil
 }
 
-func HandleStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	_, ag, templateData := web.GetBaseCPContextData(r.Context())
+func HandleSaveStatsSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
 
 	newConf := &ServerStatsConfig{
 		GuildConfigModel: configstore.GuildConfigModel{
-			GuildID: common.MustParseInt(ag.ID),
+			GuildID: ag.ID,
 		},
 		Public:         formData.Public,
 		IgnoreChannels: strings.Join(formData.IgnoreChannels, ","),
@@ -84,7 +98,7 @@ func publicHandlerJson(inner publicHandlerFuncJson, public bool) web.CustomHandl
 }
 
 func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
-	client, activeGuild, _ := web.GetBaseCPContextData(r.Context())
+	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
 	conf, err := GetConfig(r.Context(), activeGuild.ID)
 	if err != nil {
@@ -97,16 +111,17 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return nil
 	}
 
-	stats, err := RetrieveFullStats(client, activeGuild.ID)
+	stats, err := RetrieveFullStats(activeGuild.ID)
 	if err != nil {
 		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}
 
+	// Update the names to human readable ones, leave the ids in the name fields for the ones not available
 	for _, cs := range stats.ChannelsHour {
 		for _, channel := range activeGuild.Channels {
-			if channel.ID == cs.Name {
+			if discordgo.StrID(channel.ID) == cs.Name {
 				cs.Name = channel.Name
 				break
 			}

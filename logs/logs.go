@@ -1,11 +1,10 @@
 package logs
 
-//go:generate esc -o assets_gen.go -pkg logs -ignore ".go" assets/
-
 import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -24,7 +23,7 @@ func (p *Plugin) Name() string {
 	return "Logs"
 }
 
-func InitPlugin() {
+func RegisterPlugin() {
 	//p := &Plugin{}
 	err := common.GORM.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
 	if err != nil {
@@ -47,11 +46,19 @@ type GuildLoggingConfig struct {
 	ManageMessagesCanViewDeleted bool
 	EveryoneCanViewDeleted       bool
 
-	ParsedBlacklistedchannels []string `gorm:"-"`
+	ParsedBlacklistedchannels []int64 `gorm:"-"`
 }
 
 func (g *GuildLoggingConfig) PostFetch() {
-	g.ParsedBlacklistedchannels = strings.Split(g.BlacklistedChannels, ",")
+	split := strings.Split(g.BlacklistedChannels, ",")
+	for _, v := range split {
+		if v != "" && v != "0" {
+			parsed, err := strconv.ParseInt(v, 10, 64)
+			if err == nil {
+				g.ParsedBlacklistedchannels = append(g.ParsedBlacklistedchannels, parsed)
+			}
+		}
+	}
 }
 
 func (g *GuildLoggingConfig) GetName() string {
@@ -59,7 +66,7 @@ func (g *GuildLoggingConfig) GetName() string {
 }
 
 // Returns either stored config, err or a default config
-func GetConfig(guildID string) (*GuildLoggingConfig, error) {
+func GetConfig(guildID int64) (*GuildLoggingConfig, error) {
 	var general GuildLoggingConfig
 	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &general)
 	if err != nil {
@@ -105,7 +112,7 @@ type Message struct {
 	Deleted        bool
 }
 
-func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID, author, authorID string, count int) (*MessageLog, error) {
+func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*MessageLog, error) {
 	if config == nil {
 		var err error
 		config, err = GetConfig(guildID)
@@ -151,24 +158,27 @@ func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID, author, au
 			body += fmt.Sprintf("(%d embeds is not shown)", len(v.Embeds))
 		}
 
+		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
+		body = strings.Replace(body, string(0), "", -1)
+
 		logMsgs[k] = Message{
-			MessageID:      v.ID,
+			MessageID:      discordgo.StrID(v.ID),
 			Content:        body,
 			Timestamp:      string(v.Timestamp),
 			AuthorUsername: v.Author.Username,
 			AuthorDiscrim:  v.Author.Discriminator,
-			AuthorID:       v.Author.ID,
+			AuthorID:       discordgo.StrID(v.Author.ID),
 			Deleted:        v.Deleted,
 		}
 	}
 
 	log := &MessageLog{
 		Messages:    logMsgs,
-		ChannelID:   channel.ID,
+		ChannelID:   discordgo.StrID(channel.ID),
 		ChannelName: channel.Name,
 		Author:      author,
-		AuthorID:    authorID,
-		GuildID:     channel.GuildID,
+		AuthorID:    discordgo.StrID(authorID),
+		GuildID:     discordgo.StrID(channel.Guild.ID),
 	}
 
 	err = common.GORM.Create(log).Error
@@ -192,7 +202,7 @@ func GetChannelLogs(id int64) (*MessageLog, error) {
 	return &result, err
 }
 
-func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error) {
+func GetGuilLogs(guildID int64, before, after, limit int) ([]*MessageLog, error) {
 
 	var result []*MessageLog
 	var q *gorm.DB
@@ -216,23 +226,14 @@ func GetGuilLogs(guildID string, before, after, limit int) ([]*MessageLog, error
 	return result, err
 }
 
-func GetUsernames(userID string, limit int) ([]UsernameListing, error) {
+func GetUsernames(userID int64, limit int) ([]UsernameListing, error) {
 	var listings []UsernameListing
-	err := common.GORM.Where(&UsernameListing{UserID: MustParseID(userID)}).Order("id desc").Limit(limit).Find(&listings).Error
+	err := common.GORM.Where(&UsernameListing{UserID: userID}).Order("id desc").Limit(limit).Find(&listings).Error
 	return listings, err
 }
 
-func GetNicknames(userID, GuildID string, limit int) ([]NicknameListing, error) {
+func GetNicknames(userID, guildID int64, limit int) ([]NicknameListing, error) {
 	var listings []NicknameListing
-	err := common.GORM.Where(&NicknameListing{UserID: MustParseID(userID), GuildID: GuildID}).Order("id desc").Limit(limit).Find(&listings).Error
+	err := common.GORM.Where(&NicknameListing{UserID: userID, GuildID: discordgo.StrID(guildID)}).Order("id desc").Limit(limit).Find(&listings).Error
 	return listings, err
-}
-
-func MustParseID(id string) int64 {
-	v, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		panic("Failed parsing id: " + err.Error())
-	}
-
-	return v
 }

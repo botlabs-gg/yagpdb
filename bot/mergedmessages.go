@@ -5,20 +5,21 @@
 package bot
 
 import (
-	log "github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
 var (
 	// map of channels and their message queue
-	mergedQueue     = make(map[string][]string)
+	mergedQueue     = make(map[int64][]string)
 	mergedQueueLock sync.Mutex
 )
 
-func QueueMergedMessage(channelID, message string) {
+func QueueMergedMessage(channelID int64, message string) {
 	mergedQueueLock.Lock()
 	defer mergedQueueLock.Unlock()
 
@@ -36,14 +37,14 @@ func mergedMessageSender() {
 		for c, m := range mergedQueue {
 			go sendMergedBatch(c, m)
 		}
-		mergedQueue = make(map[string][]string)
+		mergedQueue = make(map[int64][]string)
 		mergedQueueLock.Unlock()
 
 		time.Sleep(time.Second)
 	}
 }
 
-func sendMergedBatch(channelID string, messages []string) {
+func sendMergedBatch(channelID int64, messages []string) {
 	out := ""
 	for _, v := range messages {
 		out += v + "\n"
@@ -53,7 +54,7 @@ func sendMergedBatch(channelID string, messages []string) {
 	out = out[:len(out)-1]
 
 	_, err := dutil.SplitSendMessage(common.BotSession, channelID, out)
-	if err != nil {
-		log.WithError(err).Error("Error sending messages")
+	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions) {
+		log.WithError(err).WithField("message", out).Error("Error sending messages")
 	}
 }

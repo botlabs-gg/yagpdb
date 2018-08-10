@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/pkg/errors"
@@ -14,19 +15,64 @@ import (
 // dictionary creates a map[string]interface{} from the given parameters by
 // walking the parameters and treating them as key-value pairs.  The number
 // of parameters must be even.
-func Dictionary(values ...interface{}) (map[string]interface{}, error) {
+func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
+	if len(values)%2 != 0 {
+		return nil, errors.New("invalid dict call")
+	}
+	dict := make(map[interface{}]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key := values[i]
+		dict[key] = values[i+1]
+	}
+
+	return dict, nil
+}
+
+func StringKeyDictionary(values ...interface{}) (map[string]interface{}, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
 	dict := make(map[string]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
-		key, ok := values[i].(string)
+		key := values[i]
+		s, ok := key.(string)
 		if !ok {
-			return nil, errors.New("dict keys must be strings")
+			return nil, errors.New("Only string keys supported in sdict")
 		}
-		dict[key] = values[i+1]
+
+		dict[s] = values[i+1]
 	}
+
 	return dict, nil
+}
+
+func CreateSlice(values ...interface{}) ([]interface{}, error) {
+	slice := make([]interface{}, len(values))
+	for i := 0; i < len(values); i++ {
+		slice[i] = values[i]
+	}
+
+	return slice, nil
+}
+
+func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
+	dict, err := StringKeyDictionary(values...)
+	if err != nil {
+		return nil, err
+	}
+
+	encoded, err := json.Marshal(dict)
+	if err != nil {
+		return nil, err
+	}
+
+	var embed *discordgo.MessageEmbed
+	err = json.Unmarshal(encoded, &embed)
+	if err != nil {
+		return nil, err
+	}
+
+	return embed, nil
 }
 
 // indirect is taken from 'text/template/exec.go'
@@ -93,29 +139,45 @@ func roleIsAbove(a, b *discordgo.Role) bool {
 	return dutil.IsRoleAbove(a, b)
 }
 
-func randInt(args ...int64) int64 {
+func randInt(args ...interface{}) int {
 	min := int64(0)
 	max := int64(10)
 	if len(args) >= 2 {
-		min = args[0]
-		max = args[1]
+		min = ToInt64(args[0])
+		max = ToInt64(args[1])
 	} else if len(args) == 1 {
-		max = args[0]
+		max = ToInt64(args[0])
 	}
 
 	r := rand.Int63n(max - min)
-	return r + min
+	return int(r + min)
 }
 
-func joinStrings(sep string, args ...string) string {
+func joinStrings(sep string, args ...interface{}) string {
+
 	out := ""
 
-	for k, v := range args {
-		if k != 0 {
-			out += sep
+	for _, v := range args {
+		switch t := v.(type) {
+		case string:
+			if out != "" {
+				out += sep
+			}
+
+			out += t
+		case []string:
+			for _, s := range t {
+				if out != "" {
+					out += sep
+				}
+
+				out += s
+			}
+		case int, int32, uint32, int64, uint64:
+			out += ToString(v)
 		}
-		out += v
 	}
+
 	return out
 }
 
@@ -171,6 +233,8 @@ func str(arg interface{}) string {
 		return strconv.FormatInt(v, 10)
 	case int:
 		return strconv.FormatInt(int64(v), 10)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
 	}
 
 	return ""
@@ -196,7 +260,7 @@ func tmplToInt(from interface{}) int {
 	}
 }
 
-func tmplToInt64(from interface{}) int64 {
+func ToInt64(from interface{}) int64 {
 	switch t := from.(type) {
 	case int:
 		return int64(t)
@@ -216,7 +280,7 @@ func tmplToInt64(from interface{}) int64 {
 	}
 }
 
-func tmplToString(from interface{}) string {
+func ToString(from interface{}) string {
 	switch t := from.(type) {
 	case int:
 		return strconv.Itoa(t)
@@ -232,5 +296,107 @@ func tmplToString(from interface{}) string {
 		return t
 	default:
 		return ""
+	}
+}
+
+func tmplJson(v interface{}) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
+}
+
+func tmplFormatTime(t time.Time, args ...string) string {
+	layout := time.RFC822
+	if len(args) > 0 {
+		layout = args[0]
+	}
+
+	return t.Format(layout)
+}
+
+type variadicFunc func([]reflect.Value) (reflect.Value, error)
+
+// callVariadic allows the given function to be called with either a variadic
+// sequence of arguments (i.e., fixed in the template definition) or a slice
+// (i.e., from a pipeline or context variable). In effect, a limited `flatten`
+// operation.
+func callVariadic(f variadicFunc, values ...reflect.Value) (reflect.Value, error) {
+	var vs []reflect.Value
+	for _, val := range values {
+		v, _ := indirect(val)
+		switch {
+		case !v.IsValid():
+			continue
+		case v.Kind() == reflect.Array || v.Kind() == reflect.Slice:
+			for i := 0; i < v.Len(); i++ {
+				vs = append(vs, v.Index(i))
+			}
+		default:
+			vs = append(vs, v)
+		}
+	}
+
+	return f(vs)
+}
+
+// slice returns the result of creating a new slice with the given arguments.
+// "slice x 1 2" is, in Go syntax, x[1:2], and "slice x 1" is equivalent to
+// x[1:].
+func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) {
+	v, _ := indirect(item)
+	if !v.IsValid() {
+		return reflect.Value{}, errors.New("index of untyped nil")
+	}
+
+	var args []int
+	for _, i := range indices {
+		index, _ := indirect(i)
+		switch index.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			args = append(args, int(index.Int()))
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			args = append(args, int(index.Uint()))
+		case reflect.Invalid:
+			return reflect.Value{}, errors.New("cannot index slice/array with nil")
+		default:
+			return reflect.Value{}, errors.Errorf("cannot index slice/array with type %s", index.Type())
+		}
+	}
+
+	switch v.Kind() {
+	case reflect.Array, reflect.Slice, reflect.String:
+		startIndex := 0
+		endIndex := 0
+
+		switch len(args) {
+		case 0:
+			// No start or end index provided same as slice[:]
+			return v, nil
+		case 1:
+			// Only start index provided, same as slice[i:]
+			startIndex = args[0]
+			endIndex = v.Len()
+			// args = append(args, v.Len()+1-args[0])
+		case 2:
+			// Both start and end index provided
+			startIndex = args[0]
+			endIndex = args[1]
+			break
+		default:
+			return reflect.Value{}, errors.Errorf("unexpected slice arguments %d", len(args))
+		}
+
+		if startIndex < 0 || startIndex >= v.Len() {
+			return reflect.Value{}, errors.Errorf("start index out of range: %d", startIndex)
+		} else if endIndex <= startIndex || endIndex > v.Len() {
+			return reflect.Value{}, errors.Errorf("end index out of range: %d", endIndex)
+		}
+
+		return v.Slice(startIndex, endIndex), nil
+	default:
+		return reflect.Value{}, errors.Errorf("can't index item of type %s", v.Type())
 	}
 }

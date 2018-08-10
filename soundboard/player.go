@@ -1,12 +1,12 @@
 package soundboard
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"sync"
@@ -14,20 +14,20 @@ import (
 )
 
 type PlayRequest struct {
-	ChannelID      string
-	GuildID        string
-	CommandRanFrom string
+	ChannelID      int64
+	GuildID        int64
+	CommandRanFrom int64
 	Sound          uint
 }
 
 var (
-	playQueues      = make(map[string][]*PlayRequest)
+	playQueues      = make(map[int64][]*PlayRequest)
 	playQueuesMutex sync.Mutex
 	Silence         = []byte{0xF8, 0xFF, 0xFE}
 )
 
 // RequestPlaySound either queues up a sound to be played in an existing player or creates a new one
-func RequestPlaySound(guildID string, channelID, channelRanFrom string, soundID uint) (queued bool) {
+func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID uint) (queued bool) {
 	item := &PlayRequest{
 		ChannelID:      channelID,
 		GuildID:        guildID,
@@ -48,8 +48,8 @@ func RequestPlaySound(guildID string, channelID, channelRanFrom string, soundID 
 	return
 }
 
-func runPlayer(guildID string) {
-	lastChannel := ""
+func runPlayer(guildID int64) {
+	var lastChannel int64
 	var vc *discordgo.VoiceConnection
 	for {
 		playQueuesMutex.Lock()
@@ -72,10 +72,10 @@ func runPlayer(guildID string) {
 		}
 
 		var err error
-		vc, err = playSound(vc, bot.ShardManager.SessionForGuildS(guildID), item)
+		vc, err = playSound(vc, bot.ShardManager.SessionForGuild(guildID), item)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", guildID).Error("Failed playing sound")
-			if item.CommandRanFrom != "" {
+			if item.CommandRanFrom != 0 {
 				common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Failed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
 			}
 		}
@@ -105,7 +105,7 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 
 	// Either use the passed voice connection, or create a new one
 	if vc == nil || !vc.Ready {
-		vc, err = session.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
+		vc, err = session.GatewayManager.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
 		if err != nil {
 			return nil, common.ErrWithCaller(err)
 		}
@@ -126,7 +126,7 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 			if err != io.EOF {
 				return vc, common.ErrWithCaller(err)
 			}
-			return vc, nil
+			break
 		}
 
 		err = sendAudio(vc, frame)

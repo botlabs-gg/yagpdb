@@ -1,14 +1,11 @@
 package youtube
 
-//go:generate esc -o assets_gen.go -pkg youtube -ignore ".go" assets/
-
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/docs"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"net/url"
@@ -54,8 +51,6 @@ func RegisterPlugin() {
 
 	common.RegisterPluginL(p)
 	mqueue.RegisterSource("youtube", p)
-
-	docs.AddPage("Youtube Feeds", FSMustString(false, "/assets/help-page.md"), nil)
 }
 
 type ChannelSubscription struct {
@@ -81,7 +76,7 @@ type YoutubePlaylistID struct {
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	code, _ := common.DiscordError(err)
 	if code != discordgo.ErrCodeUnknownChannel {
-		logrus.WithError(err).WithField("channel", elem.Channel).Error("Error posting youtube message")
+		logrus.WithError(err).WithField("channel", elem.Channel).Warn("Error posting youtube message")
 		return
 	}
 

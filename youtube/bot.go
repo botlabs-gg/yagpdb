@@ -3,16 +3,15 @@ package youtube
 import (
 	"fmt"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v3"
 )
 
-func (p *Plugin) InitBot() {}
-
-func (p *Plugin) Status(client *redis.Client) (string, string) {
-	numUnique, _ := client.Cmd("ZCARD", "youtube_subbed_channels").Int()
+func (p *Plugin) Status() (string, string) {
+	var unique int
+	common.RedisPool.Do(radix.Cmd(&unique, "ZCARD", "youtube_subbed_channels"))
 
 	var numChannels int
 	common.GORM.Model(&ChannelSubscription{}).Count(&numChannels)
 
-	return "Youtube", fmt.Sprintf("%d/%d", numUnique, numChannels)
+	return "Youtube", fmt.Sprintf("%d/%d", unique, numChannels)
 }

@@ -4,17 +4,23 @@ package eventsystem
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
+	"github.com/jonas747/discordgo"
+	"github.com/sirupsen/logrus"
+	"runtime/debug"
 )
 
 type Handler func(evtData *EventData)
 
 type EventData struct {
-	*EventDataContainer
 	EvtInterface interface{}
 	Type         Event
 	ctx          context.Context
+	Session      *discordgo.Session
 }
+
+var (
+	ConcurrentAfter *Handler
+)
 
 func (e *EventData) Context() context.Context {
 	if e.ctx == nil {
@@ -33,8 +39,26 @@ func (e *EventData) WithContext(ctx context.Context) *EventData {
 
 // EmitEvent emits an event
 func EmitEvent(data *EventData, evt Event) {
-	for _, v := range handlers[evt] {
+	for i, v := range handlers[evt] {
 		(*v)(data)
+
+		// Check if we should start firing the rest in a different goroutine
+		if ConcurrentAfter != nil && ConcurrentAfter == v {
+			go func(startFrom int) {
+				defer func() {
+					if err := recover(); err != nil {
+						stack := string(debug.Stack())
+						logrus.WithField(logrus.ErrorKey, err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
+					}
+				}()
+
+				for j := startFrom; j < len(handlers[evt]); j++ {
+					(*handlers[evt][j])(data)
+				}
+			}(i + 1)
+
+			break
+		}
 	}
 }
 

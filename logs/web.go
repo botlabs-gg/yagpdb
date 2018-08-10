@@ -2,18 +2,17 @@ package logs
 
 import (
 	"errors"
-	"github.com/Sirupsen/logrus"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type DeleteData struct {
@@ -29,8 +28,14 @@ type GeneralFormData struct {
 }
 
 func (lp *Plugin) InitWeb() {
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/control_panel.html")))
-	web.Templates = template.Must(web.Templates.Parse(FSMustString(false, "/assets/log_view.html")))
+	tmplPathSettings := "templates/plugins/logs_control_panel.html"
+	tmplPathView := "templates/plugins/logs_view.html"
+	if common.Testing {
+		tmplPathSettings = "../../logs/assets/logs_control_panel.html"
+		tmplPathView = "../../logs/assets/logs_view.html"
+	}
+
+	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathView))
 
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id/"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
@@ -58,7 +63,7 @@ func (lp *Plugin) InitWeb() {
 
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	beforeID := 0
 	beforeStr := r.URL.Query().Get("before")
@@ -104,13 +109,13 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 
 func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	form := ctx.Value(common.ContextKeyParsedForm).(*GeneralFormData)
 
 	config := &GuildLoggingConfig{
 		GuildConfigModel: configstore.GuildConfigModel{
-			GuildID: common.MustParseInt(g.ID),
+			GuildID: g.ID,
 		},
 
 		NicknameLoggingEnabled:       form.NicknameLoggingEnabled,
@@ -126,7 +131,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
-	_, g, tmpl := web.GetBaseCPContextData(ctx)
+	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*DeleteData)
 	if data.ID == "" {
@@ -149,7 +154,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 }
 
 func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
-	_, g, tmpl := web.GetBaseCPContextData(r.Context())
+	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	idString := pat.Param(r, "id")
 
@@ -176,17 +181,18 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
-	if msgLogs.GuildID != g.ID {
+	if msgLogs.GuildID != discordgo.StrID(g.ID) {
 		return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
 	}
 
+	const TimeFormat = "2006 Jan 02 15:04"
 	for k, v := range msgLogs.Messages {
 		parsed, err := discordgo.Timestamp(v.Timestamp).Parse()
 		if err != nil {
 			logrus.WithError(err).Error("Failed parsing logged message timestamp")
 			continue
 		}
-		ts := parsed.UTC().Format(time.RFC822)
+		ts := parsed.UTC().Format(TimeFormat)
 		msgLogs.Messages[k].Timestamp = ts
 	}
 
@@ -195,7 +201,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 }
 
 func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{} {
-	_, g, _ := web.GetBaseCPContextData(r.Context())
+	g, _ := web.GetBaseCPContextData(r.Context())
 
 	logsId := r.FormValue("LogID")
 	msgID := r.FormValue("MessageID")
@@ -210,7 +216,7 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return err
 	}
 
-	if logContainer.GuildID != g.ID {
+	if logContainer.GuildID != discordgo.StrID(g.ID) {
 		return err
 	}
 

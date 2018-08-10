@@ -3,6 +3,7 @@ package soundboard
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"golang.org/x/net/context"
@@ -12,16 +13,16 @@ import (
 type Plugin struct{}
 
 // GetGuildConfig returns a GuildConfig item from db
-func (p *Plugin) GetGuildConfig(ctx context.Context, guildID string, dest configstore.GuildConfig) (err error) {
+func (p *Plugin) GetGuildConfig(ctx context.Context, guildID int64, dest configstore.GuildConfig) (err error) {
 	cast := dest.(*SoundboardConfig)
 
-	err = common.GORM.Where(common.MustParseInt(guildID)).First(cast).Error
+	err = common.GORM.Where(guildID).First(cast).Error
 	if err != nil {
 		// Return default config if not found
 		if err == gorm.ErrRecordNotFound {
 			*cast = SoundboardConfig{
 				GuildConfigModel: configstore.GuildConfigModel{
-					GuildID: common.MustParseInt(guildID),
+					GuildID: guildID,
 				},
 			}
 		} else {
@@ -93,7 +94,7 @@ const (
 func (s TranscodingStatus) String() string {
 	switch s {
 	case TranscodingStatusQueued:
-		return "Qeued"
+		return "Queued"
 	case TranscodingStatusReady:
 		return "Ready"
 	case TranscodingStatusFailedLong:
@@ -113,13 +114,13 @@ type SoundboardSound struct {
 	Status       TranscodingStatus
 }
 
-func (s *SoundboardSound) CanPlay(roles []string) bool {
+func (s *SoundboardSound) CanPlay(roles []int64) bool {
 	if s.RequiredRole == "" {
 		return true
 	}
 
 	for _, v := range roles {
-		if v == s.RequiredRole {
+		if discordgo.StrID(v) == s.RequiredRole {
 			return true
 		}
 	}

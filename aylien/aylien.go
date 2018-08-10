@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AYLIEN/aylien_textapi_go"
-	log "github.com/Sirupsen/logrus"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"os"
 	"strings"
@@ -49,7 +49,9 @@ func (p *Plugin) Name() string {
 	return "ALYIEN"
 }
 
-func (p *Plugin) InitBot() {
+var _ commands.CommandProvider = (*Plugin)(nil)
+
+func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Cooldown:    5,
@@ -60,9 +62,6 @@ func (p *Plugin) InitBot() {
 			&dcmd.ArgDef{Name: "text", Type: dcmd.String},
 		},
 		RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
-			// Were working hard!
-			common.BotSession.ChannelTyping(cmd.CS.ID())
-
 			var responses []*textapi.SentimentResponse
 			if cmd.Args[0].Value != nil {
 				resp, err := p.aylien.Sentiment(&textapi.SentimentParams{
@@ -75,7 +74,7 @@ func (p *Plugin) InitBot() {
 			} else {
 
 				// Get the message to analyze
-				msgs, err := bot.GetMessages(cmd.CS.ID(), 100, false)
+				msgs, err := bot.GetMessages(cmd.CS.ID, 100, false)
 				if err != nil {
 					return "Error retrieving messages", err
 				}
