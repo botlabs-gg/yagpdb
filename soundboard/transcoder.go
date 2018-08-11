@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -76,7 +77,15 @@ func getQueue() []string {
 }
 
 func handleQueueItem(item string) error {
-	parsedId, err := strconv.ParseInt(item, 10, 32)
+	skipTranscode := false
+
+	idStr := item
+	if strings.HasSuffix(item, ".dca") {
+		skipTranscode = true
+		idStr = strings.SplitN(item, ".", 2)[0]
+	}
+
+	parsedId, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
 		return err
 	}
@@ -99,17 +108,22 @@ func handleQueueItem(item string) error {
 	}
 
 	logrus.WithField("sound", sound.ID).Info("Handling queued sound ", sound.Name)
-	err = transcodeSound(&sound)
-	if err != nil {
-		logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
-		common.GORM.Model(&sound).Update("Status", TranscodingStatusFailedOther)
-		os.Remove(SoundFilePath(sound.ID, TranscodingStatusReady))
-	} else {
-		common.GORM.Model(&sound).Update("Status", TranscodingStatusReady)
-	}
 
-	configstore.InvalidateGuildCache(sound.GuildID, &SoundboardConfig{})
-	err = os.Remove(SoundFilePath(sound.ID, TranscodingStatusQueued))
+	if !skipTranscode {
+		err = transcodeSound(&sound)
+		if err != nil {
+			logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
+			common.GORM.Model(&sound).Update("Status", TranscodingStatusFailedOther)
+			os.Remove(SoundFilePath(sound.ID, TranscodingStatusReady))
+		} else {
+			common.GORM.Model(&sound).Update("Status", TranscodingStatusReady)
+		}
+
+		configstore.InvalidateGuildCache(sound.GuildID, &SoundboardConfig{})
+		err = os.Remove(SoundFilePath(sound.ID, TranscodingStatusQueued))
+	} else {
+		os.Rename(SoundFilePath(sound.ID, TranscodingStatusQueued)+".dca", SoundFilePath(sound.ID, TranscodingStatusReady))
+	}
 	return err
 }
 
@@ -131,5 +145,6 @@ func transcodeSound(sound *SoundboardSound) error {
 		return err
 	}
 	err = session.Error()
+
 	return err
 }
