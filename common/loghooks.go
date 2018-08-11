@@ -63,6 +63,13 @@ func (p *STDLogProxy) Write(b []byte) (n int, err error) {
 	return
 }
 
+type GORMLogger struct {
+}
+
+func (g *GORMLogger) Print(v ...interface{}) {
+	logrus.WithField("stck", "...").Error(v...)
+}
+
 type LoggingTransport struct {
 	Inner http.RoundTripper
 }

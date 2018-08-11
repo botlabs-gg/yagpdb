@@ -141,6 +141,7 @@ func connectDB(host, user, pass, dbName string) error {
 	if err == nil {
 		PQ.SetMaxOpenConns(5)
 	}
+	GORM.SetLogger(&GORMLogger{})
 
 	return err
 }
