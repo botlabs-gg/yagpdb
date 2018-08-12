@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v3"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -48,7 +49,7 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			config, err := GetConfig(data.Context(), data.GS.ID)
 			if err != nil {
-				return "Failed retreiving guild config", err
+				return nil, errors.WithMessage(err, "getconfig")
 			}
 
 			if !config.Public {
@@ -57,7 +58,7 @@ func (p *Plugin) AddCommands() {
 
 			stats, err := RetrieveFullStats(data.GS.ID)
 			if err != nil {
-				return "Error retrieving stats", err
+				return nil, errors.WithMessage(err, "retrievefullstats")
 			}
 
 			total := int64(0)

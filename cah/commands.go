@@ -31,7 +31,7 @@ func (p *Plugin) AddCommands() {
 				return cahErr, nil
 			}
 
-			return "Something went wrong", err
+			return "", err
 		},
 	}
 
@@ -46,7 +46,7 @@ func (p *Plugin) AddCommands() {
 					return cahErr, nil
 				}
 
-				return "Something went wrong", err
+				return "", err
 			}
 
 			return "Stopped the game", nil
@@ -69,7 +69,7 @@ func (p *Plugin) AddCommands() {
 					return cahErr, nil
 				}
 
-				return "Something went wrong", err
+				return "", err
 			}
 
 			return "User removed", nil

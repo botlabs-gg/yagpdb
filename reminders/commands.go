@@ -54,7 +54,7 @@ var cmds = []*commands.YAGCommand{
 
 			_, err := NewReminder(parsed.Msg.Author.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
 			if err != nil {
-				return err, err
+				return nil, err
 			}
 
 			return "Set a reminder in " + durString + " from now (" + tStr + ")\nView reminders with the reminders command", nil
@@ -67,7 +67,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentReminders, err := GetUserReminders(parsed.Msg.Author.ID)
 			if err != nil {
-				return "Failed fetching your reminders, contact bot owner", err
+				return nil, err
 			}
 
 			out := "Your reminders:\n"
@@ -83,7 +83,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, parsed.CS.ID)
 			if err != nil {
-				return "An eror occured checkign for perms", err
+				return nil, err
 			}
 			if !ok {
 				return "You do not have access to this command (requires manage channel permission)", nil
@@ -91,7 +91,7 @@ var cmds = []*commands.YAGCommand{
 
 			currentReminders, err := GetChannelReminders(parsed.CS.ID)
 			if err != nil {
-				return "Failed fetching reminders, contact bot owner", err
+				return nil, err
 			}
 
 			out := "Reminders in this channel:\n"
@@ -124,7 +124,7 @@ var cmds = []*commands.YAGCommand{
 			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
 				ok, err := bot.AdminOrPerm(discordgo.PermissionManageChannels, parsed.Msg.Author.ID, reminder.ChannelIDInt())
 				if err != nil {
-					return "An eror occured checkign for perms", err
+					return nil, err
 				}
 				if !ok {
 					return "You need manage channel permission in the channel the reminder is in to delete reminders that are not your own", nil
@@ -134,13 +134,13 @@ var cmds = []*commands.YAGCommand{
 			// Do the actual deletion
 			err = common.GORM.Delete(reminder).Error
 			if err != nil {
-				return "Failed deleting reminder?", err
+				return nil, err
 			}
 
 			// Check if we should remove the scheduled event
 			currentReminders, err := GetUserReminders(reminder.UserIDInt())
 			if err != nil {
-				return "Failed fetching reminders, contact bot owner", err
+				return nil, err
 			}
 
 			delMsg := fmt.Sprintf("Deleted reminder **#%d**: %q", reminder.ID, reminder.Message)

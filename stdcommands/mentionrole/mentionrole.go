@@ -46,11 +46,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 
 	_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
 	if err != nil {
-		if _, dErr := common.DiscordError(err); dErr != "" {
-			return "Failed updating role, discord responded with: " + dErr, err
-		} else {
-			return "An unknown error occured updating the role", err
-		}
+		return nil, err
 	}
 
 	_, err = common.BotSession.ChannelMessageSend(data.CS.ID, "<@&"+discordgo.StrID(role.ID)+">")

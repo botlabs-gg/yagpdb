@@ -19,12 +19,12 @@ import (
 func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
 	if err != nil {
-		return "Failed retrieving member", err
+		return nil, err
 	}
 
 	ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, member.ID, parsed.CS.ID)
 	if err != nil {
-		return "Failed checking your perms", err
+		return nil, err
 	}
 
 	if !ok {
@@ -36,14 +36,14 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		group, err = models.RoleGroupsG(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str())).One()
 		if err != nil {
 			if err == sql.ErrNoRows {
-				return "Did not find the role command group specified, make sure you typed it right", nil
+				return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
 			}
 
-			return "Failed retrieving the group", err
+			return nil, err
 		}
 
 		if c, _ := models.RoleCommandsG(qm.Where("role_group_id=?", group.ID)).Count(); c < 1 {
-			return "No commands in group, set them up in the control panel at: <https://yagpdb.xyz/manage>", nil
+			return "No commands in group, set them up in the control panel.", nil
 		}
 	}
 
@@ -67,7 +67,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		id := parsed.Switches["m"].Int64()
 		msg, err = common.BotSession.ChannelMessage(parsed.CS.ID, id)
 		if err != nil {
-			return "Couldn't find the message", err
+			return nil, err
 		}
 
 		model.MessageID = id
@@ -129,7 +129,7 @@ func UpdateMenu(parsed *dcmd.Data, existing *models.RoleMenu) (interface{}, erro
 
 	opts, err := existing.RoleMenuOptionsG().All()
 	if err != nil && err != sql.ErrNoRows {
-		return "Error communicating with DB", nil
+		return nil, err
 	}
 
 	if existing.OwnMessage {

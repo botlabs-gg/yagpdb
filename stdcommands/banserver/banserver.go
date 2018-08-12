@@ -27,6 +27,6 @@ var Command = &commands.YAGCommand{
 
 			return "Banned " + data.Args[0].Str(), nil
 		}
-		return err, err
+		return nil, err
 	}),
 }

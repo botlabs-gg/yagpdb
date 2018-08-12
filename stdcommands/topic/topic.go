@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		topic := doc.Find("#random").Text()

@@ -157,11 +157,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			err := BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), true)
 			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return cast.Message.Message, err
-				} else {
-					return "An error occurred", err
-				}
+				return nil, err
 			}
 
 			return "👌", nil
@@ -200,11 +196,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			err := BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
 			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return cast.Message.Message, err
-				} else {
-					return "An error occurred", err
-				}
+				return nil, err
 			}
 
 			return "👌", nil
@@ -229,11 +221,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			err := KickUser(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
 			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return cast.Message.Message, err
-				} else {
-					return "An error occurred", err
-				}
+				return nil, err
 			}
 
 			return "👌", nil
@@ -267,11 +255,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
 			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return "API Error: " + cast.Message.Message, err
-				} else {
-					return "An error occurred", err
-				}
+				return nil, err
 			}
 
 			return "👌", nil
@@ -303,11 +287,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			err = MuteUnmuteUser(config, false, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
 			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return "API Error: " + cast.Message.Message, err
-				} else {
-					return "An error occurred", err
-				}
+				return nil, err
 			}
 
 			return "👌", nil
@@ -338,7 +318,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			_, err := common.BotSession.ChannelMessageSend(channelID, common.EscapeSpecialMentions(reportBody))
 			if err != nil {
-				return "Failed sending report, check perms for report channel", err
+				return nil, err
 			}
 
 			// don't bother sending confirmation if it's in the same channel
@@ -444,10 +424,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 			msg, err := common.BotSession.ChannelMessage(config.IntActionChannel(), parsed.Args[0].Int64())
 			if err != nil {
-				if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-					return "Failed retrieving the message: " + cast.Message.Message, nil
-				}
-				return "Failed retrieving the message", err
+				return nil, err
 			}
 
 			if msg.Author.ID != common.Conf.BotID {
@@ -462,7 +439,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			updateEmbedReason(parsed.Msg.Author, parsed.Args[1].Str(), embed)
 			_, err = common.BotSession.ChannelMessageEditEmbed(config.IntActionChannel(), msg.ID, embed)
 			if err != nil {
-				return "Failed updating the modlog entry", err
+				return nil, err
 			}
 
 			return "👌", nil
@@ -483,7 +460,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			err := WarnUser(config, parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author, parsed.Args[0].Value.(*discordgo.User), parsed.Args[1].Str())
 			if err != nil {
-				return "Seomthing went wrong warning this user, make sure the bot has all the proper perms. (if you have the modlog enabled the bot need to be able to send messages in the modlog for example)", err
+				return nil, err
 			}
 
 			return "👌", nil
@@ -506,7 +483,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			var result []*WarningModel
 			err := common.GORM.Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Order("id desc").Find(&result).Error
 			if err != nil && err != gorm.ErrRecordNotFound {
-				return "An error occured...", err
+				return nil, err
 			}
 
 			if len(result) < 1 {

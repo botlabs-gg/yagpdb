@@ -68,7 +68,8 @@ var cmdLogs = &commands.YAGCommand{
 			if err == ErrChannelBlacklisted {
 				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
 			}
-			return "An error occured", err
+
+			return "", err
 		}
 
 		return l.Link(), err
@@ -87,7 +88,7 @@ var cmdWhois = &commands.YAGCommand{
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
-			return "Failed retrieving config for this server", err
+			return nil, err
 		}
 
 		target := parsed.Msg.Author
@@ -97,7 +98,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		member, err := bot.GetMember(parsed.GS.ID, target.ID)
 		if err != nil {
-			return "An error occured fetching guild member, contact bot owner", err
+			return nil, err
 		}
 
 		nick := ""
@@ -230,7 +231,7 @@ var cmdUsernames = &commands.YAGCommand{
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
-			return "AAAAA", err
+			return nil, err
 		}
 
 		target := parsed.Msg.Author
@@ -244,7 +245,7 @@ var cmdUsernames = &commands.YAGCommand{
 
 		usernames, err := GetUsernames(target.ID, 25)
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		out := fmt.Sprintf("Past username of **%s#%s** ```\n", target.Username, target.Discriminator)
@@ -271,7 +272,7 @@ var cmdNicknames = &commands.YAGCommand{
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(parsed.GS.ID)
 		if err != nil {
-			return "Failed retrieving config", err
+			return nil, err
 		}
 
 		target := parsed.Msg.Author
@@ -285,7 +286,7 @@ var cmdNicknames = &commands.YAGCommand{
 
 		nicknames, err := GetNicknames(target.ID, parsed.GS.ID, 25)
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		out := fmt.Sprintf("Past nicknames of **%s#%s** ```\n", target.Username, target.Discriminator)

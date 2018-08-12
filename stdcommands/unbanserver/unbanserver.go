@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 		var unbanned bool
 		err := common.RedisPool.Do(radix.Cmd(&unbanned, "SREM", "banned_servers", data.Args[0].Str()))
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		if !unbanned {
