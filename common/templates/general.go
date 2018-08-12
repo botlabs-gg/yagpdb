@@ -400,3 +400,7 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 		return reflect.Value{}, errors.Errorf("can't index item of type %s", v.Type())
 	}
 }
+
+func tmplCurrentTime() time.Time {
+	return time.Now()
+}
