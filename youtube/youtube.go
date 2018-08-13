@@ -73,7 +73,7 @@ type YoutubePlaylistID struct {
 }
 
 // Remove feeds if they don't point to a proper channel
-func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
+func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElementNoKallax, err error) {
 	code, _ := common.DiscordError(err)
 	if code != discordgo.ErrCodeUnknownChannel {
 		logrus.WithError(err).WithField("channel", elem.Channel).Warn("Error posting youtube message")

@@ -38,6 +38,8 @@ var (
 	Statsd *statsd.Client
 
 	Testing bool
+
+	CurrentRunCounter int64
 )
 
 // Initalizes all database connections, config loading and so on
@@ -76,6 +78,11 @@ func Init() error {
 	}
 
 	BotUser, err = BotSession.UserMe()
+	if err != nil {
+		panic(err)
+	}
+
+	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
 		panic(err)
 	}

@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
 	"strconv"
@@ -26,7 +27,7 @@ var (
 )
 
 type PluginWithErrorHandler interface {
-	HandleMQueueError(elem *QueuedElement, err error)
+	HandleMQueueError(elem *QueuedElementNoKallax, err error)
 }
 
 var (
@@ -71,32 +72,49 @@ func RegisterSource(name string, source PluginWithErrorHandler) {
 	sources[name] = source
 }
 
-func QueueMessageString(source, sourceID, channel, message string) {
-	elem := &QueuedElement{
-		Source:     source,
-		SourceID:   sourceID,
-		Channel:    channel,
-		MessageStr: message,
+func IncrIDCounter() (next int64) {
+	err := common.RedisPool.Do(radix.Cmd(&next, "INCR", "mqueue_id_counter"))
+	if err != nil {
+		logrus.WithError(err).Error("Failed increasing mqueue id counter")
+		return -1
 	}
 
-	store.Insert(elem)
+	return next
+}
+
+func QueueMessageString(source, sourceID, channel, message string) {
+	QueueMessage(source, sourceID, channel, message, nil)
 }
 
 func QueueMessageEmbed(source, sourceID, channel string, embed *discordgo.MessageEmbed) {
-	encoded, err := json.Marshal(embed)
-	if err != nil {
-		logrus.WithError(err).Error("MQueue: Failed encoding message")
+	QueueMessage(source, sourceID, channel, "", embed)
+}
+
+func QueueMessage(source, sourceID, channel string, msgStr string, embed *discordgo.MessageEmbed) {
+	nextID := IncrIDCounter()
+	if nextID == -1 {
 		return
 	}
 
-	elem := &QueuedElement{
+	elem := &QueuedElementNoKallax{
+		ID:           nextID,
 		Source:       source,
 		SourceID:     sourceID,
 		Channel:      channel,
-		MessageEmbed: string(encoded),
+		MessageStr:   msgStr,
+		MessageEmbed: embed,
 	}
 
-	store.Insert(elem)
+	serialized, err := json.Marshal(elem)
+	if err != nil {
+		logrus.WithError(err).Error("Failed marshaling mqueue element")
+		return
+	}
+
+	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", "mqueue", "-1", string(serialized)))
+	if err != nil {
+		return
+	}
 }
 
 func (p *Plugin) BotInit() {
@@ -131,7 +149,8 @@ func startPolling() {
 			shutdown(wg)
 			return
 		case <-ticker.C:
-			poll()
+			pollLegacy()
+			pollRedis()
 		case <-tickerClean.C:
 			go func() {
 				result, err := common.PQ.Exec("DELETE FROM mqueue WHERE processed=true")
@@ -161,8 +180,9 @@ func shutdown(wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func poll() {
+func pollLegacy() {
 
+	// Grab the current processing elements
 	currentlyProcessingLock.RLock()
 	processing := make([]int64, len(currentlyProcessing))
 	copy(processing, currentlyProcessing)
@@ -183,15 +203,61 @@ OUTER:
 			}
 		}
 		currentlyProcessing = append(currentlyProcessing, v.ID)
-		go process(v)
+		go process(v, nil, nil, true)
+		logrus.Info("Legacy handling element")
 	}
 	currentlyProcessingLock.Unlock()
 }
 
-func process(elem *QueuedElement) {
-	queueLogger := logrus.WithField("mq_id", elem.ID)
+func pollRedis() {
+	var results [][]byte
+
+	// Get all elements that are currently not being processed, we set thhem to processing by setting their score to our run counter, which increases every time the bot starts
+	max := strconv.FormatInt(common.CurrentRunCounter, 10)
+	err := common.RedisPool.Do(radix.Cmd(&results, "ZRANGEBYSCORE", "mqueue", "-1", "("+max))
+	if err != nil {
+		logrus.WithError(err).Error("Failed polling redis mqueue")
+		return
+	}
+
+	logrus.Println("Got ", len(results), " results")
+
+	common.RedisPool.Do(radix.WithConn("mqueue", func(rc radix.Conn) error {
+		for _, elem := range results {
+			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
+			rc.Do(radix.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
+
+			var parsed *QueuedElementNoKallax
+			err := json.Unmarshal(elem, &parsed)
+			if err != nil {
+				logrus.WithError(err).Error("Failed parsing mqueue redis elemtn")
+				continue
+			}
+
+			go process(nil, parsed, elem, false)
+			logrus.Println("New handling element")
+		}
+
+		return nil
+	}))
+}
+
+func process(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleRaw []byte, isLegacy bool) {
+	id := int64(0)
+	if elem != nil {
+		id = elem.ID
+	} else {
+		id = elemSimple.ID
+	}
+
+	queueLogger := logrus.WithField("mq_id", id).WithField("legacy", isLegacy)
 
 	defer func() {
+		if !isLegacy {
+			common.RedisPool.Do(radix.Cmd(nil, "ZREM", string(elemSimpleRaw)))
+			return
+		}
+
 		elem.Processed = true
 		_, err := store.Save(elem)
 		if err != nil {
@@ -208,24 +274,21 @@ func process(elem *QueuedElement) {
 		currentlyProcessingLock.Unlock()
 	}()
 
-	var embed *discordgo.MessageEmbed
-	if len(elem.MessageEmbed) > 0 {
-		err := json.Unmarshal([]byte(elem.MessageEmbed), &embed)
-		if err != nil {
-			queueLogger.Error("MQueue: Failed decoding message embed")
-		}
+	if elemSimple == nil {
+		elemSimple = NewElemFromKallax(elem)
 	}
 
-	parsedChannel, err := strconv.ParseInt(elem.Channel, 10, 64)
+	parsedChannel, err := strconv.ParseInt(elemSimple.Channel, 10, 64)
 	if err != nil {
 		queueLogger.WithError(err).Error("Failed parsing Channel")
 	}
+
 	for {
 		var err error
-		if elem.MessageStr != "" {
-			_, err = common.BotSession.ChannelMessageSend(parsedChannel, elem.MessageStr)
-		} else if embed != nil {
-			_, err = common.BotSession.ChannelMessageSendEmbed(parsedChannel, embed)
+		if elemSimple.MessageStr != "" {
+			_, err = common.BotSession.ChannelMessageSend(parsedChannel, elemSimple.MessageStr)
+		} else if elemSimple.MessageEmbed != nil {
+			_, err = common.BotSession.ChannelMessageSendEmbed(parsedChannel, elemSimple.MessageEmbed)
 		} else {
 			queueLogger.Error("MQueue: Both MessageEmbed and MessageStr empty")
 			break
@@ -237,8 +300,8 @@ func process(elem *QueuedElement) {
 
 		if e, ok := err.(*discordgo.RESTError); ok {
 			if (e.Response != nil && e.Response.StatusCode >= 400 && e.Response.StatusCode < 500) || (e.Message != nil && e.Message.Code != 0) {
-				if source, ok := sources[elem.Source]; ok {
-					source.HandleMQueueError(elem, err)
+				if source, ok := sources[elemSimple.Source]; ok {
+					source.HandleMQueueError(elemSimple, err)
 				}
 				break
 			}
