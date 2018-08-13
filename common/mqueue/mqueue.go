@@ -82,15 +82,15 @@ func IncrIDCounter() (next int64) {
 	return next
 }
 
-func QueueMessageString(source, sourceID, channel, message string) {
+func QueueMessageString(source, sourceID string, channel int64, message string) {
 	QueueMessage(source, sourceID, channel, message, nil)
 }
 
-func QueueMessageEmbed(source, sourceID, channel string, embed *discordgo.MessageEmbed) {
+func QueueMessageEmbed(source, sourceID string, channel int64, embed *discordgo.MessageEmbed) {
 	QueueMessage(source, sourceID, channel, "", embed)
 }
 
-func QueueMessage(source, sourceID, channel string, msgStr string, embed *discordgo.MessageEmbed) {
+func QueueMessage(source, sourceID string, channel int64, msgStr string, embed *discordgo.MessageEmbed) {
 	nextID := IncrIDCounter()
 	if nextID == -1 {
 		return
@@ -204,7 +204,6 @@ OUTER:
 		}
 		currentlyProcessing = append(currentlyProcessing, v.ID)
 		go process(v, nil, nil, true)
-		logrus.Info("Legacy handling element")
 	}
 	currentlyProcessingLock.Unlock()
 }
@@ -220,8 +219,6 @@ func pollRedis() {
 		return
 	}
 
-	logrus.Println("Got ", len(results), " results")
-
 	common.RedisPool.Do(radix.WithConn("mqueue", func(rc radix.Conn) error {
 		for _, elem := range results {
 			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
@@ -235,7 +232,6 @@ func pollRedis() {
 			}
 
 			go process(nil, parsed, elem, false)
-			logrus.Println("New handling element")
 		}
 
 		return nil
@@ -254,7 +250,7 @@ func process(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleR
 
 	defer func() {
 		if !isLegacy {
-			common.RedisPool.Do(radix.Cmd(nil, "ZREM", string(elemSimpleRaw)))
+			common.RedisPool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(elemSimpleRaw)))
 			return
 		}
 
@@ -278,10 +274,7 @@ func process(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleR
 		elemSimple = NewElemFromKallax(elem)
 	}
 
-	parsedChannel, err := strconv.ParseInt(elemSimple.Channel, 10, 64)
-	if err != nil {
-		queueLogger.WithError(err).Error("Failed parsing Channel")
-	}
+	parsedChannel := elemSimple.Channel
 
 	for {
 		var err error

@@ -12,6 +12,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -332,7 +333,8 @@ func (p *Plugin) sendNewVidMessage(discordChannel string, channelTitle string, v
 		content += " @everyone"
 	}
 
-	mqueue.QueueMessageString("youtube", "", discordChannel, content)
+	parsedCChannel, _ := strconv.ParseInt(discordChannel, 10, 64)
+	mqueue.QueueMessageString("youtube", "", parsedCChannel, content)
 }
 
 var (

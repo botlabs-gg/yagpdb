@@ -55,7 +55,7 @@ func (r *Reminder) Trigger() error {
 
 	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message}).Info("Triggered reminder")
 
-	mqueue.QueueMessageString("reminder", "", r.ChannelID, common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
+	mqueue.QueueMessageString("reminder", "", r.ChannelIDInt(), common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
 	return nil
 }
 

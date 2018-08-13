@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
+	"strconv"
 )
 
 //go:generate kallax gen
@@ -46,7 +47,7 @@ type QueuedElementNoKallax struct {
 	MessageEmbed *discordgo.MessageEmbed `json:",omitempty"`
 
 	// The channel to send the message in
-	Channel string
+	Channel int64
 }
 
 func NewElemFromKallax(existing *QueuedElement) *QueuedElementNoKallax {
@@ -55,8 +56,10 @@ func NewElemFromKallax(existing *QueuedElement) *QueuedElementNoKallax {
 		Source:     existing.Source,
 		SourceID:   existing.SourceID,
 		MessageStr: existing.MessageStr,
-		Channel:    existing.Channel,
 	}
+
+	channelParsed, _ := strconv.ParseInt(existing.Channel, 10, 64)
+	m.Channel = channelParsed
 
 	if len(existing.MessageEmbed) > 0 {
 		var dest *discordgo.MessageEmbed

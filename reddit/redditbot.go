@@ -110,10 +110,11 @@ OUTER:
 	message, embed := CreatePostMessage(post)
 
 	for _, item := range filteredItems {
+		cParsed, _ := strconv.ParseInt(item.Channel, 10, 64)
 		if item.UseEmbeds {
-			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, embed)
+			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), cParsed, embed)
 		} else {
-			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, message)
+			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), cParsed, message)
 		}
 	}
 
