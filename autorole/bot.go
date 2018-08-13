@@ -18,6 +18,7 @@ import (
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.BotStartedHandler = (*Plugin)(nil)
+var _ bot.BotStopperHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
@@ -33,6 +34,11 @@ func (p *Plugin) BotInit() {
 
 func (p *Plugin) BotStarted() {
 	go runDurationChecker()
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	close(completeStop)
+	wg.Done()
 }
 
 var roleCommands = []*commands.YAGCommand{
@@ -86,6 +92,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 var (
 	processingGuilds = make(map[int64]chan bool)
 	processingLock   sync.Mutex
+	completeStop     = make(chan bool)
 )
 
 func stopProcessing(guildID int64) {
@@ -108,7 +115,11 @@ func runDurationChecker() {
 	state := bot.State
 
 	for {
-		<-ticker.C
+		select {
+		case <-completeStop:
+			return
+		case <-ticker.C:
+		}
 
 		// Copy the list of guilds so that we dont need to keep the entire state locked
 		state.RLock()
