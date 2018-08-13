@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/master/slave"
 	"github.com/sirupsen/logrus"
 	"os"
-	"runtime"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
