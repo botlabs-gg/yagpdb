@@ -28,7 +28,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	var results []*TopCommandsResult
 	err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("command, COUNT(id)").Where("created_at > ?", within).Group("command").Order("count(id) desc").Scan(&results).Error
 	if err != nil {
-		return "Uh oh... Something bad happened :'(", err
+		return nil, err
 	}
 
 	out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours)

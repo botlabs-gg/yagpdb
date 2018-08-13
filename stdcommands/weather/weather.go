@@ -24,19 +24,19 @@ var Command = &commands.YAGCommand{
 
 		req, err := http.NewRequest("GET", "http://wttr.in/"+where, nil)
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		req.Header.Set("User-Agent", "curl/7.49.1")
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		// remove escape sequences

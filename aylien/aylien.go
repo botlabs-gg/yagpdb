@@ -76,7 +76,7 @@ func (p *Plugin) AddCommands() {
 				// Get the message to analyze
 				msgs, err := bot.GetMessages(cmd.CS.ID, 100, false)
 				if err != nil {
-					return "Error retrieving messages", err
+					return "", err
 				}
 
 				if len(msgs) < 1 {

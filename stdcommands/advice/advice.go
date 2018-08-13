@@ -27,7 +27,7 @@ var Command = &commands.YAGCommand{
 
 		resp, err := http.Get(addr)
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		var decoded interface{}

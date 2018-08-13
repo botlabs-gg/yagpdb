@@ -42,8 +42,8 @@ var roleCommands = []*commands.YAGCommand{
 		Description: "Debug debug debug autorole assignment",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
-			common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
-			return fmt.Sprintf("Processing %d users.", processing), nil
+			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
+			return fmt.Sprintf("Processing %d users.", processing), err
 		},
 	},
 }

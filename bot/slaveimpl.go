@@ -81,6 +81,8 @@ func (s *SlaveImpl) StartShardTransferTo(numShards int) {
 }
 
 func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
+	debug.FreeOSMemory()
+
 	err := ShardManager.Sessions[shard].Close()
 	if err != nil {
 		logrus.WithError(err).Error("Failed stopping shard: ", err)
@@ -150,9 +152,6 @@ func (s *SlaveImpl) SendGuilds(shard int) {
 	}
 	close(workChan)
 	wg.Wait()
-
-	runtime.GC()
-	debug.FreeOSMemory()
 
 	logrus.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
 

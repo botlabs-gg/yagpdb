@@ -24,8 +24,8 @@ func init() {
 // Returns a user from either id, mention string or if the input is just a user, a user...
 func tmplUserArg(tmplCtx *templates.Context) interface{} {
 	return func(v interface{}) (interface{}, error) {
-		if tmplCtx.IncreaseCheckCallCounter("commands_user_arg", 2) {
-			return nil, errors.New("Max calls to userarg (2) reached")
+		if tmplCtx.IncreaseCheckCallCounter("commands_user_arg", 5) {
+			return nil, errors.New("Max calls to userarg (5) reached")
 		}
 
 		if num := templates.ToInt64(v); num != 0 {
@@ -35,13 +35,13 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 				return member.DGoUser(), nil
 			}
 
-			return nil, errors.New("User not found")
+			return nil, nil
 		}
 
 		if str, ok := v.(string); ok {
 			// Mention string
 			if len(str) < 5 {
-				return nil, errors.New("Mention string too short")
+				return nil, nil
 			}
 
 			str = strings.TrimSpace(str)
@@ -62,7 +62,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 			}
 
 			// No more cases we can handle
-			return nil, errors.New("User not found")
+			return nil, nil
 		}
 
 		// Just return whatever we passed

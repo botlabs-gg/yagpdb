@@ -164,6 +164,10 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
+	if (r == nil || r == "") && cmdErr != nil {
+		r = yc.HumanizeError(cmdErr)
+	}
+
 	logEntry.ResponseTime = int64(time.Since(started))
 
 	// Log errors
@@ -181,6 +185,20 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	return r, cmdErr
+}
+
+func (yc *YAGCommand) HumanizeError(err error) string {
+	cause := errors.Cause(err)
+
+	if dErr, ok := cause.(*discordgo.RESTError); ok && dErr.Message != nil && dErr.Message.Message != "" {
+		if dErr.Response != nil && dErr.Response.StatusCode == 403 {
+			return "The bot permissions has been incorrectly set up on this server for it to run this command: " + dErr.Message.Message
+		}
+
+		return "The bot was not able to perform the action, discord responded with: " + dErr.Message.Message
+	}
+
+	return "Something went wrong when running this command, either discord or the bot may be having issues."
 }
 
 // PostCommandExecuted sends the response and handles the trigger and response deletions

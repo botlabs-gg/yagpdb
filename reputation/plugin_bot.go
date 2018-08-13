@@ -137,7 +137,7 @@ var cmds = []*commands.YAGCommand{
 
 			err = SetRep(parsed.GS.ID, member.ID, target.ID, int64(parsed.Args[1].Int()))
 			if err != nil {
-				return "Failed setting rep, contact bot owner", err
+				return nil, err
 			}
 
 			return fmt.Sprintf("Set **%s** %s to `%d`", target.Username, conf.PointsName, parsed.Args[1].Int()), nil
@@ -171,7 +171,7 @@ var cmds = []*commands.YAGCommand{
 
 			err = SetRep(parsed.GS.ID, member.ID, target, int64(parsed.Args[1].Int()))
 			if err != nil {
-				return "Failed setting rep, contact bot owner", err
+				return nil, err
 			}
 
 			return fmt.Sprintf("Set **%d** %s to `%d`", target, conf.PointsName, parsed.Args[1].Int()), nil
@@ -201,7 +201,7 @@ var cmds = []*commands.YAGCommand{
 				if err == ErrUserNotFound {
 					rank = -1
 				} else {
-					return "Error retrieving stats", err
+					return nil, err
 				}
 			}
 
@@ -225,12 +225,12 @@ var cmds = []*commands.YAGCommand{
 
 			entries, err := TopUsers(parsed.GS.ID, offset, 15)
 			if err != nil {
-				return "Something went wrong... i may hae had one too many alcohol", err
+				return nil, err
 			}
 
 			detailed, err := DetailedLeaderboardEntries(parsed.GS.ID, entries)
 			if err != nil {
-				return "Failed filling in the detalis of the leaderboard entries", err
+				return nil, err
 			}
 
 			leaderboardURL := "https://" + common.Conf.Host + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
@@ -254,7 +254,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	conf, err := GetConfig(parsed.GS.ID)
 	if err != nil {
-		return "An error occured finding the server config", err
+		return nil, err
 	}
 
 	pointsName := conf.PointsName
@@ -270,7 +270,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 			err = err2
 		}
 
-		return "Failed retreiving members", err
+		return nil, err
 	}
 
 	amount := parsed.Args[1].Int()
@@ -281,14 +281,14 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 			return cast, nil
 		}
 
-		return "Failed modifying your " + pointsName, err
+		return nil, err
 	}
 
 	newScore, newRank, err := GetUserStats(parsed.GS.ID, target.ID)
 	if err != nil {
 		newScore = -1
 		newRank = -1
-		logrus.WithError(err).WithField("guild", parsed.GS.ID).Error("Failed getting user reputation stats")
+		return nil, err
 	}
 
 	actionStr := ""

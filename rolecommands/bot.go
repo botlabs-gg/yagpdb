@@ -50,7 +50,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 
 	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
 	if err != nil {
-		return "Failed retrieving you?", err
+		return nil, err
 	}
 
 	given, err := FindAssignRole(parsed.GS.ID, member, parsed.Args[0].Str())
