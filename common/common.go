@@ -18,7 +18,6 @@ const (
 	VERSIONMAJOR = 1
 	VERSIONMINOR = 4
 	VERSIONPATCH = 4
-	Testing      = true // Disables stuff like command cooldowns
 )
 
 var (
@@ -37,10 +36,13 @@ var (
 	RedisPoolSize = 25
 
 	Statsd *statsd.Client
+
+	Testing bool
 )
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
+	Testing = os.Getenv("YAGPDB_TESTING") != ""
 
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
