@@ -214,11 +214,13 @@ func (p *Plugin) checkChannel(channel string) error {
 	err = common.RedisPool.Do(radix.Cmd(&unixSeconds, "GET", KeyLastVidTime(channel)))
 
 	var lastProcessedVidTime time.Time
-	if err != nil || unixSeconds != 0 {
+	if err != nil || unixSeconds == 0 {
 		if err != nil {
 			p.Entry.WithError(err).Error("Failed retrieving last processed vid time, falling back to this time")
 		}
+
 		lastProcessedVidTime = time.Now()
+		common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastVidTime(channel), lastProcessedVidTime.Unix()))
 	} else {
 		lastProcessedVidTime = time.Unix(unixSeconds, 0)
 	}
@@ -297,6 +299,7 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 	var latestTime time.Time
 
 	for _, item := range resp.Items {
+
 		parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 		if err != nil {
 			p.Entry.WithError(err).Error("Failed parsing video time")
@@ -308,6 +311,8 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 			complete = true
 			continue
 		}
+
+		p.Entry.Info("Found youtube upload: ", item.Snippet.ChannelTitle, ": ", item.Snippet.Title)
 
 		// This is the new latest video
 		if parsedPublishedAt.After(latestTime) {
