@@ -13,9 +13,9 @@ func (p *Plugin) AddCommands() {
 		Name:        "create",
 		CmdCategory: commands.CategoryFun,
 		Aliases:     []string{"c"},
-		Description: "Creates a cards against humanity game in this channel",
+		Description: "Creates a cards against humanity game in this channel, add packs after commands, or * for all packs.",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space"},
+			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them"},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			pStr := data.Args[0].Str()
@@ -92,6 +92,15 @@ func (p *Plugin) AddCommands() {
 	}
 
 	container := commands.CommandSystem.Root.Sub("cah")
+	container.NotFound = func(data *dcmd.Data) (interface{}, error) {
+		resp := dcmd.GenerateHelp(data, container, &dcmd.StdHelpFormatter{})
+		if len(resp) > 0 {
+			return resp[0], nil
+		}
+
+		return "Unknown cah command", nil
+	}
+
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())
 	container.AddCommand(cmdKick, cmdKick.GetTrigger())
