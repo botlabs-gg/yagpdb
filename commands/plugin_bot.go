@@ -125,14 +125,17 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	// Send full help in DM
 	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
 	if err != nil {
-		return "Something went wrong", err
+		return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
 	}
 
 	for _, v := range resp {
-		common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
+		_, err := common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
+		if err != nil {
+			return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
+		}
 	}
 
-	return nil, nil
+	return "You've got mail!", nil
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
