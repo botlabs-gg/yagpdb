@@ -8,11 +8,16 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/patrickmn/go-cache"
 	"strings"
+	"sync"
 	"time"
 )
 
 var (
 	Cache = cache.New(time.Minute, time.Minute)
+
+	currentStatus       = "v" + common.VERSION + " :)"
+	currentStreamingURL = ""
+	currentPresenceLock sync.Mutex
 )
 
 func init() {
@@ -95,4 +100,45 @@ func SnowflakeToTime(i int64) time.Time {
 	flake := snowflake.ID(i)
 	t := time.Unix(flake.Time()/1000, 0)
 	return t
+}
+
+func SetStatus(status string) {
+	if status == "" {
+		status = "v" + common.VERSION + " :)"
+	}
+
+	currentPresenceLock.Lock()
+	currentStatus = status
+	currentPresenceLock.Unlock()
+
+	updateAllShardStatuses()
+}
+
+func SetStreaming(streaming, status string) {
+	if status == "" {
+		status = "v" + common.VERSION + " :)"
+	}
+
+	currentPresenceLock.Lock()
+	currentStatus = status
+	currentStreamingURL = streaming
+	currentPresenceLock.Unlock()
+
+	updateAllShardStatuses()
+}
+
+func updateAllShardStatuses() {
+	currentPresenceLock.Lock()
+	stremaing := currentStreamingURL
+	status := currentStatus
+	currentPresenceLock.Unlock()
+
+	for _, v := range ShardManager.Sessions {
+		if stremaing == "" {
+			v.UpdateStatus(0, status)
+		} else {
+			v.UpdateStreamingStatus(0, status, stremaing)
+		}
+	}
+
 }

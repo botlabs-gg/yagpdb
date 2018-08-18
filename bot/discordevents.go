@@ -72,7 +72,16 @@ func HandleReady(data *eventsystem.EventData) {
 	}
 	waitingGuildsMU.Unlock()
 
-	ContextSession(data.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
+	currentPresenceLock.Lock()
+	streamingURL := currentStreamingURL
+	status := currentStatus
+	currentPresenceLock.Unlock()
+
+	if streamingURL != "" {
+		ContextSession(data.Context()).UpdateStreamingStatus(0, status, streamingURL)
+	} else {
+		ContextSession(data.Context()).UpdateStatus(0, status)
+	}
 
 	// We pass the common.Session to the command system and that needs the user from the state
 	common.BotSession.State.Lock()

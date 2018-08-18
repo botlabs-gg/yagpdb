@@ -172,6 +172,8 @@ func (s *SlaveImpl) StartShard(shard int, sessionID string, sequence int64) {
 		stateLock.Unlock()
 
 		BotStarted()
+
+		go updateAllShardStatuses()
 	}
 }
 
