@@ -30,7 +30,7 @@ var (
 	MAUnmute   = ModlogAction{Prefix: "Unmuted", Emoji: "🔊", Color: 0x62c65f}
 	MAKick     = ModlogAction{Prefix: "Kicked", Emoji: "👢", Color: 0xf2a013}
 	MABanned   = ModlogAction{Prefix: "Banned", Emoji: "🔨", Color: 0xd64848}
-	MAUnbanned = ModlogAction{Prefix: "Unbanned", Emoji: "🔊", Color: 0x62c65f}
+	MAUnbanned = ModlogAction{Prefix: "Unbanned", Emoji: "🔓", Color: 0x62c65f}
 	MAWarned   = ModlogAction{Prefix: "Warned", Emoji: "⚠", Color: 0xfca253}
 )
 
