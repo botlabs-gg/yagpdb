@@ -40,8 +40,8 @@ func (p *Plugin) BotInit() {
 	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
 	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
 
-	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandler(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
@@ -212,6 +212,9 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	reason := ""
 
 	if !botPerformed {
+		// If we poll it too fast then there sometimes wont be a audit log entry
+		time.Sleep(time.Second * 3)
+
 		auditlogAction := discordgo.AuditLogActionMemberBanAdd
 		if evt.Type == eventsystem.EventGuildBanRemove {
 			auditlogAction = discordgo.AuditLogActionMemberBanRemove
@@ -222,11 +225,6 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		if entry != nil {
 			reason = entry.Reason
 		}
-	}
-
-	if config.ActionChannel == "" {
-		// No modlog channel set up
-		return
 	}
 
 	if (action == MAUnbanned && !config.LogUnbans && !botPerformed) ||
@@ -258,6 +256,9 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 	if config.IntActionChannel() == 0 {
 		return
 	}
+
+	// If we poll the audit log too fast then there sometimes wont be a audit log entry
+	time.Sleep(time.Second * 3)
 
 	author, entry := FindAuditLogEntry(data.GuildID, discordgo.AuditLogActionMemberKick, data.User.ID, time.Second*5)
 	if entry == nil || author == nil {
