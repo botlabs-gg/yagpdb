@@ -61,7 +61,7 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		return fmt.Sprintf("%s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.TriggerType, cc.Trigger, cc.CaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
+		return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` ```\n%s\n```", cc.ID, cc.TriggerType, cc.Trigger, cc.CaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
 
 	},
 }
@@ -96,7 +96,7 @@ func FindCommands(ccs []*CustomCommand, data *dcmd.Data) (foundCCS []*CustomComm
 func StringCommands(ccs []*CustomCommand) string {
 	out := ""
 	for _, cc := range ccs {
-		out += fmt.Sprintf("`%s`: %s\n", cc.Trigger, cc.TriggerType.String())
+		out += fmt.Sprintf("`#%3d:` `%s`: %s\n", cc.ID, cc.Trigger, cc.TriggerType.String())
 	}
 
 	return out
