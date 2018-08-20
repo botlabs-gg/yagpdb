@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/jonas747/dcmd"
@@ -10,9 +11,11 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"gopkg.in/volatiletech/null.v6"
 	"sort"
 )
 
@@ -33,16 +36,16 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 
 	var group *models.RoleGroup
 	if parsed.Args[0].Value != nil {
-		group, err = models.RoleGroupsG(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str())).One()
+		group, err = models.RoleGroups(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str())).OneG(parsed.Context())
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if errors.Cause(err) == sql.ErrNoRows {
 				return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
 			}
 
 			return nil, err
 		}
 
-		if c, _ := models.RoleCommandsG(qm.Where("role_group_id=?", group.ID)).Count(); c < 1 {
+		if c, _ := models.RoleCommands(qm.Where("role_group_id=?", group.ID)).CountG(parsed.Context()); c < 1 {
 			return "No commands in group, set them up in the control panel.", nil
 		}
 	}
@@ -73,7 +76,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		model.MessageID = id
 
 		// Update menu if its already existing
-		existing, err := models.FindRoleMenuG(id)
+		existing, err := models.FindRoleMenuG(parsed.Context(), id)
 		if err == nil {
 			return UpdateMenu(parsed, existing)
 		} else if group == nil {
@@ -98,12 +101,12 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		model.MessageID = msg.ID
 	}
 
-	err = model.InsertG()
+	err = model.InsertG(parsed.Context(), boil.Infer())
 	if err != nil {
 		return "Failed setting up menu", err
 	}
 
-	resp, err := NextRoleMenuSetupStep(model, nil, true)
+	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, nil, true)
 
 	if model.OwnMessage {
 		content := msg.Content + "\n" + resp
@@ -125,23 +128,23 @@ func UpdateMenu(parsed *dcmd.Data, existing *models.RoleMenu) (interface{}, erro
 		existing.DisableSendDM = !existing.DisableSendDM
 	}
 
-	existing.UpdateG()
+	existing.UpdateG(parsed.Context(), boil.Infer())
 
-	opts, err := existing.RoleMenuOptionsG().All()
-	if err != nil && err != sql.ErrNoRows {
+	opts, err := existing.RoleMenuOptions().AllG(parsed.Context())
+	if err != nil && errors.Cause(err) != sql.ErrNoRows {
 		return nil, err
 	}
 
 	if existing.OwnMessage {
-		UpdateRoleMenuMessage(existing, opts)
+		UpdateRoleMenuMessage(parsed.Context(), existing, opts)
 	}
 
 	// Add all mising options
-	return NextRoleMenuSetupStep(existing, opts, false)
+	return NextRoleMenuSetupStep(parsed.Context(), existing, opts, false)
 }
 
-func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, first bool) (resp string, err error) {
-	commands, err := models.RoleCommandsG(qm.Where("role_group_id = ?", rm.RoleGroupID)).All()
+func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, opts []*models.RoleMenuOption, first bool) (resp string, err error) {
+	commands, err := models.RoleCommands(qm.Where("role_group_id = ?", rm.RoleGroupID)).AllG(ctx)
 	if err != nil {
 		return "Failed fetching commands for role group", err
 	}
@@ -173,26 +176,26 @@ func NextRoleMenuSetupStep(rm *models.RoleMenu, opts []*models.RoleMenuOption, f
 
 	if nextCmd == nil {
 		rm.State = RoleMenuStateDone
-		rm.UpdateG()
+		rm.UpdateG(ctx, boil.Infer())
 
 		nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu -nodm -m %d`", rm.DisableSendDM, rm.MessageID)
 		return fmt.Sprintf("Done setting up! you can delete all the messages now (except for the menu itself)\n\n%s", nodmFlagHelp), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
-	rm.UpdateG(models.RoleMenuColumns.NextRoleCommandID)
+	rm.UpdateG(ctx, boil.Whitelist(models.RoleMenuColumns.NextRoleCommandID))
 	if first && rm.OwnMessage {
 		return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on this message\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 	}
 	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the **original message**\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 }
 
-func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) error {
+func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu, opts []*models.RoleMenuOption) error {
 	newMsg := "**Role Menu**: react to give yourself a role\n\n"
 
 	pairs := make([]*OptionCommandPair, 0, len(opts))
 	for _, v := range opts {
-		cmd, err := v.RoleCommandG().One()
+		cmd, err := v.RoleCommand().OneG(ctx)
 		if err != nil {
 			return err
 		}
@@ -215,13 +218,13 @@ func UpdateRoleMenuMessage(rm *models.RoleMenu, opts []*models.RoleMenuOption) e
 	return err
 }
 
-func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd) (resp string, err error) {
+func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, ra *discordgo.MessageReactionAdd) (resp string, err error) {
 	if ra.UserID != rm.OwnerID {
 		common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
 		return "This menu is still being set up, wait until the owner of this menu is done.", nil
 	}
 
-	currentOpts, err := rm.RoleMenuOptionsG().All()
+	currentOpts, err := rm.RoleMenuOptions().AllG(ctx)
 	if err != nil && err != sql.ErrNoRows {
 		return "Error communicating with DB", err
 	}
@@ -249,7 +252,7 @@ func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd
 		model.UnicodeEmoji = ra.Emoji.Name
 	}
 
-	err = model.InsertG()
+	err = model.InsertG(ctx, boil.Infer())
 	if err != nil {
 		return "Failed inserting option", err
 	}
@@ -262,14 +265,14 @@ func ContinueRoleMenuSetup(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd
 	currentOpts = append(currentOpts, model)
 
 	if rm.OwnMessage {
-		err = UpdateRoleMenuMessage(rm, currentOpts)
+		err = UpdateRoleMenuMessage(ctx, rm, currentOpts)
 		if err != nil {
 			return "Failed updating message", err
 		}
 	}
 
 	// return rm.NextSetupStep(false)
-	return NextRoleMenuSetupStep(rm, currentOpts, false)
+	return NextRoleMenuSetupStep(ctx, rm, currentOpts, false)
 }
 
 type OptionCommandPair struct {
@@ -283,7 +286,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 		return
 	}
 
-	menu, err := models.FindRoleMenuG(ra.MessageID)
+	menu, err := models.FindRoleMenuG(evt.Context(), ra.MessageID)
 	// menu, err := .FindByMessageID(common.MustParseInt(ra.MessageID)).WithOptions(nil).WithNextRoleCommand().WithGroup())
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -293,7 +296,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	}
 
 	if menu.State == RoleMenuStateSettingUp {
-		resp, err := ContinueRoleMenuSetup(menu, ra)
+		resp, err := ContinueRoleMenuSetup(evt.Context(), menu, ra)
 		if err != nil {
 			logrus.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup")
 		}
@@ -308,7 +311,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 		return
 	}
 
-	opts, err := menu.RoleMenuOptionsG().All()
+	opts, err := menu.RoleMenuOptions().AllG(evt.Context())
 	if err != nil && err != sql.ErrNoRows {
 		logrus.WithError(err).Error("Failed retrieving role menu options")
 		return
@@ -340,7 +343,7 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	name := gs.Guild.Name
 	gs.RUnlock()
 
-	resp, err := MemberChooseOption(menu, ra, gs, option)
+	resp, err := MemberChooseOption(evt.Context(), menu, ra, gs, option)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingPermissions) {
 		logrus.WithError(err).WithField("option", option.ID).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
 	}
@@ -350,15 +353,15 @@ func handleReactionAdd(evt *eventsystem.EventData) {
 	}
 }
 
-func MemberChooseOption(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd, gs *dstate.GuildState, option *models.RoleMenuOption) (resp string, err error) {
-	cmd, err := option.RoleCommandG().One()
+func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, ra *discordgo.MessageReactionAdd, gs *dstate.GuildState, option *models.RoleMenuOption) (resp string, err error) {
+	cmd, err := option.RoleCommand().OneG(ctx)
 	if err != nil {
 		return "An error occured giving you the role", err
 	}
 
 	pair := &CommandGroupPair{Command: cmd}
 	if cmd.RoleGroupID.Valid {
-		pair.Group, err = cmd.RoleGroupG().One()
+		pair.Group, err = cmd.RoleGroup().OneG(ctx)
 		if err != nil {
 			return "An error occured giving you the role", err
 		}
@@ -369,7 +372,7 @@ func MemberChooseOption(rm *models.RoleMenu, ra *discordgo.MessageReactionAdd, g
 		return "An error occured giving you the role", err
 	}
 
-	given, err := AssignRole(rm.GuildID, member, pair)
+	given, err := AssignRole(ctx, rm.GuildID, member, pair)
 	if err != nil {
 		resp, err = HumanizeAssignError(gs, err)
 	} else {
@@ -406,16 +409,16 @@ func OptionCommandPairLessFunc(slice []*OptionCommandPair) func(int, int) bool {
 
 func handleMessageRemove(evt *eventsystem.EventData) {
 	if evt.Type == eventsystem.EventMessageDelete {
-		messageRemoved(evt.MessageDelete().Message.ID)
+		messageRemoved(evt.Context(), evt.MessageDelete().Message.ID)
 	} else if evt.Type == eventsystem.EventMessageDeleteBulk {
 		for _, v := range evt.MessageDeleteBulk().Messages {
-			messageRemoved(v)
+			messageRemoved(evt.Context(), v)
 		}
 	}
 }
 
-func messageRemoved(id int64) {
-	err := models.RoleMenusG(qm.Where("message_id=?", id)).DeleteAll()
+func messageRemoved(ctx context.Context, id int64) {
+	_, err := models.RoleMenus(qm.Where("message_id=?", id)).DeleteAll(ctx, common.PQ)
 	if err != nil {
 		logrus.WithError(err).Error("Failed removing old role menus")
 	}

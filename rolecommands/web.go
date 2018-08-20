@@ -6,10 +6,11 @@ import (
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"gopkg.in/volatiletech/null.v6"
 	"html/template"
 	"net/http"
 	"sort"
@@ -102,7 +103,7 @@ func (p *Plugin) InitWeb() {
 func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
-	ungroupedCommands, err := models.RoleCommandsG(qm.Where("guild_id = ?", g.ID), qm.Where("role_group_id is null")).All()
+	ungroupedCommands, err := models.RoleCommands(qm.Where("guild_id = ?", g.ID), qm.Where("role_group_id is null")).AllG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
@@ -110,7 +111,7 @@ func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateDa
 
 	tmpl["LoneCommands"] = ungroupedCommands
 
-	groups, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+" = ?", g.ID), qm.OrderBy("id asc")).All()
+	groups, err := models.RoleGroups(qm.Where(models.RoleGroupColumns.GuildID+" = ?", g.ID), qm.OrderBy("id asc")).AllG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
@@ -122,7 +123,7 @@ func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateDa
 
 func HandleGetGroup(groupID int64, w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
-	groups, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+" = ?", g.ID), qm.OrderBy("id asc")).All()
+	groups, err := models.RoleGroups(qm.Where(models.RoleGroupColumns.GuildID+" = ?", g.ID), qm.OrderBy("id asc")).AllG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
@@ -139,7 +140,7 @@ func HandleGetGroup(groupID int64, w http.ResponseWriter, r *http.Request) (tmpl
 	}
 
 	if currentGroup != nil {
-		commands, err := currentGroup.RoleCommandsG().All()
+		commands, err := currentGroup.RoleCommands().AllG(r.Context())
 		if err != nil {
 			return tmpl, err
 		}
@@ -160,12 +161,12 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
 	form.Name = strings.TrimSpace(form.Name)
 
-	if c, _ := models.RoleCommandsG(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID)).Count(); c >= 1000 {
+	if c, _ := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID)).CountG(r.Context()); c >= 1000 {
 		tmpl.AddAlerts(web.ErrorAlert("Max 1000 role commands allowed"))
 		return tmpl, nil
 	}
 
-	if c, _ := models.RoleCommandsG(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name)).Count(); c > 0 {
+	if c, _ := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name)).CountG(r.Context()); c > 0 {
 		tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name"))
 		return tmpl, nil
 	}
@@ -180,7 +181,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if form.Group != -1 {
-		group, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+"=?", g.ID), qm.Where(models.RoleGroupColumns.ID+"=?", form.Group)).One()
+		group, err := models.RoleGroups(qm.Where(models.RoleGroupColumns.GuildID+"=?", g.ID), qm.Where(models.RoleGroupColumns.ID+"=?", form.Group)).OneG(r.Context())
 		if err != nil {
 			return tmpl, err
 		}
@@ -188,7 +189,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		model.RoleGroupID = null.Int64From(group.ID)
 	}
 
-	err := model.InsertG()
+	err := model.InsertG(r.Context(), boil.Infer())
 
 	return tmpl, err
 }
@@ -198,7 +199,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 
 	formCmd := r.Context().Value(common.ContextKeyParsedForm).(*FormCommand)
 
-	cmd, err := models.FindRoleCommandG(formCmd.ID)
+	cmd, err := models.FindRoleCommandG(r.Context(), formCmd.ID)
 	if err != nil {
 		return
 	}
@@ -213,32 +214,32 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 	cmd.RequireRoles = formCmd.RequireRoles
 
 	if formCmd.Group != -1 {
-		group, err := models.FindRoleGroupG(formCmd.Group)
+		group, err := models.FindRoleGroupG(r.Context(), formCmd.Group)
 		if err != nil {
 			return tmpl, err
 		}
 		if group.GuildID != g.ID {
 			return tmpl.AddAlerts(web.ErrorAlert("That's not your group")), nil
 		}
-		err = cmd.SetRoleGroupG(false, group)
+		err = cmd.SetRoleGroupG(r.Context(), false, group)
 		if err != nil {
 			return tmpl, err
 		}
 	} else {
 		cmd.RoleGroupID.Valid = false
-		if err = cmd.UpdateG(models.RoleCommandColumns.RoleGroupID); err != nil {
+		if _, err = cmd.UpdateG(r.Context(), boil.Whitelist(models.RoleCommandColumns.RoleGroupID)); err != nil {
 			cmd.RoleGroupID.Valid = true
 			return tmpl, err
 		}
 	}
 
-	err = cmd.UpdateG(models.RoleCommandColumns.Name, models.RoleCommandColumns.Role, models.RoleCommandColumns.IgnoreRoles, models.RoleCommandColumns.RequireRoles)
+	_, err = cmd.UpdateG(r.Context(), boil.Whitelist(models.RoleCommandColumns.Name, models.RoleCommandColumns.Role, models.RoleCommandColumns.IgnoreRoles, models.RoleCommandColumns.RequireRoles))
 	return
 }
 
 func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
-	commands, err := models.RoleCommandsG(qm.Where("guild_id=?", g.ID)).All()
+	commands, err := models.RoleCommands(qm.Where("guild_id=?", g.ID)).AllG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
@@ -300,7 +301,7 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	}
 
 	for _, v := range commandsInGroup {
-		lErr := v.UpdateG(models.RoleCommandColumns.Position)
+		_, lErr := v.UpdateG(r.Context(), boil.Whitelist(models.RoleCommandColumns.Position))
 		if lErr != nil {
 			err = lErr
 		}
@@ -313,7 +314,7 @@ func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
-	err := models.RoleCommandsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll()
+	_, err := models.RoleCommands(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll(r.Context(), common.PQ)
 	if err != nil {
 		return nil, err
 	}
@@ -327,12 +328,12 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	form := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
 	form.Name = strings.TrimSpace(form.Name)
 
-	if c, _ := models.RoleGroupsG(qm.Where("guild_id=?", g.ID)).Count(); c >= 1000 {
+	if c, _ := models.RoleGroups(qm.Where("guild_id=?", g.ID)).CountG(r.Context()); c >= 1000 {
 		tmpl.AddAlerts(web.ErrorAlert("Max 1000 role groups allowed"))
 		return tmpl, nil
 	}
 
-	if c, _ := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("name ILIKE ?", form.Name)).Count(); c > 0 {
+	if c, _ := models.RoleGroups(qm.Where("guild_id=?", g.ID), qm.Where("name ILIKE ?", form.Name)).CountG(r.Context()); c > 0 {
 		tmpl.AddAlerts(web.ErrorAlert("Already a role group with that name"))
 		return tmpl, nil
 	}
@@ -351,7 +352,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		SingleAutoToggleOff: form.SingleAutoToggleOff,
 	}
 
-	err := model.InsertG()
+	err := model.InsertG(r.Context(), boil.Infer())
 	if err != nil {
 		return tmpl, err
 	}
@@ -366,7 +367,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 
 	formGroup := r.Context().Value(common.ContextKeyParsedForm).(*FormGroup)
 
-	group, err := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", formGroup.ID)).One()
+	group, err := models.RoleGroups(qm.Where("guild_id=?", g.ID), qm.Where("id=?", formGroup.ID)).OneG(r.Context())
 	if err != nil {
 		return
 	}
@@ -382,7 +383,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 
 	tmpl["GroupID"] = group.ID
 
-	err = group.UpdateG()
+	_, err = group.UpdateG(r.Context(), boil.Infer())
 	return
 }
 
@@ -390,6 +391,6 @@ func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	g, _ := web.GetBaseCPContextData(r.Context())
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
-	err := models.RoleGroupsG(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll()
+	_, err := models.RoleGroups(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll(r.Context(), common.PQ)
 	return nil, err
 }

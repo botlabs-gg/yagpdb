@@ -149,9 +149,3 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("ReputationLogs", testReputationLogsSliceUpdateAll)
 	t.Run("ReputationUsers", testReputationUsersSliceUpdateAll)
 }
-
-func TestUpsert(t *testing.T) {
-	t.Run("ReputationConfigs", testReputationConfigsUpsert)
-	t.Run("ReputationLogs", testReputationLogsUpsert)
-	t.Run("ReputationUsers", testReputationUsersUpsert)
-}

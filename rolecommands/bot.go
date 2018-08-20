@@ -53,7 +53,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	given, err := FindAssignRole(parsed.GS.ID, member, parsed.Args[0].Str())
+	given, err := FindAssignRole(parsed.Context(), parsed.GS.ID, member, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
@@ -100,7 +100,7 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 }
 
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
-	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.GS.ID)
+	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.Context(), parsed.GS.ID)
 	if err != nil {
 		return "Failed retrieving role commands", err
 	}

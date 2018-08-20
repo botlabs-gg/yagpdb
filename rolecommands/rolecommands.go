@@ -1,9 +1,10 @@
 // rolecommands is a plugin which allows users to assign roles to themselves
 package rolecommands
 
-//go:generate sqlboiler --no-hooks -w "role_groups,role_commands,role_menus,role_menu_options" postgres
+//go:generate sqlboiler --no-hooks psql
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil/dstate"
@@ -64,25 +65,25 @@ type CommandGroupPair struct {
 	Group   *models.RoleGroup
 }
 
-func FindAssignRole(guildID int64, ms *dstate.MemberState, name string) (gaveRole bool, err error) {
-	cmd, err := models.RoleCommandsG(qm.Where("guild_id=?", guildID), qm.Where("name ILIKE ?", name)).One()
+func FindAssignRole(ctx context.Context, guildID int64, ms *dstate.MemberState, name string) (gaveRole bool, err error) {
+	cmd, err := models.RoleCommands(qm.Where("guild_id=?", guildID), qm.Where("name ILIKE ?", name)).OneG(ctx)
 	if err != nil {
 		return false, err
 	}
 	var group *models.RoleGroup
 	if cmd.RoleGroupID.Valid {
-		group, err = cmd.RoleGroupG().One()
+		group, err = cmd.RoleGroup().OneG(ctx)
 		if err != nil {
 			return false, err
 		}
 	}
 
-	return AssignRole(guildID, ms, &CommandGroupPair{Command: cmd, Group: group})
+	return AssignRole(ctx, guildID, ms, &CommandGroupPair{Command: cmd, Group: group})
 }
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
 // or is unable to receie said role
-func AssignRole(guildID int64, ms *dstate.MemberState, cmd *CommandGroupPair) (gaveRole bool, err error) {
+func AssignRole(ctx context.Context, guildID int64, ms *dstate.MemberState, cmd *CommandGroupPair) (gaveRole bool, err error) {
 	onCD := false
 
 	// First check cooldown
@@ -106,7 +107,7 @@ func AssignRole(guildID int64, ms *dstate.MemberState, cmd *CommandGroupPair) (g
 
 	// This command belongs to a group, let the group handle it
 	if cmd.Group != nil {
-		return GroupAssignRoleToMember(cmd.Group, guildID, ms, cmd.Command)
+		return GroupAssignRoleToMember(ctx, cmd.Group, guildID, ms, cmd.Command)
 	}
 
 	// This is a single command, just toggle it
@@ -128,7 +129,7 @@ func ToggleRole(guildID int64, ms *dstate.MemberState, role int64) (gaveRole boo
 
 // AssignRoleToMember attempts to assign the given role command, part of this group
 // to the member
-func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, ms *dstate.MemberState, targetRole *models.RoleCommand) (gaveRole bool, err error) {
+func GroupAssignRoleToMember(ctx context.Context, rg *models.RoleGroup, guildID int64, ms *dstate.MemberState, targetRole *models.RoleCommand) (gaveRole bool, err error) {
 	if len(rg.RequireRoles) > 0 {
 		if !CheckRequiredRoles(rg.RequireRoles, ms.Roles) {
 			err = NewSimpleError("Missing a required role")
@@ -148,7 +149,7 @@ func GroupAssignRoleToMember(rg *models.RoleGroup, guildID int64, ms *dstate.Mem
 	}
 
 	// First retrieve role commands for this group
-	commands, err := rg.RoleCommandsG().All()
+	commands, err := rg.RoleCommands().AllG(ctx)
 	if err != nil {
 		return
 	}
@@ -357,13 +358,13 @@ func RoleCommandsLessFunc(slice []*models.RoleCommand) func(int, int) bool {
 	}
 }
 
-func GetAllRoleCommandsSorted(guildID int64) (groups []*models.RoleGroup, grouped map[*models.RoleGroup][]*models.RoleCommand, unGrouped []*models.RoleCommand, err error) {
-	commands, err := models.RoleCommandsG(qm.Where(models.RoleCommandColumns.GuildID+"=?", guildID)).All()
+func GetAllRoleCommandsSorted(ctx context.Context, guildID int64) (groups []*models.RoleGroup, grouped map[*models.RoleGroup][]*models.RoleCommand, unGrouped []*models.RoleCommand, err error) {
+	commands, err := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", guildID)).AllG(ctx)
 	if err != nil {
 		return
 	}
 
-	grps, err := models.RoleGroupsG(qm.Where(models.RoleGroupColumns.GuildID+"=?", guildID)).All()
+	grps, err := models.RoleGroups(qm.Where(models.RoleGroupColumns.GuildID+"=?", guildID)).AllG(ctx)
 	if err != nil {
 		return
 	}

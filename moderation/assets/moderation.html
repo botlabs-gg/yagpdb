@@ -256,7 +256,7 @@ It is highly recommended to couple the moderation actions with the message logs,
     <div class="col">
         <div class="form-group">
             <label>Kick DM (Leave empty for default)</label>
-            <textarea data-plugin-textarea-autosize class="form-control" name="KickMessage" placeholder="{{"You were kicked\nReason: {{.Reason}}"}}">{{.ModConfig.KickMessage}}</textarea>
+            <textarea rows="5" class="form-control" name="KickMessage" placeholder="{{"You were kicked\nReason: {{.Reason}}"}}">{{.ModConfig.KickMessage}}</textarea>
             
             <p class="help-block">Available template data:<br/>
             {{template "template_helper_user"}} - The user being banned/kicked<br/>
@@ -303,7 +303,7 @@ It is highly recommended to couple the moderation actions with the message logs,
     <div class="col">
         <div class="form-group">
             <label>Ban DM (Leave empty for default)</label>
-            <textarea data-plugin-textarea-autosize class="form-control"  name="BanMessage" placeholder="{{"You were banned\nReason: {{.Reason}}"}}">{{.ModConfig.BanMessage}}</textarea>
+            <textarea rows="5" class="form-control"  name="BanMessage" placeholder="{{"You were banned\nReason: {{.Reason}}"}}">{{.ModConfig.BanMessage}}</textarea>
             <p class="help-block">Available template data:<br/>
             {{template "template_helper_user"}} - The user being banned/kicked<br/>
             <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br/>

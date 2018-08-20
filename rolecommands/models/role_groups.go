@@ -4,10 +4,11 @@
 package models
 
 import (
-	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -61,10 +62,24 @@ var RoleGroupColumns = struct {
 	SingleRequireOne:    "single_require_one",
 }
 
+// RoleGroupRels is where relationship names are stored.
+var RoleGroupRels = struct {
+	RoleCommands string
+	RoleMenus    string
+}{
+	RoleCommands: "RoleCommands",
+	RoleMenus:    "RoleMenus",
+}
+
 // roleGroupR is where relationships are stored.
 type roleGroupR struct {
 	RoleCommands RoleCommandSlice
 	RoleMenus    RoleMenuSlice
+}
+
+// NewStruct creates a new relationship struct
+func (*roleGroupR) NewStruct() *roleGroupR {
+	return &roleGroupR{}
 }
 
 // roleGroupL is where Load methods for each relationship are stored.
@@ -103,27 +118,20 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
-// OneP returns a single roleGroup record from the query, and panics on error.
-func (q roleGroupQuery) OneP() *RoleGroup {
-	o, err := q.One()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// OneG returns a single roleGroup record from the query using the global executor.
+func (q roleGroupQuery) OneG(ctx context.Context) (*RoleGroup, error) {
+	return q.One(ctx, boil.GetContextDB())
 }
 
 // One returns a single roleGroup record from the query.
-func (q roleGroupQuery) One() (*RoleGroup, error) {
+func (q roleGroupQuery) One(ctx context.Context, exec boil.ContextExecutor) (*RoleGroup, error) {
 	o := &RoleGroup{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(ctx, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -134,21 +142,16 @@ func (q roleGroupQuery) One() (*RoleGroup, error) {
 	return o, nil
 }
 
-// AllP returns all RoleGroup records from the query, and panics on error.
-func (q roleGroupQuery) AllP() RoleGroupSlice {
-	o, err := q.All()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// AllG returns all RoleGroup records from the query using the global executor.
+func (q roleGroupQuery) AllG(ctx context.Context) (RoleGroupSlice, error) {
+	return q.All(ctx, boil.GetContextDB())
 }
 
 // All returns all RoleGroup records from the query.
-func (q roleGroupQuery) All() (RoleGroupSlice, error) {
+func (q roleGroupQuery) All(ctx context.Context, exec boil.ContextExecutor) (RoleGroupSlice, error) {
 	var o []*RoleGroup
 
-	err := q.Bind(&o)
+	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to RoleGroup slice")
 	}
@@ -156,24 +159,19 @@ func (q roleGroupQuery) All() (RoleGroupSlice, error) {
 	return o, nil
 }
 
-// CountP returns the count of all RoleGroup records in the query, and panics on error.
-func (q roleGroupQuery) CountP() int64 {
-	c, err := q.Count()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return c
+// CountG returns the count of all RoleGroup records in the query, and panics on error.
+func (q roleGroupQuery) CountG(ctx context.Context) (int64, error) {
+	return q.Count(ctx, boil.GetContextDB())
 }
 
 // Count returns the count of all RoleGroup records in the query.
-func (q roleGroupQuery) Count() (int64, error) {
+func (q roleGroupQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to count role_groups rows")
 	}
@@ -181,24 +179,19 @@ func (q roleGroupQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q roleGroupQuery) ExistsP() bool {
-	e, err := q.Exists()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q roleGroupQuery) ExistsG(ctx context.Context) (bool, error) {
+	return q.Exists(ctx, boil.GetContextDB())
 }
 
 // Exists checks if the row exists in the table.
-func (q roleGroupQuery) Exists() (bool, error) {
+func (q roleGroupQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "models: failed to check if role_groups exists")
 	}
@@ -206,13 +199,8 @@ func (q roleGroupQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// RoleCommandsG retrieves all the role_command's role commands.
-func (o *RoleGroup) RoleCommandsG(mods ...qm.QueryMod) roleCommandQuery {
-	return o.RoleCommands(boil.GetDB(), mods...)
-}
-
-// RoleCommands retrieves all the role_command's role commands with an executor.
-func (o *RoleGroup) RoleCommands(exec boil.Executor, mods ...qm.QueryMod) roleCommandQuery {
+// RoleCommands retrieves all the role_command's RoleCommands with an executor.
+func (o *RoleGroup) RoleCommands(mods ...qm.QueryMod) roleCommandQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -222,7 +210,7 @@ func (o *RoleGroup) RoleCommands(exec boil.Executor, mods ...qm.QueryMod) roleCo
 		qm.Where("\"role_commands\".\"role_group_id\"=?", o.ID),
 	)
 
-	query := RoleCommands(exec, queryMods...)
+	query := RoleCommands(queryMods...)
 	queries.SetFrom(query.Query, "\"role_commands\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -232,13 +220,8 @@ func (o *RoleGroup) RoleCommands(exec boil.Executor, mods ...qm.QueryMod) roleCo
 	return query
 }
 
-// RoleMenusG retrieves all the role_menu's role menus.
-func (o *RoleGroup) RoleMenusG(mods ...qm.QueryMod) roleMenuQuery {
-	return o.RoleMenus(boil.GetDB(), mods...)
-}
-
-// RoleMenus retrieves all the role_menu's role menus with an executor.
-func (o *RoleGroup) RoleMenus(exec boil.Executor, mods ...qm.QueryMod) roleMenuQuery {
+// RoleMenus retrieves all the role_menu's RoleMenus with an executor.
+func (o *RoleGroup) RoleMenus(mods ...qm.QueryMod) roleMenuQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -248,7 +231,7 @@ func (o *RoleGroup) RoleMenus(exec boil.Executor, mods ...qm.QueryMod) roleMenuQ
 		qm.Where("\"role_menus\".\"role_group_id\"=?", o.ID),
 	)
 
-	query := RoleMenus(exec, queryMods...)
+	query := RoleMenus(queryMods...)
 	queries.SetFrom(query.Query, "\"role_menus\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -259,62 +242,81 @@ func (o *RoleGroup) RoleMenus(exec boil.Executor, mods ...qm.QueryMod) roleMenuQ
 }
 
 // LoadRoleCommands allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (roleGroupL) LoadRoleCommands(e boil.Executor, singular bool, maybeRoleGroup interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (roleGroupL) LoadRoleCommands(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRoleGroup interface{}, mods queries.Applicator) error {
 	var slice []*RoleGroup
 	var object *RoleGroup
 
-	count := 1
 	if singular {
 		object = maybeRoleGroup.(*RoleGroup)
 	} else {
 		slice = *maybeRoleGroup.(*[]*RoleGroup)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &roleGroupR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &roleGroupR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from \"role_commands\" where \"role_group_id\" in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`role_commands`), qm.WhereIn(`role_group_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load role_commands")
 	}
-	defer results.Close()
 
 	var resultSlice []*RoleCommand
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice role_commands")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on role_commands")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_commands")
+	}
+
 	if singular {
 		object.R.RoleCommands = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &roleCommandR{}
+			}
+			foreign.R.RoleGroup = object
+		}
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.RoleGroupID.Int64 {
+			if queries.Equal(local.ID, foreign.RoleGroupID) {
 				local.R.RoleCommands = append(local.R.RoleCommands, foreign)
+				if foreign.R == nil {
+					foreign.R = &roleCommandR{}
+				}
+				foreign.R.RoleGroup = local
 				break
 			}
 		}
@@ -324,62 +326,81 @@ func (roleGroupL) LoadRoleCommands(e boil.Executor, singular bool, maybeRoleGrou
 }
 
 // LoadRoleMenus allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (roleGroupL) LoadRoleMenus(e boil.Executor, singular bool, maybeRoleGroup interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (roleGroupL) LoadRoleMenus(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRoleGroup interface{}, mods queries.Applicator) error {
 	var slice []*RoleGroup
 	var object *RoleGroup
 
-	count := 1
 	if singular {
 		object = maybeRoleGroup.(*RoleGroup)
 	} else {
 		slice = *maybeRoleGroup.(*[]*RoleGroup)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &roleGroupR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &roleGroupR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from \"role_menus\" where \"role_group_id\" in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	query := NewQuery(qm.From(`role_menus`), qm.WhereIn(`role_group_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	results, err := e.Query(query, args...)
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load role_menus")
 	}
-	defer results.Close()
 
 	var resultSlice []*RoleMenu
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice role_menus")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on role_menus")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menus")
+	}
+
 	if singular {
 		object.R.RoleMenus = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &roleMenuR{}
+			}
+			foreign.R.RoleGroup = object
+		}
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.RoleGroupID.Int64 {
+			if queries.Equal(local.ID, foreign.RoleGroupID) {
 				local.R.RoleMenus = append(local.R.RoleMenus, foreign)
+				if foreign.R == nil {
+					foreign.R = &roleMenuR{}
+				}
+				foreign.R.RoleGroup = local
 				break
 			}
 		}
@@ -393,43 +414,20 @@ func (roleGroupL) LoadRoleMenus(e boil.Executor, singular bool, maybeRoleGroup i
 // Appends related to o.R.RoleCommands.
 // Sets related.R.RoleGroup appropriately.
 // Uses the global database handle.
-func (o *RoleGroup) AddRoleCommandsG(insert bool, related ...*RoleCommand) error {
-	return o.AddRoleCommands(boil.GetDB(), insert, related...)
-}
-
-// AddRoleCommandsP adds the given related objects to the existing relationships
-// of the role_group, optionally inserting them as new records.
-// Appends related to o.R.RoleCommands.
-// Sets related.R.RoleGroup appropriately.
-// Panics on error.
-func (o *RoleGroup) AddRoleCommandsP(exec boil.Executor, insert bool, related ...*RoleCommand) {
-	if err := o.AddRoleCommands(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// AddRoleCommandsGP adds the given related objects to the existing relationships
-// of the role_group, optionally inserting them as new records.
-// Appends related to o.R.RoleCommands.
-// Sets related.R.RoleGroup appropriately.
-// Uses the global database handle and panics on error.
-func (o *RoleGroup) AddRoleCommandsGP(insert bool, related ...*RoleCommand) {
-	if err := o.AddRoleCommands(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) AddRoleCommandsG(ctx context.Context, insert bool, related ...*RoleCommand) error {
+	return o.AddRoleCommands(ctx, boil.GetContextDB(), insert, related...)
 }
 
 // AddRoleCommands adds the given related objects to the existing relationships
 // of the role_group, optionally inserting them as new records.
 // Appends related to o.R.RoleCommands.
 // Sets related.R.RoleGroup appropriately.
-func (o *RoleGroup) AddRoleCommands(exec boil.Executor, insert bool, related ...*RoleCommand) error {
+func (o *RoleGroup) AddRoleCommands(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*RoleCommand) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.RoleGroupID.Int64 = o.ID
-			rel.RoleGroupID.Valid = true
-			if err = rel.Insert(exec); err != nil {
+			queries.Assign(&rel.RoleGroupID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -445,12 +443,11 @@ func (o *RoleGroup) AddRoleCommands(exec boil.Executor, insert bool, related ...
 				fmt.Fprintln(boil.DebugWriter, values)
 			}
 
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.RoleGroupID.Int64 = o.ID
-			rel.RoleGroupID.Valid = true
+			queries.Assign(&rel.RoleGroupID, o.ID)
 		}
 	}
 
@@ -481,34 +478,8 @@ func (o *RoleGroup) AddRoleCommands(exec boil.Executor, insert bool, related ...
 // Replaces o.R.RoleCommands with related.
 // Sets related.R.RoleGroup's RoleCommands accordingly.
 // Uses the global database handle.
-func (o *RoleGroup) SetRoleCommandsG(insert bool, related ...*RoleCommand) error {
-	return o.SetRoleCommands(boil.GetDB(), insert, related...)
-}
-
-// SetRoleCommandsP removes all previously related items of the
-// role_group replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.RoleGroup's RoleCommands accordingly.
-// Replaces o.R.RoleCommands with related.
-// Sets related.R.RoleGroup's RoleCommands accordingly.
-// Panics on error.
-func (o *RoleGroup) SetRoleCommandsP(exec boil.Executor, insert bool, related ...*RoleCommand) {
-	if err := o.SetRoleCommands(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetRoleCommandsGP removes all previously related items of the
-// role_group replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.RoleGroup's RoleCommands accordingly.
-// Replaces o.R.RoleCommands with related.
-// Sets related.R.RoleGroup's RoleCommands accordingly.
-// Uses the global database handle and panics on error.
-func (o *RoleGroup) SetRoleCommandsGP(insert bool, related ...*RoleCommand) {
-	if err := o.SetRoleCommands(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) SetRoleCommandsG(ctx context.Context, insert bool, related ...*RoleCommand) error {
+	return o.SetRoleCommands(ctx, boil.GetContextDB(), insert, related...)
 }
 
 // SetRoleCommands removes all previously related items of the
@@ -517,7 +488,7 @@ func (o *RoleGroup) SetRoleCommandsGP(insert bool, related ...*RoleCommand) {
 // Sets o.R.RoleGroup's RoleCommands accordingly.
 // Replaces o.R.RoleCommands with related.
 // Sets related.R.RoleGroup's RoleCommands accordingly.
-func (o *RoleGroup) SetRoleCommands(exec boil.Executor, insert bool, related ...*RoleCommand) error {
+func (o *RoleGroup) SetRoleCommands(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*RoleCommand) error {
 	query := "update \"role_commands\" set \"role_group_id\" = null where \"role_group_id\" = $1"
 	values := []interface{}{o.ID}
 	if boil.DebugMode {
@@ -525,14 +496,14 @@ func (o *RoleGroup) SetRoleCommands(exec boil.Executor, insert bool, related ...
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	_, err := exec.Exec(query, values...)
+	_, err := exec.ExecContext(ctx, query, values...)
 	if err != nil {
 		return errors.Wrap(err, "failed to remove relationships before set")
 	}
 
 	if o.R != nil {
 		for _, rel := range o.R.RoleCommands {
-			rel.RoleGroupID.Valid = false
+			queries.SetScanner(&rel.RoleGroupID, nil)
 			if rel.R == nil {
 				continue
 			}
@@ -542,48 +513,28 @@ func (o *RoleGroup) SetRoleCommands(exec boil.Executor, insert bool, related ...
 
 		o.R.RoleCommands = nil
 	}
-	return o.AddRoleCommands(exec, insert, related...)
+	return o.AddRoleCommands(ctx, exec, insert, related...)
 }
 
 // RemoveRoleCommandsG relationships from objects passed in.
 // Removes related items from R.RoleCommands (uses pointer comparison, removal does not keep order)
 // Sets related.R.RoleGroup.
 // Uses the global database handle.
-func (o *RoleGroup) RemoveRoleCommandsG(related ...*RoleCommand) error {
-	return o.RemoveRoleCommands(boil.GetDB(), related...)
-}
-
-// RemoveRoleCommandsP relationships from objects passed in.
-// Removes related items from R.RoleCommands (uses pointer comparison, removal does not keep order)
-// Sets related.R.RoleGroup.
-// Panics on error.
-func (o *RoleGroup) RemoveRoleCommandsP(exec boil.Executor, related ...*RoleCommand) {
-	if err := o.RemoveRoleCommands(exec, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveRoleCommandsGP relationships from objects passed in.
-// Removes related items from R.RoleCommands (uses pointer comparison, removal does not keep order)
-// Sets related.R.RoleGroup.
-// Uses the global database handle and panics on error.
-func (o *RoleGroup) RemoveRoleCommandsGP(related ...*RoleCommand) {
-	if err := o.RemoveRoleCommands(boil.GetDB(), related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) RemoveRoleCommandsG(ctx context.Context, related ...*RoleCommand) error {
+	return o.RemoveRoleCommands(ctx, boil.GetContextDB(), related...)
 }
 
 // RemoveRoleCommands relationships from objects passed in.
 // Removes related items from R.RoleCommands (uses pointer comparison, removal does not keep order)
 // Sets related.R.RoleGroup.
-func (o *RoleGroup) RemoveRoleCommands(exec boil.Executor, related ...*RoleCommand) error {
+func (o *RoleGroup) RemoveRoleCommands(ctx context.Context, exec boil.ContextExecutor, related ...*RoleCommand) error {
 	var err error
 	for _, rel := range related {
-		rel.RoleGroupID.Valid = false
+		queries.SetScanner(&rel.RoleGroupID, nil)
 		if rel.R != nil {
 			rel.R.RoleGroup = nil
 		}
-		if err = rel.Update(exec, "role_group_id"); err != nil {
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("role_group_id")); err != nil {
 			return err
 		}
 	}
@@ -614,43 +565,20 @@ func (o *RoleGroup) RemoveRoleCommands(exec boil.Executor, related ...*RoleComma
 // Appends related to o.R.RoleMenus.
 // Sets related.R.RoleGroup appropriately.
 // Uses the global database handle.
-func (o *RoleGroup) AddRoleMenusG(insert bool, related ...*RoleMenu) error {
-	return o.AddRoleMenus(boil.GetDB(), insert, related...)
-}
-
-// AddRoleMenusP adds the given related objects to the existing relationships
-// of the role_group, optionally inserting them as new records.
-// Appends related to o.R.RoleMenus.
-// Sets related.R.RoleGroup appropriately.
-// Panics on error.
-func (o *RoleGroup) AddRoleMenusP(exec boil.Executor, insert bool, related ...*RoleMenu) {
-	if err := o.AddRoleMenus(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// AddRoleMenusGP adds the given related objects to the existing relationships
-// of the role_group, optionally inserting them as new records.
-// Appends related to o.R.RoleMenus.
-// Sets related.R.RoleGroup appropriately.
-// Uses the global database handle and panics on error.
-func (o *RoleGroup) AddRoleMenusGP(insert bool, related ...*RoleMenu) {
-	if err := o.AddRoleMenus(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) AddRoleMenusG(ctx context.Context, insert bool, related ...*RoleMenu) error {
+	return o.AddRoleMenus(ctx, boil.GetContextDB(), insert, related...)
 }
 
 // AddRoleMenus adds the given related objects to the existing relationships
 // of the role_group, optionally inserting them as new records.
 // Appends related to o.R.RoleMenus.
 // Sets related.R.RoleGroup appropriately.
-func (o *RoleGroup) AddRoleMenus(exec boil.Executor, insert bool, related ...*RoleMenu) error {
+func (o *RoleGroup) AddRoleMenus(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*RoleMenu) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.RoleGroupID.Int64 = o.ID
-			rel.RoleGroupID.Valid = true
-			if err = rel.Insert(exec); err != nil {
+			queries.Assign(&rel.RoleGroupID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -666,12 +594,11 @@ func (o *RoleGroup) AddRoleMenus(exec boil.Executor, insert bool, related ...*Ro
 				fmt.Fprintln(boil.DebugWriter, values)
 			}
 
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.RoleGroupID.Int64 = o.ID
-			rel.RoleGroupID.Valid = true
+			queries.Assign(&rel.RoleGroupID, o.ID)
 		}
 	}
 
@@ -702,34 +629,8 @@ func (o *RoleGroup) AddRoleMenus(exec boil.Executor, insert bool, related ...*Ro
 // Replaces o.R.RoleMenus with related.
 // Sets related.R.RoleGroup's RoleMenus accordingly.
 // Uses the global database handle.
-func (o *RoleGroup) SetRoleMenusG(insert bool, related ...*RoleMenu) error {
-	return o.SetRoleMenus(boil.GetDB(), insert, related...)
-}
-
-// SetRoleMenusP removes all previously related items of the
-// role_group replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.RoleGroup's RoleMenus accordingly.
-// Replaces o.R.RoleMenus with related.
-// Sets related.R.RoleGroup's RoleMenus accordingly.
-// Panics on error.
-func (o *RoleGroup) SetRoleMenusP(exec boil.Executor, insert bool, related ...*RoleMenu) {
-	if err := o.SetRoleMenus(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetRoleMenusGP removes all previously related items of the
-// role_group replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.RoleGroup's RoleMenus accordingly.
-// Replaces o.R.RoleMenus with related.
-// Sets related.R.RoleGroup's RoleMenus accordingly.
-// Uses the global database handle and panics on error.
-func (o *RoleGroup) SetRoleMenusGP(insert bool, related ...*RoleMenu) {
-	if err := o.SetRoleMenus(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) SetRoleMenusG(ctx context.Context, insert bool, related ...*RoleMenu) error {
+	return o.SetRoleMenus(ctx, boil.GetContextDB(), insert, related...)
 }
 
 // SetRoleMenus removes all previously related items of the
@@ -738,7 +639,7 @@ func (o *RoleGroup) SetRoleMenusGP(insert bool, related ...*RoleMenu) {
 // Sets o.R.RoleGroup's RoleMenus accordingly.
 // Replaces o.R.RoleMenus with related.
 // Sets related.R.RoleGroup's RoleMenus accordingly.
-func (o *RoleGroup) SetRoleMenus(exec boil.Executor, insert bool, related ...*RoleMenu) error {
+func (o *RoleGroup) SetRoleMenus(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*RoleMenu) error {
 	query := "update \"role_menus\" set \"role_group_id\" = null where \"role_group_id\" = $1"
 	values := []interface{}{o.ID}
 	if boil.DebugMode {
@@ -746,14 +647,14 @@ func (o *RoleGroup) SetRoleMenus(exec boil.Executor, insert bool, related ...*Ro
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	_, err := exec.Exec(query, values...)
+	_, err := exec.ExecContext(ctx, query, values...)
 	if err != nil {
 		return errors.Wrap(err, "failed to remove relationships before set")
 	}
 
 	if o.R != nil {
 		for _, rel := range o.R.RoleMenus {
-			rel.RoleGroupID.Valid = false
+			queries.SetScanner(&rel.RoleGroupID, nil)
 			if rel.R == nil {
 				continue
 			}
@@ -763,48 +664,28 @@ func (o *RoleGroup) SetRoleMenus(exec boil.Executor, insert bool, related ...*Ro
 
 		o.R.RoleMenus = nil
 	}
-	return o.AddRoleMenus(exec, insert, related...)
+	return o.AddRoleMenus(ctx, exec, insert, related...)
 }
 
 // RemoveRoleMenusG relationships from objects passed in.
 // Removes related items from R.RoleMenus (uses pointer comparison, removal does not keep order)
 // Sets related.R.RoleGroup.
 // Uses the global database handle.
-func (o *RoleGroup) RemoveRoleMenusG(related ...*RoleMenu) error {
-	return o.RemoveRoleMenus(boil.GetDB(), related...)
-}
-
-// RemoveRoleMenusP relationships from objects passed in.
-// Removes related items from R.RoleMenus (uses pointer comparison, removal does not keep order)
-// Sets related.R.RoleGroup.
-// Panics on error.
-func (o *RoleGroup) RemoveRoleMenusP(exec boil.Executor, related ...*RoleMenu) {
-	if err := o.RemoveRoleMenus(exec, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// RemoveRoleMenusGP relationships from objects passed in.
-// Removes related items from R.RoleMenus (uses pointer comparison, removal does not keep order)
-// Sets related.R.RoleGroup.
-// Uses the global database handle and panics on error.
-func (o *RoleGroup) RemoveRoleMenusGP(related ...*RoleMenu) {
-	if err := o.RemoveRoleMenus(boil.GetDB(), related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) RemoveRoleMenusG(ctx context.Context, related ...*RoleMenu) error {
+	return o.RemoveRoleMenus(ctx, boil.GetContextDB(), related...)
 }
 
 // RemoveRoleMenus relationships from objects passed in.
 // Removes related items from R.RoleMenus (uses pointer comparison, removal does not keep order)
 // Sets related.R.RoleGroup.
-func (o *RoleGroup) RemoveRoleMenus(exec boil.Executor, related ...*RoleMenu) error {
+func (o *RoleGroup) RemoveRoleMenus(ctx context.Context, exec boil.ContextExecutor, related ...*RoleMenu) error {
 	var err error
 	for _, rel := range related {
-		rel.RoleGroupID.Valid = false
+		queries.SetScanner(&rel.RoleGroupID, nil)
 		if rel.R != nil {
 			rel.R.RoleGroup = nil
 		}
-		if err = rel.Update(exec, "role_group_id"); err != nil {
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("role_group_id")); err != nil {
 			return err
 		}
 	}
@@ -830,35 +711,20 @@ func (o *RoleGroup) RemoveRoleMenus(exec boil.Executor, related ...*RoleMenu) er
 	return nil
 }
 
-// RoleGroupsG retrieves all records.
-func RoleGroupsG(mods ...qm.QueryMod) roleGroupQuery {
-	return RoleGroups(boil.GetDB(), mods...)
-}
-
 // RoleGroups retrieves all the records using an executor.
-func RoleGroups(exec boil.Executor, mods ...qm.QueryMod) roleGroupQuery {
+func RoleGroups(mods ...qm.QueryMod) roleGroupQuery {
 	mods = append(mods, qm.From("\"role_groups\""))
-	return roleGroupQuery{NewQuery(exec, mods...)}
+	return roleGroupQuery{NewQuery(mods...)}
 }
 
 // FindRoleGroupG retrieves a single record by ID.
-func FindRoleGroupG(id int64, selectCols ...string) (*RoleGroup, error) {
-	return FindRoleGroup(boil.GetDB(), id, selectCols...)
-}
-
-// FindRoleGroupGP retrieves a single record by ID, and panics on error.
-func FindRoleGroupGP(id int64, selectCols ...string) *RoleGroup {
-	retobj, err := FindRoleGroup(boil.GetDB(), id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
+func FindRoleGroupG(ctx context.Context, iD int64, selectCols ...string) (*RoleGroup, error) {
+	return FindRoleGroup(ctx, boil.GetContextDB(), iD, selectCols...)
 }
 
 // FindRoleGroup retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindRoleGroup(exec boil.Executor, id int64, selectCols ...string) (*RoleGroup, error) {
+func FindRoleGroup(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*RoleGroup, error) {
 	roleGroupObj := &RoleGroup{}
 
 	sel := "*"
@@ -869,9 +735,9 @@ func FindRoleGroup(exec boil.Executor, id int64, selectCols ...string) (*RoleGro
 		"select %s from \"role_groups\" where \"id\"=$1", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(roleGroupObj)
+	err := q.Bind(ctx, exec, roleGroupObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -882,43 +748,14 @@ func FindRoleGroup(exec boil.Executor, id int64, selectCols ...string) (*RoleGro
 	return roleGroupObj, nil
 }
 
-// FindRoleGroupP retrieves a single record by ID with an executor, and panics on error.
-func FindRoleGroupP(exec boil.Executor, id int64, selectCols ...string) *RoleGroup {
-	retobj, err := FindRoleGroup(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *RoleGroup) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *RoleGroup) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// InsertP a single record using an executor, and panics on error. See Insert
-// for whitelist behavior description.
-func (o *RoleGroup) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) InsertG(ctx context.Context, columns boil.Columns) error {
+	return o.Insert(ctx, boil.GetContextDB(), columns)
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *RoleGroup) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *RoleGroup) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no role_groups provided for insertion")
 	}
@@ -927,18 +764,17 @@ func (o *RoleGroup) Insert(exec boil.Executor, whitelist ...string) error {
 
 	nzDefaults := queries.NonZeroDefaultSet(roleGroupColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	roleGroupInsertCacheMut.RLock()
 	cache, cached := roleGroupInsertCache[key]
 	roleGroupInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			roleGroupColumns,
 			roleGroupColumnsWithDefault,
 			roleGroupColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(roleGroupType, roleGroupMapping, wl)
@@ -950,9 +786,9 @@ func (o *RoleGroup) Insert(exec boil.Executor, whitelist ...string) error {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"role_groups\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"role_groups\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"role_groups\" DEFAULT VALUES"
+			cache.query = "INSERT INTO \"role_groups\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -961,9 +797,7 @@ func (o *RoleGroup) Insert(exec boil.Executor, whitelist ...string) error {
 			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -975,9 +809,9 @@ func (o *RoleGroup) Insert(exec boil.Executor, whitelist ...string) error {
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 
 	if err != nil {
@@ -993,56 +827,33 @@ func (o *RoleGroup) Insert(exec boil.Executor, whitelist ...string) error {
 	return nil
 }
 
-// UpdateG a single RoleGroup record. See Update for
-// whitelist behavior description.
-func (o *RoleGroup) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
-}
-
-// UpdateGP a single RoleGroup record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *RoleGroup) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateP uses an executor to update the RoleGroup, and panics on error.
-// See Update for whitelist behavior description.
-func (o *RoleGroup) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
+// UpdateG a single RoleGroup record using the global executor.
+// See Update for more documentation.
+func (o *RoleGroup) UpdateG(ctx context.Context, columns boil.Columns) (int64, error) {
+	return o.Update(ctx, boil.GetContextDB(), columns)
 }
 
 // Update uses an executor to update the RoleGroup.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *RoleGroup) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *RoleGroup) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	roleGroupUpdateCacheMut.RLock()
 	cache, cached := roleGroupUpdateCache[key]
 	roleGroupUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			roleGroupColumns,
 			roleGroupPrimaryKeyColumns,
-			whitelist,
 		)
 
-		if len(whitelist) == 0 {
+		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return errors.New("models: unable to update role_groups, could not build whitelist")
+			return 0, errors.New("models: unable to update role_groups, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"role_groups\" SET %s WHERE %s",
@@ -1051,7 +862,7 @@ func (o *RoleGroup) Update(exec boil.Executor, whitelist ...string) error {
 		)
 		cache.valueMapping, err = queries.BindMapping(roleGroupType, roleGroupMapping, append(wl, roleGroupPrimaryKeyColumns...))
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
@@ -1062,9 +873,15 @@ func (o *RoleGroup) Update(exec boil.Executor, whitelist ...string) error {
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	_, err = exec.Exec(cache.query, values...)
+	var result sql.Result
+	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update role_groups row")
+		return 0, errors.Wrap(err, "models: unable to update role_groups row")
+	}
+
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by update for role_groups")
 	}
 
 	if !cached {
@@ -1073,56 +890,40 @@ func (o *RoleGroup) Update(exec boil.Executor, whitelist ...string) error {
 		roleGroupUpdateCacheMut.Unlock()
 	}
 
-	return nil
-}
-
-// UpdateAllP updates all rows with matching column names, and panics on error.
-func (q roleGroupQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
-func (q roleGroupQuery) UpdateAll(cols M) error {
+func (q roleGroupQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all for role_groups")
+		return 0, errors.Wrap(err, "models: unable to update all for role_groups")
 	}
 
-	return nil
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for role_groups")
+	}
+
+	return rowsAff, nil
 }
 
 // UpdateAllG updates all rows with the specified column values.
-func (o RoleGroupSlice) UpdateAllG(cols M) error {
-	return o.UpdateAll(boil.GetDB(), cols)
-}
-
-// UpdateAllGP updates all rows with the specified column values, and panics on error.
-func (o RoleGroupSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateAllP updates all rows with the specified column values, and panics on error.
-func (o RoleGroupSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o RoleGroupSlice) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return o.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o RoleGroupSlice) UpdateAll(exec boil.Executor, cols M) error {
+func (o RoleGroupSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
-		return nil
+		return 0, nil
 	}
 
 	if len(cols) == 0 {
-		return errors.New("models: update all requires at least one column argument")
+		return 0, errors.New("models: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -1150,45 +951,34 @@ func (o RoleGroupSlice) UpdateAll(exec boil.Executor, cols M) error {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all in roleGroup slice")
+		return 0, errors.Wrap(err, "models: unable to update all in roleGroup slice")
 	}
 
-	return nil
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all roleGroup")
+	}
+	return rowsAff, nil
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *RoleGroup) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...)
-}
-
-// UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *RoleGroup) UpsertGP(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
-// UpsertP panics on error.
-func (o *RoleGroup) UpsertP(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) UpsertG(ctx context.Context, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(ctx, boil.GetContextDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *RoleGroup) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *RoleGroup) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no role_groups provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(roleGroupColumnsWithDefault, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-
 	if updateOnConflict {
 		buf.WriteByte('t')
 	} else {
@@ -1199,11 +989,13 @@ func (o *RoleGroup) Upsert(exec boil.Executor, updateOnConflict bool, conflictCo
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
@@ -1220,19 +1012,17 @@ func (o *RoleGroup) Upsert(exec boil.Executor, updateOnConflict bool, conflictCo
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			roleGroupColumns,
 			roleGroupColumnsWithDefault,
 			roleGroupColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			roleGroupColumns,
 			roleGroupPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("models: unable to upsert role_groups, could not build update column list")
 		}
@@ -1242,7 +1032,7 @@ func (o *RoleGroup) Upsert(exec boil.Executor, updateOnConflict bool, conflictCo
 			conflict = make([]string, len(roleGroupPrimaryKeyColumns))
 			copy(conflict, roleGroupPrimaryKeyColumns)
 		}
-		cache.query = queries.BuildUpsertQueryPostgres(dialect, "\"role_groups\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"role_groups\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(roleGroupType, roleGroupMapping, insert)
 		if err != nil {
@@ -1269,12 +1059,12 @@ func (o *RoleGroup) Upsert(exec boil.Executor, updateOnConflict bool, conflictCo
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(returns...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
 			err = nil // Postgres doesn't return anything when there's no update
 		}
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert role_groups")
@@ -1289,39 +1079,17 @@ func (o *RoleGroup) Upsert(exec boil.Executor, updateOnConflict bool, conflictCo
 	return nil
 }
 
-// DeleteP deletes a single RoleGroup record with an executor.
-// DeleteP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *RoleGroup) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteG deletes a single RoleGroup record.
 // DeleteG will match against the primary key column to find the record to delete.
-func (o *RoleGroup) DeleteG() error {
-	if o == nil {
-		return errors.New("models: no RoleGroup provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
-}
-
-// DeleteGP deletes a single RoleGroup record.
-// DeleteGP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *RoleGroup) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *RoleGroup) DeleteG(ctx context.Context) (int64, error) {
+	return o.Delete(ctx, boil.GetContextDB())
 }
 
 // Delete deletes a single RoleGroup record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *RoleGroup) Delete(exec boil.Executor) error {
+func (o *RoleGroup) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no RoleGroup provided for delete")
+		return 0, errors.New("models: no RoleGroup provided for delete")
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), roleGroupPrimaryKeyMapping)
@@ -1332,67 +1100,53 @@ func (o *RoleGroup) Delete(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete from role_groups")
+		return 0, errors.Wrap(err, "models: unable to delete from role_groups")
 	}
 
-	return nil
-}
-
-// DeleteAllP deletes all rows, and panics on error.
-func (q roleGroupQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for role_groups")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAll deletes all matching rows.
-func (q roleGroupQuery) DeleteAll() error {
+func (q roleGroupQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return errors.New("models: no roleGroupQuery provided for delete all")
+		return 0, errors.New("models: no roleGroupQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from role_groups")
+		return 0, errors.Wrap(err, "models: unable to delete all from role_groups")
 	}
 
-	return nil
-}
-
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o RoleGroupSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for role_groups")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAllG deletes all rows in the slice.
-func (o RoleGroupSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("models: no RoleGroup slice provided for delete all")
-	}
-	return o.DeleteAll(boil.GetDB())
-}
-
-// DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
-func (o RoleGroupSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o RoleGroupSlice) DeleteAllG(ctx context.Context) (int64, error) {
+	return o.DeleteAll(ctx, boil.GetContextDB())
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o RoleGroupSlice) DeleteAll(exec boil.Executor) error {
+func (o RoleGroupSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no RoleGroup slice provided for delete all")
+		return 0, errors.New("models: no RoleGroup slice provided for delete all")
 	}
 
 	if len(o) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	var args []interface{}
@@ -1409,41 +1163,32 @@ func (o RoleGroupSlice) DeleteAll(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from roleGroup slice")
+		return 0, errors.Wrap(err, "models: unable to delete all from roleGroup slice")
 	}
 
-	return nil
-}
-
-// ReloadGP refetches the object from the database and panics on error.
-func (o *RoleGroup) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for role_groups")
 	}
-}
 
-// ReloadP refetches the object from the database with an executor. Panics on error.
-func (o *RoleGroup) ReloadP(exec boil.Executor) {
-	if err := o.Reload(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+	return rowsAff, nil
 }
 
 // ReloadG refetches the object from the database using the primary keys.
-func (o *RoleGroup) ReloadG() error {
+func (o *RoleGroup) ReloadG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: no RoleGroup provided for reload")
 	}
 
-	return o.Reload(boil.GetDB())
+	return o.Reload(ctx, boil.GetContextDB())
 }
 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *RoleGroup) Reload(exec boil.Executor) error {
-	ret, err := FindRoleGroup(exec, o.ID)
+func (o *RoleGroup) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindRoleGroup(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1452,42 +1197,24 @@ func (o *RoleGroup) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *RoleGroupSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// ReloadAllP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *RoleGroupSlice) ReloadAllP(exec boil.Executor) {
-	if err := o.ReloadAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *RoleGroupSlice) ReloadAllG() error {
+func (o *RoleGroupSlice) ReloadAllG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: empty RoleGroupSlice provided for reload all")
 	}
 
-	return o.ReloadAll(boil.GetDB())
+	return o.ReloadAll(ctx, boil.GetContextDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *RoleGroupSlice) ReloadAll(exec boil.Executor) error {
+func (o *RoleGroupSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
 
-	roleGroups := RoleGroupSlice{}
+	slice := RoleGroupSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), roleGroupPrimaryKeyMapping)
@@ -1497,29 +1224,34 @@ func (o *RoleGroupSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT \"role_groups\".* FROM \"role_groups\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, roleGroupPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&roleGroups)
+	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to reload all in RoleGroupSlice")
 	}
 
-	*o = roleGroups
+	*o = slice
 
 	return nil
 }
 
+// RoleGroupExistsG checks if the RoleGroup row exists.
+func RoleGroupExistsG(ctx context.Context, iD int64) (bool, error) {
+	return RoleGroupExists(ctx, boil.GetContextDB(), iD)
+}
+
 // RoleGroupExists checks if the RoleGroup row exists.
-func RoleGroupExists(exec boil.Executor, id int64) (bool, error) {
+func RoleGroupExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"role_groups\" where \"id\"=$1 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1527,29 +1259,4 @@ func RoleGroupExists(exec boil.Executor, id int64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// RoleGroupExistsG checks if the RoleGroup row exists.
-func RoleGroupExistsG(id int64) (bool, error) {
-	return RoleGroupExists(boil.GetDB(), id)
-}
-
-// RoleGroupExistsGP checks if the RoleGroup row exists. Panics on error.
-func RoleGroupExistsGP(id int64) bool {
-	e, err := RoleGroupExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// RoleGroupExistsP checks if the RoleGroup row exists. Panics on error.
-func RoleGroupExistsP(exec boil.Executor, id int64) bool {
-	e, err := RoleGroupExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

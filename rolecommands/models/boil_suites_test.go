@@ -119,20 +119,20 @@ func TestToMany(t *testing.T) {
 // TestToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
-	t.Run("RoleCommandToRoleGroupUsingRoleGroup", testRoleCommandToOneSetOpRoleGroupUsingRoleGroup)
-	t.Run("RoleMenuOptionToRoleCommandUsingRoleCommand", testRoleMenuOptionToOneSetOpRoleCommandUsingRoleCommand)
-	t.Run("RoleMenuOptionToRoleMenuUsingRoleMenu", testRoleMenuOptionToOneSetOpRoleMenuUsingRoleMenu)
-	t.Run("RoleMenuToRoleCommandUsingNextRoleCommand", testRoleMenuToOneSetOpRoleCommandUsingNextRoleCommand)
-	t.Run("RoleMenuToRoleGroupUsingRoleGroup", testRoleMenuToOneSetOpRoleGroupUsingRoleGroup)
+	t.Run("RoleCommandToRoleGroupUsingRoleCommands", testRoleCommandToOneSetOpRoleGroupUsingRoleGroup)
+	t.Run("RoleMenuOptionToRoleCommandUsingRoleMenuOptions", testRoleMenuOptionToOneSetOpRoleCommandUsingRoleCommand)
+	t.Run("RoleMenuOptionToRoleMenuUsingRoleMenuOptions", testRoleMenuOptionToOneSetOpRoleMenuUsingRoleMenu)
+	t.Run("RoleMenuToRoleCommandUsingNextRoleCommandRoleMenus", testRoleMenuToOneSetOpRoleCommandUsingNextRoleCommand)
+	t.Run("RoleMenuToRoleGroupUsingRoleMenus", testRoleMenuToOneSetOpRoleGroupUsingRoleGroup)
 }
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneRemove(t *testing.T) {
-	t.Run("RoleCommandToRoleGroupUsingRoleGroup", testRoleCommandToOneRemoveOpRoleGroupUsingRoleGroup)
-	t.Run("RoleMenuOptionToRoleCommandUsingRoleCommand", testRoleMenuOptionToOneRemoveOpRoleCommandUsingRoleCommand)
-	t.Run("RoleMenuToRoleCommandUsingNextRoleCommand", testRoleMenuToOneRemoveOpRoleCommandUsingNextRoleCommand)
-	t.Run("RoleMenuToRoleGroupUsingRoleGroup", testRoleMenuToOneRemoveOpRoleGroupUsingRoleGroup)
+	t.Run("RoleCommandToRoleGroupUsingRoleCommands", testRoleCommandToOneRemoveOpRoleGroupUsingRoleGroup)
+	t.Run("RoleMenuOptionToRoleCommandUsingRoleMenuOptions", testRoleMenuOptionToOneRemoveOpRoleCommandUsingRoleCommand)
+	t.Run("RoleMenuToRoleCommandUsingNextRoleCommandRoleMenus", testRoleMenuToOneRemoveOpRoleCommandUsingNextRoleCommand)
+	t.Run("RoleMenuToRoleGroupUsingRoleMenus", testRoleMenuToOneRemoveOpRoleGroupUsingRoleGroup)
 }
 
 // TestOneToOneSet tests cannot be run in parallel
@@ -204,11 +204,4 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("RoleGroups", testRoleGroupsSliceUpdateAll)
 	t.Run("RoleMenuOptions", testRoleMenuOptionsSliceUpdateAll)
 	t.Run("RoleMenus", testRoleMenusSliceUpdateAll)
-}
-
-func TestUpsert(t *testing.T) {
-	t.Run("RoleCommands", testRoleCommandsUpsert)
-	t.Run("RoleGroups", testRoleGroupsUpsert)
-	t.Run("RoleMenuOptions", testRoleMenuOptionsUpsert)
-	t.Run("RoleMenus", testRoleMenusUpsert)
 }

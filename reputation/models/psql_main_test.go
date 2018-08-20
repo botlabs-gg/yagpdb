@@ -11,14 +11,18 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
+	"github.com/kat-co/vala"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"github.com/volatiletech/sqlboiler/bdb/drivers"
+	"github.com/volatiletech/sqlboiler/drivers/sqlboiler-psql/driver"
 	"github.com/volatiletech/sqlboiler/randomize"
 )
+
+var rgxPGFkey = regexp.MustCompile(`(?m)^ALTER TABLE ONLY .*\n\s+ADD CONSTRAINT .*? FOREIGN KEY .*?;\n`)
 
 type pgTester struct {
 	dbConn *sql.DB
@@ -45,12 +49,29 @@ func init() {
 func (p *pgTester) setup() error {
 	var err error
 
-	p.dbName = viper.GetString("postgres.dbname")
-	p.host = viper.GetString("postgres.host")
-	p.user = viper.GetString("postgres.user")
-	p.pass = viper.GetString("postgres.pass")
-	p.port = viper.GetInt("postgres.port")
-	p.sslmode = viper.GetString("postgres.sslmode")
+	viper.SetDefault("psql.schema", "public")
+	viper.SetDefault("psql.port", 5432)
+	viper.SetDefault("psql.sslmode", "require")
+
+	p.dbName = viper.GetString("psql.dbname")
+	p.host = viper.GetString("psql.host")
+	p.user = viper.GetString("psql.user")
+	p.pass = viper.GetString("psql.pass")
+	p.port = viper.GetInt("psql.port")
+	p.sslmode = viper.GetString("psql.sslmode")
+
+	err = vala.BeginValidation().Validate(
+		vala.StringNotEmpty(p.user, "psql.user"),
+		vala.StringNotEmpty(p.host, "psql.host"),
+		vala.Not(vala.Equals(p.port, 0, "psql.port")),
+		vala.StringNotEmpty(p.dbName, "psql.dbname"),
+		vala.StringNotEmpty(p.sslmode, "psql.sslmode"),
+	).Check()
+
+	if err != nil {
+		return err
+	}
+
 	// Create a randomized db name.
 	p.testDBName = randomize.StableDBName(p.dbName)
 
@@ -86,7 +107,7 @@ func (p *pgTester) setup() error {
 		return errors.Wrap(err, "failed to wait for pg_dump command")
 	}
 
-	w.Close() // After dumpCmd is done, close the write end of the pipe
+	_ = w.Close() // After dumpCmd is done, close the write end of the pipe
 
 	if err = createCmd.Wait(); err != nil {
 		fmt.Println(err)
@@ -184,7 +205,7 @@ func (p *pgTester) conn() (*sql.DB, error) {
 	}
 
 	var err error
-	p.dbConn, err = sql.Open("postgres", drivers.PostgresBuildQueryString(p.user, p.pass, p.testDBName, p.host, p.port, p.sslmode))
+	p.dbConn, err = sql.Open("postgres", driver.PSQLBuildQueryString(p.user, p.pass, p.testDBName, p.host, p.port, p.sslmode))
 	if err != nil {
 		return nil, err
 	}

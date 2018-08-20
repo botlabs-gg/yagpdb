@@ -76,6 +76,17 @@ func AddRootCommands(cmds ...*YAGCommand) {
 }
 
 func handleMsgCreate(evt *eventsystem.EventData) {
+	abort := false
+	for _, filterFunc := range MessageFilterFuncs {
+		if !filterFunc(evt.MessageCreate().Message) {
+			abort = true
+		}
+	}
+
+	if abort {
+		return
+	}
+
 	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
 }
 

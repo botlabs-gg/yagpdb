@@ -1,6 +1,6 @@
 package commands
 
-//go:generate sqlboiler --no-hooks -w "commands_channels_overrides,commands_command_overrides" postgres
+//go:generate sqlboiler --no-hooks psql
 //REMOVED: generate easyjson  commands.go
 
 import (
@@ -17,6 +17,11 @@ const (
 	CtxKeyCmdSettings CtxKey = iota
 	CtxKeyChannelOverride
 )
+
+type MessageFilterFunc func(msg *discordgo.Message) bool
+
+// These functions are called on every message, and should return true if the message should be checked for commands, false otherwise
+var MessageFilterFuncs []MessageFilterFunc
 
 type Plugin struct{}
 

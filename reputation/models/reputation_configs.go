@@ -4,20 +4,21 @@
 package models
 
 import (
-	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"gopkg.in/volatiletech/null.v6"
 )
 
 // ReputationConfig is an object representing the database table.
@@ -61,8 +62,17 @@ var ReputationConfigColumns = struct {
 	AdminRole:              "admin_role",
 }
 
+// ReputationConfigRels is where relationship names are stored.
+var ReputationConfigRels = struct {
+}{}
+
 // reputationConfigR is where relationships are stored.
 type reputationConfigR struct {
+}
+
+// NewStruct creates a new relationship struct
+func (*reputationConfigR) NewStruct() *reputationConfigR {
+	return &reputationConfigR{}
 }
 
 // reputationConfigL is where Load methods for each relationship are stored.
@@ -101,27 +111,20 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
 )
 
-// OneP returns a single reputationConfig record from the query, and panics on error.
-func (q reputationConfigQuery) OneP() *ReputationConfig {
-	o, err := q.One()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// OneG returns a single reputationConfig record from the query using the global executor.
+func (q reputationConfigQuery) OneG(ctx context.Context) (*ReputationConfig, error) {
+	return q.One(ctx, boil.GetContextDB())
 }
 
 // One returns a single reputationConfig record from the query.
-func (q reputationConfigQuery) One() (*ReputationConfig, error) {
+func (q reputationConfigQuery) One(ctx context.Context, exec boil.ContextExecutor) (*ReputationConfig, error) {
 	o := &ReputationConfig{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(ctx, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -132,21 +135,16 @@ func (q reputationConfigQuery) One() (*ReputationConfig, error) {
 	return o, nil
 }
 
-// AllP returns all ReputationConfig records from the query, and panics on error.
-func (q reputationConfigQuery) AllP() ReputationConfigSlice {
-	o, err := q.All()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// AllG returns all ReputationConfig records from the query using the global executor.
+func (q reputationConfigQuery) AllG(ctx context.Context) (ReputationConfigSlice, error) {
+	return q.All(ctx, boil.GetContextDB())
 }
 
 // All returns all ReputationConfig records from the query.
-func (q reputationConfigQuery) All() (ReputationConfigSlice, error) {
+func (q reputationConfigQuery) All(ctx context.Context, exec boil.ContextExecutor) (ReputationConfigSlice, error) {
 	var o []*ReputationConfig
 
-	err := q.Bind(&o)
+	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to ReputationConfig slice")
 	}
@@ -154,24 +152,19 @@ func (q reputationConfigQuery) All() (ReputationConfigSlice, error) {
 	return o, nil
 }
 
-// CountP returns the count of all ReputationConfig records in the query, and panics on error.
-func (q reputationConfigQuery) CountP() int64 {
-	c, err := q.Count()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return c
+// CountG returns the count of all ReputationConfig records in the query, and panics on error.
+func (q reputationConfigQuery) CountG(ctx context.Context) (int64, error) {
+	return q.Count(ctx, boil.GetContextDB())
 }
 
 // Count returns the count of all ReputationConfig records in the query.
-func (q reputationConfigQuery) Count() (int64, error) {
+func (q reputationConfigQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to count reputation_configs rows")
 	}
@@ -179,24 +172,19 @@ func (q reputationConfigQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q reputationConfigQuery) ExistsP() bool {
-	e, err := q.Exists()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q reputationConfigQuery) ExistsG(ctx context.Context) (bool, error) {
+	return q.Exists(ctx, boil.GetContextDB())
 }
 
 // Exists checks if the row exists in the table.
-func (q reputationConfigQuery) Exists() (bool, error) {
+func (q reputationConfigQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "models: failed to check if reputation_configs exists")
 	}
@@ -204,35 +192,20 @@ func (q reputationConfigQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// ReputationConfigsG retrieves all records.
-func ReputationConfigsG(mods ...qm.QueryMod) reputationConfigQuery {
-	return ReputationConfigs(boil.GetDB(), mods...)
-}
-
 // ReputationConfigs retrieves all the records using an executor.
-func ReputationConfigs(exec boil.Executor, mods ...qm.QueryMod) reputationConfigQuery {
+func ReputationConfigs(mods ...qm.QueryMod) reputationConfigQuery {
 	mods = append(mods, qm.From("\"reputation_configs\""))
-	return reputationConfigQuery{NewQuery(exec, mods...)}
+	return reputationConfigQuery{NewQuery(mods...)}
 }
 
 // FindReputationConfigG retrieves a single record by ID.
-func FindReputationConfigG(guildID int64, selectCols ...string) (*ReputationConfig, error) {
-	return FindReputationConfig(boil.GetDB(), guildID, selectCols...)
-}
-
-// FindReputationConfigGP retrieves a single record by ID, and panics on error.
-func FindReputationConfigGP(guildID int64, selectCols ...string) *ReputationConfig {
-	retobj, err := FindReputationConfig(boil.GetDB(), guildID, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
+func FindReputationConfigG(ctx context.Context, guildID int64, selectCols ...string) (*ReputationConfig, error) {
+	return FindReputationConfig(ctx, boil.GetContextDB(), guildID, selectCols...)
 }
 
 // FindReputationConfig retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindReputationConfig(exec boil.Executor, guildID int64, selectCols ...string) (*ReputationConfig, error) {
+func FindReputationConfig(ctx context.Context, exec boil.ContextExecutor, guildID int64, selectCols ...string) (*ReputationConfig, error) {
 	reputationConfigObj := &ReputationConfig{}
 
 	sel := "*"
@@ -243,9 +216,9 @@ func FindReputationConfig(exec boil.Executor, guildID int64, selectCols ...strin
 		"select %s from \"reputation_configs\" where \"guild_id\"=$1", sel,
 	)
 
-	q := queries.Raw(exec, query, guildID)
+	q := queries.Raw(query, guildID)
 
-	err := q.Bind(reputationConfigObj)
+	err := q.Bind(ctx, exec, reputationConfigObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -256,43 +229,14 @@ func FindReputationConfig(exec boil.Executor, guildID int64, selectCols ...strin
 	return reputationConfigObj, nil
 }
 
-// FindReputationConfigP retrieves a single record by ID with an executor, and panics on error.
-func FindReputationConfigP(exec boil.Executor, guildID int64, selectCols ...string) *ReputationConfig {
-	retobj, err := FindReputationConfig(exec, guildID, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *ReputationConfig) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *ReputationConfig) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// InsertP a single record using an executor, and panics on error. See Insert
-// for whitelist behavior description.
-func (o *ReputationConfig) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *ReputationConfig) InsertG(ctx context.Context, columns boil.Columns) error {
+	return o.Insert(ctx, boil.GetContextDB(), columns)
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *ReputationConfig) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no reputation_configs provided for insertion")
 	}
@@ -301,18 +245,17 @@ func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error
 
 	nzDefaults := queries.NonZeroDefaultSet(reputationConfigColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	reputationConfigInsertCacheMut.RLock()
 	cache, cached := reputationConfigInsertCache[key]
 	reputationConfigInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			reputationConfigColumns,
 			reputationConfigColumnsWithDefault,
 			reputationConfigColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(reputationConfigType, reputationConfigMapping, wl)
@@ -324,9 +267,9 @@ func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"reputation_configs\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"reputation_configs\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"reputation_configs\" DEFAULT VALUES"
+			cache.query = "INSERT INTO \"reputation_configs\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -335,9 +278,7 @@ func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error
 			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -349,9 +290,9 @@ func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 
 	if err != nil {
@@ -367,56 +308,33 @@ func (o *ReputationConfig) Insert(exec boil.Executor, whitelist ...string) error
 	return nil
 }
 
-// UpdateG a single ReputationConfig record. See Update for
-// whitelist behavior description.
-func (o *ReputationConfig) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
-}
-
-// UpdateGP a single ReputationConfig record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *ReputationConfig) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateP uses an executor to update the ReputationConfig, and panics on error.
-// See Update for whitelist behavior description.
-func (o *ReputationConfig) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
+// UpdateG a single ReputationConfig record using the global executor.
+// See Update for more documentation.
+func (o *ReputationConfig) UpdateG(ctx context.Context, columns boil.Columns) (int64, error) {
+	return o.Update(ctx, boil.GetContextDB(), columns)
 }
 
 // Update uses an executor to update the ReputationConfig.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *ReputationConfig) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *ReputationConfig) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	reputationConfigUpdateCacheMut.RLock()
 	cache, cached := reputationConfigUpdateCache[key]
 	reputationConfigUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			reputationConfigColumns,
 			reputationConfigPrimaryKeyColumns,
-			whitelist,
 		)
 
-		if len(whitelist) == 0 {
+		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return errors.New("models: unable to update reputation_configs, could not build whitelist")
+			return 0, errors.New("models: unable to update reputation_configs, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"reputation_configs\" SET %s WHERE %s",
@@ -425,7 +343,7 @@ func (o *ReputationConfig) Update(exec boil.Executor, whitelist ...string) error
 		)
 		cache.valueMapping, err = queries.BindMapping(reputationConfigType, reputationConfigMapping, append(wl, reputationConfigPrimaryKeyColumns...))
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
@@ -436,9 +354,15 @@ func (o *ReputationConfig) Update(exec boil.Executor, whitelist ...string) error
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	_, err = exec.Exec(cache.query, values...)
+	var result sql.Result
+	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update reputation_configs row")
+		return 0, errors.Wrap(err, "models: unable to update reputation_configs row")
+	}
+
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by update for reputation_configs")
 	}
 
 	if !cached {
@@ -447,56 +371,40 @@ func (o *ReputationConfig) Update(exec boil.Executor, whitelist ...string) error
 		reputationConfigUpdateCacheMut.Unlock()
 	}
 
-	return nil
-}
-
-// UpdateAllP updates all rows with matching column names, and panics on error.
-func (q reputationConfigQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
-func (q reputationConfigQuery) UpdateAll(cols M) error {
+func (q reputationConfigQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
 
-	_, err := q.Query.Exec()
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all for reputation_configs")
+		return 0, errors.Wrap(err, "models: unable to update all for reputation_configs")
 	}
 
-	return nil
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for reputation_configs")
+	}
+
+	return rowsAff, nil
 }
 
 // UpdateAllG updates all rows with the specified column values.
-func (o ReputationConfigSlice) UpdateAllG(cols M) error {
-	return o.UpdateAll(boil.GetDB(), cols)
-}
-
-// UpdateAllGP updates all rows with the specified column values, and panics on error.
-func (o ReputationConfigSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateAllP updates all rows with the specified column values, and panics on error.
-func (o ReputationConfigSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o ReputationConfigSlice) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return o.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o ReputationConfigSlice) UpdateAll(exec boil.Executor, cols M) error {
+func (o ReputationConfigSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
-		return nil
+		return 0, nil
 	}
 
 	if len(cols) == 0 {
-		return errors.New("models: update all requires at least one column argument")
+		return 0, errors.New("models: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -524,45 +432,34 @@ func (o ReputationConfigSlice) UpdateAll(exec boil.Executor, cols M) error {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all in reputationConfig slice")
+		return 0, errors.Wrap(err, "models: unable to update all in reputationConfig slice")
 	}
 
-	return nil
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all reputationConfig")
+	}
+	return rowsAff, nil
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *ReputationConfig) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...)
-}
-
-// UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *ReputationConfig) UpsertGP(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
-// UpsertP panics on error.
-func (o *ReputationConfig) UpsertP(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *ReputationConfig) UpsertG(ctx context.Context, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(ctx, boil.GetContextDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *ReputationConfig) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no reputation_configs provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(reputationConfigColumnsWithDefault, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-
 	if updateOnConflict {
 		buf.WriteByte('t')
 	} else {
@@ -573,11 +470,13 @@ func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, con
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
@@ -594,19 +493,17 @@ func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, con
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			reputationConfigColumns,
 			reputationConfigColumnsWithDefault,
 			reputationConfigColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			reputationConfigColumns,
 			reputationConfigPrimaryKeyColumns,
-			updateColumns,
 		)
+
 		if len(update) == 0 {
 			return errors.New("models: unable to upsert reputation_configs, could not build update column list")
 		}
@@ -616,7 +513,7 @@ func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, con
 			conflict = make([]string, len(reputationConfigPrimaryKeyColumns))
 			copy(conflict, reputationConfigPrimaryKeyColumns)
 		}
-		cache.query = queries.BuildUpsertQueryPostgres(dialect, "\"reputation_configs\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"reputation_configs\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(reputationConfigType, reputationConfigMapping, insert)
 		if err != nil {
@@ -643,12 +540,12 @@ func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, con
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(returns...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
 			err = nil // Postgres doesn't return anything when there's no update
 		}
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert reputation_configs")
@@ -663,39 +560,17 @@ func (o *ReputationConfig) Upsert(exec boil.Executor, updateOnConflict bool, con
 	return nil
 }
 
-// DeleteP deletes a single ReputationConfig record with an executor.
-// DeleteP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *ReputationConfig) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteG deletes a single ReputationConfig record.
 // DeleteG will match against the primary key column to find the record to delete.
-func (o *ReputationConfig) DeleteG() error {
-	if o == nil {
-		return errors.New("models: no ReputationConfig provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
-}
-
-// DeleteGP deletes a single ReputationConfig record.
-// DeleteGP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *ReputationConfig) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *ReputationConfig) DeleteG(ctx context.Context) (int64, error) {
+	return o.Delete(ctx, boil.GetContextDB())
 }
 
 // Delete deletes a single ReputationConfig record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *ReputationConfig) Delete(exec boil.Executor) error {
+func (o *ReputationConfig) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no ReputationConfig provided for delete")
+		return 0, errors.New("models: no ReputationConfig provided for delete")
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), reputationConfigPrimaryKeyMapping)
@@ -706,67 +581,53 @@ func (o *ReputationConfig) Delete(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete from reputation_configs")
+		return 0, errors.Wrap(err, "models: unable to delete from reputation_configs")
 	}
 
-	return nil
-}
-
-// DeleteAllP deletes all rows, and panics on error.
-func (q reputationConfigQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for reputation_configs")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAll deletes all matching rows.
-func (q reputationConfigQuery) DeleteAll() error {
+func (q reputationConfigQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return errors.New("models: no reputationConfigQuery provided for delete all")
+		return 0, errors.New("models: no reputationConfigQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from reputation_configs")
+		return 0, errors.Wrap(err, "models: unable to delete all from reputation_configs")
 	}
 
-	return nil
-}
-
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o ReputationConfigSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reputation_configs")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAllG deletes all rows in the slice.
-func (o ReputationConfigSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("models: no ReputationConfig slice provided for delete all")
-	}
-	return o.DeleteAll(boil.GetDB())
-}
-
-// DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
-func (o ReputationConfigSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o ReputationConfigSlice) DeleteAllG(ctx context.Context) (int64, error) {
+	return o.DeleteAll(ctx, boil.GetContextDB())
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o ReputationConfigSlice) DeleteAll(exec boil.Executor) error {
+func (o ReputationConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no ReputationConfig slice provided for delete all")
+		return 0, errors.New("models: no ReputationConfig slice provided for delete all")
 	}
 
 	if len(o) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	var args []interface{}
@@ -783,41 +644,32 @@ func (o ReputationConfigSlice) DeleteAll(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from reputationConfig slice")
+		return 0, errors.Wrap(err, "models: unable to delete all from reputationConfig slice")
 	}
 
-	return nil
-}
-
-// ReloadGP refetches the object from the database and panics on error.
-func (o *ReputationConfig) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reputation_configs")
 	}
-}
 
-// ReloadP refetches the object from the database with an executor. Panics on error.
-func (o *ReputationConfig) ReloadP(exec boil.Executor) {
-	if err := o.Reload(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+	return rowsAff, nil
 }
 
 // ReloadG refetches the object from the database using the primary keys.
-func (o *ReputationConfig) ReloadG() error {
+func (o *ReputationConfig) ReloadG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: no ReputationConfig provided for reload")
 	}
 
-	return o.Reload(boil.GetDB())
+	return o.Reload(ctx, boil.GetContextDB())
 }
 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *ReputationConfig) Reload(exec boil.Executor) error {
-	ret, err := FindReputationConfig(exec, o.GuildID)
+func (o *ReputationConfig) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindReputationConfig(ctx, exec, o.GuildID)
 	if err != nil {
 		return err
 	}
@@ -826,42 +678,24 @@ func (o *ReputationConfig) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *ReputationConfigSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// ReloadAllP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *ReputationConfigSlice) ReloadAllP(exec boil.Executor) {
-	if err := o.ReloadAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *ReputationConfigSlice) ReloadAllG() error {
+func (o *ReputationConfigSlice) ReloadAllG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: empty ReputationConfigSlice provided for reload all")
 	}
 
-	return o.ReloadAll(boil.GetDB())
+	return o.ReloadAll(ctx, boil.GetContextDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *ReputationConfigSlice) ReloadAll(exec boil.Executor) error {
+func (o *ReputationConfigSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
 
-	reputationConfigs := ReputationConfigSlice{}
+	slice := ReputationConfigSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), reputationConfigPrimaryKeyMapping)
@@ -871,20 +705,25 @@ func (o *ReputationConfigSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT \"reputation_configs\".* FROM \"reputation_configs\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, reputationConfigPrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&reputationConfigs)
+	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to reload all in ReputationConfigSlice")
 	}
 
-	*o = reputationConfigs
+	*o = slice
 
 	return nil
 }
 
+// ReputationConfigExistsG checks if the ReputationConfig row exists.
+func ReputationConfigExistsG(ctx context.Context, guildID int64) (bool, error) {
+	return ReputationConfigExists(ctx, boil.GetContextDB(), guildID)
+}
+
 // ReputationConfigExists checks if the ReputationConfig row exists.
-func ReputationConfigExists(exec boil.Executor, guildID int64) (bool, error) {
+func ReputationConfigExists(ctx context.Context, exec boil.ContextExecutor, guildID int64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"reputation_configs\" where \"guild_id\"=$1 limit 1)"
 
@@ -893,7 +732,7 @@ func ReputationConfigExists(exec boil.Executor, guildID int64) (bool, error) {
 		fmt.Fprintln(boil.DebugWriter, guildID)
 	}
 
-	row := exec.QueryRow(sql, guildID)
+	row := exec.QueryRowContext(ctx, sql, guildID)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -901,29 +740,4 @@ func ReputationConfigExists(exec boil.Executor, guildID int64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// ReputationConfigExistsG checks if the ReputationConfig row exists.
-func ReputationConfigExistsG(guildID int64) (bool, error) {
-	return ReputationConfigExists(boil.GetDB(), guildID)
-}
-
-// ReputationConfigExistsGP checks if the ReputationConfig row exists. Panics on error.
-func ReputationConfigExistsGP(guildID int64) bool {
-	e, err := ReputationConfigExists(boil.GetDB(), guildID)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// ReputationConfigExistsP checks if the ReputationConfig row exists. Panics on error.
-func ReputationConfigExistsP(exec boil.Executor, guildID int64) bool {
-	e, err := ReputationConfigExists(exec, guildID)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

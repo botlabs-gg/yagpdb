@@ -1,6 +1,10 @@
-[postgres]
+add-global-variants="true"
+no-hooks="true"
+
+[psql]
 dbname="yagpdb"
 host="localhost"
 user="postgres"
 pass="123"
 sslmode="disable"
+whitelist=["commands_channels_overrides","commands_command_overrides"]

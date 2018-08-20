@@ -437,7 +437,7 @@ func (cs *YAGCommand) GetSettings(data *dcmd.Data, channelID, channelParentID, g
 	}
 
 	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
-	channelOverrides, err := models.CommandsChannelsOverridesG(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", channelID, channelParentID, guildID), qm.Load("CommandsCommandOverrides")).All()
+	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", channelID, channelParentID, guildID), qm.Load("CommandsCommandOverrides")).AllG(context.Background())
 	if err != nil {
 		err = errors.WithMessage(err, "query channel overrides")
 		return

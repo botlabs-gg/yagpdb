@@ -344,6 +344,15 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
+	guild := bot.State.Guild(true, c.GuildID)
+	if guild == nil {
+		return
+	}
+	role := guild.Role(true, config.IntMuteRole())
+	if role == nil {
+		return // Probably deleted the mute role, do nothing then
+	}
+
 	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
 
 	removedRoles, err := AddMemberMuteRole(config, c.Member.User.ID, c.Member.Roles)

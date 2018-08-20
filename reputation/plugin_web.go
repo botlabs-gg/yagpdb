@@ -5,9 +5,10 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
-	"gopkg.in/volatiletech/null.v6"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -70,7 +71,7 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	if _, ok := templateData["RepSettings"]; !ok {
-		settings, err := GetConfig(activeGuild.ID)
+		settings, err := GetConfig(r.Context(), activeGuild.ID)
 		if !web.CheckErr(templateData, err, "Failed retrieving settings", web.CtxLogger(r.Context()).Error) {
 			templateData["RepSettings"] = settings
 		}
@@ -89,7 +90,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 
 	templateData["RepSettings"] = conf
 
-	err = conf.UpsertG(true, []string{"guild_id"}, []string{
+	err = conf.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist(
 		"points_name",
 		"enabled",
 		"cooldown",
@@ -99,7 +100,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 		"blacklisted_give_role",
 		"blacklisted_receive_role",
 		"admin_role",
-	})
+	), boil.Infer())
 
 	return
 }
@@ -107,7 +108,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
-	conf, err := GetConfig(activeGuild.ID)
+	conf, err := GetConfig(r.Context(), activeGuild.ID)
 	if err != nil {
 		return err
 	}
