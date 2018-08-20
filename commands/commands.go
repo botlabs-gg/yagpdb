@@ -18,6 +18,11 @@ const (
 	CtxKeyChannelOverride
 )
 
+type MessageFilterFunc func(msg *discordgo.Message) bool
+
+// These functions are called on every message, and should return true if the message should be checked for commands, false otherwise
+var MessageFilterFuncs []MessageFilterFunc
+
 type Plugin struct{}
 
 func RegisterPlugin() {

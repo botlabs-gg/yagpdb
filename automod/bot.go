@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
@@ -25,7 +26,8 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, CommandsMessageFilterFunc)
+
 	eventsystem.AddHandler(HandleMessageUpdate, eventsystem.EventMessageUpdate)
 
 	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
@@ -85,8 +87,8 @@ func CachedGetConfig(gID int64) (*Config, error) {
 	return confItem.Value().(*Config), nil
 }
 
-func HandleMessageCreate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageCreate().Message)
+func CommandsMessageFilterFunc(msg *discordgo.Message) bool {
+	return !CheckMessage(msg)
 }
 
 func HandleMessageUpdate(evt *eventsystem.EventData) {
