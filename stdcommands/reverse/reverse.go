@@ -2,6 +2,8 @@ package reverse
 
 import (
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/commands"
 )
 
@@ -21,6 +23,15 @@ var Command = &commands.YAGCommand{
 		out := ""
 		for _, r := range toFlip {
 			out = string(r) + out
+		}
+
+		cop := *data.Msg
+		cop.Content = out
+
+		if data.CS.Type == discordgo.ChannelTypeGuildText {
+			if automod.CheckMessage(&cop) {
+				return "", nil
+			}
 		}
 
 		return ":upside_down: " + out, nil

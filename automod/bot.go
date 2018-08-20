@@ -93,40 +93,40 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 	CheckMessage(evt.MessageUpdate().Message)
 }
 
-func CheckMessage(m *discordgo.Message) {
+func CheckMessage(m *discordgo.Message) bool {
 
 	if m.Author == nil || m.Author.ID == common.BotUser.ID {
-		return // Pls no panicerinos or banerinos self
+		return false // Pls no panicerinos or banerinos self
 	}
 
 	if m.Author.Bot {
-		return
+		return false
 	}
 
 	cs := bot.State.Channel(true, m.ChannelID)
 	if cs == nil {
 		logrus.WithField("channel", m.ChannelID).Error("Channel not found in state")
-		return
+		return false
 	}
 
 	if cs.IsPrivate() {
-		return
+		return false
 	}
 
 	config, err := CachedGetConfig(cs.Guild.ID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed retrieving config")
-		return
+		return false
 	}
 
 	if !config.Enabled {
-		return
+		return false
 	}
 
 	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
 	if err != nil {
 		logrus.WithError(err).WithField("guild", cs.Guild.ID).Warn("Member not found in state, automod ignoring")
-		return
+		return false
 	}
 
 	locked := true
@@ -173,7 +173,7 @@ func CheckMessage(m *discordgo.Message) {
 	}
 
 	if !del {
-		return
+		return false
 	}
 
 	if punishMsg != "" {
@@ -201,5 +201,7 @@ func CheckMessage(m *discordgo.Message) {
 	if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
 		logrus.WithError(err).Error("Error carrying out punishment")
 	}
+
+	return true
 
 }
