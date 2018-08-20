@@ -92,6 +92,32 @@ func HandleReady(data *eventsystem.EventData) {
 	}
 	common.BotSession.State.Ready = ready
 	common.BotSession.State.Unlock()
+
+	var listedServers []int64
+	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving connected servers")
+	}
+
+	numShards := ShardManager.GetNumShards()
+
+OUTER:
+	for _, v := range listedServers {
+		shard := (v >> 22) % int64(numShards)
+		if int(shard) != data.Session.ShardID {
+			continue
+		}
+
+		for _, readyGuild := range evt.Guilds {
+			if readyGuild.ID == v {
+				continue OUTER
+			}
+		}
+
+		log.Info("Left server while bot was down: ", v)
+		common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
+		go EmitGuildRemoved(v)
+	}
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
