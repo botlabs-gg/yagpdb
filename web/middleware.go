@@ -108,7 +108,6 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		cookie, err := r.Cookie(SessionCookieName)
 		if err != nil {
 			// Cookie not present, skip retrieving session
-			log.Println("cookie not present")
 			return
 		}
 
