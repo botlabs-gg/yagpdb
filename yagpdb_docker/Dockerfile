@@ -6,7 +6,7 @@ RUN git clone -b yagpdb https://github.com/jonas747/discordgo github.com/jonas74
   && git clone -b dgofork https://github.com/jonas747/dutil github.com/jonas747/dutil \
   && git clone -b dgofork https://github.com/jonas747/dshardmanager github.com/jonas747/dshardmanager \
   && git clone -b dgofork https://github.com/jonas747/dcmd github.com/jonas747/dcmd \
-  && git clone -b v2.7.4 https://github.com/volatiletech/sqlboiler github.com/volatiletech/sqlboiler
+  && git clone -b master https://github.com/volatiletech/sqlboiler github.com/volatiletech/sqlboiler
 
 RUN go get -d -v \
   github.com/jonas747/yagpdb/cmd/yagpdb
