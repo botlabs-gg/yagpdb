@@ -3,6 +3,7 @@ package cah
 import (
 	"github.com/jonas747/cardsagainstdiscord"
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"strings"
 )
@@ -40,7 +41,13 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a cards against humanity game thats ongoing in this channel",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			err := p.Manager.TryAdminRemoveGame(data.Msg.Author.ID)
+			isAdmin, err := bot.AdminOrPerm(0, data.Msg.Author.ID, data.CS.ID)
+			if err == nil && isAdmin {
+				err = p.Manager.RemoveGame(data.CS.ID)
+			} else {
+				err = p.Manager.TryAdminRemoveGame(data.Msg.Author.ID)
+			}
+
 			if err != nil {
 				if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
 					return cahErr, nil

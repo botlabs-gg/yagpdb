@@ -71,10 +71,6 @@ func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 		return false, err
 	}
 
-	if err != nil {
-		return false, err
-	}
-
 	if perms&needed != 0 {
 		return true, nil
 	}
