@@ -229,18 +229,20 @@ var cmdUsernames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.GS.ID)
-		if err != nil {
-			return nil, err
+		if parsed.GS != nil {
+			config, err := GetConfig(parsed.GS.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			if !config.UsernameLoggingEnabled {
+				return "Username logging is disabled on this server", nil
+			}
 		}
 
 		target := parsed.Msg.Author
 		if parsed.Args[0].Value != nil {
 			target = parsed.Args[0].Value.(*discordgo.User)
-		}
-
-		if !config.UsernameLoggingEnabled {
-			return "Username logging is disabled on this server", nil
 		}
 
 		usernames, err := GetUsernames(target.ID, 25)
