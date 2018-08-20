@@ -5,44 +5,56 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/randomize"
 	"github.com/volatiletech/sqlboiler/strmangle"
+)
+
+var (
+	// Relationships sometimes use the reflection helper queries.Equal/queries.Assign
+	// so force a package dependency in case they don't.
+	_ = queries.Equal
 )
 
 func testCommandsCommandOverrides(t *testing.T) {
 	t.Parallel()
 
-	query := CommandsCommandOverrides(nil)
+	query := CommandsCommandOverrides()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
+
 func testCommandsCommandOverridesDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = commandsCommandOverride.Delete(tx); err != nil {
+	if rowsAff, err := o.Delete(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -57,22 +69,25 @@ func testCommandsCommandOverridesQueryDeleteAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = CommandsCommandOverrides(tx).DeleteAll(); err != nil {
+	if rowsAff, err := CommandsCommandOverrides().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -87,24 +102,27 @@ func testCommandsCommandOverridesSliceDeleteAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice := CommandsCommandOverrideSlice{commandsCommandOverride}
+	slice := CommandsCommandOverrideSlice{o}
 
-	if err = slice.DeleteAll(tx); err != nil {
+	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -113,47 +131,51 @@ func testCommandsCommandOverridesSliceDeleteAll(t *testing.T) {
 		t.Error("want zero records, got:", count)
 	}
 }
+
 func testCommandsCommandOverridesExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	e, err := CommandsCommandOverrideExists(tx, commandsCommandOverride.ID)
+	e, err := CommandsCommandOverrideExists(ctx, tx, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if CommandsCommandOverride exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected CommandsCommandOverrideExistsG to return true, but got false.")
+		t.Errorf("Expected CommandsCommandOverrideExists to return true, but got false.")
 	}
 }
+
 func testCommandsCommandOverridesFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	commandsCommandOverrideFound, err := FindCommandsCommandOverride(tx, commandsCommandOverride.ID)
+	commandsCommandOverrideFound, err := FindCommandsCommandOverride(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -162,23 +184,25 @@ func testCommandsCommandOverridesFind(t *testing.T) {
 		t.Error("want a record, got nil")
 	}
 }
+
 func testCommandsCommandOverridesBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = CommandsCommandOverrides(tx).Bind(commandsCommandOverride); err != nil {
+	if err = CommandsCommandOverrides().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
@@ -188,18 +212,19 @@ func testCommandsCommandOverridesOne(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if x, err := CommandsCommandOverrides(tx).One(); err != nil {
+	if x, err := CommandsCommandOverrides().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
@@ -220,16 +245,17 @@ func testCommandsCommandOverridesAll(t *testing.T) {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverrideOne.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = commandsCommandOverrideOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = commandsCommandOverrideTwo.Insert(tx); err != nil {
+	if err = commandsCommandOverrideTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := CommandsCommandOverrides(tx).All()
+	slice, err := CommandsCommandOverrides().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -253,16 +279,17 @@ func testCommandsCommandOverridesCount(t *testing.T) {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverrideOne.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = commandsCommandOverrideOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = commandsCommandOverrideTwo.Insert(tx); err != nil {
+	if err = commandsCommandOverrideTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -277,18 +304,19 @@ func testCommandsCommandOverridesInsert(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -303,18 +331,19 @@ func testCommandsCommandOverridesInsertWhitelist(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx, commandsCommandOverrideColumnsWithoutDefault...); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Whitelist(commandsCommandOverrideColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -325,8 +354,9 @@ func testCommandsCommandOverridesInsertWhitelist(t *testing.T) {
 }
 
 func testCommandsCommandOverrideToOneCommandsChannelsOverrideUsingCommandsChannelsOverride(t *testing.T) {
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var local CommandsCommandOverride
 	var foreign CommandsChannelsOverride
@@ -339,16 +369,16 @@ func testCommandsCommandOverrideToOneCommandsChannelsOverrideUsingCommandsChanne
 		t.Errorf("Unable to randomize CommandsChannelsOverride struct: %s", err)
 	}
 
-	if err := foreign.Insert(tx); err != nil {
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
 	local.CommandsChannelsOverridesID = foreign.ID
-	if err := local.Insert(tx); err != nil {
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.CommandsChannelsOverride(tx).One()
+	check, err := local.CommandsChannelsOverride().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +388,7 @@ func testCommandsCommandOverrideToOneCommandsChannelsOverrideUsingCommandsChanne
 	}
 
 	slice := CommandsCommandOverrideSlice{&local}
-	if err = local.L.LoadCommandsChannelsOverride(tx, false, (*[]*CommandsCommandOverride)(&slice)); err != nil {
+	if err = local.L.LoadCommandsChannelsOverride(ctx, tx, false, (*[]*CommandsCommandOverride)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.CommandsChannelsOverride == nil {
@@ -366,7 +396,7 @@ func testCommandsCommandOverrideToOneCommandsChannelsOverrideUsingCommandsChanne
 	}
 
 	local.R.CommandsChannelsOverride = nil
-	if err = local.L.LoadCommandsChannelsOverride(tx, true, &local); err != nil {
+	if err = local.L.LoadCommandsChannelsOverride(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.CommandsChannelsOverride == nil {
@@ -377,8 +407,9 @@ func testCommandsCommandOverrideToOneCommandsChannelsOverrideUsingCommandsChanne
 func testCommandsCommandOverrideToOneSetOpCommandsChannelsOverrideUsingCommandsChannelsOverride(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var a CommandsCommandOverride
 	var b, c CommandsChannelsOverride
@@ -394,15 +425,15 @@ func testCommandsCommandOverrideToOneSetOpCommandsChannelsOverrideUsingCommandsC
 		t.Fatal(err)
 	}
 
-	if err := a.Insert(tx); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = b.Insert(tx); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
 	for i, x := range []*CommandsChannelsOverride{&b, &c} {
-		err = a.SetCommandsChannelsOverride(tx, i != 0, x)
+		err = a.SetCommandsChannelsOverride(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -421,7 +452,7 @@ func testCommandsCommandOverrideToOneSetOpCommandsChannelsOverrideUsingCommandsC
 		zero := reflect.Zero(reflect.TypeOf(a.CommandsChannelsOverridesID))
 		reflect.Indirect(reflect.ValueOf(&a.CommandsChannelsOverridesID)).Set(zero)
 
-		if err = a.Reload(tx); err != nil {
+		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
@@ -430,23 +461,25 @@ func testCommandsCommandOverrideToOneSetOpCommandsChannelsOverrideUsingCommandsC
 		}
 	}
 }
+
 func testCommandsCommandOverridesReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = commandsCommandOverride.Reload(tx); err != nil {
+	if err = o.Reload(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -456,40 +489,43 @@ func testCommandsCommandOverridesReloadAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice := CommandsCommandOverrideSlice{commandsCommandOverride}
+	slice := CommandsCommandOverrideSlice{o}
 
-	if err = slice.ReloadAll(tx); err != nil {
+	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
+
 func testCommandsCommandOverridesSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := CommandsCommandOverrides(tx).All()
+	slice, err := CommandsCommandOverrides().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -507,24 +543,28 @@ var (
 func testCommandsCommandOverridesUpdate(t *testing.T) {
 	t.Parallel()
 
+	if 0 == len(commandsCommandOverridePrimaryKeyColumns) {
+		t.Skip("Skipping table with no primary key columns")
+	}
 	if len(commandsCommandOverrideColumns) == len(commandsCommandOverridePrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -533,12 +573,14 @@ func testCommandsCommandOverridesUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverridePrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	if err = commandsCommandOverride.Update(tx); err != nil {
+	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only affect one row but affected", rowsAff)
 	}
 }
 
@@ -551,18 +593,19 @@ func testCommandsCommandOverridesSliceUpdateAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	commandsCommandOverride := &CommandsCommandOverride{}
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
+	o := &CommandsCommandOverride{}
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverrideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -571,7 +614,7 @@ func testCommandsCommandOverridesSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, commandsCommandOverride, commandsCommandOverrideDBTypes, true, commandsCommandOverridePrimaryKeyColumns...); err != nil {
+	if err = randomize.Struct(seed, o, commandsCommandOverrideDBTypes, true, commandsCommandOverridePrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
@@ -586,17 +629,28 @@ func testCommandsCommandOverridesSliceUpdateAll(t *testing.T) {
 		)
 	}
 
-	value := reflect.Indirect(reflect.ValueOf(commandsCommandOverride))
+	value := reflect.Indirect(reflect.ValueOf(o))
+	typ := reflect.TypeOf(o).Elem()
+	n := typ.NumField()
+
 	updateMap := M{}
 	for _, col := range fields {
-		updateMap[col] = value.FieldByName(strmangle.TitleCase(col)).Interface()
+		for i := 0; i < n; i++ {
+			f := typ.Field(i)
+			if f.Tag.Get("boil") == col {
+				updateMap[col] = value.Field(i).Interface()
+			}
+		}
 	}
 
-	slice := CommandsCommandOverrideSlice{commandsCommandOverride}
-	if err = slice.UpdateAll(tx, updateMap); err != nil {
+	slice := CommandsCommandOverrideSlice{o}
+	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("wanted one record updated but got", rowsAff)
 	}
 }
+
 func testCommandsCommandOverridesUpsert(t *testing.T) {
 	t.Parallel()
 
@@ -607,18 +661,19 @@ func testCommandsCommandOverridesUpsert(t *testing.T) {
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	commandsCommandOverride := CommandsCommandOverride{}
-	if err = randomize.Struct(seed, &commandsCommandOverride, commandsCommandOverrideDBTypes, true); err != nil {
+	o := CommandsCommandOverride{}
+	if err = randomize.Struct(seed, &o, commandsCommandOverrideDBTypes, true); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = commandsCommandOverride.Upsert(tx, false, nil, nil); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert CommandsCommandOverride: %s", err)
 	}
 
-	count, err := CommandsCommandOverrides(tx).Count()
+	count, err := CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -627,15 +682,15 @@ func testCommandsCommandOverridesUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &commandsCommandOverride, commandsCommandOverrideDBTypes, false, commandsCommandOverridePrimaryKeyColumns...); err != nil {
+	if err = randomize.Struct(seed, &o, commandsCommandOverrideDBTypes, false, commandsCommandOverridePrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize CommandsCommandOverride struct: %s", err)
 	}
 
-	if err = commandsCommandOverride.Upsert(tx, true, nil, nil); err != nil {
+	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert CommandsCommandOverride: %s", err)
 	}
 
-	count, err = CommandsCommandOverrides(tx).Count()
+	count, err = CommandsCommandOverrides().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

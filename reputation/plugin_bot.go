@@ -47,7 +47,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	conf, err := GetConfig(cs.Guild.ID)
+	conf, err := GetConfig(evt.Context(), cs.Guild.ID)
 	if err != nil || !conf.Enabled {
 		return
 	}
@@ -67,7 +67,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = ModifyRep(conf, cs.Guild.ID, sender, target, 1)
+	err = ModifyRep(evt.Context(), conf, cs.Guild.ID, sender, target, 1)
 	if err != nil {
 		if err == ErrCooldown {
 			// Ignore this error silently
@@ -119,7 +119,7 @@ var cmds = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			conf, err := GetConfig(parsed.GS.ID)
+			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
 			if err != nil {
 				return "An error occured while finding the server config", err
 			}
@@ -135,7 +135,7 @@ var cmds = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Value.(*discordgo.User)
 
-			err = SetRep(parsed.GS.ID, member.ID, target.ID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GS.ID, member.ID, target.ID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -153,7 +153,7 @@ var cmds = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			conf, err := GetConfig(parsed.GS.ID)
+			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
 			if err != nil {
 				return "An error occured while finding the server config", err
 			}
@@ -169,7 +169,7 @@ var cmds = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Int64()
 
-			err = SetRep(parsed.GS.ID, member.ID, target, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GS.ID, member.ID, target, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -190,7 +190,7 @@ var cmds = []*commands.YAGCommand{
 				target = parsed.Args[0].Value.(*discordgo.User)
 			}
 
-			conf, err := GetConfig(parsed.GS.ID)
+			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
 			if err != nil {
 				return "An error occured finding the server config", err
 			}
@@ -252,7 +252,7 @@ var cmds = []*commands.YAGCommand{
 func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 	target := parsed.Args[0].Value.(*discordgo.User)
 
-	conf, err := GetConfig(parsed.GS.ID)
+	conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	amount := parsed.Args[1].Int()
 
-	err = ModifyRep(conf, parsed.GS.ID, sender, receiver, int64(amount))
+	err = ModifyRep(parsed.Context(), conf, parsed.GS.ID, sender, receiver, int64(amount))
 	if err != nil {
 		if cast, ok := err.(UserError); ok {
 			return cast, nil

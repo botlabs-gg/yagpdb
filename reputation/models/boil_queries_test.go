@@ -16,16 +16,12 @@ import (
 
 var dbNameRand *rand.Rand
 
-func MustTx(transactor boil.Transactor, err error) boil.Transactor {
+func MustTx(transactor boil.ContextTransactor, err error) boil.ContextTransactor {
 	if err != nil {
 		panic(fmt.Sprintf("Cannot create a transactor: %s", err))
 	}
 	return transactor
 }
-
-var rgxPGFkey = regexp.MustCompile(`(?m)^ALTER TABLE ONLY .*\n\s+ADD CONSTRAINT .*? FOREIGN KEY .*?;\n`)
-var rgxMySQLkey = regexp.MustCompile(`(?m)((,\n)?\s+CONSTRAINT.*?FOREIGN KEY.*?\n)+`)
-var rgxMSSQLkey = regexp.MustCompile(`(?m)^ALTER TABLE .*ADD\s+CONSTRAINT .* FOREIGN KEY.*?.*\n?REFERENCES.*`)
 
 func newFKeyDestroyer(regex *regexp.Regexp, reader io.Reader) io.Reader {
 	return &fKeyDestroyer{
@@ -47,7 +43,9 @@ func (f *fKeyDestroyer) Read(b []byte) (int, error) {
 			return 0, err
 		}
 
-		f.buf = bytes.NewBuffer(f.rgx.ReplaceAll(all, []byte{}))
+		all = bytes.Replace(all, []byte{'\r', '\n'}, []byte{'\n'}, -1)
+		all = f.rgx.ReplaceAll(all, []byte{})
+		f.buf = bytes.NewBuffer(all)
 	}
 
 	return f.buf.Read(b)

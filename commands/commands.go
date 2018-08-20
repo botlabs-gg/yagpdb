@@ -1,6 +1,6 @@
 package commands
 
-//go:generate sqlboiler --no-hooks -w "commands_channels_overrides,commands_command_overrides" postgres
+//go:generate sqlboiler --no-hooks psql
 //REMOVED: generate easyjson  commands.go
 
 import (

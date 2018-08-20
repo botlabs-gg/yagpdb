@@ -1,8 +1,9 @@
 package reputation
 
-//go:generate sqlboiler --no-hooks -w "reputation_configs,reputation_users,reputation_log" postgres
+//go:generate sqlboiler --no-hooks psql
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/jonas747/discordgo"
@@ -14,6 +15,7 @@ import (
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	"strconv"
 )
 
@@ -132,9 +134,9 @@ var (
 	ErrCooldown           = UserError("You're still on cooldown")
 )
 
-func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *dstate.MemberState, amount int64) (err error) {
+func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64, sender, receiver *dstate.MemberState, amount int64) (err error) {
 	if conf == nil {
-		conf, err = GetConfig(guildID)
+		conf, err = GetConfig(ctx, guildID)
 		if err != nil {
 			return
 		}
@@ -160,7 +162,7 @@ func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *d
 		return
 	}
 
-	err = insertUpdateUserRep(guildID, receiver.ID, amount)
+	err = insertUpdateUserRep(ctx, guildID, receiver.ID, amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
 		ClearCooldown(guildID, sender.ID)
@@ -176,7 +178,7 @@ func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *d
 		Amount:         amount,
 	}
 
-	err = entry.InsertG()
+	err = entry.InsertG(ctx, boil.Infer())
 	if err != nil {
 		err = errors.WithMessage(err, "ModifyRep log entry.Insert")
 	}
@@ -184,7 +186,7 @@ func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *d
 	return
 }
 
-func insertUpdateUserRep(guildID, userID int64, amount int64) (err error) {
+func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int64) (err error) {
 
 	user := &models.ReputationUser{
 		GuildID: guildID,
@@ -193,14 +195,14 @@ func insertUpdateUserRep(guildID, userID int64, amount int64) (err error) {
 	}
 
 	// First try inserting a new user
-	err = user.InsertG()
+	err = user.InsertG(ctx, boil.Infer())
 	if err == nil {
 		logrus.Debug("Inserted")
 		return nil
 	}
 
 	// Update
-	r, err := common.PQ.Exec("UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
+	r, err := common.PQ.ExecContext(ctx, "UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
 	rows, _ := r.RowsAffected()
 	logrus.Println("Rows: ", rows, userID, guildID)
 	return
@@ -255,14 +257,14 @@ func IsAdmin(gs *dstate.GuildState, member *dstate.MemberState, config *models.R
 	return false
 }
 
-func SetRep(gid int64, senderID, userID int64, points int64) error {
+func SetRep(ctx context.Context, gid int64, senderID, userID int64, points int64) error {
 	user := &models.ReputationUser{
 		GuildID: gid,
 		UserID:  userID,
 		Points:  points,
 	}
 
-	err := user.UpsertG(true, []string{"guild_id", "user_id"}, []string{"points"})
+	err := user.UpsertG(ctx, true, []string{"guild_id", "user_id"}, boil.Whitelist("points"), boil.Infer())
 	if err != nil {
 		return err
 	}
@@ -276,7 +278,7 @@ func SetRep(gid int64, senderID, userID int64, points int64) error {
 		Amount:         points,
 	}
 
-	err = entry.InsertG()
+	err = entry.InsertG(ctx, boil.Infer())
 	return errors.WithMessage(err, "SetRep log entry.Insert")
 }
 
@@ -300,8 +302,8 @@ func ClearCooldown(guildID, senderID int64) error {
 	return common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyCooldown(guildID, senderID)))
 }
 
-func GetConfig(guildID int64) (*models.ReputationConfig, error) {
-	conf, err := models.FindReputationConfigG(guildID)
+func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, error) {
+	conf, err := models.FindReputationConfigG(ctx, guildID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return DefaultConfig(guildID), nil
@@ -365,58 +367,3 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 
 	return resultEntries, nil
 }
-
-// func DetailedLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
-// 	if len(ranks) < 1 {
-// 		return []*LeaderboardEntry{}, nil
-// 	}
-
-// 	query := "SELECT id,username,bot,avatar FROM d_users WHERE id in ("
-// 	args := make([]interface{}, len(ranks))
-
-// 	for i, v := range ranks {
-// 		if i != 0 {
-// 			query += ","
-// 		}
-
-// 		args[i] = v.UserID
-// 		query += "$" + strconv.Itoa(i+1)
-// 	}
-// 	query += ")"
-
-// 	result := make([]*LeaderboardEntry, len(ranks))
-// 	for i, v := range ranks {
-// 		result[i] = &LeaderboardEntry{
-// 			RankEntry: v,
-// 		}
-// 	}
-
-// 	rows, err := common.DSQLStateDB.Query(query, args...)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "ToLeaderboardEntries")
-// 	}
-// 	defer rows.Close()
-// 	for rows.Next() {
-// 		var id int64
-// 		var entry LeaderboardEntry
-// 		err = rows.Scan(&id, &entry.Username, &entry.Bot, &entry.Avatar)
-// 		if err != nil {
-// 			logrus.WithError(err).Error("Failed scanning row")
-// 			continue
-// 		}
-
-// 		for i, v := range result {
-// 			if v.UserID == id {
-// 				entry.RankEntry = v.RankEntry
-// 				result[i] = &entry
-// 				if entry.Avatar != "" {
-// 					result[i].Avatar = discordgo.EndpointUserAvatar(strconv.FormatInt(id, 10), entry.Avatar)
-// 				} else {
-// 					result[i].Avatar = "/static/dist/img/unknown-user.png"
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return result, nil
-// }
