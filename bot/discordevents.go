@@ -117,6 +117,10 @@ OUTER:
 		log.Info("Left server while bot was down: ", v)
 		common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
 		go EmitGuildRemoved(v)
+
+		if common.Statsd != nil {
+			common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
+		}
 	}
 }
 
@@ -141,6 +145,10 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 			EvtInterface: g,
 			Type:         eventsystem.EventNewGuild,
 		}, eventsystem.EventNewGuild)
+
+		if common.Statsd != nil {
+			common.Statsd.Incr("yagpdb.joined_guilds", nil, 1)
+		}
 	}
 
 	var banned bool
@@ -170,6 +178,10 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 	}
 
 	go EmitGuildRemoved(evt.GuildDelete().ID)
+
+	if common.Statsd != nil {
+		common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
+	}
 }
 
 // StateHandler updates the world state
