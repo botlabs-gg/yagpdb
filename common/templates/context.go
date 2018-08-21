@@ -178,7 +178,7 @@ func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 func baseContextFuncs(c *Context) {
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
 	c.ContextFuncs["sendMessage"] = c.tmplSendMessage(true)
-	c.ContextFuncs["sendMessageNoFilter"] = c.tmplSendMessage(false)
+	c.ContextFuncs["sendMessageNoEscape"] = c.tmplSendMessage(false)
 
 	// Mentions
 	c.ContextFuncs["mentionEveryone"] = c.tmplMentionEveryone
