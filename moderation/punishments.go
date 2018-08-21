@@ -121,6 +121,9 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 	logrus.Println("MODERATION:", author.Username, action.Prefix, user.Username, "cause", reason)
 
 	if memberNotFound {
+		// Wait a tiny bit to make sure the audit log is updated
+		time.Sleep(time.Second * 3)
+
 		// Pull user details from audit log if we can
 		auditLog, err := common.BotSession.GuildAuditLog(gs.ID, common.BotUser.ID, 0, discordgo.AuditLogActionMemberBanAdd, 10)
 		if err == nil {
