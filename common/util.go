@@ -368,6 +368,19 @@ func EscapeSpecialMentions(in string) string {
 }
 
 // EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
+func EscapeEveryoneHere(s string, escapeEveryone, escapeHere bool) string {
+	if escapeEveryone {
+		s = everyoneReplacer.Replace(s)
+	}
+
+	if escapeHere {
+		s = hereReplacer.Replace(s)
+	}
+
+	return s
+}
+
+// EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
 func EscapeSpecialMentionsConditional(s string, allowEveryone, allowHere bool, allowRoles []int64) string {
 	if !allowEveryone {
 		s = everyoneReplacer.Replace(s)

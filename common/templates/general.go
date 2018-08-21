@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
 	"math/rand"
 	"reflect"
@@ -403,4 +404,14 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 
 func tmplCurrentTime() time.Time {
 	return time.Now()
+}
+
+func tmplEscapeHere(in string) string {
+	return common.EscapeEveryoneHere(in, false, true)
+}
+func tmplEscapeEveryone(in string) string {
+	return common.EscapeEveryoneHere(in, true, false)
+}
+func tmplEscapeEveryoneHere(in string) string {
+	return common.EscapeEveryoneHere(in, true, true)
 }
