@@ -16,6 +16,7 @@ import (
 
 type PostConfigForm struct {
 	Enabled                bool
+	EnableThanksDetection  bool
 	PointsName             string `valid:",50"`
 	Cooldown               int    `valid:"0,86401"` // One day
 	MaxGiveAmount          int64
@@ -37,6 +38,7 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 		BlacklistedGiveRole:    null.NewString(p.BlacklistedGiveRole, true),
 		BlacklistedReceiveRole: null.NewString(p.BlacklistedReceiveRole, true),
 		AdminRole:              null.NewString(p.AdminRole, true),
+		DisableThanksDetection: !p.EnableThanksDetection,
 	}
 }
 
@@ -100,6 +102,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 		"blacklisted_give_role",
 		"blacklisted_receive_role",
 		"admin_role",
+		"disable_thanks_detection",
 	), boil.Infer())
 
 	return

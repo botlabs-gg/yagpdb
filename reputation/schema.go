@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS reputation_configs (
 	admin_role               varchar(30)
 );
 
+ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS disable_thanks_detection BOOLEAN NOT NULL DEFAULT false;
+
 -- DROP TABLE IF EXISTS reputation_users;
 
 CREATE TABLE IF NOT EXISTS reputation_users (

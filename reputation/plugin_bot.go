@@ -48,7 +48,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	conf, err := GetConfig(evt.Context(), cs.Guild.ID)
-	if err != nil || !conf.Enabled {
+	if err != nil || !conf.Enabled || conf.DisableThanksDetection {
 		return
 	}
 

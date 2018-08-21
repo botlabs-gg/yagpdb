@@ -23,6 +23,10 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-lg-6">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="rep-thanks-detection" {{if not .RepSettings.DisableThanksDetection}}checked{{end}} name="EnableThanksDetection"></input>
+                                <label class="form-check-label" for="rep-thanks-detection">Enable giving rep when someone says "thanks @user"?</label>
+                            </div>
                             <div class="form-group">
                                 <label for="point-name">Name for reputation points</label>
                                 <input type="text" class="form-control" id="point-name" name="PointsName" value="{{.RepSettings.PointsName}}">

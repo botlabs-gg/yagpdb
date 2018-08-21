@@ -33,6 +33,7 @@ type ReputationConfig struct {
 	BlacklistedGiveRole    null.String `boil:"blacklisted_give_role" json:"blacklisted_give_role,omitempty" toml:"blacklisted_give_role" yaml:"blacklisted_give_role,omitempty"`
 	BlacklistedReceiveRole null.String `boil:"blacklisted_receive_role" json:"blacklisted_receive_role,omitempty" toml:"blacklisted_receive_role" yaml:"blacklisted_receive_role,omitempty"`
 	AdminRole              null.String `boil:"admin_role" json:"admin_role,omitempty" toml:"admin_role" yaml:"admin_role,omitempty"`
+	DisableThanksDetection bool        `boil:"disable_thanks_detection" json:"disable_thanks_detection" toml:"disable_thanks_detection" yaml:"disable_thanks_detection"`
 
 	R *reputationConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L reputationConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -49,6 +50,7 @@ var ReputationConfigColumns = struct {
 	BlacklistedGiveRole    string
 	BlacklistedReceiveRole string
 	AdminRole              string
+	DisableThanksDetection string
 }{
 	GuildID:                "guild_id",
 	PointsName:             "points_name",
@@ -60,6 +62,7 @@ var ReputationConfigColumns = struct {
 	BlacklistedGiveRole:    "blacklisted_give_role",
 	BlacklistedReceiveRole: "blacklisted_receive_role",
 	AdminRole:              "admin_role",
+	DisableThanksDetection: "disable_thanks_detection",
 }
 
 // ReputationConfigRels is where relationship names are stored.
@@ -79,9 +82,9 @@ func (*reputationConfigR) NewStruct() *reputationConfigR {
 type reputationConfigL struct{}
 
 var (
-	reputationConfigColumns               = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role"}
+	reputationConfigColumns               = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "disable_thanks_detection"}
 	reputationConfigColumnsWithoutDefault = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role"}
-	reputationConfigColumnsWithDefault    = []string{}
+	reputationConfigColumnsWithDefault    = []string{"disable_thanks_detection"}
 	reputationConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
 
