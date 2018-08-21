@@ -42,66 +42,74 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-func (c *Context) tmplSendMessage(channel interface{}, msg interface{}) string {
-	if c.IncreaseCheckCallCounter("send_message", 3) {
-		return ""
-	}
+func (c *Context) tmplSendMessage(filterSpecialMentions bool) func(channel interface{}, msg interface{}) string {
+	return func(channel interface{}, msg interface{}) string {
 
-	var cid int64
-	verifiedExistence := false
+		if c.IncreaseCheckCallCounter("send_message", 3) {
+			return ""
+		}
 
-	c.GS.RLock()
-	// Look for the channel
-	if channel == nil && c.CS != nil {
-		// No channel passed, assume current channel
-		cid = c.CS.ID
-	} else if channel != nil {
-		switch t := channel.(type) {
-		case int, int64:
-			// Channel id passed
-			cid = ToInt64(t)
-		case string:
-			parsed, err := strconv.ParseInt(t, 10, 64)
-			if err == nil {
-				// Channel id passed in string format
-				cid = parsed
-			} else {
-				// Channel name, look for it
-				for _, v := range c.GS.Channels {
-					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-						cid = v.ID
-						verifiedExistence = true
-						break
+		var cid int64
+		verifiedExistence := false
+
+		c.GS.RLock()
+		// Look for the channel
+		if channel == nil && c.CS != nil {
+			// No channel passed, assume current channel
+			cid = c.CS.ID
+		} else if channel != nil {
+			switch t := channel.(type) {
+			case int, int64:
+				// Channel id passed
+				cid = ToInt64(t)
+			case string:
+				parsed, err := strconv.ParseInt(t, 10, 64)
+				if err == nil {
+					// Channel id passed in string format
+					cid = parsed
+				} else {
+					// Channel name, look for it
+					for _, v := range c.GS.Channels {
+						if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
+							cid = v.ID
+							verifiedExistence = true
+							break
+						}
 					}
 				}
 			}
 		}
-	}
 
-	if !verifiedExistence {
-		// Make sure the channel is part of the guild
-		for k, _ := range c.GS.Channels {
-			if k == cid {
-				verifiedExistence = true
-				break
+		if !verifiedExistence {
+			// Make sure the channel is part of the guild
+			for k, _ := range c.GS.Channels {
+				if k == cid {
+					verifiedExistence = true
+					break
+				}
 			}
 		}
-	}
-	c.GS.RUnlock()
+		c.GS.RUnlock()
 
-	if cid == 0 || !verifiedExistence {
+		if cid == 0 || !verifiedExistence {
+			return ""
+		}
+
+		if embed, ok := msg.(*discordgo.MessageEmbed); ok {
+			common.BotSession.ChannelMessageSendEmbed(cid, embed)
+			return ""
+		}
+
+		strMsg := fmt.Sprint(msg)
+
+		if filterSpecialMentions {
+			strMsg = common.EscapeSpecialMentions(strMsg)
+		}
+
+		common.BotSession.ChannelMessageSend(cid, strMsg)
+
 		return ""
 	}
-
-	if embed, ok := msg.(*discordgo.MessageEmbed); ok {
-		common.BotSession.ChannelMessageSendEmbed(cid, embed)
-		return ""
-	}
-
-	strMsg := fmt.Sprint(msg)
-	common.BotSession.ChannelMessageSend(cid, strMsg)
-
-	return ""
 }
 
 func (c *Context) tmplMentionEveryone() string {
