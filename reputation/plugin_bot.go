@@ -178,6 +178,39 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	&commands.YAGCommand{
+		CmdCategory:  commands.CategoryFun,
+		Name:         "DelRep",
+		Description:  "Deletes someone from the reputation list completely, this cannot be undone.",
+		RequiredArgs: 1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
+			if err != nil {
+				return "An error occured while finding the server config", err
+			}
+
+			member, _ := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
+			parsed.GS.RLock()
+
+			if !IsAdmin(parsed.GS, member, conf) {
+				parsed.GS.RUnlock()
+				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
+			}
+			parsed.GS.RUnlock()
+
+			target := parsed.Args[0].Int64()
+
+			err = DelRep(parsed.Context(), parsed.GS.ID, target)
+			if err != nil {
+				return nil, err
+			}
+
+			return fmt.Sprintf("Deleted all of %d's %s.", target, conf.PointsName), nil
+		},
+	},
+	&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Rep",
 		Description: "Shows yours or the specified users current rep and rank",

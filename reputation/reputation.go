@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 )
 
@@ -280,6 +281,11 @@ func SetRep(ctx context.Context, gid int64, senderID, userID int64, points int64
 
 	err = entry.InsertG(ctx, boil.Infer())
 	return errors.WithMessage(err, "SetRep log entry.Insert")
+}
+
+func DelRep(ctx context.Context, gid int64, userID int64) error {
+	_, err := models.ReputationUsers(qm.Where("guild_id = ? AND user_id = ?", gid, userID)).DeleteAll(ctx, common.PQ)
+	return err
 }
 
 // CheckSetCooldown checks and updates the reputation cooldown of a user,
