@@ -81,6 +81,9 @@ func Init() error {
 	if err != nil {
 		panic(err)
 	}
+	BotSession.State.User = &discordgo.SelfUser{
+		User: BotUser,
+	}
 
 	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
