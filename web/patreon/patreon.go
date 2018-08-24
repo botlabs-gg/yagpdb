@@ -32,7 +32,7 @@ func Run() {
 	clientSecret := os.Getenv("YAGPDB_PATREON_API_CLIENT_SECRET")
 
 	if accessToken == "" || clientID == "" || clientSecret == "" {
-		logrus.Warn("Patreon: Missing one of YAGPDB_PATREON_API_ACCESS_TOKEN, YAGPDB_PATREON_API_CLIENT_ID, YAGPDB_PATREON_API_CLIENT_SECRET, not starting patreon integration.")
+		PatreonDisabled(nil, "Missing one of YAGPDB_PATREON_API_ACCESS_TOKEN, YAGPDB_PATREON_API_CLIENT_ID, YAGPDB_PATREON_API_CLIENT_SECRET")
 		return
 	}
 
@@ -58,11 +58,12 @@ func Run() {
 
 	tc := oauth2.NewClient(context.Background(), &TokenSourceSaver{inner: config.TokenSource(context.Background(), token)})
 
+	// Either use the token provided in the env vars or a cached one in redis
 	pClient := patreon.NewClient(tc)
 	user, err := pClient.FetchUser()
 	if err != nil {
 		if storedRefreshToken == "" {
-			logrus.WithError(err).Error("Patreon: Failed fetching current user with env var refresh token, no refresh token stored in redis, not starting patreon integration")
+			PatreonDisabled(err, "Failed fetching current user with env var refresh token, no refresh token stored in redis.")
 			return
 		}
 
@@ -75,7 +76,7 @@ func Run() {
 
 		user, err = pClient.FetchUser()
 		if err != nil {
-			logrus.WithError(err).Error("Patreon: Failed fetching current user with stored token, not starting patreon integration")
+			PatreonDisabled(err, "Unable to fetch user with redis patreon token.")
 			return
 		}
 	}
@@ -90,6 +91,16 @@ func Run() {
 
 	logrus.Info("Patreon integration activated as ", user.Data.ID, ": ", user.Data.Attributes.FullName)
 	go poller.Run()
+}
+
+func PatreonDisabled(err error, reason string) {
+	l := logrus.NewEntry(logrus.StandardLogger())
+
+	if err != nil {
+		l = l.WithError(err)
+	}
+
+	l.Warn("Not starting patreon integration, also means that premium statuses wont update. " + reason)
 }
 
 func (p *Poller) Run() {
@@ -115,6 +126,7 @@ func (p *Poller) Poll() {
 
 	normalPatrons := make([]*patreon.User, 0, 25)
 	qualityPatrons := make([]*patreon.User, 0, 25)
+
 	for {
 		pledgesResponse, err := p.client.FetchPledges(campaignId,
 			patreon.WithPageSize(25),
