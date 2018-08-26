@@ -45,7 +45,6 @@ var (
 // Initalizes all database connections, config loading and so on
 func Init() error {
 	Testing = os.Getenv("YAGPDB_TESTING") != ""
-
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
 
