@@ -85,10 +85,19 @@ func RefreshMuteOverrides(guildID int64) {
 		return // Still starting up and haven't received the guild yet
 	}
 
+	if guild.Role(true, config.IntMuteRole()) == nil {
+		return
+	}
+
 	guild.RLock()
-	defer guild.RUnlock()
+	channelsCopy := make([]*discordgo.Channel, 0, len(guild.Channels))
 	for _, v := range guild.Channels {
-		RefreshMuteOverrideForChannel(config, v.DGoCopy())
+		channelsCopy = append(channelsCopy, v.DGoCopy())
+	}
+	guild.RUnlock()
+
+	for _, v := range channelsCopy {
+		RefreshMuteOverrideForChannel(config, v)
 	}
 }
 
@@ -119,6 +128,10 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) {
 func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 	// Ignore the channel
 	if common.ContainsInt64Slice(config.MuteIgnoreChannels, channel.ID) {
+		return
+	}
+
+	if !bot.BotProbablyHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles) {
 		return
 	}
 

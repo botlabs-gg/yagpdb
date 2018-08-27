@@ -155,7 +155,7 @@ func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bo
 // BotProbablyHasPermissionGS is the same as BotProbablyHasPermission but with a guildstate instead of guildid
 func BotProbablyHasPermissionGS(gs *dstate.GuildState, channelID int64, permission int) bool {
 	perms, err := gs.MemberPermissions(false, channelID, common.BotUser.ID)
-	if err != nil {
+	if err != nil && err != dstate.ErrChannelNotFound {
 		logrus.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
 	}
