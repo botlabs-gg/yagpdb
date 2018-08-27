@@ -54,6 +54,7 @@ var Command = &commands.YAGCommand{
 
 			bot.State.RLock()
 		}
+		bot.State.RUnlock()
 
 		if len(candidates) < 1 {
 			return "No matches", nil
