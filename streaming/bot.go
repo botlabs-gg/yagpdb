@@ -258,11 +258,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 		}
 
 		if config.GiveRole != 0 {
-			err := GiveStreamingRole(ms, config.GiveRole, gs.Guild)
-			if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
-				log.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
-				client.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(gs.ID), ms.ID))
-			}
+			go GiveStreamingRole(ms, config.GiveRole, gs.Guild)
 		}
 
 		// if true, then we were marked now, and not before
@@ -372,21 +368,21 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
 }
 
-func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guild) error {
-	// Ensure the role exists
-	found := false
-	for _, v := range guild.Roles {
-		if v.ID == role {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil
+func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guild) {
+	if role == 0 {
+		return
 	}
 
-	go common.AddRoleDS(ms, role)
-	return nil
+	err := common.AddRoleDS(ms, role)
+
+	if err != nil {
+		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
+			DisableStreamingRole(guild.ID)
+		}
+
+		log.WithError(err).WithField("guild", guild.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
+		common.RedisPool.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guild.ID), ms.ID))
+	}
 }
 
 func RemoveStreamingRole(ms *dstate.MemberState, role int64, guildID int64) {
@@ -395,7 +391,23 @@ func RemoveStreamingRole(ms *dstate.MemberState, role int64, guildID int64) {
 	}
 
 	err := common.RemoveRoleDS(ms, role)
-	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
+	if err != nil {
 		log.WithError(err).WithField("guild", guildID).WithField("user", ms.ID).WithField("role", role).Error("Failed removing streaming role")
+		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
+			DisableStreamingRole(guildID)
+		}
 	}
+}
+
+func DisableStreamingRole(guildID int64) {
+	log.WithField("guild", guildID).Warn("Disabling streaming role for server because of misssing permissions or unknown role")
+
+	conf, err := GetConfig(guildID)
+	if err != nil {
+		log.WithField("guild", guildID).WithError(err).Error("Failed retrieving streaming config, when there should be one?")
+		return
+	}
+
+	conf.GiveRole = 0
+	conf.Save(guildID)
 }
