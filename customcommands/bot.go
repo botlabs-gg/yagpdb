@@ -124,10 +124,9 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
-	botUser := common.BotUser
 	cs := bot.State.Channel(true, mc.ChannelID)
 
-	if shouldIgnoreChannel(mc, botUser.ID, cs) {
+	if shouldIgnoreChannel(mc, cs) {
 		return
 	}
 
