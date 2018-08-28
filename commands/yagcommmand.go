@@ -190,6 +190,10 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 func (yc *YAGCommand) HumanizeError(err error) string {
 	cause := errors.Cause(err)
 
+	if pe, ok := cause.(PublicError); ok {
+		return "The command returned an error: " + pe.Error()
+	}
+
 	if dErr, ok := cause.(*discordgo.RESTError); ok && dErr.Message != nil && dErr.Message.Message != "" {
 		if dErr.Response != nil && dErr.Response.StatusCode == 403 {
 			return "The bot permissions has been incorrectly set up on this server for it to run this command: " + dErr.Message.Message

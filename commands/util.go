@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jonas747/dcmd"
 	"strconv"
 	"strings"
@@ -103,4 +104,18 @@ func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
 
 	return parsedDur, nil
 
+}
+
+type PublicError string
+
+func (p PublicError) Error() string {
+	return string(p)
+}
+
+func NewPublicError(a ...interface{}) PublicError {
+	return PublicError(fmt.Sprint(a...))
+}
+
+func NewPublicErrorF(f string, a ...interface{}) PublicError {
+	return PublicError(fmt.Sprintf(f, a...))
 }
