@@ -9,29 +9,40 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 type DurationArg struct {
 	Min, Max time.Duration
 }
 
-func (d *DurationArg) Matches(part string) bool {
+func (d *DurationArg) Matches(def *dcmd.ArgDef, part string) bool {
+	if len(part) < 1 {
+		return false
+	}
+
+	// We "need" the first character to be a number
+	r, _ := utf8.DecodeRuneInString(part)
+	if !unicode.IsNumber(r) {
+		return false
+	}
+
 	_, err := ParseDuration(part)
 	return err == nil
 }
 
-func (d *DurationArg) Parse(part string, data *dcmd.Data) (interface{}, error) {
+func (d *DurationArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
 	dur, err := ParseDuration(part)
 	if err != nil {
 		return nil, err
 	}
 
 	if d.Min != 0 && d.Min > dur {
-
+		return nil, &DurationOutOfRangeError{ArgName: def.Name, Got: dur, Max: d.Max, Min: d.Min}
 	}
 
 	if d.Max != 0 && d.Max < dur {
-
+		return nil, &DurationOutOfRangeError{ArgName: def.Name, Got: dur, Max: d.Max, Min: d.Min}
 	}
 
 	return dur, nil
@@ -126,13 +137,19 @@ type DurationOutOfRangeError struct {
 }
 
 func (o *DurationOutOfRangeError) Error() string {
-	preStr := "Too big"
+	preStr := "too big"
 	if o.Got < o.Min {
-		preStr = "Too small"
+		preStr = "too small"
 	}
 
-	const intFormat = "%s is %s (has to be %d - %d)"
-	return fmt.Sprintf(intFormat, o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min), common.HumanizeDuration(common.DurationPrecisionMinutes, o.Max))
+	if o.Min == 0 {
+		return fmt.Sprintf("%s is %s, has to be smaller than %s", o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Max))
+	} else if o.Max == 0 {
+		return fmt.Sprintf("%s is %s, has to be bigger than %s", o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min))
+	} else {
+		format := "%s is %s (has to be within `%d` and `%d`)"
+		return fmt.Sprintf(format, o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min), common.HumanizeDuration(common.DurationPrecisionMinutes, o.Max))
+	}
 }
 
 type PublicError string
