@@ -39,11 +39,13 @@ func ParseDuration(str string) (time.Duration, error) {
 
 	// Parse the time
 	for _, v := range str {
+		// Ignore whitespace
 		if unicode.Is(unicode.White_Space, v) {
 			continue
 		}
 
 		if unicode.IsNumber(v) {
+			// If we reached a number and the modifier was also set, parse the last duration component before starting a new one
 			if currentModifierBuf != "" {
 				if currentNumBuf == "" {
 					currentNumBuf = "1"
