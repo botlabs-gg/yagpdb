@@ -218,10 +218,10 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Mutes a member",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Duration", Default: time.Minute * 10, Type: &dcmd.IntArg{Min: 1, Max: 1440}},
+			&dcmd.ArgDef{Name: "Duration", Default: time.Minute * 10, Type: &commands.DurationArg{Max: time.Hour * 24 * 7}},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
-		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
+		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 2, 1}, []int{0, 1}, []int{0, 2}, []int{0}},
 		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdMute, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 			if config.MuteRole == "" {
@@ -229,7 +229,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			target := parsed.Args[0].Value.(*discordgo.User)
-			muteDuration := parsed.Args[1].Int()
+			muteDuration := int(parsed.Args[1].Value.(time.Duration).Minutes())
 			reason := parsed.Args[2].Str()
 
 			member, err := bot.GetMember(parsed.GS.ID, target.ID)
