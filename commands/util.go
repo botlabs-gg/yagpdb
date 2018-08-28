@@ -4,13 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/common"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 )
 
-type DurationArg struct{}
+type DurationArg struct {
+	Min, Max time.Duration
+}
 
 func (d *DurationArg) Matches(part string) bool {
 	_, err := ParseDuration(part)
@@ -21,6 +24,14 @@ func (d *DurationArg) Parse(part string, data *dcmd.Data) (interface{}, error) {
 	dur, err := ParseDuration(part)
 	if err != nil {
 		return nil, err
+	}
+
+	if d.Min != 0 && d.Min > dur {
+
+	}
+
+	if d.Max != 0 && d.Max < dur {
+
 	}
 
 	return dur, nil
@@ -106,6 +117,22 @@ func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
 
 	return parsedDur, nil
 
+}
+
+type DurationOutOfRangeError struct {
+	Min, Max time.Duration
+	Got      time.Duration
+	ArgName  string
+}
+
+func (o *DurationOutOfRangeError) Error() string {
+	preStr := "Too big"
+	if o.Got < o.Min {
+		preStr = "Too small"
+	}
+
+	const intFormat = "%s is %s (has to be %d - %d)"
+	return fmt.Sprintf(intFormat, o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min), common.HumanizeDuration(common.DurationPrecisionMinutes, o.Max))
 }
 
 type PublicError string

@@ -218,7 +218,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Mutes a member",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Minutes", Default: 10, Type: &dcmd.IntArg{Min: 1, Max: 1440}},
+			&dcmd.ArgDef{Name: "Duration", Default: time.Minute * 10, Type: &dcmd.IntArg{Min: 1, Max: 1440}},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
