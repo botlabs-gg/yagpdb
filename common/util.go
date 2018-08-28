@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"

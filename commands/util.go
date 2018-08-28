@@ -2,24 +2,47 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/common"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
-type DurationArg struct{}
+type DurationArg struct {
+	Min, Max time.Duration
+}
 
-func (d *DurationArg) Matches(part string) bool {
+func (d *DurationArg) Matches(def *dcmd.ArgDef, part string) bool {
+	if len(part) < 1 {
+		return false
+	}
+
+	// We "need" the first character to be a number
+	r, _ := utf8.DecodeRuneInString(part)
+	if !unicode.IsNumber(r) {
+		return false
+	}
+
 	_, err := ParseDuration(part)
 	return err == nil
 }
 
-func (d *DurationArg) Parse(part string, data *dcmd.Data) (interface{}, error) {
+func (d *DurationArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
 	dur, err := ParseDuration(part)
 	if err != nil {
 		return nil, err
+	}
+
+	if d.Min != 0 && d.Min > dur {
+		return nil, &DurationOutOfRangeError{ArgName: def.Name, Got: dur, Max: d.Max, Min: d.Min}
+	}
+
+	if d.Max != 0 && d.Max < dur {
+		return nil, &DurationOutOfRangeError{ArgName: def.Name, Got: dur, Max: d.Max, Min: d.Min}
 	}
 
 	return dur, nil
@@ -38,11 +61,13 @@ func ParseDuration(str string) (time.Duration, error) {
 
 	// Parse the time
 	for _, v := range str {
+		// Ignore whitespace
 		if unicode.Is(unicode.White_Space, v) {
 			continue
 		}
 
 		if unicode.IsNumber(v) {
+			// If we reached a number and the modifier was also set, parse the last duration component before starting a new one
 			if currentModifierBuf != "" {
 				if currentNumBuf == "" {
 					currentNumBuf = "1"
@@ -103,4 +128,40 @@ func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
 
 	return parsedDur, nil
 
+}
+
+type DurationOutOfRangeError struct {
+	Min, Max time.Duration
+	Got      time.Duration
+	ArgName  string
+}
+
+func (o *DurationOutOfRangeError) Error() string {
+	preStr := "too big"
+	if o.Got < o.Min {
+		preStr = "too small"
+	}
+
+	if o.Min == 0 {
+		return fmt.Sprintf("%s is %s, has to be smaller than %s", o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Max))
+	} else if o.Max == 0 {
+		return fmt.Sprintf("%s is %s, has to be bigger than %s", o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min))
+	} else {
+		format := "%s is %s (has to be within `%d` and `%d`)"
+		return fmt.Sprintf(format, o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min), common.HumanizeDuration(common.DurationPrecisionMinutes, o.Max))
+	}
+}
+
+type PublicError string
+
+func (p PublicError) Error() string {
+	return string(p)
+}
+
+func NewPublicError(a ...interface{}) PublicError {
+	return PublicError(fmt.Sprint(a...))
+}
+
+func NewPublicErrorF(f string, a ...interface{}) PublicError {
+	return PublicError(fmt.Sprintf(f, a...))
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -102,23 +102,19 @@ func StringCommands(ccs []*CustomCommand) string {
 	return out
 }
 
-func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dstate.ChannelState) bool {
+func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelState) bool {
 	if cState == nil {
 		log.Warn("Channel not found in state")
 		return true
 	}
 
-	if userID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate() {
+	botID := common.BotUser.ID
+
+	if botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate() {
 		return true
 	}
 
-	channelPerms, err := cState.Guild.MemberPermissions(true, cState.ID, userID)
-	if err != nil {
-		log.WithFields(log.Fields{"guild": cState.Guild.ID, "channel": cState.ID}).WithError(err).Error("Failed checking channel perms")
-		return true
-	}
-
-	if channelPerms&discordgo.PermissionSendMessages == 0 {
+	if !bot.BotProbablyHasPermissionGS(cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
 		return true
 	}
 
@@ -128,10 +124,9 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, userID int64, cState *dst
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
-	botUser := common.BotUser
 	cs := bot.State.Channel(true, mc.ChannelID)
 
-	if shouldIgnoreChannel(mc, botUser.ID, cs) {
+	if shouldIgnoreChannel(mc, cs) {
 		return
 	}
 

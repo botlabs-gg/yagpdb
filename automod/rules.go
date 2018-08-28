@@ -3,7 +3,7 @@ package automod
 import (
 	"fmt"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
@@ -163,46 +163,7 @@ type InviteRule struct {
 var inviteRegex = regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`)
 
 func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-	matches := inviteRegex.FindAllStringSubmatch(evt.ContentWithMentionsReplaced(), -1)
-	if len(matches) < 1 {
-		return
-	}
-
-	checked := make([]string, 0)
-
-	badInvite := false
-
-OUTER:
-	for _, v := range matches {
-		if len(v) < 3 {
-			continue
-		}
-		id := v[2]
-
-		// only check each link once
-		for _, c := range checked {
-			if id == c {
-				continue OUTER
-			}
-		}
-
-		checked = append(checked, id)
-
-		invite, err := common.BotSession.Invite(id)
-		if err != nil {
-			logrus.Error(err)
-			continue
-		}
-
-		// Ignore invites to this server
-		if invite.Guild.ID == cs.Guild.ID {
-			continue
-		}
-		badInvite = true
-		break
-	}
-
-	if !badInvite {
+	if !CheckMessageForBadInvites(evt.ContentWithMentionsReplaced(), cs.Guild.ID) {
 		return
 	}
 
@@ -215,6 +176,51 @@ OUTER:
 
 	msg = "Sending server invites to another server."
 	return
+}
+
+func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bool) {
+	matches := inviteRegex.FindAllStringSubmatch(msg, -1)
+	if len(matches) < 1 {
+		return false
+	}
+
+	// Only check each invite id once
+	checked := make([]string, 0)
+
+OUTER:
+	for _, v := range matches {
+		if len(v) < 3 {
+			continue
+		}
+
+		id := v[2]
+
+		// only check each link once
+		for _, c := range checked {
+			if id == c {
+				continue OUTER
+			}
+		}
+
+		checked = append(checked, id)
+
+		// Check to see if its a valid id, and if so check if its to the same server were on
+		invite, err := common.BotSession.Invite(id)
+		if err != nil {
+			logrus.WithError(err).WithField("guild", guildID).Error("Failed checking invite ", invite)
+			continue
+		}
+
+		// Ignore invites to this server
+		if invite.Guild.ID == guildID {
+			continue
+		}
+
+		return true
+	}
+
+	// If we got here then there's no bad invites
+	return false
 }
 
 type MentionRule struct {

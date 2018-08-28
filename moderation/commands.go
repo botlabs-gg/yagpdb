@@ -139,38 +139,11 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Ban",
+		Aliases:       []string{"banid"},
 		Description:   "Bans a member, specify a duration with -d",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
-		},
-		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
-		},
-		RunFunc: ModBaseCmd(discordgo.PermissionBanMembers, ModCmdBan, func(parsed *dcmd.Data) (interface{}, error) {
-			config := parsed.Context().Value(ContextKeyConfig).(*Config)
-
-			reason := SafeArgString(parsed, 1)
-
-			target := parsed.Args[0].Value.(*discordgo.User)
-
-			err := BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), true)
-			if err != nil {
-				return nil, err
-			}
-
-			return "👌", nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Banid",
-		Description:   "Bans a user by id, specify a duration with -d",
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.Int},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
@@ -209,7 +182,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Kicks a member",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdKick, func(parsed *dcmd.Data) (interface{}, error) {
@@ -217,7 +190,18 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			reason := SafeArgString(parsed, 1)
 
-			target := parsed.Args[0].Value.(*discordgo.User)
+			targetID := parsed.Args[0].Int64()
+			targetMember := parsed.GS.MemberCopy(true, targetID)
+			var target *discordgo.User
+			if targetMember == nil || !targetMember.MemberSet {
+				target = &discordgo.User{
+					Username:      "unknown",
+					Discriminator: "????",
+					ID:            targetID,
+				}
+			} else {
+				target = targetMember.DGoUser()
+			}
 
 			err := KickUser(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
 			if err != nil {
@@ -234,10 +218,10 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Mutes a member",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
-			&dcmd.ArgDef{Name: "Minutes", Default: 10, Type: &dcmd.IntArg{Min: 1, Max: 1440}},
+			&dcmd.ArgDef{Name: "Duration", Default: time.Minute * 10, Type: &commands.DurationArg{Max: time.Hour * 24 * 7}},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
-		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 1}, []int{0, 2}, []int{0}},
+		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 2, 1}, []int{0, 1}, []int{0, 2}, []int{0}},
 		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdMute, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
 			if config.MuteRole == "" {
@@ -245,7 +229,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			target := parsed.Args[0].Value.(*discordgo.User)
-			muteDuration := parsed.Args[1].Int()
+			muteDuration := int(parsed.Args[1].Value.(time.Duration).Minutes())
 			reason := parsed.Args[2].Str()
 
 			member, err := bot.GetMember(parsed.GS.ID, target.ID)

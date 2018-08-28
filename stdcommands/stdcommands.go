@@ -10,10 +10,12 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/banserver"
 	"github.com/jonas747/yagpdb/stdcommands/calc"
 	"github.com/jonas747/yagpdb/stdcommands/catfact"
+	"github.com/jonas747/yagpdb/stdcommands/createinvite"
 	"github.com/jonas747/yagpdb/stdcommands/currentshard"
 	"github.com/jonas747/yagpdb/stdcommands/currenttime"
 	"github.com/jonas747/yagpdb/stdcommands/customembed"
 	"github.com/jonas747/yagpdb/stdcommands/define"
+	"github.com/jonas747/yagpdb/stdcommands/findserver"
 	"github.com/jonas747/yagpdb/stdcommands/info"
 	"github.com/jonas747/yagpdb/stdcommands/invite"
 	"github.com/jonas747/yagpdb/stdcommands/leaveserver"
@@ -83,6 +85,8 @@ func (p *Plugin) AddCommands() {
 		memberfetcher.Command,
 		yagstatus.Command,
 		setstatus.Command,
+		createinvite.Command,
+		findserver.Command,
 	)
 
 }

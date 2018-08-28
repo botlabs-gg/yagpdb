@@ -5,8 +5,10 @@ import (
 	"errors"
 	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/patrickmn/go-cache"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"time"
@@ -137,4 +139,74 @@ func updateAllShardStatuses() {
 		}
 	}
 
+}
+
+// BotProbablyHasPermission returns true if its possible that the bot has the following permission,
+// it also returns true if the bot member could not be found or if the guild is not in state (hence, probably)
+func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bool {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return true
+	}
+
+	return BotProbablyHasPermissionGS(gs, channelID, permission)
+}
+
+// BotProbablyHasPermissionGS is the same as BotProbablyHasPermission but with a guildstate instead of guildid
+func BotProbablyHasPermissionGS(gs *dstate.GuildState, channelID int64, permission int) bool {
+	perms, err := gs.MemberPermissions(false, channelID, common.BotUser.ID)
+	if err != nil && err != dstate.ErrChannelNotFound {
+		logrus.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
+		return true
+	}
+
+	if perms&permission == permission {
+		return true
+	}
+
+	if perms&discordgo.PermissionAdministrator != 0 {
+		return true
+	}
+
+	return false
+}
+
+func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
+	if !BotProbablyHasPermission(guildID, channelID, discordgo.PermissionSendMessages) {
+		return false, nil, nil
+	}
+
+	resp, err = common.BotSession.ChannelMessageSend(channelID, msg)
+	permsOK = true
+	return
+}
+
+func SendMessageGS(gs *dstate.GuildState, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
+	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages) {
+		return false, nil, nil
+	}
+
+	resp, err = common.BotSession.ChannelMessageSend(channelID, msg)
+	permsOK = true
+	return
+}
+
+func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
+	if !BotProbablyHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
+		return false, nil, nil
+	}
+
+	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)
+	permsOK = true
+	return
+}
+
+func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
+	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
+		return false, nil, nil
+	}
+
+	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)
+	permsOK = true
+	return
 }

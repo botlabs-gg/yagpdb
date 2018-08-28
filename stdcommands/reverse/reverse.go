@@ -29,6 +29,11 @@ var Command = &commands.YAGCommand{
 		cop.Content = out
 
 		if data.CS.Type == discordgo.ChannelTypeGuildText {
+
+			if automod.CheckMessageForBadInvites(out, data.CS.Guild.ID) {
+				return data.Msg.Author.Mention() + " tried to use the reverse command to send a invite to another server :(", nil
+			}
+
 			if automod.CheckMessage(&cop) {
 				return "", nil
 			}

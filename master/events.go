@@ -1,7 +1,7 @@
 package master
 
 import (
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 )
 
 // Shard rescaling graceful restarts (This is still very much WIP):

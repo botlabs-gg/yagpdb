@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
@@ -190,6 +190,10 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 func (yc *YAGCommand) HumanizeError(err error) string {
 	cause := errors.Cause(err)
 
+	if pe, ok := cause.(PublicError); ok {
+		return "The command returned an error: " + pe.Error()
+	}
+
 	if dErr, ok := cause.(*discordgo.RESTError); ok && dErr.Message != nil && dErr.Message.Message != "" {
 		if dErr.Response != nil && dErr.Response.StatusCode == 403 {
 			return "The bot permissions has been incorrectly set up on this server for it to run this command: " + dErr.Message.Message
@@ -277,6 +281,10 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 
 		if guild == nil {
 			resp = "You're not on a server?"
+			return
+		}
+
+		if !bot.BotProbablyHasPermissionGS(guild, cState.ID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages) {
 			return
 		}
 

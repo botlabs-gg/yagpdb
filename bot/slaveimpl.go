@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/master"
 	"github.com/jonas747/yagpdb/master/slave"

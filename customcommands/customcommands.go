@@ -3,7 +3,7 @@ package customcommands
 import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix.v3"
