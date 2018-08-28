@@ -124,8 +124,13 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		// Wait a tiny bit to make sure the audit log is updated
 		time.Sleep(time.Second * 3)
 
+		auditLogType := discordgo.AuditLogActionMemberBanAdd
+		if p == PunishmentKick {
+			auditLogType = discordgo.AuditLogActionMemberKick
+		}
+
 		// Pull user details from audit log if we can
-		auditLog, err := common.BotSession.GuildAuditLog(gs.ID, common.BotUser.ID, 0, discordgo.AuditLogActionMemberBanAdd, 10)
+		auditLog, err := common.BotSession.GuildAuditLog(gs.ID, common.BotUser.ID, 0, auditLogType, 10)
 		if err == nil {
 			for _, v := range auditLog.Users {
 				if v.ID == user.ID {

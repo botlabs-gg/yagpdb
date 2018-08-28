@@ -209,7 +209,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Kicks a member",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: ModBaseCmd(discordgo.PermissionKickMembers, ModCmdKick, func(parsed *dcmd.Data) (interface{}, error) {
@@ -217,7 +217,18 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			reason := SafeArgString(parsed, 1)
 
-			target := parsed.Args[0].Value.(*discordgo.User)
+			targetID := parsed.Args[0].Int64()
+			targetMember := parsed.GS.MemberCopy(true, targetID)
+			var target *discordgo.User
+			if targetMember == nil || !targetMember.MemberSet {
+				target = &discordgo.User{
+					Username:      "unknown",
+					Discriminator: "????",
+					ID:            targetID,
+				}
+			} else {
+				target = targetMember.DGoUser()
+			}
 
 			err := KickUser(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
 			if err != nil {
