@@ -285,11 +285,13 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Reports a member to the server's staff",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: ModBaseCmd(0, ModCmdReport, func(parsed *dcmd.Data) (interface{}, error) {
 			config := parsed.Context().Value(ContextKeyConfig).(*Config)
+
+			target := parsed.Args[0].Int64()
 
 			logLink := CreateLogs(parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author)
 
@@ -298,7 +300,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
-			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Msg.Author.ID, parsed.Args[0].Value.(*discordgo.User).ID, parsed.Msg.ChannelID, parsed.Args[1].Str(), logLink)
+			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Msg.Author.ID, target, parsed.Msg.ChannelID, parsed.Args[1].Str(), logLink)
 
 			_, err := common.BotSession.ChannelMessageSend(channelID, common.EscapeSpecialMentions(reportBody))
 			if err != nil {
