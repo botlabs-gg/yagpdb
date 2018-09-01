@@ -26,6 +26,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "findserver",
+	Aliases:              []string{"findservers"},
 	Description:          "Looks for a server by server name or the servers a user was on",
 	HideFromHelp:         true,
 	ArgSwitches: []*dcmd.ArgDef{
@@ -53,6 +54,10 @@ var Command = &commands.YAGCommand{
 			v.RUnlock()
 
 			bot.State.RLock()
+
+			if len(candidates) > 1000 {
+				break
+			}
 		}
 		bot.State.RUnlock()
 
