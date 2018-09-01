@@ -48,10 +48,10 @@ var Command = &commands.YAGCommand{
 		})
 
 		if err != nil {
-			return "Failed creating invite", nil
+			return nil, err
 		}
 
 		bot.SendDM(data.Msg.Author.ID, "discord.gg/"+invite.Code)
-		return "", nil
+		return "Sent invite expiring in 120 seconds and with 1 use in DM", nil
 	}),
 }
