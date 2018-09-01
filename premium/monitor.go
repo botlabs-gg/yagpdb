@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func Run() {
+func run() {
 	ticker := time.NewTicker(time.Minute)
 	time.Sleep(time.Second * 3)
 	err := updateAllPremiumSlots()

@@ -32,6 +32,8 @@ import (
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
+	"github.com/jonas747/yagpdb/premium"
+	_ "github.com/jonas747/yagpdb/premium/codepremiumsource"
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
@@ -138,6 +140,7 @@ func main() {
 	youtube.RegisterPlugin()
 	rolecommands.RegisterPlugin()
 	cah.RegisterPlugin()
+	premium.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")

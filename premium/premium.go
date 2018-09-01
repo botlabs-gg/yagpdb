@@ -24,6 +24,17 @@ const (
 // Json object of []PremiumSlots, the premium slots this user has
 func RedisKeyPremiumUser(userID int64) string { return "premium_user:" + strconv.FormatInt(userID, 10) }
 
+type Plugin struct {
+}
+
+func (p *Plugin) Name() string {
+	return "premium"
+}
+
+func RegisterPlugin() {
+	common.RegisterPlugin(&Plugin{})
+}
+
 type PremiumSlot struct {
 	ID      int64  `json:"id"` // The slot id may be the same as others if the source is different, as its a per source thing
 	Source  string `json:"source"`

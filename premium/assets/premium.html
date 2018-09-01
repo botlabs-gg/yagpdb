@@ -1,0 +1,92 @@
+{{define "premium_user_setup"}}
+{{template "cp_head" .}}
+
+<div class="page-header">
+    <h2>Premium setup</h2>
+</div>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Info</h2>
+            </header>
+
+            <div class="card-body">
+                <p>Here you can redeem codes from giveaways and assign premium slots to servers</p>
+                <p>Keeping discord bots running isn't cheap when they're on tens of thousands of servers, and a Patreon alone without any benefits aside from priority support and whatnot didn't get enough income to run it without a loss, therefor I've had implement premium functionality to increase the intensive to support the bot. The features behind the paywall is extended limits and some other relatively heavy stuff.</p>
+                <p><b>Note that premium is currently in the TESTING phase, so there may be bugs and quirks that needs to be worked out</b></p>
+                <p><b>Final note:</b> This is still a hobby project run by 1 guy in his spare time with occasional code contributions here and there, premium functionality is just a bonus to supporting the bot and not a "product", they may go away at any point if issues should arise.</p>
+
+                <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#premium-full-benefits" aria-expanded="false" aria-controls="premium-full-benefits">
+                Full list of premium benefits
+                </button>
+                <div class="collapse" id="premium-full-benefits">
+                    <section class="card">
+                        <div class="card-body">
+                            <b>General goodies</b>
+                                <li>TBD</li>
+                            <ul>
+                                
+                            </ul>
+                            <b>Extended limits:</b>
+                            <ul>
+                                <li>Message cache duration increased from 1 hour to 12 hours, means you will be able to see removed messages in logs if the message created within 12 hours the message was sent</li>
+                                <li>Max custom commands increased to from 100 to 250</li>
+                                <li>Max Reddit feeds increased from 100 to 1000</li>
+                                <li>Max Youtube feeds increased from 50 to 250 (Possibly higher if needed)</li>
+                                <li>Max Soundboard sounds increased from 50 to 250 (Possibly higher if needed)</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->            
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Redeem codes</h2>
+            </header>
+
+            <div class="card-body">
+                <form>
+                    <input type="text">
+                    <input type="submit" value="Redeem code">
+                    <input type="submit" value="Check code">
+                </form>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<div class="row">
+{{range .PremiumSlots}}
+    <div class="col-6">
+        <section class="card {{if ne .GuildID 0}}card-featured card-featured-success{{end}}">
+            <header class="card-header">
+                <h2 class="card-title">Slot: {{.Message}}</h2>
+            </header>
+
+            <div class="card-body">
+                <ul>
+                    <li>{{if .Temporary}}{{.DurationLeft}}{{else}}Never expires{{end}}</li>
+                </ul>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+{{end}}
+    <!-- /.col-lg-12 -->
+</div>
+{{template "cp_footer" .}}
+
+{{end}}

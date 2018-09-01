@@ -42,6 +42,7 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			var tmplData TemplateData
 			ctx, tmplData = GetCreateTemplateData(ctx)
 			tmplData["PartialRequest"] = true
+			ctx = context.WithValue(ctx, common.ContextKeyIsPartial, true)
 		}
 
 		entry := log.WithFields(log.Fields{
