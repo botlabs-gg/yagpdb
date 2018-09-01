@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -62,8 +63,9 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Handle(pat.Get(""), mainGetHandler)
 	subMux.Handle(pat.Get("/"), mainGetHandler)
-	subMux.Handle(pat.Post(""), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputatoin config"))
-	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputatoin config"))
+	subMux.Handle(pat.Post(""), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputation config"))
+	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputation config"))
+	subMux.Handle(pat.Post("/reset_users"), web.ControllerPostHandler(HandleResetReputation, mainGetHandler, nil, "Reset reputation"))
 
 	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
 	web.ServerPubliAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
@@ -106,6 +108,14 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 	), boil.Infer())
 
 	return
+}
+
+func HandleResetReputation(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
+
+	_, err = models.ReputationUsers(qm.Where("guild_id = ?", activeGuild.ID)).DeleteAll(r.Context(), common.PQ)
+	return templateData, err
 }
 
 func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {

@@ -88,6 +88,25 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
+<!-- /.row -->   
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card card-featured card-featured-danger">
+            <header class="card-header">
+                <h2 class="card-title">Reset all user reputation</h2>
+            </header>
+
+            <div class="card-body">
+                <p>Completely wipe all reputation from the server, <b>CANNOT BE UNDONE</b></p>
+                <form action="/manage/{{.ActiveGuild.ID}}/reputation/reset_users" data-async-form method="post">
+                    <button type="submit" class="btn btn-danger">Completely reset all users rep!</button>
+                </form>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
 <!-- /.row -->            
 {{template "cp_footer" .}}
 
