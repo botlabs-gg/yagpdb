@@ -14,8 +14,12 @@ var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "TopServers",
 	Description: "Responds with the top 15 servers I'm on",
-
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		skip := data.Args[0].Int()
+
 		state := bot.State
 		state.RLock()
 
@@ -32,12 +36,18 @@ var Command = &commands.YAGCommand{
 		sortable := GuildsSortUsers(guilds)
 		sort.Sort(sortable)
 
+		entriesIncluded := 0
 		out := "```"
 		for k, v := range sortable {
-			if k > 14 {
+			if entriesIncluded > 14 {
 				break
 			}
 
+			if k < skip {
+				continue
+			}
+
+			entriesIncluded++
 			out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
 		}
 		return "Top servers the bot is on (by membercount):\n" + out + "\n```", nil
