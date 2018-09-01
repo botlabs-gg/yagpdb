@@ -233,7 +233,7 @@ func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.Member
 	}
 
 	parsedBlacklistedReceiveRole, _ := strconv.ParseInt(conf.BlacklistedReceiveRole.String, 10, 64)
-	if conf.BlacklistedReceiveRole.String != "" && common.ContainsInt64Slice(sender.Roles, parsedBlacklistedReceiveRole) {
+	if conf.BlacklistedReceiveRole.String != "" && common.ContainsInt64Slice(receiver.Roles, parsedBlacklistedReceiveRole) {
 		return ErrBlacklistedReceive
 	}
 
