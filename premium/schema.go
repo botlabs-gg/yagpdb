@@ -1,4 +1,4 @@
-package codepremiumsource
+package premium
 
 const DBSchema = `
 CREATE TABLE IF NOT EXISTS premium_codes (

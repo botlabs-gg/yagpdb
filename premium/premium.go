@@ -33,6 +33,10 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 	common.RegisterPlugin(&Plugin{})
+
+	for _, v := range PremiumSources {
+		v.Init()
+	}
 }
 
 type PremiumSlot struct {

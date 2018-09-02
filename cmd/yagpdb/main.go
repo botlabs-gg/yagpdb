@@ -33,7 +33,6 @@ import (
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/premium"
-	_ "github.com/jonas747/yagpdb/premium/codepremiumsource"
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
