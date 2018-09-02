@@ -16,13 +16,13 @@ import (
 
 const (
 	VERSIONMAJOR = 1
-	VERSIONMINOR = 4
-	VERSIONPATCH = 12
+	VERSIONMINOR = 5
+	VERSIONPATCH = 0
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Xenophobic"
+	VERSION       = VERSIONNUMBER + " Youthful"
 
 	GORM *gorm.DB
 	PQ   *sql.DB
