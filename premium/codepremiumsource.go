@@ -193,7 +193,7 @@ func RedeemCode(ctx context.Context, code string, userID int64) error {
 }
 
 func LookupCode(ctx context.Context, code string) (*models.PremiumCode, error) {
-	c, err := models.PremiumCodes(qm.Where("code = ", code)).OneG(ctx)
+	c, err := models.PremiumCodes(qm.Where("code = ?", code)).OneG(ctx)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrCodeNotFound

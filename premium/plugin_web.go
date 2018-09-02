@@ -27,8 +27,12 @@ func (p *Plugin) InitWeb() {
 
 	submux.Use(web.RequireSessionMiddleware)
 
-	submux.Handle(pat.Get("/"), web.ControllerHandler(HandleGetPremiumMainPage, "premium_user_setup"))
-	submux.Handle(pat.Get(""), web.ControllerHandler(HandleGetPremiumMainPage, "premium_user_setup"))
+	mainHandler := web.ControllerHandler(HandleGetPremiumMainPage, "premium_user_setup")
+
+	submux.Handle(pat.Get("/"), mainHandler)
+	submux.Handle(pat.Get(""), mainHandler)
+
+	submux.Handle(pat.Post("/lookupcode"), web.ControllerPostHandler(HandlePostLookupCode, mainHandler, nil, ""))
 }
 
 // Add in a template var wether the guild is premium or not
@@ -62,14 +66,35 @@ func HandleGetPremiumMainPage(w http.ResponseWriter, r *http.Request) (tmpl web.
 	return tmpl, nil
 }
 
-func HandlePostLookupCode(w http.ResponseWriter, r *http.Request) {
+func HandlePostLookupCode(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	_, tmpl = web.GetCreateTemplateData(r.Context())
 
+	code := r.FormValue("code")
+	if code == "" {
+		return tmpl.AddAlerts(web.ErrorAlert("No code provided")), nil
+	}
+
+	codeModel, err := LookupCode(r.Context(), code)
+	if err != nil {
+		if err == ErrCodeNotFound {
+			return tmpl.AddAlerts(web.ErrorAlert("Code not found")), nil
+		}
+
+		return tmpl, err
+	}
+
+	if codeModel.UserID.Valid {
+		return tmpl.AddAlerts(web.ErrorAlert("That code is already redeemed")), nil
+	}
+
+	tmpl["QueriedCode"] = codeModel
+	return tmpl, nil
 }
 
-func HandlePostRedeemCode(w http.ResponseWriter, r *http.Request) {
-
+func HandlePostRedeemCode(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	return nil, nil
 }
 
-func HandlePostSetSlotGuild(w http.ResponseWriter, r *http.Request) {
-
+func HandlePostSetSlotGuild(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	return nil, nil
 }
