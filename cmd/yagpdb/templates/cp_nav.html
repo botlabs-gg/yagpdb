@@ -282,20 +282,17 @@
 {{if gt .CurrentAd.Height 0}}
 <div id="nav-footer" style="height: {{.CurrentAd.Height}}px;">
     <a href="{{.CurrentAd.LinkURL}}" target="_blank">
+        {{if .CurrentAd.VideoUrls}}
+        {{$dot := .}}
+        <video id="nav-footer-img" autoplay loop muted>
+            {{range $i, $v := .CurrentAd.VideoUrls}}
+            <source src="/{{$v}}" type="{{index $dot.CurrentAd.VideoTypes $i}}">
+            {{end}}
+        </video>
+        {{else}}
         <img src="/{{.CurrentAd.Path}}" id="nav-footer-img"></img>
+        {{end}}
     </a>
-    <!-- <p><a href="/docs/ads">Buy this space for 1$/day (Click here for more info!)</a></p> -->
-    <!-- <p><a href="/docs/index#donate">Donate using patreon, bitcoin and other cryptos!</a></p> -->
-    <!-- <p><i>(Image by the amazing Tashi)</i></p> -->
-    <!-- <a href="/docs/ads"><img src="/static/img/onion_placeholder.png" id="nav-footer-img"></img></a> -->
-<!--     <a href="https://discord.gg/JZufWqM" target="_blank">
-        <img src="/static/img/onion_img_2.png" id="nav-footer-img" style="max-height: 222px !important"></img>
-        <span id="nav-footer-overlay">Advertisement</span>
-    </a> -->
-    <!-- <p><i>(ad by br0wni3#6344)</i></p> -->
-    <!-- <img src="/static/img/fortnite_img.gif" id="nav-footer-img"></img> -->
-    <!-- <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSdWheZWEtyNBF8EZS8f-oH9RiuOw-WOoylFMJ4o0LuoGtUzJg/viewform?usp=sf_link">Would you be okay with an ad showing up here?</a></p> -->
-
 </div>
 {{end}}
 {{end}}
