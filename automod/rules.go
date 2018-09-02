@@ -248,11 +248,11 @@ type LinksRule struct {
 	BaseRule `valid:"traverse"`
 }
 
-var linkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
+var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
 
 func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
 
-	if !linkRegex.MatchString(evt.ContentWithMentionsReplaced()) {
+	if !LinkRegex.MatchString(evt.ContentWithMentionsReplaced()) {
 		return
 	}
 
@@ -367,7 +367,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 }
 
 func (s *SitesRule) checkMessage(message string) (banned bool, item string, threatList string) {
-	matches := linkRegex.FindAllString(message, -1)
+	matches := LinkRegex.FindAllString(message, -1)
 
 	for _, v := range matches {
 		parsed, err := url.ParseRequestURI(v)

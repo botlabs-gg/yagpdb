@@ -37,6 +37,8 @@ var Command = &commands.YAGCommand{
 			if automod.CheckMessage(&cop) {
 				return "", nil
 			}
+
+			out = automod.LinkRegex.ReplaceAllString(out, "")
 		}
 
 		return ":upside_down: " + out, nil
