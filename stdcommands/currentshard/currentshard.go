@@ -10,7 +10,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
-	Name:                 "CurentShard",
+	Name:                 "CurrentShard",
 	Aliases:              []string{"cshard"},
 	Description:          "Shows the current shard this server is on",
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
