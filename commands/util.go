@@ -165,3 +165,9 @@ func NewPublicError(a ...interface{}) PublicError {
 func NewPublicErrorF(f string, a ...interface{}) PublicError {
 	return PublicError(fmt.Sprintf(f, a...))
 }
+
+func FilterBadInvites(msg string, guildID int64, replacement string) string {
+	msg = common.DiscordmeRegex.ReplaceAllString(msg, replacement)
+	msg = common.DiscordInviteRegex.ReplaceAllString(msg, replacement)
+	return msg
+}
