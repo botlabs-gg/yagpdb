@@ -52,10 +52,12 @@ var (
 )
 
 type Advertisement struct {
-	Path    template.URL
-	LinkURL template.URL
-	Width   int
-	Height  int
+	Path       template.URL
+	VideoUrls  []template.URL
+	VideoTypes []string
+	LinkURL    template.URL
+	Width      int
+	Height     int
 }
 
 func init() {
@@ -134,6 +136,22 @@ func LoadAd() {
 		LinkURL: template.URL(linkurl),
 		Width:   width,
 		Height:  height,
+	}
+
+	videos := strings.Split(os.Getenv("YAGPDB_AD_VIDEO_PATHS"), ",")
+	for _, v := range videos {
+		if v == "" {
+			continue
+		}
+		CurrentAd.VideoUrls = append(CurrentAd.VideoUrls, template.URL(v))
+
+		split := strings.SplitN(v, ".", 2)
+		if len(split) < 2 {
+			CurrentAd.VideoTypes = append(CurrentAd.VideoTypes, "unknown")
+			continue
+		}
+
+		CurrentAd.VideoTypes = append(CurrentAd.VideoTypes, "video/"+split[1])
 	}
 }
 

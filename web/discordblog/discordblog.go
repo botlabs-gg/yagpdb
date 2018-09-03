@@ -34,7 +34,7 @@ func RunPoller(session *discordgo.Session, channel int64, interval time.Duration
 	}
 }
 
-var mentionStrippingRegex = regexp.MustCompile("<(#|&)[0-9]*>")
+var mentionStrippingRegex = regexp.MustCompile("<@(#|&)[0-9]*>")
 
 func updatePosts(session *discordgo.Session, channel int64) error {
 	messages, err := session.ChannelMessages(channel, 25, 0, 0, 0)
