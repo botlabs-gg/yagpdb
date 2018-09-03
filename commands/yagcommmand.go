@@ -211,6 +211,10 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		yc.Logger(cmdData).WithError(err).Error("Command returned error")
 	}
 
+	if cast, ok := resp.(string); ok && cmdData.GS != nil {
+		resp = FilterBadInvites(cast, cmdData.GS.ID, "[removed-invite]")
+	}
+
 	if settings.DelResponse && settings.DelResponseDelay < 1 {
 		// Set up the trigger deletion if set
 		if settings.DelTrigger {
