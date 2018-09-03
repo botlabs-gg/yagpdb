@@ -57,10 +57,10 @@
             </header>
 
             <div class="card-body">
-                <form method="post">
+                <form method="post" data-async-form>
                     <input type="text" class="form-control" name="code">
-                    <input type="submit" value="Redeem code" class="btn btn-success" formaction="/premium/redeem">
-                    <input type="submit" value="Check code" class="btn btn-primary" formaction="/premium/lookupcode">
+                    <button type="submit" value="Redeem code" class="btn btn-success" formaction="/premium/redeemcode">Redeem code</button>
+                    <button type="submit" value="Check code" class="btn btn-primary" formaction="/premium/lookupcode">Check code</button>
                 </form>
 
                 {{if .QueriedCode}}
