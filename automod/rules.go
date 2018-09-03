@@ -160,7 +160,8 @@ type InviteRule struct {
 	BaseRule `valid:"traverse"`
 }
 
-var inviteRegex = regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`)
+var discordInvite = regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`)
+var discordmeRegex = regexp.MustCompile(`(discord.me)(?:\/#)?\/([a-zA-Z0-9-]+)`)
 
 func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
 	if !CheckMessageForBadInvites(evt.ContentWithMentionsReplaced(), cs.Guild.ID) {
@@ -179,7 +180,12 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 }
 
 func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bool) {
-	matches := inviteRegex.FindAllStringSubmatch(msg, -1)
+	// check discord.me
+	if discordmeRegex.MatchString(msg) {
+		return true
+	}
+
+	matches := discordInvite.FindAllStringSubmatch(msg, -1)
 	if len(matches) < 1 {
 		return false
 	}
