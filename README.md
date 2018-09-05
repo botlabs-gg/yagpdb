@@ -1,4 +1,4 @@
-YAGPDB  [![Circle CI](https://circleci.com/gh/jonas747/yagpdb.svg?style=svg)](https://circleci.com/gh/jonas747/yagpdb) 
+YAGPDB 
 ================
 
 ### Yet another general purpose discord bot
@@ -103,7 +103,7 @@ git clone -b dgofork https://github.com/jonas747/dshardmanager $GOPATH/src/githu
 git clone -b dgofork https://github.com/jonas747/dcmd $GOPATH/src/github.com/jonas747/dcmd
 go get -v -d github.com/jonas747/yagpdb/cmd/yagpdb
 cd $GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb
-go build -o yagpdb main.go
+go build 
 ```
 You can now run `./yagpdb`
 
