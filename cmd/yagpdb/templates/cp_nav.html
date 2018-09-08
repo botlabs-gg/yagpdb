@@ -58,7 +58,7 @@
                     {{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="Server Name">
-                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{else}}Select Server{{end}}</span>
+                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i class="fas fa-crown text-info ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
                     <span class="role">Change server</span>
                 </div>
 

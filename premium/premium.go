@@ -9,7 +9,6 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strconv"
 	"time"
 )
 
@@ -121,9 +120,8 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 		return ErrSlotNotFound
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "HSET", strconv.FormatInt(guildID, 10), userID))
-
-	return nil
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, guildID, userID))
+	return errors.WithMessage(err, "Hset.RedisKeyPremiumGuilds")
 }
 
 func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error {
@@ -143,6 +141,8 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 		return ErrSlotNotFound
 	}
 
+	oldGuildID := slot.GuildID.Int64
+
 	// Update the duration before we reset the guild_id to null
 	slot.DurationRemaining = int64(SlotDurationLeft(slot))
 	slot.GuildID = null.Int64{}
@@ -155,5 +155,10 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 	}
 
 	err = tx.Commit()
-	return errors.WithMessage(err, "Commit")
+	if err != nil {
+		errors.WithMessage(err, "Commit")
+	}
+
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, oldGuildID))
+	return errors.WithMessage(err, "HDEL.RedisKeyPremiumGuilds")
 }
