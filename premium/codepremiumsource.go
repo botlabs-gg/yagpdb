@@ -45,151 +45,39 @@ func (ps *CodePremiumSource) Names() (human string, idname string) {
 	return "Redeemed code", "code"
 }
 
-func (ps *CodePremiumSource) AllUserSlots(ctx context.Context) (userSlots map[int64][]*PremiumSlot, err error) {
-	allSlots, err := models.PremiumCodes(qm.Where("user_id IS NOT NULL")).AllG(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, "codepremiumsource.AllUserSlots")
-	}
-
-	dst := make(map[int64][]*PremiumSlot)
-	for _, slot := range allSlots {
-		dst[slot.UserID.Int64] = append(dst[slot.UserID.Int64], &PremiumSlot{
-			ID:           slot.ID,
-			Source:       "code",
-			Message:      slot.Message,
-			UserID:       slot.UserID.Int64,
-			GuildID:      slot.GuildID.Int64,
-			DurationLeft: CodeDurationLeft(slot),
-			Temporary:    !slot.Permanent,
-		})
-	}
-
-	return dst, nil
-}
-
-func (ps *CodePremiumSource) SlotsForUser(ctx context.Context, userID int64) (slots []*PremiumSlot, err error) {
-	codes, err := models.PremiumCodes(qm.Where("user_id = ?", userID)).AllG(ctx)
-	if err != nil {
-		err = errors.WithMessage(err, "codepremiumsource.SlotsForUser")
-	}
-
-	slots = make([]*PremiumSlot, 0, len(slots))
-	for _, code := range codes {
-		slots = append(slots, &PremiumSlot{
-			ID:           code.ID,
-			Source:       "code",
-			Message:      code.Message,
-			UserID:       code.UserID.Int64,
-			GuildID:      code.GuildID.Int64,
-			DurationLeft: CodeDurationLeft(code),
-			Temporary:    !code.Permanent,
-		})
-	}
-
-	return slots, err
-}
-
-func (ps *CodePremiumSource) AttachSlot(ctx context.Context, userID int64, slotID int64, guildID int64) error {
-	tx, err := common.PQ.Begin()
-	if err != nil {
-		return errors.WithMessage(err, "begin.codepremiumsource.AttachSlot")
-	}
-
-	code, err := models.PremiumCodes(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL", slotID, userID), qm.For("UPDATE")).One(ctx, tx)
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "find.codepremiumsource.AttachSlot")
-	}
-
-	if !code.Permanent {
-		durLeft := CodeDurationLeft(code)
-		if durLeft <= 0 {
-			tx.Rollback()
-			return ErrCodeExpired
-		}
-	}
-
-	code.AttachedAt = null.TimeFrom(time.Now())
-	code.GuildID = null.Int64From(guildID)
-
-	_, err = code.Update(ctx, tx, boil.Infer())
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "update.codepremiumsource.AttachSlot")
-	}
-
-	err = tx.Commit()
-	return errors.WithMessage(err, "commit.codepremiumsource.AttachSlot")
-}
-
-func (ps *CodePremiumSource) DetachSlot(ctx context.Context, userID int64, slotID int64) error {
-	tx, err := common.PQ.Begin()
-	if err != nil {
-		return errors.WithMessage(err, "begin.codepremiumsource.DetachSlot")
-	}
-
-	code, err := models.PremiumCodes(qm.Where("id = ? AND user_id = ? AND guild_id IS NOT NULL", slotID, userID), qm.For("UPDATE")).One(ctx, tx)
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "find.codepremiumsource.DetachSlot")
-	}
-
-	if !code.Permanent {
-		// Update duration left
-		durUsedSinceLastAttach := time.Since(code.AttachedAt.Time)
-		code.DurationUsed += int64(durUsedSinceLastAttach)
-	}
-
-	code.AttachedAt = null.Time{}
-	code.GuildID = null.Int64{}
-
-	_, err = code.Update(ctx, tx, boil.Infer())
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "update.codepremiumsource.DetachSlot")
-	}
-
-	err = tx.Commit()
-	return errors.WithMessage(err, "commit.codepremiumsource.DetachSlot")
-}
-
-func CodeDurationLeft(code *models.PremiumCode) (duration time.Duration) {
-	if code.Permanent {
-		return 0xfffffffffffffff
-	}
-
-	duration = time.Duration(code.FullDuration - code.DurationUsed)
-
-	if code.GuildID.Valid {
-		duration -= time.Since(code.AttachedAt.Time)
-	}
-
-	return duration
-}
-
 func RedeemCode(ctx context.Context, code string, userID int64) error {
-	tx, err := common.PQ.Begin()
+	tx, err := common.PQ.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.WithMessage(err, "begin.codepremiumsource.RedeemCode")
+		return errors.WithMessage(err, "BeginTX")
 	}
 
+	// Query for the code model
 	c, err := models.PremiumCodes(qm.Where("code = ? AND user_id IS NULL", code), qm.For("UPDATE")).One(ctx, tx)
 	if err != nil {
 		tx.Rollback()
-		return errors.WithMessage(err, "find.codepremiumsource.RedeemCode")
+		return errors.WithMessage(err, "models.PremiumCodes")
 	}
 
+	// model found, with no user attached, create the slot for it
+	slot, err := CreatePremiumSlot(ctx, tx, userID, "code", "Redeemed code", c.Message, c.ID, time.Duration(c.Duration))
+	if err != nil {
+		tx.Rollback()
+		return errors.WithMessage(err, "CreatePremiumSlot")
+	}
+
+	// Update the code fields
 	c.UserID = null.Int64From(userID)
 	c.UsedAt = null.TimeFrom(time.Now())
+	c.SlotID = null.Int64From(slot.ID)
 
 	_, err = c.Update(ctx, tx, boil.Infer())
 	if err != nil {
 		tx.Rollback()
-		return errors.WithMessage(err, "update.codepremiumsource.RedeemCode")
+		return errors.WithMessage(err, "Update")
 	}
 
 	err = tx.Commit()
-	return errors.WithMessage(err, "commit.codepremiumsource.RedeemCode")
+	return errors.WithMessage(err, "Commit")
 }
 
 func LookupCode(ctx context.Context, code string) (*models.PremiumCode, error) {
@@ -199,7 +87,7 @@ func LookupCode(ctx context.Context, code string) (*models.PremiumCode, error) {
 			return nil, ErrCodeNotFound
 		}
 
-		return nil, errors.WithMessage(err, "LookupCode")
+		return nil, errors.WithMessage(err, "models.PremiumCodes")
 	}
 
 	return c, nil
@@ -233,10 +121,10 @@ func GenerateCode(ctx context.Context, message string, duration time.Duration) (
 	encoded := encodeKey(key)
 
 	model := &models.PremiumCode{
-		Code:         encoded,
-		Message:      message,
-		Permanent:    duration == -1,
-		FullDuration: int64(duration),
+		Code:      encoded,
+		Message:   message,
+		Permanent: duration == -1,
+		Duration:  int64(duration),
 	}
 
 	err = model.InsertG(ctx, boil.Infer())
@@ -247,6 +135,7 @@ func GenerateCode(ctx context.Context, message string, duration time.Duration) (
 			}
 		}
 	}
+
 	return model, err
 }
 

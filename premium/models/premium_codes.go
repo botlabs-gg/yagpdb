@@ -23,54 +23,55 @@ import (
 
 // PremiumCode is an object representing the database table.
 type PremiumCode struct {
-	ID           int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Code         string     `boil:"code" json:"code" toml:"code" yaml:"code"`
-	Message      string     `boil:"message" json:"message" toml:"message" yaml:"message"`
-	CreatedAt    time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UsedAt       null.Time  `boil:"used_at" json:"used_at,omitempty" toml:"used_at" yaml:"used_at,omitempty"`
-	AttachedAt   null.Time  `boil:"attached_at" json:"attached_at,omitempty" toml:"attached_at" yaml:"attached_at,omitempty"`
-	UserID       null.Int64 `boil:"user_id" json:"user_id,omitempty" toml:"user_id" yaml:"user_id,omitempty"`
-	GuildID      null.Int64 `boil:"guild_id" json:"guild_id,omitempty" toml:"guild_id" yaml:"guild_id,omitempty"`
-	Permanent    bool       `boil:"permanent" json:"permanent" toml:"permanent" yaml:"permanent"`
-	FullDuration int64      `boil:"full_duration" json:"full_duration" toml:"full_duration" yaml:"full_duration"`
-	DurationUsed int64      `boil:"duration_used" json:"duration_used" toml:"duration_used" yaml:"duration_used"`
+	ID        int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Code      string     `boil:"code" json:"code" toml:"code" yaml:"code"`
+	Message   string     `boil:"message" json:"message" toml:"message" yaml:"message"`
+	CreatedAt time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UsedAt    null.Time  `boil:"used_at" json:"used_at,omitempty" toml:"used_at" yaml:"used_at,omitempty"`
+	SlotID    null.Int64 `boil:"slot_id" json:"slot_id,omitempty" toml:"slot_id" yaml:"slot_id,omitempty"`
+	UserID    null.Int64 `boil:"user_id" json:"user_id,omitempty" toml:"user_id" yaml:"user_id,omitempty"`
+	GuildID   null.Int64 `boil:"guild_id" json:"guild_id,omitempty" toml:"guild_id" yaml:"guild_id,omitempty"`
+	Permanent bool       `boil:"permanent" json:"permanent" toml:"permanent" yaml:"permanent"`
+	Duration  int64      `boil:"duration" json:"duration" toml:"duration" yaml:"duration"`
 
 	R *premiumCodeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L premiumCodeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var PremiumCodeColumns = struct {
-	ID           string
-	Code         string
-	Message      string
-	CreatedAt    string
-	UsedAt       string
-	AttachedAt   string
-	UserID       string
-	GuildID      string
-	Permanent    string
-	FullDuration string
-	DurationUsed string
+	ID        string
+	Code      string
+	Message   string
+	CreatedAt string
+	UsedAt    string
+	SlotID    string
+	UserID    string
+	GuildID   string
+	Permanent string
+	Duration  string
 }{
-	ID:           "id",
-	Code:         "code",
-	Message:      "message",
-	CreatedAt:    "created_at",
-	UsedAt:       "used_at",
-	AttachedAt:   "attached_at",
-	UserID:       "user_id",
-	GuildID:      "guild_id",
-	Permanent:    "permanent",
-	FullDuration: "full_duration",
-	DurationUsed: "duration_used",
+	ID:        "id",
+	Code:      "code",
+	Message:   "message",
+	CreatedAt: "created_at",
+	UsedAt:    "used_at",
+	SlotID:    "slot_id",
+	UserID:    "user_id",
+	GuildID:   "guild_id",
+	Permanent: "permanent",
+	Duration:  "duration",
 }
 
 // PremiumCodeRels is where relationship names are stored.
 var PremiumCodeRels = struct {
-}{}
+	Slot string
+}{
+	Slot: "Slot",
+}
 
 // premiumCodeR is where relationships are stored.
 type premiumCodeR struct {
+	Slot *PremiumSlot
 }
 
 // NewStruct creates a new relationship struct
@@ -82,8 +83,8 @@ func (*premiumCodeR) NewStruct() *premiumCodeR {
 type premiumCodeL struct{}
 
 var (
-	premiumCodeColumns               = []string{"id", "code", "message", "created_at", "used_at", "attached_at", "user_id", "guild_id", "permanent", "full_duration", "duration_used"}
-	premiumCodeColumnsWithoutDefault = []string{"code", "message", "created_at", "used_at", "attached_at", "user_id", "guild_id", "permanent", "full_duration", "duration_used"}
+	premiumCodeColumns               = []string{"id", "code", "message", "created_at", "used_at", "slot_id", "user_id", "guild_id", "permanent", "duration"}
+	premiumCodeColumnsWithoutDefault = []string{"code", "message", "created_at", "used_at", "slot_id", "user_id", "guild_id", "permanent", "duration"}
 	premiumCodeColumnsWithDefault    = []string{"id"}
 	premiumCodePrimaryKeyColumns     = []string{"id"}
 )
@@ -193,6 +194,201 @@ func (q premiumCodeQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 	}
 
 	return count > 0, nil
+}
+
+// Slot pointed to by the foreign key.
+func (o *PremiumCode) Slot(mods ...qm.QueryMod) premiumSlotQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("id=?", o.SlotID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := PremiumSlots(queryMods...)
+	queries.SetFrom(query.Query, "\"premium_slots\"")
+
+	return query
+}
+
+// LoadSlot allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (premiumCodeL) LoadSlot(ctx context.Context, e boil.ContextExecutor, singular bool, maybePremiumCode interface{}, mods queries.Applicator) error {
+	var slice []*PremiumCode
+	var object *PremiumCode
+
+	if singular {
+		object = maybePremiumCode.(*PremiumCode)
+	} else {
+		slice = *maybePremiumCode.(*[]*PremiumCode)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &premiumCodeR{}
+		}
+		args = append(args, object.SlotID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &premiumCodeR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.SlotID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.SlotID)
+		}
+	}
+
+	query := NewQuery(qm.From(`premium_slots`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load PremiumSlot")
+	}
+
+	var resultSlice []*PremiumSlot
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice PremiumSlot")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for premium_slots")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for premium_slots")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Slot = foreign
+		if foreign.R == nil {
+			foreign.R = &premiumSlotR{}
+		}
+		foreign.R.SlotPremiumCodes = append(foreign.R.SlotPremiumCodes, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.SlotID, foreign.ID) {
+				local.R.Slot = foreign
+				if foreign.R == nil {
+					foreign.R = &premiumSlotR{}
+				}
+				foreign.R.SlotPremiumCodes = append(foreign.R.SlotPremiumCodes, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// SetSlotG of the premiumCode to the related item.
+// Sets o.R.Slot to related.
+// Adds o to related.R.SlotPremiumCodes.
+// Uses the global database handle.
+func (o *PremiumCode) SetSlotG(ctx context.Context, insert bool, related *PremiumSlot) error {
+	return o.SetSlot(ctx, boil.GetContextDB(), insert, related)
+}
+
+// SetSlot of the premiumCode to the related item.
+// Sets o.R.Slot to related.
+// Adds o to related.R.SlotPremiumCodes.
+func (o *PremiumCode) SetSlot(ctx context.Context, exec boil.ContextExecutor, insert bool, related *PremiumSlot) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"premium_codes\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"slot_id"}),
+		strmangle.WhereClause("\"", "\"", 2, premiumCodePrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.SlotID, related.ID)
+	if o.R == nil {
+		o.R = &premiumCodeR{
+			Slot: related,
+		}
+	} else {
+		o.R.Slot = related
+	}
+
+	if related.R == nil {
+		related.R = &premiumSlotR{
+			SlotPremiumCodes: PremiumCodeSlice{o},
+		}
+	} else {
+		related.R.SlotPremiumCodes = append(related.R.SlotPremiumCodes, o)
+	}
+
+	return nil
+}
+
+// RemoveSlotG relationship.
+// Sets o.R.Slot to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+// Uses the global database handle.
+func (o *PremiumCode) RemoveSlotG(ctx context.Context, related *PremiumSlot) error {
+	return o.RemoveSlot(ctx, boil.GetContextDB(), related)
+}
+
+// RemoveSlot relationship.
+// Sets o.R.Slot to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *PremiumCode) RemoveSlot(ctx context.Context, exec boil.ContextExecutor, related *PremiumSlot) error {
+	var err error
+
+	queries.SetScanner(&o.SlotID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("slot_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.Slot = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.SlotPremiumCodes {
+		if queries.Equal(o.SlotID, ri.SlotID) {
+			continue
+		}
+
+		ln := len(related.R.SlotPremiumCodes)
+		if ln > 1 && i < ln-1 {
+			related.R.SlotPremiumCodes[i] = related.R.SlotPremiumCodes[ln-1]
+		}
+		related.R.SlotPremiumCodes = related.R.SlotPremiumCodes[:ln-1]
+		break
+	}
+	return nil
 }
 
 // PremiumCodes retrieves all the records using an executor.

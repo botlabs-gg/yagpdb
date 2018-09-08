@@ -125,7 +125,11 @@ func ContextGuild(ctx context.Context) *discordgo.Guild {
 
 // Returns base context data for control panel plugins
 func GetBaseCPContextData(ctx context.Context) (*discordgo.Guild, TemplateData) {
-	guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	var guild *discordgo.Guild
+	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
+		guild = v.(*discordgo.Guild)
+	}
+
 	templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
 
 	return guild, templateData

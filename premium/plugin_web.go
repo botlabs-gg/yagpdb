@@ -2,14 +2,12 @@ package premium
 
 import (
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strconv"
 )
 
 var _ web.Plugin = (*Plugin)(nil)
@@ -37,6 +35,7 @@ func (p *Plugin) InitWeb() {
 
 	submux.Handle(pat.Post("/lookupcode"), web.ControllerPostHandler(HandlePostLookupCode, mainHandler, nil, ""))
 	submux.Handle(pat.Post("/redeemcode"), web.ControllerPostHandler(HandlePostRedeemCode, mainHandler, nil, ""))
+	submux.Handle(pat.Post("/updateslot/:slotID"), web.ControllerPostHandler(HandlePostUpdateSlot, mainHandler, UpdateData{}, ""))
 }
 
 // Add in a template var wether the guild is premium or not
@@ -61,11 +60,12 @@ func HandleGetPremiumMainPage(w http.ResponseWriter, r *http.Request) (tmpl web.
 	_, tmpl = web.GetCreateTemplateData(r.Context())
 
 	user := web.ContextUser(r.Context())
-	slots, err := UserPremiumSlots(user.ID)
+	slots, err := UserPremiumSlots(r.Context(), user.ID)
 	if err != nil {
 		return tmpl, err
 	}
 
+	tmpl["PremiumSlotDurationRemaining"] = SlotDurationLeft
 	tmpl["PremiumSlots"] = slots
 	return tmpl, nil
 }
@@ -104,18 +104,27 @@ func HandlePostRedeemCode(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 		return tmpl.AddAlerts(web.ErrorAlert("No code provided")), nil
 	}
 
-	n, err := models.PremiumCodes(qm.Where("code = ? AND user_id IS NULL", code)).UpdateAll(r.Context(), common.PQ, models.M{"user_id": null.Int64From(user.ID)})
-	if err != nil {
-		return tmpl, err
-	}
-
-	if n < 1 {
-		return tmpl.AddAlerts(web.ErrorAlert("Code not found or already used")), nil
-	}
-
-	return tmpl, nil
+	err = RedeemCode(r.Context(), code, user.ID)
+	return tmpl, err
 }
 
-func HandlePostSetSlotGuild(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
-	return nil, nil
+type UpdateData struct {
+	GuildID int64
+}
+
+func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	_, tmpl = web.GetCreateTemplateData(r.Context())
+	data := r.Context().Value(common.ContextKeyParsedForm).(*UpdateData)
+	user := web.ContextUser(r.Context())
+
+	strSlotID := pat.Param(r, "slotID")
+	parsedSlotID, _ := strconv.ParseInt(strSlotID, 10, 64)
+
+	if data.GuildID != 0 {
+		err = AttachSlotToGuild(r.Context(), parsedSlotID, user.ID, data.GuildID)
+	} else {
+		err = DetachSlotFromGuild(r.Context(), parsedSlotID, user.ID)
+	}
+
+	return tmpl, err
 }

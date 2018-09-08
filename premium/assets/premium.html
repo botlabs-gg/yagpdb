@@ -67,7 +67,7 @@
                 <ul>
                     <li>Code: <code>{{.QueriedCode.Code}}</code></li>
                     <li>Permanent: <code>{{.QueriedCode.Permanent}}</code></li>
-                    <li>Duration: <code>{{.QueriedCode.FullDuration}}</code></li>
+                    <li>Duration: <code>{{.QueriedCode.Duration}}</code></li>
                 </ul>
                 {{end}}
             </div>
@@ -77,17 +77,40 @@
     <!-- /.col-lg-12 -->
 </div>
 <div class="row">
+{{$dot := .}}
 {{range .PremiumSlots}}
-    <div class="col-6">
-        <section class="card {{if ne .GuildID 0}}card-featured card-featured-success{{end}}">
+    <div class="col-6 mb-2">
+        <section class="card {{if .GuildID.Valid}}card-featured card-featured-success{{end}}">
             <header class="card-header">
                 <h2 class="card-title">Slot: {{.Message}}</h2>
             </header>
 
             <div class="card-body">
                 <ul>
-                    <li>{{if .Temporary}}{{.DurationLeft}}{{else}}Never expires{{end}}</li>
-                </ul>
+                    <li>{{if not .Permanent}}Expires in: <code>{{humanizeDurationHours (call $dot.PremiumSlotDurationRemaining .)}}</code>{{else}}Expires never{{end}}.</li>
+                </ul>   
+
+                <form action="/premium/updateslot/{{.ID}}" method="post" data-async-form>
+                    <div class="form-group">
+                        <label for="slot-{{.Source}}-{{.ID}}">Assign this premium slot to a server</label>
+                        <select name="GuildID" class="form-control" id="slot-{{.Source}}-{{.ID}}">
+                            {{$found := false}}
+                            <option value="0" {{if not .GuildID.Valid}}{{$found = true}} selected{{end}}>None</option>
+                            
+
+                            {{$selected := .GuildID.Int64}}
+                            {{range  $dot.ManagedGuilds}}
+                                <option value="{{.ID}}" {{if eq .ID $selected}}{{$found = true}} selected {{end}}>{{.Name}}</option>
+                            {{end}}
+
+                            {{if not $found}}
+                            <option value="{{.GuildID.Int64}}" selected>Unknown server ({{.GuildID.Int64}})</option>
+                            {{end}}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success mt-2">Update premium slot</button>
+                </form>
             </div>
         </section>
         <!-- /.panel -->

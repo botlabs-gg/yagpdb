@@ -353,6 +353,166 @@ func testPremiumCodesInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testPremiumCodeToOnePremiumSlotUsingSlot(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local PremiumCode
+	var foreign PremiumSlot
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, premiumCodeDBTypes, true, premiumCodeColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PremiumCode struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, premiumSlotDBTypes, false, premiumSlotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PremiumSlot struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.SlotID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Slot().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := PremiumCodeSlice{&local}
+	if err = local.L.LoadSlot(ctx, tx, false, (*[]*PremiumCode)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Slot == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Slot = nil
+	if err = local.L.LoadSlot(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Slot == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
+func testPremiumCodeToOneSetOpPremiumSlotUsingSlot(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PremiumCode
+	var b, c PremiumSlot
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, premiumCodeDBTypes, false, strmangle.SetComplement(premiumCodePrimaryKeyColumns, premiumCodeColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, premiumSlotDBTypes, false, strmangle.SetComplement(premiumSlotPrimaryKeyColumns, premiumSlotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, premiumSlotDBTypes, false, strmangle.SetComplement(premiumSlotPrimaryKeyColumns, premiumSlotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*PremiumSlot{&b, &c} {
+		err = a.SetSlot(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Slot != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.SlotPremiumCodes[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.SlotID, x.ID) {
+			t.Error("foreign key was wrong value", a.SlotID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.SlotID))
+		reflect.Indirect(reflect.ValueOf(&a.SlotID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.SlotID, x.ID) {
+			t.Error("foreign key was wrong value", a.SlotID, x.ID)
+		}
+	}
+}
+
+func testPremiumCodeToOneRemoveOpPremiumSlotUsingSlot(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PremiumCode
+	var b PremiumSlot
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, premiumCodeDBTypes, false, strmangle.SetComplement(premiumCodePrimaryKeyColumns, premiumCodeColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, premiumSlotDBTypes, false, strmangle.SetComplement(premiumSlotPrimaryKeyColumns, premiumSlotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetSlot(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveSlot(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Slot().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Slot != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.SlotID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.SlotPremiumCodes) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
 func testPremiumCodesReload(t *testing.T) {
 	t.Parallel()
 
@@ -427,7 +587,7 @@ func testPremiumCodesSelect(t *testing.T) {
 }
 
 var (
-	premiumCodeDBTypes = map[string]string{`AttachedAt`: `timestamp with time zone`, `Code`: `text`, `CreatedAt`: `timestamp with time zone`, `DurationUsed`: `bigint`, `FullDuration`: `bigint`, `GuildID`: `bigint`, `ID`: `bigint`, `Message`: `text`, `Permanent`: `boolean`, `UsedAt`: `timestamp with time zone`, `UserID`: `bigint`}
+	premiumCodeDBTypes = map[string]string{`Code`: `text`, `CreatedAt`: `timestamp with time zone`, `Duration`: `bigint`, `GuildID`: `bigint`, `ID`: `bigint`, `Message`: `text`, `Permanent`: `boolean`, `SlotID`: `bigint`, `UsedAt`: `timestamp with time zone`, `UserID`: `bigint`}
 	_                  = bytes.MinRead
 )
 

@@ -7,4 +7,4 @@ host="localhost"
 user="postgres"
 pass="123"
 sslmode="disable"
-whitelist=["premium_codes"]
+whitelist=["premium_slots", "premium_codes"]

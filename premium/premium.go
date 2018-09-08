@@ -3,8 +3,12 @@ package premium
 import (
 	"context"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"time"
 )
@@ -13,16 +17,9 @@ const (
 	// Hash
 	// Key: guild id's
 	// Value: the user id's providing the premium status
-	RedisKeyPremiumGuilds = "premium_activated_guilds"
-
-	// Set
-	// values: user id's
-	RedisKeyPremiumUsers = "premium_users"
+	RedisKeyPremiumGuilds    = "premium_activated_guilds"
+	RedisKeyPremiumGuildsTmp = "premium_activated_guilds_tmp"
 )
-
-// String/Byte array
-// Json object of []PremiumSlots, the premium slots this user has
-func RedisKeyPremiumUser(userID int64) string { return "premium_user:" + strconv.FormatInt(userID, 10) }
 
 type Plugin struct {
 }
@@ -39,18 +36,6 @@ func RegisterPlugin() {
 	}
 }
 
-type PremiumSlot struct {
-	ID      int64  `json:"id"` // The slot id may be the same as others if the source is different, as its a per source thing
-	Source  string `json:"source"`
-	Message string `json:"message"` // An optinal message for this slot, maybe it was from a giveaway or something
-
-	GuildID int64 `json:"guild_id"` // If this slot is
-	UserID  int64 `json:"user_id"`
-
-	Temporary    bool          `json:"temporary"`  // Wether this slot is fixed monthly (eg patreon slots) or something thats given from say giveaways
-	DurationLeft time.Duration `json:"hours_left"` // How much time is left of this slot, if temporary
-}
-
 // IsGuildPremium return true if the provided guild has the premium status provided to it by a user
 func IsGuildPremium(guildID int64) (bool, error) {
 	var premium bool
@@ -59,34 +44,116 @@ func IsGuildPremium(guildID int64) (bool, error) {
 }
 
 // UserPremiumSlots returns all slots for a user
-func UserPremiumSlots(userID int64) (slots []*PremiumSlot, err error) {
-	err = common.GetRedisJson(RedisKeyPremiumUser(userID), &slots)
-	err = errors.WithMessage(err, "UserPremiumSlots")
+func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.PremiumSlot, err error) {
+	slots, err = models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc")).AllG(ctx)
 	return
-}
-
-func AllPremiumUsers() (users []int64, err error) {
-	err = common.RedisPool.Do(radix.Cmd(&users, "SMEMBERS", RedisKeyPremiumUsers))
-	return users, errors.WithMessage(err, "AllPremiumUsers")
 }
 
 var (
 	PremiumSources []PremiumSource
+
+	ErrSlotNotFound = errors.New("premium slot not found")
 )
 
 type PremiumSource interface {
 	Init()
 	Names() (human string, idname string)
-	AllUserSlots(ctx context.Context) (userSlots map[int64][]*PremiumSlot, err error)
-	SlotsForUser(ctx context.Context, userID int64) (slots []*PremiumSlot, err error)
-	AttachSlot(ctx context.Context, userID int64, slotID int64, guildID int64) (err error)
-	DetachSlot(ctx context.Context, userID int64, slotID int64) (err error)
 }
 
 func RegisterPremiumSource(source PremiumSource) {
 	PremiumSources = append(PremiumSources, source)
 }
 
-func SlotExpired(userID, guildID int64) {
+func SlotExpired(slot *models.PremiumSlot) {
 	// TODO
+}
+
+func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source, title, message string, sourceSlotID int64, duration time.Duration) (*models.PremiumSlot, error) {
+	slot := &models.PremiumSlot{
+		UserID:   userID,
+		Source:   source,
+		SourceID: sourceSlotID,
+
+		Title:   title,
+		Message: message,
+
+		FullDuration:      int64(duration),
+		Permanent:         duration <= 0,
+		DurationRemaining: int64(duration),
+	}
+
+	err := slot.Insert(ctx, exec, boil.Infer())
+	return slot, err
+}
+
+func FindSource(sourceID string) PremiumSource {
+	for _, v := range PremiumSources {
+		if _, id := v.Names(); id == sourceID {
+			return v
+		}
+	}
+
+	return nil
+}
+
+func SlotDurationLeft(slot *models.PremiumSlot) (duration time.Duration) {
+	if slot.Permanent {
+		return 0xfffffffffffffff
+	}
+
+	duration = time.Duration(slot.DurationRemaining)
+
+	if slot.GuildID.Valid {
+		duration -= time.Since(slot.AttachedAt.Time)
+	}
+
+	return duration
+}
+
+func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID int64) error {
+	n, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL AND (permanent OR duration_remaining > 0)", slotID, userID)).UpdateAll(
+		ctx, common.PQ, models.M{"guild_id": null.Int64From(guildID), "attached_at": time.Now()})
+	if err != nil {
+		return errors.WithMessage(err, "UpdateAll")
+	}
+
+	if n < 1 {
+		return ErrSlotNotFound
+	}
+
+	common.RedisPool.Do(radix.FlatCmd(nil, "HSET", strconv.FormatInt(guildID, 10), userID))
+
+	return nil
+}
+
+func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error {
+	tx, err := common.PQ.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.WithMessage(err, "BeginTX")
+	}
+
+	slot, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ?", slotID, userID), qm.For("UPDATE")).One(ctx, tx)
+	if err != nil {
+		tx.Rollback()
+		return errors.WithMessage(err, "PremiumSlots.One")
+	}
+
+	if slot == nil {
+		tx.Rollback()
+		return ErrSlotNotFound
+	}
+
+	// Update the duration before we reset the guild_id to null
+	slot.DurationRemaining = int64(SlotDurationLeft(slot))
+	slot.GuildID = null.Int64{}
+	slot.AttachedAt = null.Time{}
+
+	_, err = slot.Update(ctx, tx, boil.Infer())
+	if err != nil {
+		tx.Rollback()
+		return errors.WithMessage(err, "Update")
+	}
+
+	err = tx.Commit()
+	return errors.WithMessage(err, "Commit")
 }

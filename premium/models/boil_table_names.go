@@ -5,6 +5,8 @@ package models
 
 var TableNames = struct {
 	PremiumCodes string
+	PremiumSlots string
 }{
 	PremiumCodes: "premium_codes",
+	PremiumSlots: "premium_slots",
 }
