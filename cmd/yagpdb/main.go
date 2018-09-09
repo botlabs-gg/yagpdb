@@ -33,6 +33,7 @@ import (
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
 	"github.com/jonas747/yagpdb/premium"
+	"github.com/jonas747/yagpdb/premium/patreonpremiumsource"
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
@@ -140,6 +141,7 @@ func main() {
 	rolecommands.RegisterPlugin()
 	cah.RegisterPlugin()
 	premium.RegisterPlugin()
+	patreonpremiumsource.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")

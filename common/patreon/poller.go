@@ -2,17 +2,16 @@ package patreon
 
 import (
 	"context"
+	"github.com/jonas747/patreon-go"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v3"
-	"github.com/mxpv/patreon-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
-
-var ActivePoller *Poller
 
 type Poller struct {
 	mu     sync.RWMutex
@@ -20,8 +19,7 @@ type Poller struct {
 	token  *oauth2.Token
 	client *patreon.Client
 
-	normalPatrons  []*patreon.User
-	qualityPatrons []*patreon.User
+	activePatrons []*Patron
 }
 
 func Run() {
@@ -124,8 +122,7 @@ func (p *Poller) Poll() {
 	cursor := ""
 	page := 1
 
-	normalPatrons := make([]*patreon.User, 0, 25)
-	qualityPatrons := make([]*patreon.User, 0, 25)
+	patrons := make([]*Patron, 0, 25)
 
 	for {
 		pledgesResponse, err := p.client.FetchPledges(campaignId,
@@ -154,19 +151,29 @@ func (p *Poller) Poll() {
 				continue
 			}
 
-			amount := pledge.Attributes.AmountCents
 			user, ok := users[pledge.Relationships.Patron.Data.ID]
 			if !ok {
 				continue
 			}
 
-			if amount <= 200 {
-				normalPatrons = append(normalPatrons, user)
-			} else {
-				qualityPatrons = append(qualityPatrons, user)
+			patron := &Patron{
+				AmountCents: pledge.Attributes.AmountCents,
+				Avatar:      user.Attributes.ImageURL,
 			}
 
-			// fmt.Printf("%s is pledging %d cents\r\n", patronFullName, amount)
+			if user.Attributes.Vanity != "" {
+				patron.Name = user.Attributes.Vanity
+			} else {
+				patron.Name = user.Attributes.FirstName
+			}
+
+			if user.Attributes.SocialConnections.Discord != nil && user.Attributes.SocialConnections.Discord.UserID != "" {
+				discordID, _ := strconv.ParseInt(user.Attributes.SocialConnections.Discord.UserID, 10, 64)
+				patron.DiscordID = discordID
+			}
+
+			patrons = append(patrons, patron)
+			// fmt.Printf("%s is pledging %d cents, Discord: %d\r\n", patron.Name, patron.AmountCents, patron.DiscordID)
 		}
 
 		// Get the link to the next page of pledges
@@ -179,17 +186,21 @@ func (p *Poller) Poll() {
 		page++
 	}
 
+	patrons = append(patrons, &Patron{
+		DiscordID:   common.Conf.Owner,
+		Name:        "Owner",
+		AmountCents: 10000,
+	})
+
 	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo
 	p.mu.Lock()
-	p.normalPatrons = normalPatrons
-	p.qualityPatrons = qualityPatrons
+	p.activePatrons = patrons
 	p.mu.Unlock()
 }
 
-func (p *Poller) GetPatrons() (normal []*patreon.User, quality []*patreon.User) {
+func (p *Poller) GetPatrons() (patrons []*Patron) {
 	p.mu.RLock()
-	normal = p.normalPatrons
-	quality = p.qualityPatrons
+	patrons = p.activePatrons
 	p.mu.RUnlock()
 
 	return
