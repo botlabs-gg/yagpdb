@@ -13,7 +13,7 @@ import (
 )
 
 func runMonitor() {
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Second * 10)
 	time.Sleep(time.Second * 3)
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
@@ -77,6 +77,8 @@ func updatePremiumServers(ctx context.Context) error {
 
 		rCmd = append(rCmd, strGID, strUserID)
 	}
+
+	logrus.Println(len(rCmd))
 
 	err = common.RedisPool.Do(radix.Pipeline(
 		radix.Cmd(nil, "DEL", RedisKeyPremiumGuildsTmp),

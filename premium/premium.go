@@ -67,6 +67,13 @@ func SlotExpired(slot *models.PremiumSlot) {
 	// TODO
 }
 
+// func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID int64, slots []int64) error {
+// 	userSlots, err = models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc")).All(ctx, exec)
+// 	if err != nil {
+// 		return errors.WithMessage(err, "models.PremiumSlots")
+// 	}
+// }
+
 func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source, title, message string, sourceSlotID int64, duration time.Duration) (*models.PremiumSlot, error) {
 	slot := &models.PremiumSlot{
 		UserID:   userID,

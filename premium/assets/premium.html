@@ -18,8 +18,9 @@
                 <p>Here you can redeem codes from giveaways and assign premium slots to servers</p>
                 <p>Keeping discord bots running isn't cheap when they're on tens of thousands of servers, and a Patreon alone without any benefits aside from priority support and whatnot didn't get enough income to run it without a loss, therefor I've had implement premium functionality to increase the intensive to support the bot. The features behind the paywall is extended limits and some other relatively heavy stuff.</p>
                 <p><b>Note that premium is currently in the TESTING phase, so there may be bugs and quirks that needs to be worked out</b></p>
-                <p><b>Final note:</b> This is still a hobby project run by 1 guy in his spare time with occasional code contributions here and there, premium functionality is just a bonus to supporting the bot and not a "product", they may go away at any point if issues should arise.</p>
+                <p><b>Another note:</b> This is still a hobby project run by 1 guy in his spare time with occasional code contributions here and there and support provided from unpaid volunteers on their free time, premium functionality is just a bonus to supporting the bot and not a "product".</p>
 
+                <p>It will take up to 2 minutes from making the pledge on patreon to it showing up here, so give it those 2 minutes before you contact me</p>
                 <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#premium-full-benefits" aria-expanded="false" aria-controls="premium-full-benefits">
                 Full list of premium benefits
                 </button>
@@ -27,10 +28,10 @@
                     <section class="card">
                         <div class="card-body">
                             <b>General goodies</b>
-                                <li>TBD</li>
-                            <ul>
-                                
+                            <ul> 
+                                <li>Coming later...</li>
                             </ul>
+                                
                             <b>Extended limits:</b>
                             <ul>
                                 <li>Message cache duration increased from 1 hour to 12 hours, means you will be able to see removed messages in logs if the message created within 12 hours the message was sent</li>
@@ -82,18 +83,19 @@
     <div class="col-6 mb-2">
         <section class="card {{if .GuildID.Valid}}card-featured card-featured-success{{end}}">
             <header class="card-header">
-                <h2 class="card-title">Slot: {{.Message}}</h2>
+                <h2 class="card-title">Slot: {{.Title}}</h2>
             </header>
 
             <div class="card-body">
                 <ul>
                     <li>{{if not .Permanent}}Expires in: <code>{{humanizeDurationHours (call $dot.PremiumSlotDurationRemaining .)}}</code>{{else}}Expires never{{end}}.</li>
+                    {{if .Message}}<li>{{.Message}}</li>{{end}}
                 </ul>   
 
                 <form action="/premium/updateslot/{{.ID}}" method="post" data-async-form>
                     <div class="form-group">
-                        <label for="slot-{{.Source}}-{{.ID}}">Assign this premium slot to a server</label>
-                        <select name="GuildID" class="form-control" id="slot-{{.Source}}-{{.ID}}">
+                        <label for="slot-{{.ID}}">Assign this premium slot to a server</label>
+                        <select name="GuildID" class="form-control" id="slot-{{.ID}}">
                             {{$found := false}}
                             <option value="0" {{if not .GuildID.Valid}}{{$found = true}} selected{{end}}>None</option>
                             
