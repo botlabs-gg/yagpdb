@@ -14,3 +14,4 @@ cp ../../serverstats/assets/* templates/plugins/
 cp ../../soundboard/assets/* templates/plugins/
 cp ../../streaming/assets/* templates/plugins/
 cp ../../youtube/assets/* templates/plugins/
+cp ../../assets/assets/* templates/plugins/

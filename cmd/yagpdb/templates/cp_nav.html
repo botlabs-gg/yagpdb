@@ -58,7 +58,7 @@
                     {{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="Server Name">
-                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{else}}Select Server{{end}}</span>
+                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i class="fas fa-crown text-info ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
                     <span class="role">Change server</span>
                 </div>
 
@@ -113,6 +113,9 @@
                     <li class="divider"></li>
                     <li>
                         <a role="menuitem" tabindex="-1" href="/logout"><i class="fas fa-power-off"></i> Logout</a>
+                    </li>
+                    <li>
+                        <a role="menuitem" tabindex="-1" href="/premium"><i class="fas fa-crown"></i> Premium</a>
                     </li>
                 </ul>
             </div>

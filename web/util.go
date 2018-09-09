@@ -119,9 +119,17 @@ func SucessAlert(args ...interface{}) *Alert {
 	}
 }
 
+func ContextGuild(ctx context.Context) *discordgo.Guild {
+	return ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+}
+
 // Returns base context data for control panel plugins
 func GetBaseCPContextData(ctx context.Context) (*discordgo.Guild, TemplateData) {
-	guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	var guild *discordgo.Guild
+	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
+		guild = v.(*discordgo.Guild)
+	}
+
 	templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
 
 	return guild, templateData
@@ -204,4 +212,16 @@ func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, stat
 	http.Redirect(w, r, "/?error="+url.QueryEscape(err), http.StatusTemporaryRedirect)
 	return
 
+}
+
+func IsRequestPartial(ctx context.Context) bool {
+	if v := ctx.Value(common.ContextKeyIsPartial); v != nil {
+		return v.(bool)
+	}
+
+	return false
+}
+
+func ContextUser(ctx context.Context) *discordgo.User {
+	return ctx.Value(common.ContextKeyUser).(*discordgo.User)
 }

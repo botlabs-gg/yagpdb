@@ -37,15 +37,13 @@ var (
 
 	Statsd *statsd.Client
 
-	Testing bool
+	Testing = os.Getenv("YAGPDB_TESTING") != ""
 
 	CurrentRunCounter int64
 )
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
-	Testing = os.Getenv("YAGPDB_TESTING") != ""
-
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
 

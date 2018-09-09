@@ -42,6 +42,7 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			var tmplData TemplateData
 			ctx, tmplData = GetCreateTemplateData(ctx)
 			tmplData["PartialRequest"] = true
+			ctx = context.WithValue(ctx, common.ContextKeyIsPartial, true)
 		}
 
 		entry := log.WithFields(log.Fields{
@@ -677,7 +678,13 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		g, templateData := GetBaseCPContextData(ctx)
+
+		templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
+
+		var g *discordgo.Guild
+		if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
+			g = v.(*discordgo.Guild)
+		}
 
 		if extraHandler != nil {
 			defer func() {
@@ -701,7 +708,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 		if err == nil {
 			data.AddAlerts(SucessAlert("Success!"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-			if ok {
+			if ok && logMsg != "" && g != nil {
 				go common.AddCPLogEntry(user, g.ID, logMsg)
 			}
 		}

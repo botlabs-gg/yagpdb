@@ -65,17 +65,10 @@
                 <h2 class="card-title">Thanks to my patrons!</h2>
             </header>
             <div class="card-body">
-                <b>Quality patrons</b><br>
-                {{range .qualityPatrons}}
-                <img class="avatar" src="{{.Attributes.ImageURL}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{or .Attributes.Vanity .Attributes.FirstName}}"></img>
-                {{end}}
-                
+                {{range .activePatrons}}
+                <img class="avatar" src="{{.Avatar}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{.Name}}"></img>
+                {{end}}                
                 <br>
-
-                <b>Patrons</b><br>
-                {{range .normalPatrons}}
-                <img class="avatar" src="{{.Attributes.ImageURL}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{or .Attributes.Vanity .Attributes.FirstName}}"></img>
-                {{end}}
             </div>
         </section>
         {{end}}
