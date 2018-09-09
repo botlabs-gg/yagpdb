@@ -100,19 +100,22 @@ func UpdatePremiumSlots(ctx context.Context) error {
 					return errors.WithMessage(err, "CreatePremiumSlot")
 				}
 
-				logrus.Info("Created patreon premium slot #", slot.ID)
+				logrus.Info("Created patreon premium slot #", slot.ID, slot.UserID)
 			}
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
-			for i := 0; i < len(userSlots)-slotsForPledge; i++ {
-				slot := userSlots[(len(userSlots)-1)-i]
-				_, err = slot.Delete(ctx, tx)
-				if err != nil {
-					tx.Rollback()
-					return errors.WithMessage(err, "Slot.Delete")
-				}
+			slotsToRemove := make([]int64, 0)
 
-				logrus.Info("Deleted patreon premium slot #", slot.ID)
+			for i := 0; i < len(userSlots)-slotsForPledge; i++ {
+				slot := userSlots[i]
+				slotsToRemove = append(slotsToRemove, slot.ID)
+				logrus.Info("Marked patreon slot for deletion #", slot.ID, slot.UserID)
+			}
+
+			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
+			if err != nil {
+				tx.Rollback()
+				return errors.WithMessage(err, "RemovePremiumSlots")
 			}
 		}
 	}
@@ -140,7 +143,7 @@ OUTER:
 				return errors.WithMessage(err, "new CreatePremiumSlot")
 			}
 
-			logrus.Info("Created new patreon premium slot #", slot.ID)
+			logrus.Info("Created new patreon premium slot #", slot.ID, slot.ID)
 		}
 	}
 
@@ -158,11 +161,11 @@ func CalcSlotsForPledge(cents int) (slots int) {
 		return 1
 	}
 
-	// 2.5$ per slot up until 10$
+	// 2.5$ per slot up until before 10$
 	if cents < 1000 {
 		return cents / 250
 	}
 
-	// 2$ per slot above 10$
+	// 2$ per slot from and including 10$
 	return cents / 200
 }

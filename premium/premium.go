@@ -2,6 +2,7 @@ package premium
 
 import (
 	"context"
+	"database/sql"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/mediocregopher/radix.v3"
@@ -51,7 +52,8 @@ func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.Premiu
 var (
 	PremiumSources []PremiumSource
 
-	ErrSlotNotFound = errors.New("premium slot not found")
+	ErrSlotNotFound        = errors.New("premium slot not found")
+	ErrGuildAlreadyPremium = errors.New("guild already assigned premium from another slot")
 )
 
 type PremiumSource interface {
@@ -63,16 +65,112 @@ func RegisterPremiumSource(source PremiumSource) {
 	PremiumSources = append(PremiumSources, source)
 }
 
-func SlotExpired(slot *models.PremiumSlot) {
-	// TODO
+func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {
+	err := DetachSlotFromGuild(ctx, slot.ID, slot.UserID)
+	if err != nil {
+		return errors.WithMessage(err, "Detach")
+	}
+
+	// Attempt migrating the guild attached to the epxired slot to the next available slot the owner of the slot has
+	tx, err := common.PQ.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.WithMessage(err, "BeginTX")
+	}
+
+	availableSlot, err := models.PremiumSlots(qm.Where("user_id = ? AND guild_id IS NULL and permanent = true", slot.UserID), qm.For("UPDATE")).One(ctx, tx)
+	if err != nil {
+		tx.Rollback()
+
+		// If there's no available slots to migrate the guild to, not much can be done
+		if errors.Cause(err) == sql.ErrNoRows {
+			return nil
+		}
+
+		return errors.WithMessage(err, "models.PremiumSlots")
+	}
+
+	availableSlot.AttachedAt = null.TimeFrom(time.Now())
+	availableSlot.GuildID = slot.GuildID
+
+	_, err = availableSlot.Update(ctx, tx, boil.Whitelist("attached_at", "guild_id"))
+	if err != nil {
+		tx.Rollback()
+		return errors.WithMessage(err, "Update")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.WithMessage(err, "Commit")
+	}
+
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, slot.GuildID.Int64, slot.UserID))
+	return errors.WithMessage(err, "HSET")
 }
 
-// func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID int64, slots []int64) error {
-// 	userSlots, err = models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc")).All(ctx, exec)
-// 	if err != nil {
-// 		return errors.WithMessage(err, "models.PremiumSlots")
-// 	}
-// }
+// RemovePremiumSlots removes the specifues premium slots and attempts to migrate to other permanent available ones
+// THIS SHOULD BE USED INSIDE A TRANSACTION ONLY, AS OTHERWISE RACE CONDITIONS BE UPON THEE
+func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID int64, slotsToRemove []int64) error {
+	userSlots, err := models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc"), qm.For("UPDATE")).All(ctx, exec)
+	if err != nil {
+		return errors.WithMessage(err, "models.PremiumSlots")
+	}
+
+	// Find the remainign free slots after the removal of the specified slots
+	remainingFreeSlots := make([]*models.PremiumSlot, 0)
+	for _, slot := range userSlots {
+		if slot.GuildID.Valid || !slot.Permanent || SlotDurationLeft(slot) <= 0 {
+			continue
+		}
+
+		for _, v := range slotsToRemove {
+			if v == slot.ID {
+				continue
+			}
+		}
+
+		remainingFreeSlots = append(remainingFreeSlots, slot)
+	}
+
+	freeSlotsUsed := 0
+
+	// Do the removal and migration
+	for _, removing := range slotsToRemove {
+		// Find the model first
+		var slot *models.PremiumSlot
+		for _, v := range userSlots {
+			if v.ID == removing {
+				slot = v
+				break
+			}
+		}
+
+		if slot == nil {
+			continue
+		}
+
+		if slot.GuildID.Valid && freeSlotsUsed < len(remainingFreeSlots) {
+			// We can migrate it
+			remainingFreeSlots[freeSlotsUsed].GuildID = slot.GuildID
+			remainingFreeSlots[freeSlotsUsed].AttachedAt = null.TimeFrom(time.Now())
+			freeSlotsUsed++
+		}
+
+		_, err = slot.Delete(ctx, exec)
+		if err != nil {
+			return errors.WithMessage(err, "slot.Delete")
+		}
+	}
+
+	// Update all the slots we migrated to
+	for i := 0; i < freeSlotsUsed; i++ {
+		_, err = remainingFreeSlots[i].Update(ctx, exec, boil.Whitelist("guild_id", "attached_at"))
+		if err != nil {
+			return errors.WithMessage(err, "remainingFreeSlots.Update")
+		}
+	}
+
+	return nil
+}
 
 func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source, title, message string, sourceSlotID int64, duration time.Duration) (*models.PremiumSlot, error) {
 	slot := &models.PremiumSlot{
@@ -117,14 +215,45 @@ func SlotDurationLeft(slot *models.PremiumSlot) (duration time.Duration) {
 }
 
 func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID int64) error {
-	n, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL AND (permanent OR duration_remaining > 0)", slotID, userID)).UpdateAll(
-		ctx, common.PQ, models.M{"guild_id": null.Int64From(guildID), "attached_at": time.Now()})
+	tx, err := common.PQ.BeginTx(ctx, nil)
 	if err != nil {
+		return errors.WithMessage(err, "BeginTX")
+	}
+
+	_, err = tx.Exec("LOCK TABLE premium_slots IN EXCLUSIVE MODE")
+	if err != nil {
+		tx.Rollback()
+		return errors.WithMessage(err, "Lock")
+	}
+
+	// Check if this guild is used in another slot
+	n, err := models.PremiumSlots(qm.Where("guild_id = ?", guildID)).Count(ctx, tx)
+	if err != nil {
+		tx.Rollback()
+		return errors.WithMessage(err, "PremiumSlots.Count")
+	}
+
+	if n > 0 {
+		tx.Rollback()
+		return ErrGuildAlreadyPremium
+	}
+
+	n, err = models.PremiumSlots(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL AND (permanent OR duration_remaining > 0)", slotID, userID)).UpdateAll(
+		ctx, tx, models.M{"guild_id": null.Int64From(guildID), "attached_at": time.Now()})
+	if err != nil {
+		tx.Rollback()
 		return errors.WithMessage(err, "UpdateAll")
 	}
 
 	if n < 1 {
+		tx.Rollback()
 		return ErrSlotNotFound
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return errors.WithMessage(err, "Commit")
 	}
 
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, guildID, userID))

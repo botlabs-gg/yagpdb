@@ -13,7 +13,7 @@ import (
 )
 
 func runMonitor() {
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * 30)
 	time.Sleep(time.Second * 3)
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
@@ -50,7 +50,10 @@ func checkExpiredSlots(ctx context.Context) error {
 
 	for _, v := range timedSlots {
 		if SlotDurationLeft(v) <= 0 {
-			SlotExpired(v)
+			err := SlotExpired(ctx, v)
+			if err != nil {
+				logrus.WithError(err).WithField("slot", v.ID).Error("Failed expiring premium slot")
+			}
 		}
 	}
 
@@ -78,11 +81,9 @@ func updatePremiumServers(ctx context.Context) error {
 		rCmd = append(rCmd, strGID, strUserID)
 	}
 
-	logrus.Println(len(rCmd))
-
 	err = common.RedisPool.Do(radix.Pipeline(
 		radix.Cmd(nil, "DEL", RedisKeyPremiumGuildsTmp),
-		radix.Cmd(nil, "HSET", rCmd...),
+		radix.Cmd(nil, "HMSET", rCmd...),
 		radix.Cmd(nil, "RENAME", RedisKeyPremiumGuildsTmp, RedisKeyPremiumGuilds),
 	))
 
