@@ -43,6 +43,11 @@ const (
 func setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
+	State.MaxChannelMessages = 1000
+	State.MaxMessageAge = time.Hour
+	// State.Debug = true
+	State.ThrowAwayDMMessages = true
+
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
 	eventsystem.ConcurrentAfter = StateHandlerPtr
@@ -111,10 +116,6 @@ func Run() {
 	for i := 0; i < shardCount; i++ {
 		waitingReadies = append(waitingReadies, i)
 	}
-
-	State.MaxChannelMessages = 1000
-	State.MaxMessageAge = time.Hour
-	// State.Debug = true
 
 	Running = true
 
