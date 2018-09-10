@@ -211,8 +211,12 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		yc.Logger(cmdData).WithError(err).Error("Command returned error")
 	}
 
-	if cast, ok := resp.(string); ok && cmdData.GS != nil {
-		resp = FilterBadInvites(cast, cmdData.GS.ID, "[removed-invite]")
+	if cmdData.GS != nil {
+		if resp == nil && err != nil {
+			err = errors.New(FilterResp(err.Error(), cmdData.GS.ID).(string))
+		} else if resp != nil {
+			resp = FilterResp(resp, cmdData.GS.ID)
+		}
 	}
 
 	if settings.DelResponse && settings.DelResponseDelay < 1 {
