@@ -1,6 +1,7 @@
 package premium
 
 import (
+	"context"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -9,6 +10,10 @@ import (
 	"net/http"
 	"strconv"
 )
+
+type CtxKey int
+
+var CtxKeyIsPremium CtxKey = 1
 
 var _ web.Plugin = (*Plugin)(nil)
 
@@ -51,7 +56,7 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 
 		tmpl["IsGuildPremium"] = isPremium
 
-		inner.ServeHTTP(w, r)
+		inner.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), CtxKeyIsPremium, isPremium)))
 	}
 
 	return http.HandlerFunc(mw)
@@ -131,4 +136,12 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 	}
 
 	return tmpl, err
+}
+
+func ContextPremium(ctx context.Context) bool {
+	if v := ctx.Value(CtxKeyIsPremium); v != nil {
+		return v.(bool)
+	}
+
+	return false
 }
