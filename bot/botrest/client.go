@@ -142,10 +142,12 @@ func RunPinger() {
 		err := get("ping", &dest)
 		if err != nil {
 			if !lastFailed {
-				logrus.Warn("Ping failed: ", err)
+				logrus.Warn("Ping to bot failed: ", err)
 				lastFailed = true
 			}
 			continue
+		} else if lastFailed {
+			logrus.Info("Ping to bot succeeded again after failing!")
 		}
 
 		lastPingMutex.Lock()
