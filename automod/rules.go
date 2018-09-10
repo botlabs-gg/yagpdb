@@ -214,6 +214,10 @@ OUTER:
 			continue
 		}
 
+		if invite == nil || invite.Guild == nil {
+			continue
+		}
+
 		// Ignore invites to this server
 		if invite.Guild.ID == guildID {
 			continue
