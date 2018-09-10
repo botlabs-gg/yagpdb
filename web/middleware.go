@@ -705,7 +705,17 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 		}
 		checkControllerError(ctx, data, err)
 
-		if err == nil {
+		// Don't display the success alert if there's an error alert displaying, that indicates a problem... :(
+		hasErrorAlert := false
+		alerts := data.Alerts()
+		for _, v := range alerts {
+			if v.Style == AlertDanger {
+				hasErrorAlert = true
+				break
+			}
+		}
+
+		if err == nil && !hasErrorAlert {
 			data.AddAlerts(SucessAlert("Success!"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 			if ok && logMsg != "" && g != nil {

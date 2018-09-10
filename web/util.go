@@ -77,6 +77,14 @@ func (t TemplateData) AddAlerts(alerts ...*Alert) TemplateData {
 	return t
 }
 
+func (t TemplateData) Alerts() []*Alert {
+	if v, ok := t["Alerts"]; ok {
+		return v.([]*Alert)
+	}
+
+	return nil
+}
+
 func GetCreateTemplateData(ctx context.Context) (context.Context, TemplateData) {
 	if v := ctx.Value(common.ContextKeyTemplateData); v != nil {
 		return ctx, v.(TemplateData)
