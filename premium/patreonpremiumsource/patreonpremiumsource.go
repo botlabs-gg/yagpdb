@@ -39,6 +39,10 @@ func (p *Plugin) Name() string {
 var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
+	if patreon.ActivePoller == nil {
+		return
+	}
+
 	go RunPoller()
 }
 
