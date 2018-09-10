@@ -2,6 +2,7 @@ package soundboard
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -101,8 +102,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	if err != nil {
 		return tmpl, err
 	}
-	if count > 49 {
-		tmpl.AddAlerts(web.ErrorAlert("You can have a maximum amount of 50 sounds"))
+	if count >= MaxSoundsForContext(ctx) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d sounds allowed (%d for premium servers)", MaxGuildSounds, MaxGuildSoundsPremium)))
 		return tmpl, nil
 	}
 
