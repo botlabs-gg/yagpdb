@@ -24,7 +24,7 @@ const (
 	NormalStateMaxMessages   = 1000
 	NormalStateMaxMessageAge = time.Hour
 
-	PremiumStateMaxMessags    = 100000
+	PremiumStateMaxMessags    = 10000
 	PremiumStateMaxMessageAge = time.Hour * 12
 )
 
