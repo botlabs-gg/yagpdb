@@ -20,7 +20,8 @@ func (p *Plugin) InitWeb() {
 
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
-	web.CPMux.Use(CPMiddlware)
+	web.CPMux.Use(PremiumGuildMW)
+	web.ServerPublicMux.Use(PremiumGuildMW)
 
 	submux := goji.SubMux()
 	web.RootMux.Handle(pat.New("/premium"), submux)
@@ -39,7 +40,7 @@ func (p *Plugin) InitWeb() {
 }
 
 // Add in a template var wether the guild is premium or not
-func CPMiddlware(inner http.Handler) http.Handler {
+func PremiumGuildMW(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		guild, tmpl := web.GetBaseCPContextData(r.Context())
 
