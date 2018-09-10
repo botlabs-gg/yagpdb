@@ -3,11 +3,13 @@ package reddit
 //go:generate esc -o assets_gen.go -pkg reddit -ignore ".go" assets/
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -151,4 +153,18 @@ func GetConfig(key string) ([]*SubredditWatchItem, error) {
 	}
 
 	return out, nil
+}
+
+const (
+	// Max feeds per guild
+	GuildMaxFeedsNormal  = 100
+	GuildMaxFeedsPremium = 1000
+)
+
+func MaxFeedForCtx(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return GuildMaxFeedsPremium
+	}
+
+	return GuildMaxFeedsNormal
 }
