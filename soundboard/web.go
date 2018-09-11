@@ -70,11 +70,6 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		}
 		file = f
 
-		if !strings.HasSuffix(header.Filename, ".mp3") && !strings.HasSuffix(header.Filename, ".ogg") && !strings.HasSuffix(header.Filename, ".wav") && !strings.HasSuffix(header.Filename, ".dca") {
-			tmpl.AddAlerts(web.ErrorAlert("Only mp3, ogg, wav and dca files allowed"))
-			return tmpl, nil
-		}
-
 		if strings.HasSuffix(header.Filename, ".dca") {
 			isDCA = true
 		}
