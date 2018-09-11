@@ -3,6 +3,7 @@ package logs
 import (
 	"errors"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -195,6 +196,17 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
 	}
 
+	// Fetch the role colors if possible
+	users := make([]int64, 0, 50)
+	for _, v := range msgLogs.Messages {
+		parsedAuthor, _ := strconv.ParseInt(v.AuthorID, 10, 64)
+		if !common.ContainsInt64Slice(users, parsedAuthor) {
+			users = append(users, parsedAuthor)
+		}
+	}
+
+	roleColors, _ := botrest.GetMemberColors(g.ID, users...)
+
 	const TimeFormat = "2006 Jan 02 15:04"
 	for k, v := range msgLogs.Messages {
 		parsed, err := discordgo.Timestamp(v.Timestamp).Parse()
@@ -205,8 +217,11 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		ts := parsed.UTC().Format(TimeFormat)
 		msgLogs.Messages[k].Timestamp = ts
 
-		parsedAuthor, _ := strconv.ParseInt(v.AuthorID, 10, 64)
-		msgLogs.Messages[k].Color = AuthorColors[int(parsedAuthor%int64(len(AuthorColors)))]
+		if roleColors != nil {
+			if c, ok := roleColors[v.AuthorID]; ok {
+				msgLogs.Messages[k].Color = strconv.FormatInt(int64(c), 16)
+			}
+		}
 	}
 
 	tmpl["Logs"] = msgLogs
