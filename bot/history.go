@@ -102,7 +102,7 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, e
 	defer cs.Owner.Unlock()
 
 	for _, m := range msgBuf {
-		cs.MessageAddUpdate(false, m.Message, -1, 0)
+		cs.MessageAddUpdate(false, m.Message, -1, 0, false, false)
 	}
 
 	sort.Sort(DiscordMessages(cs.Messages))
