@@ -270,7 +270,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
 			}
 			r = r.WithContext(ctx)
-			log.Info("No guilds, set full guild instead of userguild")
 			return
 		}
 
@@ -283,7 +282,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			}
 		}
 
-		// Fallback to userguilds if not found
+		// Fallback to full guild if userguilds if not found
 		if userGuild == nil {
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
@@ -291,7 +290,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
 			}
 			r = r.WithContext(ctx)
-			log.Info("Userguild not found")
 			return
 		}
 
