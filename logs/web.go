@@ -15,6 +15,16 @@ import (
 	"strings"
 )
 
+var AuthorColors = []string{
+	"7c7cff", // blue-ish
+	"529fb7", // lighter blue
+	"4aa085", // dark-green
+	"7ea04a", // lighter green
+	"a0824a", // brown
+	"a04a4a", // red
+	"a04a89", // purple?
+}
+
 type DeleteData struct {
 	ID string
 }
@@ -194,6 +204,9 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 		ts := parsed.UTC().Format(TimeFormat)
 		msgLogs.Messages[k].Timestamp = ts
+
+		parsedAuthor, _ := strconv.ParseInt(v.AuthorID, 10, 64)
+		msgLogs.Messages[k].Color = AuthorColors[int(parsedAuthor%int64(len(AuthorColors)))]
 	}
 
 	tmpl["Logs"] = msgLogs
