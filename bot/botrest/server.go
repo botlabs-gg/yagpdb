@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
@@ -13,6 +14,7 @@ import (
 	"goji.io/pat"
 	"net/http"
 	"net/http/pprof"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -46,6 +48,7 @@ func (p *Plugin) BotInit() {
 	muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
 	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
 	muxer.HandleFunc(pat.Get("/:guild/members"), HandleGetMembers)
+	muxer.HandleFunc(pat.Get("/:guild/membercolors"), HandleGetMemberColors)
 	muxer.HandleFunc(pat.Get("/:guild/onlinecount"), HandleGetOnlineCount)
 	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
 	muxer.HandleFunc(pat.Get("/gw_status"), HandleGWStatus)
@@ -188,6 +191,61 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ServeJson(w, r, members)
+}
+
+func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
+	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
+	uIDs, ok := r.URL.Query()["users"]
+
+	if !ok || len(uIDs) < 1 {
+		ServerError(w, r, errors.New("No id's provided"))
+		return
+	}
+
+	if len(uIDs) > 100 {
+		ServerError(w, r, errors.New("Too many ids provided"))
+		return
+	}
+
+	guild := bot.State.Guild(true, gId)
+	if guild == nil {
+		ServerError(w, r, errors.New("Guild not found"))
+		return
+	}
+
+	uIDsParsed := make([]int64, 0, len(uIDs))
+	for _, v := range uIDs {
+		parsed, _ := strconv.ParseInt(v, 10, 64)
+		uIDsParsed = append(uIDsParsed, parsed)
+	}
+
+	memberStates, _ := bot.GetMembers(gId, uIDsParsed...)
+
+	guild.RLock()
+	defer guild.RUnlock()
+
+	// Make sure the roles are in the proper order
+	sort.Sort(dutil.Roles(guild.Guild.Roles))
+
+	colors := make(map[string]int)
+	for _, ms := range memberStates {
+		// Find the highest role this user has with a color
+		for _, role := range guild.Guild.Roles {
+			if role.Color == 0 {
+				continue
+			}
+
+			if !common.ContainsInt64Slice(ms.Roles, role.ID) {
+				continue
+			}
+
+			// Bingo
+			colors[ms.StrID()] = role.Color
+			break
+		}
+	}
+
+	ServeJson(w, r, colors)
 }
 
 func HandleGetOnlineCount(w http.ResponseWriter, r *http.Request) {

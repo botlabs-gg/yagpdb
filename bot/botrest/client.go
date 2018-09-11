@@ -98,6 +98,21 @@ func GetMembers(guildID int64, members ...int64) (m []*discordgo.Member, err err
 	return
 }
 
+func GetMemberColors(guildID int64, members ...int64) (m map[string]int, err error) {
+	m = make(map[string]int)
+
+	stringed := make([]string, 0, len(members))
+	for _, v := range members {
+		stringed = append(stringed, strconv.FormatInt(v, 10))
+	}
+
+	query := url.Values{"users": stringed}
+	encoded := query.Encode()
+
+	err = get(discordgo.StrID(guildID)+"/membercolors?"+encoded, &m)
+	return
+}
+
 func GetChannelPermissions(guildID, channelID int64) (perms int64, err error) {
 	err = get(discordgo.StrID(guildID)+"/channelperms/"+discordgo.StrID(channelID), &perms)
 	return
