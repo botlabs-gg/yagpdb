@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var TempRangeRegex = regexp.MustCompile("([0-9]{1,3}) ?- ?([0-9]{1,3}) ?°C")
+var TempRangeRegex = regexp.MustCompile("(-?[0-9]{1,3}) ?- ?(-?[0-9]{1,3}) ?°C")
 
 var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryFun,
