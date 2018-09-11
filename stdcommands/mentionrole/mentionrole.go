@@ -110,7 +110,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	scheduledevents.ScheduleEvent("reset_mentionable_role", string(scheduledData), time.Now().Add(time.Minute))
+	scheduledevents.ScheduleEvent("reset_mentionable_role", string(scheduledData), time.Now().Add(time.Second*30))
 
 	return "", err
 }
