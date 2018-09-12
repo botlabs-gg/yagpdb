@@ -303,7 +303,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentUserGuild, userGuild)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
-		isAdmin := IsAdminCtx(ctx)
+		isAdmin := IsAdminRequest(ctx, r)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild, "IsAdmin": isAdmin})
 		r = r.WithContext(ctx)
 	}
@@ -324,7 +324,7 @@ func RequireActiveServer(inner http.Handler) http.Handler {
 
 func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		if !IsAdminCtx(r.Context()) {
+		if !IsAdminRequest(r.Context(), r) {
 			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
 			return
 		}

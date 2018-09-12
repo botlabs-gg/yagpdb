@@ -26,7 +26,6 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/poll"
 	"github.com/jonas747/yagpdb/stdcommands/reverse"
 	"github.com/jonas747/yagpdb/stdcommands/roll"
-	"github.com/jonas747/yagpdb/stdcommands/secretcommand"
 	"github.com/jonas747/yagpdb/stdcommands/setstatus"
 	"github.com/jonas747/yagpdb/stdcommands/stateinfo"
 	"github.com/jonas747/yagpdb/stdcommands/throw"
@@ -73,7 +72,6 @@ func (p *Plugin) AddCommands() {
 
 		// Maintenance
 		stateinfo.Command,
-		secretcommand.Command,
 		leaveserver.Command,
 		banserver.Command,
 		allocstat.Command,

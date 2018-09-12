@@ -65,6 +65,7 @@ func setup() {
 	eventsystem.AddHandler(HandleChannelUpdate, eventsystem.EventChannelUpdate)
 	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
 	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
 }
 
 func Run() {
@@ -195,6 +196,7 @@ func BotStarted() {
 	}
 
 	go scheduledevents.Run()
+	go loopCheckAdmins()
 }
 
 var stopOnce sync.Once
@@ -213,6 +215,7 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 
 		wg.Add(1)
 		go scheduledevents.Stop(wg)
+		close(stopRunCheckAdmins)
 	})
 }
 

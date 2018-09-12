@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
@@ -164,14 +166,7 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 }
 
 // Checks the context if there is a logged in user and if so if he's and admin or not
-func IsAdminCtx(ctx context.Context) bool {
-	if user := ctx.Value(common.ContextKeyUser); user != nil {
-		cast := user.(*discordgo.User)
-		if cast.ID == common.Conf.Owner {
-			return true
-		}
-	}
-
+func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
 
 		cast := v.(*discordgo.UserGuild)
@@ -181,6 +176,18 @@ func IsAdminCtx(ctx context.Context) bool {
 		}
 	}
 
+	if user := ctx.Value(common.ContextKeyUser); user != nil {
+		cast := user.(*discordgo.User)
+		if cast.ID == common.Conf.Owner {
+			return true
+		}
+
+		if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS") {
+			if hasAcces, err := bot.HasReadOnlyAccess(cast.ID); hasAcces && err == nil {
+				return true
+			}
+		}
+	}
 	return false
 }
 

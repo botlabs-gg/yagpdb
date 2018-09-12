@@ -24,6 +24,14 @@ export YAGPDB_TESTING=""
 # Plugins and various other optional features below, not required #
 ##################################################################
 
+# Administration
+# Used for YAGPDB_ADMINROLE and readonlyaccesrole
+export YAGPDB_MAIN_SERVER=""
+# Admins have access to things like shard reconnects, and full access to admin only commands 
+export YAGPDB_ADMIN_ROLE=""
+# Users in the main server with this role can access the control panel page of any server, but they can't modify any settings
+export YAGPDB_READONLY_ACCESS_ROLE=""
+
 # Send discord gateway connection events to a discord channel
 export YAGPDB_CONNEVT_CHANNEL=""
 # Send connection status to a discord channel

@@ -179,7 +179,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
-	canViewDeleted := web.IsAdminCtx(r.Context())
+	canViewDeleted := web.IsAdminRequest(r.Context(), r)
 	if config.EveryoneCanViewDeleted {
 		canViewDeleted = true
 	} else if config.ManageMessagesCanViewDeleted && !canViewDeleted {
