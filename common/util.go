@@ -532,3 +532,72 @@ type LoggedExecutedCommand struct {
 func (l LoggedExecutedCommand) TableName() string {
 	return "executed_commands"
 }
+
+func HumanizePermissions(perms int64) (res []string) {
+	if perms&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
+		res = append(res, "ReadMessages")
+	}
+	if perms&discordgo.PermissionSendMessages == discordgo.PermissionSendMessages {
+		res = append(res, "SendMessages")
+	}
+	if perms&discordgo.PermissionSendTTSMessages == discordgo.PermissionSendTTSMessages {
+		res = append(res, "SendTTSMessages")
+	}
+	if perms&discordgo.PermissionManageMessages == discordgo.PermissionManageMessages {
+		res = append(res, "ManageMessages")
+	}
+	if perms&discordgo.PermissionEmbedLinks == discordgo.PermissionEmbedLinks {
+		res = append(res, "EmbedLinks")
+	}
+	if perms&discordgo.PermissionAttachFiles == discordgo.PermissionAttachFiles {
+		res = append(res, "AttachFiles")
+	}
+	if perms&discordgo.PermissionReadMessageHistory == discordgo.PermissionReadMessageHistory {
+		res = append(res, "ReadMessageHistory")
+	}
+	if perms&discordgo.PermissionMentionEveryone == discordgo.PermissionMentionEveryone {
+		res = append(res, "MentionEveryone")
+	}
+	if perms&discordgo.PermissionUseExternalEmojis == discordgo.PermissionUseExternalEmojis {
+		res = append(res, "UseExternalEmojis")
+	}
+
+	// Constants for the different bit offsets of voice permissions
+	if perms&discordgo.PermissionVoiceConnect == discordgo.PermissionVoiceConnect {
+		res = append(res, "VoiceConnect")
+	}
+	if perms&discordgo.PermissionVoiceSpeak == discordgo.PermissionVoiceSpeak {
+		res = append(res, "VoiceSpeak")
+	}
+	if perms&discordgo.PermissionVoiceMuteMembers == discordgo.PermissionVoiceMuteMembers {
+		res = append(res, "VoiceMuteMembers")
+	}
+	if perms&discordgo.PermissionVoiceDeafenMembers == discordgo.PermissionVoiceDeafenMembers {
+		res = append(res, "VoiceDeafenMembers")
+	}
+	if perms&discordgo.PermissionVoiceMoveMembers == discordgo.PermissionVoiceMoveMembers {
+		res = append(res, "VoiceMoveMembers")
+	}
+	if perms&discordgo.PermissionVoiceUseVAD == discordgo.PermissionVoiceUseVAD {
+		res = append(res, "VoiceUseVAD")
+	}
+
+	// Constants for general management.
+	if perms&discordgo.PermissionChangeNickname == discordgo.PermissionChangeNickname {
+		res = append(res, "ChangeNickname")
+	}
+	if perms&discordgo.PermissionManageNicknames == discordgo.PermissionManageNicknames {
+		res = append(res, "ManageNicknames")
+	}
+	if perms&discordgo.PermissionManageRoles == discordgo.PermissionManageRoles {
+		res = append(res, "ManageRoles")
+	}
+	if perms&discordgo.PermissionManageWebhooks == discordgo.PermissionManageWebhooks {
+		res = append(res, "ManageWebhooks")
+	}
+	if perms&discordgo.PermissionManageEmojis == discordgo.PermissionManageEmojis {
+		res = append(res, "ManageEmojis")
+	}
+
+	return
+}
