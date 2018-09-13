@@ -534,6 +534,13 @@ func (l LoggedExecutedCommand) TableName() string {
 }
 
 func HumanizePermissions(perms int64) (res []string) {
+	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
+		res = append(res, "Administrator")
+	}
+	if perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
+		res = append(res, "ManageServer")
+	}
+
 	if perms&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
 		res = append(res, "ReadMessages")
 	}
@@ -597,6 +604,25 @@ func HumanizePermissions(perms int64) (res []string) {
 	}
 	if perms&discordgo.PermissionManageEmojis == discordgo.PermissionManageEmojis {
 		res = append(res, "ManageEmojis")
+	}
+
+	if perms&discordgo.PermissionCreateInstantInvite == discordgo.PermissionCreateInstantInvite {
+		res = append(res, "CreateInstantInvite")
+	}
+	if perms&discordgo.PermissionKickMembers == discordgo.PermissionKickMembers {
+		res = append(res, "KickMembers")
+	}
+	if perms&discordgo.PermissionBanMembers == discordgo.PermissionBanMembers {
+		res = append(res, "BanMembers")
+	}
+	if perms&discordgo.PermissionManageChannels == discordgo.PermissionManageChannels {
+		res = append(res, "ManageChannels")
+	}
+	if perms&discordgo.PermissionAddReactions == discordgo.PermissionAddReactions {
+		res = append(res, "AddReactions")
+	}
+	if perms&discordgo.PermissionViewAuditLogs == discordgo.PermissionViewAuditLogs {
+		res = append(res, "ViewAuditLogs")
 	}
 
 	return
