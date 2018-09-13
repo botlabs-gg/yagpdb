@@ -34,6 +34,8 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/topic"
 	"github.com/jonas747/yagpdb/stdcommands/topservers"
 	"github.com/jonas747/yagpdb/stdcommands/unbanserver"
+	"github.com/jonas747/yagpdb/stdcommands/undelete"
+	"github.com/jonas747/yagpdb/stdcommands/viewperms"
 	"github.com/jonas747/yagpdb/stdcommands/weather"
 	"github.com/jonas747/yagpdb/stdcommands/wouldyourather"
 	"github.com/jonas747/yagpdb/stdcommands/yagstatus"
@@ -69,6 +71,8 @@ func (p *Plugin) AddCommands() {
 		listroles.Command,
 		wouldyourather.Command,
 		poll.Command,
+		undelete.Command,
+		viewperms.Command,
 
 		// Maintenance
 		stateinfo.Command,
