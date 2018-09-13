@@ -111,8 +111,12 @@ func stopProcessing(guildID int64) {
 
 func runDurationChecker() {
 
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Second)
 	state := bot.State
+
+	var guildsToCheck []*dstate.GuildState
+	var i int
+	var numToCheckPerRun int
 
 	for {
 		select {
@@ -121,18 +125,31 @@ func runDurationChecker() {
 		case <-ticker.C:
 		}
 
-		// Copy the list of guilds so that we dont need to keep the entire state locked
-		state.RLock()
-		guildStates := make([]*dstate.GuildState, len(state.Guilds))
-		i := 0
-		for _, v := range state.Guilds {
-			guildStates[i] = v
-			i++
-		}
-		state.RUnlock()
+		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
+			// Copy the list of guilds so that we dont need to keep the entire state locked
+			state.RLock()
+			guildsToCheck = make([]*dstate.GuildState, 0, len(state.Guilds))
+			i = 0
+			for _, v := range state.Guilds {
+				if v == nil || v.ID == 0 {
 
-		for _, g := range guildStates {
+				}
+				guildsToCheck = append(guildsToCheck, v)
+			}
+			state.RUnlock()
+
+			// Hit each guild once per minute
+			numToCheckPerRun = len(guildsToCheck) / 60
+			if numToCheckPerRun < 1 {
+				numToCheckPerRun = 1
+			}
+		}
+
+		for checkedThisRound := 0; i < len(guildsToCheck) && checkedThisRound < numToCheckPerRun; i++ {
+			g := guildsToCheck[i]
 			checkGuild(g)
+
+			checkedThisRound++
 		}
 	}
 }
