@@ -4332,6 +4332,7 @@ input[type="button"].btn-block {
   -ms-flex-direction: column;
   flex-direction: column;
   min-width: 0;
+  margin: 0 4px
   word-wrap: break-word;
   background-color: #fff;
   background-clip: border-box;
@@ -6023,6 +6024,11 @@ a.bg-secondary:hover, a.bg-secondary:focus,
 button.bg-secondary:hover,
 button.bg-secondary:focus {
   background-color: #545b62 !important;
+}
+
+.bg-success, .bg-info, .bg-warning, .bg-danger {
+  padding: 2px !important;
+  border-radius: 5px !important;
 }
 
 .bg-success {
