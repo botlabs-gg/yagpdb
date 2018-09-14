@@ -32,6 +32,10 @@ var (
 	_ bot.BotStopperHandler = (*Plugin)(nil)
 )
 
+type BotRestPlugin interface {
+	InitBotRestServer(mux *goji.Mux)
+}
+
 type Plugin struct {
 	srv *http.Server
 }
@@ -62,6 +66,12 @@ func (p *Plugin) BotInit() {
 	muxer.HandleFunc(pat.Get("/debug2/pproff/profile"), pprof.Profile)
 	muxer.HandleFunc(pat.Get("/debug2/pproff/symbol"), pprof.Symbol)
 	muxer.HandleFunc(pat.Get("/debug2/pproff/trace"), pprof.Trace)
+
+	for _, p := range common.Plugins {
+		if botRestPlugin, ok := p.(BotRestPlugin); ok {
+			botRestPlugin.InitBotRestServer(muxer)
+		}
+	}
 
 	p.srv = &http.Server{
 		Addr:    serverAddr,

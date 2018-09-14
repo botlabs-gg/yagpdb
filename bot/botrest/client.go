@@ -18,7 +18,7 @@ var (
 	ErrServerError = errors.New("reststate server is having issues")
 )
 
-func get(url string, dest interface{}) error {
+func Get(url string, dest interface{}) error {
 	resp, err := http.Get("http://" + serverAddr + "/" + url)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func get(url string, dest interface{}) error {
 	return errors.WithMessage(json.NewDecoder(resp.Body).Decode(dest), "json.Decode")
 }
 
-func post(url string, bodyData interface{}, dest interface{}) error {
+func Post(url string, bodyData interface{}, dest interface{}) error {
 	var bodyBuf bytes.Buffer
 	if bodyData != nil {
 		encoder := json.NewEncoder(&bodyBuf)
@@ -71,17 +71,17 @@ func post(url string, bodyData interface{}, dest interface{}) error {
 }
 
 func GetGuild(guildID int64) (g *discordgo.Guild, err error) {
-	err = get(discordgo.StrID(guildID)+"/guild", &g)
+	err = Get(discordgo.StrID(guildID)+"/guild", &g)
 	return
 }
 
 func GetBotMember(guildID int64) (m *discordgo.Member, err error) {
-	err = get(discordgo.StrID(guildID)+"/botmember", &m)
+	err = Get(discordgo.StrID(guildID)+"/botmember", &m)
 	return
 }
 
 func GetOnlineCount(guildID int64) (c int64, err error) {
-	err = get(discordgo.StrID(guildID)+"/onlinecount", &c)
+	err = Get(discordgo.StrID(guildID)+"/onlinecount", &c)
 	return
 }
 
@@ -94,7 +94,7 @@ func GetMembers(guildID int64, members ...int64) (m []*discordgo.Member, err err
 	query := url.Values{"users": stringed}
 	encoded := query.Encode()
 
-	err = get(discordgo.StrID(guildID)+"/members?"+encoded, &m)
+	err = Get(discordgo.StrID(guildID)+"/members?"+encoded, &m)
 	return
 }
 
@@ -109,17 +109,17 @@ func GetMemberColors(guildID int64, members ...int64) (m map[string]int, err err
 	query := url.Values{"users": stringed}
 	encoded := query.Encode()
 
-	err = get(discordgo.StrID(guildID)+"/membercolors?"+encoded, &m)
+	err = Get(discordgo.StrID(guildID)+"/membercolors?"+encoded, &m)
 	return
 }
 
 func GetChannelPermissions(guildID, channelID int64) (perms int64, err error) {
-	err = get(discordgo.StrID(guildID)+"/channelperms/"+discordgo.StrID(channelID), &perms)
+	err = Get(discordgo.StrID(guildID)+"/channelperms/"+discordgo.StrID(channelID), &perms)
 	return
 }
 
 func GetShardStatuses() (st []*ShardStatus, err error) {
-	err = get("gw_status", &st)
+	err = Get("gw_status", &st)
 	return
 }
 
@@ -129,7 +129,7 @@ func SendReconnectShard(shardID int, reidentify bool) (err error) {
 		queryParams = "?reidentify=1"
 	}
 
-	err = post(fmt.Sprintf("shard/%d/reconnect"+queryParams, shardID), nil, nil)
+	err = Post(fmt.Sprintf("shard/%d/reconnect"+queryParams, shardID), nil, nil)
 	return
 }
 
@@ -139,7 +139,7 @@ func SendReconnectAll(reidentify bool) (err error) {
 		queryParams = "?reidentify=1"
 	}
 
-	err = post("shard/*/reconnect"+queryParams, nil, nil)
+	err = Post("shard/*/reconnect"+queryParams, nil, nil)
 	return
 }
 
@@ -154,7 +154,7 @@ func RunPinger() {
 		time.Sleep(time.Second)
 
 		var dest string
-		err := get("ping", &dest)
+		err := Get("ping", &dest)
 		if err != nil {
 			if !lastFailed {
 				logrus.Warn("Ping to bot failed: ", err)
