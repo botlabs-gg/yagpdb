@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -28,6 +29,7 @@ func (p *Plugin) AddCommands() {
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(OnMemberJoin, eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandler(HandleGuildChunk, eventsystem.EventGuildMembersChunk)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
 }
@@ -226,14 +228,13 @@ func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 
 	gs.RLock()
 
-	now := time.Now()
 OUTER:
 	for _, ms := range gs.Members {
 		if !ms.MemberSet {
 			continue
 		}
 
-		if now.Sub(ms.JoinedAt) > time.Duration(config.RequiredDuration)*time.Minute && config.CanAssignTo(ms) {
+		if config.CanAssignTo(ms.Roles, ms.JoinedAt) {
 			for _, r := range ms.Roles {
 				if r == config.Role {
 					continue OUTER
@@ -305,18 +306,22 @@ func OnMemberJoin(evt *eventsystem.EventData) {
 		return
 	}
 
-	if config.Role != 0 && config.RequiredDuration < 1 && config.CanAssignTo(ms) {
+	if config.Role != 0 && config.RequiredDuration < 1 && config.CanAssignTo(ms.Roles, ms.JoinedAt) {
 		common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
 	}
 }
 
-func (conf *GeneralConfig) CanAssignTo(ms *dstate.MemberState) bool {
+func (conf *GeneralConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time) bool {
+	if time.Since(joinedAt) < time.Duration(conf.RequiredDuration)*time.Minute {
+		return false
+	}
+
 	if len(conf.IgnoreRoles) < 1 && len(conf.RequiredRoles) < 1 {
 		return true
 	}
 
 	for _, ignoreRole := range conf.IgnoreRoles {
-		if common.ContainsInt64Slice(ms.Roles, ignoreRole) {
+		if common.ContainsInt64Slice(currentRoles, ignoreRole) {
 			return false
 		}
 	}
@@ -324,7 +329,7 @@ func (conf *GeneralConfig) CanAssignTo(ms *dstate.MemberState) bool {
 	// If require roles are set up, make sure the member has one of them
 	if len(conf.RequiredRoles) > 0 {
 		for _, reqRole := range conf.RequiredRoles {
-			if common.ContainsInt64Slice(ms.Roles, reqRole) {
+			if common.ContainsInt64Slice(currentRoles, reqRole) {
 				return true
 			}
 		}
@@ -332,4 +337,96 @@ func (conf *GeneralConfig) CanAssignTo(ms *dstate.MemberState) bool {
 	}
 
 	return true
+}
+
+func RedisKeyGuildChunkProecssing(gID int64) string {
+	return "autorole_guild_chunk_processing:" + strconv.FormatInt(gID, 10)
+}
+
+func HandleGuildChunk(evt *eventsystem.EventData) {
+	chunk := evt.GuildMembersChunk()
+	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "300", "1"))
+	if err != nil {
+		logrus.WithError(err).Error("failed marking autorole chunk processing")
+	}
+
+	config, err := GetGeneralConfig(chunk.GuildID)
+	if err != nil {
+		return
+	}
+
+	if config.Role == 0 {
+		return
+	}
+
+	lastTimeUpdatedBlockingKey := time.Now()
+	lastTimeUpdatefConfig := time.Now()
+
+OUTER:
+	for _, m := range chunk.Members {
+		joinedAt, err := time.Parse(time.RFC3339, m.JoinedAt)
+		if err != nil {
+			logrus.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed parsing join timestamp")
+			if config.RequiredDuration > 0 {
+				continue // Need the joined_at field for this
+			}
+		}
+
+		if !config.CanAssignTo(m.Roles, joinedAt) {
+			continue
+		}
+
+		for _, r := range m.Roles {
+			if r == config.Role {
+				continue OUTER
+			}
+		}
+
+		logrus.Println("assigning to ", m.User.ID, " from guild chunk event")
+		err = common.AddRole(m, config.Role, chunk.GuildID)
+		if err != nil {
+			logrus.WithError(err).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed adding autorole role")
+
+			if common.IsDiscordErr(err, 50013, 10011) {
+				// No perms, remove autorole
+				logrus.WithError(err).WithField("guild", chunk.GuildID).Info("No perms to add autorole, or nonexistant, removing from config")
+				config.Role = 0
+				saveGeneral(chunk.GuildID, config)
+				return
+			}
+		}
+
+		if time.Since(lastTimeUpdatefConfig) > time.Second*10 {
+			// Refresh the config occasionally to make sure it dosen't go stale
+			newConf, err := GetGeneralConfig(chunk.GuildID)
+			if err == nil {
+				config = newConf
+			} else {
+				return
+			}
+
+			config = newConf
+			if config.Role == 0 {
+				logrus.WithField("guild", chunk.GuildID).Info("autorole role was set to none in the middle of full retroactive assignment, cancelling")
+				return
+			}
+		}
+
+		if time.Since(lastTimeUpdatedBlockingKey) > time.Minute {
+			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "300", "1"))
+			if err != nil {
+				logrus.WithError(err).Error("failed marking autorole chunk processing")
+			}
+		}
+	}
+}
+
+func WorkingOnFullScan(guildID int64) (bool, error) {
+	var b bool
+	err := common.RedisPool.Do(radix.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
+	if err != nil {
+		return false, err
+	}
+
+	return b, nil
 }
