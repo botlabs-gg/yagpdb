@@ -38,6 +38,7 @@ var (
 		"escapeEveryone":        tmplEscapeEveryone,
 		"escapeEveryoneHere":    tmplEscapeEveryoneHere,
 		"humanizeDurationHours": tmplHumanizeDurationHours,
+		"humanizeTimeSinceDays": tmplHumanizeTimeSinceDays,
 	}
 
 	contextSetupFuncs = []ContextSetupFunc{
