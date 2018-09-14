@@ -164,6 +164,14 @@ func checkGuild(gs *dstate.GuildState) {
 	}
 
 	logger := logrus.WithField("guild", gs.ID)
+	working, err := WorkingOnFullScan(gs.ID)
+	if err != nil {
+		logger.WithError(err).Error("failed checking working on full scan")
+	}
+
+	if working {
+		return // Working on a full scan, do nothing
+	}
 
 	perms, err := gs.MemberPermissions(false, 0, common.BotUser.ID)
 	if err != nil && err != dstate.ErrChannelNotFound {
@@ -345,7 +353,7 @@ func RedisKeyGuildChunkProecssing(gID int64) string {
 
 func HandleGuildChunk(evt *eventsystem.EventData) {
 	chunk := evt.GuildMembersChunk()
-	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "300", "1"))
+	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
 	if err != nil {
 		logrus.WithError(err).Error("failed marking autorole chunk processing")
 	}
@@ -359,8 +367,10 @@ func HandleGuildChunk(evt *eventsystem.EventData) {
 		return
 	}
 
+	stopProcessing(chunk.GuildID)
+
 	lastTimeUpdatedBlockingKey := time.Now()
-	lastTimeUpdatefConfig := time.Now()
+	lastTimeUpdatedConfig := time.Now()
 
 OUTER:
 	for _, m := range chunk.Members {
@@ -396,7 +406,7 @@ OUTER:
 			}
 		}
 
-		if time.Since(lastTimeUpdatefConfig) > time.Second*10 {
+		if time.Since(lastTimeUpdatedConfig) > time.Second*10 {
 			// Refresh the config occasionally to make sure it dosen't go stale
 			newConf, err := GetGeneralConfig(chunk.GuildID)
 			if err == nil {
@@ -405,6 +415,8 @@ OUTER:
 				return
 			}
 
+			lastTimeUpdatedConfig = time.Now()
+
 			config = newConf
 			if config.Role == 0 {
 				logrus.WithField("guild", chunk.GuildID).Info("autorole role was set to none in the middle of full retroactive assignment, cancelling")
@@ -412,8 +424,10 @@ OUTER:
 			}
 		}
 
-		if time.Since(lastTimeUpdatedBlockingKey) > time.Minute {
-			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "300", "1"))
+		if time.Since(lastTimeUpdatedBlockingKey) > time.Second*10 {
+			lastTimeUpdatedBlockingKey = time.Now()
+
+			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
 			if err != nil {
 				logrus.WithError(err).Error("failed marking autorole chunk processing")
 			}
