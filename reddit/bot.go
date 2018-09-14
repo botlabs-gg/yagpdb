@@ -6,11 +6,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	// Max feeds per guild
-	GuildMaxFeeds = 100
-)
-
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 
 func (p *Plugin) RemoveGuild(g int64) error {

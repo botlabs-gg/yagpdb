@@ -45,8 +45,12 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 			return nil, err
 		}
 
-		if c, _ := models.RoleCommands(qm.Where("role_group_id=?", group.ID)).CountG(parsed.Context()); c < 1 {
-			return "No commands in group, set them up in the control panel.", nil
+		if c, _ := models.RoleCommands(qm.Where("role_group_id=?", group.ID)).CountG(parsed.Context()); c < 1 || c > 20 {
+			if c < 1 {
+				return "No commands in group, set them up in the control panel.", nil
+			} else {
+				return "Can't do this, that group has over 20 roles in it, but there can only be 20 reactions on 1 message.", nil
+			}
 		}
 	}
 

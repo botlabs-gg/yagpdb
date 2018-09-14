@@ -20,7 +20,7 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "server", Type: dcmd.Int},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		gs := bot.State.Guild(true, data.Args[0].Int64())
 		if gs == nil {
 			return "Unknown server", nil

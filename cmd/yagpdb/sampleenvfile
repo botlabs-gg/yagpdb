@@ -1,39 +1,47 @@
 #!/bin/bash
 
+# General discord stuff
 export YAGPDB_OWNER="Insert owner id here"
 export YAGPDB_BOTID="Insert bot ID here"
 export YAGPDB_CLIENTID="Insert client id here"
 export YAGPDB_CLIENTSECRET="Insert client secret here"
 export YAGPDB_BOTTOKEN="Bot token_here"
 
-#Used for the website, required for https
+# Used for the website, required for https and csrf protection
 export YAGPDB_HOST="somehost.com"   
 export YAGPDB_EMAIL="insert@email.here"      
 
+# Postgres and redis
 export YAGPDB_PQHOST="localhost"
 export YAGPDB_PQUSERNAME="postgres username"
 export YAGPDB_PQPASSWORD="postgres password"
 export YAGPDB_REDIS="redis address"
 
-# Logging, not required
-# Send gateway connection events to a discord channel
+# Set to yes or anything really to run in testing mode (cooldowns, verbose logging, laod templates from plugin folders etc..)
+export YAGPDB_TESTING=""
+
+###################################################################
+# Plugins and various other optional features below, not required #
+##################################################################
+
+# Administration
+# Used for YAGPDB_ADMINROLE and readonlyaccesrole
+export YAGPDB_MAIN_SERVER=""
+# Admins have access to things like shard reconnects, and full access to admin only commands 
+export YAGPDB_ADMIN_ROLE=""
+# Users in the main server with this role can access the control panel page of any server, but they can't modify any settings
+export YAGPDB_READONLY_ACCESS_ROLE=""
+
+# Send discord gateway connection events to a discord channel
 export YAGPDB_CONNEVT_CHANNEL=""
 # Send connection status to a discord channel
 export YAGPDB_CONNSTATUS_CHANNEL=""
 
 # Bot leaves joins to this channel
 export YAGPDB_BOTLEAVESJOINS=""
-
-# specialised state db, currently only used in reputation, in testing phase
-export YAGPDB_SQLSTATE_ADDR=""
-export YAGPDB_SQLSTATE_USER=""
-export YAGPDB_SQLSTATE_PW=""
-export YAGPDB_SQLSTATE_DB=""
 	
 # Set to anything to disable the request logging of the webserver
 export YAGPDB_DISABLE_REQUEST_LOGGING=""
-
-# Plugins below, not required
 
 # Aylien
 export YAGPDB_AYLIENAPPID="aylien app id here"

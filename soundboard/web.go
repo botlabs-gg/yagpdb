@@ -2,6 +2,7 @@ package soundboard
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
@@ -69,11 +70,6 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		}
 		file = f
 
-		if !strings.HasSuffix(header.Filename, ".mp3") && !strings.HasSuffix(header.Filename, ".ogg") && !strings.HasSuffix(header.Filename, ".wav") && !strings.HasSuffix(header.Filename, ".dca") {
-			tmpl.AddAlerts(web.ErrorAlert("Only mp3, ogg, wav and dca files allowed"))
-			return tmpl, nil
-		}
-
 		if strings.HasSuffix(header.Filename, ".dca") {
 			isDCA = true
 		}
@@ -101,8 +97,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	if err != nil {
 		return tmpl, err
 	}
-	if count > 49 {
-		tmpl.AddAlerts(web.ErrorAlert("You can have a maximum amount of 50 sounds"))
+	if count >= MaxSoundsForContext(ctx) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d sounds allowed (%d for premium servers)", MaxGuildSounds, MaxGuildSoundsPremium)))
 		return tmpl, nil
 	}
 

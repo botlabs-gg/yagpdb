@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	Description: "List roles and their id's, and some other stuff on the server",
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		out := ""
+		out := "(ME = mention everyone perms)\n"
 
 		data.GS.Lock()
 		defer data.GS.Unlock()

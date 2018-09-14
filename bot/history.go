@@ -102,12 +102,17 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, e
 	defer cs.Owner.Unlock()
 
 	for _, m := range msgBuf {
-		cs.MessageAddUpdate(false, m.Message, -1, 0)
+		cs.MessageAddUpdate(false, m.Message, -1, 0, false, false)
 	}
 
 	sort.Sort(DiscordMessages(cs.Messages))
 
-	cs.UpdateMessages(false, State.MaxChannelMessages, State.MaxMessageAge)
+	maxChannelMessages, maxMessageAge := State.MaxChannelMessages, State.MaxMessageAge
+	if State.CustomLimitProvider != nil {
+		maxChannelMessages, maxMessageAge = State.CustomLimitProvider.MessageLimits(cs)
+	}
+
+	cs.UpdateMessages(false, maxChannelMessages, maxMessageAge)
 
 	// Return at most limit results
 	if limit < len(msgBuf) {

@@ -89,6 +89,8 @@ type YAGCommand struct {
 	RunInDM      bool // Set to enable this commmand in DM's
 	HideFromHelp bool // Set to hide from help
 
+	RequireDiscordPerms []int64 // Require users to have one of these permission sets to run the command
+
 	// Run is ran the the command has sucessfully been parsed
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
@@ -348,6 +350,29 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 		}
 	}
 
+	// This command has permission sets required, if the user has one of them then allow this command to be used
+	if len(yc.RequireDiscordPerms) > 0 {
+		var perms int
+		perms, err = cState.Guild.MemberPermissions(true, cState.ID, data.Msg.Author.ID)
+		if err != nil {
+			resp = "Unable to check permissions"
+			return
+		}
+
+		foundMatch := false
+		for _, permSet := range yc.RequireDiscordPerms {
+			if permSet&int64(perms) == permSet {
+				foundMatch = true
+				break
+			}
+		}
+
+		if !foundMatch {
+			resp = "Missing required permissions to use this command (" + yc.humanizedRequiredPerms() + ")"
+			return
+		}
+	}
+
 	// Check the command cooldown
 	cdLeft, err := yc.CooldownLeft(data.Msg.Author.ID)
 	if err != nil {
@@ -363,6 +388,18 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 	// If we got here then we can execute the command
 	canExecute = true
 	return
+}
+
+func (yc *YAGCommand) humanizedRequiredPerms() string {
+	res := ""
+	for i, permSet := range yc.RequireDiscordPerms {
+		if i != 0 {
+			res += " or "
+		}
+		res += "`" + strings.Join(common.HumanizePermissions(permSet), "+") + "`"
+	}
+
+	return res
 }
 
 func (cs *YAGCommand) logExecutionTime(dur time.Duration, raw string, sender string) {

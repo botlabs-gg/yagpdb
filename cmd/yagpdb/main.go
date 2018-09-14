@@ -32,6 +32,8 @@ import (
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/notifications"
+	"github.com/jonas747/yagpdb/premium"
+	"github.com/jonas747/yagpdb/premium/patreonpremiumsource"
 	"github.com/jonas747/yagpdb/reddit"
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
@@ -138,6 +140,8 @@ func main() {
 	youtube.RegisterPlugin()
 	rolecommands.RegisterPlugin()
 	cah.RegisterPlugin()
+	premium.RegisterPlugin()
+	patreonpremiumsource.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
@@ -167,6 +171,8 @@ func main() {
 }
 
 // Gracefull shutdown
+// Why we sleep before we stop? just to be on the safe side in case there's some stuff that's not fully done yet
+// running in seperate untracked goroutines
 func listenSignal() {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -204,11 +210,6 @@ func listenSignal() {
 
 	log.Info("Sleeping for a second to allow work to finish")
 	time.Sleep(time.Second)
-
-	if !common.Testing {
-		log.Info("Sleeping a little longer")
-		time.Sleep(time.Second * 2)
-	}
 
 	log.Info("Bye..")
 	os.Exit(0)

@@ -110,6 +110,8 @@ type Message struct {
 	AuthorDiscrim  string
 	AuthorID       string
 	Deleted        bool
+
+	Color string `gorm:"-"`
 }
 
 func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*MessageLog, error) {

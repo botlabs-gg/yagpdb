@@ -1,19 +1,16 @@
 package customcommands
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"sort"
-)
-
-const (
-	MaxCommands     = 100
-	MaxUserMessages = 20
 )
 
 var (
@@ -215,4 +212,18 @@ func filterEmptyResponses(s string, ss ...string) []string {
 	}
 
 	return result
+}
+
+const (
+	MaxCommands        = 100
+	MaxCommandsPremium = 250
+	MaxUserMessages    = 20
+)
+
+func MaxCommandsForContext(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return MaxCommandsPremium
+	}
+
+	return MaxCommands
 }

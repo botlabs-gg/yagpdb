@@ -1,10 +1,12 @@
 package youtube
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
@@ -16,7 +18,6 @@ import (
 
 const (
 	RedisChannelsLockKey = "youtube_subbed_channel_lock"
-	GuildMaxFeeds        = 50
 
 	RedisKeyWebSubChannels = "youtube_registered_websub_channels"
 	GoogleWebsubHub        = "https://pubsubhubbub.appspot.com/subscribe"
@@ -176,4 +177,17 @@ type Link struct {
 type LinkEntry struct {
 	Href string `xml:"href,attr"`
 	Rel  string `xml:"rel,attr"`
+}
+
+const (
+	GuildMaxFeeds        = 50
+	GuildMaxFeedsPremium = 250
+)
+
+func MaxFeedsForContext(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return GuildMaxFeedsPremium
+	}
+
+	return GuildMaxFeeds
 }

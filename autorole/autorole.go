@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -60,5 +61,8 @@ func (l *GeneralConfig) UnmarshalJSON(b []byte) error {
 func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
 	err := common.GetRedisJson(KeyGeneral(guildID), conf)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", guildID).Error("failed retreiving autorole config")
+	}
 	return conf, err
 }

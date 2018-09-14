@@ -1,8 +1,8 @@
 package moderation
 
 import (
-	"runtime"
 	"sync"
+	"time"
 )
 
 var (
@@ -20,7 +20,7 @@ func LockMute(uID int64) {
 		}
 		muteLocksmu.Unlock()
 
-		runtime.Gosched()
+		time.Sleep(time.Millisecond * 250)
 	}
 }
 
@@ -28,5 +28,4 @@ func UnlockMute(uID int64) {
 	muteLocksmu.Lock()
 	delete(muteLocks, uID)
 	muteLocksmu.Unlock()
-
 }
