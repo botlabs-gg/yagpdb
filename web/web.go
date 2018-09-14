@@ -105,6 +105,8 @@ func Run() {
 		ListenAddressHTTPS = ":443"
 	}
 
+	patreon.Run()
+
 	InitOauth()
 	mux := setupRoutes()
 
@@ -116,8 +118,6 @@ func Run() {
 	if parsedBlogChannel != 0 {
 		go discordblog.RunPoller(common.BotSession, parsedBlogChannel, time.Minute)
 	}
-
-	patreon.Run()
 
 	LoadAd()
 
