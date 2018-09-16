@@ -133,7 +133,12 @@ func (c *Context) Execute(source string) (string, error) {
 		// Construct a fake message
 		c.Msg = new(discordgo.Message)
 		c.Msg.Author = c.BotUser
-		c.Msg.ChannelID = c.GS.ID
+		if c.CS != nil {
+			c.Msg.ChannelID = c.CS.ID
+		} else {
+			// This may fail in some cases
+			c.Msg.ChannelID = c.GS.ID
+		}
 	}
 
 	if c.GS != nil {
