@@ -1,4 +1,4 @@
-package automod
+package automod_legacy
 
 import (
 	"github.com/google/safebrowsing"
@@ -30,7 +30,7 @@ func (p *Plugin) BotInit() {
 
 	eventsystem.AddHandler(HandleMessageUpdate, eventsystem.EventMessageUpdate)
 
-	pubsub.AddHandler("update_automod_rules", HandleUpdateAutomodRules, nil)
+	pubsub.AddHandler("update_automod_legacy_rules", HandleUpdateAutomodRules, nil)
 	confCache = ccache.New(ccache.Configure().MaxSize(1000))
 
 	safeBrosingAPIKey := os.Getenv("YAGPDB_GOOGLE_SAFEBROWSING_API_KEY")

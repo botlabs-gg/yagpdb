@@ -3,7 +3,7 @@ package reverse
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/automod_legacy"
 	"github.com/jonas747/yagpdb/commands"
 )
 
@@ -30,15 +30,15 @@ var Command = &commands.YAGCommand{
 
 		if data.CS.Type == discordgo.ChannelTypeGuildText {
 
-			if automod.CheckMessageForBadInvites(out, data.CS.Guild.ID) {
+			if automod_legacy.CheckMessageForBadInvites(out, data.CS.Guild.ID) {
 				return data.Msg.Author.Mention() + " tried to use the reverse command to send a invite to another server :(", nil
 			}
 
-			if automod.CheckMessage(&cop) {
+			if automod_legacy.CheckMessage(&cop) {
 				return "", nil
 			}
 
-			out = automod.LinkRegex.ReplaceAllString(out, "")
+			out = automod_legacy.LinkRegex.ReplaceAllString(out, "")
 		}
 
 		return ":upside_down: " + out, nil

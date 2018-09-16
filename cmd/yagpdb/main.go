@@ -22,7 +22,7 @@ import (
 	"github.com/jonas747/yagpdb/web"
 
 	// Plugin imports
-	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/automod_legacy"
 	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/cah"
@@ -132,7 +132,7 @@ func main() {
 	reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
-	automod.RegisterPlugin()
+	automod_legacy.RegisterPlugin()
 	logs.RegisterPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()

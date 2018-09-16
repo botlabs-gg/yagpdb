@@ -1,4 +1,4 @@
-package automod
+package automod_legacy
 
 import (
 	"github.com/jonas747/discordgo"
@@ -22,16 +22,16 @@ type GeneralForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/automod.html"
+	tmplPath := "templates/plugins/automod_legacy.html"
 	if common.Testing {
-		tmplPath = "../../automod/assets/automod.html"
+		tmplPath = "../../automod_legacy/assets/automod_legacy.html"
 	}
 
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	autmodMux := goji.SubMux()
-	web.CPMux.Handle(pat.New("/automod/*"), autmodMux)
-	web.CPMux.Handle(pat.New("/automod"), autmodMux)
+	web.CPMux.Handle(pat.New("/automod_legacy/*"), autmodMux)
+	web.CPMux.Handle(pat.New("/automod_legacy"), autmodMux)
 
 	// Alll handlers here require guild channels present
 	autmodMux.Use(web.RequireFullGuildMW)
@@ -39,7 +39,7 @@ func (p *Plugin) InitWeb() {
 	autmodMux.Use(web.RequireBotMemberMW)
 	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages))
 
-	getHandler := web.RenderHandler(HandleAutomod, "cp_automod")
+	getHandler := web.RenderHandler(HandleAutomod, "cp_automod_legacy")
 
 	autmodMux.Handle(pat.Get("/"), getHandler)
 	autmodMux.Handle(pat.Get(""), getHandler)
@@ -56,7 +56,7 @@ func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
 	web.CheckErr(templateData, err, "Failed retrieving rules", web.CtxLogger(r.Context()).Error)
 
 	templateData["AutomodConfig"] = config
-	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(g.ID) + "/automod/"
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(g.ID) + "/automod_legacy/"
 
 	return templateData
 }
@@ -65,7 +65,7 @@ func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
 func ExtraPostMW(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		activeGuild, _ := web.GetBaseCPContextData(r.Context())
-		pubsub.Publish("update_automod_rules", activeGuild.ID, nil)
+		pubsub.Publish("update_automod_legacy_rules", activeGuild.ID, nil)
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)

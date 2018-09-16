@@ -1,4 +1,4 @@
-package automod
+package automod_legacy
 
 import (
 	"github.com/jonas747/discordgo"
