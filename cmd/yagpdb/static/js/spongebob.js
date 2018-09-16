@@ -200,19 +200,28 @@ function updateSelectedMenuItem(pathname){
 
 	// Then update the nav links
 	var navLinks = document.querySelectorAll("#menu .nav-link")
+	
+	var bestMatch = -1;
+	var bestMatchLength = 0;
 	for(var i = 0; i < navLinks.length; i++){
 		var href = navLinks[i].attributes.getNamedItem("href").value;
 		if(pathname.indexOf(href) !== -1){
-	
-			var collapseParent = navLinks[i].parentElement.parentElement.parentElement;
-			if(collapseParent.classList.contains("nav-parent")){
-				collapseParent.classList.add("nav-expanded", "nav-active");
+			if(href.length > bestMatchLength){
+				bestMatch = i;
+				bestMatchLength = href.length
 			}
-
-			navLinks[i].parentElement.classList.add("nav-active");
-		}else{
-			navLinks[i].parentElement.classList.remove("nav-active");
 		}
+		
+		navLinks[i].parentElement.classList.remove("nav-active");
+	}
+
+	if (bestMatch !== -1) {
+		var collapseParent = navLinks[bestMatch].parentElement.parentElement.parentElement;
+		if(collapseParent.classList.contains("nav-parent")){
+			collapseParent.classList.add("nav-expanded", "nav-active");
+		}
+
+		navLinks[bestMatch].parentElement.classList.add("nav-active");
 	}
 }
 
