@@ -31,7 +31,6 @@
 
 .nav-tabs {
   border-bottom: $nav-tabs-border-width solid $nav-tabs-border-color;
-  flex-wrap: wrap-reverse;
 
   .nav-item {
     margin-bottom: -$nav-tabs-border-width;
@@ -113,6 +112,7 @@
   > .tab-pane {
     display: none;
   }
+
   > .active {
     display: block;
   }
