@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var TempRangeRegex = regexp.MustCompile("(-?[0-9]{1,3}) ?- ?(-?[0-9]{1,3}) ?°C")
+var TempRangeRegex = regexp.MustCompile("(-?[0-9]{1,3})( ?- ?(-?[0-9]{1,3}))? ?°C")
 
 var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryFun,
@@ -57,20 +57,30 @@ var Command = &commands.YAGCommand{
 
 			tmpFrom := 0
 			tmpTo := 0
+			isRange := false
+
 			submatches := TempRangeRegex.FindStringSubmatch(v)
-			if len(submatches) < 3 {
+			if len(submatches) < 2 {
 				continue
 			}
 
 			tmpFrom, _ = strconv.Atoi(submatches[1])
-			tmpTo, _ = strconv.Atoi(submatches[2])
+
+			if len(submatches) >= 4 && submatches[3] != "" {
+				tmpTo, _ = strconv.Atoi(submatches[3])
+				isRange = true
+			}
 
 			// convert to fahernheit
 			tmpFrom = int(float64(tmpFrom)*1.8 + 32)
 			tmpTo = int(float64(tmpTo)*1.8 + 32)
 
 			v = strings.TrimRight(v, " ")
-			split[i] = v + fmt.Sprintf(" (%d-%d °F)", tmpFrom, tmpTo)
+			if isRange {
+				split[i] = v + fmt.Sprintf(" (%d-%d °F)", tmpFrom, tmpTo)
+			} else {
+				split[i] = v + fmt.Sprintf(" (%d °F)", tmpFrom)
+			}
 		}
 
 		out := "```\n"
