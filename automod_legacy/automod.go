@@ -23,7 +23,7 @@ func RegisterPlugin() {
 	common.RegisterPlugin(p)
 }
 
-func (p *Plugin) Name() string { return "Automod" }
+func (p *Plugin) Name() string { return "Legacy Automod" }
 
 type Config struct {
 	Enabled bool

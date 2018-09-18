@@ -1,0 +1,460 @@
+{{define "automod_index"}}
+{{template "cp_head" .}}
+<header class="page-header">
+    <h2>Command settings</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<style>
+/* yes style is allowed in <body> as of around 2013 or something*/
+.automod-rule-part-table{
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.automod-type-column {
+    width: 12rem;
+}
+
+.automod-options-column{
+    width: calc(100% - 15rem);
+}
+
+.automod-delete-column{
+    width: 2.5rem;
+}
+
+table{
+    table-layout: fixed;
+}
+
+</style>
+
+<div class="row">
+    <div class="col">
+        <!-- Nav tabs -->
+        <div class="tabs">
+            <ul class="nav nav-tabs">
+                <li class="nav-item {{if not .CurrentRuleset}}active{{end}}">
+                    <a data-partial-load="true" class="nav-link show {{if not .CurrentRuleset}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/automod/">Global settings</a>
+                </li>
+
+                {{$dot := .}}
+                {{range .AutomodRulesets}}
+                <li class="nav-item {{if $dot.CurrentRuleset}}{{if eq $dot.CurrentRuleset.ID .ID}}active{{end}}{{end}}">
+                    <a data-partial-load="true" class="nav-link show {{if $dot.CurrentRuleset}}{{if eq $dot.CurrentRuleset.ID .ID}}active{{end}}{{end}}" href="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{.ID}}">{{.Name}}</a>
+                </li>
+                {{end}}
+            </ul>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div class="tab-pane active">
+                    {{if .CurrentRuleset}}
+                    <!-- /.row -->
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form action="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/update" method="post" data-async-form>
+                                <!-- Modify ruleset -->
+                                <h3>Ruleset settings here</h3>
+                                <div class="automod-rule-part-table" data-automod-part-type=1>
+                                    <p><b>Ruleset Conditions</b></p>
+                                    <table class="table table-hover table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="automod-type-column">Type</th>
+                                                <th class="automod-options-column">Options</th>
+                                                <th class="automod-delete-column">-</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {{$dot := .}}
+                                            {{range $i, $jv := .CurrentRuleset.R.RulesetAutomodRulesetConditions}}{{if eq .Kind 1}}
+                                            {{$settings := index $dot.RSPartData $i}}
+                                            {{$partType := index $dot.PartMap .TypeID}}
+                                            {{mTemplate "automod_rule_part_row" "dot" $dot "partIndex" $i "settings" $settings "partType" $partType "part" . "kind" "condition"}}
+                                            {{end}}{{end}}
+                                        </tbody>
+                                    </table>
+                                    <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
+                                </div>
+                                <button class="btn btn-success" type="submit">Save</button>
+                            </form>
+                        </div>
+                        <!-- /.col-lg-12 -->
+                    </div>
+                    <!-- /.row -->
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <!-- Add new rule -->
+                            <h4>Create a new rule</h3>
+                            <form action="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/new_rule" method="post" data-async-form>
+                                <!-- <div class="form-group">
+                                    <label for="am-new-ruleset-name">Name</label>
+                                    <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
+                                </div> -->
+                                <button type="submit" class="btn btn-success">Create</button>
+                            </form>
+
+                        </div>
+                        <!-- /.col-lg-12 -->
+                    </div>
+                    <!-- /.row -->
+                    {{else}}
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form action="/manage/{{.ActiveGuild.ID}}/automod/new_ruleset" method="post" data-async-form>
+                                <p><b>Create a new ruleset</b></p>
+                                <div class="form-group">
+                                    <label for="am-new-ruleset-name">Name</label>
+                                    <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
+                                </div>
+                                <button type="submit" class="btn btn-success">Create</button>
+                            </form>
+                        </div>
+                        <!-- /.col-lg-12 -->
+                    </div>
+                     <!-- /.row -->
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{$dot := .}}
+{{if .CurrentRuleset}}
+{{range $i, $rule := .CurrentRuleset.R.RulesetAutomodRules}}
+<div class="row">
+    <div class="col">
+        <form action="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/update" method="post" data-async-form>
+            <!-- Pressing enter uses the first button for some reason -->
+            <button class="hidden" type="submit"></button>
+
+            <section class="card card-featured card-featured-warning">
+                <header class="card-header">
+                    <div class="pull-right">
+                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/delete">Delete</button>
+                    </div>
+                    <h2 class="card-title">Rule #{{$i}}</h2>
+                </header>
+                <div class="card-body">
+                    <div class="automod-rule-part-table" data-automod-part-type=0>
+                        <p><b>Triggers</b></p>
+                        <table class="table table-hover table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="automod-type-column">Type</th>
+                                    <th class="automod-options-column">Options</th>
+                                    <th class="automod-delete-column">-</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{if .R}}{{range $j, $jv := .R.RuleAutomodRuleData}}{{if eq .Kind 0}}
+                                {{$settings := index (index $dot.RulePartData $i) $j}}
+                                {{$partType := index $dot.PartMap .TypeID}}
+                                {{mTemplate "automod_rule_part_row" "dot" $dot "partIndex" $j "settings" $settings "partType" $partType "part" . "kind" "trigger"}}
+                                {{end}}{{end}}{{end}}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
+                    </div>
+                    <div class="automod-rule-part-table" data-automod-part-type=1>
+                        <p><b>Conditions</b></p>
+                        <table class="table table-hover table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="automod-type-column">Type</th>
+                                    <th class="automod-options-column">Options</th>
+                                    <th class="automod-delete-column">-</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{if.R}}{{range $j, $jv := .R.RuleAutomodRuleData}}{{if eq .Kind 1}}
+                                {{$settings := index (index $dot.RulePartData $i) $j}}
+                                {{$partType := index $dot.PartMap .TypeID}}
+                                {{mTemplate "automod_rule_part_row" "dot" $dot "partIndex" $j "settings" $settings "partType" $partType "part" . "kind" "condition"}}
+                                {{end}}{{end}}{{end}}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
+                    </div>
+                    <div class="automod-rule-part-table" data-automod-part-type=2>
+                        <p><b>Effects</b></p>
+                        <table class="table table-hover table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="automod-type-column">Type</th>
+                                    <th class="automod-options-column">Options</th>
+                                    <th class="automod-delete-column">-</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{if .R}}{{range $j, $jv := .R.RuleAutomodRuleData}}{{if eq .Kind 2}}
+                                {{$settings := index (index $dot.RulePartData $i) $j}}
+                                {{$partType := index $dot.PartMap .TypeID}}
+                                {{mTemplate "automod_rule_part_row" "dot" $dot "partIndex" $j "settings" $settings "partType" $partType "part" . "kind" "effect"}}
+                                {{end}}{{end}}{{end}}
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button><br>
+                    </div>
+                    <button class="btn btn-success" type="submit">Save</button>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+{{end}}
+{{end}}
+<div class="hidden">
+    <select id="automod-roledropdown-multi-template" data-plugin-multiselect class="multiselect form-control" multiple="multiple">
+        {{roleOptionsMulti .ActiveGuild.Roles nil nil}}
+    </select>
+    <select id="automod-channel-multi-template" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+        {{textChannelOptionsMulti .ActiveGuild.Channels nil}}
+    </select>
+</div>
+
+<script>
+$(function(){
+    // Load in all part (triggers, conditions and effects) types
+    var partMap = [];
+    {{range $k, $v := .PartMap}}
+    partMap[{{$k}}] = {
+        name: "{{.Name}}",
+        description: "{{.Description}}",
+        kind: {{.Kind}},
+        options: JSON.parse({{json .UserSettings}})
+    }
+    {{end}}
+    console.log(partMap)
+
+    function namePrefixFromKind(kind){
+        namePrefix = "Triggers."
+        if(kind == 1){
+            namePrefix = "Conditions."
+        }else if(kind == 2){
+            namePrefix = "Effects."
+        }
+
+        return namePrefix
+    }
+
+    $(document).off('click', '.automod-add-rule-part')
+    $(document).on('click', '.automod-add-rule-part', function(evt){
+        var kind = $(evt.target).closest("[data-automod-part-type]").attr("data-automod-part-type")
+
+        var tbody = $(evt.target).parent().find("tbody");
+        var rowIndex = tbody.children().length;
+        var row = createPartRow(kind, rowIndex)
+        
+        console.log("Creating new: ", kind, rowIndex)
+        tbody.append(row);
+    })
+
+    function createPartRow(kind, rowIndex){
+        namePrefix = namePrefixFromKind(kind)
+
+        var row = $("<tr class='automod-rule-row' data-automod-row-index='"+rowIndex+"'></tr>")
+
+        var selectName = namePrefix+rowIndex+".Type"
+        var typeSelect = $("<select class='form-control automod-type-dropdown' name='"+selectName+"'><option value='0' selected>None</option></select>")
+        for (var i = 0; i < partMap.length; i++) {
+            var partType = partMap[i]
+            if(!partType || partType.kind != kind) continue;
+
+            typeSelect.append("<option value='"+i+"'> "+partType.name+"</option>");
+        }
+
+        row.append($("<td>").append(typeSelect))
+        row.append("<td class='automod-options-column'></td>")
+
+        row.append("<td><button type='button' class='btn btn-danger automod-delete-rule-part btn-sm' noconfirm>-</button></td>")
+
+        return row
+    }
+
+    $(document).off('change', '.automod-type-dropdown')
+    $(document).on("change", ".automod-type-dropdown", function(evt){
+        partTypeChanged($(evt.target));
+    })
+
+    function partTypeChanged(target){
+        var rowElem = target.closest(".automod-rule-row")
+        var kind = target.closest("[data-automod-part-type]").attr("data-automod-part-type")
+        
+        var optionsColumn = rowElem.find(".automod-options-column")
+        var typSelectVal = target.val();
+
+        var opts = []
+        if (partMap[typSelectVal]){
+            opts = partMap[typSelectVal].options;
+        }
+
+        var namePrefix = namePrefixFromKind(kind);
+
+        var col = createOptionsColumn(opts, namePrefix+rowElem.attr("data-automod-row-index")+".Data.")
+        optionsColumn.replaceWith(col)
+
+        col.find("[data-plugin-multiselect]").each(function(i, v){
+            $(v).themePluginMultiSelect({});
+        })
+    }
+
+    $(document).off('click', '.automod-delete-rule-part')
+    $(document).on('click', '.automod-delete-rule-part', function(evt){
+        var rowElem = $(evt.target).closest(".automod-rule-row")
+        
+        tbody = rowElem.parent();
+
+        rowElem.detach();
+        
+        // Update the indexes for all the rows, since the names contains them
+        updateRowIndexes(tbody);
+    })
+
+    function updateRowIndexes(tbody){
+        tbody.children("tr").each(function(i, v) { 
+            var row = $(v)
+            row.attr("data-automod-row-index", i)
+
+            var typeDropdown = row.find(".automod-type-dropdown")
+            var name = typeDropdown.attr("name")
+            name = name.replace(/\d+/g, i)
+            typeDropdown.attr("name", name);
+            
+            var inputs = row.find('[name*=".Data."]')
+            inputs.each(function(j, htmlInput){
+                var name = $(htmlInput).attr("name")
+                name = name.replace(/\d+/g, i)
+                $(htmlInput).attr("name", name)
+            })
+        });
+    }
+
+    function createOptionsColumn(opts, namePrefix){
+        var elem = $("<td class='automod-options-column'>")
+        for (var i = 0; i < opts.length; i++) {
+            var opt = opts[i];
+            createOpt(elem, namePrefix+opt.Key, opt);
+        }
+
+        return elem;
+    }
+
+    function createOpt(cell, key, opt, namePrefix){
+        var wrapper = $("<div class='col-md'><div class='form-group row'><label class='col-md-2'>"+opt.Name+":</label><div class='col-md-10 automod-part-setting'></div></div>")
+        var column = wrapper.find(".automod-part-setting")
+
+        switch(opt.Kind){
+        case "int":
+            var input = $("<input type='number' class='form-control' name='"+key+"'></input>");
+            if(opt.Min !== 0 || opt.Max !== 0){
+                input.attr("min", opt.Min)
+                input.attr("max", opt.Max)
+                input.attr("required", true)
+            }
+
+            if(opt.Default){
+                input.attr("value", opt.Default)
+            }
+
+            column.append(input)
+            break;
+        case "string":
+            var input = $("<input type='text' class='form-control' name='"+key+"'></input>");
+            if(opt.Min !== 0 || opt.Max !== 0){
+                input.attr("minlength", opt.Min)
+                input.attr("maxlength", opt.Max)
+                input.attr("required", true)
+            }
+
+            if(opt.Default){
+                input.attr("value", opt.Default)
+            }
+
+            column.append(input)
+            break;
+        case "multi_role":
+            cloneDropdown(column, "#automod-roledropdown-multi-template", key, true);
+            break;
+        case "multi_channel":
+            cloneDropdown(column, "#automod-channel-multi-template", key, true);
+            break;
+        }
+
+        cell.append(wrapper);
+    }
+
+    function cloneDropdown(column, id, name){
+        var input = $(id).clone()
+        input.attr("id", "")
+        input.attr("name", name)
+        input.removeClass("hidden")
+        column.append(input)
+
+        return input
+    }
+})
+</script>
+
+{{template "cp_footer" .}}
+{{end}}
+
+
+{{define "automod_rule_part_row"}}
+{{$namePrefix := "Triggers"}}
+{{if eq .kind "condition"}}
+{{$namePrefix = "Conditions"}}
+{{else if eq .kind "effect"}}
+{{$namePrefix = "Effects"}}
+{{end}}
+<tr class="automod-rule-row" data-automod-row-index="{{.partIndex}}">
+    <td>
+        <div class="form-gorup">
+            <select class="form-control automod-type-dropdown" name="{{$namePrefix}}.{{.partIndex}}.Type">
+                <option value="0"{{if eq .part.TypeID 0}}selected{{end}}>None</option>
+                {{$kind := .part.Kind}}
+                {{$selected := .part.TypeID}}
+                {{range $k, $v := .dot.PartMap}}{{if eq $v.Kind $kind}}
+                <option value="{{$k}}" {{if eq $selected $k}} selected {{end}}>{{$v.Name}}</option>
+                {{end}}{{end}}
+            </select>
+        </div>
+    </td>
+    <td class="automod-options-column">
+        <!-- Options here -->
+        {{$dot := .}}
+        {{range .partType.UserSettings}}
+        <div class="col-md">
+            <div class='form-group row'>
+                <label class='col-md-2'>{{.Name}}:</label>
+                <div class='col-md-10'>
+                    {{$name := joinStr "" $namePrefix "." $dot.partIndex ".Data." .Key}}
+                    {{if eq .Kind "int"}}
+                    <input type='number' class='form-control' name="{{$name}}" {{if or .Min .Max}} min="{{.Min}}" max="{{.Max}}" {{end}} value="{{index $dot.settings .Key}}"></input>
+                    {{else if eq .Kind "multi_role"}}
+                    <select name="{{$name}}" data-plugin-multiselect class="multiselect form-control" multiple="multiple">
+                        {{roleOptionsMulti $dot.dot.ActiveGuild.Roles nil (index $dot.settings .Key)}}
+                    </select>
+                    {{else if eq .Kind "multi_channel"}}
+                    <select name="{{$name}}" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                        {{textChannelOptionsMulti $dot.dot.ActiveGuild.Channels (index $dot.settings .Key)}}
+                    </select>
+                    {{else if eq .Kind "string"}}
+                    <input type='text' class='form-control' name="{{$name}}" {{if or .Min .Max}}required minlength="{{.Min}}" maxlength="{{.Max}}" {{end}} value="{{index $dot.settings .Key}}"></input>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        {{end}}
+    </td>
+    <td>
+        <div class="btn-group">
+            <button class="btn btn-danger btn-sm automod-delete-rule-part" noconfirm>-</button>
+        </div>
+    </td>
+</tr>
+{{end}}

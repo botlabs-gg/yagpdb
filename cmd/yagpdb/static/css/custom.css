@@ -207,3 +207,10 @@ html.sidebar-left-collapsed #nav-footer {
 .multiselect-container {
   top: 125px !important;
 }
+
+
+@media only screen and (max-width: 768px) {
+  .card-body {
+    padding: 0.25rem !important;
+  }  
+}

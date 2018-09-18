@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/evalphobia/logrus_sentry"
+	"github.com/jonas747/yagpdb/automod"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -133,6 +134,7 @@ func main() {
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	automod_legacy.RegisterPlugin()
+	automod.RegisterPlugin()
 	logs.RegisterPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
