@@ -294,7 +294,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			return
 		}
 
-		if !bot.BotProbablyHasPermissionGS(guild, cState.ID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages) {
+		if !bot.BotProbablyHasPermissionGS(true, guild, cState.ID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages) {
 			return
 		}
 
