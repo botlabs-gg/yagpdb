@@ -70,35 +70,12 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		actionChannel = channelID
 	}
 
-	dmMsg := ""
-	if p == PunishmentKick {
-		dmMsg = config.KickMessage
-	} else {
-		dmMsg = config.BanMessage
-	}
-
-	if dmMsg == "" {
-		dmMsg = "You were " + action.Emoji + strings.ToLower(action.Prefix) + "\nReason: {{.Reason}}"
-	}
-
 	gs := bot.State.Guild(true, guildID)
 
 	member, memberNotFound := getMemberWithFallback(gs, user)
-
-	// Execute and send the DM message template
-	ctx := templates.NewContext(gs, nil, member)
-	ctx.Data["Reason"] = reason
-	ctx.Data["Duration"] = duration
-	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
-	ctx.Data["Author"] = author
-
-	executed, err := ctx.Execute(dmMsg)
-	if err != nil {
-		logrus.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
-		executed = "Failed executing template."
+	if !memberNotFound {
+		sendPunishDM(config, p == PunishmentKick, action, gs, author, member, duration, reason)
 	}
-
-	go bot.SendDM(user.ID, "**"+bot.GuildName(guildID)+":** "+executed)
 
 	logLink := ""
 	if channelID != 0 {
@@ -147,6 +124,34 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 
 	err = CreateModlogEmbed(actionChannel, author, action, user, reason, logLink)
 	return err
+}
+
+func sendPunishDM(config *Config, kick bool, action ModlogAction, gs *dstate.GuildState, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string) {
+	dmMsg := ""
+	if kick {
+		dmMsg = config.KickMessage
+	} else {
+		dmMsg = config.BanMessage
+	}
+
+	if dmMsg == "" {
+		dmMsg = "You were " + action.Emoji + " " + strings.ToLower(action.Prefix) + "\nReason: {{.Reason}}"
+	}
+
+	// Execute and send the DM message template
+	ctx := templates.NewContext(gs, nil, member)
+	ctx.Data["Reason"] = reason
+	ctx.Data["Duration"] = duration
+	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
+	ctx.Data["Author"] = author
+
+	executed, err := ctx.Execute(dmMsg)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
+		executed = "Failed executing template."
+	}
+
+	go bot.SendDM(member.ID, "**"+bot.GuildName(gs.ID)+":** "+executed)
 }
 
 func KickUser(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User) error {
