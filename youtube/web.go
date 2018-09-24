@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
@@ -93,8 +94,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	var count int
 	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
 
-	if count > GuildMaxFeeds {
-		return templateData.AddAlerts(web.ErrorAlert("Max " + strconv.Itoa(GuildMaxFeeds) + " items allowed")), errors.New("Max limit reached")
+	if count >= MaxFeedsForContext(ctx) {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)

@@ -43,6 +43,11 @@ const (
 func setup() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
+	State.MaxChannelMessages = 1000
+	State.MaxMessageAge = time.Hour
+	// State.Debug = true
+	State.ThrowAwayDMMessages = true
+
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
 	eventsystem.ConcurrentAfter = StateHandlerPtr
@@ -60,6 +65,7 @@ func setup() {
 	eventsystem.AddHandler(HandleChannelUpdate, eventsystem.EventChannelUpdate)
 	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
 	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
 }
 
 func Run() {
@@ -111,10 +117,6 @@ func Run() {
 	for i := 0; i < shardCount; i++ {
 		waitingReadies = append(waitingReadies, i)
 	}
-
-	State.MaxChannelMessages = 1000
-	State.MaxMessageAge = time.Hour
-	// State.Debug = true
 
 	Running = true
 
@@ -194,6 +196,7 @@ func BotStarted() {
 	}
 
 	go scheduledevents.Run()
+	go loopCheckAdmins()
 }
 
 var stopOnce sync.Once
@@ -212,6 +215,7 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 
 		wg.Add(1)
 		go scheduledevents.Stop(wg)
+		close(stopRunCheckAdmins)
 	})
 }
 

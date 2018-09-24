@@ -105,8 +105,8 @@ OUTER:
 	logrus.WithFields(logrus.Fields{
 		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
-	}).Info("Found matched reddit post")
-
+	}).Debug("Found matched reddit post")
+  
 	message, embed := CreatePostMessage(post)
 
 	for _, item := range filteredItems {

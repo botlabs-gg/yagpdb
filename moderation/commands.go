@@ -167,7 +167,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				target = targetMember.DGoUser()
 			}
 
-			err := BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), false)
+			err := BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration))
 			if err != nil {
 				return nil, err
 			}

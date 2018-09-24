@@ -32,7 +32,7 @@
                 {{range $i, $v := .Logs.Messages}}
                 <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID}} Message ID: {{.MessageID}}">
                     <td class="text-nowrap">{{.Timestamp}}</td>
-                    <td>{{.AuthorUsername}}#{{.AuthorDiscrim}}</td>
+                    <td style="{{if.Color}}color: #{{.Color}};{{end}}font-weight: 600;">{{.AuthorUsername}}<small>#{{.AuthorDiscrim}}</small></td>
                     <td id="msg-cell-{{.ID}}" {{if .Deleted}} class="deleted-message" {{end}}>
                         {{if .Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Deleted) $CanViewDeleted}}{{.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}
                     </td>{{if $IsAdmin}}

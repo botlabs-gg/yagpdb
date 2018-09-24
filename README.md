@@ -1,4 +1,4 @@
-YAGPDB  [![Circle CI](https://circleci.com/gh/jonas747/yagpdb.svg?style=svg)](https://circleci.com/gh/jonas747/yagpdb) 
+YAGPDB 
 ================
 
 ### Yet another general purpose discord bot
@@ -14,26 +14,19 @@ YAGPDB is a multifunctional modular discord bot, it's modular in that plugins ex
 
 Running this bot may seem challenging and that's because I don't have time to make it easy to run for everyone, for the most part, it should run fine after the initial work has been done.
 
-There's also some struggle when you update, as in the past at least I've been bad at announcing what needs to be done to migrate certain data, in most cases `-a "migrate"` will do the trick though.
+#### Updating
+Updating after v1 should migrate schemas automatically, but you should always take backups beforehand if things go wrong.
 
-With that said running this bot requires knowledge of:
+I will put breaking changes in the breaking_changes.md file, which you should always read before updating.
 
- - Basic batch/shell scripting (as in setting environment variables and such, really basic stuff)
- - Basic knowledge of PostgreSQL (being able to create the database and user for yagpdb)
- - Basic knowledge of redis (being able to install and run it)
- - Basic knowledge of go (being able to compile things)
- - Basic knowledge of git (being able to change branches and such)
+#### There's 2 ways of running this bot
 
-**I will not help you if you're missing one of these, I simply do not have time. You can expect little to no support on helping it get set up unless the purpose of you setting it up is to help out the project.**
+1. Using Docker
+2. Standalone
+
+**I will not help with basic problems or how to do unrelated things (how to run it on startup for example), use google, if those well written tutorials and aritcles confuse you, how the hell is a guy with english as a second language gonne be any better?**
 
 (There's still a lot of contributing you can do without this though, such as writing docs, fixing my horrible typos and so on)
-
-**The web server requires a domain.**
-
-The web server (control panel) requires a domain (e.g., yagpdb.example.com) in
-order to integrate with Discord. Although it is possible to run this bot without
-the control panel, it is significantly more difficult and not supported by the
-maintainers.
 
 #### General Discord bot setup
 
@@ -42,8 +35,7 @@ Directions on creating an app and getting credentials may be found
 YAGPDB does not require you to authorize the bot: all of that will be handled
 via the Control Panel.
 
-In addition, you will need to add your domain to the bot's "REDIRECT URI(S)"
-configuration:
+In addition, you will need to add the following urls to the bot's "REDIRECT URI(S)" configuration:
 
 - https://YourHostNameHere/confirm_login
 - https://YourHostNameHere/manage
@@ -81,38 +73,46 @@ And then start the bot using the proxy:
 
     docker-compose -f yagpdb/yagpdb_docker/docker-compose.proxied.yml up
 
-#### Manual setup
+#### Standalone/Manual setup
 
-Required databases: 
- - PostgresSQL
-     + Requires a db named yagpdb, this is currently hardcoded in.
-     + The user and password is configurable through env variables.
- - Redis
-     + Defaults are fine
+**Requirements**
+ - Fairly recent go version (1.11 or later, i use new features as soon as they're out so watch out in breaking_changes)
+ - PostgreSQL 9.6 or later
+ - Redis version 3.x or later (maybe its possible to get it working with earlier versions, i don't know personally though)
 
-First step is to set those up and get them running.
+I may update the bot at any point to require newer versions of any of these, so you should ALWAYS check breaking_changes before updating.
+
+**First step** is to set those up and get them running:
+
+ 1. Install and configure redis and postgres with your desired settings (my dm's are not google, you'll have to figure atleast this much out on your own...)
+ 2. Create a user named `yagpdb` and database named `yagpdb` which the user `yagpdb` has write access to
+ 3. Update your env vars with the config (see example env file in `cmd/yagpdb/`)
+ 4. Done.
 
 **Steps for building:**
 
-YAGPDB currently use a lot of alternative branches of my projects, mostly because of my custom discordgo fork.
+YAGPDB currently use a lot of alternative branches of my projects, mainly because i also use a discordgo fork with a lot of goodies in (why not push my changes upstream? cause a shit ton of breaking changes that would never get accepted)
+
+I'm working towards making yagpdb fully `go get ...`-able 
 
 ```bash
 git clone -b yagpdb https://github.com/jonas747/discordgo $GOPATH/src/github.com/jonas747/discordgo
 git clone -b dgofork https://github.com/jonas747/dutil $GOPATH/src/github.com/jonas747/dutil
 git clone -b dgofork https://github.com/jonas747/dshardmanager $GOPATH/src/github.com/jonas747/dshardmanager
-git clone -b dgofork https://github.com/jonas747/dcmd $GOPATH/src/github.com/jonas747/dcmd
 go get -v -d github.com/jonas747/yagpdb/cmd/yagpdb
 cd $GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb
-go build -o yagpdb main.go
+go build 
 ```
+
+After this, unless you wanna run it in testing mode using `YAGPDB_TESTING=yes` you have to run `cmd/yagpdb/copytemplates.sh` to copy all the plugin specific template files into the `cmd/yagpdb/templates/plugins` folder.
+
 You can now run `./yagpdb`
 
 Configuration is done through environment variables. See `cmd/yagpdb/sampleenvfile` for what environment variables are available.
 
-You can run the web server, bot, reddit and youtube parts as separate processes (haven't tested on different physical machines yet, doubt it'll work well atm for the web server and bot at least)
+You can run the web server, bot, reddit and youtube parts as separate processes (some smallish limitations require to to run it on the same machine, will likely be removed soon as I'm gonna need to work on horizontal scaling soon)
 
-You specify `-bot` to run the bot, `-web` to run the web server and so on.
-And it should be running now.
+You specify `-bot` to run the bot, `-web` to run the web server, `-feeds "youtube,reddit"` to run the reddit and youtube feeds.
 
 The web server by default (unless `-pa`) listens on 5000(http) and 5001(https)
 So if you're behind a NAT, forward those, if not you can either use the `-pa` switch or add an entry to iptables.

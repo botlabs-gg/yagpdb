@@ -8,9 +8,9 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/patreon"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/web/discordblog"
-	"github.com/jonas747/yagpdb/web/patreon"
 	"github.com/natefinch/lumberjack"
 	log "github.com/sirupsen/logrus"
 	"goji.io"
@@ -105,6 +105,8 @@ func Run() {
 		ListenAddressHTTPS = ":443"
 	}
 
+	patreon.Run()
+
 	InitOauth()
 	mux := setupRoutes()
 
@@ -116,8 +118,6 @@ func Run() {
 	if parsedBlogChannel != 0 {
 		go discordblog.RunPoller(common.BotSession, parsedBlogChannel, time.Minute)
 	}
-
-	patreon.Run()
 
 	LoadAd()
 

@@ -28,7 +28,7 @@
         {{range .Posts}}
         <secton class="card">
             <header class="card-header">
-                <h2 class="card-title">{{.Message.Author.Username}} - <small>{{.ParsedTimestamp.Format "02 Jan 06 15:04"}}</small></h2>
+                <h2 class="card-title"><img class="avatar mr-2" src="{{.Message.Author.AvatarURL "256"}}"></img>{{.Message.Author.Username}}<small class="float-right">{{humanizeTimeSinceDays .ParsedTimestamp}} ago ({{.ParsedTimestamp.Format "02 Jan 06 15:04"}})</small></h2>
             </header>
             <div class="card-body">
                 {{.RenderedBody}}
@@ -65,17 +65,11 @@
                 <h2 class="card-title">Thanks to my patrons!</h2>
             </header>
             <div class="card-body">
-                <b>Quality patrons</b><br>
-                {{range .qualityPatrons}}
-                <img class="avatar" src="{{.Attributes.ImageURL}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{or .Attributes.Vanity .Attributes.FirstName}}"></img>
-                {{end}}
-                
+                {{range .activePatrons}}
+                <img class="avatar" src="{{.Avatar}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{.Name}}"></img>
+                {{end}}                
                 <br>
-
-                <b>Patrons</b><br>
-                {{range .normalPatrons}}
-                <img class="avatar" src="{{.Attributes.ImageURL}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{or .Attributes.Vanity .Attributes.FirstName}}"></img>
-                {{end}}
+                <p>Patreon tiers above 3$ will grant you premium slots you can assign to servers, see <a href="/premium">the premium page</a> for more info</p>
             </div>
         </section>
         {{end}}
@@ -85,7 +79,7 @@
             </header>
             <div class="card-body">
                 <p>YAGPDB is open source! The project is hosted on github here: <a href="https://github.com/jonas747/yagpdb">jonas747/yagpdb</a></p>
-                <p><a href="https://docs.yagpdb.xyz/other/donating" target="_blank">Donate using patreon, bitcoin and other cryptos!</a></p>
+                <p><a href="https://docs.yagpdb.xyz/donating" target="_blank">Donate using patreon, bitcoin and other cryptos!</a> Donating $3 or more will grant you premium slots you can assign to servers!</p>
                 <p>Looking to buy the ad space? <a href="https://docs.yagpdb.xyz/other/ads" target="_blank">Click here for more info</a></p>
                 <p>Looking for the YAGPDB Discord server? the link is located at the top of the page!</p>
             </div>

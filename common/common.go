@@ -16,13 +16,13 @@ import (
 
 const (
 	VERSIONMAJOR = 1
-	VERSIONMINOR = 5
-	VERSIONPATCH = 1
+	VERSIONMINOR = 6
+	VERSIONPATCH = 3
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Youthful"
+	VERSION       = VERSIONNUMBER + " Zippy"
 
 	GORM *gorm.DB
 	PQ   *sql.DB
@@ -37,15 +37,13 @@ var (
 
 	Statsd *statsd.Client
 
-	Testing bool
+	Testing = os.Getenv("YAGPDB_TESTING") != ""
 
 	CurrentRunCounter int64
 )
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
-	Testing = os.Getenv("YAGPDB_TESTING") != ""
-
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
 

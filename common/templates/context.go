@@ -12,31 +12,33 @@ import (
 
 var (
 	StandardFuncMap = map[string]interface{}{
-		"dict":               Dictionary,
-		"sdict":              StringKeyDictionary,
-		"cembed":             CreateEmbed,
-		"json":               tmplJson,
-		"in":                 in,
-		"title":              strings.Title,
-		"add":                add,
-		"roleAbove":          roleIsAbove,
-		"adjective":          common.RandomAdjective,
-		"randInt":            randInt,
-		"shuffle":            shuffle,
-		"seq":                sequence,
-		"joinStr":            joinStrings,
-		"str":                str,
-		"lower":              strings.ToLower,
-		"toString":           ToString,
-		"toInt":              tmplToInt,
-		"toInt64":            ToInt64,
-		"formatTime":         tmplFormatTime,
-		"slice":              slice,
-		"cslice":             CreateSlice,
-		"currentTime":        tmplCurrentTime,
-		"escapeHere":         tmplEscapeHere,
-		"escapeEveryone":     tmplEscapeEveryone,
-		"escapeEveryoneHere": tmplEscapeEveryoneHere,
+		"dict":                  Dictionary,
+		"sdict":                 StringKeyDictionary,
+		"cembed":                CreateEmbed,
+		"json":                  tmplJson,
+		"in":                    in,
+		"title":                 strings.Title,
+		"add":                   add,
+		"roleAbove":             roleIsAbove,
+		"adjective":             common.RandomAdjective,
+		"randInt":               randInt,
+		"shuffle":               shuffle,
+		"seq":                   sequence,
+		"joinStr":               joinStrings,
+		"str":                   str,
+		"lower":                 strings.ToLower,
+		"toString":              ToString,
+		"toInt":                 tmplToInt,
+		"toInt64":               ToInt64,
+		"formatTime":            tmplFormatTime,
+		"slice":                 slice,
+		"cslice":                CreateSlice,
+		"currentTime":           tmplCurrentTime,
+		"escapeHere":            tmplEscapeHere,
+		"escapeEveryone":        tmplEscapeEveryone,
+		"escapeEveryoneHere":    tmplEscapeEveryoneHere,
+		"humanizeDurationHours": tmplHumanizeDurationHours,
+		"humanizeTimeSinceDays": tmplHumanizeTimeSinceDays,
 	}
 
 	contextSetupFuncs = []ContextSetupFunc{
@@ -131,7 +133,12 @@ func (c *Context) Execute(source string) (string, error) {
 		// Construct a fake message
 		c.Msg = new(discordgo.Message)
 		c.Msg.Author = c.BotUser
-		c.Msg.ChannelID = c.GS.ID
+		if c.CS != nil {
+			c.Msg.ChannelID = c.CS.ID
+		} else {
+			// This may fail in some cases
+			c.Msg.ChannelID = c.GS.ID
+		}
 	}
 
 	if c.GS != nil {

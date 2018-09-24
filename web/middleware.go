@@ -42,6 +42,7 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			var tmplData TemplateData
 			ctx, tmplData = GetCreateTemplateData(ctx)
 			tmplData["PartialRequest"] = true
+			ctx = context.WithValue(ctx, common.ContextKeyIsPartial, true)
 		}
 
 		entry := log.WithFields(log.Fields{
@@ -269,7 +270,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
 			}
 			r = r.WithContext(ctx)
-			log.Info("No guilds, set full guild instead of userguild")
 			return
 		}
 
@@ -282,7 +282,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			}
 		}
 
-		// Fallback to userguilds if not found
+		// Fallback to full guild if userguilds if not found
 		if userGuild == nil {
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
@@ -290,7 +290,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
 			}
 			r = r.WithContext(ctx)
-			log.Info("Userguild not found")
 			return
 		}
 
@@ -304,7 +303,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentUserGuild, userGuild)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
-		isAdmin := IsAdminCtx(ctx)
+		isAdmin := IsAdminRequest(ctx, r)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild, "IsAdmin": isAdmin})
 		r = r.WithContext(ctx)
 	}
@@ -325,7 +324,7 @@ func RequireActiveServer(inner http.Handler) http.Handler {
 
 func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		if !IsAdminCtx(r.Context()) {
+		if !IsAdminRequest(r.Context(), r) {
 			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
 			return
 		}
@@ -677,7 +676,13 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		g, templateData := GetBaseCPContextData(ctx)
+
+		templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
+
+		var g *discordgo.Guild
+		if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
+			g = v.(*discordgo.Guild)
+		}
 
 		if extraHandler != nil {
 			defer func() {
@@ -698,10 +703,20 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 		}
 		checkControllerError(ctx, data, err)
 
-		if err == nil {
+		// Don't display the success alert if there's an error alert displaying, that indicates a problem... :(
+		hasErrorAlert := false
+		alerts := data.Alerts()
+		for _, v := range alerts {
+			if v.Style == AlertDanger {
+				hasErrorAlert = true
+				break
+			}
+		}
+
+		if err == nil && !hasErrorAlert {
 			data.AddAlerts(SucessAlert("Success!"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-			if ok {
+			if ok && logMsg != "" && g != nil {
 				go common.AddCPLogEntry(user, g.ID, logMsg)
 			}
 		}

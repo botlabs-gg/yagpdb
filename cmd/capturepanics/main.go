@@ -65,7 +65,7 @@ func main() {
 }
 
 func reader(reader io.ReadCloser, logPrefix string) {
-	r := ring.New(2500)
+	r := ring.New(50000)
 
 	bufReader := bufio.NewReader(reader)
 
@@ -89,7 +89,7 @@ func reader(reader io.ReadCloser, logPrefix string) {
 }
 
 func writeLogs(prefix string, r *ring.Ring) {
-	compiled := make([]byte, 0, 1000000)
+	compiled := make([]byte, 0, 10000000)
 
 	r.Do(func(p interface{}) {
 		if p != nil {

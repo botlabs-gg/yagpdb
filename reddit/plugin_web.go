@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"context"
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -110,8 +111,9 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 	}
 
-	if len(currentConfig) >= GuildMaxFeeds {
-		return templateData.AddAlerts(web.ErrorAlert("Max " + strconv.Itoa(GuildMaxFeeds) + " items allowed"))
+	maxFeeds := MaxFeedForCtx(ctx)
+	if len(currentConfig) >= maxFeeds {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d feeds allowed (or %d for premium servers)", GuildMaxFeedsNormal, GuildMaxFeedsPremium)))
 	}
 
 	watchItem := &SubredditWatchItem{

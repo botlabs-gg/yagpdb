@@ -14,15 +14,19 @@ func (p *Plugin) AddCommands() {
 		Name:        "create",
 		CmdCategory: commands.CategoryFun,
 		Aliases:     []string{"c"},
-		Description: "Creates a cards against humanity game in this channel, add packs after commands, or * for all packs.",
+		Description: "Creates a cards against humanity game in this channel, add packs after commands, or * for all packs. (-v for vote mode without a card czar)",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them"},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			{Switch: "v", Name: "Vote mode, players vote instead of having a cardczar"},
+		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			voteMode := data.Switch("v").Bool()
 			pStr := data.Args[0].Str()
 			packs := strings.Fields(pStr)
 
-			_, err := p.Manager.CreateGame(data.GS.ID, data.CS.ID, data.Msg.Author.ID, data.Msg.Author.Username, packs...)
+			_, err := p.Manager.CreateGame(data.GS.ID, data.CS.ID, data.Msg.Author.ID, data.Msg.Author.Username, voteMode, packs...)
 			if err == nil {
 				p.Logger().Info("Created a new game in ", data.CS.ID, ":", data.GS.ID)
 				return "", nil

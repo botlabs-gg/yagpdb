@@ -31,7 +31,17 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 		yc, ok := data.Cmd.Command.(*YAGCommand)
 		if !ok {
-			return inner(data)
+			resp, err := inner(data)
+			// Filter the response
+			if data.GS != nil {
+				if resp == nil && err != nil {
+					err = errors.New(FilterResp(err.Error(), data.GS.ID).(string))
+				} else if resp != nil {
+					resp = FilterResp(resp, data.GS.ID)
+				}
+			}
+
+			return resp, err
 		}
 
 		// Check if the user can execute the command
@@ -67,6 +77,17 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 		return nil, nil
 	}
+}
+
+func FilterResp(in interface{}, guildID int64) interface{} {
+	switch t := in.(type) {
+	case string:
+		return FilterBadInvites(t, guildID, "[removed-invite]")
+	case error:
+		return FilterBadInvites(t.Error(), guildID, "[removed-invite]")
+	}
+
+	return in
 }
 
 func AddRootCommands(cmds ...*YAGCommand) {
