@@ -158,7 +158,7 @@ func GroupAssignRoleToMember(ctx context.Context, rg *models.RoleGroup, guildID 
 		// If user already has role it's attempting to give itself
 		if common.ContainsInt64Slice(ms.Roles, targetRole.Role) {
 			if rg.SingleRequireOne {
-				return false, NewGroupError("Need atleast one role in group **%s**", rg)
+				return false, NewGroupError("Need at least one role in group **%s**", rg)
 			}
 			err = common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, targetRole.Role)
 			gaveRole = false
