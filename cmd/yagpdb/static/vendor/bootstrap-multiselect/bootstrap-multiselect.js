@@ -480,8 +480,6 @@
                     'overflow-y': 'auto',
                     'overflow-x': 'hidden'
                 });
-
-                opts = { };
             })
             
             if (this.$select.attr('class') && this.options.inheritClass) {
