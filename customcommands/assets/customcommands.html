@@ -98,6 +98,8 @@
     {{$g := .ActiveGuild}}
     {{range .CustomCommands}}
     <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form>
+        <button type="submit" class="hidden" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form-alertsonly></button>
+        
         <div class="card">
             <div class="card-header clearfix">
                 <div class="pull-right">

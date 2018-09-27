@@ -194,7 +194,7 @@ func CheckMessage(m *discordgo.Message) bool {
 	case PunishKick:
 		err = moderation.KickUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
 	case PunishBan:
-		err = moderation.BanUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser(), true)
+		err = moderation.BanUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
 	}
 
 	// Execute the punishment before removing the message to make sure it's included in logs

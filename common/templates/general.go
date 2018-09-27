@@ -415,3 +415,11 @@ func tmplEscapeEveryone(in string) string {
 func tmplEscapeEveryoneHere(in string) string {
 	return common.EscapeEveryoneHere(in, true, true)
 }
+
+func tmplHumanizeDurationHours(in time.Duration) string {
+	return common.HumanizeDuration(common.DurationPrecisionHours, in)
+}
+
+func tmplHumanizeTimeSinceDays(in time.Time) string {
+	return common.HumanizeDuration(common.DurationPrecisionDays, time.Since(in))
+}

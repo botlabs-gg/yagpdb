@@ -53,12 +53,14 @@
         <div id="server-selection" class="userbox">
             <a href="#" data-toggle="dropdown">
                 <figure class="profile-picture">
-                    {{if .ActiveGuild}}
+                    {{if and .ActiveGuild .ActiveGuild.Icon}}
                     <img src="https://cdn.discordapp.com/icons/{{.ActiveGuild.ID}}/{{.ActiveGuild.Icon}}?size=64" alt="Server Icon" class="rounded-circle"/>
+                    {{else}}
+                    <img src="/static/img/questionmark.png" alt="Server Icon" class="rounded-circle"/>
                     {{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="Server Name">
-                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{else}}Select Server{{end}}</span>
+                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i class="fas fa-crown text-info ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
                     <span class="role">Change server</span>
                 </div>
 
@@ -98,7 +100,7 @@
         <div id="userbox" class="userbox">
             <a href="#" data-toggle="dropdown">
                 <figure class="profile-picture">
-                    <img src="https://cdn.discordapp.com/avatars/{{.User.ID}}/{{.User.Avatar}}?size=64" alt="Joseph Doe" class="rounded-circle" data-lock-picture="img/!logged-user.jpg" />
+                    {{if .User.Avatar}}<img src="https://cdn.discordapp.com/avatars/{{.User.ID}}/{{.User.Avatar}}?size=64" alt="Joseph Doe" class="rounded-circle" data-lock-picture="img/!logged-user.jpg" />{{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="{{.User.Username}}" data-lock-email="">
                     <span class="name">{{.User.Username}}</span>
@@ -113,6 +115,9 @@
                     <li class="divider"></li>
                     <li>
                         <a role="menuitem" tabindex="-1" href="/logout"><i class="fas fa-power-off"></i> Logout</a>
+                    </li>
+                    <li>
+                        <a role="menuitem" tabindex="-1" href="/premium"><i class="fas fa-crown"></i> Premium</a>
                     </li>
                 </ul>
             </div>

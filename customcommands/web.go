@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -9,7 +10,6 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"strconv"
 	"unicode/utf8"
 )
 
@@ -67,8 +67,8 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, err
 	}
 
-	if len(currentCommands) >= MaxCommands {
-		return templateData, web.NewPublicError("Max " + strconv.Itoa(MaxCommands) + " custom commands allowed, if you need more ask on the support server")
+	if len(currentCommands) >= MaxCommandsForContext(ctx) {
+		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
 	}
 
 	templateData["CustomCommands"] = currentCommands

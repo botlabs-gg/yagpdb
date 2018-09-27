@@ -12,9 +12,24 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "CurrentShard",
 	Aliases:              []string{"cshard"},
-	Description:          "Shows the current shard this server is on",
+	Description:          "Shows the current shard this server is on (or the one specified",
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "serverid", Type: dcmd.Int, Default: int64(0)},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		shard := bot.ShardManager.SessionForGuild(data.GS.ID)
-		return fmt.Sprintf("On shard %d out of total %d shards.", shard.ShardID+1, shard.ShardCount), nil
+		gID := data.GS.ID
+
+		if data.Args[0].Int64() != 0 {
+			gID = data.Args[0].Int64()
+		}
+
+		shard := bot.ShardManager.SessionForGuild(gID)
+		if shard == nil {
+			return "Unknown shard...?", nil
+		}
+
+		status := shard.GatewayManager.Status()
+
+		return fmt.Sprintf("`%d` on shard `%d` out of total `%d` shards, status: `%s`", gID, shard.ShardID, shard.ShardCount, status.String()), nil
 	},
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/premium"
 	"golang.org/x/net/context"
 	"os"
 )
@@ -138,4 +139,17 @@ func SoundFilePath(id uint, status TranscodingStatus) string {
 	}
 
 	return fmt.Sprintf("soundboard/queue/%d", id)
+}
+
+const (
+	MaxGuildSounds        = 50
+	MaxGuildSoundsPremium = 250
+)
+
+func MaxSoundsForContext(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return MaxGuildSoundsPremium
+	}
+
+	return MaxGuildSounds
 }

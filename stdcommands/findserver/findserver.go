@@ -33,7 +33,7 @@ var Command = &commands.YAGCommand{
 		&dcmd.ArgDef{Switch: "name", Name: "name", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "user", Name: "user", Type: dcmd.UserID, Default: 0},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		nameToMatch := strings.ToLower(data.Switch("name").Str())
 		userIDToMatch := data.Switch("user").Int64()
 

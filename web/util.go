@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
@@ -77,6 +79,14 @@ func (t TemplateData) AddAlerts(alerts ...*Alert) TemplateData {
 	return t
 }
 
+func (t TemplateData) Alerts() []*Alert {
+	if v, ok := t["Alerts"]; ok {
+		return v.([]*Alert)
+	}
+
+	return nil
+}
+
 func GetCreateTemplateData(ctx context.Context) (context.Context, TemplateData) {
 	if v := ctx.Value(common.ContextKeyTemplateData); v != nil {
 		return ctx, v.(TemplateData)
@@ -119,9 +129,17 @@ func SucessAlert(args ...interface{}) *Alert {
 	}
 }
 
+func ContextGuild(ctx context.Context) *discordgo.Guild {
+	return ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+}
+
 // Returns base context data for control panel plugins
 func GetBaseCPContextData(ctx context.Context) (*discordgo.Guild, TemplateData) {
-	guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	var guild *discordgo.Guild
+	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
+		guild = v.(*discordgo.Guild)
+	}
+
 	templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
 
 	return guild, templateData
@@ -148,14 +166,7 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 }
 
 // Checks the context if there is a logged in user and if so if he's and admin or not
-func IsAdminCtx(ctx context.Context) bool {
-	if user := ctx.Value(common.ContextKeyUser); user != nil {
-		cast := user.(*discordgo.User)
-		if cast.ID == common.Conf.Owner {
-			return true
-		}
-	}
-
+func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
 
 		cast := v.(*discordgo.UserGuild)
@@ -165,6 +176,18 @@ func IsAdminCtx(ctx context.Context) bool {
 		}
 	}
 
+	if user := ctx.Value(common.ContextKeyUser); user != nil {
+		cast := user.(*discordgo.User)
+		if cast.ID == common.Conf.Owner {
+			return true
+		}
+
+		if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS") {
+			if hasAcces, err := bot.HasReadOnlyAccess(cast.ID); hasAcces && err == nil {
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -204,4 +227,16 @@ func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, stat
 	http.Redirect(w, r, "/?error="+url.QueryEscape(err), http.StatusTemporaryRedirect)
 	return
 
+}
+
+func IsRequestPartial(ctx context.Context) bool {
+	if v := ctx.Value(common.ContextKeyIsPartial); v != nil {
+		return v.(bool)
+	}
+
+	return false
+}
+
+func ContextUser(ctx context.Context) *discordgo.User {
+	return ctx.Value(common.ContextKeyUser).(*discordgo.User)
 }
