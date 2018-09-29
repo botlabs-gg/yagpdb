@@ -3,11 +3,13 @@ package automod
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -16,6 +18,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -51,6 +54,11 @@ func (p *Plugin) InitWeb() {
 
 	muxer.Handle(pat.Post("/new_ruleset"), web.ControllerPostHandler(p.handlePostAutomodCreateRuleset, getIndexHandler, CreateRulesetData{}, "Created a new automod ruleset"))
 
+	// List handlers
+	muxer.Handle(pat.Post("/new_list"), web.ControllerPostHandler(p.handlePostAutomodCreateList, getIndexHandler, CreateListData{}, "Created a new automod list"))
+	muxer.Handle(pat.Post("/list/:listID/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateList, getIndexHandler, UpdateListData{}, "Updated a automod list"))
+	muxer.Handle(pat.Post("/list/:listID/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteList, getIndexHandler, nil, "Deleted a automod list"))
+
 	// Ruleset specific handlers
 	rulesetMuxer := goji.SubMux()
 	muxer.Handle(pat.New("/ruleset/:rulesetID"), rulesetMuxer)
@@ -63,8 +71,9 @@ func (p *Plugin) InitWeb() {
 	rulesetMuxer.Handle(pat.Get("/"), getRulesetHandler)
 
 	rulesetMuxer.Handle(pat.Post("/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateRuleset, getRulesetHandler, UpdateRulesetData{}, "Updated a ruleset"))
+	rulesetMuxer.Handle(pat.Post("/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteRuleset, getIndexHandler, nil, "Deleted a ruleset"))
 
-	rulesetMuxer.Handle(pat.Post("/new_rule"), web.ControllerPostHandler(p.handlePostAutomodCreateRule, getRulesetHandler, nil, "Created a new automod rule"))
+	rulesetMuxer.Handle(pat.Post("/new_rule"), web.ControllerPostHandler(p.handlePostAutomodCreateRule, getRulesetHandler, CreateRuleData{}, "Created a new automod rule"))
 	rulesetMuxer.Handle(pat.Post("/rule/:ruleID/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteRule, getRulesetHandler, nil, "Deleted a automod rule"))
 	rulesetMuxer.Handle(pat.Post("/rule/:ruleID/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateRule, getRulesetHandler, UpdateRuleData{}, "Updated a automod rule"))
 }
@@ -72,11 +81,17 @@ func (p *Plugin) InitWeb() {
 func (p *Plugin) handleGetAutomodIndex(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
-	rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", g.ID)).AllG(r.Context())
+	rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", g.ID), qm.OrderBy("id asc")).AllG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
 
+	lists, err := models.AutomodLists(qm.Where("guild_id=?", g.ID), qm.OrderBy("id asc")).AllG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl["AutomodLists"] = lists
 	tmpl["AutomodRulesets"] = rulesets
 	tmpl["PartMap"] = RulePartMap
 
@@ -89,14 +104,95 @@ type CreateRulesetData struct {
 
 func (p *Plugin) handlePostAutomodCreateRuleset(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	currentCount, err := models.AutomodRulesets(qm.Where("guild_id=?", g.ID)).CountG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+
+	if currentCount >= MaxRulesets {
+		tmpl.AddAlerts(web.ErrorAlert("Reached max number of rulesets, ", MaxRulesets))
+		return tmpl, nil
+	}
+
 	data := r.Context().Value(common.ContextKeyParsedForm).(*CreateRulesetData)
 
 	rs := &models.AutomodRuleset{
 		Name:    data.Name,
 		GuildID: g.ID,
+		Enabled: true,
 	}
 
-	err := rs.InsertG(r.Context(), boil.Infer())
+	err = rs.InsertG(r.Context(), boil.Infer())
+	return tmpl, err
+}
+
+type CreateListData struct {
+	Name string `valid:",1,50"`
+}
+
+func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	totalLists, err := models.AutomodLists(qm.Where("guild_id = ? ", g.ID)).CountG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+	if totalLists >= int64(GuildMaxLists(g.ID)) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Reached max number of lists, %d for normal servers and %d for premium servers", MaxLists, MaxListsPremium)))
+		return tmpl, nil
+	}
+
+	data := r.Context().Value(common.ContextKeyParsedForm).(*CreateListData)
+
+	list := &models.AutomodList{
+		Name:    data.Name,
+		GuildID: g.ID,
+		Content: []string{},
+	}
+
+	err = list.InsertG(r.Context(), boil.Infer())
+	if err == nil {
+		pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+	}
+	return tmpl, err
+}
+
+type UpdateListData struct {
+	Content string `valid:",0,5000"`
+}
+
+func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, tmpl := web.GetBaseCPContextData(r.Context())
+	data := r.Context().Value(common.ContextKeyParsedForm).(*UpdateListData)
+
+	id := pat.Param(r, "listID")
+	list, err := models.AutomodLists(qm.Where("guild_id=? AND id=?", g.ID, id)).OneG(r.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	list.Content = strings.Fields(data.Content)
+	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
+	if err == nil {
+		pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+	}
+	return tmpl, err
+}
+
+func (p *Plugin) handlePostAutomodDeleteList(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	id := pat.Param(r, "listID")
+	list, err := models.AutomodLists(qm.Where("guild_id=? AND id=?", g.ID, id)).OneG(r.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = list.DeleteG(r.Context())
+	if err == nil {
+		pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+	}
 	return tmpl, err
 }
 
@@ -108,13 +204,19 @@ func (p *Plugin) currentRulesetMW(backupHandler http.Handler) func(http.Handler)
 			idStr := pat.Param(r, "rulesetID")
 			parsed, _ := strconv.ParseInt(idStr, 10, 64)
 
-			ruleset, err := models.AutomodRulesets(qm.Where("guild_id=? AND id=?", g.ID, parsed), qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).OneG(r.Context())
+			ruleset, err := models.AutomodRulesets(qm.Where("guild_id=? AND id=?", g.ID, parsed),
+				qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).OneG(r.Context())
+
 			if err != nil {
 				tmpl.AddAlerts(web.ErrorAlert("Failed retrieving ruleset, maybe it was deleted?"))
 				backupHandler.ServeHTTP(w, r)
 				web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving automod ruleset")
 				return
 			}
+
+			sort.Slice(ruleset.R.RulesetAutomodRules, func(i, j int) bool {
+				return ruleset.R.RulesetAutomodRules[i].ID < ruleset.R.RulesetAutomodRules[j].ID
+			})
 
 			tmpl["CurrentRuleset"] = ruleset
 
@@ -132,6 +234,7 @@ func (p *Plugin) handleGetAutomodRuleset(w http.ResponseWriter, r *http.Request)
 }
 
 type CreateRuleData struct {
+	Name string `valid:",1,50"`
 }
 
 func (p *Plugin) handlePostAutomodCreateRule(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -139,12 +242,24 @@ func (p *Plugin) handlePostAutomodCreateRule(w http.ResponseWriter, r *http.Requ
 
 	ruleset := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
 
+	totalRules, err := models.AutomodRuleData(qm.Where("guild_id = ? ", g.ID)).CountG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+	if totalRules >= int64(GuildMaxTotalRules(g.ID)) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Reached max number of rules, %d for normal servers and %d for premium servers", MaxTotalRules, MaxTotalRulesPremium)))
+		return tmpl, nil
+	}
+
+	data := r.Context().Value(common.ContextKeyParsedForm).(*CreateRuleData)
+
 	rule := &models.AutomodRule{
 		GuildID:   g.ID,
 		RulesetID: ruleset.ID,
+		Name:      data.Name,
 	}
 
-	err := rule.InsertG(r.Context(), boil.Infer())
+	err = rule.InsertG(r.Context(), boil.Infer())
 	if err == nil {
 		ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules, rule)
 	}
@@ -153,6 +268,8 @@ func (p *Plugin) handlePostAutomodCreateRule(w http.ResponseWriter, r *http.Requ
 }
 
 type UpdateRulesetData struct {
+	Name       string `valid:",1,50"`
+	Enabled    bool
 	Conditions []RuleRowData
 }
 
@@ -167,7 +284,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 		return tmpl, err
 	}
 
-	ruleSet := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
+	ruleset := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
 
 	tx, err := common.PQ.BeginTx(r.Context(), nil)
 	if err != nil {
@@ -175,7 +292,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 	}
 
 	// First wipe all previous rule data
-	_, err = models.AutomodRulesetConditions(qm.Where("guild_id = ? AND ruleset_id = ?", g.ID, ruleSet.ID)).DeleteAll(r.Context(), tx)
+	_, err = models.AutomodRulesetConditions(qm.Where("guild_id = ? AND ruleset_id = ?", g.ID, ruleset.ID)).DeleteAll(r.Context(), tx)
 	if err != nil {
 		tx.Rollback()
 		return tmpl, err
@@ -187,7 +304,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 	for i, cond := range conditions {
 		proper := &models.AutomodRulesetCondition{
 			GuildID:   g.ID,
-			RulesetID: ruleSet.ID,
+			RulesetID: ruleset.ID,
 			Kind:      cond.Kind,
 			TypeID:    cond.TypeID,
 			Settings:  cond.Settings,
@@ -201,20 +318,47 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 		}
 	}
 
+	// Update the ruleset model itself
+	ruleset.Name = data.Name
+	ruleset.Enabled = data.Enabled
+	_, err = ruleset.Update(r.Context(), tx, boil.Whitelist("name", "enabled"))
+	if err != nil {
+		tx.Rollback()
+		return tmpl, err
+	}
+
 	// All done
 	err = tx.Commit()
 	if err != nil {
 		return tmpl, err
 	}
 
+	pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+
 	// Reload the conditions now
-	ruleSet.R.RulesetAutomodRulesetConditions = properConditions
-	WebLoadRuleSettings(r, tmpl, ruleSet)
+	ruleset.R.RulesetAutomodRulesetConditions = properConditions
+	WebLoadRuleSettings(r, tmpl, ruleset)
 
 	return tmpl, err
 }
 
+func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	ruleset := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
+	_, err := ruleset.DeleteG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+
+	delete(tmpl, "CurrentRuleset")
+
+	pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+	return tmpl, err
+}
+
 type UpdateRuleData struct {
+	Name       string `valid:",1,50"`
 	Triggers   []RuleRowData
 	Conditions []RuleRowData
 	Effects    []RuleRowData
@@ -230,25 +374,30 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 
 	data := r.Context().Value(common.ContextKeyParsedForm).(*UpdateRuleData)
 
+	combinedParts := make([]*models.AutomodRuleDatum, 0, 10)
 	// The form parsing utility dosen't take care of maps, so manually do that parsing for now
 	triggers, validatedOK, err := ReadRuleRowData(g, tmpl, data.Triggers, r.Form, "Triggers")
 	if err != nil || !validatedOK {
 		return tmpl, err
 	}
+	combinedParts = append(combinedParts, triggers...)
 
 	conditions, validatedOK, err := ReadRuleRowData(g, tmpl, data.Conditions, r.Form, "Conditions")
 	if err != nil || !validatedOK {
 		return tmpl, err
 	}
+	combinedParts = append(combinedParts, conditions...)
 
 	effects, validatedOK, err := ReadRuleRowData(g, tmpl, data.Effects, r.Form, "Effects")
 	if err != nil || !validatedOK {
 		return tmpl, err
 	}
+	combinedParts = append(combinedParts, effects...)
 
+	// retrieve the ruleset and the rule were working on
 	ruleSet := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
 	ruleIDStr := pat.Param(r, "ruleID")
-	parsedRuleID, _ := strconv.ParseInt(ruleIDStr, 19, 64)
+	parsedRuleID, _ := strconv.ParseInt(ruleIDStr, 10, 64)
 
 	var currentRule *models.AutomodRule
 	for _, v := range ruleSet.R.RulesetAutomodRules {
@@ -260,6 +409,12 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 
 	if currentRule == nil {
 		return tmpl.AddAlerts(web.ErrorAlert("Unknown rule, maybe someone else deleted it in the meantime?")), nil
+	}
+
+	// Check limits
+	combinedParts, ok, err := CheckLimits(common.PQ, currentRule, tmpl, combinedParts)
+	if !ok || err != nil {
+		return tmpl, err
 	}
 
 	tx, err := common.PQ.BeginTx(r.Context(), nil)
@@ -275,33 +430,21 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Then insert the new data
-	saveDatumSlice := func(s []*models.AutomodRuleDatum) error {
-		for _, d := range s {
-			d.GuildID = g.ID
-			d.RuleID = currentRule.ID
+	for _, part := range combinedParts {
+		part.GuildID = g.ID
+		part.RuleID = currentRule.ID
 
-			err := d.Insert(r.Context(), tx, boil.Infer())
-			if err != nil {
-				tx.Rollback()
-				return err
-			}
-
+		err := part.Insert(r.Context(), tx, boil.Infer())
+		if err != nil {
+			tx.Rollback()
+			return tmpl, err
 		}
-		return nil
 	}
 
-	err = saveDatumSlice(triggers)
+	currentRule.Name = data.Name
+	_, err = currentRule.Update(r.Context(), tx, boil.Whitelist("name"))
 	if err != nil {
-		return tmpl, err
-	}
-
-	err = saveDatumSlice(conditions)
-	if err != nil {
-		return tmpl, err
-	}
-
-	err = saveDatumSlice(effects)
-	if err != nil {
+		tx.Rollback()
 		return tmpl, err
 	}
 
@@ -312,16 +455,85 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Reload the rules now
-	currentRule.R.RuleAutomodRuleData = append(triggers, conditions...)
-	currentRule.R.RuleAutomodRuleData = append(currentRule.R.RuleAutomodRuleData, effects...)
+	currentRule.R.RuleAutomodRuleData = combinedParts
 
 	WebLoadRuleSettings(r, tmpl, ruleSet)
+
+	pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
 
 	return tmpl, err
 }
 
-func ReadRuleRowData(guild *discordgo.Guild, tmpl web.TemplateData, rawData []RuleRowData, form url.Values, namePrefix string) (dst []*models.AutomodRuleDatum, validationOK bool, err error) {
-	result := make([]*models.AutomodRuleDatum, 0, len(rawData))
+func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.TemplateData, parts []*models.AutomodRuleDatum) (newParts []*models.AutomodRuleDatum, ok bool, err error) {
+	// truncate to 20
+	newParts = parts
+	if len(newParts) > MaxRuleParts {
+		newParts = newParts[:MaxRuleParts]
+		tmpl.AddAlerts(web.WarningAlert("Truncated rule down to 20 triggers/conditions/effects, thats the max per rule."))
+	}
+
+	// Check number of message triggers and violation triggers
+	numMessageTriggers := 0
+	numViolationTriggers := 0
+	for _, v := range newParts {
+		for _, mt := range messageTriggers {
+			if v.TypeID == mt {
+				numMessageTriggers++
+				break
+			}
+		}
+
+		for _, vt := range violationTriggers {
+			if v.TypeID == vt {
+				numViolationTriggers++
+				break
+			}
+		}
+	}
+
+	maxTotalMT := GuildMaxMessageTriggers(rule.GuildID)
+	maxTotalVT := GuildMaxViolationTriggers(rule.GuildID)
+
+	allParts, err := models.AutomodRuleData(qm.Where("guild_id = ? AND id != ?", rule.GuildID, rule.ID)).All(context.Background(), exec)
+	if err != nil {
+		return
+	}
+	for _, v := range allParts {
+		if numMessageTriggers > 0 {
+			for _, mt := range messageTriggers {
+				if v.TypeID == mt {
+					numMessageTriggers++
+					break
+				}
+			}
+		}
+
+		if numViolationTriggers > 0 {
+			for _, vt := range violationTriggers {
+				if v.TypeID == vt {
+					numViolationTriggers++
+					break
+				}
+			}
+		}
+	}
+
+	ok = true
+	if numMessageTriggers > maxTotalMT {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max message based triggers reached (%d for normal and %d for premium)", MaxMessageTriggers, MaxMessageTriggersPremium)))
+		ok = false
+	}
+
+	if numViolationTriggers > maxTotalVT {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max violation based triggers reached (%d for normal and %d for premium)", MaxViolationTriggers, MaxViolationTriggersPremium)))
+		ok = false
+	}
+
+	return
+}
+
+func ReadRuleRowData(guild *discordgo.Guild, tmpl web.TemplateData, rawData []RuleRowData, form url.Values, namePrefix string) (result []*models.AutomodRuleDatum, validationOK bool, err error) {
+	parsedSettings := make([]*ParsedPart, 0, len(rawData))
 
 	for i, entry := range rawData {
 		for k, fv := range form {
@@ -341,10 +553,8 @@ func ReadRuleRowData(guild *discordgo.Guild, tmpl web.TemplateData, rawData []Ru
 			continue // Ignore unknown rules
 		}
 
-		row := &models.AutomodRuleDatum{
-			GuildID: guild.ID,
-			Kind:    int(pType.Kind()),
-			TypeID:  entry.Type,
+		parsed := &ParsedPart{
+			Part: pType,
 		}
 
 		// Process the settings for this part type if it has any
@@ -356,33 +566,85 @@ func ReadRuleRowData(guild *discordgo.Guild, tmpl web.TemplateData, rawData []Ru
 			dec.IgnoreUnknownKeys(true)
 			err = dec.Decode(dst, entry.Data)
 			if err != nil {
-				return result, false, err
+				return nil, false, err
 			}
 
 			// Perform the validation
 			validationOK = web.ValidateForm(guild, tmpl, dst)
 			if !validationOK {
-				return result, false, nil
+				return nil, false, nil
 			}
 
+			parsed.ParsedSettings = dst
+
+		}
+
+		parsedSettings = append(parsedSettings, parsed)
+	}
+
+	// merge the duplicate parts
+	deDuplicated := make([]*ParsedPart, 0, len(parsedSettings))
+OUTER:
+	for _, parsedPart := range parsedSettings {
+		mergeable, ok := parsedPart.Part.(MergeableRulePart)
+		if !ok {
+			// not mergeable, continue as normal
+			deDuplicated = append(deDuplicated, parsedPart)
+			continue
+		}
+
+		for _, d := range deDuplicated {
+			if parsedPart.Part == d.Part {
+				// already merged before, skip
+				continue OUTER
+			}
+		}
+
+		dupes := []interface{}{parsedPart.ParsedSettings}
+		// find duplicate types
+		for _, v := range parsedSettings {
+			if v.Part == parsedPart.Part && v != parsedPart {
+				dupes = append(dupes, v.ParsedSettings)
+			}
+		}
+
+		if len(dupes) > 1 {
+			merged := mergeable.MergeDuplicates(dupes)
+			parsedPart.ParsedSettings = merged
+		}
+
+		deDuplicated = append(deDuplicated, parsedPart)
+	}
+
+	// finally make proper db models
+	result = make([]*models.AutomodRuleDatum, len(deDuplicated))
+	for i, v := range deDuplicated {
+		model := &models.AutomodRuleDatum{
+			GuildID: guild.ID,
+			Kind:    int(v.Part.Kind()),
+			TypeID:  InverseRulePartMap[v.Part],
+		}
+
+		if v.ParsedSettings != nil {
 			// Serialize it back to store in the database
-			serialized, err := json.Marshal(dst)
+			serialized, err := json.Marshal(v.ParsedSettings)
 			if err != nil {
 				return result, false, err
 			}
 
-			row.Settings = serialized
+			model.Settings = serialized
 		} else {
-			row.Settings = []byte("{}")
+			model.Settings = []byte("{}")
 		}
 
-		result = append(result, row)
+		result[i] = model
 	}
 
 	return result, true, nil
 }
 
 func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g := web.ContextGuild(r.Context())
 	ruleset := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
 	toDelete := pat.Param(r, "ruleID")
 	parsedRuleID, err := strconv.ParseInt(toDelete, 10, 64)
@@ -395,6 +657,7 @@ func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Requ
 			_, err := v.DeleteG(r.Context())
 			if err == nil {
 				ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules[:k], ruleset.R.RulesetAutomodRules[k+1:]...)
+				pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
 			}
 
 			return nil, err

@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
+	"strings"
 )
 
 // maps rule part indentifiers to actual condition types
@@ -22,7 +23,29 @@ var RulePartMap = map[int]RulePart{
 	10: &BanUserEffect{},
 	11: &MuteUserEffect{},
 	12: &ViolationsTrigger{},
+	13: &WordListTrigger{Blacklist: true},
+	14: &WordListTrigger{Blacklist: false},
+	15: &DomainTrigger{Blacklist: true},
+	16: &DomainTrigger{Blacklist: false},
+	17: &AllCapsTrigger{},
+	18: &ChannelCategoriesCondition{Blacklist: true},
+	19: &ChannelCategoriesCondition{Blacklist: false},
+	20: &ServerInviteTrigger{},
+	21: &AccountAgeCondition{Below: false},
+	22: &AccountAgeCondition{Below: true},
+	23: &MemberAgecondition{Below: false},
+	24: &MemberAgecondition{Below: true},
+	25: &WarnUserEffect{},
+	26: &GoogleSafeBrowsingTrigger{},
+	27: &BotCondition{Ignore: true},
+	28: &SetNicknameEffect{},
+	29: &SlowmodeTrigger{ChannelBased: false},
+	30: &SlowmodeTrigger{ChannelBased: true},
+	31: &MultiMsgMentionTrigger{ChannelBased: false},
+	32: &MultiMsgMentionTrigger{ChannelBased: true},
 }
+
+var InverseRulePartMap = make(map[RulePart]int)
 
 // helpers for querying the db
 var messageTriggers []interface{}
@@ -37,19 +60,23 @@ func init() {
 		if _, ok := v.(ViolationListener); ok {
 			violationTriggers = append(violationTriggers, k)
 		}
+
+		InverseRulePartMap[v] = k
 	}
 }
 
 type SettingType string
 
 const (
-	SettingTypeRole         = "role"
-	SettingTypeMultiRole    = "multi_role"
-	SettingTypeChannel      = "channel"
-	SettingTypeMultiChannel = "multi_channel"
-	SettingTypeInt          = "int"
-	SettingTypeString       = "string"
-	SettingTypeBool         = "bool"
+	SettingTypeRole                   = "role"
+	SettingTypeMultiRole              = "multi_role"
+	SettingTypeChannel                = "channel"
+	SettingTypeMultiChannel           = "multi_channel"
+	SettingTypeMultiChannelCategories = "multi_channel_cat"
+	SettingTypeInt                    = "int"
+	SettingTypeString                 = "string"
+	SettingTypeBool                   = "bool"
+	SettingTypeList                   = "list"
 )
 
 type SettingDef struct {
@@ -83,16 +110,65 @@ type RulePart interface {
 	Kind() RulePartType
 }
 
+type MergeableRulePart interface {
+	MergeDuplicates(data []interface{}) interface{}
+}
+
 type TriggeredRuleData struct {
+	// Should always be available
 	Plugin  *Plugin
 	GS      *dstate.GuildState
 	MS      *dstate.MemberState
 	Ruleset *ParsedRuleset
-	Rule    *ParsedRule
+
+	// not present when checking rs conditions
+	CurrentRule *ParsedRule
+
+	// not present when checking conditions
+	TriggeredRules    []*ParsedRule
+	ActivatedTriggers []*ParsedPart
 
 	// Optional data that may not be present
 	CS      *dstate.ChannelState
 	Message *discordgo.Message
+
+	RecursionCounter int
+
+	// Gets added to when we recurse using +violation
+	PreviousReasons []string
+}
+
+func (t *TriggeredRuleData) Clone() *TriggeredRuleData {
+	n := *t
+	n.PreviousReasons = make([]string, len(t.PreviousReasons))
+	copy(n.PreviousReasons, t.PreviousReasons)
+	return &n
+}
+
+func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
+	var builder strings.Builder
+	if includePrevious {
+		for _, previous := range t.PreviousReasons {
+			builder.WriteString(previous)
+			builder.WriteString("\n")
+		}
+	}
+
+	builder.WriteString("Triggered rule: ")
+	if t.CurrentRule == nil {
+		builder.WriteString("unknown rule?`")
+	} else {
+		builder.WriteString(t.CurrentRule.Model.Name)
+
+		for _, p := range t.ActivatedTriggers {
+			if p.RuleModel.RuleID == t.CurrentRule.Model.ID {
+				builder.WriteString(" (`" + p.Part.Name() + "`)")
+				break
+			}
+		}
+	}
+
+	return builder.String()
 }
 
 // MessageCondition is a active condition that needs to run on a message
@@ -106,5 +182,5 @@ type MessageTrigger interface {
 type ViolationListener interface {
 	RulePart
 
-	CheckUser(ms *dstate.MemberState, gs *dstate.GuildState, violations []*models.AutomodViolation, data interface{}) (isAffected bool, err error)
+	CheckUser(ctxData *TriggeredRuleData, violations []*models.AutomodViolation, data interface{}, triggeredOnHigher bool) (isAffected bool, err error)
 }

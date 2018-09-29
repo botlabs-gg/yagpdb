@@ -7,4 +7,4 @@ host="localhost"
 user="postgres"
 pass="123"
 sslmode="disable"
-whitelist=["automod_rulesets", "automod_rules", "automod_rule_data", "automod_ruleset_conditions", "automod_violations"]
+whitelist=["automod_rulesets", "automod_rules", "automod_rule_data", "automod_ruleset_conditions", "automod_violations", "automod_lists"]

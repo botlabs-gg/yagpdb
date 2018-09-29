@@ -214,3 +214,7 @@ html.sidebar-left-collapsed #nav-footer {
     padding: 0.25rem !important;
   }  
 }
+
+.content-editable-form::before {
+  content: "✎ ";
+}

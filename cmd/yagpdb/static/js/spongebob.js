@@ -168,6 +168,19 @@ function showAlerts(alertsJson){
 					sticker: false
 				}
 			});
+		}else if(alert.Style === "warning"){
+			notice = new PNotify({
+				title: alert.Message,
+				type: 'warning',
+				addclass: 'stack-bar-top click-2-close',
+				stack: stack_bar_top,
+				width: "100%",
+				hide: false,
+				buttons: {
+					closer: false,
+					sticker: false
+				}
+			});
 		}else{
 			continue;
 		}
@@ -564,6 +577,12 @@ function formSubmissionEvents(){
 	function submitForm(form, url, alertsOnly){
 		var serialized = form.serialize();
 		
+		form.find("[data-content-editable-form]").each(function(i, v){
+			var name = $(v).attr("data-content-editable-form")
+			var value = encodeURIComponent($(v).text())
+			serialized += "&"+name+"="+value;
+		})
+
 		if(!alertsOnly){
 			alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
 		}
@@ -583,7 +602,6 @@ function formSubmissionEvents(){
 
 		$.magnificPopup.close();
 	}
-
 }
 
 function navigateToAnchor(name){

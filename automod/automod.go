@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/sirupsen/logrus"
 	"strconv"
 )
@@ -64,4 +65,53 @@ func ParseAllRulePartData(dataModels []*models.AutomodRuleDatum) ([]interface{},
 	}
 
 	return dst, nil
+}
+
+const (
+	MaxMessageTriggers        = 20
+	MaxMessageTriggersPremium = 100
+
+	MaxViolationTriggers        = 20
+	MaxViolationTriggersPremium = 100
+
+	MaxTotalRules        = 15
+	MaxTotalRulesPremium = 100
+
+	MaxLists        = 5
+	MaxListsPremium = 25
+
+	MaxRuleParts = 20
+	MaxRulesets  = 10
+)
+
+func GuildMaxMessageTriggers(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxMessageTriggersPremium
+	}
+
+	return MaxMessageTriggers
+}
+
+func GuildMaxViolationTriggers(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxViolationTriggersPremium
+	}
+
+	return MaxViolationTriggers
+}
+
+func GuildMaxTotalRules(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxTotalRulesPremium
+	}
+
+	return MaxTotalRules
+}
+
+func GuildMaxLists(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxListsPremium
+	}
+
+	return MaxLists
 }

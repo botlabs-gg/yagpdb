@@ -59,4 +59,15 @@ CREATE TABLE IF NOT EXISTS automod_violations (
 
 CREATE INDEX IF NOT EXISTS automod_violations_guild_idx ON automod_violations(guild_id);
 CREATE INDEX IF NOT EXISTS automod_violations_user_idx ON automod_violations(user_id);
+
+CREATE TABLE IF NOT EXISTS automod_lists (
+	id BIGSERIAL PRIMARY KEY,
+	guild_id BIGINT NOT NULL,
+
+	name TEXT NOT NULL,
+	kind INT NOT NULL,
+	content TEXT[] NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS automod_lists_guild_idx ON automod_lists(guild_id);
 `

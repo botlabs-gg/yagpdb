@@ -22,7 +22,7 @@ var _ bot.BotStopperHandler = (*Plugin)(nil)
 var (
 	// cache configs because they are used often
 	confCache   *ccache.Cache
-	safeBrowser *safebrowsing.SafeBrowser
+	SafeBrowser *safebrowsing.SafeBrowser
 )
 
 func (p *Plugin) BotInit() {
@@ -44,14 +44,14 @@ func (p *Plugin) BotInit() {
 		if err != nil {
 			logrus.WithError(err).Error("Failed initializing google safebrowsing client, integration will be disabled")
 		} else {
-			safeBrowser = sb
+			SafeBrowser = sb
 		}
 	}
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
-	if safeBrowser != nil {
-		err := safeBrowser.Close()
+	if SafeBrowser != nil {
+		err := SafeBrowser.Close()
 		if err != nil {
 			logrus.WithError(err).Error("Failed closing safebrowser")
 		}

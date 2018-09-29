@@ -20,6 +20,10 @@ type ParsedRule struct {
 }
 
 type ParsedPart struct {
+	// Parts are either children directly of the ruleset, ad ruleset conditions or as children of individual rules
+	ParentRule *ParsedRule
+	ParentRS   *ParsedRuleset
+
 	RuleModel        *models.AutomodRuleDatum
 	RSConditionModel *models.AutomodRulesetCondition
 
@@ -46,6 +50,7 @@ func ParseRuleset(rs *models.AutomodRuleset) (*ParsedRuleset, error) {
 		}
 
 		result.ParsedConditions[i] = &ParsedPart{
+			ParentRS:         result,
 			RSConditionModel: v,
 			Part:             partType,
 			ParsedSettings:   dst,
@@ -70,6 +75,10 @@ func ParseRuleData(rule *models.AutomodRule) (*ParsedRule, error) {
 	var conditions []*ParsedPart
 	var effects []*ParsedPart
 
+	pr := &ParsedRule{
+		Model: rule,
+	}
+
 	for _, v := range rule.R.RuleAutomodRuleData {
 		partType := RulePartMap[v.TypeID]
 		dst := partType.DataType()
@@ -81,6 +90,7 @@ func ParseRuleData(rule *models.AutomodRule) (*ParsedRule, error) {
 		}
 
 		p := &ParsedPart{
+			ParentRule:     pr,
 			RuleModel:      v,
 			Part:           partType,
 			ParsedSettings: dst,
@@ -96,10 +106,8 @@ func ParseRuleData(rule *models.AutomodRule) (*ParsedRule, error) {
 		}
 	}
 
-	return &ParsedRule{
-		Model:      rule,
-		Triggers:   triggers,
-		Conditions: conditions,
-		Effects:    effects,
-	}, nil
+	pr.Triggers = triggers
+	pr.Conditions = conditions
+	pr.Effects = effects
+	return pr, nil
 }

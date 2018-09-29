@@ -4,12 +4,14 @@
 package models
 
 var TableNames = struct {
+	AutomodLists             string
 	AutomodRuleData          string
 	AutomodRules             string
 	AutomodRulesetConditions string
 	AutomodRulesets          string
 	AutomodViolations        string
 }{
+	AutomodLists:             "automod_lists",
 	AutomodRuleData:          "automod_rule_data",
 	AutomodRules:             "automod_rules",
 	AutomodRulesetConditions: "automod_ruleset_conditions",

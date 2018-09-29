@@ -1,7 +1,7 @@
 {{define "automod_index"}}
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>Command settings</h2>
+    <h2>Automoderator v2</h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -45,7 +45,7 @@ table{
                 {{$dot := .}}
                 {{range .AutomodRulesets}}
                 <li class="nav-item {{if $dot.CurrentRuleset}}{{if eq $dot.CurrentRuleset.ID .ID}}active{{end}}{{end}}">
-                    <a data-partial-load="true" class="nav-link show {{if $dot.CurrentRuleset}}{{if eq $dot.CurrentRuleset.ID .ID}}active{{end}}{{end}}" href="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{.ID}}">{{.Name}}</a>
+                    <a data-partial-load="true" class="nav-link show {{if $dot.CurrentRuleset}}{{if eq $dot.CurrentRuleset.ID .ID}}active{{end}}{{end}}" href="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{.ID}}">{{.Name}} <span class="indicator {{if .Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span></a>
                 </li>
                 {{end}}
             </ul>
@@ -58,10 +58,19 @@ table{
                         <div class="col-lg-12">
                             <form action="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/update" method="post" data-async-form>
                                 <!-- Modify ruleset -->
-                                <h3>Ruleset settings here</h3>
+                                <h4>Ruleset settings</h4>
+                                <div class="form-group">
+                                    <label for="automod-rs-name">Name</label>
+                                    <input type="text" class="form-control" id="automod-rs-name" name="Name" value="{{.CurrentRuleset.Name}}">
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="automod-rs-enable" name="Enabled" {{if .CurrentRuleset.Enabled}}checked{{end}}>
+                                    <label class="form-check-label" for="automod-rs-enable">Enable ruleset?</label>
+                                    <p class="help-block">Can also be toggled on/off using the <code>automod toggle {{.CurrentRuleset.Name}}</code> command.</p>
+                                </div>
                                 <div class="automod-rule-part-table" data-automod-part-type=1>
-                                    <p><b>Ruleset Conditions</b></p>
-                                    <table class="table table-hover table-sm mb-0">
+                                    <b>Ruleset scoped conditions</b>
+                                    <table class="table table-sm mb-0">
                                         <thead>
                                             <tr>
                                                 <th class="automod-type-column">Type</th>
@@ -81,6 +90,7 @@ table{
                                     <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
                                 </div>
                                 <button class="btn btn-success" type="submit">Save</button>
+                                <button class="btn btn-danger" type="submit" formaction="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/delete">Delete entire ruleset</button>
                             </form>
                         </div>
                         <!-- /.col-lg-12 -->
@@ -91,10 +101,10 @@ table{
                             <!-- Add new rule -->
                             <h4>Create a new rule</h3>
                             <form action="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/new_rule" method="post" data-async-form>
-                                <!-- <div class="form-group">
+                                <div class="form-group">
                                     <label for="am-new-ruleset-name">Name</label>
                                     <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
-                                </div> -->
+                                </div>
                                 <button type="submit" class="btn btn-success">Create</button>
                             </form>
 
@@ -103,10 +113,35 @@ table{
                     </div>
                     <!-- /.row -->
                     {{else}}
-                    <div class="row">
+                    <div class="row mb-3">
+                        <div class="col-lg-12">
+                            <p>Automoderator (v2) is a completely new automoderator system made with the goal to be the most flexible configurable system you could get for a chat bot (within reason).<br>
+                                You start by creating a ruleset, then creating rules inside said ruleset.<br>
+                                Rules consists of one or more triggers, conditions, and effects, you can also apply general conditions on the ruleset itself.<br>
+                                Visit the documentation (TODO: link here) for more information on how to build rules and some examples</p>
+                            <p>If you have some suggestions for triggers, conditions and effects then either open a issue on <a href="https://github.com/jonas747/yagpdb">github</a> or join the support server (link located above)</p>
+                        </div>
+                    </div>                    
+                    <div class="row mb-3">
                         <div class="col-lg-12">
                             <form action="/manage/{{.ActiveGuild.ID}}/automod/new_ruleset" method="post" data-async-form>
-                                <p><b>Create a new ruleset</b></p>
+                                <h4>Create a new ruleset</h4>
+                                <p class="help-block">Rulesets contains rules that you define afterwards</p>
+                                <div class="form-group">
+                                    <label for="am-new-ruleset-name">Name</label>
+                                    <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
+                                </div>
+                                <button type="submit" class="btn btn-success">Create</button>
+                            </form>
+                        </div>
+                        <!-- /.col-lg-12 -->
+                    </div>
+                     <!-- /.row -->
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form action="/manage/{{.ActiveGuild.ID}}/automod/new_list" method="post" data-async-form>
+                                <h4>Create a new list</h4>
+                                <p class="help-block">Lists are used for word/website blacklisting/whitelisting</p>
                                 <div class="form-group">
                                     <label for="am-new-ruleset-name">Name</label>
                                     <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
@@ -137,12 +172,12 @@ table{
                     <div class="pull-right">
                         <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/delete">Delete</button>
                     </div>
-                    <h2 class="card-title">Rule #{{$i}}</h2>
+                    <h2 class="card-title">Rule #{{$i}}: <span contenteditable="true" data-content-editable-form="Name" class="content-editable-form">{{or .Name "Un-named"}}</span></h2>
                 </header>
                 <div class="card-body">
                     <div class="automod-rule-part-table" data-automod-part-type=0>
-                        <p><b>Triggers</b></p>
-                        <table class="table table-hover table-sm mb-0">
+                        <b>Triggers</b>
+                        <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
                                     <th class="automod-type-column">Type</th>
@@ -161,8 +196,8 @@ table{
                         <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
                     </div>
                     <div class="automod-rule-part-table" data-automod-part-type=1>
-                        <p><b>Conditions</b></p>
-                        <table class="table table-hover table-sm mb-0">
+                        <b>Conditions</b>
+                        <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
                                     <th class="automod-type-column">Type</th>
@@ -181,8 +216,8 @@ table{
                         <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
                     </div>
                     <div class="automod-rule-part-table" data-automod-part-type=2>
-                        <p><b>Effects</b></p>
-                        <table class="table table-hover table-sm mb-0">
+                        <b>Effects</b>
+                        <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
                                     <th class="automod-type-column">Type</th>
@@ -207,6 +242,35 @@ table{
     </div>
 </div>
 {{end}}
+{{else}}
+{{range .AutomodLists}}
+<div class="row">
+    <div class="col">
+        <form action="/manage/{{$dot.ActiveGuild.ID}}/automod/list/{{.ID}}/update" method="post" data-async-form>
+            <!-- Pressing enter uses the first button for some reason -->
+            <button class="hidden" type="submit"></button>
+
+            <section class="card card-featured card-featured-warning">
+                <header class="card-header">
+                    <div class="pull-right">
+                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/list/{{.ID}}/delete">Delete</button>
+                    </div>
+                    <h2 class="card-title">List: {{.Name}}</h2>
+                </header>
+                <div class="card-body">
+                    <div class="form-group">
+                        <p class="help-block">Separate entries by spaces or lines.</p>
+                        <p class="help-block">If this is a website list, then only specify domains, example: <code>google.com</code> instead of <code>https://google.com/something there</code>, note that all subdomains will also be included</p>
+                        <textarea class="form-control" name="Content" rows="5">{{range $k, $v :=  .Content}}{{if ne $k 0}}
+{{end}}{{.}}{{end}}</textarea>
+                    </div>
+                    <button class="btn btn-success" type="submit">Save</button>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+{{end}}
 {{end}}
 <div class="hidden">
     <select id="automod-roledropdown-multi-template" data-plugin-multiselect class="multiselect form-control" multiple="multiple">
@@ -214,6 +278,16 @@ table{
     </select>
     <select id="automod-channel-multi-template" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
         {{textChannelOptionsMulti .ActiveGuild.Channels nil}}
+    </select>
+    <select id="automod-list-selection-template" class="form-control">
+        {{range .AutomodLists}}
+        <option value="{{.ID}}">{{.Name}}</option>
+        {{else}}
+        <option>No lists set up, set up a list in the global settings</option>
+        {{end}}
+    </select>
+    <select id="automod-channel-cat-multi-template" multiple="multiple" class="form-control" data-plugin-multiselect name="ChannelCategories">
+        {{catChannelOptionsMulti .ActiveGuild.Channels nil}}
     </select>
 </div>
 
@@ -268,7 +342,7 @@ $(function(){
             typeSelect.append("<option value='"+i+"'> "+partType.name+"</option>");
         }
 
-        row.append($("<td>").append(typeSelect))
+        row.append($("<td class='d-flex'>").append(typeSelect))
         row.append("<td class='automod-options-column'></td>")
 
         row.append("<td><button type='button' class='btn btn-danger automod-delete-rule-part btn-sm' noconfirm>-</button></td>")
@@ -301,6 +375,17 @@ $(function(){
         col.find("[data-plugin-multiselect]").each(function(i, v){
             $(v).themePluginMultiSelect({});
         })
+
+        var typeDropdownCell = rowElem.find(".automod-type-dropdown").parent();
+        typeDropdownCell.find("[data-toggle='tooltip']").detach()
+
+        if(partMap[typSelectVal] && partMap[typSelectVal].description){
+            var span = $('<span data-toggle="tooltip" data-placement="bottom"><i class="fas fa-question"></i></span>')
+            span.attr("title", partMap[typSelectVal].description)
+            span.tooltip();
+
+            typeDropdownCell.append(span)
+        }
     }
 
     $(document).off('click', '.automod-delete-rule-part')
@@ -368,7 +453,9 @@ $(function(){
             if(opt.Min !== 0 || opt.Max !== 0){
                 input.attr("minlength", opt.Min)
                 input.attr("maxlength", opt.Max)
-                input.attr("required", true)
+                if(opt.Min !== 0){
+                    input.attr("required", true)
+                }
             }
 
             if(opt.Default){
@@ -377,11 +464,30 @@ $(function(){
 
             column.append(input)
             break;
+        case "bool":
+            // <div class="form-check">
+            //             <input type="checkbox" class="form-check-input" name="$name" checked>
+            //         </div>
+            var input = $("<input type='checkbox' class='form-check-input' name='"+key+"'>")
+            if(opt.Default){
+                input.attr("checked", true)
+            }
+
+            var container = $("<div class='form-check'>")
+            container.append(input)
+            column.append(container)  
+            break;
         case "multi_role":
             cloneDropdown(column, "#automod-roledropdown-multi-template", key, true);
             break;
         case "multi_channel":
             cloneDropdown(column, "#automod-channel-multi-template", key, true);
+            break;
+        case "multi_channel_cat":
+            cloneDropdown(column, "#automod-channel-cat-multi-template", key, true);
+            break;
+        case "list":
+            cloneDropdown(column, "#automod-list-selection-template", key, true);
             break;
         }
 
@@ -397,6 +503,10 @@ $(function(){
 
         return input
     }
+
+    $(".automod-rule-part-table tbody").each(function(i, v){
+        updateRowIndexes($(v))
+    })
 })
 </script>
 
@@ -411,17 +521,18 @@ $(function(){
 {{else if eq .kind "effect"}}
 {{$namePrefix = "Effects"}}
 {{end}}
-<tr class="automod-rule-row" data-automod-row-index="{{.partIndex}}">
+<tr class="automod-rule-row">
     <td>
-        <div class="form-gorup">
+        <div class="form-gorup d-flex">
             <select class="form-control automod-type-dropdown" name="{{$namePrefix}}.{{.partIndex}}.Type">
                 <option value="0"{{if eq .part.TypeID 0}}selected{{end}}>None</option>
                 {{$kind := .part.Kind}}
                 {{$selected := .part.TypeID}}
                 {{range $k, $v := .dot.PartMap}}{{if eq $v.Kind $kind}}
-                <option value="{{$k}}" {{if eq $selected $k}} selected {{end}}>{{$v.Name}}</option>
+                <option value="{{$k}}" {{if eq $selected $k}} selected {{end}} title="{{$v.Description}}">{{$v.Name}}</option>
                 {{end}}{{end}}
             </select>
+            {{if .partType.Description}}<span data-toggle="tooltip" data-placement="bottom" title="{{.partType.Description}}"><i class="fas fa-question"></i></span>{{end}}
         </div>
     </td>
     <td class="automod-options-column">
@@ -443,10 +554,27 @@ $(function(){
                     <select name="{{$name}}" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
                         {{textChannelOptionsMulti $dot.dot.ActiveGuild.Channels (index $dot.settings .Key)}}
                     </select>
+                    {{else if eq .Kind "multi_channel_cat"}}
+                    <select name="{{$name}}" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                        {{catChannelOptionsMulti $dot.dot.ActiveGuild.Channels (index $dot.settings .Key)}}
+                    </select>
                     {{else if eq .Kind "string"}}
-                    <input type='text' class='form-control' name="{{$name}}" {{if or .Min .Max}}required minlength="{{.Min}}" maxlength="{{.Max}}" {{end}} value="{{index $dot.settings .Key}}"></input>
+                    <input type='text' class='form-control' name="{{$name}}" {{if or .Min .Max}}{{if ne .Min 0}}required{{end}} minlength="{{.Min}}" maxlength="{{.Max}}" {{end}} value="{{index $dot.settings .Key}}"></input>
+                    {{else if eq .Kind "list"}}
+                    <select name="{{$name}}" class="form-control">
+                        {{$selectedList := (index $dot.settings .Key)}}
+                        {{range $dot.dot.AutomodLists}}
+                        <option value="{{.ID}}" {{if eq $selectedList .ID}} selected{{end}}>{{.Name}}</option>
+                        {{else}}
+                        <option>No lists set up, set up a list in the global settings</option>
+                        {{end}}
+                    </select>
+                    {{else if eq .Kind "bool"}}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="{{$name}}" {{if  (index $dot.settings .Key)}}checked{{end}}>
+                    </div>
                     {{end}}
-                </div>
+                </div>  
             </div>
         </div>
         {{end}}

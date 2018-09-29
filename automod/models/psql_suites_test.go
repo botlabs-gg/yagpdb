@@ -6,6 +6,8 @@ package models
 import "testing"
 
 func TestUpsert(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsUpsert)
+
 	t.Run("AutomodRuleData", testAutomodRuleDataUpsert)
 
 	t.Run("AutomodRules", testAutomodRulesUpsert)

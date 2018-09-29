@@ -12,6 +12,7 @@ import "testing"
 // It does NOT run each operation group in parallel.
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
+	t.Run("AutomodLists", testAutomodLists)
 	t.Run("AutomodRuleData", testAutomodRuleData)
 	t.Run("AutomodRules", testAutomodRules)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditions)
@@ -20,6 +21,7 @@ func TestParent(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsDelete)
 	t.Run("AutomodRuleData", testAutomodRuleDataDelete)
 	t.Run("AutomodRules", testAutomodRulesDelete)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsDelete)
@@ -28,6 +30,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestQueryDeleteAll(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsQueryDeleteAll)
 	t.Run("AutomodRuleData", testAutomodRuleDataQueryDeleteAll)
 	t.Run("AutomodRules", testAutomodRulesQueryDeleteAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsQueryDeleteAll)
@@ -36,6 +39,7 @@ func TestQueryDeleteAll(t *testing.T) {
 }
 
 func TestSliceDeleteAll(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsSliceDeleteAll)
 	t.Run("AutomodRuleData", testAutomodRuleDataSliceDeleteAll)
 	t.Run("AutomodRules", testAutomodRulesSliceDeleteAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsSliceDeleteAll)
@@ -44,6 +48,7 @@ func TestSliceDeleteAll(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsExists)
 	t.Run("AutomodRuleData", testAutomodRuleDataExists)
 	t.Run("AutomodRules", testAutomodRulesExists)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsExists)
@@ -52,6 +57,7 @@ func TestExists(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsFind)
 	t.Run("AutomodRuleData", testAutomodRuleDataFind)
 	t.Run("AutomodRules", testAutomodRulesFind)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsFind)
@@ -60,6 +66,7 @@ func TestFind(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsBind)
 	t.Run("AutomodRuleData", testAutomodRuleDataBind)
 	t.Run("AutomodRules", testAutomodRulesBind)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsBind)
@@ -68,6 +75,7 @@ func TestBind(t *testing.T) {
 }
 
 func TestOne(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsOne)
 	t.Run("AutomodRuleData", testAutomodRuleDataOne)
 	t.Run("AutomodRules", testAutomodRulesOne)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsOne)
@@ -76,6 +84,7 @@ func TestOne(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsAll)
 	t.Run("AutomodRuleData", testAutomodRuleDataAll)
 	t.Run("AutomodRules", testAutomodRulesAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsAll)
@@ -84,6 +93,7 @@ func TestAll(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsCount)
 	t.Run("AutomodRuleData", testAutomodRuleDataCount)
 	t.Run("AutomodRules", testAutomodRulesCount)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsCount)
@@ -92,6 +102,8 @@ func TestCount(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsInsert)
+	t.Run("AutomodLists", testAutomodListsInsertWhitelist)
 	t.Run("AutomodRuleData", testAutomodRuleDataInsert)
 	t.Run("AutomodRuleData", testAutomodRuleDataInsertWhitelist)
 	t.Run("AutomodRules", testAutomodRulesInsert)
@@ -171,6 +183,7 @@ func TestToManyRemove(t *testing.T) {
 }
 
 func TestReload(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsReload)
 	t.Run("AutomodRuleData", testAutomodRuleDataReload)
 	t.Run("AutomodRules", testAutomodRulesReload)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsReload)
@@ -179,6 +192,7 @@ func TestReload(t *testing.T) {
 }
 
 func TestReloadAll(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsReloadAll)
 	t.Run("AutomodRuleData", testAutomodRuleDataReloadAll)
 	t.Run("AutomodRules", testAutomodRulesReloadAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsReloadAll)
@@ -187,6 +201,7 @@ func TestReloadAll(t *testing.T) {
 }
 
 func TestSelect(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsSelect)
 	t.Run("AutomodRuleData", testAutomodRuleDataSelect)
 	t.Run("AutomodRules", testAutomodRulesSelect)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsSelect)
@@ -195,6 +210,7 @@ func TestSelect(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsUpdate)
 	t.Run("AutomodRuleData", testAutomodRuleDataUpdate)
 	t.Run("AutomodRules", testAutomodRulesUpdate)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsUpdate)
@@ -203,6 +219,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestSliceUpdateAll(t *testing.T) {
+	t.Run("AutomodLists", testAutomodListsSliceUpdateAll)
 	t.Run("AutomodRuleData", testAutomodRuleDataSliceUpdateAll)
 	t.Run("AutomodRules", testAutomodRulesSliceUpdateAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsSliceUpdateAll)

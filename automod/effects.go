@@ -3,6 +3,7 @@ package automod
 import (
 	"context"
 	"github.com/jonas747/yagpdb/automod/models"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/volatiletech/null"
@@ -12,6 +13,8 @@ import (
 type Effect interface {
 	Apply(ctxData *TriggeredRuleData, settings interface{}) error
 }
+
+///////////////////////////////////////////////////////
 
 type DeleteMessageEffect struct{}
 
@@ -40,9 +43,15 @@ func (del *DeleteMessageEffect) Apply(ctxData *TriggeredRuleData, settings inter
 		return nil // no message to delete
 	}
 
-	err := common.BotSession.ChannelMessageDelete(ctxData.Message.ChannelID, ctxData.Message.ID)
-	return err
+	go bot.MessageDeleteQueue.DeleteMessages(ctxData.Message.ChannelID, ctxData.Message.ID)
+	return nil
 }
+
+func (del *DeleteMessageEffect) MergeDuplicates(data []interface{}) interface{} {
+	return nil // no user data
+}
+
+///////////////////////////////////////////////////////
 
 type AddViolationEffect struct{}
 
@@ -63,7 +72,7 @@ func (vio *AddViolationEffect) Name() (name string) {
 }
 
 func (vio *AddViolationEffect) Description() (description string) {
-	return "Adds a violation"
+	return "Adds a violation (use with violation tirggers)"
 }
 
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
@@ -84,7 +93,7 @@ func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interf
 	violation := &models.AutomodViolation{
 		GuildID: ctxData.GS.ID,
 		UserID:  ctxData.MS.ID,
-		RuleID:  null.Int64From(ctxData.Rule.Model.ID),
+		RuleID:  null.Int64From(ctxData.CurrentRule.Model.ID),
 		Name:    settingsCast.Name,
 	}
 
@@ -93,10 +102,15 @@ func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interf
 		return err
 	}
 
-	go ctxData.Plugin.checkViolationTriggers(ctxData.GS, ctxData.MS, settingsCast.Name)
+	newData := ctxData.Clone()
+	newData.PreviousReasons = append(newData.PreviousReasons, ctxData.ConstructReason(false))
+	newData.RecursionCounter++
+	go ctxData.Plugin.checkViolationTriggers(newData, settingsCast.Name)
 
 	return err
 }
+
+///////////////////////////////////////////////////////
 
 type KickUserEffect struct{}
 
@@ -127,9 +141,15 @@ func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.KickUser(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator: TODO", ctxData.MS.DGoUser())
+	err := moderation.KickUser(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS.DGoUser())
 	return err
 }
+
+func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
+}
+
+///////////////////////////////////////////////////////
 
 type BanUserEffect struct{}
 
@@ -159,9 +179,15 @@ func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.BanUser(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator: TODO", ctxData.MS.DGoUser())
+	err := moderation.BanUser(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS.DGoUser())
 	return err
 }
+
+func (ban *BanUserEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
+}
+
+///////////////////////////////////////////////////////
 
 type MuteUserEffect struct{}
 
@@ -206,6 +232,97 @@ func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.MuteUnmuteUser(nil, true, ctxData.GS.ID, cID, common.BotUser, "Automoderator: TODO", ctxData.MS, settingsCast.Duration)
+	err := moderation.MuteUnmuteUser(nil, true, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS, settingsCast.Duration)
 	return err
+}
+
+func (mute *MuteUserEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
+}
+
+///////////////////////////////////////////////////////
+
+type WarnUserEffect struct{}
+
+func (warn *WarnUserEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (warn *WarnUserEffect) DataType() interface{} {
+	return &MuteUserEffectData{}
+}
+
+func (warn *WarnUserEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (warn *WarnUserEffect) Name() (name string) {
+	return "Warn user"
+}
+
+func (warn *WarnUserEffect) Description() (description string) {
+	return "Warns the user"
+}
+
+func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	// settingsCast := settings.(*MuteUserEffectData)
+
+	var cID int64
+	if ctxData.CS != nil {
+		cID = ctxData.CS.ID
+	}
+
+	err := moderation.WarnUser(nil, ctxData.GS.ID, cID, common.BotUser, ctxData.MS.DGoUser(), "Automoderator:\n"+ctxData.ConstructReason(true))
+	return err
+}
+
+func (warn *WarnUserEffect) MergeDuplicates(data []interface{}) interface{} {
+	return nil // no user data
+}
+
+/////////////////////////////////////////////////////////////
+
+type SetNicknameEffect struct{}
+
+type SetNicknameEffectData struct {
+	NewName string `valid:",0,32,trimspace"`
+}
+
+func (sn *SetNicknameEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (sn *SetNicknameEffect) DataType() interface{} {
+	return &SetNicknameEffectData{}
+}
+
+func (sn *SetNicknameEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name: "New Nickname (empty for removal)",
+			Key:  "NewName",
+			Min:  0,
+			Max:  32,
+			Kind: SettingTypeString,
+		},
+	}
+}
+
+func (sn *SetNicknameEffect) Name() (name string) {
+	return "Set Nickname"
+}
+
+func (sn *SetNicknameEffect) Description() (description string) {
+	return "Sets the nickname of the user"
+}
+
+func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*SetNicknameEffectData)
+
+	err := common.BotSession.GuildMemberNickname(ctxData.GS.ID, ctxData.MS.ID, settingsCast.NewName)
+	return err
+}
+
+func (sn *SetNicknameEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
 }
