@@ -555,6 +555,12 @@ function formSubmissionEvents(){
 	function submitForm(form, url, alertsOnly){
 		var serialized = form.serialize();
 		
+		form.find("[data-content-editable-form]").each(function(i, v){
+			var name = $(v).attr("data-content-editable-form")
+			var value = encodeURIComponent($(v).text())
+			serialized += "&"+name+"="+value;
+		})
+
 		if(!alertsOnly){
 			alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
 		}
@@ -574,7 +580,6 @@ function formSubmissionEvents(){
 
 		$.magnificPopup.close();
 	}
-
 }
 
 function navigateToAnchor(name){

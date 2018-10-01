@@ -218,6 +218,7 @@ html.sidebar-left-collapsed #nav-footer {
 
 /*Proper Design, f**king bootztrap*/
 
+<<<<<<< HEAD
 .card-body.bg-success,
 .card-body.bg-info,
 .card-body.bg-warning,
@@ -232,4 +233,14 @@ html.sidebar-left-collapsed #nav-footer {
 
 .nav-tabs {
 	flex-wrap: wrap-reverse;
+}
+
+@media only screen and (max-width: 768px) {
+  .card-body {
+    padding: 0.25rem !important;
+  }  
+}
+
+.content-editable-form::before {
+  content: "✎ ";
 }
