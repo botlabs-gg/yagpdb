@@ -47,6 +47,7 @@ func setup() {
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
 	State.ThrowAwayDMMessages = true
+	go State.RunGCWorker()
 
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
