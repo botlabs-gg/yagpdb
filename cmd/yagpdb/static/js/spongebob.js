@@ -320,6 +320,7 @@ function initPlugins(partial){
 	}
 
 	$(selectorPrefix + '[data-toggle="popover"]').popover()
+	$(selectorPrefix + '[data-toggle="tooltip"]').tooltip();
 
 	$('.entry:not(:last-of-type) .btn-add')
           .removeClass('btn-add').addClass('btn-remove')
@@ -332,7 +333,6 @@ function initPlugins(partial){
 	yagInitMultiSelect(selectorPrefix)
 	yagInitAutosize(selectorPrefix);
 	// initializeMultiselect(selectorPrefix);
-
 
 	$(selectorPrefix + '.modal-basic').magnificPopup({
 		type: 'inline',
