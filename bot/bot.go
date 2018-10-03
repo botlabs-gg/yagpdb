@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardmanager"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
@@ -26,8 +27,9 @@ var (
 
 	SlaveClient *slave.Conn
 
-	state     int
-	stateLock sync.Mutex
+	state              int
+	stateLock          sync.Mutex
+	MessageDeleteQueue = deletequeue.NewQueue()
 )
 
 const (
