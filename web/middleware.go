@@ -282,6 +282,9 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			}
 		}
 
+		entry := CtxLogger(ctx).WithField("g", guildID)
+		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
+
 		// Fallback to full guild if userguilds if not found
 		if userGuild == nil {
 			var err error
@@ -289,6 +292,8 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			if err != nil {
 				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
 			}
+
+			ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": IsAdminRequest(ctx, r)})
 			r = r.WithContext(ctx)
 			return
 		}
@@ -299,8 +304,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			Icon: userGuild.Icon,
 		}
 
-		entry := CtxLogger(ctx).WithField("g", fullGuild.ID)
-		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentUserGuild, userGuild)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
 		isAdmin := IsAdminRequest(ctx, r)
