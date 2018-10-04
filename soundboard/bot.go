@@ -87,7 +87,7 @@ func ListSounds(config *SoundboardConfig, ms *dstate.MemberState) string {
 			restricted += "`" + sound.Name + "`, "
 		}
 	}
-	out := "Sounboard sounds:\n"
+	out := "Soundboard sounds:\n"
 
 	if canPlay != "" {
 		out += "Can Play: " + canPlay[:len(canPlay)-2] + "\n"
