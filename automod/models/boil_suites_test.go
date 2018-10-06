@@ -17,6 +17,7 @@ func TestParent(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRules)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditions)
 	t.Run("AutomodRulesets", testAutomodRulesets)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRules)
 	t.Run("AutomodViolations", testAutomodViolations)
 }
 
@@ -26,6 +27,7 @@ func TestDelete(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesDelete)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsDelete)
 	t.Run("AutomodRulesets", testAutomodRulesetsDelete)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesDelete)
 	t.Run("AutomodViolations", testAutomodViolationsDelete)
 }
 
@@ -35,6 +37,7 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesQueryDeleteAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsQueryDeleteAll)
 	t.Run("AutomodRulesets", testAutomodRulesetsQueryDeleteAll)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesQueryDeleteAll)
 	t.Run("AutomodViolations", testAutomodViolationsQueryDeleteAll)
 }
 
@@ -44,6 +47,7 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesSliceDeleteAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsSliceDeleteAll)
 	t.Run("AutomodRulesets", testAutomodRulesetsSliceDeleteAll)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesSliceDeleteAll)
 	t.Run("AutomodViolations", testAutomodViolationsSliceDeleteAll)
 }
 
@@ -53,6 +57,7 @@ func TestExists(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesExists)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsExists)
 	t.Run("AutomodRulesets", testAutomodRulesetsExists)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesExists)
 	t.Run("AutomodViolations", testAutomodViolationsExists)
 }
 
@@ -62,6 +67,7 @@ func TestFind(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesFind)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsFind)
 	t.Run("AutomodRulesets", testAutomodRulesetsFind)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesFind)
 	t.Run("AutomodViolations", testAutomodViolationsFind)
 }
 
@@ -71,6 +77,7 @@ func TestBind(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesBind)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsBind)
 	t.Run("AutomodRulesets", testAutomodRulesetsBind)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesBind)
 	t.Run("AutomodViolations", testAutomodViolationsBind)
 }
 
@@ -80,6 +87,7 @@ func TestOne(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesOne)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsOne)
 	t.Run("AutomodRulesets", testAutomodRulesetsOne)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesOne)
 	t.Run("AutomodViolations", testAutomodViolationsOne)
 }
 
@@ -89,6 +97,7 @@ func TestAll(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsAll)
 	t.Run("AutomodRulesets", testAutomodRulesetsAll)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesAll)
 	t.Run("AutomodViolations", testAutomodViolationsAll)
 }
 
@@ -98,6 +107,7 @@ func TestCount(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesCount)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsCount)
 	t.Run("AutomodRulesets", testAutomodRulesetsCount)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesCount)
 	t.Run("AutomodViolations", testAutomodViolationsCount)
 }
 
@@ -112,6 +122,8 @@ func TestInsert(t *testing.T) {
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsInsertWhitelist)
 	t.Run("AutomodRulesets", testAutomodRulesetsInsert)
 	t.Run("AutomodRulesets", testAutomodRulesetsInsertWhitelist)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesInsert)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesInsertWhitelist)
 	t.Run("AutomodViolations", testAutomodViolationsInsert)
 	t.Run("AutomodViolations", testAutomodViolationsInsertWhitelist)
 }
@@ -122,6 +134,8 @@ func TestToOne(t *testing.T) {
 	t.Run("AutomodRuleDatumToAutomodRuleUsingRule", testAutomodRuleDatumToOneAutomodRuleUsingRule)
 	t.Run("AutomodRuleToAutomodRulesetUsingRuleset", testAutomodRuleToOneAutomodRulesetUsingRuleset)
 	t.Run("AutomodRulesetConditionToAutomodRulesetUsingRuleset", testAutomodRulesetConditionToOneAutomodRulesetUsingRuleset)
+	t.Run("AutomodTriggeredRuleToAutomodRuleDatumUsingTrigger", testAutomodTriggeredRuleToOneAutomodRuleDatumUsingTrigger)
+	t.Run("AutomodTriggeredRuleToAutomodRuleUsingRule", testAutomodTriggeredRuleToOneAutomodRuleUsingRule)
 	t.Run("AutomodViolationToAutomodRuleUsingRule", testAutomodViolationToOneAutomodRuleUsingRule)
 }
 
@@ -132,7 +146,9 @@ func TestOneToOne(t *testing.T) {}
 // TestToMany tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
+	t.Run("AutomodRuleDatumToTriggerAutomodTriggeredRules", testAutomodRuleDatumToManyTriggerAutomodTriggeredRules)
 	t.Run("AutomodRuleToRuleAutomodRuleData", testAutomodRuleToManyRuleAutomodRuleData)
+	t.Run("AutomodRuleToRuleAutomodTriggeredRules", testAutomodRuleToManyRuleAutomodTriggeredRules)
 	t.Run("AutomodRuleToRuleAutomodViolations", testAutomodRuleToManyRuleAutomodViolations)
 	t.Run("AutomodRulesetToRulesetAutomodRules", testAutomodRulesetToManyRulesetAutomodRules)
 	t.Run("AutomodRulesetToRulesetAutomodRulesetConditions", testAutomodRulesetToManyRulesetAutomodRulesetConditions)
@@ -144,12 +160,16 @@ func TestToOneSet(t *testing.T) {
 	t.Run("AutomodRuleDatumToAutomodRuleUsingRuleAutomodRuleData", testAutomodRuleDatumToOneSetOpAutomodRuleUsingRule)
 	t.Run("AutomodRuleToAutomodRulesetUsingRulesetAutomodRules", testAutomodRuleToOneSetOpAutomodRulesetUsingRuleset)
 	t.Run("AutomodRulesetConditionToAutomodRulesetUsingRulesetAutomodRulesetConditions", testAutomodRulesetConditionToOneSetOpAutomodRulesetUsingRuleset)
+	t.Run("AutomodTriggeredRuleToAutomodRuleDatumUsingTriggerAutomodTriggeredRules", testAutomodTriggeredRuleToOneSetOpAutomodRuleDatumUsingTrigger)
+	t.Run("AutomodTriggeredRuleToAutomodRuleUsingRuleAutomodTriggeredRules", testAutomodTriggeredRuleToOneSetOpAutomodRuleUsingRule)
 	t.Run("AutomodViolationToAutomodRuleUsingRuleAutomodViolations", testAutomodViolationToOneSetOpAutomodRuleUsingRule)
 }
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneRemove(t *testing.T) {
+	t.Run("AutomodTriggeredRuleToAutomodRuleDatumUsingTriggerAutomodTriggeredRules", testAutomodTriggeredRuleToOneRemoveOpAutomodRuleDatumUsingTrigger)
+	t.Run("AutomodTriggeredRuleToAutomodRuleUsingRuleAutomodTriggeredRules", testAutomodTriggeredRuleToOneRemoveOpAutomodRuleUsingRule)
 	t.Run("AutomodViolationToAutomodRuleUsingRuleAutomodViolations", testAutomodViolationToOneRemoveOpAutomodRuleUsingRule)
 }
 
@@ -164,7 +184,9 @@ func TestOneToOneRemove(t *testing.T) {}
 // TestToManyAdd tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
+	t.Run("AutomodRuleDatumToTriggerAutomodTriggeredRules", testAutomodRuleDatumToManyAddOpTriggerAutomodTriggeredRules)
 	t.Run("AutomodRuleToRuleAutomodRuleData", testAutomodRuleToManyAddOpRuleAutomodRuleData)
+	t.Run("AutomodRuleToRuleAutomodTriggeredRules", testAutomodRuleToManyAddOpRuleAutomodTriggeredRules)
 	t.Run("AutomodRuleToRuleAutomodViolations", testAutomodRuleToManyAddOpRuleAutomodViolations)
 	t.Run("AutomodRulesetToRulesetAutomodRules", testAutomodRulesetToManyAddOpRulesetAutomodRules)
 	t.Run("AutomodRulesetToRulesetAutomodRulesetConditions", testAutomodRulesetToManyAddOpRulesetAutomodRulesetConditions)
@@ -173,12 +195,16 @@ func TestToManyAdd(t *testing.T) {
 // TestToManySet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManySet(t *testing.T) {
+	t.Run("AutomodRuleDatumToTriggerAutomodTriggeredRules", testAutomodRuleDatumToManySetOpTriggerAutomodTriggeredRules)
+	t.Run("AutomodRuleToRuleAutomodTriggeredRules", testAutomodRuleToManySetOpRuleAutomodTriggeredRules)
 	t.Run("AutomodRuleToRuleAutomodViolations", testAutomodRuleToManySetOpRuleAutomodViolations)
 }
 
 // TestToManyRemove tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManyRemove(t *testing.T) {
+	t.Run("AutomodRuleDatumToTriggerAutomodTriggeredRules", testAutomodRuleDatumToManyRemoveOpTriggerAutomodTriggeredRules)
+	t.Run("AutomodRuleToRuleAutomodTriggeredRules", testAutomodRuleToManyRemoveOpRuleAutomodTriggeredRules)
 	t.Run("AutomodRuleToRuleAutomodViolations", testAutomodRuleToManyRemoveOpRuleAutomodViolations)
 }
 
@@ -188,6 +214,7 @@ func TestReload(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesReload)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsReload)
 	t.Run("AutomodRulesets", testAutomodRulesetsReload)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesReload)
 	t.Run("AutomodViolations", testAutomodViolationsReload)
 }
 
@@ -197,6 +224,7 @@ func TestReloadAll(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesReloadAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsReloadAll)
 	t.Run("AutomodRulesets", testAutomodRulesetsReloadAll)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesReloadAll)
 	t.Run("AutomodViolations", testAutomodViolationsReloadAll)
 }
 
@@ -206,6 +234,7 @@ func TestSelect(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesSelect)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsSelect)
 	t.Run("AutomodRulesets", testAutomodRulesetsSelect)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesSelect)
 	t.Run("AutomodViolations", testAutomodViolationsSelect)
 }
 
@@ -215,6 +244,7 @@ func TestUpdate(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesUpdate)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsUpdate)
 	t.Run("AutomodRulesets", testAutomodRulesetsUpdate)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesUpdate)
 	t.Run("AutomodViolations", testAutomodViolationsUpdate)
 }
 
@@ -224,5 +254,6 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("AutomodRules", testAutomodRulesSliceUpdateAll)
 	t.Run("AutomodRulesetConditions", testAutomodRulesetConditionsSliceUpdateAll)
 	t.Run("AutomodRulesets", testAutomodRulesetsSliceUpdateAll)
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesSliceUpdateAll)
 	t.Run("AutomodViolations", testAutomodViolationsSliceUpdateAll)
 }

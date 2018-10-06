@@ -431,6 +431,83 @@ func testAutomodRuleToManyRuleAutomodRuleData(t *testing.T) {
 	}
 }
 
+func testAutomodRuleToManyRuleAutomodTriggeredRules(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRule
+	var b, c AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDBTypes, true, automodRuleColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AutomodRule struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, automodTriggeredRuleDBTypes, false, automodTriggeredRuleColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, automodTriggeredRuleDBTypes, false, automodTriggeredRuleColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.RuleID, a.ID)
+	queries.Assign(&c.RuleID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	automodTriggeredRule, err := a.RuleAutomodTriggeredRules().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range automodTriggeredRule {
+		if queries.Equal(v.RuleID, b.RuleID) {
+			bFound = true
+		}
+		if queries.Equal(v.RuleID, c.RuleID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := AutomodRuleSlice{&a}
+	if err = a.L.LoadRuleAutomodTriggeredRules(ctx, tx, false, (*[]*AutomodRule)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.RuleAutomodTriggeredRules); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.RuleAutomodTriggeredRules = nil
+	if err = a.L.LoadRuleAutomodTriggeredRules(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.RuleAutomodTriggeredRules); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", automodTriggeredRule)
+	}
+}
+
 func testAutomodRuleToManyRuleAutomodViolations(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -583,6 +660,257 @@ func testAutomodRuleToManyAddOpRuleAutomodRuleData(t *testing.T) {
 		}
 	}
 }
+func testAutomodRuleToManyAddOpRuleAutomodTriggeredRules(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRule
+	var b, c, d, e AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDBTypes, false, strmangle.SetComplement(automodRulePrimaryKeyColumns, automodRuleColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AutomodTriggeredRule{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, automodTriggeredRuleDBTypes, false, strmangle.SetComplement(automodTriggeredRulePrimaryKeyColumns, automodTriggeredRuleColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*AutomodTriggeredRule{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddRuleAutomodTriggeredRules(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.RuleID) {
+			t.Error("foreign key was wrong value", a.ID, first.RuleID)
+		}
+		if !queries.Equal(a.ID, second.RuleID) {
+			t.Error("foreign key was wrong value", a.ID, second.RuleID)
+		}
+
+		if first.R.Rule != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Rule != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.RuleAutomodTriggeredRules[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.RuleAutomodTriggeredRules[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.RuleAutomodTriggeredRules().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testAutomodRuleToManySetOpRuleAutomodTriggeredRules(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRule
+	var b, c, d, e AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDBTypes, false, strmangle.SetComplement(automodRulePrimaryKeyColumns, automodRuleColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AutomodTriggeredRule{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, automodTriggeredRuleDBTypes, false, strmangle.SetComplement(automodTriggeredRulePrimaryKeyColumns, automodTriggeredRuleColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetRuleAutomodTriggeredRules(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.RuleAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetRuleAutomodTriggeredRules(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.RuleAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.RuleID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.RuleID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.RuleID) {
+		t.Error("foreign key was wrong value", a.ID, d.RuleID)
+	}
+	if !queries.Equal(a.ID, e.RuleID) {
+		t.Error("foreign key was wrong value", a.ID, e.RuleID)
+	}
+
+	if b.R.Rule != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Rule != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Rule != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Rule != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.RuleAutomodTriggeredRules[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.RuleAutomodTriggeredRules[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testAutomodRuleToManyRemoveOpRuleAutomodTriggeredRules(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRule
+	var b, c, d, e AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDBTypes, false, strmangle.SetComplement(automodRulePrimaryKeyColumns, automodRuleColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AutomodTriggeredRule{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, automodTriggeredRuleDBTypes, false, strmangle.SetComplement(automodTriggeredRulePrimaryKeyColumns, automodTriggeredRuleColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddRuleAutomodTriggeredRules(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.RuleAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveRuleAutomodTriggeredRules(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.RuleAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.RuleID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.RuleID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Rule != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Rule != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Rule != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Rule != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.RuleAutomodTriggeredRules) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.RuleAutomodTriggeredRules[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.RuleAutomodTriggeredRules[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testAutomodRuleToManyAddOpRuleAutomodViolations(t *testing.T) {
 	var err error
 

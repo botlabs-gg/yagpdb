@@ -353,6 +353,334 @@ func testAutomodRuleDataInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testAutomodRuleDatumToManyTriggerAutomodTriggeredRules(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRuleDatum
+	var b, c AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDatumDBTypes, true, automodRuleDatumColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AutomodRuleDatum struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, automodTriggeredRuleDBTypes, false, automodTriggeredRuleColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, automodTriggeredRuleDBTypes, false, automodTriggeredRuleColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.TriggerID, a.ID)
+	queries.Assign(&c.TriggerID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	automodTriggeredRule, err := a.TriggerAutomodTriggeredRules().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range automodTriggeredRule {
+		if queries.Equal(v.TriggerID, b.TriggerID) {
+			bFound = true
+		}
+		if queries.Equal(v.TriggerID, c.TriggerID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := AutomodRuleDatumSlice{&a}
+	if err = a.L.LoadTriggerAutomodTriggeredRules(ctx, tx, false, (*[]*AutomodRuleDatum)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.TriggerAutomodTriggeredRules); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.TriggerAutomodTriggeredRules = nil
+	if err = a.L.LoadTriggerAutomodTriggeredRules(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.TriggerAutomodTriggeredRules); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", automodTriggeredRule)
+	}
+}
+
+func testAutomodRuleDatumToManyAddOpTriggerAutomodTriggeredRules(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRuleDatum
+	var b, c, d, e AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDatumDBTypes, false, strmangle.SetComplement(automodRuleDatumPrimaryKeyColumns, automodRuleDatumColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AutomodTriggeredRule{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, automodTriggeredRuleDBTypes, false, strmangle.SetComplement(automodTriggeredRulePrimaryKeyColumns, automodTriggeredRuleColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*AutomodTriggeredRule{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddTriggerAutomodTriggeredRules(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.TriggerID) {
+			t.Error("foreign key was wrong value", a.ID, first.TriggerID)
+		}
+		if !queries.Equal(a.ID, second.TriggerID) {
+			t.Error("foreign key was wrong value", a.ID, second.TriggerID)
+		}
+
+		if first.R.Trigger != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Trigger != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.TriggerAutomodTriggeredRules[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.TriggerAutomodTriggeredRules[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.TriggerAutomodTriggeredRules().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testAutomodRuleDatumToManySetOpTriggerAutomodTriggeredRules(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRuleDatum
+	var b, c, d, e AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDatumDBTypes, false, strmangle.SetComplement(automodRuleDatumPrimaryKeyColumns, automodRuleDatumColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AutomodTriggeredRule{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, automodTriggeredRuleDBTypes, false, strmangle.SetComplement(automodTriggeredRulePrimaryKeyColumns, automodTriggeredRuleColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetTriggerAutomodTriggeredRules(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.TriggerAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetTriggerAutomodTriggeredRules(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.TriggerAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.TriggerID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.TriggerID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.TriggerID) {
+		t.Error("foreign key was wrong value", a.ID, d.TriggerID)
+	}
+	if !queries.Equal(a.ID, e.TriggerID) {
+		t.Error("foreign key was wrong value", a.ID, e.TriggerID)
+	}
+
+	if b.R.Trigger != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Trigger != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Trigger != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Trigger != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.TriggerAutomodTriggeredRules[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.TriggerAutomodTriggeredRules[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testAutomodRuleDatumToManyRemoveOpTriggerAutomodTriggeredRules(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AutomodRuleDatum
+	var b, c, d, e AutomodTriggeredRule
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, automodRuleDatumDBTypes, false, strmangle.SetComplement(automodRuleDatumPrimaryKeyColumns, automodRuleDatumColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AutomodTriggeredRule{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, automodTriggeredRuleDBTypes, false, strmangle.SetComplement(automodTriggeredRulePrimaryKeyColumns, automodTriggeredRuleColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddTriggerAutomodTriggeredRules(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.TriggerAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveTriggerAutomodTriggeredRules(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.TriggerAutomodTriggeredRules().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.TriggerID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.TriggerID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Trigger != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Trigger != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Trigger != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Trigger != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.TriggerAutomodTriggeredRules) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.TriggerAutomodTriggeredRules[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.TriggerAutomodTriggeredRules[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testAutomodRuleDatumToOneAutomodRuleUsingRule(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

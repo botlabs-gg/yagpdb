@@ -9,6 +9,7 @@ var TableNames = struct {
 	AutomodRules             string
 	AutomodRulesetConditions string
 	AutomodRulesets          string
+	AutomodTriggeredRules    string
 	AutomodViolations        string
 }{
 	AutomodLists:             "automod_lists",
@@ -16,5 +17,6 @@ var TableNames = struct {
 	AutomodRules:             "automod_rules",
 	AutomodRulesetConditions: "automod_ruleset_conditions",
 	AutomodRulesets:          "automod_rulesets",
+	AutomodTriggeredRules:    "automod_triggered_rules",
 	AutomodViolations:        "automod_violations",
 }

@@ -16,5 +16,7 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("AutomodRulesets", testAutomodRulesetsUpsert)
 
+	t.Run("AutomodTriggeredRules", testAutomodTriggeredRulesUpsert)
+
 	t.Run("AutomodViolations", testAutomodViolationsUpsert)
 }

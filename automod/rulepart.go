@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
+	"sort"
 	"strings"
 )
 
@@ -11,58 +12,75 @@ import (
 // since these are stored in the database, changing the id's would require an update of all the relevant rows
 // so don't do that.
 var RulePartMap = map[int]RulePart{
-	1:  &MemberRolesCondition{Blacklist: true},
-	2:  &MemberRolesCondition{Blacklist: false},
-	3:  &MentionsTrigger{},
-	4:  &AnyLinkTrigger{},
-	5:  &DeleteMessageEffect{},
-	6:  &AddViolationEffect{},
-	7:  &ChannelsCondition{Blacklist: true},
-	8:  &ChannelsCondition{Blacklist: false},
-	9:  &KickUserEffect{},
-	10: &BanUserEffect{},
-	11: &MuteUserEffect{},
-	12: &ViolationsTrigger{},
-	13: &WordListTrigger{Blacklist: true},
-	14: &WordListTrigger{Blacklist: false},
-	15: &DomainTrigger{Blacklist: true},
-	16: &DomainTrigger{Blacklist: false},
-	17: &AllCapsTrigger{},
-	18: &ChannelCategoriesCondition{Blacklist: true},
-	19: &ChannelCategoriesCondition{Blacklist: false},
-	20: &ServerInviteTrigger{},
-	21: &AccountAgeCondition{Below: false},
-	22: &AccountAgeCondition{Below: true},
-	23: &MemberAgecondition{Below: false},
-	24: &MemberAgecondition{Below: true},
-	25: &WarnUserEffect{},
-	26: &GoogleSafeBrowsingTrigger{},
-	27: &BotCondition{Ignore: true},
-	28: &SetNicknameEffect{},
-	29: &SlowmodeTrigger{ChannelBased: false},
-	30: &SlowmodeTrigger{ChannelBased: true},
-	31: &MultiMsgMentionTrigger{ChannelBased: false},
-	32: &MultiMsgMentionTrigger{ChannelBased: true},
+	// Triggers <2xx
+	1:  &AllCapsTrigger{},
+	2:  &MentionsTrigger{},
+	3:  &AnyLinkTrigger{},
+	4:  &ViolationsTrigger{},
+	5:  &WordListTrigger{Blacklist: true},
+	6:  &WordListTrigger{Blacklist: false},
+	7:  &DomainTrigger{Blacklist: true},
+	8:  &DomainTrigger{Blacklist: false},
+	9:  &ServerInviteTrigger{},
+	10: &GoogleSafeBrowsingTrigger{},
+	11: &SlowmodeTrigger{ChannelBased: false},
+	12: &SlowmodeTrigger{ChannelBased: true},
+	13: &MultiMsgMentionTrigger{ChannelBased: false},
+	14: &MultiMsgMentionTrigger{ChannelBased: true},
+	15: &MessageRegexTrigger{},
+	16: &MessageRegexTrigger{BaseRegexTrigger: BaseRegexTrigger{Inverse: true}},
+	17: &SpamTrigger{},
+	18: &NicknameRegexTrigger{BaseRegexTrigger: BaseRegexTrigger{Inverse: false}},
+	19: &NicknameRegexTrigger{BaseRegexTrigger: BaseRegexTrigger{Inverse: true}},
+	20: &NicknameWordlistTrigger{Blacklist: false},
+	21: &NicknameWordlistTrigger{Blacklist: true},
+
+	// Conditions 2xx
+	200: &MemberRolesCondition{Blacklist: true},
+	201: &MemberRolesCondition{Blacklist: false},
+	202: &ChannelsCondition{Blacklist: true},
+	203: &ChannelsCondition{Blacklist: false},
+	204: &AccountAgeCondition{Below: false},
+	205: &AccountAgeCondition{Below: true},
+	206: &MemberAgecondition{Below: false},
+	207: &MemberAgecondition{Below: true},
+	209: &BotCondition{Ignore: true},
+	// Space here incase i wanna bring in another bot condition later
+	211: &ChannelCategoriesCondition{Blacklist: true},
+	212: &ChannelCategoriesCondition{Blacklist: false},
+
+	// Effects 3xx
+	300: &DeleteMessageEffect{},
+	301: &AddViolationEffect{},
+	302: &KickUserEffect{},
+	303: &BanUserEffect{},
+	304: &MuteUserEffect{},
+	305: &WarnUserEffect{},
+	306: &SetNicknameEffect{},
 }
 
 var InverseRulePartMap = make(map[RulePart]int)
 
-// helpers for querying the db
-var messageTriggers []interface{}
-var violationTriggers []interface{}
+type RulePartPair struct {
+	ID   int
+	Part RulePart
+}
+
+var RulePartList = make([]*RulePartPair, 0)
 
 func init() {
 	for k, v := range RulePartMap {
-		if _, ok := v.(MessageTrigger); ok {
-			messageTriggers = append(messageTriggers, k)
-		}
-
-		if _, ok := v.(ViolationListener); ok {
-			violationTriggers = append(violationTriggers, k)
-		}
-
 		InverseRulePartMap[v] = k
+
+		RulePartList = append(RulePartList, &RulePartPair{
+			ID:   k,
+			Part: v,
+		})
 	}
+
+	sort.Slice(RulePartList, func(i, j int) bool {
+		return RulePartList[i].ID < RulePartList[j].ID
+	})
 }
 
 type SettingType string
@@ -183,4 +201,11 @@ type ViolationListener interface {
 	RulePart
 
 	CheckUser(ctxData *TriggeredRuleData, violations []*models.AutomodViolation, data interface{}, triggeredOnHigher bool) (isAffected bool, err error)
+}
+
+// NicknameListener is a trigger that gets triggered on a nickname change
+type NicknameListener interface {
+	RulePart
+
+	CheckNickname(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
 }

@@ -70,4 +70,26 @@ CREATE TABLE IF NOT EXISTS automod_lists (
 );
 
 CREATE INDEX IF NOT EXISTS automod_lists_guild_idx ON automod_lists(guild_id);
+
+CREATE TABLE IF NOT EXISTS automod_triggered_rules (
+	id BIGSERIAL PRIMARY KEY,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	channel_id BIGINT NOT NULL,
+	channel_name TEXT NOT NULL,
+	guild_id BIGINT NOT NULL,
+
+	trigger_id BIGINT references automod_rule_data(id) ON DELETE SET NULL,
+	trigger_typeid INT NOT NULL, -- backup in case the actual trigger was deleted
+	
+	rule_id BIGINT references automod_rules(id) ON DELETE SET NULL,
+	rule_name TEXT NOT NULL, -- backup in case the rule was deleted
+	ruleset_name TEXT NOT NULL,
+
+	user_id BIGINT NOT NULL,
+	user_name TEXT NOT NULL,
+
+	extradata JSONB NOT NULL 
+);
+
+CREATE INDEX IF NOT EXISTS automod_triggered_rules_guild_idx ON automod_triggered_rules(guild_id);
 `

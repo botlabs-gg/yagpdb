@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/moderation"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -89,6 +90,8 @@ func (vio *AddViolationEffect) UserSettings() []*SettingDef {
 }
 
 func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	logrus.Println("AAAAA")
+
 	settingsCast := settings.(*AddViolationEffectData)
 	violation := &models.AutomodViolation{
 		GuildID: ctxData.GS.ID,
@@ -319,6 +322,17 @@ func (sn *SetNicknameEffect) Description() (description string) {
 func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*SetNicknameEffectData)
 
+	curNick := ""
+	ctxData.GS.RLock()
+	curNick = ctxData.MS.Nick
+	ctxData.GS.RUnlock()
+
+	if curNick == settingsCast.NewName {
+		// Avoid infinite recursion
+		return nil
+	}
+
+	logrus.WithField("guild", ctxData.GS.ID).Info("automod: set nickname: ", settingsCast.NewName)
 	err := common.BotSession.GuildMemberNickname(ctxData.GS.ID, ctxData.MS.ID, settingsCast.NewName)
 	return err
 }

@@ -51,6 +51,7 @@ func (p *Plugin) InitWeb() {
 
 	muxer.Handle(pat.Get("/"), getIndexHandler)
 	muxer.Handle(pat.Get(""), getIndexHandler)
+	muxer.Handle(pat.Get("/logs"), web.ControllerHandler(p.handleGetLogs, "automod_index"))
 
 	muxer.Handle(pat.Post("/new_ruleset"), web.ControllerPostHandler(p.handlePostAutomodCreateRuleset, getIndexHandler, CreateRulesetData{}, "Created a new automod ruleset"))
 
@@ -94,8 +95,42 @@ func (p *Plugin) handleGetAutomodIndex(w http.ResponseWriter, r *http.Request) (
 	tmpl["AutomodLists"] = lists
 	tmpl["AutomodRulesets"] = rulesets
 	tmpl["PartMap"] = RulePartMap
+	tmpl["PartList"] = RulePartList
 
 	return tmpl, nil
+}
+
+func (p *Plugin) handleGetLogs(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	tmpl["InLogs"] = true
+
+	before := r.URL.Query().Get("before")
+	after := r.URL.Query().Get("after")
+
+	var beforeParsed int
+	var afterParsed int
+	if before != "" {
+		beforeParsed, _ = strconv.Atoi(before)
+	} else if after != "" {
+		afterParsed, _ = strconv.Atoi(after)
+	}
+
+	qms := []qm.QueryMod{qm.Where("guild_id=?", g.ID), qm.OrderBy("id desc"), qm.Limit(100)}
+	if beforeParsed != 0 {
+		qms = append(qms, qm.Where("id < ?", beforeParsed))
+	} else if afterParsed != 0 {
+		qms = append(qms, qm.Where("id > ?", afterParsed))
+	}
+
+	entries, err := models.AutomodTriggeredRules(qms...).AllG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl["AutomodLogEntries"] = entries
+
+	return p.handleGetAutomodIndex(w, r)
 }
 
 type CreateRulesetData struct {
@@ -476,18 +511,21 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 	numMessageTriggers := 0
 	numViolationTriggers := 0
 	for _, v := range newParts {
-		for _, mt := range messageTriggers {
-			if v.TypeID == mt {
+		for _, p := range RulePartList {
+			if p.ID != v.TypeID {
+				continue
+			}
+
+			if _, ok := p.Part.(MessageTrigger); ok {
 				numMessageTriggers++
 				break
 			}
-		}
 
-		for _, vt := range violationTriggers {
-			if v.TypeID == vt {
+			if _, ok := p.Part.(ViolationListener); ok {
 				numViolationTriggers++
 				break
 			}
+
 		}
 	}
 
@@ -499,21 +537,19 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 		return
 	}
 	for _, v := range allParts {
-		if numMessageTriggers > 0 {
-			for _, mt := range messageTriggers {
-				if v.TypeID == mt {
-					numMessageTriggers++
-					break
-				}
+		for _, p := range RulePartList {
+			if p.ID != v.TypeID {
+				continue
 			}
-		}
 
-		if numViolationTriggers > 0 {
-			for _, vt := range violationTriggers {
-				if v.TypeID == vt {
-					numViolationTriggers++
-					break
-				}
+			if _, ok := p.Part.(MessageTrigger); ok {
+				numMessageTriggers++
+				break
+			}
+
+			if _, ok := p.Part.(ViolationListener); ok {
+				numViolationTriggers++
+				break
 			}
 		}
 	}

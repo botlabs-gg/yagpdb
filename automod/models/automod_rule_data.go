@@ -52,14 +52,17 @@ var AutomodRuleDatumColumns = struct {
 
 // AutomodRuleDatumRels is where relationship names are stored.
 var AutomodRuleDatumRels = struct {
-	Rule string
+	Rule                         string
+	TriggerAutomodTriggeredRules string
 }{
 	Rule: "Rule",
+	TriggerAutomodTriggeredRules: "TriggerAutomodTriggeredRules",
 }
 
 // automodRuleDatumR is where relationships are stored.
 type automodRuleDatumR struct {
-	Rule *AutomodRule
+	Rule                         *AutomodRule
+	TriggerAutomodTriggeredRules AutomodTriggeredRuleSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -198,6 +201,27 @@ func (o *AutomodRuleDatum) Rule(mods ...qm.QueryMod) automodRuleQuery {
 	return query
 }
 
+// TriggerAutomodTriggeredRules retrieves all the automod_triggered_rule's AutomodTriggeredRules with an executor via trigger_id column.
+func (o *AutomodRuleDatum) TriggerAutomodTriggeredRules(mods ...qm.QueryMod) automodTriggeredRuleQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"automod_triggered_rules\".\"trigger_id\"=?", o.ID),
+	)
+
+	query := AutomodTriggeredRules(queryMods...)
+	queries.SetFrom(query.Query, "\"automod_triggered_rules\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"automod_triggered_rules\".*"})
+	}
+
+	return query
+}
+
 // LoadRule allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (automodRuleDatumL) LoadRule(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAutomodRuleDatum interface{}, mods queries.Applicator) error {
@@ -285,6 +309,90 @@ func (automodRuleDatumL) LoadRule(ctx context.Context, e boil.ContextExecutor, s
 	return nil
 }
 
+// LoadTriggerAutomodTriggeredRules allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (automodRuleDatumL) LoadTriggerAutomodTriggeredRules(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAutomodRuleDatum interface{}, mods queries.Applicator) error {
+	var slice []*AutomodRuleDatum
+	var object *AutomodRuleDatum
+
+	if singular {
+		object = maybeAutomodRuleDatum.(*AutomodRuleDatum)
+	} else {
+		slice = *maybeAutomodRuleDatum.(*[]*AutomodRuleDatum)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &automodRuleDatumR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &automodRuleDatumR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`automod_triggered_rules`), qm.WhereIn(`trigger_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load automod_triggered_rules")
+	}
+
+	var resultSlice []*AutomodTriggeredRule
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice automod_triggered_rules")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on automod_triggered_rules")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for automod_triggered_rules")
+	}
+
+	if singular {
+		object.R.TriggerAutomodTriggeredRules = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &automodTriggeredRuleR{}
+			}
+			foreign.R.Trigger = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.TriggerID) {
+				local.R.TriggerAutomodTriggeredRules = append(local.R.TriggerAutomodTriggeredRules, foreign)
+				if foreign.R == nil {
+					foreign.R = &automodTriggeredRuleR{}
+				}
+				foreign.R.Trigger = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetRuleG of the automodRuleDatum to the related item.
 // Sets o.R.Rule to related.
 // Adds o to related.R.RuleAutomodRuleData.
@@ -335,6 +443,157 @@ func (o *AutomodRuleDatum) SetRule(ctx context.Context, exec boil.ContextExecuto
 		}
 	} else {
 		related.R.RuleAutomodRuleData = append(related.R.RuleAutomodRuleData, o)
+	}
+
+	return nil
+}
+
+// AddTriggerAutomodTriggeredRulesG adds the given related objects to the existing relationships
+// of the automod_rule_datum, optionally inserting them as new records.
+// Appends related to o.R.TriggerAutomodTriggeredRules.
+// Sets related.R.Trigger appropriately.
+// Uses the global database handle.
+func (o *AutomodRuleDatum) AddTriggerAutomodTriggeredRulesG(ctx context.Context, insert bool, related ...*AutomodTriggeredRule) error {
+	return o.AddTriggerAutomodTriggeredRules(ctx, boil.GetContextDB(), insert, related...)
+}
+
+// AddTriggerAutomodTriggeredRules adds the given related objects to the existing relationships
+// of the automod_rule_datum, optionally inserting them as new records.
+// Appends related to o.R.TriggerAutomodTriggeredRules.
+// Sets related.R.Trigger appropriately.
+func (o *AutomodRuleDatum) AddTriggerAutomodTriggeredRules(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AutomodTriggeredRule) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TriggerID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"automod_triggered_rules\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"trigger_id"}),
+				strmangle.WhereClause("\"", "\"", 2, automodTriggeredRulePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TriggerID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &automodRuleDatumR{
+			TriggerAutomodTriggeredRules: related,
+		}
+	} else {
+		o.R.TriggerAutomodTriggeredRules = append(o.R.TriggerAutomodTriggeredRules, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &automodTriggeredRuleR{
+				Trigger: o,
+			}
+		} else {
+			rel.R.Trigger = o
+		}
+	}
+	return nil
+}
+
+// SetTriggerAutomodTriggeredRulesG removes all previously related items of the
+// automod_rule_datum replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Trigger's TriggerAutomodTriggeredRules accordingly.
+// Replaces o.R.TriggerAutomodTriggeredRules with related.
+// Sets related.R.Trigger's TriggerAutomodTriggeredRules accordingly.
+// Uses the global database handle.
+func (o *AutomodRuleDatum) SetTriggerAutomodTriggeredRulesG(ctx context.Context, insert bool, related ...*AutomodTriggeredRule) error {
+	return o.SetTriggerAutomodTriggeredRules(ctx, boil.GetContextDB(), insert, related...)
+}
+
+// SetTriggerAutomodTriggeredRules removes all previously related items of the
+// automod_rule_datum replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Trigger's TriggerAutomodTriggeredRules accordingly.
+// Replaces o.R.TriggerAutomodTriggeredRules with related.
+// Sets related.R.Trigger's TriggerAutomodTriggeredRules accordingly.
+func (o *AutomodRuleDatum) SetTriggerAutomodTriggeredRules(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AutomodTriggeredRule) error {
+	query := "update \"automod_triggered_rules\" set \"trigger_id\" = null where \"trigger_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TriggerAutomodTriggeredRules {
+			queries.SetScanner(&rel.TriggerID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Trigger = nil
+		}
+
+		o.R.TriggerAutomodTriggeredRules = nil
+	}
+	return o.AddTriggerAutomodTriggeredRules(ctx, exec, insert, related...)
+}
+
+// RemoveTriggerAutomodTriggeredRulesG relationships from objects passed in.
+// Removes related items from R.TriggerAutomodTriggeredRules (uses pointer comparison, removal does not keep order)
+// Sets related.R.Trigger.
+// Uses the global database handle.
+func (o *AutomodRuleDatum) RemoveTriggerAutomodTriggeredRulesG(ctx context.Context, related ...*AutomodTriggeredRule) error {
+	return o.RemoveTriggerAutomodTriggeredRules(ctx, boil.GetContextDB(), related...)
+}
+
+// RemoveTriggerAutomodTriggeredRules relationships from objects passed in.
+// Removes related items from R.TriggerAutomodTriggeredRules (uses pointer comparison, removal does not keep order)
+// Sets related.R.Trigger.
+func (o *AutomodRuleDatum) RemoveTriggerAutomodTriggeredRules(ctx context.Context, exec boil.ContextExecutor, related ...*AutomodTriggeredRule) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TriggerID, nil)
+		if rel.R != nil {
+			rel.R.Trigger = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("trigger_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TriggerAutomodTriggeredRules {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TriggerAutomodTriggeredRules)
+			if ln > 1 && i < ln-1 {
+				o.R.TriggerAutomodTriggeredRules[i] = o.R.TriggerAutomodTriggeredRules[ln-1]
+			}
+			o.R.TriggerAutomodTriggeredRules = o.R.TriggerAutomodTriggeredRules[:ln-1]
+			break
+		}
 	}
 
 	return nil
