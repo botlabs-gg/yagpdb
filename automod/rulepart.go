@@ -147,8 +147,9 @@ type TriggeredRuleData struct {
 	ActivatedTriggers []*ParsedPart
 
 	// Optional data that may not be present
-	CS      *dstate.ChannelState
-	Message *discordgo.Message
+	CS                     *dstate.ChannelState
+	Message                *discordgo.Message
+	StrippedMessageContent string // message content stripped of markdown
 
 	RecursionCounter int
 
@@ -193,7 +194,7 @@ func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
 type MessageTrigger interface {
 	RulePart
 
-	CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (isAffected bool, err error)
+	CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (isAffected bool, err error)
 }
 
 // ViolationListener is a trigger that gets triggered on a violation

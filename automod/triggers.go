@@ -81,7 +81,7 @@ func (mc *MentionsTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (mc *MentionsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (mc *MentionsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*MentionsTriggerData)
 	if len(m.Mentions) > dataCast.Treshold {
 		return true, nil
@@ -122,8 +122,8 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 
 var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
 
-func (alc *AnyLinkTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
-	if LinkRegex.MatchString(m.ContentWithMentionsReplaced()) {
+func (alc *AnyLinkTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, stripped string, data interface{}) (bool, error) {
+	if LinkRegex.MatchString(stripped) {
 		return true, nil
 	}
 
@@ -179,7 +179,7 @@ func (wl *WordListTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (wl *WordListTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (wl *WordListTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*WorldListTriggerData)
 
 	list, err := FindFetchGuildList(cs.Guild, dataCast.ListID)
@@ -187,7 +187,7 @@ func (wl *WordListTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Chann
 		return false, err
 	}
 
-	messageFields := strings.Fields(m.ContentWithMentionsReplaced())
+	messageFields := strings.Fields(mdStripped)
 
 	for _, mf := range messageFields {
 		contained := false
@@ -258,7 +258,7 @@ func (dt *DomainTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*DomainTriggerData)
 
 	list, err := FindFetchGuildList(cs.Guild, dataCast.ListID)
@@ -266,7 +266,7 @@ func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 		return false, err
 	}
 
-	matches := LinkRegex.FindAllString(m.Content, -1)
+	matches := LinkRegex.FindAllString(mdStripped, -1)
 
 	for _, v := range matches {
 		if contains, _ := dt.containsDomain(v, list.Content); contains {
@@ -443,10 +443,10 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*AllCapsTriggerData)
 
-	if len(m.Content) < dataCast.MinLength {
+	if len(mdStripped) < dataCast.MinLength {
 		return false, nil
 	}
 
@@ -454,7 +454,7 @@ func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Chan
 	numCaps := 0
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
-	for _, r := range m.Content {
+	for _, r := range mdStripped {
 		if unicode.IsUpper(r) {
 			numCaps++
 			totalCapitalisableChars++
@@ -507,7 +507,7 @@ func (inv *ServerInviteTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (inv *ServerInviteTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (inv *ServerInviteTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	containsBadInvited := automod_legacy.CheckMessageForBadInvites(m.Content, m.GuildID)
 	return containsBadInvited, nil
 }
@@ -542,7 +542,7 @@ func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	if automod_legacy.SafeBrowser == nil {
 		return false, nil
 	}
@@ -625,7 +625,7 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (s *SlowmodeTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (s *SlowmodeTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	settings := data.(*SlowmodeTriggerData)
 
 	within := time.Duration(settings.Interval) * time.Second
@@ -719,7 +719,7 @@ func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	settings := data.(*SlowmodeTriggerData)
 
 	within := time.Duration(settings.Interval) * time.Second
@@ -796,7 +796,7 @@ func (r *MessageRegexTrigger) Description() string {
 	return "Triggers when a message matches the provided regex"
 }
 
-func (r *MessageRegexTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (r *MessageRegexTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*BaseRegexTriggerData)
 
 	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
@@ -813,7 +813,7 @@ func (r *MessageRegexTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Ch
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(m.Content) {
+	if re.MatchString(mdStripped) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -833,7 +833,7 @@ type SpamTriggerData struct {
 	Treshold int
 }
 
-var _ MessageTrigger = (*MessageRegexTrigger)(nil)
+var _ MessageTrigger = (*SpamTrigger)(nil)
 
 type SpamTrigger struct{}
 
@@ -866,9 +866,9 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, data interface{}) (bool, error) {
+func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 
-	mToCheckAgainst := strings.TrimSpace(strings.ToLower(m.Content))
+	mToCheckAgainst := strings.TrimSpace(strings.ToLower(mdStripped))
 
 	count := 1
 

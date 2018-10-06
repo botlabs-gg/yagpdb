@@ -51,13 +51,14 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	stripped := common.StripMarkdown(m.Message.Content)
 	p.CheckTriggers(nil, ms, m.Message, cs, func(trig *ParsedPart) (activated bool, err error) {
 		cast, ok := trig.Part.(MessageTrigger)
 		if !ok {
 			return
 		}
 
-		return cast.CheckMessage(ms, cs, m.Message, trig.ParsedSettings)
+		return cast.CheckMessage(ms, cs, m.Message, stripped, trig.ParsedSettings)
 	})
 }
 
@@ -264,6 +265,10 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 			TriggeredRules:    triggeredRules,
 			ActivatedTriggers: activatedTriggers,
 			Message:           msg,
+		}
+
+		if ctxData.Message != nil {
+			ctxData.StrippedMessageContent = common.StripMarkdown(ctxData.Message.Content)
 		}
 
 		go p.RulesetRulesTriggered(ctxData)

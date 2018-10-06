@@ -162,7 +162,7 @@ table{
                                 <thead>
                                     <tr>
                                         <th >Date (utc)</th>
-                                        <th >User</th>
+                                        <th >User (id)</th>
                                         <th >Ruleset</th>
                                         <th >Rule</th>
                                         <th >Trigger</th>
@@ -172,7 +172,7 @@ table{
                                 <tbody>{{range .AutomodLogEntries}}
                                     <tr>
                                         <td>{{.CreatedAt.Format "2006 Jan 02 15:04"}}</td>
-                                        <td>{{.UserName}}</td>
+                                        <td>{{.UserName}} <small><code>{{.UserID}}</code></small></td>
                                         <td>{{.RulesetName}}</td>
                                         <td>{{.RuleName}}</td>
                                         <td>{{(index $dot.PartMap (.TriggerTypeid)).Name}}</td>
