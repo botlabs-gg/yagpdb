@@ -1,4 +1,4 @@
-package automod
+package automod_legacy
 
 import (
 	"fmt"
@@ -389,11 +389,11 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	}
 
 	// Check safebrowsing
-	if safeBrowser == nil || !s.GoogleSafeBrowsingEnabled {
+	if SafeBrowser == nil || !s.GoogleSafeBrowsingEnabled {
 		return false, "", ""
 	}
 
-	urlThreats, err := safeBrowser.LookupURLs(matches)
+	urlThreats, err := SafeBrowser.LookupURLs(matches)
 	if err != nil {
 		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
 	}

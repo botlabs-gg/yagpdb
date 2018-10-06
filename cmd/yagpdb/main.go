@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/evalphobia/logrus_sentry"
+	"github.com/jonas747/yagpdb/automod"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -22,7 +23,7 @@ import (
 	"github.com/jonas747/yagpdb/web"
 
 	// Plugin imports
-	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/automod_legacy"
 	"github.com/jonas747/yagpdb/autorole"
 	"github.com/jonas747/yagpdb/aylien"
 	"github.com/jonas747/yagpdb/cah"
@@ -132,6 +133,7 @@ func main() {
 	reputation.RegisterPlugin()
 	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
+	automod_legacy.RegisterPlugin()
 	automod.RegisterPlugin()
 	logs.RegisterPlugin()
 	autorole.RegisterPlugin()
