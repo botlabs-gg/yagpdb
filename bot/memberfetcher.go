@@ -56,6 +56,12 @@ func GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberState, error) 
 	return result, nil
 }
 
+func HandleGuildMemberAdd(evt *eventsystem.EventData) {
+	ma := evt.GuildMemberAdd()
+
+	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
+}
+
 // memberFetcher handles a per guild queue for fetching members
 // This is probably overkill as the root cause for the flood of member requests (state being flushed upon guilds becoming unavailble) was fixed
 // But it's here, for better or for worse

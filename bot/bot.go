@@ -68,6 +68,7 @@ func setup() {
 	eventsystem.AddHandler(HandleChannelUpdate, eventsystem.EventChannelUpdate)
 	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
 	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
 }
 
