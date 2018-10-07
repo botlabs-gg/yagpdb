@@ -60,34 +60,20 @@ func RegisterPlugin() {
 	}
 }
 
-type CommandGroupPair struct {
-	Command *models.RoleCommand
-	Group   *models.RoleGroup
-}
-
-func FindAssignRole(ctx context.Context, guildID int64, ms *dstate.MemberState, name string) (gaveRole bool, err error) {
-	cmd, err := models.RoleCommands(qm.Where("guild_id=?", guildID), qm.Where("name ILIKE ?", name)).OneG(ctx)
+func FindToggleRole(ctx context.Context, ms *dstate.MemberState, name string) (gaveRole bool, err error) {
+	cmd, err := models.RoleCommands(qm.Where("guild_id=?", ms.Guild.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
 	if err != nil {
 		return false, err
 	}
-	var group *models.RoleGroup
-	if cmd.RoleGroupID.Valid {
-		group, err = cmd.RoleGroup().OneG(ctx)
-		if err != nil {
-			return false, err
-		}
-	}
 
-	return AssignRole(ctx, guildID, ms, &CommandGroupPair{Command: cmd, Group: group})
+	return CheckToggleRole(ctx, ms, cmd)
 }
 
-// AssignRole attempts to assign the given role command, returns an error if the role does not exists
-// or is unable to receie said role
-func AssignRole(ctx context.Context, guildID int64, ms *dstate.MemberState, cmd *CommandGroupPair) (gaveRole bool, err error) {
+func CanRole(ctx context.Context, ms *dstate.MemberState, cmd *models.RoleCommand) (can bool, err error) {
 	onCD := false
 
 	// First check cooldown
-	if cmd.Group != nil && cmd.Group.Mode == GroupModeSingle {
+	if cmd.R.RoleGroup != nil && cmd.R.RoleGroup.Mode == GroupModeSingle {
 		err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
 			_, replaced, _ := tx.Set(discordgo.StrID(ms.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
 			if replaced {
@@ -101,82 +87,108 @@ func AssignRole(ctx context.Context, guildID int64, ms *dstate.MemberState, cmd 
 		}
 	}
 
-	if err := CanAssignRoleCmdTo(cmd.Command, ms.Roles); err != nil {
+	if err := CanAssignRoleCmdTo(cmd, ms.Roles); err != nil {
 		return false, err
 	}
 
 	// This command belongs to a group, let the group handle it
-	if cmd.Group != nil {
-		return GroupAssignRoleToMember(ctx, cmd.Group, guildID, ms, cmd.Command)
+	if cmd.R.RoleGroup != nil {
+		return GroupCanRole(ctx, ms, cmd)
+	}
+
+	return true, nil
+}
+
+// AssignRole attempts to assign the given role command, returns an error if the role does not exists
+// or is unable to receie said role
+func CheckToggleRole(ctx context.Context, ms *dstate.MemberState, cmd *models.RoleCommand) (gaveRole bool, err error) {
+	if can, err := CanRole(ctx, ms, cmd); !can {
+		return false, err
+	}
+
+	// This command belongs to a group, let the group handle it
+	if cmd.R.RoleGroup != nil {
+		return GroupToggleRole(ctx, ms, cmd)
 	}
 
 	// This is a single command, just toggle it
-	return ToggleRole(guildID, ms, cmd.Command.Role)
+	return ToggleRole(ms, cmd.Role)
 }
 
 // ToggleRole toggles the role of a guildmember, adding it if the member does not have the role and removing it if they do
-func ToggleRole(guildID int64, ms *dstate.MemberState, role int64) (gaveRole bool, err error) {
+func ToggleRole(ms *dstate.MemberState, role int64) (gaveRole bool, err error) {
 	if common.ContainsInt64Slice(ms.Roles, role) {
-		err = common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, role)
-		gaveRole = false
-		return
+		err = common.BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, role)
+		return false, err
 	}
 
-	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, role)
-	gaveRole = true
-	return
+	err = common.BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, role)
+	return true, err
 }
 
-// AssignRoleToMember attempts to assign the given role command, part of this group
-// to the member
-func GroupAssignRoleToMember(ctx context.Context, rg *models.RoleGroup, guildID int64, ms *dstate.MemberState, targetRole *models.RoleCommand) (gaveRole bool, err error) {
+func AssignRole(ctx context.Context, ms *dstate.MemberState, cmd *models.RoleCommand) (gaveRole bool, err error) {
+	if common.ContainsInt64Slice(ms.Roles, cmd.Role) {
+		return false, nil
+	}
+
+	return CheckToggleRole(ctx, ms, cmd)
+}
+
+func RemoveRole(ctx context.Context, ms *dstate.MemberState, cmd *models.RoleCommand) (removedRole bool, err error) {
+	if !common.ContainsInt64Slice(ms.Roles, cmd.Role) {
+		return false, nil
+	}
+
+	return CheckToggleRole(ctx, ms, cmd)
+}
+
+func GroupCanRole(ctx context.Context, ms *dstate.MemberState, targetRole *models.RoleCommand) (can bool, err error) {
+	rg := targetRole.R.RoleGroup
+
 	if len(rg.RequireRoles) > 0 {
 		if !CheckRequiredRoles(rg.RequireRoles, ms.Roles) {
 			err = NewSimpleError("Missing a required role")
-			return
+			return false, err
 		}
 	}
 
 	if len(rg.IgnoreRoles) > 0 {
 		if err = CheckIgnoredRoles(rg.IgnoreRoles, ms.Roles); err != nil {
-			return
+			return false, err
 		}
 	}
 
 	// Default behaviour of groups is no more restrictions than reuiqred and ignore roles
 	if rg.Mode == GroupModeNone {
-		return ToggleRole(guildID, ms, targetRole.Role)
+		return true, nil
 	}
 
 	// First retrieve role commands for this group
 	commands, err := rg.RoleCommands().AllG(ctx)
 	if err != nil {
-		return
+		return false, err
 	}
 
 	if rg.Mode == GroupModeSingle {
-		// If user already has role it's attempting to give itself
+		// If user already has role it's attempting to give itself, assume were trying to remove it
 		if common.ContainsInt64Slice(ms.Roles, targetRole.Role) {
 			if rg.SingleRequireOne {
 				return false, NewGroupError("Need at least one role in group **%s**", rg)
 			}
-			err = common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, targetRole.Role)
-			gaveRole = false
-			return
+
+			return true, nil
 		}
 
 		// Check if the user has any other role commands in this group
 		for _, v := range commands {
 			if common.ContainsInt64Slice(ms.Roles, v.Role) {
-				if rg.SingleAutoToggleOff {
-					common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, v.Role)
-				} else {
+				if !rg.SingleAutoToggleOff {
 					return false, NewGroupError("Max 1 role in group **%s** is allowed", rg)
 				}
 			}
 		}
-		// Finally give the role
-		err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, targetRole.Role)
+
+		// If we got here then we can
 		return true, err
 	}
 
@@ -198,16 +210,55 @@ func GroupAssignRoleToMember(ctx context.Context, rg *models.RoleGroup, guildID 
 	if hasTargetRole {
 		if hasRoles-1 < int(rg.MultipleMin) {
 			err = NewLmitError("Minimum of `%d` roles required in this group", int(rg.MultipleMin))
-			return
+			return false, err
 		}
 	} else {
 		if hasRoles+1 > int(rg.MultipleMax) {
 			err = NewLmitError("Maximum of `%d` roles allowed in this group", int(rg.MultipleMax))
-			return
+			return false, err
 		}
 	}
 
-	return ToggleRole(guildID, ms, targetRole.Role)
+	// If we got here then all checks passed
+	return true, nil
+}
+
+// AssignRoleToMember attempts to assign the given role command, part of this group
+// to the member
+func GroupToggleRole(ctx context.Context, ms *dstate.MemberState, targetRole *models.RoleCommand) (gaveRole bool, err error) {
+	rg := targetRole.R.RoleGroup
+	guildID := targetRole.GuildID
+
+	if can, err := GroupCanRole(ctx, ms, targetRole); !can {
+		return false, err
+	}
+
+	// Default behaviour of groups is no more restrictions than reuiqred and ignore roles
+	if rg.Mode != GroupModeSingle {
+		// We already passed all checks
+		return ToggleRole(ms, targetRole.Role)
+	}
+
+	// If user already has role it's attempting to give itself
+	if common.ContainsInt64Slice(ms.Roles, targetRole.Role) {
+		err = common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, targetRole.Role)
+		return false, err
+	}
+
+	// Check if the user has any other role commands in this group
+	for _, v := range rg.R.RoleCommands {
+		if common.ContainsInt64Slice(ms.Roles, v.Role) {
+			if rg.SingleAutoToggleOff {
+				common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, v.Role)
+			} else {
+				return false, NewGroupError("Max 1 role in group **%s** is allowed", rg)
+			}
+		}
+	}
+
+	// Finally give the role
+	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, targetRole.Role)
+	return true, err
 }
 
 func CanAssignRoleCmdTo(r *models.RoleCommand, memberRoles []int64) error {

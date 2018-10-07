@@ -32,6 +32,7 @@ func (p *Plugin) AddCommands() {
 			ArgSwitches: []*dcmd.ArgDef{
 				&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
 				&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
+				&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
 			},
 			RunFunc: CmdFuncRoleMenu,
 		},
@@ -39,7 +40,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(handleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandler(handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 }
 
@@ -53,7 +54,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	given, err := FindAssignRole(parsed.Context(), parsed.GS.ID, member, parsed.Args[0].Str())
+	given, err := FindToggleRole(parsed.Context(), member, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
