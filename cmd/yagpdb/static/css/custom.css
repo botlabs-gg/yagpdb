@@ -218,14 +218,6 @@ html.sidebar-left-collapsed #nav-footer {
 
 /*Proper Design, f**king bootztrap*/
 
-.card-body.bg-success,
-.card-body.bg-info,
-.card-body.bg-warning,
-.card-body.bg-danger {
-	padding: 2px !important;
-	border-radius: 5px !important;
-}
-
 .card {
 	margin: 4px 0 !important;
 }
