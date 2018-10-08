@@ -186,23 +186,25 @@ func CheckMessage(m *discordgo.Message) bool {
 	cs.Owner.RUnlock()
 	locked = false
 
-	switch highestPunish {
-	case PunishNone:
-		err = moderation.WarnUser(nil, cs.Guild.ID, cs.ID, common.BotUser, member.DGoUser(), "Automoderator: "+punishMsg)
-	case PunishMute:
-		err = moderation.MuteUnmuteUser(nil, true, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
-	case PunishKick:
-		err = moderation.KickUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
-	case PunishBan:
-		err = moderation.BanUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
-	}
+	go func() {
+		switch highestPunish {
+		case PunishNone:
+			err = moderation.WarnUser(nil, cs.Guild.ID, cs.ID, common.BotUser, member.DGoUser(), "Automoderator: "+punishMsg)
+		case PunishMute:
+			err = moderation.MuteUnmuteUser(nil, true, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
+		case PunishKick:
+			err = moderation.KickUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
+		case PunishBan:
+			err = moderation.BanUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
+		}
 
-	// Execute the punishment before removing the message to make sure it's included in logs
-	common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
+		// Execute the punishment before removing the message to make sure it's included in logs
+		common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
 
-	if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
-		logrus.WithError(err).Error("Error carrying out punishment")
-	}
+		if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
+			logrus.WithError(err).Error("Error carrying out punishment")
+		}
+	}()
 
 	return true
 
