@@ -720,7 +720,7 @@ func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
 }
 
 func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	settings := data.(*SlowmodeTriggerData)
+	settings := data.(*MultiMsgMentionTriggerData)
 
 	within := time.Duration(settings.Interval) * time.Second
 	now := time.Now()
@@ -729,7 +729,6 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstat
 
 	cs.Owner.RLock()
 	defer cs.Owner.RUnlock()
-
 	// New messages are at the end
 	for i := len(cs.Messages) - 1; i >= 0; i-- {
 		cMsg := cs.Messages[i]

@@ -49,7 +49,7 @@ func (p *Plugin) commandsMessageFilterFunc(msg *discordgo.Message) bool {
 
 	ms, err := bot.GetMember(msg.GuildID, msg.Author.ID)
 	if err != nil {
-		logrus.WithError(err).Error("automod failed fetching member")
+		logrus.WithError(err).Debug("automod failed fetching member")
 		return true
 	}
 
@@ -439,8 +439,6 @@ func (p *Plugin) FetchGuildRulesets(gs *dstate.GuildState) ([]*ParsedRuleset, er
 			}
 			parsedSets = append(parsedSets, parsed)
 		}
-
-		logrus.WithField("guild", gs.ID).WithField("n_rs", len(rulesets)).Info("fetched rulesets from db")
 
 		return parsedSets, nil
 	})
