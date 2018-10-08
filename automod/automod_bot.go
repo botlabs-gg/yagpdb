@@ -42,6 +42,10 @@ func (p *Plugin) BotInit() {
 
 func (p *Plugin) commandsMessageFilterFunc(msg *discordgo.Message) bool {
 
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID {
+		return false // Pls no panicerinos or banerinos self
+	}
+
 	cs := bot.State.Channel(true, msg.ChannelID)
 	if cs == nil || cs.Guild == nil {
 		return true
