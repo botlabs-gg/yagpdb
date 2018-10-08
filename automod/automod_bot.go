@@ -143,7 +143,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 			continue
 		}
 
-		// sort them in order from highest to lowest treshold
+		// sort them in order from highest to lowest threshold
 		sort.Slice(activatedTriggers, func(i, j int) bool {
 			d1 := activatedTriggers[i].ParsedSettings.(*ViolationsTriggerData)
 			d2 := activatedTriggers[j].ParsedSettings.(*ViolationsTriggerData)

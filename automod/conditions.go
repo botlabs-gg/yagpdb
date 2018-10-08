@@ -315,10 +315,10 @@ func (ac *AccountAgeCondition) Name() string {
 
 func (ac *AccountAgeCondition) Description() string {
 	if ac.Below {
-		return "Ignore users whose accounts age is greater than the specified treshold"
+		return "Ignore users whose accounts age is greater than the specified threshold"
 	}
 
-	return "Ignore users whose accounts age is less than the specified treshold"
+	return "Ignore users whose accounts age is less than the specified threshold"
 }
 
 func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
@@ -338,7 +338,7 @@ func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings interface
 	minutes := int(time.Since(created).Minutes())
 	logrus.Println(minutes)
 	if minutes <= settingsCast.Treshold {
-		// account were made within treshold
+		// account were made within threshold
 		if ac.Below {
 			return true, nil
 		} else {
@@ -346,7 +346,7 @@ func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings interface
 		}
 	}
 
-	// account is older than treshold
+	// account is older than threshold
 	if ac.Below {
 		return false, nil
 	} else {
@@ -410,7 +410,7 @@ func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{
 	minutes := int(time.Since(data.MS.JoinedAt).Minutes())
 
 	if minutes <= settingsCast.Treshold {
-		// joined within treshold
+		// joined within threshold
 		if mc.Below {
 			return true, nil
 		} else {
@@ -418,7 +418,7 @@ func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{
 		}
 	}
 
-	// joined before treshold
+	// joined before threshold
 	if mc.Below {
 		return false, nil
 	} else {
