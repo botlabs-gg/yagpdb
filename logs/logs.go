@@ -136,6 +136,10 @@ func CreateChannelLog(config *GuildLoggingConfig, guildID, channelID int64, auth
 	}
 
 	cs := bot.State.Channel(true, channelID)
+	if cs == nil {
+		return nil, errors.New("Unknown channel")
+	}
+
 	// Make a light copy of the channel
 	channel := cs.Copy(true, false)
 

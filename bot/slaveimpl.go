@@ -14,7 +14,10 @@ import (
 )
 
 // Slave implementation
-type SlaveImpl struct{}
+type SlaveImpl struct {
+	lastTimeFreedMemory   time.Time
+	lastTimeFreedMemorymu sync.Mutex
+}
 
 var _ slave.Bot = (*SlaveImpl)(nil)
 
@@ -80,7 +83,17 @@ func (s *SlaveImpl) StartShardTransferTo(numShards int) {
 }
 
 func (s *SlaveImpl) StopShard(shard int) (sessionID string, sequence int64) {
-	debug.FreeOSMemory()
+	s.lastTimeFreedMemorymu.Lock()
+	freeMem := false
+	if time.Since(s.lastTimeFreedMemory) > time.Minute {
+		freeMem = true
+		s.lastTimeFreedMemory = time.Now()
+	}
+	s.lastTimeFreedMemorymu.Unlock()
+
+	if freeMem {
+		debug.FreeOSMemory()
+	}
 
 	err := ShardManager.Sessions[shard].Close()
 	if err != nil {

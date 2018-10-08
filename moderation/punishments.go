@@ -429,7 +429,7 @@ func WarnUser(config *Config, guildID, channelID int64, author *discordgo.User, 
 		return common.ErrWithCaller(err)
 	}
 
-	if config.WarnIncludeChannelLogs {
+	if config.WarnIncludeChannelLogs && channelID != 0 {
 		warning.LogsLink = CreateLogs(guildID, channelID, author)
 	}
 

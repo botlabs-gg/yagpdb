@@ -1,4 +1,4 @@
-package automod
+package automod_legacy
 
 // This list is in alphabethical order
 // Open a pr or bug me on discord if you want a word added
@@ -17,7 +17,7 @@ var BuiltinSwearWords = map[string]bool{
 	"bollok":      true,
 	"boner":       true,
 	"boob":        true,
-	"boobs":        true,
+	"boobs":       true,
 	"buttplug":    true,
 	"clitoris":    true,
 	"cock":        true,
