@@ -277,10 +277,11 @@ func (p *Plugin) handlePostAutomodCreateRule(w http.ResponseWriter, r *http.Requ
 
 	ruleset := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
 
-	totalRules, err := models.AutomodRuleData(qm.Where("guild_id = ? ", g.ID)).CountG(r.Context())
+	totalRules, err := models.AutomodRules(qm.Where("guild_id = ? ", g.ID)).CountG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
+
 	if totalRules >= int64(GuildMaxTotalRules(g.ID)) {
 		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Reached max number of rules, %d for normal servers and %d for premium servers", MaxTotalRules, MaxTotalRulesPremium)))
 		return tmpl, nil

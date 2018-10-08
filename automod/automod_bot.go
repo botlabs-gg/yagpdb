@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/sirupsen/logrus"
@@ -21,7 +22,9 @@ import (
 const PubSubEvtCleaCache = "automod_2_clear_guild_cache"
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(p.handleMessageCreate, eventsystem.EventMessageCreate)
+
+	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, p.commandsMessageFilterFunc)
+
 	eventsystem.AddHandler(p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 
 	pubsub.AddHandler(PubSubEvtCleaCache, func(evt *pubsub.Event) {
@@ -37,28 +40,27 @@ func (p *Plugin) BotInit() {
 	}, nil)
 }
 
-func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
-	m := evt.MessageCreate()
+func (p *Plugin) commandsMessageFilterFunc(msg *discordgo.Message) bool {
 
-	cs := bot.State.Channel(true, m.ChannelID)
+	cs := bot.State.Channel(true, msg.ChannelID)
 	if cs == nil || cs.Guild == nil {
-		return
+		return true
 	}
 
-	ms, err := bot.GetMember(m.GuildID, m.Author.ID)
+	ms, err := bot.GetMember(msg.GuildID, msg.Author.ID)
 	if err != nil {
 		logrus.WithError(err).Error("automod failed fetching member")
-		return
+		return true
 	}
 
-	stripped := common.StripMarkdown(m.Message.Content)
-	p.CheckTriggers(nil, ms, m.Message, cs, func(trig *ParsedPart) (activated bool, err error) {
+	stripped := common.StripMarkdown(msg.Content)
+	return !p.CheckTriggers(nil, ms, msg, cs, func(trig *ParsedPart) (activated bool, err error) {
 		cast, ok := trig.Part.(MessageTrigger)
 		if !ok {
 			return
 		}
 
-		return cast.CheckMessage(ms, cs, m.Message, stripped, trig.ParsedSettings)
+		return cast.CheckMessage(ms, cs, msg, stripped, trig.ParsedSettings)
 	})
 }
 
@@ -178,7 +180,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 		cClone.CurrentRule = nil
 
 		go p.RulesetRulesTriggered(cClone)
-		logrus.Println("Triggered violation rules: ", finalTriggeredRules, ctxData.GS.ID)
+		logrus.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(finalTriggeredRules), " violation rules")
 	}
 }
 
@@ -207,19 +209,21 @@ func (p *Plugin) checkNickname(ms *dstate.MemberState) {
 	})
 }
 
-func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState, msg *discordgo.Message, cs *dstate.ChannelState, checkF func(trp *ParsedPart) (activated bool, err error)) {
+func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState, msg *discordgo.Message, cs *dstate.ChannelState, checkF func(trp *ParsedPart) (activated bool, err error)) bool {
 	if rulesets == nil {
 		var err error
 		rulesets, err = p.FetchGuildRulesets(ms.Guild)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", ms.Guild.ID).Error("automod: failed fetching triggers")
-			return
+			return false
 		}
 
 		if len(rulesets) < 1 {
-			return
+			return false
 		}
 	}
+
+	activatededRules := false
 
 	for _, rs := range rulesets {
 		if !rs.RSModel.Enabled {
@@ -272,8 +276,12 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 		}
 
 		go p.RulesetRulesTriggered(ctxData)
-		logrus.Println("Triggered rules: ", triggeredRules, ms.Guild.ID)
+		activatededRules = true
+
+		logrus.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(triggeredRules), " rules")
 	}
+
+	return activatededRules
 }
 
 func (p *Plugin) RulesetRulesTriggered(ctxData *TriggeredRuleData) {

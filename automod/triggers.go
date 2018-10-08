@@ -83,7 +83,7 @@ func (mc *MentionsTrigger) UserSettings() []*SettingDef {
 
 func (mc *MentionsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*MentionsTriggerData)
-	if len(m.Mentions) > dataCast.Treshold {
+	if len(m.Mentions) >= dataCast.Treshold {
 		return true, nil
 	}
 
