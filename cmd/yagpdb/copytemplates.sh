@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cp ../../automod/assets/* templates/plugins/
+cp ../../automod_legacy/assets/* templates/plugins/
 cp ../../autorole/assets/* templates/plugins/
 cp ../../commands/assets/* templates/plugins/
 cp ../../customcommands/assets/* templates/plugins/
