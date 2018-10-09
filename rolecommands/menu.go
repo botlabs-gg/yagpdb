@@ -409,6 +409,11 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 		return "An error occured giving you the role", err
 	}
 
+	if member.Bot {
+		// ignore bots
+		return "", nil
+	}
+
 	if rm.RemoveRoleOnReactionRemove {
 		//  Strictly assign or remove based on wether the reaction was added or removed
 		if raAdd {
