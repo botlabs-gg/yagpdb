@@ -90,8 +90,6 @@ func (vio *AddViolationEffect) UserSettings() []*SettingDef {
 }
 
 func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
-	logrus.Println("AAAAA")
-
 	settingsCast := settings.(*AddViolationEffectData)
 	violation := &models.AutomodViolation{
 		GuildID: ctxData.GS.ID,
@@ -109,6 +107,8 @@ func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interf
 	newData.PreviousReasons = append(newData.PreviousReasons, ctxData.ConstructReason(false))
 	newData.RecursionCounter++
 	go ctxData.Plugin.checkViolationTriggers(newData, settingsCast.Name)
+
+	logrus.Debug("Added violation to ", settingsCast.Name)
 
 	return err
 }

@@ -42,6 +42,10 @@ func (p *Plugin) BotInit() {
 
 func (p *Plugin) commandsMessageFilterFunc(msg *discordgo.Message) bool {
 
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID {
+		return false // Pls no panicerinos or banerinos self
+	}
+
 	cs := bot.State.Channel(true, msg.ChannelID)
 	if cs == nil || cs.Guild == nil {
 		return true
@@ -143,7 +147,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 			continue
 		}
 
-		// sort them in order from highest to lowest treshold
+		// sort them in order from highest to lowest threshold
 		sort.Slice(activatedTriggers, func(i, j int) bool {
 			d1 := activatedTriggers[i].ParsedSettings.(*ViolationsTriggerData)
 			d2 := activatedTriggers[j].ParsedSettings.(*ViolationsTriggerData)
@@ -179,7 +183,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 		cClone.ActivatedTriggers = finalActivatedTriggers
 		cClone.CurrentRule = nil
 
-		go p.RulesetRulesTriggered(cClone)
+		go p.RulesetRulesTriggered(cClone, true)
 		logrus.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(finalTriggeredRules), " violation rules")
 	}
 }
@@ -230,11 +234,34 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 			continue
 		}
 
+		ctxData := &TriggeredRuleData{
+			MS:      ms,
+			CS:      cs,
+			GS:      ms.Guild,
+			Plugin:  p,
+			Ruleset: rs,
+
+			Message: msg,
+		}
+
+		// check if we match all conditions, starting with the ruleset conditions
+		if !p.CheckConditions(ctxData, rs.ParsedConditions) {
+			continue
+		}
+
 		// Check for triggered rules in this ruleset
 		var triggeredRules []*ParsedRule
 		var activatedTriggers []*ParsedPart
 
+	OUTER:
 		for _, rule := range rs.Rules {
+
+			// Check the rule conditions
+			ctxData.CurrentRule = rule
+			if !p.CheckConditions(ctxData, rule.Conditions) {
+				continue OUTER
+			}
+			ctxData.CurrentRule = nil
 
 			for _, trig := range rule.Triggers {
 
@@ -259,23 +286,14 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 			continue
 		}
 
-		ctxData := &TriggeredRuleData{
-			MS:      ms,
-			CS:      cs,
-			GS:      ms.Guild,
-			Plugin:  p,
-			Ruleset: rs,
-
-			TriggeredRules:    triggeredRules,
-			ActivatedTriggers: activatedTriggers,
-			Message:           msg,
-		}
+		ctxData.TriggeredRules = triggeredRules
+		ctxData.ActivatedTriggers = activatedTriggers
 
 		if ctxData.Message != nil {
 			ctxData.StrippedMessageContent = common.StripMarkdown(ctxData.Message.Content)
 		}
 
-		go p.RulesetRulesTriggered(ctxData)
+		go p.RulesetRulesTriggered(ctxData, true)
 		activatededRules = true
 
 		logrus.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(triggeredRules), " rules")
@@ -284,8 +302,13 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 	return activatededRules
 }
 
-func (p *Plugin) RulesetRulesTriggered(ctxData *TriggeredRuleData) {
+func (p *Plugin) RulesetRulesTriggered(ctxData *TriggeredRuleData, checkedConditions bool) {
 	ruleset := ctxData.Ruleset
+
+	if checkedConditions {
+		p.RulesetRulesTriggeredCondsPassed(ruleset, ctxData.TriggeredRules, ctxData)
+		return
+	}
 
 	// check if we match all conditions, starting with the ruleset conditions
 	if !p.CheckConditions(ctxData, ctxData.Ruleset.ParsedConditions) {
@@ -311,7 +334,6 @@ func (p *Plugin) RulesetRulesTriggered(ctxData *TriggeredRuleData) {
 	}
 
 	p.RulesetRulesTriggeredCondsPassed(ruleset, filteredRules, ctxData)
-
 }
 
 func (p *Plugin) CheckConditions(ctxData *TriggeredRuleData, conditions []*ParsedPart) bool {

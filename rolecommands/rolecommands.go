@@ -139,7 +139,8 @@ func RemoveRole(ctx context.Context, ms *dstate.MemberState, cmd *models.RoleCom
 		return false, nil
 	}
 
-	return CheckToggleRole(ctx, ms, cmd)
+	given, err := CheckToggleRole(ctx, ms, cmd)
+	return !given, err
 }
 
 func GroupCanRole(ctx context.Context, ms *dstate.MemberState, targetRole *models.RoleCommand) (can bool, err error) {

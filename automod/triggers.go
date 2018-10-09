@@ -73,7 +73,7 @@ func (mc *MentionsTrigger) Description() string {
 func (mc *MentionsTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
-			Name:    "Treshold",
+			Name:    "Threshold",
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
 			Default: 4,
@@ -855,7 +855,7 @@ func (spam *SpamTrigger) Description() string {
 func (spam *SpamTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
-			Name:    "Treshold",
+			Name:    "Threshold",
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
 			Min:     1,

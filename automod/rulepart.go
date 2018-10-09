@@ -45,7 +45,7 @@ var RulePartMap = map[int]RulePart{
 	206: &MemberAgecondition{Below: false},
 	207: &MemberAgecondition{Below: true},
 	209: &BotCondition{Ignore: true},
-	// Space here incase i wanna bring in another bot condition later
+	210: &BotCondition{Ignore: false},
 	211: &ChannelCategoriesCondition{Blacklist: true},
 	212: &ChannelCategoriesCondition{Blacklist: false},
 
