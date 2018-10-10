@@ -57,7 +57,7 @@ func (p *Plugin) commandsMessageFilterFunc(msg *discordgo.Message) bool {
 		return true
 	}
 
-	stripped := common.StripMarkdown(msg.Content)
+	stripped := RemoveSpecialCharacters(msg.Content)
 	return !p.CheckTriggers(nil, ms, msg, cs, func(trig *ParsedPart) (activated bool, err error) {
 		cast, ok := trig.Part.(MessageTrigger)
 		if !ok {
@@ -290,7 +290,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 		ctxData.ActivatedTriggers = activatedTriggers
 
 		if ctxData.Message != nil {
-			ctxData.StrippedMessageContent = common.StripMarkdown(ctxData.Message.Content)
+			ctxData.StrippedMessageContent = RemoveSpecialCharacters(ctxData.Message.Content)
 		}
 
 		go p.RulesetRulesTriggered(ctxData, true)

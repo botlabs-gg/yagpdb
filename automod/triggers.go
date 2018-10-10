@@ -812,7 +812,7 @@ func (r *MessageRegexTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Ch
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(mdStripped) {
+	if re.MatchString(m.Content) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
