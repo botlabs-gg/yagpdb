@@ -123,7 +123,7 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
 
 func (alc *AnyLinkTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, stripped string, data interface{}) (bool, error) {
-	if LinkRegex.MatchString(stripped) {
+	if LinkRegex.MatchString(m.Content) {
 		return true, nil
 	}
 
@@ -266,7 +266,7 @@ func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 		return false, err
 	}
 
-	matches := LinkRegex.FindAllString(mdStripped, -1)
+	matches := LinkRegex.FindAllString(m.Content, -1)
 
 	for _, v := range matches {
 		if contains, _ := dt.containsDomain(v, list.Content); contains {
