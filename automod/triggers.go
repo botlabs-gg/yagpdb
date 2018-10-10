@@ -1004,7 +1004,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(ms *dstate.MemberState, data i
 		return false, err
 	}
 
-	fields := strings.Fields(ms.Nick)
+	fields := strings.Fields(RemoveSpecialCharacters(ms.Nick))
 
 	for _, mf := range fields {
 		contained := false
