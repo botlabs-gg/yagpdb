@@ -128,7 +128,7 @@ func (cd *ChannelsCondition) Name() string {
 		return "Ignore channels"
 	}
 
-	return "Whitelist channels"
+	return "Active in channels"
 }
 
 func (cd *ChannelsCondition) Description() string {
@@ -216,10 +216,10 @@ func (cd *ChannelCategoriesCondition) DataType() interface{} {
 
 func (cd *ChannelCategoriesCondition) Name() string {
 	if cd.Blacklist {
-		return "Categories ignore"
+		return "Ignore categories"
 	}
 
-	return "Categories whitelist"
+	return "Active in categories"
 }
 
 func (cd *ChannelCategoriesCondition) Description() string {
@@ -380,10 +380,10 @@ func (mc *MemberAgecondition) DataType() interface{} {
 
 func (mc *MemberAgecondition) Name() string {
 	if mc.Below {
-		return "Server Member duration less than"
+		return "Server Member duration below"
 	}
 
-	return "Server Member duration more than"
+	return "Server Member duration above"
 }
 
 func (mc *MemberAgecondition) Description() string {
