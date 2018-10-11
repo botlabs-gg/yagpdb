@@ -44,6 +44,8 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 		return
 	}
 
+	gs.UserCacheDel(true, CacheKeyConfig)
+
 	CheckGuildFull(gs, true)
 }
 
@@ -129,19 +131,18 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	m := evt.GuildMemberUpdate()
 
-	config, err := GetConfig(m.GuildID)
+	gs := bot.State.Guild(true, m.GuildID)
+	if gs == nil {
+		return
+	}
+
+	config, err := BotCachedGetConfig(gs)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
 
 	if !config.Enabled {
-		return
-	}
-
-	gs := bot.State.Guild(true, m.GuildID)
-	if gs == nil {
-		log.WithField("guild", m.GuildID).Error("Guild not found in state")
 		return
 	}
 
@@ -178,7 +179,6 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if !config.Enabled {
 		return
 	}
-
 	gs := bot.State.Guild(true, g.ID)
 	if gs == nil {
 		log.WithField("guild", g.ID).Error("Guild not found in state")
@@ -210,7 +210,12 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	p := evt.PresenceUpdate()
 
-	config, err := GetConfig(p.GuildID)
+	gs := bot.State.Guild(true, p.GuildID)
+	if gs == nil {
+		return
+	}
+
+	config, err := BotCachedGetConfig(gs)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
 		return
@@ -220,15 +225,9 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	gs := bot.State.Guild(true, p.GuildID)
-	if gs == nil {
-		log.WithField("guild", p.GuildID).Error("Failed retrieving guild from state")
-		return
-	}
-
 	ms, err := bot.GetMember(p.GuildID, p.User.ID)
 	if ms == nil || err != nil {
-		log.WithError(err).WithField("guild", p.GuildID).WithField("user", p.User.ID).Error("Failed retrieving member")
+		log.WithError(err).WithField("guild", p.GuildID).WithField("user", p.User.ID).Debug("Failed retrieving member")
 		return
 	}
 
@@ -410,4 +409,22 @@ func DisableStreamingRole(guildID int64) {
 
 	conf.GiveRole = 0
 	conf.Save(guildID)
+}
+
+type CacheKey int
+
+const (
+	CacheKeyConfig CacheKey = iota
+)
+
+func BotCachedGetConfig(gs *dstate.GuildState) (*Config, error) {
+	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+		return GetConfig(gs.ID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(*Config), nil
 }
