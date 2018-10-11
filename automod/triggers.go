@@ -446,7 +446,7 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*AllCapsTriggerData)
 
-	if len(mdStripped) < dataCast.MinLength {
+	if len(m.Content) < dataCast.MinLength {
 		return false, nil
 	}
 
@@ -454,7 +454,7 @@ func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Chan
 	numCaps := 0
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
-	for _, r := range mdStripped {
+	for _, r := range m.Content {
 		if unicode.IsUpper(r) {
 			numCaps++
 			totalCapitalisableChars++
@@ -867,7 +867,7 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 
 func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 
-	mToCheckAgainst := strings.TrimSpace(strings.ToLower(mdStripped))
+	mToCheckAgainst := strings.TrimSpace(strings.ToLower(m.Content))
 
 	count := 1
 
