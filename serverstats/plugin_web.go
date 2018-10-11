@@ -3,6 +3,7 @@ package serverstats
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/null"
@@ -117,6 +118,10 @@ OUTER:
 	}
 
 	err := model.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist("public", "ignore_channels"), boil.Infer())
+	if err == nil {
+		go pubsub.Publish("server_stats_invalidate_cache", ag.ID, nil)
+	}
+
 	return templateData, err
 }
 
