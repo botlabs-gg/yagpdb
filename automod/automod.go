@@ -8,6 +8,8 @@ import (
 	"github.com/karlseguin/ccache"
 	"github.com/sirupsen/logrus"
 	"strconv"
+	"strings"
+	"unicode"
 )
 
 //go:generate sqlboiler --no-hooks psql
@@ -121,4 +123,23 @@ func GuildMaxLists(guildID int64) int {
 	}
 
 	return MaxLists
+}
+
+func RemoveSpecialCharacters(input string) string {
+	var out strings.Builder
+	for _, r := range input {
+		// we replace them with spaces instead to make for a more accurate version
+		// e.g "word1*word2" will become "word1 word2" instead of "word1word2"
+		if unicode.IsPunct(r) {
+			r = ' '
+		}
+
+		if unicode.IsSymbol(r) {
+			r = ' '
+		}
+
+		out.WriteRune(r)
+	}
+
+	return out.String()
 }

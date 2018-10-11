@@ -15,12 +15,24 @@
     margin-bottom: 5px;
 }
 
-.automod-type-column {
-    width: 12em;
+@media(min-width: 500px) {
+    .automod-type-column {
+        width: 17em;
+    }
+
+    .automod-options-column{
+        width: calc(100% - 20em);
+    }
 }
 
-.automod-options-column{
-    width: calc(100% - 15em);
+@media(max-width: 499px) {
+    .automod-type-column {
+        width: 12em;
+    }
+
+    .automod-options-column{
+        width: calc(100% - 15em);
+    }
 }
 
 .automod-delete-column{

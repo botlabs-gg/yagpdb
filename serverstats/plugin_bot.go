@@ -1,13 +1,16 @@
 package serverstats
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -29,8 +32,14 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(HandleMemberAdd, eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(HandleMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
-
 	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
+
+	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
+		gs := bot.State.Guild(true, evt.TargetGuildInt)
+		if gs != nil {
+			gs.UserCacheDel(true, CacheKeyConfig)
+		}
+	}, nil)
 
 	go UpdateStatsLoop()
 }
@@ -135,7 +144,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := GetConfig(evt.Context(), channel.Guild.ID)
+	config, err := BotCachedFetchGuildConfig(evt.Context(), channel.Guild)
 	if err != nil {
 		log.WithError(err).WithField("guild", channel.Guild.ID).Error("Failed retrieving config")
 		return
@@ -152,4 +161,22 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	MarkGuildAsToBeChecked(channel.Guild.ID)
+}
+
+type CacheKey int
+
+const (
+	CacheKeyConfig CacheKey = iota
+)
+
+func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*ServerStatsConfig, error) {
+	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+		return GetConfig(ctx, gs.ID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(*ServerStatsConfig), nil
 }
