@@ -3,18 +3,21 @@ package serverstats
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"strings"
+	"strconv"
+	"time"
 )
 
 type FormData struct {
 	Public         bool
-	IgnoreChannels []string `valid:"channel,false"`
+	IgnoreChannels []int64 `valid:"channel,false"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -55,9 +58,8 @@ func publicHandler(inner publicHandlerFunc, public bool) web.ControllerHandlerFu
 func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
-	var config ServerStatsConfig
-	err := configstore.Cached.GetGuildConfig(r.Context(), activeGuild.ID, &config)
-	if err != nil && err != configstore.ErrNotFound {
+	config, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
 		return templateData, common.ErrWithCaller(err)
 	}
 
@@ -75,15 +77,46 @@ func HandleSaveStatsSettings(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
 
-	newConf := &ServerStatsConfig{
-		GuildConfigModel: configstore.GuildConfigModel{
-			GuildID: ag.ID,
-		},
-		Public:         formData.Public,
-		IgnoreChannels: strings.Join(formData.IgnoreChannels, ","),
+	stringedChannels := ""
+	alreadyAdded := make([]int64, 0, len(formData.IgnoreChannels))
+OUTER:
+	for i, v := range formData.IgnoreChannels {
+		// only add each once
+		for _, ad := range alreadyAdded {
+			if ad == v {
+				continue OUTER
+			}
+		}
+
+		// make sure the channel exists
+		channelExists := false
+		for _, ec := range ag.Channels {
+			if ec.ID == v {
+				channelExists = true
+				break
+			}
+		}
+
+		if !channelExists {
+			continue
+		}
+
+		if i != 0 {
+			stringedChannels += ","
+		}
+
+		alreadyAdded = append(alreadyAdded, v)
+		stringedChannels += strconv.FormatInt(v, 10)
 	}
 
-	err := configstore.SQL.SetGuildConfig(r.Context(), newConf)
+	model := &models.ServerStatsConfig{
+		GuildID:        ag.ID,
+		Public:         null.BoolFrom(formData.Public),
+		IgnoreChannels: null.StringFrom(stringedChannels),
+		CreatedAt:      null.TimeFrom(time.Now()),
+	}
+
+	err := model.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist("public", "ignore_channels"), boil.Infer())
 	return templateData, err
 }
 

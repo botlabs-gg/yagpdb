@@ -1,23 +1,24 @@
 package serverstats
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"context"
+	"database/sql"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/mediocregopher/radix.v3"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/src-d/go-kallax.v1"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-)
-
-var (
-	ServerStatsPeriodStore *models.StatsPeriodStore
 )
 
 type Plugin struct{}
@@ -27,18 +28,15 @@ func (p *Plugin) Name() string {
 }
 
 func RegisterPlugin() {
-	plugin := &Plugin{}
-	common.RegisterPlugin(plugin)
-
-	common.GORM.AutoMigrate(&ServerStatsConfig{})
-	configstore.RegisterConfig(configstore.SQL, &ServerStatsConfig{})
-	ServerStatsPeriodStore = models.NewStatsPeriodStore(common.PQ)
-
 	common.ValidateSQLSchema(DBSchema)
 	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {
-		panic("Failed initializing db schema: " + err.Error())
+		log.WithError(err).Error("serverstats: failed initializing db schema, serverstats will be disabled")
+		return
 	}
+
+	plugin := &Plugin{}
+	common.RegisterPlugin(plugin)
 }
 
 var stopStatsLoop = make(chan *sync.WaitGroup)
@@ -137,7 +135,7 @@ func UpdateGuildStats(guildID int64) error {
 		return err
 	}
 
-	channelAuthorStats := make(map[string]*models.StatsPeriod)
+	channelAuthorStats := make(map[string]*models.ServerStatsPeriod)
 	for _, row := range messageStatsRaw {
 		// 0 = channel, 1 = mid, 2 = author
 		split := strings.Split(row, ":")
@@ -151,38 +149,46 @@ func UpdateGuildStats(guildID int64) error {
 		author := split[2]
 
 		if model, ok := channelAuthorStats[channel+"_"+author]; ok {
-			model.Count++
+			model.Count.Int64++
 		} else {
-			model = &models.StatsPeriod{
-				GuildID:   guildID,
-				ChannelID: common.MustParseInt(channel),
-				UserID:    common.MustParseInt(author),
-				Started:   minAgo, // TODO: we should calculate these from the min max snowflake ids
-				Duration:  time.Minute,
-				Count:     1,
+			model = &models.ServerStatsPeriod{
+				GuildID:   null.Int64From(guildID),
+				ChannelID: null.Int64From(common.MustParseInt(channel)),
+				UserID:    null.Int64From(common.MustParseInt(author)),
+				Started:   null.TimeFrom(minAgo), // TODO: we should calculate these from the min max snowflake ids
+				Duration:  null.Int64From(int64(time.Minute)),
+				Count:     null.Int64From(1),
 			}
 			channelAuthorStats[channel+"_"+author] = model
 		}
 	}
 
-	return ServerStatsPeriodStore.Transaction(func(st *models.StatsPeriodStore) error {
-		for _, model := range channelAuthorStats {
-			err := st.Insert(model)
-			if err != nil {
-				return err
-			}
-		}
+	tx, err := common.PQ.BeginTx(context.Background(), nil)
+	if err != nil {
+		return errors.WithMessage(err, "bginTX")
+	}
 
-		return nil
-	})
+	for _, model := range channelAuthorStats {
+		err = model.Insert(context.Background(), tx, boil.Infer())
+		if err != nil {
+			tx.Rollback()
+			return errors.WithMessage(err, "insert")
+		}
+	}
+
+	err = tx.Commit()
+	err = errors.WithMessage(err, "commit")
+	return err
 }
 
 func UpdateOldStats() {
 	started := time.Now()
-	del, err := ServerStatsPeriodStore.RawExec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '2 days'")
-	log.Infof("ServerStats: Deleted %d records in %s", del, time.Since(started))
+	del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '2 days'")
 	if err != nil {
 		log.WithError(err).Error("ServerStats: Failed deleting old stats")
+	} else if del != nil {
+		affected, _ := del.RowsAffected()
+		log.Infof("ServerStats: Deleted %d records in %s", affected, time.Since(started))
 	}
 }
 
@@ -209,22 +215,23 @@ func RetrieveFullStats(guildID int64) (*FullStats, error) {
 		return nil, err
 	}
 
-	rows, err := ServerStatsPeriodStore.FindAll(models.NewStatsPeriodQuery().FindByGuildID(
-		kallax.Eq, guildID).FindByStarted(kallax.Gt, time.Now().Add(time.Hour*-24)))
+	rows, err := models.ServerStatsPeriods(qm.Where("guild_id = ?", guildID), qm.Where("started > ?", time.Now().Add(time.Hour*-24))).AllG(context.Background())
+	// rows, err := ServerStatsPeriodStore.FindAll(models.NewStatsPeriodQuery().FindByGuildID(
+	// 	kallax.Eq, guildID).FindByStarted(kallax.Gt))
 
-	if err != nil && err != kallax.ErrNotFound {
+	if err != nil {
 		return nil, err
 	}
 
 	// Merge the stats togheter
 	for _, period := range rows {
-		stringedChannel := strconv.FormatInt(period.ChannelID, 10)
+		stringedChannel := strconv.FormatInt(period.ChannelID.Int64, 10)
 		if st, ok := stats.ChannelsHour[stringedChannel]; ok {
-			st.Count += period.Count
+			st.Count += period.Count.Int64
 		} else {
 			stats.ChannelsHour[stringedChannel] = &ChannelStats{
 				Name:  stringedChannel,
-				Count: period.Count,
+				Count: period.Count.Int64,
 			}
 		}
 	}
@@ -309,21 +316,17 @@ func GetChannelMessageStats(raw []string, guildID int64) (map[string]*ChannelSta
 	return channelResult, nil
 }
 
-var _ configstore.PostFetchHandler = (*ServerStatsConfig)(nil)
-
+// ServerStatsConfig represents a configuration for a server
+// reason we dont reference the model directly is because i need to figure out a way to
+// migrate them over to the new schema, painlessly.
 type ServerStatsConfig struct {
-	configstore.GuildConfigModel
 	Public         bool
 	IgnoreChannels string
 
-	ParsedChannels []int64 `gorm:"-"`
+	ParsedChannels []int64
 }
 
-func (c *ServerStatsConfig) GetName() string {
-	return "server_stats_config"
-}
-
-func (s *ServerStatsConfig) PostFetch() {
+func (s *ServerStatsConfig) ParseChannels() {
 	split := strings.Split(s.IgnoreChannels, ",")
 	for _, v := range split {
 		parsed, err := strconv.ParseInt(v, 10, 64)
@@ -333,15 +336,29 @@ func (s *ServerStatsConfig) PostFetch() {
 	}
 }
 
+func configFromModel(model *models.ServerStatsConfig) *ServerStatsConfig {
+	conf := &ServerStatsConfig{
+		Public:         model.Public.Bool,
+		IgnoreChannels: model.IgnoreChannels.String,
+	}
+	conf.ParseChannels()
+
+	return conf
+}
+
 func GetConfig(ctx context.Context, GuildID int64) (*ServerStatsConfig, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	var conf ServerStatsConfig
-	err := configstore.Cached.GetGuildConfig(ctx, GuildID, &conf)
-	if err != nil && err != configstore.ErrNotFound {
-		return &conf, err
+
+	conf, err := models.FindServerStatsConfigG(ctx, GuildID)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
 
-	return &conf, nil
+	if conf == nil {
+		return &ServerStatsConfig{}, nil
+	}
+
+	return configFromModel(conf), nil
 }
