@@ -125,20 +125,36 @@ func GuildMaxLists(guildID int64) int {
 	return MaxLists
 }
 
-func RemoveSpecialCharacters(input string) string {
+func PrepareMessageForWordCheck(input string) string {
 	var out strings.Builder
-	for _, r := range input {
-		// we replace them with spaces instead to make for a more accurate version
-		// e.g "word1*word2" will become "word1 word2" instead of "word1word2"
-		if unicode.IsPunct(r) {
-			r = ' '
+
+	split := strings.Fields(input)
+	for i, w := range split {
+		if i != 0 {
+			out.WriteRune(' ')
 		}
 
-		if unicode.IsSymbol(r) {
-			r = ' '
+		// make 2 variants, 1 with all occurences replaced with space and 1 with all the occurences just removed
+		// this i imagine will solve a low of cases
+		w1 := ""
+		w2 := ""
+
+		for _, r := range w {
+			// we replace them with spaces instead to make for a more accurate version
+			// e.g "word1*word2" will become "word1 word2" instead of "word1word2"
+			if unicode.IsPunct(r) || unicode.IsSymbol(r) {
+				// replace with spaces for w1, and just remove for w2
+				w1 += " "
+			} else {
+				w1 += string(r)
+				w2 += string(r)
+			}
 		}
 
-		out.WriteRune(r)
+		out.WriteString(w1)
+		if w1 != w2 {
+			out.WriteString(" " + w2)
+		}
 	}
 
 	return out.String()
