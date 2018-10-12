@@ -16,7 +16,7 @@ var Command = &commands.YAGCommand{
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		return "The API this comand used has been shut down :(", nil
+		return "The API this command used has been shut down :(", nil
 		// random := true
 		// addr := "http://api.adviceslip.com/advice"
 		// if data.Args[0].Str() != "" {
