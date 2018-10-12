@@ -446,7 +446,7 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	dataCast := data.(*AllCapsTriggerData)
 
-	if len(mdStripped) < dataCast.MinLength {
+	if len(m.Content) < dataCast.MinLength {
 		return false, nil
 	}
 
@@ -454,7 +454,7 @@ func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Chan
 	numCaps := 0
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
-	for _, r := range mdStripped {
+	for _, r := range m.Content {
 		if unicode.IsUpper(r) {
 			numCaps++
 			totalCapitalisableChars++
@@ -867,7 +867,7 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 
 func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 
-	mToCheckAgainst := strings.TrimSpace(strings.ToLower(mdStripped))
+	mToCheckAgainst := strings.TrimSpace(strings.ToLower(m.Content))
 
 	count := 1
 
@@ -877,6 +877,10 @@ func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 
 		if cMsg.Message.ID == m.ID {
 			continue
+		}
+
+		if len(cMsg.Message.Attachments) > 0 {
+			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
 
 		if strings.ToLower(strings.TrimSpace(cMsg.Message.Content)) == mToCheckAgainst {
@@ -1004,7 +1008,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(ms *dstate.MemberState, data i
 		return false, err
 	}
 
-	fields := strings.Fields(RemoveSpecialCharacters(ms.Nick))
+	fields := strings.Fields(PrepareMessageForWordCheck(ms.Nick))
 
 	for _, mf := range fields {
 		contained := false

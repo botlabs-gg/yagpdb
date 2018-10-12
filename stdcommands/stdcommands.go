@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/currentshard"
 	"github.com/jonas747/yagpdb/stdcommands/currenttime"
 	"github.com/jonas747/yagpdb/stdcommands/customembed"
+	"github.com/jonas747/yagpdb/stdcommands/dcallvoice"
 	"github.com/jonas747/yagpdb/stdcommands/define"
 	"github.com/jonas747/yagpdb/stdcommands/findserver"
 	"github.com/jonas747/yagpdb/stdcommands/info"
@@ -89,6 +90,7 @@ func (p *Plugin) AddCommands() {
 		setstatus.Command,
 		createinvite.Command,
 		findserver.Command,
+		dcallvoice.Command,
 	)
 
 }
