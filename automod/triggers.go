@@ -959,8 +959,6 @@ func (r *NicknameRegexTrigger) CheckNickname(ms *dstate.MemberState, data interf
 
 /////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////
-
 var _ NicknameListener = (*NicknameWordlistTrigger)(nil)
 
 type NicknameWordlistTrigger struct {
