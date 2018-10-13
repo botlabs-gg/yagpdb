@@ -134,7 +134,7 @@ func sendPunishDM(config *Config, kick bool, action ModlogAction, gs *dstate.Gui
 	}
 
 	if dmMsg == "" {
-		dmMsg = "You were " + action.String() + "\nReason: {{.Reason}}"
+		dmMsg = "You were " + action.String() + "\n**Reason:** {{.Reason}}"
 	}
 
 	// Execute and send the DM message template
