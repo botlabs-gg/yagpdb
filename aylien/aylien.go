@@ -159,7 +159,7 @@ func (p *Plugin) AddCommands() {
 					case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
 						return "Not likely", nil
 					case resp.PolarityConfidence >= 0.5:
-						return "Definetively not", nil
+						return "Definitively not", nil
 					}
 				}
 				return "Dunno", nil
