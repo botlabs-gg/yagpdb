@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"time"
 )
 
 type Effect interface {
@@ -156,12 +157,16 @@ func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
 
 type BanUserEffect struct{}
 
+type BanUserEffectData struct {
+	Duration int
+}
+
 func (ban *BanUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
 func (ban *BanUserEffect) DataType() interface{} {
-	return nil
+	return &BanUserEffectData{}
 }
 
 func (ban *BanUserEffect) Name() (name string) {
@@ -173,16 +178,26 @@ func (ban *BanUserEffect) Description() (description string) {
 }
 
 func (ban *BanUserEffect) UserSettings() []*SettingDef {
-	return []*SettingDef{}
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Duration (minutes, 0 for permanent)",
+			Key:     "Duration",
+			Kind:    SettingTypeInt,
+			Default: 0,
+		},
+	}
 }
 
 func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*BanUserEffectData)
+
 	var cID int64
 	if ctxData.CS != nil {
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.BanUser(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS.DGoUser())
+	duration := time.Duration(settingsCast.Duration) * time.Minute
+	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS.DGoUser(), duration)
 	return err
 }
 
