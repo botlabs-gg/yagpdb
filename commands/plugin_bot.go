@@ -190,3 +190,26 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
 }
+
+var cmdPrefix = &YAGCommand{
+	Name:        "Prefix",
+	Description: "Shows command prefix of the current server, or the specified server",
+	CmdCategory: CategoryTool,
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "Server ID", Type: dcmd.Int, Default: 0},
+	},
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		targetGuildID := data.Args[0].Int64()
+		if targetGuildID == 0 {
+			targetGuildID = data.GS.ID
+		}
+
+		prefix, err := GetCommandPrefix(targetGuildID)
+		if err != nil {
+			return nil, err
+		}
+
+		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
+	},
+}
