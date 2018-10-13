@@ -879,6 +879,10 @@ func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 			continue
 		}
 
+		if cMsg.Message.Author.ID != m.Author.ID {
+			continue
+		}
+
 		if len(cMsg.Message.Attachments) > 0 {
 			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
