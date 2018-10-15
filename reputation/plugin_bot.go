@@ -180,6 +180,7 @@ var cmds = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "RepLog",
+		Aliases:      []string{"replogs"},
 		Description:  "Shows the rep log for the specified user.",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{

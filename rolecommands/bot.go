@@ -26,7 +26,6 @@ func (p *Plugin) AddCommands() {
 		})
 
 	cmdCreate := &commands.YAGCommand{
-		CmdCategory:         commands.CategoryTool,
 		Name:                "Create",
 		Description:         "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -44,7 +43,6 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdRemoveRoleMenu := &commands.YAGCommand{
-		CmdCategory:         commands.CategoryTool,
 		Name:                "Remove",
 		Description:         "Removes a rolemenu from a message, the message wont be deleted but the bot will now not do anything with reactions on that message",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -56,7 +54,6 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdUpdate := &commands.YAGCommand{
-		CmdCategory:         commands.CategoryTool,
 		Name:                "Update",
 		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -72,7 +69,6 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdResetReactions := &commands.YAGCommand{
-		CmdCategory:         commands.CategoryTool,
 		Name:                "ResetReactions",
 		Description:         "Removes all reactions on this menu and re-adds them, can be used to fix the order",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -84,7 +80,6 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdEditOption := &commands.YAGCommand{
-		CmdCategory:         commands.CategoryTool,
 		Name:                "EditOption",
 		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -105,6 +100,9 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
+	menuContainer.HelpOwnEmbed = true
+	menuContainer.HelpTitleEmoji = "🔘"
+	menuContainer.HelpColor = 0x42b9f4
 }
 
 func (p *Plugin) BotInit() {
