@@ -22,34 +22,40 @@ import (
 
 // ReputationLog is an object representing the database table.
 type ReputationLog struct {
-	ID             int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	GuildID        int64     `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	SenderID       int64     `boil:"sender_id" json:"sender_id" toml:"sender_id" yaml:"sender_id"`
-	ReceiverID     int64     `boil:"receiver_id" json:"receiver_id" toml:"receiver_id" yaml:"receiver_id"`
-	SetFixedAmount bool      `boil:"set_fixed_amount" json:"set_fixed_amount" toml:"set_fixed_amount" yaml:"set_fixed_amount"`
-	Amount         int64     `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
+	ID               int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt        time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	GuildID          int64     `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	SenderID         int64     `boil:"sender_id" json:"sender_id" toml:"sender_id" yaml:"sender_id"`
+	ReceiverID       int64     `boil:"receiver_id" json:"receiver_id" toml:"receiver_id" yaml:"receiver_id"`
+	SetFixedAmount   bool      `boil:"set_fixed_amount" json:"set_fixed_amount" toml:"set_fixed_amount" yaml:"set_fixed_amount"`
+	Amount           int64     `boil:"amount" json:"amount" toml:"amount" yaml:"amount"`
+	ReceiverUsername string    `boil:"receiver_username" json:"receiver_username" toml:"receiver_username" yaml:"receiver_username"`
+	SenderUsername   string    `boil:"sender_username" json:"sender_username" toml:"sender_username" yaml:"sender_username"`
 
 	R *reputationLogR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L reputationLogL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ReputationLogColumns = struct {
-	ID             string
-	CreatedAt      string
-	GuildID        string
-	SenderID       string
-	ReceiverID     string
-	SetFixedAmount string
-	Amount         string
+	ID               string
+	CreatedAt        string
+	GuildID          string
+	SenderID         string
+	ReceiverID       string
+	SetFixedAmount   string
+	Amount           string
+	ReceiverUsername string
+	SenderUsername   string
 }{
-	ID:             "id",
-	CreatedAt:      "created_at",
-	GuildID:        "guild_id",
-	SenderID:       "sender_id",
-	ReceiverID:     "receiver_id",
-	SetFixedAmount: "set_fixed_amount",
-	Amount:         "amount",
+	ID:               "id",
+	CreatedAt:        "created_at",
+	GuildID:          "guild_id",
+	SenderID:         "sender_id",
+	ReceiverID:       "receiver_id",
+	SetFixedAmount:   "set_fixed_amount",
+	Amount:           "amount",
+	ReceiverUsername: "receiver_username",
+	SenderUsername:   "sender_username",
 }
 
 // ReputationLogRels is where relationship names are stored.
@@ -69,9 +75,9 @@ func (*reputationLogR) NewStruct() *reputationLogR {
 type reputationLogL struct{}
 
 var (
-	reputationLogColumns               = []string{"id", "created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount"}
+	reputationLogColumns               = []string{"id", "created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount", "receiver_username", "sender_username"}
 	reputationLogColumnsWithoutDefault = []string{"created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount"}
-	reputationLogColumnsWithDefault    = []string{"id"}
+	reputationLogColumnsWithDefault    = []string{"id", "receiver_username", "sender_username"}
 	reputationLogPrimaryKeyColumns     = []string{"id"}
 )
 

@@ -170,13 +170,20 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return
 	}
 
+	receiver.Guild.RLock()
+	defer receiver.Guild.RUnlock()
+	receiverUsername := receiver.Username + "#" + receiver.StrDiscriminator()
+	senderUsername := sender.Username + "#" + sender.StrDiscriminator()
+
 	// Add the log element
 	entry := &models.ReputationLog{
-		GuildID:        guildID,
-		SenderID:       sender.ID,
-		ReceiverID:     receiver.ID,
-		SetFixedAmount: false,
-		Amount:         amount,
+		GuildID:          guildID,
+		SenderID:         sender.ID,
+		SenderUsername:   senderUsername,
+		ReceiverID:       receiver.ID,
+		ReceiverUsername: receiverUsername,
+		SetFixedAmount:   false,
+		Amount:           amount,
 	}
 
 	err = entry.InsertG(ctx, boil.Infer())
