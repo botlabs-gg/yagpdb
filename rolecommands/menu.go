@@ -182,12 +182,11 @@ OUTER:
 func StrFlags(rm *models.RoleMenu) string {
 	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu update -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
 	rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu update -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
-
 	return nodmFlagHelp + "\n" + rrFlagHelp
 }
 
 func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
-	newMsg := "**Role Menu**: react to give yourself a role\n\n"
+	newMsg := "**Role Menu: " + rm.R.RoleGroup.Name + "**\nReact to give yourself a role.\n\n"
 
 	opts := rm.R.RoleMenuOptions
 	sort.Slice(opts, OptionsLessFunc(opts))
