@@ -28,6 +28,7 @@ type RoleMenuOption struct {
 	EmojiID       int64      `boil:"emoji_id" json:"emoji_id" toml:"emoji_id" yaml:"emoji_id"`
 	UnicodeEmoji  string     `boil:"unicode_emoji" json:"unicode_emoji" toml:"unicode_emoji" yaml:"unicode_emoji"`
 	RoleMenuID    int64      `boil:"role_menu_id" json:"role_menu_id" toml:"role_menu_id" yaml:"role_menu_id"`
+	EmojiAnimated bool       `boil:"emoji_animated" json:"emoji_animated" toml:"emoji_animated" yaml:"emoji_animated"`
 
 	R *roleMenuOptionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L roleMenuOptionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,12 +40,14 @@ var RoleMenuOptionColumns = struct {
 	EmojiID       string
 	UnicodeEmoji  string
 	RoleMenuID    string
+	EmojiAnimated string
 }{
 	ID:            "id",
 	RoleCommandID: "role_command_id",
 	EmojiID:       "emoji_id",
 	UnicodeEmoji:  "unicode_emoji",
 	RoleMenuID:    "role_menu_id",
+	EmojiAnimated: "emoji_animated",
 }
 
 // RoleMenuOptionRels is where relationship names are stored.
@@ -71,9 +74,9 @@ func (*roleMenuOptionR) NewStruct() *roleMenuOptionR {
 type roleMenuOptionL struct{}
 
 var (
-	roleMenuOptionColumns               = []string{"id", "role_command_id", "emoji_id", "unicode_emoji", "role_menu_id"}
+	roleMenuOptionColumns               = []string{"id", "role_command_id", "emoji_id", "unicode_emoji", "role_menu_id", "emoji_animated"}
 	roleMenuOptionColumnsWithoutDefault = []string{"role_command_id", "emoji_id", "unicode_emoji", "role_menu_id"}
-	roleMenuOptionColumnsWithDefault    = []string{"id"}
+	roleMenuOptionColumnsWithDefault    = []string{"id", "emoji_animated"}
 	roleMenuOptionPrimaryKeyColumns     = []string{"id"}
 )
 

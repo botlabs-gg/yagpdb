@@ -20,8 +20,6 @@ import (
 )
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
-	logrus.Println("Weeew")
-
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
@@ -199,7 +197,11 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 
 		emoji := opt.UnicodeEmoji
 		if opt.EmojiID != 0 {
-			emoji = fmt.Sprintf("<:yagpdb:%d>", opt.EmojiID)
+			if opt.EmojiAnimated {
+				emoji = fmt.Sprintf("<a:yagpdb:%d>", opt.EmojiID)
+			} else {
+				emoji = fmt.Sprintf("<:yagpdb:%d>", opt.EmojiID)
+			}
 		}
 
 		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, cmd.Name)
@@ -234,6 +236,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		RoleMenuID:    rm.MessageID,
 		RoleCommandID: rm.NextRoleCommandID,
 		EmojiID:       emoji.ID,
+		EmojiAnimated: emoji.Animated,
 	}
 
 	if emoji.ID == 0 {

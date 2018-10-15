@@ -696,7 +696,7 @@ func testRoleMenuOptionsSelect(t *testing.T) {
 }
 
 var (
-	roleMenuOptionDBTypes = map[string]string{`EmojiID`: `bigint`, `ID`: `bigint`, `RoleCommandID`: `bigint`, `RoleMenuID`: `bigint`, `UnicodeEmoji`: `text`}
+	roleMenuOptionDBTypes = map[string]string{`EmojiAnimated`: `boolean`, `EmojiID`: `bigint`, `ID`: `bigint`, `RoleCommandID`: `bigint`, `RoleMenuID`: `bigint`, `UnicodeEmoji`: `text`}
 	_                     = bytes.MinRead
 )
 

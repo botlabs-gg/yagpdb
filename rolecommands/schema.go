@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS role_menu_options (
 	role_menu_id bigint NOT NULL REFERENCES role_menus(message_id) ON DELETE CASCADE
 );
 
+ALTER TABLE role_menu_options ADD COLUMN IF NOT EXISTS emoji_animated BOOLEAN NOT NULL DEFAULT false;
+
 CREATE INDEX IF NOT EXISTS role_menu_options_role_command_idx ON role_menu_options(role_command_id);
 
 `
