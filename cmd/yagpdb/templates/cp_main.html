@@ -1,6 +1,6 @@
 {{define "cp_head"}}{{if not .PartialRequest}}
 <!DOCTYPE html>
-<html lang="en" class="fixed {{if not .LightTheme}}dark{{else}}sidebar-light{{end}}">
+<html lang="en" class="fixed {{if not .LightTheme}}dark{{else}}sidebar-light{{end}}{{if .SidebarCollapsed}} sidebar-left-collapsed{{end}}">
 
 <head>
 
