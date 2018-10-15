@@ -203,9 +203,7 @@ func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int6
 	}
 
 	// Update
-	r, err := common.PQ.ExecContext(ctx, "UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
-	rows, _ := r.RowsAffected()
-	logrus.Println("Rows: ", rows, userID, guildID)
+	_, err = common.PQ.ExecContext(ctx, "UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
 	return
 }
 
