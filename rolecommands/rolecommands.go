@@ -150,7 +150,7 @@ func GroupCanRole(ctx context.Context, ms *dstate.MemberState, targetRole *model
 
 	if len(rg.RequireRoles) > 0 {
 		if !CheckRequiredRoles(rg.RequireRoles, ms.Roles) {
-			err = NewSimpleError("Missing a required role")
+			err = NewSimpleError("You don't have a required role for this self-assignable role group.")
 			return false, err
 		}
 	}
@@ -268,7 +268,7 @@ func CanAssignRoleCmdTo(r *models.RoleCommand, memberRoles []int64) error {
 
 	if len(r.RequireRoles) > 0 {
 		if !CheckRequiredRoles(r.RequireRoles, memberRoles) {
-			return NewSimpleError("Missing a required role")
+			return NewSimpleError("You don't have a required role for this self-assignable role.")
 		}
 	}
 
