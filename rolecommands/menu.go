@@ -31,13 +31,11 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
+	skipAmount := parsed.Switches["skip"].Int()
+
 	cmdsLen := len(group.R.RoleCommands)
-	if cmdsLen > 20 || cmdsLen < 1 {
-		if cmdsLen < 1 {
-			return "No commands in group, set them up in the control panel.", nil
-		} else {
-			return "Can't do this, that group has over 20 roles in it, but there can only be 20 reactions on 1 message.", nil
-		}
+	if cmdsLen < 1 {
+		return "No commands in group, set them up in the control panel.", nil
 	}
 
 	model := &models.RoleMenu{
@@ -49,6 +47,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		OwnMessage:                 true,
 		DisableSendDM:              parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool),
 		RemoveRoleOnReactionRemove: true,
+		SkipAmount:                 skipAmount,
 	}
 
 	if group != nil {
@@ -137,39 +136,41 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 }
 
 func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, first bool) (resp string, err error) {
-	var nextCmd *models.RoleCommand
 
 	commands := rm.R.RoleGroup.R.RoleCommands
 	sort.Slice(commands, RoleCommandsLessFunc(commands))
 
-	if first {
-		if len(commands) > 0 {
-			nextCmd = commands[0]
-		}
-	} else {
-		// Find next command, making sure we dont do any duplicate ones
+	var nextCmd *models.RoleCommand
 
-	OUTER:
-		for _, cmd := range commands {
-			for _, option := range rm.R.RoleMenuOptions {
-				if cmd.ID == option.RoleCommandID.Int64 {
-					continue OUTER
-				}
+OUTER:
+	for i, cmd := range commands {
+		if i < rm.SkipAmount {
+			continue
+		}
+
+		for _, option := range rm.R.RoleMenuOptions {
+			if cmd.ID == option.RoleCommandID.Int64 {
+				continue OUTER
 			}
-
-			// New command is cmd
-			nextCmd = cmd
-			break
 		}
+
+		// New command is cmd
+		nextCmd = cmd
+		break
 	}
 
-	if nextCmd == nil {
+	if nextCmd == nil || len(rm.R.RoleMenuOptions) >= 20 {
+		extra := ""
+		if len(rm.R.RoleMenuOptions) >= 20 && nextCmd != nil {
+			extra = fmt.Sprintf("\n\nMessages can contain max 20 reactions, couldn't fit them all into this one, you can add the remaining to another menu using `rolemenu create %s -skip %d`", rm.R.RoleGroup.Name, rm.SkipAmount+20)
+			rm.FixedAmount = true
+		}
+
 		rm.State = RoleMenuStateDone
 		rm.UpdateG(ctx, boil.Infer())
 
-		nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu update -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
-		rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu update -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
-		return fmt.Sprintf("Done setting up! you can delete all the messages now (except for the menu itself)\n\nFlags:\n%s\n%s", nodmFlagHelp, rrFlagHelp), nil
+		flagHelp := StrFlags(rm)
+		return fmt.Sprintf("Done setting up! you can delete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
@@ -178,6 +179,13 @@ func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, first bool)
 		return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on this message\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 	}
 	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the **Menu message (not this one)**\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
+}
+
+func StrFlags(rm *models.RoleMenu) string {
+	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu update -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
+	rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu update -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
+
+	return nodmFlagHelp + "\n" + rrFlagHelp
 }
 
 func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
@@ -367,6 +375,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildState, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
 	cmd := option.R.RoleCommand
+	cmd.R.RoleGroup = rm.R.RoleGroup
 
 	member, err := bot.GetMember(gs.ID, userID)
 	if err != nil {

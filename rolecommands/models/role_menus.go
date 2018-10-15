@@ -33,6 +33,8 @@ type RoleMenu struct {
 	RoleGroupID                null.Int64 `boil:"role_group_id" json:"role_group_id,omitempty" toml:"role_group_id" yaml:"role_group_id,omitempty"`
 	DisableSendDM              bool       `boil:"disable_send_dm" json:"disable_send_dm" toml:"disable_send_dm" yaml:"disable_send_dm"`
 	RemoveRoleOnReactionRemove bool       `boil:"remove_role_on_reaction_remove" json:"remove_role_on_reaction_remove" toml:"remove_role_on_reaction_remove" yaml:"remove_role_on_reaction_remove"`
+	FixedAmount                bool       `boil:"fixed_amount" json:"fixed_amount" toml:"fixed_amount" yaml:"fixed_amount"`
+	SkipAmount                 int        `boil:"skip_amount" json:"skip_amount" toml:"skip_amount" yaml:"skip_amount"`
 
 	R *roleMenuR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L roleMenuL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -49,6 +51,8 @@ var RoleMenuColumns = struct {
 	RoleGroupID                string
 	DisableSendDM              string
 	RemoveRoleOnReactionRemove string
+	FixedAmount                string
+	SkipAmount                 string
 }{
 	MessageID:                  "message_id",
 	GuildID:                    "guild_id",
@@ -60,6 +64,8 @@ var RoleMenuColumns = struct {
 	RoleGroupID:                "role_group_id",
 	DisableSendDM:              "disable_send_dm",
 	RemoveRoleOnReactionRemove: "remove_role_on_reaction_remove",
+	FixedAmount:                "fixed_amount",
+	SkipAmount:                 "skip_amount",
 }
 
 // RoleMenuRels is where relationship names are stored.
@@ -89,9 +95,9 @@ func (*roleMenuR) NewStruct() *roleMenuR {
 type roleMenuL struct{}
 
 var (
-	roleMenuColumns               = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "disable_send_dm", "remove_role_on_reaction_remove"}
+	roleMenuColumns               = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount"}
 	roleMenuColumnsWithoutDefault = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id"}
-	roleMenuColumnsWithDefault    = []string{"disable_send_dm", "remove_role_on_reaction_remove"}
+	roleMenuColumnsWithDefault    = []string{"disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount"}
 	roleMenuPrimaryKeyColumns     = []string{"message_id"}
 )
 
