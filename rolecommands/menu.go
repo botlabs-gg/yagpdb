@@ -459,3 +459,33 @@ func messageRemoved(ctx context.Context, id int64) {
 func FindRolemenuFull(ctx context.Context, mID int64) (*models.RoleMenu, error) {
 	return models.RoleMenus(qm.Where("message_id = ?", mID), qm.Load("RoleMenuOptions.RoleCommand"), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
 }
+
+func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
+	mID := data.Args[0].Int64()
+	menu, err := FindRolemenuFull(data.Context(), mID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	err = common.BotSession.MessageReactionsRemoveAll(menu.ChannelID, menu.MessageID)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(menu.R.RoleMenuOptions, OptionsLessFunc(menu.R.RoleMenuOptions))
+
+	for _, option := range menu.R.RoleMenuOptions {
+		emoji := option.UnicodeEmoji
+		if option.EmojiID != 0 {
+			emoji = "aaa:" + discordgo.StrID(option.EmojiID)
+		}
+
+		logrus.Println(emoji)
+		err := common.BotSession.MessageReactionAdd(menu.ChannelID, menu.MessageID, emoji)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
