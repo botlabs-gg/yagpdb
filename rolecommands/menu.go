@@ -201,7 +201,7 @@ func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, opts []*mod
 }
 
 func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu, opts []*models.RoleMenuOption) error {
-	newMsg := "**Role Menu**: react to give yourself a role\n\n"
+	newMsg := "**Role Menu: " + group.Name + "**\nReact to give yourself a role.\n\n"
 
 	pairs := make([]*OptionCommandPair, 0, len(opts))
 	for _, v := range opts {
