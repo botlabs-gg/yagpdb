@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"strings"
+	"time"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -93,7 +94,8 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 }
 
 func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string) {
-	msg, err := templates.NewContext(cs.Guild, cs, ms).Execute(tmpl)
+	ctx := templates.NewContext(cs.Guild, cs, ms)
+	msg, err := ctx.Execute(tmpl)
 
 	if err != nil {
 		log.WithError(err).WithField("guild", cs.Guild.ID).Warnf("Failed parsing/executing %s template", name)
@@ -110,10 +112,18 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 		if err != nil {
 			log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
 		}
-	} else {
+	} else if !ctx.DelResponse {
 		bot.QueueMergedMessage(cs.ID, msg)
+	} else {
+		m, err := common.BotSession.ChannelMessageSend(cs.ID, msg)
+		if err == nil {
+			if ctx.DelResponseDelay > 0 {
+				go common.DelayedMessageDelete(common.BotSession, time.Duration(ctx.DelResponseDelay)*time.Second, cs.ID, m.ID)
+			} else {
+				go bot.MessageDeleteQueue.DeleteMessages(cs.ID, m.ID)
+			}
+		}
 	}
-
 }
 
 func HandleChannelUpdate(evt *eventsystem.EventData) {
