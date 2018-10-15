@@ -27,6 +27,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdCreate := &commands.YAGCommand{
 		Name:                "Create",
+		Aliases:             []string{"c"},
 		Description:         "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -55,6 +56,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdUpdate := &commands.YAGCommand{
 		Name:                "Update",
+		Aliases:             []string{"u"},
 		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -70,6 +72,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdResetReactions := &commands.YAGCommand{
 		Name:                "ResetReactions",
+		Aliases:             []string{"reset"},
 		Description:         "Removes all reactions on this menu and re-adds them, can be used to fix the order",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -81,6 +84,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdEditOption := &commands.YAGCommand{
 		Name:                "EditOption",
+		Aliases:             []string{"edit"},
 		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
