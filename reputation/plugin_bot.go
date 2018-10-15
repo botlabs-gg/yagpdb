@@ -8,9 +8,12 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -112,10 +115,11 @@ var cmds = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "SetRep",
+		Aliases:      []string{"SetRepID"}, // alias for legacy reasons, used to be a standalone command
 		Description:  "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.User},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -125,56 +129,23 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			member, _ := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
-			parsed.GS.RLock()
-
-			if !IsAdmin(parsed.GS, member, conf) {
-				parsed.GS.RUnlock()
+			if member == nil || !IsAdmin(parsed.GS, member, conf) {
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
-			parsed.GS.RUnlock()
 
-			target := parsed.Args[0].Value.(*discordgo.User)
+			targetID := parsed.Args[0].Int64()
+			targetUsername := strconv.FormatInt(targetID, 10)
+			targetMember, _ := bot.GetMember(parsed.GS.ID, targetID)
+			if targetMember != nil {
+				targetUsername = targetMember.Username
+			}
 
-			err = SetRep(parsed.Context(), parsed.GS.ID, member.ID, target.ID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GS.ID, member.ID, targetID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Set **%s** %s to `%d`", target.Username, conf.PointsName, parsed.Args[1].Int()), nil
-		},
-	},
-	&commands.YAGCommand{
-		CmdCategory:  commands.CategoryFun,
-		Name:         "SetRepID",
-		Description:  "Sets someones rep, by userid, this is an admin command and bypasses cooldowns and other restrictions.",
-		RequiredArgs: 2,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.Int},
-			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int},
-		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
-			if err != nil {
-				return "An error occured while finding the server config", err
-			}
-
-			member, _ := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
-			parsed.GS.RLock()
-
-			if !IsAdmin(parsed.GS, member, conf) {
-				parsed.GS.RUnlock()
-				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
-			}
-			parsed.GS.RUnlock()
-
-			target := parsed.Args[0].Int64()
-
-			err = SetRep(parsed.Context(), parsed.GS.ID, member.ID, target, int64(parsed.Args[1].Int()))
-			if err != nil {
-				return nil, err
-			}
-
-			return fmt.Sprintf("Set **%d** %s to `%d`", target, conf.PointsName, parsed.Args[1].Int()), nil
+			return fmt.Sprintf("Set **%s** %s to `%d`", targetUsername, conf.PointsName, parsed.Args[1].Int()), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -192,13 +163,9 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			member, _ := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
-			parsed.GS.RLock()
-
 			if !IsAdmin(parsed.GS, member, conf) {
-				parsed.GS.RUnlock()
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
-			parsed.GS.RUnlock()
 
 			target := parsed.Args[0].Int64()
 
@@ -208,6 +175,106 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			return fmt.Sprintf("Deleted all of %d's %s.", target, conf.PointsName), nil
+		},
+	},
+	&commands.YAGCommand{
+		CmdCategory:  commands.CategoryFun,
+		Name:         "RepLog",
+		Aliases:      []string{"replogs"},
+		Description:  "Shows the rep log for the specified user.",
+		RequiredArgs: 1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "Page", Type: dcmd.Int, Default: 1},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
+			if err != nil {
+				return "An error occured while finding the server config", err
+			}
+
+			member, _ := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
+			if member == nil || !IsAdmin(parsed.GS, member, conf) {
+				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
+			}
+
+			targetID := parsed.Args[0].Int64()
+
+			const entriesPerPage = 20
+			offset := (parsed.Args[1].Int() - 1) * entriesPerPage
+
+			logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", parsed.GS.ID, targetID, targetID), qm.OrderBy("id desc"), qm.Limit(entriesPerPage), qm.Offset(offset)).AllG(parsed.Context())
+			if err != nil {
+				return nil, err
+			}
+
+			if len(logEntries) < 1 {
+				return "No entries", nil
+			}
+
+			// grab the up to date info on as many users as we can
+			membersToGrab := make([]int64, 1, len(logEntries))
+			membersToGrab[0] = targetID
+
+		OUTER:
+			for _, entry := range logEntries {
+				for _, v := range membersToGrab {
+					if entry.ReceiverID == targetID {
+						if v == entry.SenderID {
+							continue OUTER
+						}
+					} else {
+						if v == entry.ReceiverID {
+							continue OUTER
+						}
+					}
+				}
+
+				if entry.ReceiverID == targetID {
+					membersToGrab = append(membersToGrab, entry.SenderID)
+				} else {
+					membersToGrab = append(membersToGrab, entry.ReceiverID)
+				}
+			}
+
+			members, _ := bot.GetMembers(parsed.GS.ID, membersToGrab...)
+
+			// finally display the results
+			var out strings.Builder
+			out.WriteString("```\n")
+			for i, entry := range logEntries {
+				receiver := entry.ReceiverUsername
+				sender := entry.SenderUsername
+
+				for _, v := range members {
+					if v.ID == entry.ReceiverID {
+						receiver = v.Username + "#" + v.StrDiscriminator()
+					}
+					if v.ID == entry.SenderID {
+						sender = v.Username + "#" + v.StrDiscriminator()
+					}
+				}
+
+				if receiver == "" {
+					receiver = discordgo.StrID(entry.ReceiverID)
+				}
+
+				if sender == "" {
+					sender = discordgo.StrID(entry.SenderID)
+				}
+
+				f := "#%2d: %-15s: %s gave %s: %d points"
+				if entry.SetFixedAmount {
+					f = "#%2d: %-15s: %s set %s points to: %d"
+				}
+				out.WriteString(fmt.Sprintf(f, i+offset+1, entry.CreatedAt.UTC().Format("02 Jan 06 15:04"), sender, receiver, entry.Amount))
+				out.WriteRune('\n')
+			}
+
+			out.WriteString("```\n")
+			out.WriteString(fmt.Sprint("Page ", parsed.Args[1].Int()))
+
+			return out.String(), nil
 		},
 	},
 	&commands.YAGCommand{

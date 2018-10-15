@@ -28,6 +28,7 @@ type RoleMenuOption struct {
 	EmojiID       int64      `boil:"emoji_id" json:"emoji_id" toml:"emoji_id" yaml:"emoji_id"`
 	UnicodeEmoji  string     `boil:"unicode_emoji" json:"unicode_emoji" toml:"unicode_emoji" yaml:"unicode_emoji"`
 	RoleMenuID    int64      `boil:"role_menu_id" json:"role_menu_id" toml:"role_menu_id" yaml:"role_menu_id"`
+	EmojiAnimated bool       `boil:"emoji_animated" json:"emoji_animated" toml:"emoji_animated" yaml:"emoji_animated"`
 
 	R *roleMenuOptionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L roleMenuOptionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,27 +40,32 @@ var RoleMenuOptionColumns = struct {
 	EmojiID       string
 	UnicodeEmoji  string
 	RoleMenuID    string
+	EmojiAnimated string
 }{
 	ID:            "id",
 	RoleCommandID: "role_command_id",
 	EmojiID:       "emoji_id",
 	UnicodeEmoji:  "unicode_emoji",
 	RoleMenuID:    "role_menu_id",
+	EmojiAnimated: "emoji_animated",
 }
 
 // RoleMenuOptionRels is where relationship names are stored.
 var RoleMenuOptionRels = struct {
-	RoleCommand string
-	RoleMenu    string
+	RoleCommand            string
+	RoleMenu               string
+	EditingOptionRoleMenus string
 }{
-	RoleCommand: "RoleCommand",
-	RoleMenu:    "RoleMenu",
+	RoleCommand:            "RoleCommand",
+	RoleMenu:               "RoleMenu",
+	EditingOptionRoleMenus: "EditingOptionRoleMenus",
 }
 
 // roleMenuOptionR is where relationships are stored.
 type roleMenuOptionR struct {
-	RoleCommand *RoleCommand
-	RoleMenu    *RoleMenu
+	RoleCommand            *RoleCommand
+	RoleMenu               *RoleMenu
+	EditingOptionRoleMenus RoleMenuSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -71,9 +77,9 @@ func (*roleMenuOptionR) NewStruct() *roleMenuOptionR {
 type roleMenuOptionL struct{}
 
 var (
-	roleMenuOptionColumns               = []string{"id", "role_command_id", "emoji_id", "unicode_emoji", "role_menu_id"}
+	roleMenuOptionColumns               = []string{"id", "role_command_id", "emoji_id", "unicode_emoji", "role_menu_id", "emoji_animated"}
 	roleMenuOptionColumnsWithoutDefault = []string{"role_command_id", "emoji_id", "unicode_emoji", "role_menu_id"}
-	roleMenuOptionColumnsWithDefault    = []string{"id"}
+	roleMenuOptionColumnsWithDefault    = []string{"id", "emoji_animated"}
 	roleMenuOptionPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -208,6 +214,27 @@ func (o *RoleMenuOption) RoleMenu(mods ...qm.QueryMod) roleMenuQuery {
 
 	query := RoleMenus(queryMods...)
 	queries.SetFrom(query.Query, "\"role_menus\"")
+
+	return query
+}
+
+// EditingOptionRoleMenus retrieves all the role_menu's RoleMenus with an executor via editing_option_id column.
+func (o *RoleMenuOption) EditingOptionRoleMenus(mods ...qm.QueryMod) roleMenuQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"role_menus\".\"editing_option_id\"=?", o.ID),
+	)
+
+	query := RoleMenus(queryMods...)
+	queries.SetFrom(query.Query, "\"role_menus\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"role_menus\".*"})
+	}
 
 	return query
 }
@@ -386,6 +413,90 @@ func (roleMenuOptionL) LoadRoleMenu(ctx context.Context, e boil.ContextExecutor,
 	return nil
 }
 
+// LoadEditingOptionRoleMenus allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (roleMenuOptionL) LoadEditingOptionRoleMenus(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRoleMenuOption interface{}, mods queries.Applicator) error {
+	var slice []*RoleMenuOption
+	var object *RoleMenuOption
+
+	if singular {
+		object = maybeRoleMenuOption.(*RoleMenuOption)
+	} else {
+		slice = *maybeRoleMenuOption.(*[]*RoleMenuOption)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &roleMenuOptionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &roleMenuOptionR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`role_menus`), qm.WhereIn(`editing_option_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load role_menus")
+	}
+
+	var resultSlice []*RoleMenu
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice role_menus")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on role_menus")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menus")
+	}
+
+	if singular {
+		object.R.EditingOptionRoleMenus = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &roleMenuR{}
+			}
+			foreign.R.EditingOption = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.EditingOptionID) {
+				local.R.EditingOptionRoleMenus = append(local.R.EditingOptionRoleMenus, foreign)
+				if foreign.R == nil {
+					foreign.R = &roleMenuR{}
+				}
+				foreign.R.EditingOption = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetRoleCommandG of the roleMenuOption to the related item.
 // Sets o.R.RoleCommand to related.
 // Adds o to related.R.RoleMenuOptions.
@@ -530,6 +641,157 @@ func (o *RoleMenuOption) SetRoleMenu(ctx context.Context, exec boil.ContextExecu
 		}
 	} else {
 		related.R.RoleMenuOptions = append(related.R.RoleMenuOptions, o)
+	}
+
+	return nil
+}
+
+// AddEditingOptionRoleMenusG adds the given related objects to the existing relationships
+// of the role_menu_option, optionally inserting them as new records.
+// Appends related to o.R.EditingOptionRoleMenus.
+// Sets related.R.EditingOption appropriately.
+// Uses the global database handle.
+func (o *RoleMenuOption) AddEditingOptionRoleMenusG(ctx context.Context, insert bool, related ...*RoleMenu) error {
+	return o.AddEditingOptionRoleMenus(ctx, boil.GetContextDB(), insert, related...)
+}
+
+// AddEditingOptionRoleMenus adds the given related objects to the existing relationships
+// of the role_menu_option, optionally inserting them as new records.
+// Appends related to o.R.EditingOptionRoleMenus.
+// Sets related.R.EditingOption appropriately.
+func (o *RoleMenuOption) AddEditingOptionRoleMenus(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*RoleMenu) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.EditingOptionID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"role_menus\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"editing_option_id"}),
+				strmangle.WhereClause("\"", "\"", 2, roleMenuPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.MessageID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.EditingOptionID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &roleMenuOptionR{
+			EditingOptionRoleMenus: related,
+		}
+	} else {
+		o.R.EditingOptionRoleMenus = append(o.R.EditingOptionRoleMenus, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &roleMenuR{
+				EditingOption: o,
+			}
+		} else {
+			rel.R.EditingOption = o
+		}
+	}
+	return nil
+}
+
+// SetEditingOptionRoleMenusG removes all previously related items of the
+// role_menu_option replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.EditingOption's EditingOptionRoleMenus accordingly.
+// Replaces o.R.EditingOptionRoleMenus with related.
+// Sets related.R.EditingOption's EditingOptionRoleMenus accordingly.
+// Uses the global database handle.
+func (o *RoleMenuOption) SetEditingOptionRoleMenusG(ctx context.Context, insert bool, related ...*RoleMenu) error {
+	return o.SetEditingOptionRoleMenus(ctx, boil.GetContextDB(), insert, related...)
+}
+
+// SetEditingOptionRoleMenus removes all previously related items of the
+// role_menu_option replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.EditingOption's EditingOptionRoleMenus accordingly.
+// Replaces o.R.EditingOptionRoleMenus with related.
+// Sets related.R.EditingOption's EditingOptionRoleMenus accordingly.
+func (o *RoleMenuOption) SetEditingOptionRoleMenus(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*RoleMenu) error {
+	query := "update \"role_menus\" set \"editing_option_id\" = null where \"editing_option_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.EditingOptionRoleMenus {
+			queries.SetScanner(&rel.EditingOptionID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.EditingOption = nil
+		}
+
+		o.R.EditingOptionRoleMenus = nil
+	}
+	return o.AddEditingOptionRoleMenus(ctx, exec, insert, related...)
+}
+
+// RemoveEditingOptionRoleMenusG relationships from objects passed in.
+// Removes related items from R.EditingOptionRoleMenus (uses pointer comparison, removal does not keep order)
+// Sets related.R.EditingOption.
+// Uses the global database handle.
+func (o *RoleMenuOption) RemoveEditingOptionRoleMenusG(ctx context.Context, related ...*RoleMenu) error {
+	return o.RemoveEditingOptionRoleMenus(ctx, boil.GetContextDB(), related...)
+}
+
+// RemoveEditingOptionRoleMenus relationships from objects passed in.
+// Removes related items from R.EditingOptionRoleMenus (uses pointer comparison, removal does not keep order)
+// Sets related.R.EditingOption.
+func (o *RoleMenuOption) RemoveEditingOptionRoleMenus(ctx context.Context, exec boil.ContextExecutor, related ...*RoleMenu) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.EditingOptionID, nil)
+		if rel.R != nil {
+			rel.R.EditingOption = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("editing_option_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.EditingOptionRoleMenus {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.EditingOptionRoleMenus)
+			if ln > 1 && i < ln-1 {
+				o.R.EditingOptionRoleMenus[i] = o.R.EditingOptionRoleMenus[ln-1]
+			}
+			o.R.EditingOptionRoleMenus = o.R.EditingOptionRoleMenus[:ln-1]
+			break
+		}
 	}
 
 	return nil

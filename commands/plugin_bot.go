@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -42,6 +43,15 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			}
 
 			return resp, err
+		}
+
+		if data.GS != nil {
+			ms, err := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed fetching member")
+			}
+
+			data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ms))
 		}
 
 		// Check if the user can execute the command
@@ -189,4 +199,36 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
 		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
+}
+
+var cmdPrefix = &YAGCommand{
+	Name:        "Prefix",
+	Description: "Shows command prefix of the current server, or the specified server",
+	CmdCategory: CategoryTool,
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "Server ID", Type: dcmd.Int, Default: 0},
+	},
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		targetGuildID := data.Args[0].Int64()
+		if targetGuildID == 0 {
+			targetGuildID = data.GS.ID
+		}
+
+		prefix, err := GetCommandPrefix(targetGuildID)
+		if err != nil {
+			return nil, err
+		}
+
+		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
+	},
+}
+
+func ContextMS(ctx context.Context) *dstate.MemberState {
+	v := ctx.Value(CtxKeyMS)
+	if v == nil {
+		return nil
+	}
+
+	return v.(*dstate.MemberState)
 }
