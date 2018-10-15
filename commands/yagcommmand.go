@@ -312,64 +312,55 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			return
 		}
 
+		member := ContextMS(data.Context())
 		// Check the required and ignored roles
-		if len(settings.RequiredRoles) > 0 || len(settings.IgnoreRoles) > 0 {
-			var member *dstate.MemberState
-			member, err = bot.GetMember(guild.ID, data.Msg.Author.ID)
+		if len(settings.RequiredRoles) > 0 {
+			found := false
+			for _, r := range member.Roles {
+				if common.ContainsInt64Slice(settings.RequiredRoles, r) {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				resp = "Missing a required role set up by the server admins for this command."
+				return
+			}
+		}
+
+		for _, ignored := range settings.IgnoreRoles {
+			if common.ContainsInt64Slice(member.Roles, ignored) {
+				resp = "One of your roles is set up to be ignored by the server admins."
+				return
+			}
+		}
+
+		// This command has permission sets required, if the user has one of them then allow this command to be used
+		if len(yc.RequireDiscordPerms) > 0 {
+			var perms int
+			perms, err = cState.Guild.MemberPermissionsMS(true, cState.ID, member)
 			if err != nil {
-				err = errors.WithMessage(err, "bot.GetMember")
-				resp = "Bot is having issues retrieving your member state"
+				resp = "Unable to check permissions"
 				return
 			}
 
-			if len(settings.RequiredRoles) > 0 {
-				found := false
-				for _, r := range member.Roles {
-					if common.ContainsInt64Slice(settings.RequiredRoles, r) {
-						found = true
-						break
-					}
-				}
-
-				if !found {
-					resp = "Missing a required role set up by the server admins for this command."
-					return
+			foundMatch := false
+			for _, permSet := range yc.RequireDiscordPerms {
+				if permSet&int64(perms) == permSet {
+					foundMatch = true
+					break
 				}
 			}
 
-			for _, ignored := range settings.IgnoreRoles {
-				if common.ContainsInt64Slice(member.Roles, ignored) {
-					resp = "One of your roles is set up to be ignored by the server admins."
-					return
-				}
+			if !foundMatch {
+				resp = "Missing required permissions to use this command (" + yc.humanizedRequiredPerms() + ")"
+				return
 			}
 		}
 	} else {
 		settings = &CommandSettings{
 			Enabled: true,
-		}
-	}
-
-	// This command has permission sets required, if the user has one of them then allow this command to be used
-	if len(yc.RequireDiscordPerms) > 0 {
-		var perms int
-		perms, err = cState.Guild.MemberPermissions(true, cState.ID, data.Msg.Author.ID)
-		if err != nil {
-			resp = "Unable to check permissions"
-			return
-		}
-
-		foundMatch := false
-		for _, permSet := range yc.RequireDiscordPerms {
-			if permSet&int64(perms) == permSet {
-				foundMatch = true
-				break
-			}
-		}
-
-		if !foundMatch {
-			resp = "Missing required permissions to use this command (" + yc.humanizedRequiredPerms() + ")"
-			return
 		}
 	}
 

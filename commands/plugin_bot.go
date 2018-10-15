@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -42,6 +43,15 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			}
 
 			return resp, err
+		}
+
+		if data.GS != nil {
+			ms, err := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed fetching member")
+			}
+
+			data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ms))
 		}
 
 		// Check if the user can execute the command
@@ -212,4 +222,13 @@ var cmdPrefix = &YAGCommand{
 
 		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
 	},
+}
+
+func ContextMS(ctx context.Context) *dstate.MemberState {
+	v := ctx.Value(CtxKeyMS)
+	if v == nil {
+		return nil
+	}
+
+	return v.(*dstate.MemberState)
 }
