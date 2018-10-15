@@ -502,6 +502,21 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 	return nil, nil
 }
 
+func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
+	mID := data.Args[0].Int64()
+	menu, err := FindRolemenuFull(data.Context(), mID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	_, err = menu.DeleteG(data.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	return "Deleted. The bot will no longer listen for reactions on this message, you can even make another menu on it.", nil
+}
+
 func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID)

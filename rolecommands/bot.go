@@ -43,6 +43,18 @@ func (p *Plugin) AddCommands() {
 		RunFunc: cmdFuncRoleMenuCreate,
 	}
 
+	cmdRemoveRoleMenu := &commands.YAGCommand{
+		CmdCategory:         commands.CategoryTool,
+		Name:                "Remove",
+		Description:         "Removes a rolemenu from a message, the message wont be deleted but the bot will now not do anything with reactions on that message",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuRemove,
+	}
+
 	cmdUpdate := &commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "Update",
@@ -89,6 +101,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	menuContainer.AddCommand(cmdCreate, cmdCreate.GetTrigger())
+	menuContainer.AddCommand(cmdRemoveRoleMenu, cmdRemoveRoleMenu.GetTrigger())
 	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
