@@ -46,6 +46,7 @@ ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS disable_send_dm BOOLEAN NOT NULL
 ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS remove_role_on_reaction_remove BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS fixed_amount BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS skip_amount INT NOT NULL DEFAULT 0;
+ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS editing_option_id BIGINT references role_menu_options(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS role_menu_options (
 	id bigserial NOT NULL PRIMARY KEY,

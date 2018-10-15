@@ -35,8 +35,10 @@ const (
 )
 
 const (
-	RoleMenuStateSettingUp = 0
-	RoleMenuStateDone      = 1
+	RoleMenuStateSettingUp              = 0
+	RoleMenuStateDone                   = 1
+	RoleMenuStateEditingOptionSelecting = 2
+	RoleMenuStateEditingOptionReplacing = 3
 )
 
 var (

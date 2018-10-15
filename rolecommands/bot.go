@@ -71,6 +71,18 @@ func (p *Plugin) AddCommands() {
 		RunFunc: cmdFuncRoleMenuResetReactions,
 	}
 
+	cmdEditOption := &commands.YAGCommand{
+		CmdCategory:         commands.CategoryTool,
+		Name:                "EditOption",
+		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuEditOption,
+	}
+
 	menuContainer := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
 	menuContainer.NotFound = func(data *dcmd.Data) (interface{}, error) {
 		return "Unknown rolemenu command, if you've used this before it was recently revamped, try `rolemenu create ...` and `rolemenu update ...` instead.\nSee `help rolemenu` for all rolemenu commands.", nil
@@ -79,6 +91,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
+	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 }
 
 func (p *Plugin) BotInit() {

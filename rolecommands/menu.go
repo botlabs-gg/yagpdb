@@ -330,15 +330,15 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	// Continue setup if were doing that
-	if menu.State == RoleMenuStateSettingUp {
+	if menu.State != RoleMenuStateDone {
 		if !raAdd {
 			// ignore reaction removes in this state
 			return
 		}
 
-		resp, err := ContinueRoleMenuSetup(evt.Context(), menu, emoji, uID)
+		resp, err := MenuReactedNotDone(evt.Context(), menu, emoji, uID)
 		if err != nil {
-			logrus.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup")
+			logrus.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup, or editing menu")
 		}
 
 		if resp != "" {
@@ -500,4 +500,91 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
+	mID := data.Args[0].Int64()
+	menu, err := FindRolemenuFull(data.Context(), mID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	if menu.State != RoleMenuStateDone {
+		return "This menu isn't 'done' (still being edited, or made)", nil
+	}
+
+	menu.State = RoleMenuStateEditingOptionSelecting
+	menu.OwnerID = data.Msg.Author.ID
+	_, err = menu.UpdateG(data.Context(), boil.Whitelist("state", "owner_id"))
+	if err != nil {
+		return "", err
+	}
+	return "React on the emoji for the option you want to change", nil
+}
+
+func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
+	if userID != rm.OwnerID {
+		return "Someone is currently editing or setting up this menu, please wait", nil
+	}
+
+	switch rm.State {
+	case RoleMenuStateSettingUp:
+		return ContinueRoleMenuSetup(ctx, rm, emoji, userID)
+	case RoleMenuStateEditingOptionSelecting:
+		option := findOptionFromEmoji(emoji, rm.R.RoleMenuOptions)
+		if option == nil {
+			return "", nil
+		}
+
+		rm.State = RoleMenuStateEditingOptionReplacing
+		rm.EditingOptionID = null.Int64From(option.ID)
+		_, err := rm.UpdateG(ctx, boil.Whitelist("state", "editing_option_id"))
+		if err != nil {
+			return "", err
+		}
+
+		return "Editing `" + option.R.RoleCommand.Name + "`, select the new emoji for it", nil
+	case RoleMenuStateEditingOptionReplacing:
+		option, err := rm.EditingOption().OneG(ctx)
+		if err != nil {
+			// possible they might have deleted the role in the meantime, so set it to done to prevent a deadlock for this menu
+			rm.State = RoleMenuStateDone
+			rm.UpdateG(ctx, boil.Whitelist("state"))
+			return "", err
+		}
+
+		option.EmojiID = emoji.ID
+		option.EmojiAnimated = emoji.Animated
+		if option.EmojiID == 0 {
+			option.UnicodeEmoji = emoji.Name
+		} else {
+			option.UnicodeEmoji = ""
+		}
+
+		_, err = option.UpdateG(ctx, boil.Infer())
+		if err != nil {
+			return "", err
+		}
+
+		rm.State = RoleMenuStateDone
+		rm.UpdateG(ctx, boil.Whitelist("state"))
+
+		go common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
+
+		if rm.OwnMessage {
+			for _, v := range rm.R.RoleMenuOptions {
+				if v.ID == option.ID {
+					v.EmojiAnimated = option.EmojiAnimated
+					v.EmojiID = option.EmojiID
+					v.UnicodeEmoji = option.UnicodeEmoji
+				}
+			}
+
+			UpdateRoleMenuMessage(ctx, rm)
+		}
+
+		return fmt.Sprintf("Sucessfully edited menu, tip: run `rolemenu resetreactions %d` to clear all reactions so that the order is fixed.", rm.MessageID), nil
+	}
+
+	return "", nil
 }
