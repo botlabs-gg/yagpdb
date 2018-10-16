@@ -13,6 +13,12 @@ import (
 )
 
 func (p *Plugin) AddCommands() {
+	categoryRoleMenu := &dcmd.Category{
+		Name:        "Rolemenu",
+		Description: "Rolemenu commands",
+		HelpEmoji:   "🔘",
+		EmbedColor:  0x42b9f4,
+	}
 
 	commands.AddRootCommands(
 		&commands.YAGCommand{
@@ -27,6 +33,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdCreate := &commands.YAGCommand{
 		Name:                "Create",
+		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"c"},
 		Description:         "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -45,6 +52,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdRemoveRoleMenu := &commands.YAGCommand{
 		Name:                "Remove",
+		CmdCategory:         categoryRoleMenu,
 		Description:         "Removes a rolemenu from a message, the message wont be deleted but the bot will now not do anything with reactions on that message",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -56,6 +64,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdUpdate := &commands.YAGCommand{
 		Name:                "Update",
+		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"u"},
 		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -72,6 +81,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdResetReactions := &commands.YAGCommand{
 		Name:                "ResetReactions",
+		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"reset"},
 		Description:         "Removes all reactions on this menu and re-adds them, can be used to fix the order",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -84,6 +94,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdEditOption := &commands.YAGCommand{
 		Name:                "EditOption",
+		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"edit"},
 		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -104,9 +115,6 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
-	menuContainer.HelpOwnEmbed = true
-	menuContainer.HelpTitleEmoji = "🔘"
-	menuContainer.HelpColor = 0x42b9f4
 }
 
 func (p *Plugin) BotInit() {
