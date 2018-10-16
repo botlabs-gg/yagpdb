@@ -38,7 +38,7 @@
                                             <span class="input-group-prepend">
                                                 <span class="input-group-text"><small>-role</small></span>
                                             </span>
-                                            <input type="text" class="form-control" id="new-role-command-name" name="Name">
+                                            <input type="text" class="form-control" id="new-role-command-name" name="Name" oninput="rolecmdNameInputChanged()">
                                         </div>
                                     </div>
                                 </div>
@@ -51,7 +51,7 @@
                                     </div>
                                     <div class="form-group col">
                                         <label for="new-role-command-role">Role</label>
-                                        <select id="channel" class="form-control" name="Role">
+                                        <select class="form-control" name="Role" id="new-role-command-role" onchange="rolecmdRoleDropdownChanged()">
                                             {{roleOptions .ActiveGuild.Roles .HighestRole}}
                                         </select>
                                     </div>
@@ -163,6 +163,24 @@ function ModeChanged(dropdown, idPrefix){
         idMultiOpts.removeClass("hidden");
         idSingleOpts.addClass("hidden");
     }
+}
+    
+// simple thing to set the selected role to the one that matches the name, if the role dropdown hasn't been touched
+var rolecmdDropdownHasChanged = false
+function rolecmdNameInputChanged(){
+    if(rolecmdDropdownHasChanged) return;
+
+    var newVal = $("#new-role-command-name").val()
+    var opts = $("#new-role-command-role").find("option").each(function(i, v){
+        var $v = $(v)
+        if ($v.text().toLowerCase() == newVal.toLowerCase()){
+            $("#new-role-command-role").val($v.val());
+        }
+    })
+}
+
+function rolecmdRoleDropdownChanged(){
+    rolecmdDropdownHasChanged = true;
 }
 
 $(function(){

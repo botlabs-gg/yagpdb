@@ -353,6 +353,334 @@ func testRoleMenuOptionsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testRoleMenuOptionToManyEditingOptionRoleMenus(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoleMenuOption
+	var b, c RoleMenu
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, roleMenuOptionDBTypes, true, roleMenuOptionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoleMenuOption struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, roleMenuDBTypes, false, roleMenuColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, roleMenuDBTypes, false, roleMenuColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.EditingOptionID, a.ID)
+	queries.Assign(&c.EditingOptionID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	roleMenu, err := a.EditingOptionRoleMenus().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range roleMenu {
+		if queries.Equal(v.EditingOptionID, b.EditingOptionID) {
+			bFound = true
+		}
+		if queries.Equal(v.EditingOptionID, c.EditingOptionID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RoleMenuOptionSlice{&a}
+	if err = a.L.LoadEditingOptionRoleMenus(ctx, tx, false, (*[]*RoleMenuOption)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.EditingOptionRoleMenus); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.EditingOptionRoleMenus = nil
+	if err = a.L.LoadEditingOptionRoleMenus(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.EditingOptionRoleMenus); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", roleMenu)
+	}
+}
+
+func testRoleMenuOptionToManyAddOpEditingOptionRoleMenus(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoleMenuOption
+	var b, c, d, e RoleMenu
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, roleMenuOptionDBTypes, false, strmangle.SetComplement(roleMenuOptionPrimaryKeyColumns, roleMenuOptionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*RoleMenu{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, roleMenuDBTypes, false, strmangle.SetComplement(roleMenuPrimaryKeyColumns, roleMenuColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*RoleMenu{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddEditingOptionRoleMenus(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.EditingOptionID) {
+			t.Error("foreign key was wrong value", a.ID, first.EditingOptionID)
+		}
+		if !queries.Equal(a.ID, second.EditingOptionID) {
+			t.Error("foreign key was wrong value", a.ID, second.EditingOptionID)
+		}
+
+		if first.R.EditingOption != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.EditingOption != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.EditingOptionRoleMenus[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.EditingOptionRoleMenus[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.EditingOptionRoleMenus().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testRoleMenuOptionToManySetOpEditingOptionRoleMenus(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoleMenuOption
+	var b, c, d, e RoleMenu
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, roleMenuOptionDBTypes, false, strmangle.SetComplement(roleMenuOptionPrimaryKeyColumns, roleMenuOptionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*RoleMenu{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, roleMenuDBTypes, false, strmangle.SetComplement(roleMenuPrimaryKeyColumns, roleMenuColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetEditingOptionRoleMenus(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.EditingOptionRoleMenus().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetEditingOptionRoleMenus(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.EditingOptionRoleMenus().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.EditingOptionID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.EditingOptionID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.EditingOptionID) {
+		t.Error("foreign key was wrong value", a.ID, d.EditingOptionID)
+	}
+	if !queries.Equal(a.ID, e.EditingOptionID) {
+		t.Error("foreign key was wrong value", a.ID, e.EditingOptionID)
+	}
+
+	if b.R.EditingOption != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.EditingOption != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.EditingOption != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.EditingOption != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.EditingOptionRoleMenus[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.EditingOptionRoleMenus[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testRoleMenuOptionToManyRemoveOpEditingOptionRoleMenus(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoleMenuOption
+	var b, c, d, e RoleMenu
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, roleMenuOptionDBTypes, false, strmangle.SetComplement(roleMenuOptionPrimaryKeyColumns, roleMenuOptionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*RoleMenu{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, roleMenuDBTypes, false, strmangle.SetComplement(roleMenuPrimaryKeyColumns, roleMenuColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddEditingOptionRoleMenus(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.EditingOptionRoleMenus().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveEditingOptionRoleMenus(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.EditingOptionRoleMenus().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.EditingOptionID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.EditingOptionID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.EditingOption != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.EditingOption != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.EditingOption != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.EditingOption != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.EditingOptionRoleMenus) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.EditingOptionRoleMenus[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.EditingOptionRoleMenus[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testRoleMenuOptionToOneRoleCommandUsingRoleCommand(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -696,7 +1024,7 @@ func testRoleMenuOptionsSelect(t *testing.T) {
 }
 
 var (
-	roleMenuOptionDBTypes = map[string]string{`EmojiID`: `bigint`, `ID`: `bigint`, `RoleCommandID`: `bigint`, `RoleMenuID`: `bigint`, `UnicodeEmoji`: `text`}
+	roleMenuOptionDBTypes = map[string]string{`EmojiAnimated`: `boolean`, `EmojiID`: `bigint`, `ID`: `bigint`, `RoleCommandID`: `bigint`, `RoleMenuID`: `bigint`, `UnicodeEmoji`: `text`}
 	_                     = bytes.MinRead
 )
 

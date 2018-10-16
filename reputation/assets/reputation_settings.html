@@ -88,7 +88,56 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
+<!-- /.row -->            
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Reputation logs</h2>
+            </header>
+
+            <div class="card-body">
+                <div class="row">
+                    <!-- <div class="col">
+                        <input type="text" class="form-control" placeholder="Search by Username">
+                    </div> -->
+                    <div class="col">
+                        <input type="number" id="rep-search-id" class="form-control" placeholder="User ID">
+                    </div>
+                    <div class="col">
+                        <button type="button" id="rep-search-button" class="rep-button btn btn-primary" onclick="yagRepSearch(false, false)">Search</button>
+                        <button type="button" id="rep-newer-button" class="rep-button btn btn-primary hidden" onclick="yagRepSearch(false, true)">Newer</button>
+                        <button type="button" id="rep-older-button" class="rep-button btn btn-primary hidden" onclick="yagRepSearch(true, false)">Older</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th >Date (your local time)</th>
+                                        <th >Sender (id)</th>
+                                        <th >Action</th>
+                                        <th >Receiver (id)</th>
+                                        <th >Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rep-search-results-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
 <!-- /.row -->   
+
 <div class="row">
     <div class="col-lg-12">
         <section class="card card-featured card-featured-danger">
@@ -107,7 +156,86 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
-<!-- /.row -->            
+<!-- /.row -->  
+
+<script type="text/javascript">
+var repOldestID = 0;
+var repNewestID = 0;
+var repIsFirstPage = true;
+
+function yagRepSearch(older, newer){
+    function userCell(username, id){
+        var cell = $("<td>")
+        cell.text(username + " ")
+        cell.append($("<small><code>" + id + "</code></small>"))
+        return cell
+    }
+
+    userIDReq = $("#rep-search-id").val();
+    $("#rep-search-results-body").empty();
+
+    if(!older && !newer){
+        repIsFirstPage = true
+        repOldestID = 0
+        repNewestID = 0
+    }else{
+        repIsFirstPage = false 
+    }
+
+    var url = "/manage/{{.ActiveGuild.ID}}/reputation/logs?user_id="+userIDReq
+    if(older){
+        url += "&before="+repOldestID
+    }else if(newer){
+        url += "&after="+repNewestID
+    }
+
+    $(".rep-button").attr("disabled", true)
+
+    $("#rep-newer-button").addClass("hidden")
+    $("#rep-older-button").addClass("hidden")
+
+    createRequest("GET", url, null, function(){
+        $(".rep-button").attr("disabled", false)
+
+        var parsed = JSON.parse(this.responseText);
+        if(!parsed){
+            $("#rep-search-results-body").append($("<tr><td>no results</td></tr>"));
+            return
+        }
+
+        for(var i = 0; i < parsed.length; i++){
+            var elem = parsed[i]
+            var row = $("<tr>")
+            
+            var createdAt = new Date(elem.created_at)
+
+            row.append($('<td>').text(createdAt.toLocaleString()))            
+            row.append(userCell(elem.sender_username, elem.sender_id))
+            
+            if(elem.set_fixed_amount){
+                row.append($("<td>").text("fixed set"))
+            }else{
+                row.append($("<td>").text("gave"))
+            }
+
+            row.append(userCell(elem.receiver_username, elem.receiver_id))
+            row.append($("<td>").text(elem.amount))
+            
+            $("#rep-search-results-body").append(row);
+        }
+
+        if(!repIsFirstPage){
+            $("#rep-newer-button").removeClass("hidden")
+        }
+        $("#rep-older-button").removeClass("hidden")   
+
+        repOldestID = parsed[parsed.length-1].id
+        repNewestID = parsed[0].id
+    });
+
+}
+</script> 
+
 {{template "cp_footer" .}}
 
 {{end}}

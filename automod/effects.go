@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"time"
 )
 
 type Effect interface {
@@ -117,12 +118,16 @@ func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interf
 
 type KickUserEffect struct{}
 
+type KickUserEffectData struct {
+	CustomReason string `valid:",0,150,trimspace"`
+}
+
 func (kick *KickUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
 func (kick *KickUserEffect) DataType() interface{} {
-	return nil
+	return &KickUserEffectData{}
 }
 
 func (kick *KickUserEffect) Name() (name string) {
@@ -134,17 +139,34 @@ func (kick *KickUserEffect) Description() (description string) {
 }
 
 func (kick *KickUserEffect) UserSettings() []*SettingDef {
-	return []*SettingDef{}
+	return []*SettingDef{
+		&SettingDef{
+			Name: "Custom message (empty for default)",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  150,
+			Kind: SettingTypeString,
+		},
+	}
 }
 
 func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*KickUserEffectData)
+
 	var cID int64
 
 	if ctxData.CS != nil {
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.KickUser(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS.DGoUser())
+	reason := "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		reason += settingsCast.CustomReason
+	} else {
+		reason += ctxData.ConstructReason(true)
+	}
+
+	err := moderation.KickUser(nil, ctxData.GS.ID, cID, common.BotUser, reason, ctxData.MS.DGoUser())
 	return err
 }
 
@@ -156,12 +178,17 @@ func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
 
 type BanUserEffect struct{}
 
+type BanUserEffectData struct {
+	Duration     int
+	CustomReason string `valid:",0,150,trimspace"`
+}
+
 func (ban *BanUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
 func (ban *BanUserEffect) DataType() interface{} {
-	return nil
+	return &BanUserEffectData{}
 }
 
 func (ban *BanUserEffect) Name() (name string) {
@@ -173,16 +200,40 @@ func (ban *BanUserEffect) Description() (description string) {
 }
 
 func (ban *BanUserEffect) UserSettings() []*SettingDef {
-	return []*SettingDef{}
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Duration (minutes, 0 for permanent)",
+			Key:     "Duration",
+			Kind:    SettingTypeInt,
+			Default: 0,
+		},
+		&SettingDef{
+			Name: "Custom message (empty for default)",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  150,
+			Kind: SettingTypeString,
+		},
+	}
 }
 
 func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*BanUserEffectData)
+
 	var cID int64
 	if ctxData.CS != nil {
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.BanUser(nil, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS.DGoUser())
+	reason := "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		reason += settingsCast.CustomReason
+	} else {
+		reason += ctxData.ConstructReason(true)
+	}
+
+	duration := time.Duration(settingsCast.Duration) * time.Minute
+	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, cID, common.BotUser, reason, ctxData.MS.DGoUser(), duration)
 	return err
 }
 
@@ -195,7 +246,8 @@ func (ban *BanUserEffect) MergeDuplicates(data []interface{}) interface{} {
 type MuteUserEffect struct{}
 
 type MuteUserEffectData struct {
-	Duration int
+	Duration     int
+	CustomReason string `valid:",0,150,trimspace"`
 }
 
 func (mute *MuteUserEffect) Kind() RulePartType {
@@ -216,6 +268,13 @@ func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
+		&SettingDef{
+			Name: "Custom message (empty for default)",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  150,
+			Kind: SettingTypeString,
+		},
 	}
 }
 
@@ -235,7 +294,14 @@ func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.MuteUnmuteUser(nil, true, ctxData.GS.ID, cID, common.BotUser, "Automoderator:\n"+ctxData.ConstructReason(true), ctxData.MS, settingsCast.Duration)
+	reason := "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		reason += settingsCast.CustomReason
+	} else {
+		reason += ctxData.ConstructReason(true)
+	}
+
+	err := moderation.MuteUnmuteUser(nil, true, ctxData.GS.ID, cID, common.BotUser, reason, ctxData.MS, settingsCast.Duration)
 	return err
 }
 
@@ -247,16 +313,28 @@ func (mute *MuteUserEffect) MergeDuplicates(data []interface{}) interface{} {
 
 type WarnUserEffect struct{}
 
+type WarnUserEffectData struct {
+	CustomReason string `valid:",0,150,trimspace"`
+}
+
 func (warn *WarnUserEffect) Kind() RulePartType {
 	return RulePartEffect
 }
 
 func (warn *WarnUserEffect) DataType() interface{} {
-	return &MuteUserEffectData{}
+	return &WarnUserEffectData{}
 }
 
 func (warn *WarnUserEffect) UserSettings() []*SettingDef {
-	return []*SettingDef{}
+	return []*SettingDef{
+		&SettingDef{
+			Name: "Custom message (empty for default)",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  150,
+			Kind: SettingTypeString,
+		},
+	}
 }
 
 func (warn *WarnUserEffect) Name() (name string) {
@@ -264,18 +342,25 @@ func (warn *WarnUserEffect) Name() (name string) {
 }
 
 func (warn *WarnUserEffect) Description() (description string) {
-	return "Warns the user"
+	return "Warns the user, with an optional custom warning message"
 }
 
 func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
-	// settingsCast := settings.(*MuteUserEffectData)
+	settingsCast := settings.(*WarnUserEffectData)
 
 	var cID int64
 	if ctxData.CS != nil {
 		cID = ctxData.CS.ID
 	}
 
-	err := moderation.WarnUser(nil, ctxData.GS.ID, cID, common.BotUser, ctxData.MS.DGoUser(), "Automoderator:\n"+ctxData.ConstructReason(true))
+	reason := "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		reason += settingsCast.CustomReason
+	} else {
+		reason += ctxData.ConstructReason(true)
+	}
+
+	err := moderation.WarnUser(nil, ctxData.GS.ID, cID, common.BotUser, ctxData.MS.DGoUser(), reason)
 	return err
 }
 

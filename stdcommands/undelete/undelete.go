@@ -32,7 +32,7 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		resp := "10 last deleted messages (last hour or 12 hours for premium): \n\n"
+		resp := "Up to 10 last deleted messages (last hour or 12 hours for premium): \n\n"
 		numFound := 0
 
 		data.GS.RLock()

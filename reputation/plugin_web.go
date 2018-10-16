@@ -66,6 +66,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post(""), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputation config"))
 	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputation config"))
 	subMux.Handle(pat.Post("/reset_users"), web.ControllerPostHandler(HandleResetReputation, mainGetHandler, nil, "Reset reputation"))
+	subMux.Handle(pat.Get("/logs"), web.APIHandler(HandleLogsJson))
 
 	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
 	web.ServerPubliAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
@@ -165,4 +166,40 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	return entries
+}
+
+func HandleLogsJson(W http.ResponseWriter, r *http.Request) interface{} {
+	activeGuild, _ := web.GetBaseCPContextData(r.Context())
+
+	query := r.URL.Query()
+	after, _ := strconv.ParseInt(query.Get("after"), 10, 64)
+	before, _ := strconv.ParseInt(query.Get("before"), 10, 64)
+
+	// usernameQuery := query.Get("username")
+	idQuery, _ := strconv.ParseInt(query.Get("user_id"), 10, 64)
+
+	var result []*models.ReputationLog
+
+	if idQuery == 0 {
+		return result
+	}
+
+	clauses := make([]qm.QueryMod, 4, 5)
+	clauses[0] = qm.Where("guild_id = ?", activeGuild.ID)
+	clauses[1] = qm.Where("(receiver_id = ? OR sender_id = ?)", idQuery, idQuery)
+	clauses[2] = qm.OrderBy("id desc")
+	clauses[3] = qm.Limit(100)
+
+	if after != 0 {
+		clauses = append(clauses, qm.Where("id > ?", after))
+	} else if before != 0 {
+		clauses = append(clauses, qm.Where("id < ?", before))
+	}
+
+	result, err := models.ReputationLogs(clauses...).AllG(r.Context())
+	if err != nil {
+		return err
+	}
+
+	return result
 }

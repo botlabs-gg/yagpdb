@@ -16,6 +16,7 @@ type CtxKey int
 const (
 	CtxKeyCmdSettings CtxKey = iota
 	CtxKeyChannelOverride
+	CtxKeyMS
 )
 
 type MessageFilterFunc func(msg *discordgo.Message) bool
@@ -62,6 +63,7 @@ func InitCommands() {
 	// We have our own middleware before the argument parsing, this is to check for things such as wether the command is enabled at all
 	CommandSystem.Root.AddMidlewares(YAGCommandMiddleware, dcmd.ArgParserMW)
 	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
+	CommandSystem.Root.AddCommand(cmdPrefix, cmdPrefix.GetTrigger())
 
 	for _, v := range common.Plugins {
 		if adder, ok := v.(CommandProvider); ok {
