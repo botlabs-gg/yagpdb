@@ -37,6 +37,7 @@ $(function(){
 
    	updateSelectedMenuItem(window.location.pathname);
 
+
    	// Update all dropdowns
 	// $(".btn-group .dropdown-menu").dropdownUpdate();
 })
@@ -309,7 +310,10 @@ function addListeners(){
 		$.magnificPopup.close();
 	});
 
-
+	$(window).on("sidebar-left-toggle", function(evt, data){
+		window.localStorage.setItem("sidebar_collapsed", !data.removed);
+		document.cookie = "sidebar_collapsed="+data.added+"; max-age=3153600000; path=/"	
+	})
 }
 
 // Initializes plugins such as multiselect, we have to do this on the new elements each time we load a partial page

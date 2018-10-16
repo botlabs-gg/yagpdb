@@ -19,39 +19,21 @@ import (
 	"sort"
 )
 
-func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
-	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
+func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
+	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
+		if errors.Cause(err) == sql.ErrNoRows {
+			return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
+		}
+
 		return nil, err
 	}
 
-	ok, err := bot.AdminOrPerm(discordgo.PermissionManageServer, member.ID, parsed.CS.ID)
-	if err != nil {
-		return nil, err
-	}
+	skipAmount := parsed.Switches["skip"].Int()
 
-	if !ok {
-		return "You do not have the proper permissions (Manage Server) to create a role menu", nil
-	}
-
-	var group *models.RoleGroup
-	if parsed.Args[0].Value != nil {
-		group, err = models.RoleGroups(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str())).OneG(parsed.Context())
-		if err != nil {
-			if errors.Cause(err) == sql.ErrNoRows {
-				return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
-			}
-
-			return nil, err
-		}
-
-		if c, _ := models.RoleCommands(qm.Where("role_group_id=?", group.ID)).CountG(parsed.Context()); c < 1 || c > 20 {
-			if c < 1 {
-				return "No commands in group, set them up in the control panel.", nil
-			} else {
-				return "Can't do this, that group has over 20 roles in it, but there can only be 20 reactions on 1 message.", nil
-			}
-		}
+	cmdsLen := len(group.R.RoleCommands)
+	if cmdsLen < 1 {
+		return "No commands in group, set them up in the control panel.", nil
 	}
 
 	model := &models.RoleMenu{
@@ -59,9 +41,11 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		OwnerID:   parsed.Msg.Author.ID,
 		ChannelID: parsed.Msg.ChannelID,
 
+		RoleGroupID:                null.Int64From(group.ID),
 		OwnMessage:                 true,
 		DisableSendDM:              parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool),
 		RemoveRoleOnReactionRemove: true,
+		SkipAmount:                 skipAmount,
 	}
 
 	if group != nil {
@@ -79,18 +63,7 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		}
 
 		model.MessageID = id
-
-		// Update menu if its already existing
-		existing, err := models.FindRoleMenuG(parsed.Context(), id)
-		if err == nil {
-			return UpdateMenu(parsed, existing)
-		} else if group == nil {
-			return "No group specified", nil
-		}
 	} else {
-		if group == nil {
-			return "No group specified", nil
-		}
 
 		// set up the message if not provided
 		msg, err = common.BotSession.ChannelMessageSend(parsed.CS.ID, "Role menu\nSetting up...")
@@ -111,7 +84,10 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 		return "Failed setting up menu", err
 	}
 
-	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, nil, true)
+	model.R = model.R.NewStruct()
+	model.R.RoleGroup = group
+
+	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, true)
 
 	if model.OwnMessage {
 		content := msg.Content + "\n" + resp
@@ -122,74 +98,77 @@ func CmdFuncRoleMenu(parsed *dcmd.Data) (interface{}, error) {
 	return resp, err
 }
 
-func UpdateMenu(parsed *dcmd.Data, existing *models.RoleMenu) (interface{}, error) {
-	if existing.State == RoleMenuStateSettingUp {
+func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
+	mID := parsed.Args[0].Int64()
+	menu, err := FindRolemenuFull(parsed.Context(), mID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	return UpdateMenu(parsed, menu)
+}
+
+func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
+	if menu.State == RoleMenuStateSettingUp {
 		return "Already setting this menu up", nil
 	}
 
-	existing.State = RoleMenuStateSettingUp
+	menu.State = RoleMenuStateSettingUp
 
 	if parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool) {
-		existing.DisableSendDM = !existing.DisableSendDM
+		menu.DisableSendDM = !menu.DisableSendDM
 	}
 
 	if parsed.Switches["rr"].Value != nil && parsed.Switches["rr"].Value.(bool) {
-		existing.RemoveRoleOnReactionRemove = !existing.RemoveRoleOnReactionRemove
+		menu.RemoveRoleOnReactionRemove = !menu.RemoveRoleOnReactionRemove
 	}
 
-	existing.UpdateG(parsed.Context(), boil.Infer())
+	menu.UpdateG(parsed.Context(), boil.Infer())
 
-	opts, err := existing.RoleMenuOptions().AllG(parsed.Context())
-	if err != nil && errors.Cause(err) != sql.ErrNoRows {
-		return nil, err
-	}
-
-	if existing.OwnMessage {
-		UpdateRoleMenuMessage(parsed.Context(), existing, opts)
+	if menu.OwnMessage {
+		UpdateRoleMenuMessage(parsed.Context(), menu)
 	}
 
 	// Add all mising options
-	return NextRoleMenuSetupStep(parsed.Context(), existing, opts, false)
+	return NextRoleMenuSetupStep(parsed.Context(), menu, false)
 }
 
-func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, opts []*models.RoleMenuOption, first bool) (resp string, err error) {
-	commands, err := models.RoleCommands(qm.Where("role_group_id = ?", rm.RoleGroupID)).AllG(ctx)
-	if err != nil {
-		return "Failed fetching commands for role group", err
-	}
+func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, first bool) (resp string, err error) {
+
+	commands := rm.R.RoleGroup.R.RoleCommands
+	sort.Slice(commands, RoleCommandsLessFunc(commands))
 
 	var nextCmd *models.RoleCommand
 
-	sort.Slice(commands, RoleCommandsLessFunc(commands))
-
-	if first {
-		if len(commands) > 0 {
-			nextCmd = commands[0]
+OUTER:
+	for i, cmd := range commands {
+		if i < rm.SkipAmount {
+			continue
 		}
-	} else {
-		// Find next command, making sure we dont do any duplicate ones
 
-	OUTER:
-		for _, cmd := range commands {
-			for _, option := range opts {
-				if cmd.ID == option.RoleCommandID.Int64 {
-					continue OUTER
-				}
+		for _, option := range rm.R.RoleMenuOptions {
+			if cmd.ID == option.RoleCommandID.Int64 {
+				continue OUTER
 			}
-
-			// New command is cmd
-			nextCmd = cmd
-			break
 		}
+
+		// New command is cmd
+		nextCmd = cmd
+		break
 	}
 
-	if nextCmd == nil {
+	if nextCmd == nil || len(rm.R.RoleMenuOptions) >= 20 {
+		extra := ""
+		if len(rm.R.RoleMenuOptions) >= 20 && nextCmd != nil {
+			extra = fmt.Sprintf("\n\nMessages can contain max 20 reactions, couldn't fit them all into this one, you can add the remaining to another menu using `rolemenu create %s -skip %d`", rm.R.RoleGroup.Name, rm.SkipAmount+20)
+			rm.FixedAmount = true
+		}
+
 		rm.State = RoleMenuStateDone
 		rm.UpdateG(ctx, boil.Infer())
 
-		nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu -nodm -m %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
-		rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu -rr -m %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
-		return fmt.Sprintf("Done setting up! you can delete all the messages now (except for the menu itself)\n\nFlags:\n%s\n%s", nodmFlagHelp, rrFlagHelp), nil
+		flagHelp := StrFlags(rm)
+		return fmt.Sprintf("Done setting up! you can delete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
@@ -200,28 +179,31 @@ func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, opts []*mod
 	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the **Menu message (not this one)**\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 }
 
-func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu, opts []*models.RoleMenuOption) error {
-	newMsg := "**Role Menu**: react to give yourself a role\n\n"
+func StrFlags(rm *models.RoleMenu) string {
+	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu update -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
+	rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu update -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
+	return nodmFlagHelp + "\n" + rrFlagHelp
+}
 
-	pairs := make([]*OptionCommandPair, 0, len(opts))
-	for _, v := range opts {
-		cmd, err := v.RoleCommand().OneG(ctx)
-		if err != nil {
-			return err
+func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
+	newMsg := "**Role Menu: " + rm.R.RoleGroup.Name + "**\nReact to give yourself a role.\n\n"
+
+	opts := rm.R.RoleMenuOptions
+	sort.Slice(opts, OptionsLessFunc(opts))
+
+	for _, opt := range opts {
+		cmd := opt.R.RoleCommand
+
+		emoji := opt.UnicodeEmoji
+		if opt.EmojiID != 0 {
+			if opt.EmojiAnimated {
+				emoji = fmt.Sprintf("<a:yagpdb:%d>", opt.EmojiID)
+			} else {
+				emoji = fmt.Sprintf("<:yagpdb:%d>", opt.EmojiID)
+			}
 		}
 
-		pairs = append(pairs, &OptionCommandPair{Command: cmd, Option: v})
-	}
-
-	sort.Slice(pairs, OptionCommandPairLessFunc(pairs))
-
-	for _, pair := range pairs {
-
-		emoji := pair.Option.UnicodeEmoji
-		if pair.Option.EmojiID != 0 {
-			emoji = fmt.Sprintf("<:yagpdb:%d>", pair.Option.EmojiID)
-		}
-		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, pair.Command.Name)
+		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, cmd.Name)
 	}
 
 	_, err := common.BotSession.ChannelMessageEdit(rm.ChannelID, rm.MessageID, newMsg)
@@ -234,10 +216,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		return "This menu is still being set up, wait until the owner of this menu is done.", nil
 	}
 
-	currentOpts, err := rm.RoleMenuOptions().AllG(ctx)
-	if err != nil && err != sql.ErrNoRows {
-		return "Error communicating with DB", err
-	}
+	currentOpts := rm.R.RoleMenuOptions
 
 	// Make sure this emoji isnt used to another option
 	for _, option := range currentOpts {
@@ -256,6 +235,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		RoleMenuID:    rm.MessageID,
 		RoleCommandID: rm.NextRoleCommandID,
 		EmojiID:       emoji.ID,
+		EmojiAnimated: emoji.Animated,
 	}
 
 	if emoji.ID == 0 {
@@ -272,22 +252,25 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		logrus.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
 	}
 
-	currentOpts = append(currentOpts, model)
+	model.R = model.R.NewStruct()
+	for _, cmd := range rm.R.RoleGroup.R.RoleCommands {
+		if cmd.ID == model.RoleCommandID.Int64 {
+			model.R.RoleCommand = cmd
+			break
+		}
+	}
+
+	rm.R.RoleMenuOptions = append(rm.R.RoleMenuOptions, model)
 
 	if rm.OwnMessage {
-		err = UpdateRoleMenuMessage(ctx, rm, currentOpts)
+		err = UpdateRoleMenuMessage(ctx, rm)
 		if err != nil {
 			return "Failed updating message", err
 		}
 	}
 
 	// return rm.NextSetupStep(false)
-	return NextRoleMenuSetupStep(ctx, rm, currentOpts, false)
-}
-
-type OptionCommandPair struct {
-	Option  *models.RoleMenuOption
-	Command *models.RoleCommand
+	return NextRoleMenuSetupStep(ctx, rm, false)
 }
 
 func getReactionDetails(evt *eventsystem.EventData) (emoji *discordgo.Emoji, cID, gID, uID, mID int64, add bool) {
@@ -337,7 +320,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	menu, err := models.FindRoleMenuG(evt.Context(), mID)
+	menu, err := FindRolemenuFull(evt.Context(), mID)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			logrus.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
@@ -346,15 +329,15 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	// Continue setup if were doing that
-	if menu.State == RoleMenuStateSettingUp {
+	if menu.State != RoleMenuStateDone {
 		if !raAdd {
 			// ignore reaction removes in this state
 			return
 		}
 
-		resp, err := ContinueRoleMenuSetup(evt.Context(), menu, emoji, uID)
+		resp, err := MenuReactedNotDone(evt.Context(), menu, emoji, uID)
 		if err != nil {
-			logrus.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup")
+			logrus.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup, or editing menu")
 		}
 
 		if resp != "" {
@@ -371,14 +354,8 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 		return // only go further is this flag is enabled
 	}
 
-	opts, err := menu.RoleMenuOptions().AllG(evt.Context())
-	if err != nil && err != sql.ErrNoRows {
-		logrus.WithError(err).Error("Failed retrieving role menu options")
-		return
-	}
-
 	// Find the option model from the reaction
-	option := findOptionFromEmoji(emoji, opts)
+	option := findOptionFromEmoji(emoji, menu.R.RoleMenuOptions)
 	if option == nil {
 		return
 	}
@@ -399,10 +376,8 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 }
 
 func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildState, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
-	cmd, err := option.RoleCommand(qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
-	if err != nil {
-		return "An error occured giving you the role", err
-	}
+	cmd := option.R.RoleCommand
+	cmd.R.RoleGroup = rm.R.RoleGroup
 
 	member, err := bot.GetMember(gs.ID, userID)
 	if err != nil {
@@ -460,14 +435,14 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 	return
 }
 
-func OptionCommandPairLessFunc(slice []*OptionCommandPair) func(int, int) bool {
+func OptionsLessFunc(slice []*models.RoleMenuOption) func(int, int) bool {
 	return func(i, j int) bool {
 		// Compare timestamps if positions are equal, for deterministic output
-		if slice[i].Command.Position == slice[0].Command.Position {
-			return slice[i].Command.CreatedAt.After(slice[j].Command.CreatedAt)
+		if slice[i].R.RoleCommand.Position == slice[j].R.RoleCommand.Position {
+			return slice[i].R.RoleCommand.CreatedAt.After(slice[j].R.RoleCommand.CreatedAt)
 		}
 
-		if slice[i].Command.Position > slice[j].Command.Position {
+		if slice[i].R.RoleCommand.Position > slice[j].R.RoleCommand.Position {
 			return false
 		}
 
@@ -490,4 +465,140 @@ func messageRemoved(ctx context.Context, id int64) {
 	if err != nil {
 		logrus.WithError(err).Error("Failed removing old role menus")
 	}
+}
+
+func FindRolemenuFull(ctx context.Context, mID int64) (*models.RoleMenu, error) {
+	return models.RoleMenus(qm.Where("message_id = ?", mID), qm.Load("RoleMenuOptions.RoleCommand"), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
+}
+
+func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
+	mID := data.Args[0].Int64()
+	menu, err := FindRolemenuFull(data.Context(), mID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	err = common.BotSession.MessageReactionsRemoveAll(menu.ChannelID, menu.MessageID)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(menu.R.RoleMenuOptions, OptionsLessFunc(menu.R.RoleMenuOptions))
+
+	for _, option := range menu.R.RoleMenuOptions {
+		emoji := option.UnicodeEmoji
+		if option.EmojiID != 0 {
+			emoji = "aaa:" + discordgo.StrID(option.EmojiID)
+		}
+
+		logrus.Println(emoji)
+		err := common.BotSession.MessageReactionAdd(menu.ChannelID, menu.MessageID, emoji)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
+	mID := data.Args[0].Int64()
+	menu, err := FindRolemenuFull(data.Context(), mID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	_, err = menu.DeleteG(data.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	return "Deleted. The bot will no longer listen for reactions on this message, you can even make another menu on it.", nil
+}
+
+func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
+	mID := data.Args[0].Int64()
+	menu, err := FindRolemenuFull(data.Context(), mID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	if menu.State != RoleMenuStateDone {
+		return "This menu isn't 'done' (still being edited, or made)", nil
+	}
+
+	menu.State = RoleMenuStateEditingOptionSelecting
+	menu.OwnerID = data.Msg.Author.ID
+	_, err = menu.UpdateG(data.Context(), boil.Whitelist("state", "owner_id"))
+	if err != nil {
+		return "", err
+	}
+	return "React on the emoji for the option you want to change", nil
+}
+
+func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
+	if userID != rm.OwnerID {
+		return "Someone is currently editing or setting up this menu, please wait", nil
+	}
+
+	switch rm.State {
+	case RoleMenuStateSettingUp:
+		return ContinueRoleMenuSetup(ctx, rm, emoji, userID)
+	case RoleMenuStateEditingOptionSelecting:
+		option := findOptionFromEmoji(emoji, rm.R.RoleMenuOptions)
+		if option == nil {
+			return "", nil
+		}
+
+		rm.State = RoleMenuStateEditingOptionReplacing
+		rm.EditingOptionID = null.Int64From(option.ID)
+		_, err := rm.UpdateG(ctx, boil.Whitelist("state", "editing_option_id"))
+		if err != nil {
+			return "", err
+		}
+
+		return "Editing `" + option.R.RoleCommand.Name + "`, select the new emoji for it", nil
+	case RoleMenuStateEditingOptionReplacing:
+		option, err := rm.EditingOption().OneG(ctx)
+		if err != nil {
+			// possible they might have deleted the role in the meantime, so set it to done to prevent a deadlock for this menu
+			rm.State = RoleMenuStateDone
+			rm.UpdateG(ctx, boil.Whitelist("state"))
+			return "", err
+		}
+
+		option.EmojiID = emoji.ID
+		option.EmojiAnimated = emoji.Animated
+		if option.EmojiID == 0 {
+			option.UnicodeEmoji = emoji.Name
+		} else {
+			option.UnicodeEmoji = ""
+		}
+
+		_, err = option.UpdateG(ctx, boil.Infer())
+		if err != nil {
+			return "", err
+		}
+
+		rm.State = RoleMenuStateDone
+		rm.UpdateG(ctx, boil.Whitelist("state"))
+
+		go common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
+
+		if rm.OwnMessage {
+			for _, v := range rm.R.RoleMenuOptions {
+				if v.ID == option.ID {
+					v.EmojiAnimated = option.EmojiAnimated
+					v.EmojiID = option.EmojiID
+					v.UnicodeEmoji = option.UnicodeEmoji
+				}
+			}
+
+			UpdateRoleMenuMessage(ctx, rm)
+		}
+
+		return fmt.Sprintf("Sucessfully edited menu, tip: run `rolemenu resetreactions %d` to clear all reactions so that the order is fixed.", rm.MessageID), nil
+	}
+
+	return "", nil
 }

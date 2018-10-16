@@ -15,7 +15,7 @@
     margin-bottom: 5px;
 }
 
-@media(min-width: 500px) {
+@media(min-width: 1024px) {
     .automod-type-column {
         width: 17em;
     }
@@ -25,7 +25,7 @@
     }
 }
 
-@media(max-width: 499px) {
+@media(max-width: 1023px) {
     .automod-type-column {
         width: 12em;
     }
@@ -472,7 +472,7 @@ $(function(){
     }
 
     function createOpt(cell, key, opt, namePrefix){
-        var wrapper = $("<div class='col-md'><div class='form-group row'><label class='col-md-2'>"+opt.Name+":</label><div class='col-md-10 automod-part-setting'></div></div>")
+        var wrapper = $("<div class='col-md'><div class='form-group row'><label class='col-lg-2'>"+opt.Name+":</label><div class='col-lg-10 automod-part-setting'></div></div>")
         var column = wrapper.find(".automod-part-setting")
 
         switch(opt.Kind){
@@ -583,8 +583,8 @@ $(function(){
         {{range .partType.UserSettings}}
         <div class="col-md">
             <div class='form-group row'>
-                <label class='col-md-2'>{{.Name}}:</label>
-                <div class='col-md-10'>
+                <label class='col-lg-2'>{{.Name}}:</label>
+                <div class='col-lg-10'>
                     {{$name := joinStr "" $namePrefix "." $dot.partIndex ".Data." .Key}}
                     {{if eq .Kind "int"}}
                     <input type='number' class='form-control' name="{{$name}}" {{if or .Min .Max}} min="{{.Min}}" max="{{.Max}}" {{end}} value="{{index $dot.settings .Key}}"></input>

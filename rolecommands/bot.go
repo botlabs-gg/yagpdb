@@ -13,6 +13,13 @@ import (
 )
 
 func (p *Plugin) AddCommands() {
+	categoryRoleMenu := &dcmd.Category{
+		Name:        "Rolemenu",
+		Description: "Rolemenu commands",
+		HelpEmoji:   "🔘",
+		EmbedColor:  0x42b9f4,
+	}
+
 	commands.AddRootCommands(
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
@@ -22,21 +29,92 @@ func (p *Plugin) AddCommands() {
 				&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
 			},
 			RunFunc: CmdFuncRole,
-		}, &commands.YAGCommand{
-			CmdCategory: commands.CategoryTool,
-			Name:        "RoleMenu",
-			Description: "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one, if there's already a menu on this message it will be updated with the missing options.",
-			Arguments: []*dcmd.ArgDef{
-				&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
-			},
-			ArgSwitches: []*dcmd.ArgDef{
-				&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
-				&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
-				&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
-			},
-			RunFunc: CmdFuncRoleMenu,
+		})
+
+	cmdCreate := &commands.YAGCommand{
+		Name:                "Create",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"c"},
+		Description:         "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
 		},
-	)
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
+			&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
+			&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
+			&dcmd.ArgDef{Switch: "skip", Name: "Number of roles to skip", Default: 0, Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuCreate,
+	}
+
+	cmdRemoveRoleMenu := &commands.YAGCommand{
+		Name:                "Remove",
+		CmdCategory:         categoryRoleMenu,
+		Description:         "Removes a rolemenu from a message, the message wont be deleted but the bot will now not do anything with reactions on that message",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuRemove,
+	}
+
+	cmdUpdate := &commands.YAGCommand{
+		Name:                "Update",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"u"},
+		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
+			&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
+		},
+		RunFunc: cmdFuncRoleMenuUpdate,
+	}
+
+	cmdResetReactions := &commands.YAGCommand{
+		Name:                "ResetReactions",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"reset"},
+		Description:         "Removes all reactions on this menu and re-adds them, can be used to fix the order",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuResetReactions,
+	}
+
+	cmdEditOption := &commands.YAGCommand{
+		Name:                "EditOption",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"edit"},
+		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuEditOption,
+	}
+
+	menuContainer := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
+	menuContainer.NotFound = func(data *dcmd.Data) (interface{}, error) {
+		return "Unknown rolemenu command, if you've used this before it was recently revamped, try `rolemenu create ...` and `rolemenu update ...` instead.\nSee `help rolemenu` for all rolemenu commands.", nil
+	}
+
+	menuContainer.AddCommand(cmdCreate, cmdCreate.GetTrigger())
+	menuContainer.AddCommand(cmdRemoveRoleMenu, cmdRemoveRoleMenu.GetTrigger())
+	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
+	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
+	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 }
 
 func (p *Plugin) BotInit() {

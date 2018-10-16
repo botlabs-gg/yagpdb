@@ -44,6 +44,9 @@ CREATE TABLE IF NOT EXISTS reputation_log (
 	amount 			 bigint NOT NULL
 );
 
+ALTER TABLE reputation_log ADD COLUMN IF NOT EXISTS receiver_username TEXT NOT NULL DEFAULT '';
+ALTER TABLE reputation_log ADD COLUMN IF NOT EXISTS sender_username TEXT NOT NULL DEFAULT '';
+
 CREATE INDEX IF NOT EXISTS reputation_log_guild_idx ON reputation_log (guild_id);
 CREATE INDEX IF NOT EXISTS reputation_log_sender_idx ON reputation_log (sender_id);
 CREATE INDEX IF NOT EXISTS reputation_log_receiver_idx ON reputation_log (receiver_id);	

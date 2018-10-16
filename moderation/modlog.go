@@ -19,7 +19,7 @@ type ModlogAction struct {
 func (m ModlogAction) String() string {
 	str := m.Emoji + m.Prefix
 	if m.Footer != "" {
-		str += "(" + m.Footer + ")"
+		str += " (" + m.Footer + ")"
 	}
 
 	return str

@@ -74,13 +74,21 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			}
 		}
 
+		collapseSidebar := false
+		if cookie, err := r.Cookie("sidebar_collapsed"); err == nil {
+			if cookie.Value != "false" {
+				collapseSidebar = true
+			}
+		}
+
 		baseData := map[string]interface{}{
-			"BotRunning":    botrest.BotIsRunning(),
-			"RequestURI":    r.RequestURI,
-			"StartedAtUnix": StartedAt.Unix(),
-			"CurrentAd":     CurrentAd,
-			"LightTheme":    lightTheme,
-			"GAID":          GAID,
+			"BotRunning":       botrest.BotIsRunning(),
+			"RequestURI":       r.RequestURI,
+			"StartedAtUnix":    StartedAt.Unix(),
+			"CurrentAd":        CurrentAd,
+			"LightTheme":       lightTheme,
+			"SidebarCollapsed": collapseSidebar,
+			"GAID":             GAID,
 		}
 
 		for k, v := range globalTemplateData {

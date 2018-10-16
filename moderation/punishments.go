@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -135,7 +134,7 @@ func sendPunishDM(config *Config, kick bool, action ModlogAction, gs *dstate.Gui
 	}
 
 	if dmMsg == "" {
-		dmMsg = "You were " + action.Emoji + " " + strings.ToLower(action.Prefix) + "\nReason: {{.Reason}}"
+		dmMsg = "You were " + action.String() + "\n**Reason:** {{.Reason}}"
 	}
 
 	// Execute and send the DM message template

@@ -582,6 +582,7 @@ var _ MessageTrigger = (*SlowmodeTrigger)(nil)
 
 type SlowmodeTrigger struct {
 	ChannelBased bool
+	Attachments  bool // whether this trigger checks any messages or just attachments
 }
 
 func (s *SlowmodeTrigger) Kind() RulePartType {
@@ -594,38 +595,65 @@ func (s *SlowmodeTrigger) DataType() interface{} {
 
 func (s *SlowmodeTrigger) Name() string {
 	if s.ChannelBased {
+		if s.Attachments {
+			return "x channel attachments in y seconds"
+		}
+
 		return "x channel messages in y seconds"
 	}
 
+	if s.Attachments {
+		return "x user attachments in y seconds"
+	}
 	return "x user messages in y seconds"
 }
 
 func (s *SlowmodeTrigger) Description() string {
 	if s.ChannelBased {
+		if s.Attachments {
+			return "Triggers when a channel has more than x attachments within y seconds"
+		}
+
 		return "Triggers when a channel has more than x messages in y seconds."
+	}
+
+	if s.Attachments {
+		return "Triggers when a user has more than x attachments within y seconds in a single channel"
 	}
 
 	return "Triggers when a user has more than x messages in y seconds in a single channel."
 }
 
 func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
+	defaultMessages := 5
+	defaultInterval := 5
+
+	if s.Attachments {
+		defaultMessages = 10
+		defaultInterval = 60
+	}
+
 	return []*SettingDef{
 		&SettingDef{
 			Name:    "Messages",
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
-			Default: 5,
+			Default: defaultMessages,
 		},
 		&SettingDef{
 			Name:    "Within (seconds)",
 			Key:     "Interval",
 			Kind:    SettingTypeInt,
-			Default: 5,
+			Default: defaultInterval,
 		},
 	}
 }
 
 func (s *SlowmodeTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+	if s.Attachments && len(m.Attachments) < 1 {
+		return false, nil
+	}
+
 	settings := data.(*SlowmodeTriggerData)
 
 	within := time.Duration(settings.Interval) * time.Second
@@ -649,9 +677,15 @@ func (s *SlowmodeTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channe
 			continue
 		}
 
-		if s.ChannelBased || cMsg.Message.Author.ID == ms.ID {
-			amount++
+		if !s.ChannelBased && cMsg.Message.Author.ID != ms.ID {
+			continue
 		}
+
+		if s.Attachments && len(cMsg.Message.Attachments) < 1 {
+			continue // were only checking messages with attachments
+		}
+
+		amount++
 	}
 
 	if amount >= settings.Treshold {
@@ -879,6 +913,10 @@ func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 			continue
 		}
 
+		if cMsg.Message.Author.ID != m.Author.ID {
+			continue
+		}
+
 		if len(cMsg.Message.Attachments) > 0 {
 			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
@@ -952,8 +990,6 @@ func (r *NicknameRegexTrigger) CheckNickname(ms *dstate.MemberState, data interf
 
 	return false, nil
 }
-
-/////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////
 

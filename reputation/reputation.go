@@ -170,13 +170,20 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return
 	}
 
+	receiver.Guild.RLock()
+	defer receiver.Guild.RUnlock()
+	receiverUsername := receiver.Username + "#" + receiver.StrDiscriminator()
+	senderUsername := sender.Username + "#" + sender.StrDiscriminator()
+
 	// Add the log element
 	entry := &models.ReputationLog{
-		GuildID:        guildID,
-		SenderID:       sender.ID,
-		ReceiverID:     receiver.ID,
-		SetFixedAmount: false,
-		Amount:         amount,
+		GuildID:          guildID,
+		SenderID:         sender.ID,
+		SenderUsername:   senderUsername,
+		ReceiverID:       receiver.ID,
+		ReceiverUsername: receiverUsername,
+		SetFixedAmount:   false,
+		Amount:           amount,
 	}
 
 	err = entry.InsertG(ctx, boil.Infer())
@@ -203,9 +210,7 @@ func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int6
 	}
 
 	// Update
-	r, err := common.PQ.ExecContext(ctx, "UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
-	rows, _ := r.RowsAffected()
-	logrus.Println("Rows: ", rows, userID, guildID)
+	_, err = common.PQ.ExecContext(ctx, "UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
 	return
 }
 

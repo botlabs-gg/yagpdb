@@ -58,6 +58,11 @@ var roleCommands = []*commands.YAGCommand{
 
 // Stop updating
 func HandleUpdateAutoroles(event *pubsub.Event) {
+	gs := bot.State.Guild(true, event.TargetGuildInt)
+	if gs != nil {
+		gs.UserCacheDel(true, CacheKeyConfig)
+	}
+
 	stopProcessing(event.TargetGuildInt)
 }
 
@@ -81,7 +86,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 	gs.RUnlock()
 
-	config, err := GetGeneralConfig(gs.ID)
+	config, err := GuildCacheGetGeneralConfig(gs)
 	if err != nil {
 		return
 	}
@@ -184,7 +189,9 @@ func checkGuild(gs *dstate.GuildState) {
 		return
 	}
 
-	conf, err := GetGeneralConfig(gs.ID)
+	gs.RUnlock()
+	conf, err := GuildCacheGetGeneralConfig(gs)
+	gs.RLock()
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieivng general config")
 		return
@@ -443,4 +450,21 @@ func WorkingOnFullScan(guildID int64) (bool, error) {
 	}
 
 	return b, nil
+}
+
+type CacheKey int
+
+const CacheKeyConfig CacheKey = 1
+
+func GuildCacheGetGeneralConfig(gs *dstate.GuildState) (*GeneralConfig, error) {
+	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+		config, err := GetGeneralConfig(gs.ID)
+		return config, err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(*GeneralConfig), nil
 }

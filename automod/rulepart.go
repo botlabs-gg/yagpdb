@@ -34,6 +34,8 @@ var RulePartMap = map[int]RulePart{
 	19: &NicknameRegexTrigger{BaseRegexTrigger: BaseRegexTrigger{Inverse: true}},
 	20: &NicknameWordlistTrigger{Blacklist: false},
 	21: &NicknameWordlistTrigger{Blacklist: true},
+	22: &SlowmodeTrigger{Attachments: true, ChannelBased: false},
+	23: &SlowmodeTrigger{Attachments: true, ChannelBased: true},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
