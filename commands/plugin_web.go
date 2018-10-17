@@ -115,7 +115,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	for _, cmd := range CommandSystem.Root.Commands {
 		switch t := cmd.Command.(type) {
 		case *YAGCommand:
-			if t.HideFromHelp {
+			if t.HideFromCommandsPage {
 				continue
 			}
 			addCommand(t, cmd.Trigger.Names[0])
@@ -123,7 +123,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 			for _, containerCmd := range t.Commands {
 				cast := containerCmd.Command.(*YAGCommand)
 
-				if cast.HideFromHelp {
+				if cast.HideFromCommandsPage {
 					continue
 				}
 

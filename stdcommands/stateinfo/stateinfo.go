@@ -9,13 +9,12 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	Cooldown:             2,
-	CmdCategory:          commands.CategoryDebug,
-	HideFromCommandsPage: true,
-	Name:                 "stateinfo",
-	Description:          "Responds with state debug info",
-	HideFromHelp:         true,
-	RunFunc:              cmdFuncStateInfo,
+	Cooldown:     2,
+	CmdCategory:  commands.CategoryDebug,
+	Name:         "stateinfo",
+	Description:  "Responds with state debug info",
+	HideFromHelp: true,
+	RunFunc:      cmdFuncStateInfo,
 }
 
 func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {

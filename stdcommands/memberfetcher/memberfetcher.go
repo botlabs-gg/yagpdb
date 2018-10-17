@@ -8,11 +8,10 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:          commands.CategoryDebug,
-	HideFromCommandsPage: true,
-	Name:                 "MemberFetcher",
-	Aliases:              []string{"memfetch"},
-	Description:          "Shows the current status of the member fetcher",
+	CmdCategory: commands.CategoryDebug,
+	Name:        "MemberFetcher",
+	Aliases:     []string{"memfetch"},
+	Description: "Shows the current status of the member fetcher",
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		fetching, notFetching := bot.MemberFetcher.Status()
 		return fmt.Sprintf("Fetching: `%d`, Not fetching: `%d`", fetching, notFetching), nil

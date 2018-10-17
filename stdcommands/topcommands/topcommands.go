@@ -9,12 +9,11 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	Cooldown:             2,
-	CmdCategory:          commands.CategoryDebug,
-	HideFromCommandsPage: true,
-	Name:                 "topcommands",
-	Description:          "Shows command usage stats",
-	HideFromHelp:         true,
+	Cooldown:     2,
+	CmdCategory:  commands.CategoryDebug,
+	Name:         "topcommands",
+	Description:  "Shows command usage stats",
+	HideFromHelp: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "hours", Type: dcmd.Int, Default: 1},
 	},
