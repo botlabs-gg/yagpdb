@@ -754,6 +754,10 @@ func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
 }
 
 func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+	if len(m.Mentions) < 1 {
+		return false, nil
+	}
+
 	settings := data.(*MultiMsgMentionTriggerData)
 
 	within := time.Duration(settings.Interval) * time.Second
