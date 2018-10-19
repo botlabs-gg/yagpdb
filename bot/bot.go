@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"flag"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardmanager"
 	"github.com/jonas747/dstate"
@@ -31,6 +32,30 @@ var (
 	stateLock          sync.Mutex
 	MessageDeleteQueue = deletequeue.NewQueue()
 )
+
+var (
+	// the variables below specify shard clustering information, for splitting shards across multiple processes and machines
+	// this is very work in process and does not work at all atm
+	//
+	// plugins that needs to perform shard specific tasks, not directly related to incoming gateway events should check here
+	// to make sure the action they're doing is relevant to the current cluster (example: scheduled events should only run events for guilds on this cluster)
+
+	// the total amount of shards this bot is set to use across all processes
+	TotalShardCount int
+
+	// the number of shards running on this process
+	ProcessShardCount int
+
+	// the offset of the running shards
+	// example: if we were running shard 4 and 5, the offset would be 4 and the running shard count 2
+	RunShardOffset int
+)
+
+func init() {
+	flag.IntVar(&TotalShardCount, "totalshards", 0, "TODO: Total shards the bot has, <1 for auto")
+	flag.IntVar(&ProcessShardCount, "runshards", 0, "TODO: The number of shards this process should run, <1 for all")
+	flag.IntVar(&RunShardOffset, "runshardsoffset", 0, "TODO: The start offset, e.g if we wanna run shard 10-19 then runshards would be 10 and runshardsoffset would be 10")
+}
 
 const (
 	StateRunningNoMaster   int = iota
@@ -111,15 +136,25 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
-	shardCount, err := ShardManager.GetRecommendedCount()
-	if err != nil {
-		panic("Failed getting shard count: " + err.Error())
+	if TotalShardCount < 1 || ProcessShardCount < 1 {
+		// not enough shard clustering info provided, run all shards we are reccomended from discord
+		shardCount, err := ShardManager.GetRecommendedCount()
+		if err != nil {
+			panic("Failed getting shard count: " + err.Error())
+		}
+		TotalShardCount = shardCount
+		ProcessShardCount = shardCount
+		RunShardOffset = 0
+	} else {
+		// TODO
 	}
 
-	EventLogger.init(shardCount)
+	log.Infof("Bot clustering info (WIP): Tot. Shards: %d, Running shards: %d, Shard offset: %d", TotalShardCount, ProcessShardCount, RunShardOffset)
+
+	EventLogger.init(ProcessShardCount)
 	go EventLogger.run()
 
-	for i := 0; i < shardCount; i++ {
+	for i := RunShardOffset; i < ProcessShardCount; i++ {
 		waitingReadies = append(waitingReadies, i)
 	}
 
@@ -136,6 +171,7 @@ func Run() {
 		stateLock.Unlock()
 
 		log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
+		var err error
 		SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
 		if err != nil {
 			log.WithError(err).Error("Failed connecting to master")
