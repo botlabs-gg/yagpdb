@@ -94,14 +94,17 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 }
 
 func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool) {
+	ctx := templates.NewContext(cs.Guild, cs, ms)
+
+	ctx.Data["RealUsername"] = ms.Username
 	if censorInvites {
 		newUsername := common.ReplaceServerInvites(ms.Username, ms.Guild.ID, "[removed-server-invite]")
 		if newUsername != ms.Username {
 			ms.Username = newUsername + fmt.Sprintf("(user ID: %d)", ms.ID)
+			ctx.Data["UsernameHasInvite"] = true
 		}
 	}
 
-	ctx := templates.NewContext(cs.Guild, cs, ms)
 	msg, err := ctx.Execute(tmpl)
 
 	if err != nil {
