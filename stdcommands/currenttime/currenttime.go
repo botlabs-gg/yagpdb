@@ -35,7 +35,7 @@ func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
 		location, err := time.LoadLocation(tzName)
 		if err != nil {
 			if offset, ok := customTZOffsets[strings.ToUpper(tzName)]; ok {
-				location = time.FixedZone(tzName, int(offset*60*60))
+				location = time.FixedZone(strings.ToUpper(tzName), int(offset*60*60))
 			} else {
 				return "Unknown timezone :(", err
 			}
