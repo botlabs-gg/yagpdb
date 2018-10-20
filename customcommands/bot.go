@@ -197,6 +197,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	if tmplCtx.DelTrigger {
 		go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelTriggerDelay), mc.ChannelID, mc.ID)
 	}
+	
+	if tmplCtx.AddResponseReactions {
+		common.BotSession.MessageReactionAdd(mc.ChannelID, mc.ID, tmplCtx.AddResponseReactionNames)
+	}
 
 	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
 		m, err := common.BotSession.ChannelMessageSend(mc.ChannelID, out)
