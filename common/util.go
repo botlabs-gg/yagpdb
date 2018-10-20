@@ -627,3 +627,9 @@ func HumanizePermissions(perms int64) (res []string) {
 
 	return
 }
+
+func ReplaceServerInvites(msg string, guildID int64, replacement string) string {
+	msg = ThirdPartyDiscordInviteRegex.ReplaceAllString(msg, replacement)
+	msg = DiscordInviteRegex.ReplaceAllString(msg, replacement)
+	return msg
+}

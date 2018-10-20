@@ -23,9 +23,10 @@ const PubSubEvtCleaCache = "automod_2_clear_guild_cache"
 
 func (p *Plugin) BotInit() {
 
-	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, p.commandsMessageFilterFunc)
+	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, p.checkMessage)
 
 	eventsystem.AddHandler(p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(p.handleMsgUpdate, eventsystem.EventMessageUpdate)
 
 	pubsub.AddHandler(PubSubEvtCleaCache, func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
@@ -40,7 +41,11 @@ func (p *Plugin) BotInit() {
 	}, nil)
 }
 
-func (p *Plugin) commandsMessageFilterFunc(msg *discordgo.Message) bool {
+func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
+	p.checkMessage(evt.MessageUpdate().Message)
+}
+
+func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
 
 	if msg.Author == nil || msg.Author.ID == common.BotUser.ID {
 		return false // Pls no panicerinos or banerinos self
