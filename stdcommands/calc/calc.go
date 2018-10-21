@@ -5,6 +5,7 @@ import (
 	"github.com/alfredxing/calc/compute"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
+	"strings"
 	"sync"
 )
 
