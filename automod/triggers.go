@@ -702,8 +702,9 @@ func (s *SlowmodeTrigger) MergeDuplicates(data []interface{}) interface{} {
 /////////////////////////////////////////////////////////////
 
 type MultiMsgMentionTriggerData struct {
-	Treshold int
-	Interval int
+	Treshold        int
+	Interval        int
+	CountDuplicates bool
 }
 
 var _ MessageTrigger = (*MultiMsgMentionTrigger)(nil)
@@ -750,6 +751,11 @@ func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
+		&SettingDef{
+			Name: "Count multiple mentions to the same user",
+			Key:  "CountDuplicates",
+			Kind: SettingTypeBool,
+		},
 	}
 }
 
@@ -776,10 +782,6 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstat
 			break
 		}
 
-		if m.ID == cMsg.Message.ID {
-			continue
-		}
-
 		if mt.ChannelBased || cMsg.Message.Author.ID == ms.ID {
 			// we only care about unique mentions, e.g mentioning the same user a ton wont do anythin
 			for _, msgMention := range cMsg.Message.Mentions {
@@ -787,7 +789,7 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstat
 					continue
 				}
 
-				if !common.ContainsInt64Slice(mentions, msgMention.ID) {
+				if settings.CountDuplicates || !common.ContainsInt64Slice(mentions, msgMention.ID) {
 					mentions = append(mentions, msgMention.ID)
 				}
 			}
