@@ -80,6 +80,8 @@ type Context struct {
 	Counters map[string]int
 
 	EmebdsToSend []*discordgo.MessageEmbed
+
+	AddResponseReactionNames []string
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -206,6 +208,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
 	c.ContextFuncs["addReactions"] = c.tmplAddReactions
+	c.ContextFuncs["addResponseReactions"] = c.tmplAddResponseReactions
 
 	c.ContextFuncs["currentUserCreated"] = c.tmplCurrentUserCreated
 	c.ContextFuncs["currentUserAgeHuman"] = c.tmplCurrentUserAgeHuman
