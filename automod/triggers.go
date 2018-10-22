@@ -1072,3 +1072,171 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(ms *dstate.MemberState, data i
 
 	return false, nil
 }
+
+/////////////////////////////////////////////////////////////
+
+var _ UsernameListener = (*UsernameRegexTrigger)(nil)
+
+type UsernameRegexTrigger struct {
+	BaseRegexTrigger
+}
+
+func (r *UsernameRegexTrigger) Name() string {
+	if r.BaseRegexTrigger.Inverse {
+		return "Join username not matching regex"
+	}
+
+	return "Joins username matches regex"
+}
+
+func (r *UsernameRegexTrigger) Description() string {
+	if r.BaseRegexTrigger.Inverse {
+		return "Triggers when a member joins with a username that does not match the provided regex"
+	}
+
+	return "Triggers when a member joins with a username that matches the provided regex"
+}
+
+func (r *UsernameRegexTrigger) CheckUsername(ms *dstate.MemberState, data interface{}) (bool, error) {
+	dataCast := data.(*BaseRegexTriggerData)
+
+	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
+		re, err := regexp.Compile(dataCast.Regex)
+		if err != nil {
+			return nil, err
+		}
+
+		return re, nil
+	})
+
+	if err != nil {
+		return false, nil
+	}
+
+	re := item.Value().(*regexp.Regexp)
+	if re.MatchString(ms.Username) {
+		if r.BaseRegexTrigger.Inverse {
+			return false, nil
+		}
+		return true, nil
+	}
+
+	if r.BaseRegexTrigger.Inverse {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ UsernameListener = (*UsernameWordlistTrigger)(nil)
+
+type UsernameWordlistTrigger struct {
+	Blacklist bool
+}
+type UsernameWorldlistData struct {
+	ListID int64
+}
+
+func (uwl *UsernameWordlistTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (uwl *UsernameWordlistTrigger) DataType() interface{} {
+	return &UsernameWorldlistData{}
+}
+
+func (uwl *UsernameWordlistTrigger) Name() (name string) {
+	if uwl.Blacklist {
+		return "Join username word blacklist"
+	}
+
+	return "Join username word whitelist"
+}
+
+func (uwl *UsernameWordlistTrigger) Description() (description string) {
+	if uwl.Blacklist {
+		return "Triggers when a member joins with a username that contains a word in the specified list"
+	}
+
+	return "Triggers when a member joins with a username that contains a words not in the specified list"
+}
+
+func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name: "List",
+			Key:  "ListID",
+			Kind: SettingTypeList,
+		},
+	}
+}
+
+func (uwl *UsernameWordlistTrigger) CheckUsername(ms *dstate.MemberState, data interface{}) (bool, error) {
+	dataCast := data.(*UsernameWorldlistData)
+
+	list, err := FindFetchGuildList(ms.Guild, dataCast.ListID)
+	if err != nil {
+		return false, err
+	}
+
+	fields := strings.Fields(PrepareMessageForWordCheck(ms.Username))
+
+	for _, mf := range fields {
+		contained := false
+		for _, w := range list.Content {
+			if strings.EqualFold(mf, w) {
+				if uwl.Blacklist {
+					// contains a blacklisted word, trigger
+					return true, nil
+				} else {
+					contained = true
+					break
+				}
+			}
+		}
+
+		if !uwl.Blacklist && !contained {
+			// word not whitelisted, trigger
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ UsernameListener = (*UsernameInviteTrigger)(nil)
+
+type UsernameInviteTrigger struct {
+}
+
+func (uv *UsernameInviteTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (uv *UsernameInviteTrigger) DataType() interface{} {
+	return nil
+}
+
+func (uv *UsernameInviteTrigger) Name() (name string) {
+	return "Join username invite"
+}
+
+func (uv *UsernameInviteTrigger) Description() (description string) {
+	return "Triggers when a member joins with a username that contains a server invite"
+}
+
+func (uv *UsernameInviteTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (uv *UsernameInviteTrigger) CheckUsername(ms *dstate.MemberState, data interface{}) (bool, error) {
+	if common.DiscordInviteRegex.MatchString(ms.Username) || common.ThirdPartyDiscordInviteRegex.MatchString(ms.Username) {
+		return true, nil
+	}
+
+	return false, nil
+}
