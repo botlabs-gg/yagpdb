@@ -54,7 +54,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 			Type:  discordgo.ChannelTypeDM,
 		}
 
-		sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm")
+		sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm", false)
 	}
 
 	if config.JoinServerEnabled && len(config.JoinServerMsgs) > 0 {
@@ -64,7 +64,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 		}
 
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		sendTemplate(channel, chanMsg, ms, "join server msg")
+		sendTemplate(channel, chanMsg, ms, "join server msg", config.CensorInvites)
 	}
 }
 
@@ -90,11 +90,21 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	chanMsg := config.LeaveMsgs[rand.Intn(len(config.LeaveMsgs))]
 
-	sendTemplate(channel, chanMsg, ms, "leave")
+	sendTemplate(channel, chanMsg, ms, "leave", config.CensorInvites)
 }
 
-func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string) {
+func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool) {
 	ctx := templates.NewContext(cs.Guild, cs, ms)
+
+	ctx.Data["RealUsername"] = ms.Username
+	if censorInvites {
+		newUsername := common.ReplaceServerInvites(ms.Username, ms.Guild.ID, "[removed-server-invite]")
+		if newUsername != ms.Username {
+			ms.Username = newUsername + fmt.Sprintf("(user ID: %d)", ms.ID)
+			ctx.Data["UsernameHasInvite"] = true
+		}
+	}
+
 	msg, err := ctx.Execute(tmpl)
 
 	if err != nil {

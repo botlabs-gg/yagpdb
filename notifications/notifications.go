@@ -59,6 +59,8 @@ type Config struct {
 
 	TopicEnabled bool   `json:"topic_enabled" schema:"topic_enabled"`
 	TopicChannel string `json:"topic_channel" schema:"topic_channel" valid:"channel,true"`
+
+	CensorInvites bool `schema:"censor_invites"`
 }
 
 func (c *Config) JoinServerChannelInt() (i int64) {

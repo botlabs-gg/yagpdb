@@ -451,6 +451,21 @@ func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, erro
 	return callVariadic(f, values...)
 }
 
+func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Value, error) {
+	f := func(args []reflect.Value) (reflect.Value, error) {
+		for _, reaction := range args {
+			if c.IncreaseCheckCallCounter("add_reaction_response", 20) {
+				return reflect.Value{}, ErrTooManyCalls
+			}
+
+			c.AddResponseReactionNames = append(c.AddResponseReactionNames, reaction.String())
+		}
+		return reflect.ValueOf(""), nil
+	}
+
+	return callVariadic(f, values...)
+}
+
 func (c *Context) tmplCurrentUserAgeHuman() string {
 	t := bot.SnowflakeToTime(c.MS.ID)
 

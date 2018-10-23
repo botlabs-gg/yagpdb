@@ -36,6 +36,11 @@ var RulePartMap = map[int]RulePart{
 	21: &NicknameWordlistTrigger{Blacklist: true},
 	22: &SlowmodeTrigger{Attachments: true, ChannelBased: false},
 	23: &SlowmodeTrigger{Attachments: true, ChannelBased: true},
+	24: &UsernameWordlistTrigger{Blacklist: false},
+	25: &UsernameWordlistTrigger{Blacklist: true},
+	26: &UsernameRegexTrigger{BaseRegexTrigger{Inverse: false}},
+	27: &UsernameRegexTrigger{BaseRegexTrigger{Inverse: true}},
+	29: &UsernameInviteTrigger{},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
@@ -211,4 +216,11 @@ type NicknameListener interface {
 	RulePart
 
 	CheckNickname(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
+}
+
+// UsernameListener is a trigger that gets triggered on a nickname change
+type UsernameListener interface {
+	RulePart
+
+	CheckUsername(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
 }

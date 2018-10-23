@@ -23,9 +23,11 @@ const PubSubEvtCleaCache = "automod_2_clear_guild_cache"
 
 func (p *Plugin) BotInit() {
 
-	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, p.commandsMessageFilterFunc)
+	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, p.checkMessage)
 
 	eventsystem.AddHandler(p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(p.handleMsgUpdate, eventsystem.EventMessageUpdate)
+	eventsystem.AddHandler(p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
 
 	pubsub.AddHandler(PubSubEvtCleaCache, func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
@@ -40,7 +42,11 @@ func (p *Plugin) BotInit() {
 	}, nil)
 }
 
-func (p *Plugin) commandsMessageFilterFunc(msg *discordgo.Message) bool {
+func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
+	p.checkMessage(evt.MessageUpdate().Message)
+}
+
+func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
 
 	if msg.Author == nil || msg.Author.ID == common.BotUser.ID {
 		return false // Pls no panicerinos or banerinos self
@@ -206,6 +212,15 @@ func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	p.checkNickname(ms)
 }
 
+func (p *Plugin) handleGuildMemberJoin(evt *eventsystem.EventData) {
+	evtData := evt.GuildMemberAdd()
+
+	gs := bot.State.Guild(true, evtData.GuildID)
+	ms := dstate.MSFromDGoMember(gs, evtData.Member)
+
+	p.checkUsername(ms)
+}
+
 func (p *Plugin) checkNickname(ms *dstate.MemberState) {
 	p.CheckTriggers(nil, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
 		cast, ok := trig.Part.(NicknameListener)
@@ -214,6 +229,17 @@ func (p *Plugin) checkNickname(ms *dstate.MemberState) {
 		}
 
 		return cast.CheckNickname(ms, trig.ParsedSettings)
+	})
+}
+
+func (p *Plugin) checkUsername(ms *dstate.MemberState) {
+	p.CheckTriggers(nil, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
+		cast, ok := trig.Part.(UsernameListener)
+		if !ok {
+			return false, nil
+		}
+
+		return cast.CheckUsername(ms, trig.ParsedSettings)
 	})
 }
 
