@@ -278,9 +278,3 @@ func GuildCountsFunc() []int {
 
 	return result
 }
-
-// IsGuildOnCurrentProcess returns whether the guild is on one of the shards for this process
-func IsGuildOnCurrentProcess(guildID int64) bool {
-	shardID := int((guildID >> 22) % int64(TotalShardCount))
-	return shardID >= RunShardOffset && shardID < RunShardOffset+ProcessShardCount
-}

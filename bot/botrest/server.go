@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"goji.io"
@@ -20,8 +21,6 @@ import (
 	"sync"
 	"time"
 )
-
-var serverAddr = ":5002"
 
 func RegisterPlugin() {
 	common.RegisterPlugin(&Plugin{})
@@ -37,7 +36,8 @@ type BotRestPlugin interface {
 }
 
 type Plugin struct {
-	srv *http.Server
+	srv   *http.Server
+	srvMU sync.Mutex
 }
 
 func (p *Plugin) Name() string {
@@ -74,17 +74,76 @@ func (p *Plugin) BotInit() {
 	}
 
 	p.srv = &http.Server{
-		Addr:    serverAddr,
 		Handler: muxer,
 	}
 
+	currentPort := 5010
+
 	go func() {
-		logrus.Println("starting botrest on ", serverAddr)
-		err := p.srv.ListenAndServe()
-		if err != nil {
-			logrus.WithError(err).Error("Failed starting botrest http server")
+		for {
+			address := ":" + strconv.Itoa(currentPort)
+
+			logrus.Println("[botrest] starting botrest on ", address)
+
+			p.srvMU.Lock()
+			p.srv.Addr = address
+			p.srvMU.Unlock()
+
+			err := p.srv.ListenAndServe()
+			if err != nil {
+				// Shutdown was called for graceful shutdown
+				if err == http.ErrServerClosed {
+					logrus.Info("[botrest] server closed, shutting down...")
+					return
+				}
+
+				// Retry with a higher port until we succeed
+				logrus.WithError(err).Error("[botrest] failed starting botrest http server on ", address, " trying again on next port")
+				currentPort++
+				time.Sleep(time.Millisecond)
+				continue
+			}
+
+			logrus.Println("[botrest] botrest returned without any error")
+			break
 		}
 	}()
+
+	// Wait for the server address to stop changing
+	go func() {
+		lastAddr := ""
+		lastChange := time.Now()
+		for {
+			p.srvMU.Lock()
+			addr := p.srv.Addr
+			p.srvMU.Unlock()
+
+			if lastAddr != addr {
+				lastAddr = addr
+				time.Sleep(time.Second)
+				lastChange = time.Now()
+				continue
+			}
+
+			if time.Since(lastChange) > time.Second*5 {
+				// found avaiable port
+				p.mapAddressToShards(lastAddr)
+				return
+			}
+
+			time.Sleep(time.Second)
+		}
+	}()
+}
+
+func (p *Plugin) mapAddressToShards(address string) {
+	logrus.Info("[botrest] mapping ", address, " to current process shards")
+	for i := bot.RunShardOffset; i < bot.ProcessShardCount; i++ {
+		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyShardAddressMapping(i), address))
+		if err != nil {
+			logrus.WithError(err).Error("[botrest] failed mapping botrest")
+		}
+	}
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
