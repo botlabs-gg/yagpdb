@@ -30,6 +30,7 @@ type ScheduledEvent struct {
 	GuildID      int64      `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
 	EventName    string     `boil:"event_name" json:"event_name" toml:"event_name" yaml:"event_name"`
 	Data         types.JSON `boil:"data" json:"data" toml:"data" yaml:"data"`
+	Processed    bool       `boil:"processed" json:"processed" toml:"processed" yaml:"processed"`
 
 	R *scheduledEventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L scheduledEventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +44,7 @@ var ScheduledEventColumns = struct {
 	GuildID      string
 	EventName    string
 	Data         string
+	Processed    string
 }{
 	ID:           "id",
 	CreatedAt:    "created_at",
@@ -51,6 +53,7 @@ var ScheduledEventColumns = struct {
 	GuildID:      "guild_id",
 	EventName:    "event_name",
 	Data:         "data",
+	Processed:    "processed",
 }
 
 // ScheduledEventRels is where relationship names are stored.
@@ -70,8 +73,8 @@ func (*scheduledEventR) NewStruct() *scheduledEventR {
 type scheduledEventL struct{}
 
 var (
-	scheduledEventColumns               = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data"}
-	scheduledEventColumnsWithoutDefault = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data"}
+	scheduledEventColumns               = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
+	scheduledEventColumnsWithoutDefault = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
 	scheduledEventColumnsWithDefault    = []string{}
 	scheduledEventPrimaryKeyColumns     = []string{"id"}
 )
