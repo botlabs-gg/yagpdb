@@ -559,7 +559,7 @@ func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dst
 	}
 
 	for _, link := range urlThreats {
-		if len(link) > 1 {
+		if len(link) > 0 {
 			return true, nil
 		}
 	}
