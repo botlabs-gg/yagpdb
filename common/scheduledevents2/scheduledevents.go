@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -25,23 +26,32 @@ type ScheduledEvents struct {
 	currentlyProcessing   map[int64]bool
 }
 
+func newScheduledEventsPlugin() *ScheduledEvents {
+	return &ScheduledEvents{
+		stop:                make(chan *sync.WaitGroup),
+		currentlyProcessing: make(map[int64]bool),
+	}
+}
+
 func RegisterPlugin() {
-	_, err := common.PQ.Exec(DBSchema)
+	err := InitSchema()
 	if err != nil {
 		logrus.WithError(err).Fatal("scheduledevents failed initializing db schema")
 	}
 
-	common.RegisterPlugin(&ScheduledEvents{
-		stop:                make(chan *sync.WaitGroup),
-		currentlyProcessing: make(map[int64]bool),
-	})
+	common.RegisterPlugin(newScheduledEventsPlugin())
+}
+
+func InitSchema() error {
+	_, err := common.PQ.Exec(DBSchema)
+	return err
 }
 
 func (se *ScheduledEvents) Name() string {
 	return "scheduled_events"
 }
 
-type HandlerFunc func(evt *models.ScheduledEvent, data interface{}) (err error, retry bool)
+type HandlerFunc func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error)
 
 type RegisteredHandler struct {
 	EvtName    string
@@ -53,14 +63,38 @@ var (
 	registeredHandlers = make(map[string]*RegisteredHandler)
 )
 
-func RegisterHandler(eventName string, dataDest interface{}, handler HandlerFunc) {
+// RegisterHandler registers a handler for the scpecified event name
+// dataFormat is optional and should not be a pointer, it should match the type you're passing into ScheduleEvent
+func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFunc) {
 	registeredHandlers[eventName] = &RegisteredHandler{
 		EvtName:    eventName,
-		DataFormat: dataDest,
+		DataFormat: dataFormat,
 		Handler:    handler,
 	}
 
 	logrus.Debug("[ScheduledEvents2] Registered handler for ", eventName)
+}
+
+func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interface{}) error {
+	m := &models.ScheduledEvent{
+		TriggersAt: runAt,
+		EventName:  evtName,
+		GuildID:    guildID,
+	}
+
+	if data != nil {
+		b, err := json.Marshal(data)
+		if err != nil {
+			return errors.WithMessage(err, "marshal")
+		}
+
+		m.Data = b
+	} else {
+		m.Data = []byte("{}")
+	}
+
+	err := m.InsertG(context.Background(), boil.Infer())
+	return errors.WithMessage(err, "insert")
 }
 
 var _ bot.BotStartedHandler = (*ScheduledEvents)(nil)
@@ -91,7 +125,7 @@ func (se *ScheduledEvents) check() {
 	se.currentlyProcessingMU.Lock()
 	defer se.currentlyProcessingMU.Unlock()
 
-	toProcess, err := models.ScheduledEvents(qm.Where("triggers_at < ? AND processed=false", time.Now())).AllG(context.Background())
+	toProcess, err := models.ScheduledEvents(qm.Where("triggers_at < now() AND processed=false")).AllG(context.Background())
 	if err != nil {
 		logrus.WithError(err).Error("[scheduledevents2] failed checking for events to process")
 		return
@@ -136,7 +170,7 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 	}
 
 	for {
-		err, retry := handler.Handler(item, decodedData)
+		retry, err := handler.Handler(item, decodedData)
 		if err != nil {
 			l.WithError(err).Error("[scheduledevents2] handler returned an error")
 		}
@@ -147,6 +181,7 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 			continue
 		}
 
+		se.markDone(item)
 		break
 	}
 }

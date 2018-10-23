@@ -74,8 +74,8 @@ type scheduledEventL struct{}
 
 var (
 	scheduledEventColumns               = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
-	scheduledEventColumnsWithoutDefault = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
-	scheduledEventColumnsWithDefault    = []string{}
+	scheduledEventColumnsWithoutDefault = []string{"created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
+	scheduledEventColumnsWithDefault    = []string{"id"}
 	scheduledEventPrimaryKeyColumns     = []string{"id"}
 )
 

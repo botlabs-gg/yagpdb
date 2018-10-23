@@ -2,7 +2,7 @@ package scheduledevents2
 
 const DBSchema = `
 CREATE TABLE IF NOT EXISTS scheduled_events (
-	id BIGINT PRIMARY KEY,
+	id BIGSERIAL PRIMARY KEY,
 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
 	triggers_at TIMESTAMP WITH TIME ZONE NOT NULL,
