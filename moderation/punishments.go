@@ -168,7 +168,9 @@ func KickUser(config *Config, guildID, channelID int64, author *discordgo.User, 
 		return nil
 	}
 
-	_, err = DeleteMessages(channelID, user.ID, 100, 100)
+	if channelID != 0 {
+		_, err = DeleteMessages(channelID, user.ID, 100, 100)
+	}
 	return err
 }
 

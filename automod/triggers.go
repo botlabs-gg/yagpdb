@@ -559,7 +559,7 @@ func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dst
 	}
 
 	for _, link := range urlThreats {
-		if len(link) > 1 {
+		if len(link) > 0 {
 			return true, nil
 		}
 	}
@@ -1088,7 +1088,7 @@ func (r *UsernameRegexTrigger) Name() string {
 		return "Join username not matching regex"
 	}
 
-	return "Joins username matches regex"
+	return "Join username matches regex"
 }
 
 func (r *UsernameRegexTrigger) Description() string {

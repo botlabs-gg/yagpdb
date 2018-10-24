@@ -55,7 +55,7 @@ var AutomodRuleDatumRels = struct {
 	Rule                         string
 	TriggerAutomodTriggeredRules string
 }{
-	Rule: "Rule",
+	Rule:                         "Rule",
 	TriggerAutomodTriggeredRules: "TriggerAutomodTriggeredRules",
 }
 
