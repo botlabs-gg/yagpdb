@@ -58,15 +58,15 @@ func IncrIDCounter() (next int64) {
 	return next
 }
 
-func QueueMessageString(source, sourceID string, channel int64, message string) {
-	QueueMessage(source, sourceID, channel, message, nil)
+func QueueMessageString(source, sourceID string, guildID, channelID int64, message string) {
+	QueueMessage(source, sourceID, guildID, channelID, message, nil)
 }
 
-func QueueMessageEmbed(source, sourceID string, channel int64, embed *discordgo.MessageEmbed) {
-	QueueMessage(source, sourceID, channel, "", embed)
+func QueueMessageEmbed(source, sourceID string, guildID, channelID int64, embed *discordgo.MessageEmbed) {
+	QueueMessage(source, sourceID, guildID, channelID, "", embed)
 }
 
-func QueueMessage(source, sourceID string, channel int64, msgStr string, embed *discordgo.MessageEmbed) {
+func QueueMessage(source, sourceID string, guildID, channelID int64, msgStr string, embed *discordgo.MessageEmbed) {
 	nextID := IncrIDCounter()
 	if nextID == -1 {
 		return
@@ -76,7 +76,8 @@ func QueueMessage(source, sourceID string, channel int64, msgStr string, embed *
 		ID:           nextID,
 		Source:       source,
 		SourceID:     sourceID,
-		Channel:      channel,
+		Channel:      channelID,
+		Guild:        guildID,
 		MessageStr:   msgStr,
 		MessageEmbed: embed,
 	}

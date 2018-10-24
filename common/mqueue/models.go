@@ -20,4 +20,5 @@ type QueuedElement struct {
 
 	// The channel to send the message in
 	Channel int64
+	Guild   int64
 }
