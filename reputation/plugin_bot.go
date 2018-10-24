@@ -88,7 +88,7 @@ var cmds = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "TakeRep",
-		Aliases:      []string{"-", "tr", "trep"},
+		Aliases:      []string{"-", "tr", "trep", "-rep"},
 		Description:  "Takes away rep from someone",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
@@ -103,7 +103,7 @@ var cmds = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "GiveRep",
-		Aliases:      []string{"+", "gr", "grep"},
+		Aliases:      []string{"+", "gr", "grep", "+rep"},
 		Description:  "Gives rep to someone",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
