@@ -169,15 +169,19 @@ func pollRedis() {
 
 	common.RedisPool.Do(radix.WithConn("mqueue", func(rc radix.Conn) error {
 		for _, elem := range results {
-			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
-			rc.Do(radix.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
-
 			var parsed *QueuedElement
 			err := json.Unmarshal(elem, &parsed)
 			if err != nil {
 				logrus.WithError(err).Error("Failed parsing mqueue redis elemtn")
 				continue
 			}
+
+			if !bot.IsGuildOnCurrentProcess(parsed.Guild) {
+				continue
+			}
+
+			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
+			rc.Do(radix.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
 
 			go process(parsed, elem)
 		}
