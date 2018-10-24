@@ -32,6 +32,7 @@ type Reminder struct {
 	gorm.Model
 	UserID    string
 	ChannelID string
+	GuildID   int64
 	Message   string
 	When      int64
 }
@@ -55,7 +56,7 @@ func (r *Reminder) Trigger() error {
 
 	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message}).Info("Triggered reminder")
 
-	mqueue.QueueMessageString("reminder", "", r.ChannelIDInt(), common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
+	mqueue.QueueMessageString("reminder", "", r.GuildID, r.ChannelIDInt(), common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
 	return nil
 }
 
@@ -75,13 +76,14 @@ func GetChannelReminders(channel int64) (results []*Reminder, err error) {
 	return
 }
 
-func NewReminder(userID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
+func NewReminder(userID int64, guildID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
 	whenUnix := when.Unix()
 	reminder := &Reminder{
 		UserID:    discordgo.StrID(userID),
 		ChannelID: discordgo.StrID(channelID),
 		Message:   message,
 		When:      whenUnix,
+		GuildID:   guildID,
 	}
 
 	err := common.GORM.Create(reminder).Error

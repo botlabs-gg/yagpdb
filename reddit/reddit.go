@@ -26,7 +26,7 @@ func (p *Plugin) Name() string {
 }
 
 // Remove feeds if they don't point to a proper channel
-func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElementNoKallax, err error) {
+func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	code, _ := common.DiscordError(err)
 	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess {
 		l := log.WithError(err).WithField("channel", elem.Channel)

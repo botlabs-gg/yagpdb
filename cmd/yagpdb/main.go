@@ -151,7 +151,6 @@ func main() {
 	}
 
 	commands.InitCommands()
-	mqueue.InitStores()
 
 	if flagRunWeb || flagRunEverything {
 		go web.Run()

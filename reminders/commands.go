@@ -52,7 +52,7 @@ var cmds = []*commands.YAGCommand{
 				return "Can be max 365 days from now...", nil
 			}
 
-			_, err := NewReminder(parsed.Msg.Author.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
+			_, err := NewReminder(parsed.Msg.Author.ID, parsed.GS.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
 			if err != nil {
 				return nil, err
 			}
