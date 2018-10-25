@@ -548,7 +548,14 @@ function formSubmissionEvents(){
 
 
 		if(target.hasClass("btn-danger") || target.attr("data-open-confirm") || target.hasClass("delete-button")){
-			if(!confirm("Are you sure you want to do this?")){
+			var title = target.attr("title");
+			var content = " ";
+            		if(title !== undefined){
+            			content = title + ". Deleting this.";
+            		}else{
+            			content = "Deleting this.";
+            		}
+			if(!confirm(content + " Are you sure you want to do it?" )){
 				event.preventDefault(true);
 				event.stopPropagation();
 				return;
