@@ -1,5 +1,9 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**25th october 2018 (1.9.2-dev)**
+ - safebrowsing automod_legacy and automodv2 now requires a server for that to be running, you can run the server with the safebrowsing switch (`-safebrowser`)
+     + This is to support having multiple bot processes in the near future
+
 **24th october 2018 (1.9.2-dev)**
  - mqueue no longer supports the postgres queue, meaning if you're upgrading from a version earlier than v1.4.7 and there's still messages in the queue then those wont be processed. Versions after v1.4.7 queued new messages to the new queue but still continued to also poll the postgres queue, so to get around this you can run v1.9.1 until it's empty then upgrade to v1.9.2 or later.
      + Things that uses mqueue: reddit, youtube, and reminders when triggered

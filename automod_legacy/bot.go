@@ -1,7 +1,6 @@
 package automod_legacy
 
 import (
-	"github.com/google/safebrowsing"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -11,18 +10,14 @@ import (
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
 	"github.com/sirupsen/logrus"
-	"os"
-	"sync"
 	"time"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
-var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 var (
 	// cache configs because they are used often
-	confCache   *ccache.Cache
-	SafeBrowser *safebrowsing.SafeBrowser
+	confCache *ccache.Cache
 )
 
 func (p *Plugin) BotInit() {
@@ -32,32 +27,6 @@ func (p *Plugin) BotInit() {
 
 	pubsub.AddHandler("update_automod_legacy_rules", HandleUpdateAutomodRules, nil)
 	confCache = ccache.New(ccache.Configure().MaxSize(1000))
-
-	safeBrosingAPIKey := os.Getenv("YAGPDB_GOOGLE_SAFEBROWSING_API_KEY")
-	if safeBrosingAPIKey != "" {
-		conf := safebrowsing.Config{
-			APIKey: safeBrosingAPIKey,
-			DBPath: "safebrowsing_db",
-			Logger: logrus.StandardLogger().Writer(),
-		}
-		sb, err := safebrowsing.NewSafeBrowser(conf)
-		if err != nil {
-			logrus.WithError(err).Error("Failed initializing google safebrowsing client, integration will be disabled")
-		} else {
-			SafeBrowser = sb
-		}
-	}
-}
-
-func (p *Plugin) StopBot(wg *sync.WaitGroup) {
-	if SafeBrowser != nil {
-		err := SafeBrowser.Close()
-		if err != nil {
-			logrus.WithError(err).Error("Failed closing safebrowser")
-		}
-	}
-
-	wg.Done()
 }
 
 // Invalidate the cache when the rules have changed

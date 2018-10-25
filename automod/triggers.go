@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/automod_legacy"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/safebrowsing"
 	"github.com/sirupsen/logrus"
 	"net/url"
 	"regexp"
@@ -543,25 +544,14 @@ func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
 }
 
 func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	if automod_legacy.SafeBrowser == nil {
-		return false, nil
-	}
-
-	matches := LinkRegex.FindAllString(m.Content, -1)
-	if len(matches) < 1 {
-		return false, nil
-	}
-
-	urlThreats, err := automod_legacy.SafeBrowser.LookupURLs(matches)
+	threat, err := safebrowsing.CheckString(m.Content)
 	if err != nil {
 		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
 		return false, nil
 	}
 
-	for _, link := range urlThreats {
-		if len(link) > 1 {
-			return true, nil
-		}
+	if threat != nil {
+		return true, nil
 	}
 
 	return false, nil
