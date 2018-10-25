@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/evalphobia/logrus_sentry"
 	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/safebrowsing"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -52,6 +53,7 @@ var (
 	flagRunFeeds      string
 	flagRunEverything bool
 	flagDryRun        bool
+	flagRunSB         bool
 
 	flagLogTimestamp bool
 
@@ -65,6 +67,7 @@ func init() {
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
+	flag.BoolVar(&flagRunSB, "safebrowser", false, "Run the safebrowser proxy server")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 }
@@ -115,6 +118,13 @@ func main() {
 	err := common.Init()
 	if err != nil {
 		log.WithError(err).Fatal("Failed intializing")
+	}
+
+	if flagRunSB {
+		err := safebrowsing.RunServer()
+		if err != nil {
+			log.WithError(err).Fatal("failed starting safebrowser proxy server")
+		}
 	}
 
 	configstore.InitDatabases()
@@ -202,6 +212,10 @@ func listenSignal() {
 		web.Stop()
 		// Slep for a extra second
 		time.Sleep(time.Second)
+	}
+
+	if flagRunSB {
+		safebrowsing.Shutdown()
 	}
 
 	if shouldWait {
