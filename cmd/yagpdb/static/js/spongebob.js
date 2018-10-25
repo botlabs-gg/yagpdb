@@ -551,11 +551,11 @@ function formSubmissionEvents(){
 			var title = target.attr("title");
 			var content = " ";
             		if(title !== undefined){
-            			content = title + ". Deleting this.";
+            			content = "Deleting " + title +".";
             		}else{
-            			content = "Deleting this.";
+            			content = "Deleting.";
             		}
-			if(!confirm(content + " Are you sure you want to do it?" )){
+			if(!confirm(content + " Are you sure you want to do this?" )){
 				event.preventDefault(true);
 				event.stopPropagation();
 				return;
