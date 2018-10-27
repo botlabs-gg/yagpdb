@@ -72,7 +72,7 @@ func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFu
 		Handler:    handler,
 	}
 
-	logrus.Debug("[ScheduledEvents2] Registered handler for ", eventName)
+	logrus.Debug("[scheduledEvents2] Registered handler for ", eventName)
 }
 
 func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interface{}) error {
@@ -102,6 +102,7 @@ var _ bot.BotStopperHandler = (*ScheduledEvents)(nil)
 
 func (se *ScheduledEvents) BotStarted() {
 	go se.runCheckLoop()
+	go se.MigrateLegacyEvents()
 }
 
 func (se *ScheduledEvents) StopBot(wg *sync.WaitGroup) {
