@@ -74,6 +74,11 @@ func ProcessTempStats(full bool) {
 			log.WithError(err).Error("Failed retrieving connected guilds")
 		}
 	} else {
+		var exists bool
+		if common.RedisPool.Do(radix.Cmd(&exists, "EXISTS", "serverstats_active_guilds")); !exists {
+			return // no guilds to process
+		}
+
 		err := common.RedisPool.Do(radix.Cmd(nil, "RENAME", "serverstats_active_guilds", "serverstats_active_guilds_processing"))
 		if err != nil {
 			log.WithError(err).Error("Failed renaming temp stats")
