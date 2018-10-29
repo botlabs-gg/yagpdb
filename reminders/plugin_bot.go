@@ -9,7 +9,11 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/sirupsen/logrus"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -21,7 +25,9 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandler)
+	// scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandlerLegacy)
+	scheduledevents2.RegisterHandler("reminders_check_user", int64(0), checkUserScheduledEvent)
+	scheduledevents2.RegisterLegacyMigrater("reminders_check_user", migrateLegacyScheduledEvents)
 }
 
 // Reminder management commands
@@ -186,4 +192,41 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		}
 	}
 	return out
+}
+
+func checkUserScheduledEvent(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	// !important! the evt.GuildID can be 1 in cases where it was migrated from the legacy scheduled event system
+
+	userID := *data.(*int64)
+
+	reminders, err := GetUserReminders(userID)
+	if err != nil {
+		return true, err
+	}
+
+	now := time.Now()
+	nowUnix := now.Unix()
+	for _, v := range reminders {
+		if v.When <= nowUnix {
+			err := v.Trigger()
+			if err != nil {
+				// possibly try again
+				return scheduledevents2.CheckDiscordErrRetry(err), err
+			}
+		}
+	}
+
+	return false, nil
+}
+
+func migrateLegacyScheduledEvents(t time.Time, data string) error {
+	split := strings.Split(data, ":")
+	if len(split) < 2 {
+		logrus.Error("invalid check user scheduled event: ", data)
+		return nil
+	}
+
+	parsed, _ := strconv.ParseInt(split[1], 10, 64)
+
+	return scheduledevents2.ScheduleEvent("reminders_check_user", 1, t, parsed)
 }

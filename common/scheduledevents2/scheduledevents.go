@@ -132,8 +132,11 @@ func (se *ScheduledEvents) check() {
 		return
 	}
 
+	numSkipped := 0
+	numHandling := 0
 	for _, p := range toProcess {
 		if !bot.IsGuildOnCurrentProcess(p.GuildID) {
+			numSkipped++
 			continue
 		}
 
@@ -141,8 +144,14 @@ func (se *ScheduledEvents) check() {
 			continue
 		}
 
+		numHandling++
+
 		se.currentlyProcessing[p.ID] = true
 		go se.processItem(p)
+	}
+
+	if numHandling > 0 {
+		logrus.Info("[scheduledevents2] triggered ", numHandling, " scheduled events (skipped ", numSkipped, ")")
 	}
 }
 
@@ -151,7 +160,7 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 
 	handler, ok := registeredHandlers[item.EventName]
 	if !ok {
-		l.Error("[scheduledevents] unknown event: ", item.EventName)
+		l.Error("[scheduledevents2] unknown event: ", item.EventName)
 		se.markDone(item)
 		return
 	}
