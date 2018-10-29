@@ -210,11 +210,17 @@ func (se *ScheduledEvents) markDone(item *models.ScheduledEvent) {
 }
 
 func CheckDiscordErrRetry(err error) bool {
+	err = errors.Cause(err)
+
 	if cast, ok := err.(*discordgo.RESTError); ok {
 		if cast.Message != nil && cast.Message.Code != 0 {
 			// proper discord response, don't retry
 			return false
 		}
+	}
+
+	if err == bot.ErrGuildNotFound {
+		return false
 	}
 
 	// an unknown error unrelated to the discord api occured (503's for example) attempt a retry
