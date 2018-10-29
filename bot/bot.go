@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/master/slave"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -236,7 +235,6 @@ func BotStarted() {
 		}
 	}
 
-	go scheduledevents.Run()
 	go loopCheckAdmins()
 }
 
@@ -254,8 +252,6 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 			go stopper.StopBot(wg)
 		}
 
-		wg.Add(1)
-		go scheduledevents.Stop(wg)
 		close(stopRunCheckAdmins)
 	})
 }

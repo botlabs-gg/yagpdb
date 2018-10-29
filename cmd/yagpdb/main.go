@@ -20,6 +20,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 
@@ -154,6 +155,7 @@ func main() {
 	cah.RegisterPlugin()
 	premium.RegisterPlugin()
 	patreonpremiumsource.RegisterPlugin()
+	scheduledevents2.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
