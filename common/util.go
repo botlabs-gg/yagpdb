@@ -635,3 +635,16 @@ func ReplaceServerInvites(msg string, guildID int64, replacement string) string 
 	msg = DiscordInviteRegex.ReplaceAllString(msg, replacement)
 	return msg
 }
+
+func LogIgnoreError(err error, msg string, data log.Fields) {
+	if err == nil {
+		return
+	}
+
+	l := log.WithError(err)
+	if data != nil {
+		l = l.WithFields(data)
+	}
+
+	l.Error(msg)
+}

@@ -223,7 +223,9 @@ func BanUserWithDuration(config *Config, guildID, channelID int64, author *disco
 		return err
 	}
 
-	seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND data -> user_id = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
+	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
+	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
+
 	if duration > 0 {
 		err = scheduledevents2.ScheduleEvent("moderation_unban", guildID, time.Now().Add(duration), &ScheduledUnbanData{
 			UserID: user.ID,
@@ -284,7 +286,8 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 	currentMute.ExpiresAt = time.Now().Add(time.Minute * time.Duration(duration))
 
 	// no matter what, if were unmuting or muting, we wanna make sure we dont have duplicated unmute events
-	seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND data -> user_id = ?", guildID, member.ID)).DeleteAll(context.Background(), common.PQ)
+	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, member.ID)).DeleteAll(context.Background(), common.PQ)
+	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
 
 	if mute {
 		// Apply the roles to the user
