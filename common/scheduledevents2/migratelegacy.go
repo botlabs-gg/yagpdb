@@ -29,6 +29,9 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 		return
 	}
 
+	numSuccess := 0
+	numError := 0
+
 	skipScore := 0
 	for {
 		var result []string
@@ -57,6 +60,7 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 		if !ok {
 			logrus.Error("[scheduledevents2] no migrater found for event: ", split[0])
 			skipScore++
+			numError++
 			continue
 		}
 
@@ -64,11 +68,17 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 		if err != nil {
 			logrus.WithError(err).Error("[scheduledevents2] failed migrating scheduled event: ", fullEvent)
 			skipScore++
+			numError++
 			continue
 		}
 
 		// remove it
 		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events", fullEvent))
 		logrus.Info("[scheduledevents2] successfully migrated ", fullEvent)
+		numSuccess++
+	}
+
+	if numSuccess > 0 || numError > 0 {
+		logrus.Infof("[scheduledevents2] Suscessfully migrated %d scheduled events, failed %d", numSuccess, numError)
 	}
 }
