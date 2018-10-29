@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
+	"net/http"
+	"net/url"
 )
 
 var Command = &commands.YAGCommand{
