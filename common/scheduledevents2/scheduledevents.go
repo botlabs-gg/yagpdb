@@ -210,6 +210,10 @@ func (se *ScheduledEvents) markDone(item *models.ScheduledEvent) {
 }
 
 func CheckDiscordErrRetry(err error) bool {
+	if err == nil {
+		return false
+	}
+
 	err = errors.Cause(err)
 
 	if cast, ok := err.(*discordgo.RESTError); ok {
