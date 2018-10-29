@@ -2,15 +2,9 @@ package moderation
 
 import (
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/mediocregopher/radix.v3"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -72,67 +66,4 @@ func GetConfig(guildID int64) (*Config, error) {
 		err = nil
 	}
 	return &config, err
-}
-
-func handleUnMute(data string) error {
-
-	split := strings.Split(data, ":")
-	if len(split) < 2 {
-		logrus.Error("Invalid unmute event", data)
-		return nil // Can't re-schedule an invalid event..
-	}
-
-	guildID, _ := strconv.ParseInt(split[0], 10, 64)
-	userID, _ := strconv.ParseInt(split[1], 10, 64)
-
-	member, err := bot.GetMember(guildID, userID)
-	if err != nil {
-		err = errors.Cause(err)
-		if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil {
-			return nil // Discord api ok, something else went wrong (like the user not being on the server). do not reschedule
-		}
-		if err == bot.ErrGuildNotFound {
-			return nil
-		}
-
-		return err
-	}
-
-	err = MuteUnmuteUser(nil, false, guildID, 0, common.BotUser, "Mute Duration Expired", member, 0)
-	if errors.Cause(err) != ErrNoMuteRole {
-
-		if cast, ok := errors.Cause(err).(*discordgo.RESTError); ok && cast.Message != nil {
-			return nil // Discord api ok, something else went wrong. do not reschedule
-		}
-
-		return err
-	}
-	return nil
-}
-
-func handleUnban(data string) error {
-
-	split := strings.Split(data, ":")
-	if len(split) < 2 {
-		logrus.Error("Invalid unban event", data)
-		return nil // Can't re-schedule an invalid event..
-	}
-
-	guildID, _ := strconv.ParseInt(split[0], 10, 64)
-	userID, _ := strconv.ParseInt(split[1], 10, 64)
-
-	g := bot.State.Guild(true, guildID)
-	if g == nil {
-		logrus.WithField("guild", guildID).Error("Unban scheduled for guild now in state")
-		return nil
-	}
-
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
-
-	err := common.BotSession.GuildBanDelete(guildID, userID)
-	if err != nil {
-		logrus.WithField("guild", guildID).WithError(err).Error("Failed unbanning user")
-	}
-
-	return nil
 }

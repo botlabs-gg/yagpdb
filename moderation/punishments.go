@@ -1,18 +1,21 @@
 package moderation
 
 import (
+	"context"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"time"
 )
@@ -220,10 +223,13 @@ func BanUserWithDuration(config *Config, guildID, channelID int64, author *disco
 		return err
 	}
 
+	seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND data -> user_id = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
 	if duration > 0 {
-		err = scheduledevents.ScheduleEvent("mod_unban", discordgo.StrID(guildID)+":"+discordgo.StrID(user.ID), time.Now().Add(duration))
+		err = scheduledevents2.ScheduleEvent("moderation_unban", guildID, time.Now().Add(duration), &ScheduledUnbanData{
+			UserID: user.ID,
+		})
 		if err != nil {
-			return errors.WithMessage(err, "pusnish,sched_unban")
+			return errors.WithMessage(err, "punish,sched_unban")
 		}
 	}
 
@@ -239,6 +245,7 @@ var (
 )
 
 // Unmut or mute a user, ignore duration if unmuting
+// TODO: i don't think we need to track mutes in its own database anymore now with the new scheduled event system
 func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author *discordgo.User, reason string, member *dstate.MemberState, duration int) error {
 	config, err := getConfigIfNotSet(guildID, config)
 	if err != nil {
@@ -276,6 +283,9 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 	currentMute.Reason = reason
 	currentMute.ExpiresAt = time.Now().Add(time.Minute * time.Duration(duration))
 
+	// no matter what, if were unmuting or muting, we wanna make sure we dont have duplicated unmute events
+	seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND data -> user_id = ?", guildID, member.ID)).DeleteAll(context.Background(), common.PQ)
+
 	if mute {
 		// Apply the roles to the user
 		removedRoles, err := AddMemberMuteRole(config, member.ID, member.Roles)
@@ -306,9 +316,11 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 			return errors.WithMessage(err, "failed inserting/updating mute")
 		}
 
-		err = scheduledevents.ScheduleEvent("unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(member.ID), time.Now().Add(time.Minute*time.Duration(duration)))
+		err = scheduledevents2.ScheduleEvent("moderation_unmute", guildID, time.Now().Add(time.Minute*time.Duration(duration)), &ScheduledUnmuteData{
+			UserID: member.ID,
+		})
+
 		common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1))
-		// client.Cmd("SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1)
 		if err != nil {
 			return errors.WithMessage(err, "failed scheduling unmute")
 		}
@@ -322,11 +334,6 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 		if alreadyMuted {
 			common.GORM.Delete(&currentMute)
 			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.ID)))
-		}
-
-		err = scheduledevents.RemoveEvent("unmute", discordgo.StrID(guildID)+":"+discordgo.StrID(member.ID))
-		if err != nil {
-			logrus.WithError(err).Error("Failed scheduling/removing unmute event")
 		}
 	}
 
