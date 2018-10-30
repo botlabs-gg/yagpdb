@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/sirupsen/logrus"
@@ -157,9 +156,6 @@ var cmds = []*commands.YAGCommand{
 					return delMsg, nil
 				}
 			}
-
-			// No other reminder for this user at this timestamp, remove the scheduled event
-			scheduledevents.RemoveEvent(fmt.Sprintf("reminders_check_user:%s", reminder.When), reminder.UserID)
 
 			return delMsg, nil
 		},
