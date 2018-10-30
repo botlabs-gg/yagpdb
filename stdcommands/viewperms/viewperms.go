@@ -23,7 +23,7 @@ var Command = &commands.YAGCommand{
 
 		perms, err := data.GS.MemberPermissions(true, data.CS.ID, target)
 		if err != nil {
-			return "Unable to claculate perms (unknown user maybe?)", err
+			return "Unable to calculate perms (unknown user maybe?)", err
 		}
 
 		humanized := common.HumanizePermissions(int64(perms))
