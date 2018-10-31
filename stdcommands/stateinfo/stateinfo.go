@@ -20,28 +20,26 @@ var Command = &commands.YAGCommand{
 func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 	totalGuilds := 0
 	totalMembers := 0
-	totalChannels := 0
+	guildChannel := 0
 	totalMessages := 0
 
 	state := bot.State
 	state.RLock()
-	defer state.RUnlock()
-
+	totalChannels := len(state.Channels)
 	totalGuilds = len(state.Guilds)
+	gCop := state.GuildsSlice(false)
+	state.RUnlock()
 
-	for _, g := range state.Guilds {
-
-		state.RUnlock()
+	for _, g := range gCop {
 		g.RLock()
 
-		totalChannels += len(g.Channels)
+		guildChannel += len(g.Channels)
 		totalMembers += len(g.Members)
 
 		for _, cState := range g.Channels {
 			totalMessages += len(cState.Messages)
 		}
 		g.RUnlock()
-		state.RLock()
 	}
 
 	embed := &discordgo.MessageEmbed{
@@ -50,7 +48,8 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 			&discordgo.MessageEmbedField{Name: "Guilds", Value: fmt.Sprint(totalGuilds), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Members", Value: fmt.Sprintf("%d", totalMembers), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d", totalMessages), Inline: true},
-			&discordgo.MessageEmbedField{Name: "Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Guild Channels", Value: fmt.Sprintf("%d", guildChannel), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Total Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
 		},
 	}
 
