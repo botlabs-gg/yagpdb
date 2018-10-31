@@ -28,11 +28,10 @@ func (p *Plugin) Name() string {
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElementNoKallax, err error) {
 	code, _ := common.DiscordError(err)
-	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess {
+	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess && code != discordgo.ErrCodeMissingPermissions {
 		l := log.WithError(err).WithField("channel", elem.Channel)
-		if code != discordgo.ErrCodeMissingPermissions && code != discordgo.ErrCodeMissingAccess {
-			l = l.WithField("s_msg", elem.MessageEmbed)
-		}
+		l = l.WithField("s_msg", elem.MessageEmbed)
+
 		l.Warn("Error posting reddit message")
 		return
 	}
