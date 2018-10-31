@@ -312,7 +312,7 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 			continue
 		}
 
-		p.Entry.Info("Found youtube upload: ", item.Snippet.ChannelTitle, ": ", item.Snippet.Title)
+		p.Entry.Info("Found youtube upload: ", item.Snippet.ChannelTitle, ": ", item.Snippet.Title, " : ", parsedPublishedAt.Format(time.RFC3339))
 
 		// This is the new latest video
 		if parsedPublishedAt.After(latestTime) {
