@@ -2,7 +2,6 @@ package reverse
 
 import (
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/automod_legacy"
 	"github.com/jonas747/yagpdb/commands"
 )
@@ -28,9 +27,9 @@ var Command = &commands.YAGCommand{
 		cop := *data.Msg
 		cop.Content = out
 
-		if data.CS.Type == discordgo.ChannelTypeGuildText {
+		if data.GS != nil {
 
-			if automod_legacy.CheckMessageForBadInvites(out, data.CS.Guild.ID) {
+			if automod_legacy.CheckMessageForBadInvites(out, data.GS.ID) {
 				return data.Msg.Author.Mention() + " tried to use the reverse command to send a invite to another server :(", nil
 			}
 

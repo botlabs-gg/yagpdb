@@ -101,7 +101,7 @@ func CheckMessage(m *discordgo.Message) bool {
 		return false // Pls no panicerinos or banerinos self
 	}
 
-	if m.Author.Bot {
+	if m.Author.Bot || m.GuildID == 0 {
 		return false
 	}
 

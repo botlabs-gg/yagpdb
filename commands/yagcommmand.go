@@ -120,7 +120,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send typing to indicate the bot's working
-	common.BotSession.ChannelTyping(data.CS.ID)
+	common.BotSession.ChannelTyping(data.Msg.ChannelID)
 
 	logger := yc.Logger(data)
 
@@ -130,22 +130,19 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		yc.logExecutionTime(time.Since(started), data.Msg.Content, data.Msg.Author.Username)
 	}()
 
-	cState := bot.State.Channel(true, data.Msg.ChannelID)
-	if cState == nil {
-		return nil, errors.New("Channel not found")
-	}
+	cState := data.CS
 
 	// Set up log entry for later use
 	logEntry := &common.LoggedExecutedCommand{
 		UserID:    discordgo.StrID(data.Msg.Author.ID),
-		ChannelID: discordgo.StrID(cState.ID),
+		ChannelID: discordgo.StrID(data.Msg.ChannelID),
 
 		Command:    yc.Name,
 		RawCommand: data.Msg.Content,
 		TimeStamp:  time.Now(),
 	}
 
-	if cState.Guild != nil {
+	if cState != nil && cState.Guild != nil {
 		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
 	}
 
