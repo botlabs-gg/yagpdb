@@ -104,6 +104,9 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 	go func() {
 		path := numberRemover.Replace(request.URL.Path)
 		Statsd.Incr("discord.num_requsts", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(floored), "path:" + request.Method + "-" + path}, 1)
+		if code == 429 {
+			Statsd.Incr("discord.requests.429", []string{"method:" + request.Method, "path:" + request.Method + "-" + path}, 1)
+		}
 		// Statsd.Incr("discord.response.code."+strconv.Itoa(floored), nil, 1)
 		// Statsd.Incr("discord.request.method."+request.Method, nil, 1)
 	}()
