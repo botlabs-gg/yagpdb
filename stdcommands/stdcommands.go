@@ -32,6 +32,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/throw"
 	"github.com/jonas747/yagpdb/stdcommands/topcommands"
 	"github.com/jonas747/yagpdb/stdcommands/topevents"
+	"github.com/jonas747/yagpdb/stdcommands/topgames"
 	"github.com/jonas747/yagpdb/stdcommands/topic"
 	"github.com/jonas747/yagpdb/stdcommands/topservers"
 	"github.com/jonas747/yagpdb/stdcommands/unbanserver"
@@ -74,6 +75,7 @@ func (p *Plugin) AddCommands() {
 		poll.Command,
 		undelete.Command,
 		viewperms.Command,
+		topgames.Command,
 
 		// Maintenance
 		stateinfo.Command,
