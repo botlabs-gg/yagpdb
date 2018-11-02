@@ -8,6 +8,7 @@ import (
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -275,6 +276,10 @@ func process(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleR
 	}
 
 	parsedChannel := elemSimple.Channel
+
+	// instead of firing all the requests at once, spread it out over a second
+	randSleep := rand.Intn(1000)
+	time.Sleep(time.Millisecond * time.Duration(randSleep))
 
 	for {
 		var err error
