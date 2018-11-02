@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/banserver"
 	"github.com/jonas747/yagpdb/stdcommands/calc"
 	"github.com/jonas747/yagpdb/stdcommands/catfact"
+	"github.com/jonas747/yagpdb/stdcommands/ccreqs"
 	"github.com/jonas747/yagpdb/stdcommands/createinvite"
 	"github.com/jonas747/yagpdb/stdcommands/currentshard"
 	"github.com/jonas747/yagpdb/stdcommands/currenttime"
@@ -93,6 +94,7 @@ func (p *Plugin) AddCommands() {
 		createinvite.Command,
 		findserver.Command,
 		dcallvoice.Command,
+		ccreqs.Command,
 	)
 
 }

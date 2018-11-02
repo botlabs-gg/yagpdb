@@ -57,11 +57,10 @@ func Init() error {
 	}
 	Conf = config
 
-	BotSession, err = discordgo.New(config.BotToken)
+	err = setupGlobalDGoSession()
 	if err != nil {
 		return err
 	}
-	BotSession.MaxRestRetries = 3
 
 	ConnectDatadog()
 
@@ -89,6 +88,18 @@ func Init() error {
 	}
 
 	return err
+}
+
+func setupGlobalDGoSession() (err error) {
+	BotSession, err = discordgo.New(Conf.BotToken)
+	if err != nil {
+		return err
+	}
+
+	BotSession.MaxRestRetries = 3
+	BotSession.Ratelimiter.MaxConcurrentRequests = 10
+
+	return nil
 }
 
 func ConnectDatadog() {
