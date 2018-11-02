@@ -32,7 +32,7 @@ var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?|danks|ty|thx|\+rep|\+
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
 
-	if len(msg.Mentions) < 1 {
+	if len(msg.Mentions) < 1 || msg.GuildID == 0 {
 		return
 	}
 
@@ -45,18 +45,13 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	cs := bot.State.Channel(true, msg.ChannelID)
-	if cs.IsPrivate() {
-		return
-	}
-
-	conf, err := GetConfig(evt.Context(), cs.Guild.ID)
+	conf, err := GetConfig(evt.Context(), msg.GuildID)
 	if err != nil || !conf.Enabled || conf.DisableThanksDetection {
 		return
 	}
 
-	target, err := bot.GetMember(cs.Guild.ID, who.ID)
-	sender, err2 := bot.GetMember(cs.Guild.ID, msg.Author.ID)
+	target, err := bot.GetMember(msg.GuildID, who.ID)
+	sender, err2 := bot.GetMember(msg.GuildID, msg.Author.ID)
 	if err != nil || err2 != nil {
 		if err2 != nil {
 			err = err2
@@ -70,7 +65,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = ModifyRep(evt.Context(), conf, cs.Guild.ID, sender, target, 1)
+	err = ModifyRep(evt.Context(), conf, msg.GuildID, sender, target, 1)
 	if err != nil {
 		if err == ErrCooldown {
 			// Ignore this error silently
