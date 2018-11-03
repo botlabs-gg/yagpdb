@@ -45,6 +45,9 @@ func (p *Plugin) runBot() {
 	redditClient := setupClient()
 	fetcher := NewPostFetcher(redditClient)
 
+	lastLogged := time.Now()
+	num := 0
+
 	ticker := time.NewTicker(time.Second * 5)
 	for {
 		select {
@@ -61,6 +64,13 @@ func (p *Plugin) runBot() {
 		}
 		if len(links) < 1 {
 			continue
+		}
+
+		num += len(links)
+		if time.Since(lastLogged) >= time.Minute {
+			logrus.Println("Num posts last minute: ", num)
+			lastLogged = time.Now()
+			num = 0
 		}
 
 		for _, v := range links {
@@ -106,7 +116,7 @@ OUTER:
 		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
 	}).Debug("Found matched reddit post")
-  
+
 	message, embed := CreatePostMessage(post)
 
 	for _, item := range filteredItems {
@@ -116,10 +126,10 @@ OUTER:
 		} else {
 			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), cParsed, message)
 		}
-	}
 
-	if common.Statsd != nil {
-		go common.Statsd.Count("yagpdb.reddit.matches", int64(len(filteredItems)), nil, 1)
+		if common.Statsd != nil {
+			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + item.Guild}, 1)
+		}
 	}
 
 	return nil
