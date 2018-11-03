@@ -168,7 +168,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 	}
 
 	if changed {
-		go common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
+		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
 	}
 }
 
