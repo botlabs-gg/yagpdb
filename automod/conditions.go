@@ -3,7 +3,6 @@ package automod
 import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -336,7 +335,6 @@ func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings interface
 
 	created := bot.SnowflakeToTime(data.MS.ID)
 	minutes := int(time.Since(created).Minutes())
-	logrus.Println(minutes)
 	if minutes <= settingsCast.Treshold {
 		// account were made within threshold
 		if ac.Below {
