@@ -97,7 +97,7 @@ func setupGlobalDGoSession() (err error) {
 	}
 
 	BotSession.MaxRestRetries = 3
-	BotSession.Ratelimiter.MaxConcurrentRequests = 10
+	BotSession.Ratelimiter.MaxConcurrentRequests = 50
 
 	return nil
 }
