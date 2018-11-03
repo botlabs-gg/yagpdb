@@ -8,7 +8,6 @@ import (
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-kallax.v1"
-	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -120,6 +119,10 @@ func QueueMessage(source, sourceID string, channel int64, msgStr string, embed *
 
 func (p *Plugin) BotInit() {
 	go startPolling()
+
+	for i := 0; i < 4; i++ {
+		go processWorker()
+	}
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -204,7 +207,7 @@ OUTER:
 			}
 		}
 		currentlyProcessing = append(currentlyProcessing, v.ID)
-		go process(v, nil, nil, true)
+		go queueWork(v, nil, nil, true)
 	}
 	currentlyProcessingLock.Unlock()
 }
@@ -232,11 +235,37 @@ func pollRedis() {
 				continue
 			}
 
-			go process(nil, parsed, elem, false)
+			go queueWork(nil, parsed, elem, false)
 		}
 
 		return nil
 	}))
+}
+
+type WorkItem struct {
+	legacyElem *QueuedElement
+	elemSimple *QueuedElementNoKallax
+	raw        []byte
+	isLegacy   bool
+}
+
+var (
+	workChan = make(chan *WorkItem, 50)
+)
+
+func queueWork(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleRaw []byte, isLegacy bool) {
+	workChan <- &WorkItem{
+		legacyElem: elem,
+		elemSimple: elemSimple,
+		raw:        elemSimpleRaw,
+		isLegacy:   isLegacy,
+	}
+}
+
+func processWorker() {
+	for item := range workChan {
+		process(item.legacyElem, item.elemSimple, item.raw, item.isLegacy)
+	}
 }
 
 func process(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleRaw []byte, isLegacy bool) {
@@ -276,10 +305,6 @@ func process(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleR
 	}
 
 	parsedChannel := elemSimple.Channel
-
-	// instead of firing all the requests at once, spread it out over a second
-	randSleep := rand.Intn(1000)
-	time.Sleep(time.Millisecond * time.Duration(randSleep))
 
 	for {
 		var err error
