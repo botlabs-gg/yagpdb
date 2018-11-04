@@ -47,6 +47,7 @@ func (p *Plugin) runBot() {
 
 	lastLogged := time.Now()
 	num := 0
+	numDeleted := 0
 
 	ticker := time.NewTicker(time.Second * 5)
 	for {
@@ -68,12 +69,23 @@ func (p *Plugin) runBot() {
 
 		num += len(links)
 		if time.Since(lastLogged) >= time.Minute {
-			logrus.Println("Num posts last minute: ", num)
+			logrus.Println("Num posts last minute: ", num, ", deleted: ", numDeleted)
 			lastLogged = time.Now()
 			num = 0
+			numDeleted = 0
 		}
 
 		for _, v := range links {
+			if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
+				numDeleted++
+				continue
+			}
+
+			if !v.IsRobotIndexable {
+				numDeleted++
+				continue
+			}
+
 			// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
 			// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
 			p.handlePost(v)

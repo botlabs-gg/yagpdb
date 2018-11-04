@@ -79,8 +79,20 @@ func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 		return nil, err
 	}
 
+	end := 0
 	highestID := int64(-1)
-	for _, v := range resp {
+	for i, v := range resp {
+		unixSeconds := int64(v.CreatedUtc)
+		age := time.Since(time.Unix(unixSeconds, 0))
+		// logrus.Info(age.String())
+
+		// stay 1 minute behind
+		if age.Seconds() < 60 {
+			break
+		}
+
+		end = i + 1
+
 		parsedId, err := strconv.ParseInt(v.ID, 36, 64)
 		if err != nil {
 			logrus.WithError(err).WithField("id", v.ID).Error("Failed parsing reddit post id")
@@ -91,6 +103,8 @@ func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 			highestID = parsedId
 		}
 	}
+
+	resp = resp[:end]
 
 	if highestID != -1 {
 		p.LastID = highestID
