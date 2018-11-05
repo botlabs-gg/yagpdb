@@ -3,6 +3,7 @@ package simpleembed
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/image/colornames"
@@ -16,6 +17,8 @@ var Command = &commands.YAGCommand{
 	Aliases:     []string{"se"},
 	Description: "A more simpler version of CustomEmbed, controlled completely using switches.",
 	ArgSwitches: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
+
 		&dcmd.ArgDef{Switch: "title", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: ""},
 		&dcmd.ArgDef{Switch: "color", Help: "Either hex code or name", Type: dcmd.String, Default: ""},
@@ -66,8 +69,22 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		_, err := common.BotSession.ChannelMessageSendEmbed(data.Msg.ChannelID, embed)
-		return err, err
+		cID := data.Msg.ChannelID
+		c := data.Switch("channel")
+		if c.Value != nil {
+			cID = c.Value.(*dstate.ChannelState).ID
+		}
+
+		_, err := common.BotSession.ChannelMessageSendEmbed(cID, embed)
+		if err != nil {
+			return err, err
+		}
+
+		if cID != data.Msg.ChannelID {
+			return "Done", nil
+		}
+
+		return nil, nil
 	},
 }
 
