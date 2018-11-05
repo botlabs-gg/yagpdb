@@ -55,8 +55,8 @@ var cmdLogs = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Logs",
 	Aliases:         []string{"log"},
-	Description:     "Creates a log of the last messages in the current channel",
-	LongDescription: "This includes deleted messages within an hour",
+	Description:     "Creates a log of the last messages in the current channel.",
+	LongDescription: "This includes deleted messages within an hour (or 12 hours for premium servers)",
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
@@ -220,11 +220,12 @@ var cmdWhois = &commands.YAGCommand{
 }
 
 var cmdUsernames = &commands.YAGCommand{
-	CmdCategory: commands.CategoryTool,
-	Name:        "Usernames",
-	Description: "Shows past usernames of a user",
-	Aliases:     []string{"unames", "un"},
-	RunInDM:     true,
+	CmdCategory:     commands.CategoryTool,
+	Name:            "Usernames",
+	Description:     "Shows past usernames of a user.",
+	LongDescription: "Only shows up to the last 25 usernames.",
+	Aliases:         []string{"unames", "un"},
+	RunInDM:         true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
@@ -263,11 +264,13 @@ var cmdUsernames = &commands.YAGCommand{
 }
 
 var cmdNicknames = &commands.YAGCommand{
-	CmdCategory: commands.CategoryTool,
-	Name:        "Nicknames",
-	Description: "Shows past nicknames of a user",
-	Aliases:     []string{"nn"},
-	RunInDM:     false,
+	CmdCategory:     commands.CategoryTool,
+	Name:            "Nicknames",
+	Description:     "Shows past nicknames of a user.",
+	LongDescription: "Only shows up to the last 25 nicknames.",
+
+	Aliases: []string{"nn"},
+	RunInDM: false,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},

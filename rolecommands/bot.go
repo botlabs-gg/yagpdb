@@ -26,7 +26,7 @@ func (p *Plugin) AddCommands() {
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
 			Name:        "Role",
-			Description: "Give yourself a role or list all available roles, the roles have to be set up in the control panel first, under 'rolecommands' ",
+			Description: "Toggle a role on yourself or list all available roles, they have to be set up in the control panel first, under 'rolecommands' ",
 			Arguments: []*dcmd.ArgDef{
 				&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
 			},
@@ -37,7 +37,8 @@ func (p *Plugin) AddCommands() {
 		Name:                "Create",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"c"},
-		Description:         "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one\n\n" + msgIDDocs,
+		Description:         "Set up a role menu.",
+		LongDescription:     "Specify a message with -m to use an existing message instead of having the bot make one\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
@@ -55,7 +56,8 @@ func (p *Plugin) AddCommands() {
 	cmdRemoveRoleMenu := &commands.YAGCommand{
 		Name:                "Remove",
 		CmdCategory:         categoryRoleMenu,
-		Description:         "Removes a rolemenu from a message, the message won't be deleted but the bot will now not do anything with reactions on that message\n\n" + msgIDDocs,
+		Description:         "Removes a rolemenu from a message.",
+		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
@@ -68,7 +70,8 @@ func (p *Plugin) AddCommands() {
 		Name:                "Update",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"u"},
-		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.\n\n" + msgIDDocs,
+		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
+		LongDescription:     "\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
@@ -85,7 +88,8 @@ func (p *Plugin) AddCommands() {
 		Name:                "ResetReactions",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"reset"},
-		Description:         "Removes all reactions on the specified menu message and re-adds them, can be used to fix the order after updating it.\n\n" + msgIDDocs,
+		Description:         "Removes all reactions on the specified menu message and re-adds them.",
+		LongDescription:     "Can be used to fix the order after updating it.\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
@@ -98,7 +102,8 @@ func (p *Plugin) AddCommands() {
 		Name:                "EditOption",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"edit"},
-		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards\n\n" + msgIDDocs,
+		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards.",
+		LongDescription:     "\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{

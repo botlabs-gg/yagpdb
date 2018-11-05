@@ -19,7 +19,7 @@ func (p *Plugin) AddCommands() {
 			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them"},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Switch: "v", Name: "Vote mode, players vote instead of having a cardczar"},
+			{Switch: "v", Name: "Vote mode - players vote instead of having a cardczar"},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			voteMode := data.Switch("v").Bool()
@@ -43,7 +43,7 @@ func (p *Plugin) AddCommands() {
 	cmdEnd := &commands.YAGCommand{
 		Name:        "end",
 		CmdCategory: commands.CategoryFun,
-		Description: "Ends a cards against humanity game thats ongoing in this channel",
+		Description: "Ends a cards against humanity game thats ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			isAdmin, err := bot.AdminOrPerm(0, data.Msg.Author.ID, data.CS.ID)
 			if err == nil && isAdmin {
@@ -71,7 +71,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "user", Type: dcmd.UserID},
 		},
-		Description: "Kicks a player from the ongoing cards against humanity game in this channel",
+		Description: "Kicks a player from the ongoing cards against humanity game in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			userID := data.Args[0].Int64()
 			err := p.Manager.AdminKickUser(data.Msg.Author.ID, userID)

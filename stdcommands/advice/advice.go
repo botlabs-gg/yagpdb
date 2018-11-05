@@ -12,53 +12,53 @@ var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "Advice",
-	Description: "Get advice",
+	Description: "Dont be afraid to ask for advice!",
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "What", Type: dcmd.String},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		//return "The API this command used has been shut down :(", nil
-		 random := true
-		 addr := "http://api.adviceslip.com/advice"
-		 if data.Args[0].Str() != "" {
-		 	random = false
-		 	addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
-		 }
+		random := true
+		addr := "http://api.adviceslip.com/advice"
+		if data.Args[0].Str() != "" {
+			random = false
+			addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
+		}
 
-		 resp, err := http.Get(addr)
-		 if err != nil {
-		 	return nil, err
-		 }
+		resp, err := http.Get(addr)
+		if err != nil {
+			return nil, err
+		}
 
-		 var decoded interface{}
+		var decoded interface{}
 
-		 if random {
-		 	decoded = &RandomAdviceResp{}
-		 } else {
-		 	decoded = &SearchAdviceResp{}
-		 }
+		if random {
+			decoded = &RandomAdviceResp{}
+		} else {
+			decoded = &SearchAdviceResp{}
+		}
 
-		 err = json.NewDecoder(resp.Body).Decode(&decoded)
-		 if err != nil {
-		 	return err, err
-		 }
+		err = json.NewDecoder(resp.Body).Decode(&decoded)
+		if err != nil {
+			return err, err
+		}
 
-		 advice := "No advice found :'("
+		advice := "No advice found :'("
 
-		 if random {
-		 	slip := decoded.(*RandomAdviceResp).Slip
-		 	if slip != nil {
-		 		advice = slip.Advice
+		if random {
+			slip := decoded.(*RandomAdviceResp).Slip
+			if slip != nil {
+				advice = slip.Advice
 			}
-		 } else {
-		 	cast := decoded.(*SearchAdviceResp)
-		 	if len(cast.Slips) > 0 {
-		 		advice = cast.Slips[0].Advice
-		 	}
-		 }
+		} else {
+			cast := decoded.(*SearchAdviceResp)
+			if len(cast.Slips) > 0 {
+				advice = cast.Slips[0].Advice
+			}
+		}
 
-		 return advice, nil
+		return advice, nil
 	},
 }
 
