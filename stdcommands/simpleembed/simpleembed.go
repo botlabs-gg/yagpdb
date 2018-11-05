@@ -73,6 +73,15 @@ var Command = &commands.YAGCommand{
 		c := data.Switch("channel")
 		if c.Value != nil {
 			cID = c.Value.(*dstate.ChannelState).ID
+
+			perms, err := data.GS.MemberPermissions(true, cID, data.Msg.Author.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			if perms&discordgo.PermissionSendMessages != discordgo.PermissionSendMessages || perms&discordgo.PermissionReadMessages != discordgo.PermissionReadMessages {
+				return "You do not have permissions to send messages there", nil
+			}
 		}
 
 		_, err := common.BotSession.ChannelMessageSendEmbed(cID, embed)
