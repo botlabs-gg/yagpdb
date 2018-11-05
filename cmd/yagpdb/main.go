@@ -55,7 +55,8 @@ var (
 
 	flagLogTimestamp bool
 
-	flagSysLog bool
+	flagSysLog     bool
+	flagGenCmdDocs bool
 )
 
 func init() {
@@ -65,6 +66,7 @@ func init() {
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
+	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 }
@@ -152,6 +154,11 @@ func main() {
 
 	commands.InitCommands()
 	mqueue.InitStores()
+
+	if flagGenCmdDocs {
+		GenCommandsDocs()
+		return
+	}
 
 	if flagRunWeb || flagRunEverything {
 		go web.Run()
