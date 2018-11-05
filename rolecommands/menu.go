@@ -81,6 +81,10 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 
 	err = model.InsertG(parsed.Context(), boil.Infer())
 	if err != nil {
+		if common.ErrPQIsUniqueViolation(err) {
+			return "Already a menu on that message, use `rolemenu update ...` to update it", nil
+		}
+
 		return "Failed setting up menu", err
 	}
 

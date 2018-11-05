@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/lib/pq"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -632,4 +633,18 @@ func ReplaceServerInvites(msg string, guildID int64, replacement string) string 
 	msg = ThirdPartyDiscordInviteRegex.ReplaceAllString(msg, replacement)
 	msg = DiscordInviteRegex.ReplaceAllString(msg, replacement)
 	return msg
+}
+
+func ErrPQIsUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if cast, ok := errors.Cause(err).(*pq.Error); ok {
+		if cast.Code == "23505" {
+			return true
+		}
+	}
+
+	return false
 }
