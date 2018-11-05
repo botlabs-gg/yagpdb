@@ -79,7 +79,7 @@ var cmdLogs = &commands.YAGCommand{
 var cmdWhois = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "Whois",
-	Description: "shows information about a user",
+	Description: "Shows information about a user",
 	Aliases:     []string{"whoami"},
 	RunInDM:     false,
 	Arguments: []*dcmd.ArgDef{
