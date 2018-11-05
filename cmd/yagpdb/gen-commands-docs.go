@@ -55,17 +55,17 @@ func GenCommandsDocs() {
 				out.WriteString("**Aliases:** " + aliases + "\n\n")
 			}
 
-			if args != "" {
-				out.WriteString("```\n" + args + "\n```\n")
-			}
+			out.WriteString(desc)
+			out.WriteString("\n\n")
+
+			out.WriteString("**Usage:**\n")
+			out.WriteString("```\n" + args + "\n```\n")
 
 			if switches != "" {
 				out.WriteString("```\n" + switches + "\n```\n")
 			}
 
-			out.WriteString(desc)
-			out.WriteString("\n\n")
-
+			out.WriteString("\n")
 		}
 
 	}
