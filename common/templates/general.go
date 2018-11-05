@@ -183,11 +183,12 @@ func joinStrings(sep string, args ...interface{}) string {
 }
 
 func sequence(start, stop int) ([]int, error) {
-	out := make([]int, stop-start)
 
-	if stop-start > 10000 {
-		return nil, errors.New("Sequence max length is 10000")
+	if stop-start > 1000 {
+		return nil, errors.New("Sequence max length is 1000")
 	}
+
+	out := make([]int, stop-start)
 
 	ri := 0
 	for i := start; i < stop; i++ {
