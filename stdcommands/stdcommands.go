@@ -29,6 +29,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/reverse"
 	"github.com/jonas747/yagpdb/stdcommands/roll"
 	"github.com/jonas747/yagpdb/stdcommands/setstatus"
+	"github.com/jonas747/yagpdb/stdcommands/simpleembed"
 	"github.com/jonas747/yagpdb/stdcommands/stateinfo"
 	"github.com/jonas747/yagpdb/stdcommands/throw"
 	"github.com/jonas747/yagpdb/stdcommands/topcommands"
@@ -69,6 +70,7 @@ func (p *Plugin) AddCommands() {
 		throw.Command,
 		roll.Command,
 		customembed.Command,
+		simpleembed.Command,
 		currenttime.Command,
 		mentionrole.Command,
 		listroles.Command,
