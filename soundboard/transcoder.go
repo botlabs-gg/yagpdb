@@ -29,9 +29,12 @@ func init() {
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
-var _ bot.BotStopperHandler = (*Plugin)(nil)
+var _ common.BackgroundWorkerPlugin = (*Plugin)(nil)
 
-func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+func (p *Plugin) RunBackgroundWorker() {
+	transcoderLoop()
+}
+func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 	logrus.Info("Stopping soundboard transcoder...")
 
 	transcoderStop <- wg
