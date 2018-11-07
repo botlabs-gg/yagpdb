@@ -172,7 +172,7 @@ func main() {
 		go feeds.Run(strings.Split(flagRunFeeds, ","))
 	}
 
-	if flagRunBWC {
+	if flagRunBWC || flagRunEverything {
 		go common.RunBackgroundWorkers()
 	}
 
