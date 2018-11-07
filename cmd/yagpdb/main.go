@@ -156,6 +156,10 @@ func main() {
 		return
 	}
 
+	if flagRunBot || flagRunEverything {
+		bot.Enabled = true
+	}
+
 	commands.InitCommands()
 
 	if flagRunWeb || flagRunEverything {

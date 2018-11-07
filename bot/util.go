@@ -7,10 +7,12 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -213,12 +215,67 @@ func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.M
 
 // IsGuildOnCurrentProcess returns whether the guild is on one of the shards for this process
 func IsGuildOnCurrentProcess(guildID int64) bool {
-	shardID := int((guildID >> 22) % int64(TotalShardCount))
+	totShards := GetTotalShards()
+
+	shardID := int((guildID >> 22) % totShards)
 	return shardID >= RunShardOffset && shardID < RunShardOffset+ProcessShardCount
 }
 
 // GuildShardID returns the shard id for the provided guild id
 func GuildShardID(guildID int64) int {
-	shardID := int((guildID >> 22) % int64(TotalShardCount))
+	totShards := GetTotalShards()
+
+	shardID := int((guildID >> 22) % totShards)
 	return shardID
+}
+
+var runShardPollerOnce sync.Once
+
+// GetTotalShards either retrieves the total shards from passed command line if the bot is set to run in the same process
+// or it starts a background poller to poll redis for it every second
+func GetTotalShards() int64 {
+	// if the bot is running on this process, then we know the number of total shards
+	if Enabled && totalShardCount != 0 {
+		return int64(totalShardCount)
+	}
+
+	// otherwise we poll it from redis every second
+	runShardPollerOnce.Do(func() {
+		err := fetchTotalShardsFromRedis()
+		if err != nil {
+			panic("failed retrieving shards")
+		}
+
+		go runNumShardsUpdater()
+	})
+
+	return atomic.LoadInt64(redisSetTotalShards)
+}
+
+var redisSetTotalShards = new(int64)
+
+func runNumShardsUpdater() {
+	t := time.NewTicker(time.Second)
+	for {
+		err := fetchTotalShardsFromRedis()
+		if err != nil {
+			logrus.WithError(err).Error("[botrest] failed retrieving total shards")
+		}
+		<-t.C
+	}
+}
+
+func fetchTotalShardsFromRedis() error {
+	var result int64
+	err := common.RedisPool.Do(radix.Cmd(&result, "GET", "yagpdb_total_shards"))
+	if err != nil {
+		return err
+	}
+
+	old := atomic.SwapInt64(redisSetTotalShards, result)
+	if old != result {
+		logrus.Info("[botrest] new shard count received: ", old, " -> ", result)
+	}
+
+	return nil
 }

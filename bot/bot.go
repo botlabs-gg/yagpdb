@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/master/slave"
+	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
@@ -19,7 +20,8 @@ import (
 var (
 	// When the bot was started
 	Started      = time.Now()
-	Running      bool
+	Enabled      bool // wether the bot is set to run at some point in this process
+	Running      bool // wether the bot is currently running
 	State        *dstate.State
 	ShardManager *dshardmanager.Manager
 
@@ -40,7 +42,7 @@ var (
 	// to make sure the action they're doing is relevant to the current cluster (example: scheduled events should only run events for guilds on this cluster)
 
 	// the total amount of shards this bot is set to use across all processes
-	TotalShardCount int
+	totalShardCount int
 
 	// the number of shards running on this process
 	ProcessShardCount int
@@ -51,7 +53,7 @@ var (
 )
 
 func init() {
-	flag.IntVar(&TotalShardCount, "totalshards", 0, "TODO: Total shards the bot has, <1 for auto")
+	flag.IntVar(&totalShardCount, "totalshards", 0, "TODO: Total shards the bot has, <1 for auto")
 	flag.IntVar(&ProcessShardCount, "runshards", 0, "TODO: The number of shards this process should run, <1 for all")
 	flag.IntVar(&RunShardOffset, "runshardsoffset", 0, "TODO: The start offset, e.g if we wanna run shard 10-19 then runshards would be 10 and runshardsoffset would be 10")
 }
@@ -135,20 +137,25 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
-	if TotalShardCount < 1 || ProcessShardCount < 1 {
+	if totalShardCount < 1 || ProcessShardCount < 1 {
 		// not enough shard clustering info provided, run all shards we are reccomended from discord
 		shardCount, err := ShardManager.GetRecommendedCount()
 		if err != nil {
 			panic("Failed getting shard count: " + err.Error())
 		}
-		TotalShardCount = shardCount
+		totalShardCount = shardCount
 		ProcessShardCount = shardCount
 		RunShardOffset = 0
+
+		err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
+		if err != nil {
+			log.WithError(err).Error("failed setting shard count")
+		}
 	} else {
 		// TODO
 	}
 
-	log.Infof("Bot clustering info (WIP): Tot. Shards: %d, Running shards: %d, Shard offset: %d", TotalShardCount, ProcessShardCount, RunShardOffset)
+	log.Infof("Bot clustering info (WIP): Tot. Shards: %d, Running shards: %d, Shard offset: %d", totalShardCount, ProcessShardCount, RunShardOffset)
 
 	EventLogger.init(ProcessShardCount)
 	go EventLogger.run()
