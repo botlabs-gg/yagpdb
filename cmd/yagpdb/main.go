@@ -54,7 +54,6 @@ var (
 	flagRunFeeds      string
 	flagRunEverything bool
 	flagDryRun        bool
-	flagRunSB         bool
 	flagRunBWC        bool
 
 	flagLogTimestamp bool
@@ -69,7 +68,6 @@ func init() {
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
-	flag.BoolVar(&flagRunSB, "safebrowser", false, "Run the safebrowser proxy server")
 	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
@@ -104,7 +102,7 @@ func main() {
 		}
 	}
 
-	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && flagRunSB {
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
@@ -123,18 +121,12 @@ func main() {
 		log.WithError(err).Fatal("Failed intializing")
 	}
 
-	if flagRunSB {
-		err := safebrowsing.RunServer()
-		if err != nil {
-			log.WithError(err).Fatal("failed starting safebrowser proxy server")
-		}
-	}
-
 	configstore.InitDatabases()
 
 	//BotSession.LogLevel = discordgo.LogInformational
 
 	// Setup plugins
+	safebrowsing.RegisterPlugin()
 	discordlogger.Register()
 	commands.RegisterPlugin()
 	stdcommands.RegisterPlugin()
@@ -220,10 +212,6 @@ func listenSignal() {
 		web.Stop()
 		// Slep for a extra second
 		time.Sleep(time.Second)
-	}
-
-	if flagRunSB {
-		safebrowsing.Shutdown()
 	}
 
 	if flagRunBWC {
