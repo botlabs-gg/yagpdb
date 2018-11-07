@@ -14,7 +14,6 @@ import (
 	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"sync"
 	"time"
 )
 
@@ -24,7 +23,6 @@ func MarkGuildAsToBeChecked(guildID int64) {
 
 var (
 	_ bot.BotInitHandler       = (*Plugin)(nil)
-	_ bot.BotStopperHandler    = (*Plugin)(nil)
 	_ commands.CommandProvider = (*Plugin)(nil)
 )
 
@@ -40,12 +38,6 @@ func (p *Plugin) BotInit() {
 			gs.UserCacheDel(true, CacheKeyConfig)
 		}
 	}, nil)
-
-	go UpdateStatsLoop()
-}
-
-func (p *Plugin) StopBot(wg *sync.WaitGroup) {
-	stopStatsLoop <- wg
 }
 
 func (p *Plugin) AddCommands() {
