@@ -55,6 +55,7 @@ var (
 	flagRunEverything bool
 	flagDryRun        bool
 	flagRunSB         bool
+	flagRunBWC        bool
 
 	flagLogTimestamp bool
 
@@ -69,6 +70,7 @@ func init() {
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 	flag.BoolVar(&flagRunSB, "safebrowser", false, "Run the safebrowser proxy server")
+	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 }
@@ -102,7 +104,7 @@ func main() {
 		}
 	}
 
-	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun {
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && flagRunSB {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
@@ -178,6 +180,10 @@ func main() {
 		go feeds.Run(strings.Split(flagRunFeeds, ","))
 	}
 
+	if flagRunBWC {
+		go common.RunBackgroundWorkers()
+	}
+
 	go pubsub.PollEvents()
 
 	listenSignal()
@@ -194,19 +200,19 @@ func listenSignal() {
 	log.Info("SHUTTING DOWN... ", sig.String())
 
 	shouldWait := false
-	var wg sync.WaitGroup
+	wg := new(sync.WaitGroup)
 
 	if flagRunBot || flagRunEverything {
 
 		wg.Add(1)
 
-		go bot.Stop(&wg)
+		go bot.Stop(wg)
 
 		shouldWait = true
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
-		feeds.Stop(&wg)
+		feeds.Stop(wg)
 		shouldWait = true
 	}
 
@@ -218,6 +224,10 @@ func listenSignal() {
 
 	if flagRunSB {
 		safebrowsing.Shutdown()
+	}
+
+	if flagRunBWC {
+		common.StopBackgroundWorkers(wg)
 	}
 
 	if shouldWait {
