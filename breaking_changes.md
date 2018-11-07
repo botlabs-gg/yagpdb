@@ -1,7 +1,8 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
-**25th october 2018 (1.9.2-dev)**
- - safebrowsing automod_legacy and automodv2 now requires a server for that to be running, you can run the server with the safebrowsing switch (`-safebrowser`)
+**7th november 2018 (1.10-dev)**
+ - scheduled events cleanup, serverstats processing, soundboard transcoding and safebrowsing now needs a process running with the `-backgroundworkers` flag 
+     + Can still run it on the same process as the bot or webserver or whatever...
      + This is to support having multiple bot processes in the near future
 
 **24th october 2018 (1.9.2-dev)**
