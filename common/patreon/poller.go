@@ -2,13 +2,14 @@ package patreon
 
 import (
 	"context"
-	"github.com/jonas747/patreon-go"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"os"
 	"strconv"
+	// "strconv"
 	"sync"
 	"time"
 )
@@ -17,7 +18,7 @@ type Poller struct {
 	mu     sync.RWMutex
 	config *oauth2.Config
 	token  *oauth2.Token
-	client *patreon.Client
+	client *patreonapi.Client
 
 	activePatrons []*Patron
 }
@@ -41,10 +42,10 @@ func Run() {
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  patreon.AuthorizationURL,
-			TokenURL: patreon.AccessTokenURL,
+			AuthURL:  patreonapi.AuthorizationURL,
+			TokenURL: patreonapi.AccessTokenURL,
 		},
-		Scopes: []string{"users", "pledges-to-me", "my-campaign"},
+		Scopes: []string{"identity", "campaigns", "campaigns.members"},
 	}
 
 	token := &oauth2.Token{
@@ -57,7 +58,7 @@ func Run() {
 	tc := oauth2.NewClient(context.Background(), &TokenSourceSaver{inner: config.TokenSource(context.Background(), token)})
 
 	// Either use the token provided in the env vars or a cached one in redis
-	pClient := patreon.NewClient(tc)
+	pClient := patreonapi.NewClient(tc)
 	user, err := pClient.FetchUser()
 	if err != nil {
 		if storedRefreshToken == "" {
@@ -70,7 +71,7 @@ func Run() {
 		tCop.RefreshToken = storedRefreshToken
 
 		tc = oauth2.NewClient(context.Background(), &TokenSourceSaver{inner: config.TokenSource(context.Background(), &tCop)})
-		pClient = patreon.NewClient(tc)
+		pClient = patreonapi.NewClient(tc)
 
 		user, err = pClient.FetchUser()
 		if err != nil {
@@ -111,8 +112,8 @@ func (p *Poller) Run() {
 
 func (p *Poller) Poll() {
 	// Get your campaign data
-	campaignResponse, err := p.client.FetchCampaign()
-	if err != nil {
+	campaignResponse, err := p.client.FetchCampaigns()
+	if err != nil || len(campaignResponse.Data) < 1 {
 		logrus.WithError(err).Error("Patreon: Failed fetching campaign")
 		return
 	}
@@ -122,67 +123,79 @@ func (p *Poller) Poll() {
 	cursor := ""
 	page := 1
 
-	patrons := make([]*Patron, 0, 25)
+	patrons := make([]*Patron, 0, 30)
 
 	for {
-		pledgesResponse, err := p.client.FetchPledges(campaignId,
-			patreon.WithPageSize(25),
-			patreon.WithCursor(cursor))
+		membersResponse, err := p.client.FetchMembers(campaignId, 0, cursor)
+		// pledgesResponse, err := p.client.FetchPledges(campaignId,
+		// patreon.WithPageSize(30),
+		// patreon.WithCursor(cursor))
 
 		if err != nil {
 			logrus.WithError(err).Error("Patreon: Failed fetching pledges")
 			return
 		}
 
-		// Get all the users in an easy-to-lookup way
-		users := make(map[string]*patreon.User)
-		for _, item := range pledgesResponse.Included.Items {
-			u, ok := item.(*patreon.User)
-			if !ok {
-				continue
-			}
+		// logrus.Println("num results: ", len(membersResponse.Data))
 
-			users[u.ID] = u
+		// Get all the users in an easy-to-lookup way
+		users := make(map[string]*patreonapi.UserAttributes)
+		for _, item := range membersResponse.Included {
+			if u, ok := item.Decoded.(*patreonapi.UserAttributes); ok {
+				users[item.ID] = u
+			}
 		}
 
 		// Loop over the pledges to get e.g. their amount and user name
-		for _, pledge := range pledgesResponse.Data {
-			if !pledge.Attributes.DeclinedSince.Time.IsZero() {
+		for _, memberData := range membersResponse.Data {
+			attributes := memberData.Attributes
+
+			user, ok := users[memberData.Relationships.User.Data.ID]
+			if !ok {
+				// logrus.Println("Unknown user: ", memberData.ID)
 				continue
 			}
 
-			user, ok := users[pledge.Relationships.Patron.Data.ID]
-			if !ok {
+			if attributes.LastChargeStatus != patreonapi.ChargeStatusPaid && attributes.LastChargeStatus != patreonapi.ChargeStatusPending {
+				// logrus.Println("Not paid: ", attributes.FullName)
 				continue
 			}
+
+			if attributes.PatronStatus != "active_patron" {
+				continue
+			}
+
+			// logrus.Println(attributes.PatronStatus + " --- " + user.FirstName + ":" + user.LastName + ":" + user.Vanity)
 
 			patron := &Patron{
-				AmountCents: pledge.Attributes.AmountCents,
-				Avatar:      user.Attributes.ImageURL,
+				AmountCents: attributes.CurrentEntitledAmountCents,
+				Avatar:      user.ImageURL,
 			}
 
-			if user.Attributes.Vanity != "" {
-				patron.Name = user.Attributes.Vanity
+			if user.Vanity != "" {
+				patron.Name = user.Vanity
 			} else {
-				patron.Name = user.Attributes.FirstName
+				patron.Name = user.FirstName
 			}
 
-			if user.Attributes.SocialConnections.Discord != nil && user.Attributes.SocialConnections.Discord.UserID != "" {
-				discordID, _ := strconv.ParseInt(user.Attributes.SocialConnections.Discord.UserID, 10, 64)
+			if user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
+				discordID, _ := strconv.ParseInt(user.SocialConnections.Discord.UserID, 10, 64)
 				patron.DiscordID = discordID
 			}
 
 			patrons = append(patrons, patron)
-			// fmt.Printf("%s is pledging %d cents, Discord: %d\r\n", patron.Name, patron.AmountCents, patron.DiscordID)
+			// logrus.Printf("%s is pledging %d cents, Discord: %d\r\n", patron.Name, patron.AmountCents, patron.DiscordID)
 		}
 
 		// Get the link to the next page of pledges
-		nextLink := pledgesResponse.Links.Next
-		if nextLink == "" {
+		nextCursor := membersResponse.Meta.Pagination.Cursors.Next
+		if nextCursor == "" {
+			// logrus.Println("No nextlink ", page)
 			break
 		}
 
-		cursor = nextLink
+		cursor = nextCursor
+		// logrus.Println("nextlink: ", page, ": ", cursor)
 		page++
 	}
 
