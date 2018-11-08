@@ -61,7 +61,7 @@ var Command = &commands.YAGCommand{
 			}
 		}
 		
-		if image := data.Switch("image").Str(); thumbnail != "" {
+		if image := data.Switch("image").Str(); image != "" {
 			embed.Image = &discordgo.MessageEmbedImage{
 				URL: image,
 			}
