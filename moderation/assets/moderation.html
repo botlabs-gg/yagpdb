@@ -101,7 +101,7 @@ It is highly recommended to couple the moderation actions with the message logs,
 <div class="row">
     <div class="col">
         <div class="form-group">
-            <label>Channel to announce bans and kicks through the bot in (mod log)</label>
+            <label>Channel to announce bans and kicks through the bot in (modlog)</label>
             <select class="form-control" name="ActionChannel" data-requireperms-embed>
                 {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "Same as command was sent in"}}
             </select>
@@ -118,7 +118,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         <div class="form-check mb-2">
             <input class="form-check-input" id="log-unbans" type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
             <label for="log-unbans">
-                Log unban events in the mod log channel<br/>
+                Log unban events in the modlog channel<br/>
                 The bot won't know who did the unban but a reason can be assigned through the <code>reason</code> command.<br/>
             </label>
         </div>
