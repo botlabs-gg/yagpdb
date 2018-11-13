@@ -23,9 +23,7 @@ func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
 var DiscordInviteRegex = regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`)
-var ThirdPartyDiscordInviteRegex = regexp.MustCompile(`(discord\.me|invite\.gg|discord\.io|disco\.gg|disboard\.org\/server|discordy\.com)(?:\/#)?\/([a-zA-Z0-9-]+)`)
-
-type WrappedGuild struct {
+var ThirdPartyDiscordInviteRegex = regexp.MustCompile(`(discord\.me|invite\.gg|discord\.io|disco\.gg|disboard\.org\/server|discordy\.com\/server\.php
 	*discordgo.UserGuild
 	Connected bool
 }
