@@ -24,6 +24,7 @@ var Command = &commands.YAGCommand{
 		&dcmd.ArgDef{Switch: "color", Help: "Either hex code or name", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "url", Help: "Url of this embed", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "thumbnail", Help: "Url to a thumbnail", Type: dcmd.String, Default: ""},
+		&dcmd.ArgDef{Switch: "image", Help: "Url to an image", Type: dcmd.String, Default: ""},
 
 		&dcmd.ArgDef{Switch: "author", Help: "The text in the 'author' field", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "authoricon", Help: "Url to a icon for the 'author' field", Type: dcmd.String, Default: ""},
@@ -57,6 +58,12 @@ var Command = &commands.YAGCommand{
 		if thumbnail := data.Switch("thumbnail").Str(); thumbnail != "" {
 			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
 				URL: thumbnail,
+			}
+		}
+		
+		if image := data.Switch("image").Str(); image != "" {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: image,
 			}
 		}
 
