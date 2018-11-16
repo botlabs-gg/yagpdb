@@ -17,6 +17,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/customembed"
 	"github.com/jonas747/yagpdb/stdcommands/dcallvoice"
 	"github.com/jonas747/yagpdb/stdcommands/define"
+	"github.com/jonas747/yagpdb/stdcommands/dogfact"
 	"github.com/jonas747/yagpdb/stdcommands/findserver"
 	"github.com/jonas747/yagpdb/stdcommands/info"
 	"github.com/jonas747/yagpdb/stdcommands/invite"
@@ -65,6 +66,7 @@ func (p *Plugin) AddCommands() {
 		calc.Command,
 		topic.Command,
 		catfact.Command,
+		dogfact.Command,
 		advice.Command,
 		ping.Command,
 		throw.Command,
