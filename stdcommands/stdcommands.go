@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/banserver"
 	"github.com/jonas747/yagpdb/stdcommands/calc"
 	"github.com/jonas747/yagpdb/stdcommands/catfact"
+	"github.com/jonas747/yagpdb/stdcommands/dogfact"
 	"github.com/jonas747/yagpdb/stdcommands/ccreqs"
 	"github.com/jonas747/yagpdb/stdcommands/createinvite"
 	"github.com/jonas747/yagpdb/stdcommands/currentshard"
@@ -65,6 +66,7 @@ func (p *Plugin) AddCommands() {
 		calc.Command,
 		topic.Command,
 		catfact.Command,
+		dogfact.Command,
 		advice.Command,
 		ping.Command,
 		throw.Command,
