@@ -28,6 +28,7 @@ var (
 		"joinStr":               joinStrings,
 		"str":                   str,
 		"lower":                 strings.ToLower,
+		"upper":                 strings.ToUpper,
 		"toString":              ToString,
 		"toInt":                 tmplToInt,
 		"toInt64":               ToInt64,
