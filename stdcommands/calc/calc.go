@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"strings"
 	"sync"
+	"strconv"
 )
 
 var (
@@ -37,6 +38,6 @@ var Command = &commands.YAGCommand{
 			return err, err
 		}
 
-		return fmt.Sprintf("Result: `%f`", result), nil
+		return fmt.Sprintf("Result: `%s`", strconv.FormatFloat(result, 'G', -1, 64)), nil
 	},
 }
