@@ -38,6 +38,6 @@ var Command = &commands.YAGCommand{
 			return err, err
 		}
 
-		return fmt.Sprintf("Result: `%s`", strconv.FormatFloat(result, 'G', -1, 64)), nil
+		return fmt.Sprintf("Result: `%s`", strconv.FormatFloat(result, 'f', -1, 64)), nil
 	},
 }
