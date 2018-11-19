@@ -134,7 +134,7 @@ var dogfacts = []string{
 	`Service dogs are trained to know when they are on duty. When their harness is on, they know it's business time. When you take it off, the pups immediately become playful and energetic.`,
 	`Tiger Woods stuttered as a child and used to talk to his dog until he fell asleep in an effort to get rid of it.`,
 	`Seeing eye dogs pee and poo on command so that their owners can clean up after them. (The command is usually "Get busy!" and pups will pace back and forth until they do their business.) Male dogs are also trained to do their business without lifting their leg.`,
-	`n ancient China, an emperor's last line of defense was a small Pekingese dog literally hidden up his sleeve.`,
+	`In ancient China, an emperor's last line of defense was a small Pekingese dog literally hidden up his sleeve.`,
 	`When Lord Byron was informed that his dog was not allowed to come with him to Cambridge Trinity College, he retaliated by bringing a bear instead.`,
 	`In 1860's San Francisco, two stray dogs who were best friends became local celebrities. Their exploits were celebrated in local papers and they were granted immunity from the city's dog catchers.`,
 	`There is a dog-shaped building in New Zealand.`,
