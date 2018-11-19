@@ -57,7 +57,7 @@ func (p *Plugin) AddCommands() {
 		Cooldown:    5,
 		Name:        "sentiment",
 		Aliases:     []string{"sent"},
-		Description: "Does sentiment analysys on a message or your last 5 messages longer than 3 words",
+		Description: "Does sentiment analysis on a message or your last 5 messages longer than 3 words",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "text", Type: dcmd.String},
 		},
@@ -112,7 +112,7 @@ func (p *Plugin) AddCommands() {
 				}
 			}
 
-			out := fmt.Sprintf("**Sentiment analysys on %d messages:**\n", len(responses))
+			out := fmt.Sprintf("**Sentiment analysis on %d messages:**\n", len(responses))
 			for _, resp := range responses {
 				out += fmt.Sprintf("*%s*\nPolarity: **%s** *(Confidence: %.2f%%)* Subjectivity: **%s** *(Confidence: %.2f%%)*\n\n", resp.Text, resp.Polarity, resp.PolarityConfidence*100, resp.Subjectivity, resp.SubjectivityConfidence*100)
 			}
