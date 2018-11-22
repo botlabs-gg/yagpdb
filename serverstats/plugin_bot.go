@@ -125,14 +125,13 @@ func HandleMemberRemove(evt *eventsystem.EventData) {
 func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	m := evt.MessageCreate()
-	channel := bot.State.Channel(true, m.ChannelID)
-
-	if channel == nil {
-		log.WithField("channel", m.ChannelID).Warn("Channel not in state")
-		return
+	if m.GuildID == 0 {
+		return // private channel
 	}
 
-	if channel.IsPrivate() {
+	channel := bot.State.Channel(true, m.ChannelID)
+	if channel == nil {
+		log.WithField("channel", m.ChannelID).Warn("Channel not in state")
 		return
 	}
 

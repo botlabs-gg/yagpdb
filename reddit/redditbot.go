@@ -45,6 +45,10 @@ func (p *Plugin) runBot() {
 	redditClient := setupClient()
 	fetcher := NewPostFetcher(redditClient)
 
+	lastLogged := time.Now()
+	num := 0
+	numDeleted := 0
+
 	ticker := time.NewTicker(time.Second * 5)
 	for {
 		select {
@@ -63,7 +67,25 @@ func (p *Plugin) runBot() {
 			continue
 		}
 
+		num += len(links)
+		if time.Since(lastLogged) >= time.Minute {
+			logrus.Println("Num posts last minute: ", num, ", deleted: ", numDeleted)
+			lastLogged = time.Now()
+			num = 0
+			numDeleted = 0
+		}
+
 		for _, v := range links {
+			if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
+				numDeleted++
+				continue
+			}
+
+			if !v.IsRobotIndexable {
+				numDeleted++
+				continue
+			}
+
 			// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
 			// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
 			p.handlePost(v)
@@ -117,10 +139,10 @@ OUTER:
 		} else {
 			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), gParsed, cParsed, message)
 		}
-	}
 
-	if common.Statsd != nil {
-		go common.Statsd.Count("yagpdb.reddit.matches", int64(len(filteredItems)), nil, 1)
+		if common.Statsd != nil {
+			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + item.Guild}, 1)
+		}
 	}
 
 	return nil

@@ -10,12 +10,14 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/banserver"
 	"github.com/jonas747/yagpdb/stdcommands/calc"
 	"github.com/jonas747/yagpdb/stdcommands/catfact"
+	"github.com/jonas747/yagpdb/stdcommands/ccreqs"
 	"github.com/jonas747/yagpdb/stdcommands/createinvite"
 	"github.com/jonas747/yagpdb/stdcommands/currentshard"
 	"github.com/jonas747/yagpdb/stdcommands/currenttime"
 	"github.com/jonas747/yagpdb/stdcommands/customembed"
 	"github.com/jonas747/yagpdb/stdcommands/dcallvoice"
 	"github.com/jonas747/yagpdb/stdcommands/define"
+	"github.com/jonas747/yagpdb/stdcommands/dogfact"
 	"github.com/jonas747/yagpdb/stdcommands/findserver"
 	"github.com/jonas747/yagpdb/stdcommands/info"
 	"github.com/jonas747/yagpdb/stdcommands/invite"
@@ -28,10 +30,12 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/reverse"
 	"github.com/jonas747/yagpdb/stdcommands/roll"
 	"github.com/jonas747/yagpdb/stdcommands/setstatus"
+	"github.com/jonas747/yagpdb/stdcommands/simpleembed"
 	"github.com/jonas747/yagpdb/stdcommands/stateinfo"
 	"github.com/jonas747/yagpdb/stdcommands/throw"
 	"github.com/jonas747/yagpdb/stdcommands/topcommands"
 	"github.com/jonas747/yagpdb/stdcommands/topevents"
+	"github.com/jonas747/yagpdb/stdcommands/topgames"
 	"github.com/jonas747/yagpdb/stdcommands/topic"
 	"github.com/jonas747/yagpdb/stdcommands/topservers"
 	"github.com/jonas747/yagpdb/stdcommands/unbanserver"
@@ -62,11 +66,13 @@ func (p *Plugin) AddCommands() {
 		calc.Command,
 		topic.Command,
 		catfact.Command,
+		dogfact.Command,
 		advice.Command,
 		ping.Command,
 		throw.Command,
 		roll.Command,
 		customembed.Command,
+		simpleembed.Command,
 		currenttime.Command,
 		mentionrole.Command,
 		listroles.Command,
@@ -74,6 +80,7 @@ func (p *Plugin) AddCommands() {
 		poll.Command,
 		undelete.Command,
 		viewperms.Command,
+		topgames.Command,
 
 		// Maintenance
 		stateinfo.Command,
@@ -91,6 +98,7 @@ func (p *Plugin) AddCommands() {
 		createinvite.Command,
 		findserver.Command,
 		dcallvoice.Command,
+		ccreqs.Command,
 	)
 
 }

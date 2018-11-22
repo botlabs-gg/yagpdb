@@ -8,6 +8,10 @@ cmd/yagpdb/access.log
 cmd/yagpdb/static/report.html
 cmd/yagpdb/yagpdb
 cmd/yagpdb/templates/plugins/*.html
+cmd/yagpdb/soundboard
+cmd/yagpdb/shutdown_logs
+cmd/yagpdb/safebrowsing_db
+cmd/yagpdb/static/video/*
 
 # We don't want filthy pre-configured config files here ! >:O
 # THe graw agent file

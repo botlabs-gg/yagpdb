@@ -75,6 +75,7 @@
 
                     {{$clientid := .ClientID}}
                     {{$host := .Host}}
+                    {{$baseURL := .BaseURL}}
                     
                     {{range $index, $element := .ManagedGuilds -}}{{if $element.Connected -}}
                     <li>
@@ -86,7 +87,7 @@
                     
                     {{range $index, $element := .ManagedGuilds -}}{{if not $element.Connected -}}
                     <li>
-                        <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" $host "/manage")}}"><i class="fas fa-plus"></i>{{$element.Name}}</a>
+                        <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=535948311&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i class="fas fa-plus"></i>{{$element.Name}}</a>
                     </li>
                     {{end}}{{end}}
 

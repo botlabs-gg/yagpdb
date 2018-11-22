@@ -8,11 +8,12 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:  commands.CategoryFun,
-	Name:         "CustomEmbed",
-	Aliases:      []string{"ce"},
-	Description:  "Creates an embed from what you give it in json form: https://discordapp.com/developers/docs/resources/channel#embed-object",
-	RequiredArgs: 1,
+	CmdCategory:     commands.CategoryFun,
+	Name:            "CustomEmbed",
+	Aliases:         []string{"ce"},
+	Description:     "Creates an embed from what you give it in json form: https://docs.yagpdb.xyz/others/custom-embeds",
+	LongDescription: "Example: `-ce {\"title\": \"hello\", \"description\": \"wew\"}`",
+	RequiredArgs:    1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Json", Type: dcmd.String},
 	},

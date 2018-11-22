@@ -533,7 +533,7 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 	maxTotalMT := GuildMaxMessageTriggers(rule.GuildID)
 	maxTotalVT := GuildMaxViolationTriggers(rule.GuildID)
 
-	allParts, err := models.AutomodRuleData(qm.Where("guild_id = ? AND id != ?", rule.GuildID, rule.ID)).All(context.Background(), exec)
+	allParts, err := models.AutomodRuleData(qm.Where("guild_id = ? AND rule_id != ?", rule.GuildID, rule.ID)).All(context.Background(), exec)
 	if err != nil {
 		return
 	}

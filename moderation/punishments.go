@@ -147,6 +147,10 @@ func sendPunishDM(config *Config, kick bool, action ModlogAction, gs *dstate.Gui
 	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	ctx.Data["Author"] = author
 
+	if duration < 1 {
+		ctx.Data["HumanDuration"] = "permanently"
+	}
+
 	executed, err := ctx.Execute(dmMsg)
 	if err != nil {
 		logrus.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
@@ -171,7 +175,9 @@ func KickUser(config *Config, guildID, channelID int64, author *discordgo.User, 
 		return nil
 	}
 
-	_, err = DeleteMessages(channelID, user.ID, 100, 100)
+	if channelID != 0 {
+		_, err = DeleteMessages(channelID, user.ID, 100, 100)
+	}
 	return err
 }
 

@@ -1,4 +1,4 @@
-{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Discriminator){{"}}"}}</code> - The author of the kick/ban{{end}}
+{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Discriminator){{"}}"}}</code> - The author of the ban/kick{{end}}
 
 {{define "cp_moderation"}}
 {{template "cp_head" .}}
@@ -93,7 +93,7 @@ $(function(){
 {{end}}
 
 {{define "moderation_general"}}
-<p>An set of moderation tools and commands to help you run a server.</p>
+<p>A set of moderation tools and commands to help you run a server.</p>
 <p>Commands for performing moderation actions such as kick and ban, as well as mutes, timed bans, warning, mass deleting messages and so on.<br>
 It is highly recommended to couple the moderation actions with the message logs, this was whenever your mods decide to perform actions on someone, a message log of the channel they ran the command in will be recorded and added to the mod log.</p>
 <p>The moderation actions coupled with the message logs has been one of the most useful tools for me personally when running servers with thousands of members.</p>
@@ -118,8 +118,8 @@ It is highly recommended to couple the moderation actions with the message logs,
         <div class="form-check mb-2">
             <input class="form-check-input" id="log-unbans" type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
             <label for="log-unbans">
-                Log Unban events in the mod log channel<br/>
-                The bot wont know who did the unbanm but a reason can be assigned can be assigned through the <code>reason</code> command<br/>
+                Log unban events in the modlog channel<br/>
+                The bot won't know who did the unban but a reason can be assigned through the <code>reason</code> command.<br/>
             </label>
         </div>
     </div>
@@ -135,16 +135,16 @@ It is highly recommended to couple the moderation actions with the message logs,
             <label class="form-check-label" for="clean-enabled">
                 Clean command enabled<br/>
                 <code>(mention or prefix) clean NUM {@user <- optional}</code><br/>
-                Manage Messages permissions is required for this command.<br/>
-                Clean deletes up to a 1000 messages back in history. (max 100 messages at a time)<br/>
-                See <code>-help clean</code> for more advanced usage
+                Manage Messages permission is required for this command.<br/>
+                Clean command can delete up to a 1000 messages back in history (max 100 messages at a time).<br/>
+                See <code>-help clean</code> for more advanced usage.
             </label>
         </div>
         <div class="form-check mb-2">
             <input class="form-check-input" id="log-bans" type="checkbox" name="LogBans" {{if .ModConfig.LogBans}} checked{{end}}>
             <label for="log-bans">
-                Log Bans not made through the bot<br/>
-                The bot wont know who did the ban, but a reason can be assigned can be assigned through the <code>reason</code> command<br/>
+                Log ban events not made through the bot<br/>
+                The bot won't know who did the ban, but a reason can be assigned through the <code>reason</code> command.<br/>
             </label>
         </div>
     </div>
@@ -154,7 +154,7 @@ It is highly recommended to couple the moderation actions with the message logs,
 {{define "moderation_mute"}}
 <p>Muting users allows you to punish users by removing their ability to talk.</p>
 <p>How YAGPDB Mutes users is it gives them a role which has the "Send messages" permission removed on all channels</p>
-<p>The simplest way to use it is to have the bot manage the mute role (see below), but for more advanced usages you can blacklist channels and fully manage it on your own</p>
+<p>The simplest way to use it is to have the bot manage the mute role (see below), but for more advanced usages you can blacklist channels and fully manage it on your own.</p>
 <div class="row">
     <div class="col">
         <div class="form-check mb-2">
@@ -162,7 +162,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <label class="form-check-label" for="mute-enabled">
                 Mute/Unmute commands enabled<br/>
                 <code>(mention or prefix) mute/unmute @user 10 some reason</code><br/>
-                Only users with kick permission can use this. (or with roles specified below)<br/>
+                Only users with kick permission can use this (or with roles specified below).<br/>
             </label>
         </div>
         <div class="form-group">
@@ -230,8 +230,8 @@ It is highly recommended to couple the moderation actions with the message logs,
             <label class="form-check-label" for="kick-enabled">
                 Kick command enabled<br/>
                 <code>(mention or prefix) kick @user some reason</code><br/>
-                Only users with kick permission can use this. (or with roles specified below)<br/>
-                Same as ban command, but kicks instead
+                Only users with kick permission can use this (or with roles specified below).<br/>
+                Same as ban command, but kicks instead.
             </label>
         </div>
         <div class="form-group">
@@ -275,7 +275,7 @@ It is highly recommended to couple the moderation actions with the message logs,
     <li>You can ban using user ids (even if they left the server)</li>
     <li>You can put a duration on the bans</li>
 </ul>
-<p>Note that the bans themselves are on discord, to unban someone you need to go into your banlist on discord and unban them</p>
+<p>Note that the bans themselves are on discord, to unban someone you need to go into your banlist on discord and unban them.</p>
 <div class="row">
     <div class="col">
         <div class="form-check mb-2">
@@ -324,7 +324,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <input class="form-check-input" id="warn-cmd-enabled" type="checkbox" name="WarnCommandsEnabled" {{if .ModConfig.WarnCommandsEnabled}} checked{{end}}>
             <label class="form-check-label" for="warn-cmd-enabled">
                 Warn commands enabled<br/>
-                Only users with manage messages permission can use this.(or with roles specified below)<br/>
+                Only users with manage messages permission can use this (or with roles specified below).<br/>
                 <code>warn @user some reason</code><br/>
                 Creates a new warning for the user<br/>
                 <code>warnings @user</code><br/>

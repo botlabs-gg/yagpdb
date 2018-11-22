@@ -25,6 +25,10 @@ var (
 )
 
 func IsBotAdmin(userID int64) (isAdmin bool, err error) {
+	if userID == common.Conf.Owner {
+		return true, nil
+	}
+
 	err = common.RedisPool.Do(radix.FlatCmd(&isAdmin, "SISMEMBER", RedisKeyAdmins, userID))
 	return
 }

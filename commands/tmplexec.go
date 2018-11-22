@@ -184,7 +184,7 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 
 	err = dcmd.ParseCmdArgs(data)
 	if err != nil {
-		return "", errors.WithMessage(err, "exec/exedamin, parseArgs")
+		return "", errors.WithMessage(err, "exec/execadmin, parseArgs")
 	}
 
 	resp, err := cast.RunFunc(data)

@@ -16,13 +16,13 @@ import (
 
 const (
 	VERSIONMAJOR = 1
-	VERSIONMINOR = 9
+	VERSIONMINOR = 10
 	VERSIONPATCH = 0
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Are hot-dogs sandwiches?"
+	VERSION       = VERSIONNUMBER + " Life as a bot is hard"
 
 	GORM *gorm.DB
 	PQ   *sql.DB
@@ -57,11 +57,10 @@ func Init() error {
 	}
 	Conf = config
 
-	BotSession, err = discordgo.New(config.BotToken)
+	err = setupGlobalDGoSession()
 	if err != nil {
 		return err
 	}
-	BotSession.MaxRestRetries = 3
 
 	ConnectDatadog()
 
@@ -89,6 +88,18 @@ func Init() error {
 	}
 
 	return err
+}
+
+func setupGlobalDGoSession() (err error) {
+	BotSession, err = discordgo.New(Conf.BotToken)
+	if err != nil {
+		return err
+	}
+
+	BotSession.MaxRestRetries = 3
+	BotSession.Ratelimiter.MaxConcurrentRequests = 50
+
+	return nil
 }
 
 func ConnectDatadog() {

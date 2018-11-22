@@ -548,11 +548,20 @@ function formSubmissionEvents(){
 
 
 		if(target.hasClass("btn-danger") || target.attr("data-open-confirm") || target.hasClass("delete-button")){
-			if(!confirm("Are you sure you want to do this?")){
+			var title = target.attr("title");
+            		if(title !== undefined){
+            			if(!confirm("Deleting " + title + ". Are you sure you want to do this?" )){
 				event.preventDefault(true);
 				event.stopPropagation();
 				return;
-			}
+				}
+            		}else{
+            			if(!confirm("Are you sure you want to do this?" )){
+				event.preventDefault(true);
+				event.stopPropagation();
+				return;
+			    	}		
+            		}
 		}
 
 		// Find the parent form using the parents or the form attribute

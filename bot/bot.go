@@ -75,6 +75,7 @@ func setup() {
 	State.MaxMessageAge = time.Hour
 	// State.Debug = true
 	State.ThrowAwayDMMessages = true
+	State.TrackPrivateChannels = false
 	State.CacheExpirey = time.Minute * 10
 	go State.RunGCWorker()
 

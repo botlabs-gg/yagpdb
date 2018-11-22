@@ -24,7 +24,9 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, e
 	msgBuf := make([]*WrappedMessage, limit)
 
 	cs := State.Channel(true, channelID)
-
+	if cs == nil {
+		return []*WrappedMessage{}, nil
+	}
 	cs.Owner.RLock()
 
 	n := len(msgBuf) - 1

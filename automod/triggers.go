@@ -1078,7 +1078,7 @@ func (r *UsernameRegexTrigger) Name() string {
 		return "Join username not matching regex"
 	}
 
-	return "Joins username matches regex"
+	return "Join username matches regex"
 }
 
 func (r *UsernameRegexTrigger) Description() string {
