@@ -155,6 +155,14 @@ func startPolling() {
 		case <-ticker.C:
 			pollLegacy()
 			pollRedis()
+
+			if common.Statsd != nil {
+				workmu.Lock()
+				l := len(workSlice)
+				workmu.Unlock()
+
+				common.Statsd.Gauge("yagpdb.mqueue.size", float64(l), nil, 1)
+			}
 		case <-tickerClean.C:
 			go func() {
 				result, err := common.PQ.Exec("DELETE FROM mqueue WHERE processed=true")
