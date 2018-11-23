@@ -250,21 +250,87 @@ type WorkItem struct {
 }
 
 var (
-	workChan = make(chan *WorkItem, 50)
+	workSlice  []*WorkItem
+	activeWork []*WorkItem
+	workmu     sync.Mutex
 )
 
 func queueWork(elem *QueuedElement, elemSimple *QueuedElementNoKallax, elemSimpleRaw []byte, isLegacy bool) {
-	workChan <- &WorkItem{
+	workmu.Lock()
+	workSlice = append(workSlice, &WorkItem{
 		legacyElem: elem,
 		elemSimple: elemSimple,
 		raw:        elemSimpleRaw,
 		isLegacy:   isLegacy,
-	}
+	})
+	workmu.Unlock()
 }
 
 func processWorker() {
-	for item := range workChan {
-		process(item.legacyElem, item.elemSimple, item.raw, item.isLegacy)
+	var currentItem *WorkItem
+	for {
+		workmu.Lock()
+
+		// if were done processing a item previously then remove it from the active processing slice
+		if currentItem != nil {
+			for i, v := range activeWork {
+				if v == currentItem {
+					activeWork = append(activeWork[:i], activeWork[i+1:]...)
+					break
+				}
+			}
+			currentItem = nil
+		}
+
+		// no new work to process
+		if len(workSlice) < 1 {
+			workmu.Unlock()
+			time.Sleep(time.Second)
+			continue
+		}
+
+		// find a work item that does not share a channel with any other item being processed (so ratelimits only take up max 1 worker)
+		workItemIndex := -1
+
+	OUTER:
+		for i, v := range workSlice {
+			var workChannelID int64
+			if v.elemSimple != nil {
+				workChannelID = v.elemSimple.Channel
+			} else {
+				workChannelID, _ = strconv.ParseInt(v.legacyElem.Channel, 10, 64)
+			}
+
+			for _, active := range activeWork {
+				var activeChannelID int64
+				if active.elemSimple != nil {
+					activeChannelID = active.elemSimple.Channel
+				} else {
+					activeChannelID, _ = strconv.ParseInt(active.legacyElem.Channel, 10, 64)
+				}
+
+				if activeChannelID == workChannelID {
+					continue OUTER
+				}
+			}
+
+			workItemIndex = i
+			break
+		}
+
+		// did not find any
+		if workItemIndex == -1 {
+			workmu.Unlock()
+			time.Sleep(time.Second)
+			continue
+		}
+
+		currentItem = workSlice[workItemIndex]
+		activeWork = append(activeWork, currentItem)
+		workSlice = append(workSlice[:workItemIndex], workSlice[workItemIndex+1:]...)
+		workmu.Unlock()
+
+		process(currentItem.legacyElem, currentItem.elemSimple, currentItem.raw, currentItem.isLegacy)
 	}
 }
 
