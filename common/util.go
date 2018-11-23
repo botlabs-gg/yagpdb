@@ -473,6 +473,16 @@ func ContainsInt64Slice(slice []int64, search int64) bool {
 	return false
 }
 
+func ContainsIntSlice(slice []int, search int) bool {
+	for _, v := range slice {
+		if v == search {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ValidateSQLSchema does some simple security checks on a sql schema file
 // At the moment it only checks for drop table/index statements accidentally left in the schema file
 func ValidateSQLSchema(input string) {

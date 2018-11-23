@@ -137,9 +137,12 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) mapAddressToShards(address string) {
+
+	processShards := bot.GetProcessShards()
+
 	logrus.Info("[botrest] mapping ", address, " to current process shards")
-	for i := bot.RunShardOffset; i < bot.ProcessShardCount; i++ {
-		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyShardAddressMapping(i), address))
+	for _, shard := range processShards {
+		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyShardAddressMapping(shard), address))
 		if err != nil {
 			logrus.WithError(err).Error("[botrest] failed mapping botrest")
 		}

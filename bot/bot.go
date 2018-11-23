@@ -1,14 +1,13 @@
 package bot
 
 import (
-	"flag"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardmanager"
+	"github.com/jonas747/dshardorchestrator/node"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/master/slave"
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -27,10 +26,9 @@ var (
 
 	StateHandlerPtr *eventsystem.Handler
 
-	SlaveClient *slave.Conn
+	NodeConn          *node.Conn
+	UsingOrchestrator bool
 
-	state              int
-	stateLock          sync.Mutex
 	MessageDeleteQueue = deletequeue.NewQueue()
 )
 
@@ -44,28 +42,9 @@ var (
 	// the total amount of shards this bot is set to use across all processes
 	totalShardCount int
 
-	// the number of shards running on this process
-	ProcessShardCount int
-
-	// the offset of the running shards
-	// example: if we were running shard 4 and 5, the offset would be 4 and the running shard count 2
-	RunShardOffset int
-)
-
-func init() {
-	flag.IntVar(&totalShardCount, "totalshards", 0, "TODO: Total shards the bot has, <1 for auto")
-	flag.IntVar(&ProcessShardCount, "runshards", 0, "TODO: The number of shards this process should run, <1 for all")
-	flag.IntVar(&RunShardOffset, "runshardsoffset", 0, "TODO: The start offset, e.g if we wanna run shard 10-19 then runshards would be 10 and runshardsoffset would be 10")
-}
-
-const (
-	StateRunningNoMaster   int = iota
-	StateRunningWithMaster     // Fully started
-
-	StateWaitingHelloMaster
-	StateSoftStarting
-	StateShardMigrationTo
-	StateShardMigrationFrom
+	// The shards running on this process, protected by the processShardsLock muted
+	processShards     []int
+	processShardsLock sync.RWMutex
 )
 
 func setup() {
@@ -83,7 +62,7 @@ func setup() {
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
 	eventsystem.ConcurrentAfter = StateHandlerPtr
 
-	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
+	// eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
 
 	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(HandleGuildDelete, eventsystem.EventGuildDelete)
@@ -138,63 +117,55 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
-	if totalShardCount < 1 || ProcessShardCount < 1 {
-		// not enough shard clustering info provided, run all shards we are reccomended from discord
-		shardCount, err := ShardManager.GetRecommendedCount()
-		if err != nil {
-			panic("Failed getting shard count: " + err.Error())
-		}
-		totalShardCount = shardCount
-		ProcessShardCount = shardCount
-		RunShardOffset = 0
-
-		err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
-		if err != nil {
-			log.WithError(err).Error("failed setting shard count")
-		}
+	orcheStratorAddress := os.Getenv("YAGPDB_ORCHESTRATOR_ADDRESS")
+	if orcheStratorAddress != "" {
+		UsingOrchestrator = true
+		log.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)
 	} else {
-		// TODO
+		log.Info("Running standalone without any orchestrator")
+		SetupStandalone()
 	}
 
-	log.Infof("Bot clustering info (WIP): Tot. Shards: %d, Running shards: %d, Shard offset: %d", totalShardCount, ProcessShardCount, RunShardOffset)
+	// EventLogger.init(ProcessShardCount)
+	// go EventLogger.run()
 
-	EventLogger.init(ProcessShardCount)
-	go EventLogger.run()
-
-	for i := RunShardOffset; i < ProcessShardCount; i++ {
-		waitingReadies = append(waitingReadies, i)
-	}
-
-	Running = true
-
-	// go ShardManager.Start()
 	go MemberFetcher.Run()
 	go mergedMessageSender()
 
-	masterAddr := os.Getenv("YAGPDB_MASTER_CONNECT_ADDR")
-	if masterAddr != "" {
-		stateLock.Lock()
-		state = StateWaitingHelloMaster
-		stateLock.Unlock()
+	Running = true
 
-		log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
-		var err error
-		SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
-		if err != nil {
-			log.WithError(err).Error("Failed connecting to master")
-			os.Exit(1)
-		}
+	if UsingOrchestrator {
+		// TODO
+		NodeConn = node.NewNodeConn(&NodeImpl{}, orcheStratorAddress, common.VERSION, nil)
+		NodeConn.Run()
 	} else {
-		stateLock.Lock()
-		state = StateRunningNoMaster
-		stateLock.Unlock()
-
-		InitPlugins()
-
-		log.Println("Running normally without a master")
 		go ShardManager.Start()
-		go MonitorLoading()
+		InitPlugins()
 	}
+
+	// if masterAddr != "" {
+	// 	stateLock.Lock()
+	// 	state = StateWaitingHelloMaster
+	// 	stateLock.Unlock()
+
+	// 	log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
+	// 	var err error
+	// 	SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
+	// 	if err != nil {
+	// 		log.WithError(err).Error("Failed connecting to master")
+	// 		os.Exit(1)
+	// 	}
+	// } else {
+	// 	stateLock.Lock()
+	// 	state = StateRunningNoMaster
+	// 	stateLock.Unlock()
+
+	// 	InitPlugins()
+
+	// 	log.Println("Running normally without a master")
+	// 	go ShardManager.Start()
+	// 	go MonitorLoading()
+	// }
 
 	// for _, p := range common.Plugins {
 	// 	starter, ok := p.(BotStarterHandler)
@@ -205,23 +176,21 @@ func Run() {
 	// }
 }
 
-func MonitorLoading() {
-	t := time.NewTicker(time.Second)
-	defer t.Stop()
+func SetupStandalone() {
+	shardCount, err := ShardManager.GetRecommendedCount()
+	if err != nil {
+		panic("Failed getting shard count: " + err.Error())
+	}
+	totalShardCount = shardCount
 
-	for {
-		<-t.C
+	processShards = make([]int, totalShardCount)
+	for i := 0; i < totalShardCount; i++ {
+		processShards[i] = i
+	}
 
-		waitingGuildsMU.Lock()
-		numWaitingGuilds := len(waitingGuilds)
-		numWaitingShards := len(waitingReadies)
-		waitingGuildsMU.Unlock()
-
-		log.Infof("Starting up... GC's Remaining: %d, Shards remaining: %d", numWaitingGuilds, numWaitingShards)
-
-		if numWaitingShards == 0 {
-			return
-		}
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
+	if err != nil {
+		log.WithError(err).Error("failed setting shard count")
 	}
 }
 
@@ -235,14 +204,6 @@ func InitPlugins() {
 }
 
 func BotStarted() {
-	for _, p := range common.Plugins {
-		starter, ok := p.(BotStartedHandler)
-		if ok {
-			starter.BotStarted()
-			log.Debug("Ran BotStarted for ", p.Name())
-		}
-	}
-
 	go loopCheckAdmins()
 }
 

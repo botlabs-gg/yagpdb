@@ -1,7 +1,6 @@
 package scheduledevents2
 
 import (
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
@@ -23,12 +22,6 @@ func RegisterLegacyMigrater(eventName string, migrationHandler func(t time.Time,
 }
 
 func (se *ScheduledEvents) MigrateLegacyEvents() {
-	if int(bot.GetTotalShards()) != bot.ProcessShardCount {
-		// to migrate events from the legacy system, we need to have all the channels in the state to be able to determine what guild the events are for
-		logrus.Warn("[scheduledevents2] not running all shards in this process, can't migrate scheduled events from the legacy system (ignore if there are none to actually migrate)")
-		return
-	}
-
 	numSuccess := 0
 	numError := 0
 

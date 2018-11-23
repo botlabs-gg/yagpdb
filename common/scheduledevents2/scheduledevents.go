@@ -97,10 +97,10 @@ func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interfac
 	return errors.WithMessage(err, "insert")
 }
 
-var _ bot.BotStartedHandler = (*ScheduledEvents)(nil)
+var _ bot.BotInitHandler = (*ScheduledEvents)(nil)
 var _ bot.BotStopperHandler = (*ScheduledEvents)(nil)
 
-func (se *ScheduledEvents) BotStarted() {
+func (se *ScheduledEvents) BotInit() {
 	go se.runCheckLoop()
 	go se.MigrateLegacyEvents()
 }

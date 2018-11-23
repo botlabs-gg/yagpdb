@@ -215,10 +215,13 @@ func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.M
 
 // IsGuildOnCurrentProcess returns whether the guild is on one of the shards for this process
 func IsGuildOnCurrentProcess(guildID int64) bool {
-	totShards := GetTotalShards()
+	processShardsLock.RLock()
 
-	shardID := int((guildID >> 22) % totShards)
-	return shardID >= RunShardOffset && shardID < RunShardOffset+ProcessShardCount
+	shardID := int((guildID >> 22) % int64(totalShardCount))
+	onProcess := common.ContainsIntSlice(processShards, shardID)
+	processShardsLock.RUnlock()
+
+	return onProcess
 }
 
 // GuildShardID returns the shard id for the provided guild id
@@ -278,4 +281,15 @@ func fetchTotalShardsFromRedis() error {
 	}
 
 	return nil
+}
+
+func GetProcessShards() []int {
+	processShardsLock.RLock()
+
+	cop := make([]int, len(processShards))
+	copy(cop, processShards)
+
+	processShardsLock.RUnlock()
+
+	return cop
 }
