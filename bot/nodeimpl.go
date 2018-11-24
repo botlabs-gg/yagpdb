@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+func init() {
+	dshardorchestrator.RegisterUserEvent("GuildState", EvtGuildState, dstate.GuildState{})
+}
+
 // Implementation of DShardOrchestrator/Node/Interface
 var _ node.Interface = (*NodeImpl)(nil)
 
@@ -28,6 +32,10 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 	if totalShardCount == 0 {
 		totalShardCount = info.TotalShards
 		ShardManager.SetNumShards(totalShardCount)
+		err := ShardManager.Init()
+		if err != nil {
+			panic("failed initializing discord sessions: " + err.Error())
+		}
 		InitPlugins()
 	}
 }
