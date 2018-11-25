@@ -180,6 +180,9 @@ func SetupStandalone() {
 	}
 	totalShardCount = shardCount
 
+	EventLogger.init(shardCount)
+	go EventLogger.run()
+
 	processShards = make([]int, totalShardCount)
 	for i := 0; i < totalShardCount; i++ {
 		processShards[i] = i
