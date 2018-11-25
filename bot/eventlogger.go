@@ -90,7 +90,7 @@ func (e *eventLogger) flushStats() {
 	e.Unlock()
 
 	if common.Statsd != nil {
-		common.Statsd.Set("discord.processed.events", totalPerPeriod, nil, EventLoggerPeriodDuration.Seconds())
+		common.Statsd.Count("discord.processed.events", totalPerPeriod, nil, EventLoggerPeriodDuration.Seconds())
 	}
 }
 
