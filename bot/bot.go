@@ -62,7 +62,7 @@ func setup() {
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
 	eventsystem.ConcurrentAfter = StateHandlerPtr
 
-	// eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
+	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
 
 	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(HandleGuildDelete, eventsystem.EventGuildDelete)
@@ -125,9 +125,6 @@ func Run() {
 		log.Info("Running standalone without any orchestrator")
 		SetupStandalone()
 	}
-
-	// EventLogger.init(ProcessShardCount)
-	// go EventLogger.run()
 
 	go MemberFetcher.Run()
 	go mergedMessageSender()

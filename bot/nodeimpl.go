@@ -32,6 +32,10 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 	if totalShardCount == 0 {
 		totalShardCount = info.TotalShards
 		ShardManager.SetNumShards(totalShardCount)
+
+		EventLogger.init(info.TotalShards)
+		go EventLogger.run()
+
 		err := ShardManager.Init()
 		if err != nil {
 			panic("failed initializing discord sessions: " + err.Error())
