@@ -215,6 +215,10 @@ func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.M
 
 // IsGuildOnCurrentProcess returns whether the guild is on one of the shards for this process
 func IsGuildOnCurrentProcess(guildID int64) bool {
+	if !Enabled {
+		return false
+	}
+
 	processShardsLock.RLock()
 
 	shardID := int((guildID >> 22) % int64(totalShardCount))
