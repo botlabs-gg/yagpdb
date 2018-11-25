@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/sirupsen/logrus"
@@ -57,8 +56,6 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 
 	numGoroutines := runtime.NumGoroutine()
 
-	numScheduledEvent, _ := scheduledevents.NumScheduledEvents()
-
 	botUser := common.BotUser
 
 	embed := &discordgo.MessageEmbed{
@@ -76,7 +73,6 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 			&discordgo.MessageEmbedField{Name: "Process Mem (alloc, sys, freed)", Value: fmt.Sprintf("%.1fMB, %.1fMB, %.1fMB", float64(memStats.Alloc)/1000000, float64(memStats.Sys)/1000000, (float64(memStats.TotalAlloc)/1000000)-allocated), Inline: true},
 			&discordgo.MessageEmbedField{Name: "System Mem (used, total)", Value: sysMemStats, Inline: true},
 			&discordgo.MessageEmbedField{Name: "System load (1, 5, 15)", Value: sysLoadStats, Inline: true},
-			&discordgo.MessageEmbedField{Name: "Scheduled events (reminders etc)", Value: fmt.Sprint(numScheduledEvent), Inline: true},
 		},
 	}
 

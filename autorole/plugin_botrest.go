@@ -47,6 +47,6 @@ func botRestPostFullScan(guildID int64) error {
 		return ErrAlreadyProcessingFullGuild
 	}
 
-	err = botrest.Post(strconv.FormatInt(guildID, 10)+"/autorole/fullscan", nil, nil)
+	err = botrest.Post(bot.GuildShardID(guildID), strconv.FormatInt(guildID, 10)+"/autorole/fullscan", nil, nil)
 	return err
 }

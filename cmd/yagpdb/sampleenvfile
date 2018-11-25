@@ -81,9 +81,9 @@ export YAGPDB_GA_ID=""
 export YAGPDB_ANNOUNCEMENTS_CHANNEL=""
 
 # Uncomment to enable master, dont do this unless you know what that is
-# export YAGPDB_MASTER_CONNECT_ADDR="localhost:5004"
-# export YAGPDB_MASTER_LISTEN_ADDR=":5004"
-
+# export YAGPDB_ORCHESTRATOR_LISTEN_ADDRESS="127.0.0.1:7447"
+# export YAGPDB_ORCHESTRATOR_ADDRESS="127.0.0.1:7447"
+ 
 # Datadog integration
 export YAGPDB_DOGSTATSDADDRESS="127.0.0.1:8125"
 

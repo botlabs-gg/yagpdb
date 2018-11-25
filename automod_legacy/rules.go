@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/safebrowsing"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"net/url"
@@ -389,19 +390,18 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	}
 
 	// Check safebrowsing
-	if SafeBrowser == nil || !s.GoogleSafeBrowsingEnabled {
+	if !s.GoogleSafeBrowsingEnabled {
 		return false, "", ""
 	}
 
-	urlThreats, err := SafeBrowser.LookupURLs(matches)
+	threat, err := safebrowsing.CheckString(message)
 	if err != nil {
 		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
+		return false, "", ""
 	}
 
-	for _, link := range urlThreats {
-		for _, threat := range link {
-			return true, threat.Pattern, threat.ThreatType.String()
-		}
+	if threat != nil {
+		return true, threat.Pattern, threat.ThreatType.String()
 	}
 
 	return false, "", ""

@@ -25,6 +25,8 @@ func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.Str
 var DiscordInviteRegex = regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`)
 var ThirdPartyDiscordInviteRegex = regexp.MustCompile(`(discord\.me|invite\.gg|discord\.io|disco\.gg|disboard\.org\/server)(?:\/#)?\/([a-zA-Z0-9-]+)`)
 
+var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
+
 type WrappedGuild struct {
 	*discordgo.UserGuild
 	Connected bool
@@ -471,6 +473,16 @@ func ContainsInt64Slice(slice []int64, search int64) bool {
 	return false
 }
 
+func ContainsIntSlice(slice []int, search int) bool {
+	for _, v := range slice {
+		if v == search {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ValidateSQLSchema does some simple security checks on a sql schema file
 // At the moment it only checks for drop table/index statements accidentally left in the schema file
 func ValidateSQLSchema(input string) {
@@ -633,6 +645,19 @@ func ReplaceServerInvites(msg string, guildID int64, replacement string) string 
 	msg = ThirdPartyDiscordInviteRegex.ReplaceAllString(msg, replacement)
 	msg = DiscordInviteRegex.ReplaceAllString(msg, replacement)
 	return msg
+}
+
+func LogIgnoreError(err error, msg string, data log.Fields) {
+	if err == nil {
+		return
+	}
+
+	l := log.WithError(err)
+	if data != nil {
+		l = l.WithFields(data)
+	}
+
+	l.Error(msg)
 }
 
 func ErrPQIsUniqueViolation(err error) bool {

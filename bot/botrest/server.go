@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"goji.io"
@@ -20,8 +21,6 @@ import (
 	"sync"
 	"time"
 )
-
-var serverAddr = ":5002"
 
 func RegisterPlugin() {
 	common.RegisterPlugin(&Plugin{})
@@ -37,7 +36,8 @@ type BotRestPlugin interface {
 }
 
 type Plugin struct {
-	srv *http.Server
+	srv   *http.Server
+	srvMU sync.Mutex
 }
 
 func (p *Plugin) Name() string {
@@ -74,17 +74,86 @@ func (p *Plugin) BotInit() {
 	}
 
 	p.srv = &http.Server{
-		Addr:    serverAddr,
 		Handler: muxer,
 	}
 
+	currentPort := 5010
+
 	go func() {
-		logrus.Println("starting botrest on ", serverAddr)
-		err := p.srv.ListenAndServe()
-		if err != nil {
-			logrus.WithError(err).Error("Failed starting botrest http server")
+		for {
+			address := ":" + strconv.Itoa(currentPort)
+
+			logrus.Println("[botrest] starting botrest on ", address)
+
+			p.srvMU.Lock()
+			p.srv.Addr = address
+			p.srvMU.Unlock()
+
+			err := p.srv.ListenAndServe()
+			if err != nil {
+				// Shutdown was called for graceful shutdown
+				if err == http.ErrServerClosed {
+					logrus.Info("[botrest] server closed, shutting down...")
+					return
+				}
+
+				// Retry with a higher port until we succeed
+				logrus.WithError(err).Error("[botrest] failed starting botrest http server on ", address, " trying again on next port")
+				currentPort++
+				time.Sleep(time.Millisecond)
+				continue
+			}
+
+			logrus.Println("[botrest] botrest returned without any error")
+			break
 		}
 	}()
+
+	// Wait for the server address to stop changing
+	go func() {
+		lastAddr := ""
+		lastChange := time.Now()
+		for {
+			p.srvMU.Lock()
+			addr := p.srv.Addr
+			p.srvMU.Unlock()
+
+			if lastAddr != addr {
+				lastAddr = addr
+				time.Sleep(time.Second)
+				lastChange = time.Now()
+				continue
+			}
+
+			if time.Since(lastChange) > time.Second*5 {
+				// found avaiable port
+				p.mapAddressToShards(lastAddr)
+				return
+			}
+
+			time.Sleep(time.Second)
+		}
+	}()
+}
+
+func (p *Plugin) mapAddressToShards(address string) {
+
+	processShards := bot.GetProcessShards()
+
+	logrus.Info("[botrest] mapping ", address, " to current process shards")
+	for _, shard := range processShards {
+		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyShardAddressMapping(shard), address))
+		if err != nil {
+			logrus.WithError(err).Error("[botrest] failed mapping botrest")
+		}
+	}
+
+	if bot.UsingOrchestrator {
+		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyNodeAddressMapping(bot.NodeConn.GetIDLock()), address))
+		if err != nil {
+			logrus.WithError(err).Error("[botrest] failed mapping node")
+		}
+	}
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -304,6 +373,7 @@ func HandlePing(w http.ResponseWriter, r *http.Request) {
 }
 
 type ShardStatus struct {
+	ShardID         int     `json:"shard_id"`
 	TotalEvents     int64   `json:"total_events"`
 	EventsPerSecond float64 `json:"events_per_second"`
 
@@ -318,32 +388,36 @@ func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
 	totalEventStats, periodEventStats := bot.EventLogger.GetStats()
 
 	numShards := bot.ShardManager.GetNumShards()
-	result := make([]*ShardStatus, numShards)
-	for i := 0; i < numShards; i++ {
-		shard := bot.ShardManager.Sessions[i]
+	result := make([]*ShardStatus, 0, numShards)
+
+	processShards := bot.GetProcessShards()
+
+	for _, shardID := range processShards {
+		shard := bot.ShardManager.Sessions[shardID]
 
 		sumEvents := int64(0)
 		sumPeriodEvents := int64(0)
 
-		for j, _ := range totalEventStats[i] {
-			sumEvents += totalEventStats[i][j]
-			sumPeriodEvents += periodEventStats[i][j]
+		for j, _ := range totalEventStats[shardID] {
+			sumEvents += totalEventStats[shardID][j]
+			sumPeriodEvents += periodEventStats[shardID][j]
 		}
 
 		if shard == nil || shard.GatewayManager == nil {
-			result[i] = &ShardStatus{ConnStatus: discordgo.GatewayStatusDisconnected}
+			result[shardID] = &ShardStatus{ConnStatus: discordgo.GatewayStatusDisconnected}
 			continue
 		}
 
 		beat, ack := shard.GatewayManager.HeartBeatStats()
 
-		result[i] = &ShardStatus{
+		result = append(result, &ShardStatus{
+			ShardID:           shardID,
 			ConnStatus:        shard.GatewayManager.Status(),
 			TotalEvents:       sumEvents,
 			EventsPerSecond:   float64(sumPeriodEvents) / bot.EventLoggerPeriodDuration.Seconds(),
 			LastHeartbeatSend: beat,
 			LastHeartbeatAck:  ack,
-		}
+		})
 	}
 
 	ServeJson(w, r, result)

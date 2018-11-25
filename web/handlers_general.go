@@ -81,12 +81,12 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 func HandleStatus(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	_, tmpl := GetCreateTemplateData(r.Context())
 
-	statuses, err := botrest.GetShardStatuses()
+	nodes, err := botrest.GetNodeStatuses()
 	if err != nil {
 		return tmpl, err
 	}
 
-	tmpl["Shards"] = statuses
+	tmpl["Nodes"] = nodes
 
 	return tmpl, nil
 }

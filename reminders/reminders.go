@@ -5,7 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -32,6 +32,7 @@ type Reminder struct {
 	gorm.Model
 	UserID    string
 	ChannelID string
+	GuildID   int64
 	Message   string
 	When      int64
 }
@@ -53,9 +54,9 @@ func (r *Reminder) Trigger() error {
 		logrus.Info("Tried to execute multiple reminders at once")
 	}
 
-	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message}).Info("Triggered reminder")
+	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
 
-	mqueue.QueueMessageString("reminder", "", r.ChannelIDInt(), common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
+	mqueue.QueueMessageString("reminder", "", r.GuildID, r.ChannelIDInt(), common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
 	return nil
 }
 
@@ -75,13 +76,14 @@ func GetChannelReminders(channel int64) (results []*Reminder, err error) {
 	return
 }
 
-func NewReminder(userID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
+func NewReminder(userID int64, guildID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
 	whenUnix := when.Unix()
 	reminder := &Reminder{
 		UserID:    discordgo.StrID(userID),
 		ChannelID: discordgo.StrID(channelID),
 		Message:   message,
 		When:      whenUnix,
+		GuildID:   guildID,
 	}
 
 	err := common.GORM.Create(reminder).Error
@@ -89,11 +91,12 @@ func NewReminder(userID int64, channelID int64, message string, when time.Time) 
 		return nil, err
 	}
 
-	err = scheduledevents.ScheduleEvent("reminders_check_user:"+strconv.FormatInt(whenUnix, 10), discordgo.StrID(userID), when)
+	err = scheduledevents2.ScheduleEvent("reminders_check_user", guildID, when, userID)
+	// err = scheduledevents.ScheduleEvent("reminders_check_user:"+strconv.FormatInt(whenUnix, 10), discordgo.StrID(userID), when)
 	return reminder, err
 }
 
-func checkUserEvtHandler(evt string) error {
+func checkUserEvtHandlerLegacy(evt string) error {
 	split := strings.Split(evt, ":")
 	if len(split) < 2 {
 		logrus.Error("Handled invalid check user scheduled event: ", evt)

@@ -28,11 +28,8 @@ type BotInitHandler interface {
 	BotInit()
 }
 
-// Fired after the bot has connected all shards
-type BotStartedHandler interface {
-	BotStarted()
-}
-
+// BotStopperHandler runs when the bot is shuttdown down
+// you need to call wg.Done when you have completed your plugin shutdown (stopped background workers)
 type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)
 }

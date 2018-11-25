@@ -7,6 +7,7 @@ package pubsub
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
@@ -87,9 +88,6 @@ func PollEvents() {
 			handleEvent(string(msg.Message))
 		}
 	}
-
-	for {
-	}
 }
 
 func handleEvent(evt string) {
@@ -103,6 +101,11 @@ func handleEvent(evt string) {
 	target := split[0]
 	name := split[1]
 	data := split[2]
+
+	parsedTarget, _ := strconv.ParseInt(target, 10, 64)
+	if !bot.IsGuildOnCurrentProcess(parsedTarget) {
+		return
+	}
 
 	t, ok := eventTypes[name]
 	if !ok && data != "" {
@@ -130,7 +133,6 @@ func handleEvent(evt string) {
 		Data:        decoded,
 	}
 
-	parsedTarget, _ := strconv.ParseInt(target, 10, 64)
 	event.TargetGuildInt = parsedTarget
 
 	defer func() {

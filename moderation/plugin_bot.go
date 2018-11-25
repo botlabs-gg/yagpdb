@@ -1,7 +1,9 @@
 package moderation
 
 import (
-	"errors"
+	"github.com/pkg/errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jonas747/discordgo"
@@ -11,7 +13,8 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 )
@@ -37,8 +40,12 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
-	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
+	// scheduledevents.RegisterEventHandler("unmute", handleUnMuteLegacy)
+	// scheduledevents.RegisterEventHandler("mod_unban", handleUnbanLegacy)
+	scheduledevents2.RegisterHandler("moderation_unmute", ScheduledUnmuteData{}, handleScheduledUnmute)
+	scheduledevents2.RegisterHandler("moderation_unban", ScheduledUnbanData{}, handleScheduledUnban)
+	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
+	scheduledevents2.RegisterLegacyMigrater("mod_unban", handleMigrateScheduledUnban)
 
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
@@ -49,6 +56,14 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
 
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
+}
+
+type ScheduledUnmuteData struct {
+	UserID int64 `json:"user_id"`
+}
+
+type ScheduledUnbanData struct {
+	UserID int64 `json:"user_id"`
 }
 
 func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
@@ -427,4 +442,73 @@ func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Dur
 	}
 
 	return nil, nil
+}
+
+func handleMigrateScheduledUnmute(t time.Time, data string) error {
+	split := strings.Split(data, ":")
+	if len(split) < 2 {
+		logrus.Error("invalid unmute event", data)
+		return nil
+	}
+
+	guildID, _ := strconv.ParseInt(split[0], 10, 64)
+	userID, _ := strconv.ParseInt(split[1], 10, 64)
+
+	return scheduledevents2.ScheduleEvent("moderation_unmute", guildID, t, &ScheduledUnmuteData{
+		UserID: userID,
+	})
+}
+
+func handleMigrateScheduledUnban(t time.Time, data string) error {
+	split := strings.Split(data, ":")
+	if len(split) < 2 {
+		logrus.Error("Invalid unban event", data)
+		return nil // Can't re-schedule an invalid event..
+	}
+
+	guildID, _ := strconv.ParseInt(split[0], 10, 64)
+	userID, _ := strconv.ParseInt(split[1], 10, 64)
+
+	return scheduledevents2.ScheduleEvent("moderation_unban", guildID, t, &ScheduledUnbanData{
+		UserID: userID,
+	})
+}
+
+func handleScheduledUnmute(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	unmuteData := data.(*ScheduledUnmuteData)
+
+	member, err := bot.GetMember(evt.GuildID, unmuteData.UserID)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	err = MuteUnmuteUser(nil, false, evt.GuildID, 0, common.BotUser, "Mute Duration Expired", member, 0)
+	if errors.Cause(err) != ErrNoMuteRole {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
+}
+
+func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	unbanData := data.(*ScheduledUnbanData)
+
+	guildID := evt.GuildID
+	userID := unbanData.UserID
+
+	g := bot.State.Guild(true, guildID)
+	if g == nil {
+		logrus.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
+		return false, nil
+	}
+
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
+
+	err = common.BotSession.GuildBanDelete(guildID, userID)
+	if err != nil {
+		logrus.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
 }

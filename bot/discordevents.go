@@ -4,11 +4,9 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/master"
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"sync"
-	"sync/atomic"
 )
 
 var (
@@ -18,43 +16,6 @@ var (
 
 	botStartedFired = new(int32)
 )
-
-// Once we have received a guild create for all guilds
-// We fire BotStarted
-func setWaitingGuildReady(g int64) {
-	if atomic.LoadInt32(botStartedFired) == 1 {
-		return
-	}
-
-	waitingGuildsMU.Lock()
-	delete(waitingGuilds, g)
-	shouldFireStarted := len(waitingReadies) < 1
-
-	// Some shards aren't ready yet
-	if len(waitingReadies) > 0 {
-		shouldFireStarted = false
-	}
-
-	if shouldFireStarted {
-		atomic.StoreInt32(botStartedFired, 1)
-	}
-
-	waitingGuildsMU.Unlock()
-
-	if shouldFireStarted {
-		log.Println("Bot is now fully ready")
-
-		stateLock.Lock()
-		currentState := state
-		stateLock.Unlock()
-
-		if currentState == StateSoftStarting {
-			SlaveClient.Send(master.EvtSoftStartComplete, nil, true)
-		}
-
-		BotStarted()
-	}
-}
 
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
@@ -131,8 +92,6 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		"guild":  g.ID,
 	}).Debug("Joined guild")
 
-	setWaitingGuildReady(g.ID)
-
 	var n int
 	err := common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
 	if err != nil {
@@ -165,8 +124,6 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 		// Just a guild outage
 		return
 	}
-
-	setWaitingGuildReady(evt.GuildDelete().ID)
 
 	log.WithFields(log.Fields{
 		"g_name": evt.GuildDelete().Name,

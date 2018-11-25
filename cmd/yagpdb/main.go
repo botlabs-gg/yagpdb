@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/evalphobia/logrus_sentry"
 	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/safebrowsing"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -19,6 +20,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 
@@ -52,6 +54,7 @@ var (
 	flagRunFeeds      string
 	flagRunEverything bool
 	flagDryRun        bool
+	flagRunBWC        bool
 
 	flagLogTimestamp bool
 
@@ -66,6 +69,7 @@ func init() {
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
+	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
 	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
@@ -100,7 +104,7 @@ func main() {
 		}
 	}
 
-	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun {
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
 	}
@@ -124,6 +128,7 @@ func main() {
 	//BotSession.LogLevel = discordgo.LogInformational
 
 	// Setup plugins
+	safebrowsing.RegisterPlugin()
 	discordlogger.Register()
 	commands.RegisterPlugin()
 	stdcommands.RegisterPlugin()
@@ -146,14 +151,18 @@ func main() {
 	cah.RegisterPlugin()
 	premium.RegisterPlugin()
 	patreonpremiumsource.RegisterPlugin()
+	scheduledevents2.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
 		return
 	}
 
+	if flagRunBot || flagRunEverything {
+		bot.Enabled = true
+	}
+
 	commands.InitCommands()
-	mqueue.InitStores()
 
 	if flagGenCmdDocs {
 		GenCommandsDocs()
@@ -174,6 +183,10 @@ func main() {
 		go feeds.Run(strings.Split(flagRunFeeds, ","))
 	}
 
+	if flagRunBWC || flagRunEverything {
+		go common.RunBackgroundWorkers()
+	}
+
 	go pubsub.PollEvents()
 
 	listenSignal()
@@ -190,19 +203,19 @@ func listenSignal() {
 	log.Info("SHUTTING DOWN... ", sig.String())
 
 	shouldWait := false
-	var wg sync.WaitGroup
+	wg := new(sync.WaitGroup)
 
 	if flagRunBot || flagRunEverything {
 
 		wg.Add(1)
 
-		go bot.Stop(&wg)
+		go bot.Stop(wg)
 
 		shouldWait = true
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
-		feeds.Stop(&wg)
+		feeds.Stop(wg)
 		shouldWait = true
 	}
 
@@ -210,6 +223,10 @@ func listenSignal() {
 		web.Stop()
 		// Slep for a extra second
 		time.Sleep(time.Second)
+	}
+
+	if flagRunBWC {
+		common.StopBackgroundWorkers(wg)
 	}
 
 	if shouldWait {

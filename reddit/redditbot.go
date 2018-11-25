@@ -133,10 +133,11 @@ OUTER:
 
 	for _, item := range filteredItems {
 		cParsed, _ := strconv.ParseInt(item.Channel, 10, 64)
+		gParsed, _ := strconv.ParseInt(item.Guild, 10, 64)
 		if item.UseEmbeds {
-			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), cParsed, embed)
+			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), gParsed, cParsed, embed)
 		} else {
-			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), cParsed, message)
+			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), gParsed, cParsed, message)
 		}
 
 		if common.Statsd != nil {

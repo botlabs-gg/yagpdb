@@ -7,8 +7,8 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/pkg/errors"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
@@ -20,44 +20,84 @@ type EvtData struct {
 }
 
 func AddScheduledEventListener() {
-	scheduledevents.RegisterEventHandler("reset_mentionable_role", func(data string) error {
-		var parsedData EvtData
-		err := json.Unmarshal([]byte(data), &parsedData)
-		if err != nil {
-			logrus.WithError(err).Error("Failed unmarshaling reset_mentionable_role data: ", data)
-			return nil
-		}
+	// scheduledevents.RegisterEventHandler("reset_mentionable_role", func(data string) error {
+	// 	var parsedData EvtData
+	// 	err := json.Unmarshal([]byte(data), &parsedData)
+	// 	if err != nil {
+	// 		logrus.WithError(err).Error("Failed unmarshaling reset_mentionable_role data: ", data)
+	// 		return nil
+	// 	}
 
-		gs := bot.State.Guild(true, parsedData.GuildID)
-		if gs == nil {
-			return nil
-		}
+	// 	gs := bot.State.Guild(true, parsedData.GuildID)
+	// 	if gs == nil {
+	// 		return nil
+	// 	}
 
-		var role *discordgo.Role
-		gs.RLock()
-		defer gs.RUnlock()
-		for _, r := range gs.Guild.Roles {
-			if r.ID == parsedData.RoleID {
-				role = r
-				break
-			}
-		}
+	// 	var role *discordgo.Role
+	// 	gs.RLock()
+	// 	defer gs.RUnlock()
+	// 	for _, r := range gs.Guild.Roles {
+	// 		if r.ID == parsedData.RoleID {
+	// 			role = r
+	// 			break
+	// 		}
+	// 	}
 
-		if role == nil {
-			return nil // Assume role was deleted or something in the meantime
-		}
+	// 	if role == nil {
+	// 		return nil // Assume role was deleted or something in the meantime
+	// 	}
 
-		_, err = common.BotSession.GuildRoleEdit(gs.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
-		if err != nil {
-			if cast, ok := errors.Cause(err).(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code != 0 {
-				return nil // Discord api ok, something else went wrong. do not reschedule
-			}
+	// 	_, err = common.BotSession.GuildRoleEdit(gs.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
+	// 	if err != nil {
+	// 		if cast, ok := errors.Cause(err).(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code != 0 {
+	// 			return nil // Discord api ok, something else went wrong. do not reschedule
+	// 		}
 
-			return err
-		}
+	// 		return err
+	// 	}
 
+	// 	return nil
+	// })
+
+	scheduledevents2.RegisterHandler("reset_mentionable_role", EvtData{}, handleResetMentionableRole)
+	scheduledevents2.RegisterLegacyMigrater("reset_mentionable_role", handleMigrateResetMentionable)
+}
+
+func handleMigrateResetMentionable(t time.Time, data string) error {
+	var parsedData EvtData
+	err := json.Unmarshal([]byte(data), &parsedData)
+	if err != nil {
+		logrus.WithError(err).Error("Failed unmarshaling reset_mentionable_role data: ", data)
 		return nil
-	})
+	}
+
+	return scheduledevents2.ScheduleEvent("reset_mentionable_role", parsedData.GuildID, t, parsedData)
+}
+
+func handleResetMentionableRole(evt *seventsmodels.ScheduledEvent, dataInterface interface{}) (retry bool, err error) {
+	data := dataInterface.(*EvtData)
+
+	gs := bot.State.Guild(true, evt.GuildID)
+	if gs == nil {
+		return false, nil
+	}
+
+	var role *discordgo.Role
+	gs.RLock()
+	defer gs.RUnlock()
+	for _, r := range gs.Guild.Roles {
+		if r.ID == data.RoleID {
+			role = r
+			break
+		}
+	}
+
+	if role == nil {
+		return false, nil // Assume role was deleted or something in the meantime
+	}
+
+	_, err = common.BotSession.GuildRoleEdit(gs.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, false)
+	return scheduledevents2.CheckDiscordErrRetry(err), err
 }
 
 var Command = &commands.YAGCommand{
@@ -101,16 +141,13 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 	}
 
 	_, err = common.BotSession.ChannelMessageSend(data.CS.ID, "<@&"+discordgo.StrID(role.ID)+"> "+data.Args[1].Str())
-
-	scheduledData, err := json.Marshal(EvtData{
-		GuildID: data.GS.ID,
-		RoleID:  role.ID,
-	})
 	if err != nil {
 		return nil, err
 	}
 
-	scheduledevents.ScheduleEvent("reset_mentionable_role", string(scheduledData), time.Now().Add(time.Second*30))
-
-	return "", err
+	err = scheduledevents2.ScheduleEvent("reset_mentionable_role", data.GS.ID, time.Now().Add(time.Second*30), &EvtData{
+		GuildID: data.GS.ID,
+		RoleID:  role.ID,
+	})
+	return nil, err
 }
