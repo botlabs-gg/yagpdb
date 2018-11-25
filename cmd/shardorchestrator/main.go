@@ -42,6 +42,8 @@ func main() {
 		log.Fatal("failed starting orchestrator: ", err)
 	}
 
+	go UpdateRedisNodes(orch)
+
 	api := rest.NewRESTAPI(orch, "127.0.0.1:7448")
 	err = api.Run()
 	if err != nil {
@@ -60,4 +62,33 @@ func (sc *RedisShardCountProvider) GetTotalShardCount() (int, error) {
 	shards := 0
 	err := common.RedisPool.Do(radix.Cmd(&shards, "GET", sc.Key))
 	return shards, err
+}
+
+const RedisNodesKey = "dshardorchestrator_nodes"
+
+func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
+
+	t := time.NewTicker(time.Second * 10)
+	for {
+		<-t.C
+
+		fullStatus := orch.GetFullNodesStatus()
+		common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisNodesKey+"_new"))
+
+		addedAny := false
+		for _, v := range fullStatus {
+			if !v.Connected {
+				continue
+			}
+
+			addedAny = true
+			common.RedisPool.Do(radix.Cmd(nil, "SADD", RedisNodesKey+"_new", v.ID))
+		}
+
+		if addedAny {
+			common.RedisPool.Do(radix.Cmd(nil, "RENAME", RedisNodesKey+"_new", RedisNodesKey))
+		} else {
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisNodesKey))
+		}
+	}
 }
