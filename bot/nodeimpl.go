@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/dshardorchestrator/node"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"os"
 	"runtime/debug"
@@ -36,7 +37,12 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 		EventLogger.init(info.TotalShards)
 		go EventLogger.run()
 
-		err := ShardManager.Init()
+		err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", info.TotalShards))
+		if err != nil {
+			logrus.WithError(err).Error("failed setting shard count")
+		}
+
+		err = ShardManager.Init()
 		if err != nil {
 			panic("failed initializing discord sessions: " + err.Error())
 		}

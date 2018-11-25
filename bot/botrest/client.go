@@ -43,7 +43,11 @@ func Get(shard int, url string, dest interface{}) error {
 		return ErrCantFindServer
 	}
 
-	resp, err := http.Get("http://" + serverAddr + "/" + url)
+	return GetWithAddress(serverAddr, url, dest)
+}
+
+func GetWithAddress(addr string, url string, dest interface{}) error {
+	resp, err := http.Get("http://" + addr + "/" + url)
 	if err != nil {
 		return err
 	}
@@ -147,8 +151,41 @@ func GetChannelPermissions(guildID, channelID int64) (perms int64, err error) {
 	return
 }
 
-func GetShardStatuses() (st []*ShardStatus, err error) {
-	err = Get(0, "gw_status", &st)
+type NodeStatus struct {
+	ID     string
+	Shards []*ShardStatus `json:"shards"`
+}
+
+func GetNodeStatuses() (st []*NodeStatus, err error) {
+	// retrieve a list of nodes
+	var nodeIDs []string
+	err = common.RedisPool.Do(radix.Cmd(&nodeIDs, "SMEMBERS", "dshardorchestrator_nodes"))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, n := range nodeIDs {
+		// retrieve the REST address for this node
+		var addr string
+		err = common.RedisPool.Do(radix.Cmd(&addr, "GET", RedisKeyNodeAddressMapping(n)))
+		if err != nil {
+			logrus.WithError(err).Error("failed retrieving rest address for bot for node id: ", n)
+			continue
+		}
+
+		var status []*ShardStatus
+		err = GetWithAddress(addr, "gw_status", &status)
+		if err != nil {
+			logrus.WithError(err).Error("failed retrieving shard status for node ", n)
+			continue
+		}
+
+		st = append(st, &NodeStatus{
+			ID:     n,
+			Shards: status,
+		})
+	}
+
 	return
 }
 

@@ -147,6 +147,13 @@ func (p *Plugin) mapAddressToShards(address string) {
 			logrus.WithError(err).Error("[botrest] failed mapping botrest")
 		}
 	}
+
+	if bot.UsingOrchestrator {
+		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyNodeAddressMapping(bot.NodeConn.GetIDLock()), address))
+		if err != nil {
+			logrus.WithError(err).Error("[botrest] failed mapping node")
+		}
+	}
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -366,6 +373,7 @@ func HandlePing(w http.ResponseWriter, r *http.Request) {
 }
 
 type ShardStatus struct {
+	ShardID         int     `json:"shard_id"`
 	TotalEvents     int64   `json:"total_events"`
 	EventsPerSecond float64 `json:"events_per_second"`
 
@@ -380,32 +388,36 @@ func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
 	totalEventStats, periodEventStats := bot.EventLogger.GetStats()
 
 	numShards := bot.ShardManager.GetNumShards()
-	result := make([]*ShardStatus, numShards)
-	for i := 0; i < numShards; i++ {
-		shard := bot.ShardManager.Sessions[i]
+	result := make([]*ShardStatus, 0, numShards)
+
+	processShards := bot.GetProcessShards()
+
+	for _, shardID := range processShards {
+		shard := bot.ShardManager.Sessions[shardID]
 
 		sumEvents := int64(0)
 		sumPeriodEvents := int64(0)
 
-		for j, _ := range totalEventStats[i] {
-			sumEvents += totalEventStats[i][j]
-			sumPeriodEvents += periodEventStats[i][j]
+		for j, _ := range totalEventStats[shardID] {
+			sumEvents += totalEventStats[shardID][j]
+			sumPeriodEvents += periodEventStats[shardID][j]
 		}
 
 		if shard == nil || shard.GatewayManager == nil {
-			result[i] = &ShardStatus{ConnStatus: discordgo.GatewayStatusDisconnected}
+			result[shardID] = &ShardStatus{ConnStatus: discordgo.GatewayStatusDisconnected}
 			continue
 		}
 
 		beat, ack := shard.GatewayManager.HeartBeatStats()
 
-		result[i] = &ShardStatus{
+		result = append(result, &ShardStatus{
+			ShardID:           shardID,
 			ConnStatus:        shard.GatewayManager.Status(),
 			TotalEvents:       sumEvents,
 			EventsPerSecond:   float64(sumPeriodEvents) / bot.EventLoggerPeriodDuration.Seconds(),
 			LastHeartbeatSend: beat,
 			LastHeartbeatAck:  ack,
-		}
+		})
 	}
 
 	ServeJson(w, r, result)

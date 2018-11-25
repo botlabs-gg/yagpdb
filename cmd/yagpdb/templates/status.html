@@ -26,55 +26,65 @@
 	</div>
 </div>
 {{end}}
-{{range $i, $v := .Shards}}
-<form action="/shard/{{$i}}/reconnect" method="POST">
-	<div class="row">
-	    <div class="col-lg-1">
-	    Shard: {{$i}}
-	    </div>
-	    
-	    <div class="col-lg-2">
-	    {{if eq .ConnStatus 0}}
-	    Connection Status: Disconnected
-	    {{else if eq .ConnStatus 1}}
-	    Connection Status: Connecting
-	    {{else if eq .ConnStatus 2}}
-	    Connection Status: Identifying
-	    {{else if eq .ConnStatus 3}}
-	    Connection Status: Resuming
-	    {{else if eq .ConnStatus 4}}
-	    Connection Status: Ready
-	    {{end}}
-	    <span class="indicator indicator-{{if eq .ConnStatus 4}}success{{else}}danger{{end}}">
-	    </div>
 
-	    <div class="col-lg-2">
-	    Total Events: {{.TotalEvents}}
-	    </div>
-	    
-	    <div class="col-lg-1">
-	    Events/s: {{.EventsPerSecond}}
-	    </div>
-	    
-	    <div class="col-lg-2">
-	    Heartbeat Send: {{formatTime .LastHeartbeatSend.UTC "02 15:04:05"}}
-	    </div>
-	    
-	    <div class="col-lg-2">
-	    Heartbeat Ack: {{formatTime .LastHeartbeatAck "02 15:04:05"}}
-	    </div>
-	    
-	    {{if $botOwner}}
-	    <div class="col-lg-2">
-	 		<div class="btn-group flex-wrap">
-		 		<button class="btn btn-danger" type="submit">Resume</button>
-		 		<button class="btn btn-danger" type="submit" formaction="/shard/{{$i}}/reconnect?reidentify=1">Re-identify</button>
-		 	</div>
-	    </div>
-	    {{end}}
+{{range .Nodes}}
+<section class="card card-featured card-featured-success mb-4">
+    <header class="card-header">
+        <h2 class="card-title">Node {{.ID}}</h2>
+    </header>
+    <div class="card-body">
+		{{range $i, $v := .Shards}}
+		<form action="/shard/{{.ShardID}}/reconnect" method="POST">
+			<div class="row">
+			    <div class="col-lg-1">
+			    Shard: {{.ShardID}}
+			    </div>
+			    
+			    <div class="col-lg-2">
+			    {{if eq .ConnStatus 0}}
+			    Connection Status: Disconnected
+			    {{else if eq .ConnStatus 1}}
+			    Connection Status: Connecting
+			    {{else if eq .ConnStatus 2}}
+			    Connection Status: Identifying
+			    {{else if eq .ConnStatus 3}}
+			    Connection Status: Resuming
+			    {{else if eq .ConnStatus 4}}
+			    Connection Status: Ready
+			    {{end}}
+			    <span class="indicator indicator-{{if eq .ConnStatus 4}}success{{else}}danger{{end}}"></span>
+			    </div>
+
+			    <div class="col-lg-2">
+			    Total Events: {{.TotalEvents}}
+			    </div>
+			    
+			    <div class="col-lg-1">
+			    Events/s: {{.EventsPerSecond}}
+			    </div>
+			    
+			    <div class="col-lg-2">
+			    Heartbeat Send: {{formatTime .LastHeartbeatSend.UTC "02 15:04:05"}}
+			    </div>
+			    
+			    <div class="col-lg-2">
+			    Heartbeat Ack: {{formatTime .LastHeartbeatAck "02 15:04:05"}}
+			    </div>
+			    
+			    {{if $botOwner}}
+			    <div class="col-lg-2">
+			 		<div class="btn-group flex-wrap">
+				 		<button class="btn btn-danger" type="submit">Resume</button>
+				 		<button class="btn btn-danger" type="submit" formaction="/shard/{{.ShardID}}/reconnect?reidentify=1">Re-identify</button>
+				 	</div>
+			    </div>
+			    {{end}}
+			</div>
+		</form>
+		{{end}}
+		<!-- /.row -->
 	</div>
-</form>
-<!-- /.row -->
+</section>
 {{end}}{{end}}
 
 {{template "cp_footer" .}}
