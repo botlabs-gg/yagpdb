@@ -127,13 +127,21 @@ func (p *Plugin) BotInit() {
 
 			if time.Since(lastChange) > time.Second*5 {
 				// found avaiable port
-				p.mapAddressToShards(lastAddr)
+				go p.mapper(lastAddr)
 				return
 			}
 
 			time.Sleep(time.Second)
 		}
 	}()
+}
+
+func (p *Plugin) mapper(address string) {
+	t := time.NewTicker(time.Second * 10)
+	for {
+		p.mapAddressToShards(address)
+		<-t.C
+	}
 }
 
 func (p *Plugin) mapAddressToShards(address string) {
