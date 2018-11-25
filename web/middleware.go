@@ -91,7 +91,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"GAID":             GAID,
 		}
 
-		if https {
+		if https || exthttps {
 			baseData["BaseURL"] = "https://" + common.Conf.Host
 		} else {
 			baseData["BaseURL"] = "http://" + common.Conf.Host
@@ -160,13 +160,8 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 			split := strings.SplitN(origin, ":", 3)
 			hostSplit := strings.SplitN(common.Conf.Host, ":", 2)
 
-			prefix := "https://"
-			if !https {
-				prefix = "http://"
-			}
-
-			if len(split) < 2 || !strings.EqualFold(prefix+hostSplit[0], split[0]+":"+split[1]) {
-				CtxLogger(r.Context()).Error("Mismatched origin: ", common.Conf.Host+" : "+split[0]+":"+split[1])
+			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
+				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
 				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
 				return
 			}

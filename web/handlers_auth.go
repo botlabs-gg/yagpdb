@@ -31,7 +31,7 @@ func InitOauth() {
 		},
 	}
 
-	if https {
+	if https || exthttps {
 		oauthConf.RedirectURL = "https://" + common.Conf.Host + "/confirm_login"
 	} else {
 		oauthConf.RedirectURL = "http://" + common.Conf.Host + "/confirm_login"
