@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	"runtime"
 	"time"
 )
 
@@ -666,9 +665,9 @@ func EvtProcesserGCs() {
 		if len(gc.Members) > 100 {
 			logrus.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
 			// Make sure this dosen't use all our resources
-			time.Sleep(time.Millisecond * 10)
+			time.Sleep(time.Second)
 		} else {
-			runtime.Gosched()
+			time.Sleep(time.Millisecond * 10)
 		}
 	}
 }
