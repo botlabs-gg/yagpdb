@@ -94,7 +94,10 @@ func (n *NodeImpl) StartShard(shard int, sessionID string, sequence int64) {
 
 // called when the bot should shut down, make sure to send EvtShutdown when completed
 func (n *NodeImpl) Shutdown() {
-	ShardManager.StopAll()
+	var wg sync.WaitGroup
+	Stop(&wg)
+	wg.Wait()
+
 	os.Exit(0)
 }
 
