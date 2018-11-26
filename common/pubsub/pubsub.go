@@ -7,7 +7,6 @@ package pubsub
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
@@ -32,6 +31,9 @@ type eventHandler struct {
 var (
 	eventHandlers = make([]*eventHandler, 0)
 	eventTypes    = make(map[string]reflect.Type)
+
+	// if set, return true to handle the event, false to ignore it
+	FilterFunc func(guildID int64) (handle bool)
 )
 
 // AddEventHandler adds a event handler
@@ -51,6 +53,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 }
 
 // PublishEvent publishes the specified event
+// set target to -1 to handle on all nodes
 func Publish(evt string, target int64, data interface{}) error {
 	dataStr := ""
 	if data != nil {
@@ -103,8 +106,10 @@ func handleEvent(evt string) {
 	data := split[2]
 
 	parsedTarget, _ := strconv.ParseInt(target, 10, 64)
-	if !bot.IsGuildOnCurrentProcess(parsedTarget) {
-		return
+	if FilterFunc != nil {
+		if !FilterFunc(parsedTarget) {
+			return
+		}
 	}
 
 	t, ok := eventTypes[name]

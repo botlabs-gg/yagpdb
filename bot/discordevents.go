@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -190,5 +191,36 @@ func InvalidateCache(guildID, userID int64) {
 func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {
 	return func(evt *eventsystem.EventData) {
 		go inner(evt)
+	}
+}
+
+func HandleReactionAdd(evt *eventsystem.EventData) {
+	ra := evt.MessageReactionAdd()
+	if ra.GuildID != 0 {
+		return
+	}
+	if ra.UserID == common.BotUser.ID {
+		return
+	}
+
+	err := pubsub.Publish("dm_reaction", -1, ra)
+	if err != nil {
+		log.WithError(err).Error("failed publishing dm reaction")
+	}
+}
+
+func HandleMessageCreate(evt *eventsystem.EventData) {
+	mc := evt.MessageCreate()
+	if mc.GuildID != 0 {
+		return
+	}
+
+	if mc.Author == nil || mc.Author.ID == common.BotUser.ID {
+		return
+	}
+
+	err := pubsub.Publish("dm_message", -1, mc)
+	if err != nil {
+		log.WithError(err).Error("failed publishing dm message")
 	}
 }

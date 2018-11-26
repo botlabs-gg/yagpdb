@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v3"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
@@ -27,6 +28,14 @@ var (
 func init() {
 	// Discord epoch
 	snowflake.Epoch = 1420070400000
+
+	pubsub.FilterFunc = func(guildID int64) (handle bool) {
+		if guildID == -1 || IsGuildOnCurrentProcess(guildID) {
+			return true
+		}
+
+		return false
+	}
 }
 
 func ContextSession(ctx context.Context) *discordgo.Session {
