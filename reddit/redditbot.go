@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+	"html"
 	"os"
 	"strconv"
 	"strings"
@@ -155,10 +156,10 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	}
 
 	plainMessage := fmt.Sprintf("<:reddit:462994034428870656> **/u/%s** posted a new %s in **/r/%s**\n**%s** - <%s>\n",
-		post.Author, typeStr, post.Subreddit, post.Title, "https://redd.it/"+post.ID)
+		post.Author, typeStr, post.Subreddit, html.UnescapeString(post.Title), "https://redd.it/"+post.ID)
 
 	if post.IsSelf {
-		plainMessage += common.CutStringShort(post.Selftext, 250)
+		plainMessage += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
 	} else {
 		plainMessage += post.URL
 	}
@@ -173,13 +174,13 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 			Name: "Reddit",
 			URL:  "https://reddit.com",
 		},
-		Description: "**" + post.Title + "**\n",
+		Description: "**" + html.UnescapeString(post.Title) + "**\n",
 	}
 	embed.URL = "https://redd.it/" + post.ID
 
 	if post.IsSelf {
 		embed.Title = "New self post in /r/" + post.Subreddit
-		embed.Description += common.CutStringShort(post.Selftext, 250)
+		embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
 		embed.Color = 0xc3fc7e
 	} else {
 		embed.Color = 0x718aed
