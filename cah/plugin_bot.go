@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
 func RegisterPlugin() {
@@ -39,11 +40,29 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(func(evt *eventsystem.EventData) {
 		switch t := evt.EvtInterface.(type) {
 		case *discordgo.MessageCreate:
+			if t.GuildID == 0 {
+				return
+			}
+
 			go p.Manager.HandleMessageCreate(t)
 		case *discordgo.MessageReactionAdd:
+			if t.GuildID == 0 {
+				return
+			}
+
 			go p.Manager.HandleReactionAdd(t)
 		}
 	}, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageCreate)
+
+	pubsub.AddHandler("dm_reaction", func(evt *pubsub.Event) {
+		dataCast := evt.Data.(*discordgo.MessageReactionAdd)
+		go p.Manager.HandleReactionAdd(dataCast)
+	}, discordgo.MessageReactionAdd{})
+
+	pubsub.AddHandler("dm_message", func(evt *pubsub.Event) {
+		dataCast := evt.Data.(*discordgo.MessageCreate)
+		go p.Manager.HandleMessageCreate(dataCast)
+	}, discordgo.MessageCreate{})
 }
 
 func (p *Plugin) Status() (string, string) {
