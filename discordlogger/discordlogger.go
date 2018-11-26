@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix.v3"
 	"github.com/sirupsen/logrus"
 	"os"
 	"strconv"
@@ -35,9 +36,11 @@ func (p *Plugin) BotInit() {
 }
 
 func EventHandler(evt *eventsystem.EventData) {
-	bot.State.RLock()
-	count := len(bot.State.Guilds)
-	bot.State.RUnlock()
+	var count int64
+	err := common.RedisPool.Do(radix.Cmd(&count, "SCARD", "connected_guilds"))
+	if err != nil {
+		logrus.WithError(err).Error("failed checking server count")
+	}
 
 	msg := ""
 	switch evt.Type {
