@@ -14,7 +14,7 @@ var (
 	Command       = &commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "Poll",
-		Description:  "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink",
+		Description:  "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
 		RequiredArgs: 3,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{
