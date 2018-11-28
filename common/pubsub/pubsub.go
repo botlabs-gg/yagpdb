@@ -87,7 +87,7 @@ func PollEvents() {
 
 	for msg := range msgChan {
 		if len(msg.Message) > 0 {
-			logrus.WithField("evt", string(msg.Message)).Info("Handling PubSub event")
+			logrus.WithField("evt", string(msg.Message)).Debug("Handling PubSub event")
 			handleEvent(string(msg.Message))
 		}
 	}
