@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
@@ -338,6 +339,21 @@ func RemoveStreaming(client radix.Client, config *Config, guildID int64, ms *dst
 }
 
 func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dstate.MemberState) {
+	// Only send one announcment every 1 hour
+	var resp string
+	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
+	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
+	if err != nil {
+		log.WithError(err).Error("failed setting streaming announcment cooldown")
+		return
+	}
+
+	if resp != "OK" {
+		log.Info("streaming announcment cooldown: ", ms.ID)
+		return
+	}
+
+	// make sure the channel exists
 	foundChannel := false
 	for _, v := range guild.Channels {
 		if v.ID == config.AnnounceChannel {
@@ -345,7 +361,11 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 		}
 	}
 
+	// unknown channel, disable announcements
 	if !foundChannel {
+		config.AnnounceChannel = 0
+		config.Save(guild.ID)
+
 		log.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not found in state, not sending streaming announcement")
 		return
 	}
