@@ -673,3 +673,9 @@ func ErrPQIsUniqueViolation(err error) bool {
 
 	return false
 }
+
+func GetJoinedServerCount() (int64, error) {
+	var count int64
+	err := RedisPool.Do(radix.Cmd(&count, "SCARD", "connected_guilds"))
+	return count, err
+}

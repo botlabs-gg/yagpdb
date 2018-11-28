@@ -28,9 +28,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	bot.State.RLock()
-	servers := len(bot.State.Guilds)
-	bot.State.RUnlock()
+	servers, _ := common.GetJoinedServerCount()
 
 	sysMem, err := mem.VirtualMemory()
 	sysMemStats := ""
