@@ -133,15 +133,6 @@ func InitTest() {
 }
 
 func connectRedis(addr string) (err error) {
-	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	// if os.Getenv("YAGPDB_LEGACY_REDIS_POOL") != "" {
-	// 	logrus.Info("Using legacy redis pool")
-	// 	RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
-	// } else {
-	// 	logrus.Info("Using new redis pool, set YAGPDB_LEGACY_REDIS_POOL=yes if it's broken")
-	// 	RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
-	// }
-
 	RedisPool, err = radix.NewPool("tcp", addr, RedisPoolSize, radix.PoolOnEmptyWait())
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed intitializing redis pool")
