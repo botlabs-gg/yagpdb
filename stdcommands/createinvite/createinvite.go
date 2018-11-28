@@ -21,14 +21,13 @@ var Command = &commands.YAGCommand{
 		{Name: "server", Type: dcmd.Int},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
-		gs := bot.State.Guild(true, data.Args[0].Int64())
-		if gs == nil {
-			return "Unknown server", nil
+		channels, err := common.BotSession.GuildChannels(data.Args[0].Int64())
+		if err != nil {
+			return nil, err
 		}
 
 		channelID := int64(0)
-		gs.RLock()
-		for _, v := range gs.Channels {
+		for _, v := range channels {
 			if channelID == 0 || v.Type != discordgo.ChannelTypeGuildVoice {
 				channelID = v.ID
 				if v.Type != discordgo.ChannelTypeGuildVoice {
@@ -36,7 +35,6 @@ var Command = &commands.YAGCommand{
 				}
 			}
 		}
-		gs.RUnlock()
 
 		if channelID == 0 {
 			return "No possible channel :(", nil
