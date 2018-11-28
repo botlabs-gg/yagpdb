@@ -306,3 +306,11 @@ func GetProcessShards() []int {
 
 	return cop
 }
+
+func NodeID() string {
+	if !UsingOrchestrator || NodeConn == nil {
+		return "none"
+	}
+
+	return NodeConn.GetIDLock()
+}
