@@ -25,6 +25,7 @@ func init() {
 	// Copy the standard options
 	cp := *dca.StdEncodeOptions
 	transcoderOptions = &cp
+	transcoderOptions.Bitrate = 100
 }
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
