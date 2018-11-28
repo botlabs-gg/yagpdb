@@ -22,13 +22,21 @@ var Command = &commands.YAGCommand{
 			gID = data.Args[0].Int64()
 		}
 
-		shard := bot.ShardManager.SessionForGuild(gID)
-		if shard == nil {
-			return "Unknown shard...?", nil
+		shard := bot.GuildShardID(gID)
+		totalShards := bot.GetTotalShards()
+
+		status := ""
+		if bot.IsGuildOnCurrentProcess(gID) {
+			session := bot.ShardManager.SessionForGuild(gID)
+			if session == nil {
+				return "Unknown shard...?", nil
+			}
+
+			status = session.GatewayManager.Status().String()
+		} else {
+			status = "unknown (on another node than this one)"
 		}
 
-		status := shard.GatewayManager.Status()
-
-		return fmt.Sprintf("`%d` on shard `%d` out of total `%d` shards, status: `%s`", gID, shard.ShardID, shard.ShardCount, status.String()), nil
+		return fmt.Sprintf("`%d` on shard `%d` out of total `%d` shards, status: `%s`", gID, shard, totalShards, status), nil
 	},
 }
