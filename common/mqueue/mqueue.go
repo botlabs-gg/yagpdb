@@ -97,7 +97,7 @@ func QueueMessage(source, sourceID string, guildID, channel int64, msgStr string
 func (p *Plugin) BotInit() {
 	go startPolling()
 
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 2; i++ {
 		go processWorker()
 	}
 }
@@ -135,7 +135,7 @@ func startPolling() {
 				l := len(workSlice)
 				workmu.Unlock()
 
-				common.Statsd.Gauge("yagpdb.mqueue.size", float64(l), nil, 1)
+				common.Statsd.Gauge("yagpdb.mqueue.size", float64(l), []string{"node:" + bot.NodeID()}, 1)
 			}
 		}
 	}
