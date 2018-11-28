@@ -667,7 +667,7 @@ func EvtProcesserGCs() {
 			// Make sure this dosen't use all our resources
 			time.Sleep(time.Second)
 		} else {
-			time.Sleep(time.Millisecond * 10)
+			time.Sleep(time.Millisecond * 250)
 		}
 	}
 }
