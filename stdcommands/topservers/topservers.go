@@ -50,7 +50,7 @@ var Command = &commands.YAGCommand{
 			entriesIncluded++
 			out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+1, v.Name, v.MemberCount)
 		}
-		return "Top servers the bot is on (by membercount):\n" + out + "\n```", nil
+		return "Top servers the bot is on (note: only shows servers on this node):\n" + out + "\n```", nil
 	},
 }
 
