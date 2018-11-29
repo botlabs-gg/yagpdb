@@ -61,11 +61,16 @@ type RegisteredHandler struct {
 
 var (
 	registeredHandlers = make(map[string]*RegisteredHandler)
+	running            bool
 )
 
 // RegisterHandler registers a handler for the scpecified event name
 // dataFormat is optional and should not be a pointer, it should match the type you're passing into ScheduleEvent
 func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFunc) {
+	if running {
+		panic("tried adding handler when scheduledevents2 is running")
+	}
+
 	registeredHandlers[eventName] = &RegisteredHandler{
 		EvtName:    eventName,
 		DataFormat: dataFormat,
@@ -97,10 +102,11 @@ func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interfac
 	return errors.WithMessage(err, "insert")
 }
 
-var _ bot.BotInitHandler = (*ScheduledEvents)(nil)
+var _ bot.LateBotInitHandler = (*ScheduledEvents)(nil)
 var _ bot.BotStopperHandler = (*ScheduledEvents)(nil)
 
-func (se *ScheduledEvents) BotInit() {
+func (se *ScheduledEvents) LateBotInit() {
+	running = true
 	go se.runCheckLoop()
 	go se.MigrateLegacyEvents()
 }
