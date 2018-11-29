@@ -22,7 +22,7 @@ var Command = &commands.YAGCommand{
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		streamingURL := data.Switch("url").Str()
-		bot.SetStreaming(streamingURL, data.Args[0].Str())
+		bot.SetStatus(streamingURL, data.Args[0].Str())
 		return "Doneso", nil
 	}),
 }

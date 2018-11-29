@@ -19,10 +19,6 @@ import (
 
 var (
 	Cache = cache.New(time.Minute, time.Minute)
-
-	currentStatus       = "v" + common.VERSION + " :)"
-	currentStreamingURL = ""
-	currentPresenceLock sync.Mutex
 )
 
 func init() {
@@ -111,43 +107,27 @@ func SnowflakeToTime(i int64) time.Time {
 	return t
 }
 
-func SetStatus(status string) {
+func SetStatus(streaming, status string) {
 	if status == "" {
 		status = "v" + common.VERSION + " :)"
 	}
 
-	currentPresenceLock.Lock()
-	currentStatus = status
-	currentPresenceLock.Unlock()
-
-	updateAllShardStatuses()
-}
-
-func SetStreaming(streaming, status string) {
-	if status == "" {
-		status = "v" + common.VERSION + " :)"
+	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming", streaming))
+	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", status))
+	if err1 != nil {
+		logrus.WithError(err1).Error("failed setting bot status in redis")
 	}
 
-	currentPresenceLock.Lock()
-	currentStatus = status
-	currentStreamingURL = streaming
-	currentPresenceLock.Unlock()
+	if err2 != nil {
+		logrus.WithError(err2).Error("failed setting bot status in redis")
+	}
 
-	updateAllShardStatuses()
+	pubsub.Publish("bot_status_changed", -1, nil)
 }
 
 func updateAllShardStatuses() {
-	currentPresenceLock.Lock()
-	stremaing := currentStreamingURL
-	status := currentStatus
-	currentPresenceLock.Unlock()
-
 	for _, v := range ShardManager.Sessions {
-		if stremaing == "" {
-			v.UpdateStatus(0, status)
-		} else {
-			v.UpdateStreamingStatus(0, status, stremaing)
-		}
+		RefreshStatus(v)
 	}
 
 }
@@ -313,4 +293,24 @@ func NodeID() string {
 	}
 
 	return NodeConn.GetIDLock()
+}
+
+func RefreshStatus(session *discordgo.Session) {
+	var streamingURL string
+	var status string
+	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
+	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
+	if err1 != nil {
+		logrus.WithError(err1).Error("failed retrieiving bot streaming status")
+	}
+	if err2 != nil {
+		logrus.WithError(err2).Error("failed retrieiving bot status")
+	}
+
+	if streamingURL != "" {
+		session.UpdateStreamingStatus(0, status, streamingURL)
+	} else {
+		session.UpdateStatus(0, status)
+	}
+
 }

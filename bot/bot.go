@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -199,6 +200,10 @@ func SetupStandalone() {
 }
 
 func InitPlugins() {
+	pubsub.AddHandler("bot_status_changed", func(evt *pubsub.Event) {
+		updateAllShardStatuses()
+	}, nil)
+
 	// Initialize all plugins
 	for _, plugin := range common.Plugins {
 		if initBot, ok := plugin.(BotInitHandler); ok {
