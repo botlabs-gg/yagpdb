@@ -14,6 +14,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Event struct {
@@ -30,6 +31,7 @@ type eventHandler struct {
 
 var (
 	eventHandlers = make([]*eventHandler, 0)
+	handlersMU    sync.RWMutex
 	eventTypes    = make(map[string]reflect.Type)
 
 	// if set, return true to handle the event, false to ignore it
@@ -39,6 +41,9 @@ var (
 // AddEventHandler adds a event handler
 // For the specified event, should only be done during startup
 func AddHandler(evt string, cb func(*Event), t interface{}) {
+	handlersMU.Lock()
+	defer handlersMU.Unlock()
+
 	handler := &eventHandler{
 		evt:     evt,
 		handler: cb,
@@ -86,10 +91,14 @@ func PollEvents() {
 	}
 
 	for msg := range msgChan {
-		if len(msg.Message) > 0 {
-			logrus.WithField("evt", string(msg.Message)).Debug("Handling PubSub event")
-			handleEvent(string(msg.Message))
+		if len(msg.Message) < 1 {
+			continue
 		}
+
+		handlersMU.RLock()
+		logrus.WithField("evt", string(msg.Message)).Debug("Handling PubSub event")
+		handleEvent(string(msg.Message))
+		handlersMU.RUnlock()
 	}
 }
 
