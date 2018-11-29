@@ -1,6 +1,7 @@
 package mqueue
 
 import (
+	"container/list"
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -9,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -21,6 +23,8 @@ var (
 
 	startedLock sync.Mutex
 	started     bool
+
+	numWorkers = new(int32)
 )
 
 type PluginWithErrorHandler interface {
@@ -96,10 +100,8 @@ func QueueMessage(source, sourceID string, guildID, channel int64, msgStr string
 
 func (p *Plugin) BotInit() {
 	go startPolling()
-
-	for i := 0; i < 2; i++ {
-		go processWorker()
-	}
+	go processWorker()
+	go workerScaler()
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -111,6 +113,59 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	}
 	startedLock.Unlock()
 	stopChan <- wg
+}
+
+func workerScaler() {
+	var lastWorkerSpawnedAt time.Time
+	t := time.NewTicker(time.Second * 10)
+
+	deltaHistory := list.New()
+	sizeHistory := list.New()
+
+	lastSize := 0
+	for {
+		<-t.C
+
+		workmu.Lock()
+		current := len(workSlice)
+		workmu.Unlock()
+
+		delta := current - lastSize
+		lastSize = current
+		deltaHistory.PushBack(delta)
+		sizeHistory.PushBack(current)
+
+		if deltaHistory.Len() > 6*5 { // keep 5 minute average
+			deltaHistory.Remove(deltaHistory.Front())
+			sizeHistory.Remove(sizeHistory.Front())
+		}
+
+		// see if we should launch a worker
+		if current < 100 || time.Since(lastWorkerSpawnedAt) < time.Minute*5 {
+			// don't bother launching workers when below 100
+			continue
+		}
+
+		// calculate average to see if it increased or decreased
+		deltaAverage := calcListAverage(deltaHistory)
+		sizeAverage := calcListAverage(sizeHistory)
+
+		if deltaAverage > 1 && sizeAverage > 100 {
+			logrus.Info("Launched new mqueue worker, total workers: ", atomic.LoadInt32(numWorkers)+1)
+			go processWorker()
+			lastWorkerSpawnedAt = time.Now()
+		}
+	}
+}
+
+func calcListAverage(in *list.List) int {
+	total := 0
+	for elem := in.Front(); elem != nil; elem = elem.Next() {
+		total += elem.Value.(int)
+	}
+
+	average := total / in.Len()
+	return average
 }
 
 func startPolling() {
@@ -136,6 +191,7 @@ func startPolling() {
 				workmu.Unlock()
 
 				common.Statsd.Gauge("yagpdb.mqueue.size", float64(l), []string{"node:" + bot.NodeID()}, 1)
+				common.Statsd.Gauge("yagpdb.mqueue.numworkers", float64(atomic.LoadInt32(numWorkers)), []string{"node:" + bot.NodeID()}, 1)
 			}
 		}
 	}
@@ -165,6 +221,13 @@ func pollRedis() {
 		return
 	}
 
+	if len(results) < 1 {
+		return
+	}
+
+	workmu.Lock()
+	defer workmu.Unlock()
+
 	common.RedisPool.Do(radix.WithConn("mqueue", func(rc radix.Conn) error {
 		for _, elem := range results {
 
@@ -182,7 +245,10 @@ func pollRedis() {
 			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
 			rc.Do(radix.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
 
-			go queueWork(parsed, elem)
+			workSlice = append(workSlice, &WorkItem{
+				elem: parsed,
+				raw:  elem,
+			})
 		}
 
 		return nil
@@ -200,16 +266,10 @@ var (
 	workmu     sync.Mutex
 )
 
-func queueWork(elem *QueuedElement, raw []byte) {
-	workmu.Lock()
-	workSlice = append(workSlice, &WorkItem{
-		elem: elem,
-		raw:  raw,
-	})
-	workmu.Unlock()
-}
-
 func processWorker() {
+	atomic.AddInt32(numWorkers, 1)
+	defer atomic.AddInt32(numWorkers, -1)
+
 	var currentItem *WorkItem
 	for {
 		workmu.Lock()
