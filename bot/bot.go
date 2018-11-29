@@ -48,6 +48,8 @@ var (
 )
 
 func setup() {
+	discordgo.IdentifyRatelimiter = &identifyRatelimiter{}
+
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
 	State.MaxChannelMessages = 1000
@@ -244,4 +246,30 @@ func GuildCountsFunc() []int {
 	State.RUnlock()
 
 	return result
+}
+
+// Standard implementation of the GatewayIdentifyRatelimiter
+type identifyRatelimiter struct {
+	ch   chan bool
+	once sync.Once
+}
+
+func (rl *identifyRatelimiter) RatelimitIdentify() {
+	const key = "yagpdb.gateway.identify.limit"
+	for {
+		var resp string
+		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "5", "NX"))
+		if err != nil {
+			log.WithError(err).Error("failed ratelimiting gateway")
+			time.Sleep(time.Second)
+			continue
+		}
+
+		if resp == "OK" {
+			return // success
+		}
+
+		// otherwise a identify was sent by someone else last 5 seconds
+		time.Sleep(time.Second)
+	}
 }
