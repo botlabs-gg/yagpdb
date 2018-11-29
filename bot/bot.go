@@ -12,6 +12,7 @@ import (
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -217,6 +218,10 @@ func InitPlugins() {
 			initBot.LateBotInit()
 		}
 	}
+
+	if common.Statsd != nil {
+		go goroutineLogger()
+	}
 }
 
 func BotStarted() {
@@ -283,5 +288,15 @@ func (rl *identifyRatelimiter) RatelimitIdentify() {
 
 		// otherwise a identify was sent by someone else last 5 seconds
 		time.Sleep(time.Second)
+	}
+}
+
+func goroutineLogger() {
+	t := time.NewTicker(time.Second * 10)
+	for {
+		<-t.C
+
+		num := runtime.NumGoroutine()
+		common.Statsd.Gauge("yagpdb.numgoroutine", float64(num), []string{"node:" + NodeID()}, 1)
 	}
 }
