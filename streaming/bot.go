@@ -3,6 +3,7 @@ package streaming
 import (
 	"fmt"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -19,7 +20,7 @@ import (
 func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
-var _ bot.ShardMigrationHandler = (*Plugin)(nil)
+var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
@@ -28,10 +29,12 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 
-func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
-	if !toThisSlave {
+func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
+	if evt != bot.EvtGuildState {
 		return
 	}
+
+	gs := data.(*dstate.GuildState)
 
 	go CheckGuildFull(gs, false)
 }

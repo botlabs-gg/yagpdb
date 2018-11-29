@@ -2,6 +2,7 @@ package bot
 
 import (
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
@@ -52,4 +53,12 @@ func EmitGuildRemoved(guildID int64) {
 			}
 		}
 	}
+}
+
+type ShardMigrationSender interface {
+	ShardMigrationSend(shard int) int
+}
+
+type ShardMigrationReceiver interface {
+	ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{})
 }

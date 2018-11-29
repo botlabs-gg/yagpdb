@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"github.com/jonas747/dshardorchestrator"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
@@ -33,7 +34,7 @@ const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.Perm
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
-var _ bot.ShardMigrationHandler = (*Plugin)(nil)
+var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(ModerationCommands...)
@@ -66,12 +67,11 @@ type ScheduledUnbanData struct {
 	UserID int64 `json:"user_id"`
 }
 
-func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
-	if !toThisSlave {
-		return
+func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
+	if evt == bot.EvtGuildState {
+		gs := data.(*dstate.GuildState)
+		go RefreshMuteOverrides(gs.ID)
 	}
-
-	go RefreshMuteOverrides(gs.ID)
 }
 
 func HandleRefreshMuteOverrides(evt *pubsub.Event) {

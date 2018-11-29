@@ -133,10 +133,24 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 		dataCast := data.(*dstate.GuildState)
 		n.LoadGuildState(dataCast)
 	}
+
+	for _, v := range common.Plugins {
+		if migrator, ok := v.(ShardMigrationReceiver); ok {
+			migrator.ShardMigrationReceive(evt, data)
+		}
+	}
 }
 
 func (n *NodeImpl) SendGuilds(shard int) int {
 	started := time.Now()
+
+	totalSentEvents := 0
+	// start with the plugins
+	for _, v := range common.Plugins {
+		if migrator, ok := v.(ShardMigrationSender); ok {
+			totalSentEvents += migrator.ShardMigrationSend(shard)
+		}
+	}
 
 	// Send the guilds on this shard
 	guildsToSend := make([]*dstate.GuildState, 0)
@@ -190,7 +204,8 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	wg.Wait()
 
 	logrus.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
-	return len(guildsToSend)
+	totalSentEvents += len(guildsToSend)
+	return totalSentEvents
 }
 
 func (n *NodeImpl) LoadGuildState(gs *dstate.GuildState) {
@@ -210,12 +225,4 @@ func (n *NodeImpl) LoadGuildState(gs *dstate.GuildState) {
 		State.Channels[c.ID] = c
 	}
 	State.Unlock()
-
-	for _, v := range common.Plugins {
-		if guildMigrationHandler, ok := v.(ShardMigrationHandler); ok {
-			if ok {
-				guildMigrationHandler.GuildMigrated(gs, true)
-			}
-		}
-	}
 }
