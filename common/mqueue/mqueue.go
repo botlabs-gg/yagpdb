@@ -32,8 +32,8 @@ type PluginWithErrorHandler interface {
 }
 
 var (
-	_ bot.BotInitHandler    = (*Plugin)(nil)
-	_ bot.BotStopperHandler = (*Plugin)(nil)
+	_ bot.LateBotInitHandler = (*Plugin)(nil)
+	_ bot.BotStopperHandler  = (*Plugin)(nil)
 )
 
 type Plugin struct {
@@ -98,7 +98,7 @@ func QueueMessage(source, sourceID string, guildID, channel int64, msgStr string
 	}
 }
 
-func (p *Plugin) BotInit() {
+func (p *Plugin) LateBotInit() {
 	go startPolling()
 	go processWorker()
 	go workerScaler()
