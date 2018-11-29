@@ -210,6 +210,13 @@ func InitPlugins() {
 			initBot.BotInit()
 		}
 	}
+
+	// Initialize all plugins late
+	for _, plugin := range common.Plugins {
+		if initBot, ok := plugin.(LateBotInitHandler); ok {
+			initBot.LateBotInit()
+		}
+	}
 }
 
 func BotStarted() {

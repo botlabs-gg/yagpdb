@@ -28,6 +28,11 @@ type BotInitHandler interface {
 	BotInit()
 }
 
+// Fired when the bot it starting up, after BotInit
+type LateBotInitHandler interface {
+	LateBotInit()
+}
+
 // BotStopperHandler runs when the bot is shuttdown down
 // you need to call wg.Done when you have completed your plugin shutdown (stopped background workers)
 type BotStopperHandler interface {
