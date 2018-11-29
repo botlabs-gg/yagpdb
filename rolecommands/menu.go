@@ -104,7 +104,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 
 func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 	mID := parsed.Args[0].Int64()
-	menu, err := FindRolemenuFull(parsed.Context(), mID)
+	menu, err := FindRolemenuFull(parsed.Context(), mID, parsed.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -319,12 +319,12 @@ func findOptionFromEmoji(emoji *discordgo.Emoji, opts []*models.RoleMenuOption) 
 }
 
 func handleReactionAddRemove(evt *eventsystem.EventData) {
-	emoji, cID, _, uID, mID, raAdd := getReactionDetails(evt)
+	emoji, cID, gID, uID, mID, raAdd := getReactionDetails(evt)
 	if uID == common.BotUser.ID {
 		return
 	}
 
-	menu, err := FindRolemenuFull(evt.Context(), mID)
+	menu, err := FindRolemenuFull(evt.Context(), mID, gID)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			logrus.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
@@ -471,13 +471,13 @@ func messageRemoved(ctx context.Context, id int64) {
 	}
 }
 
-func FindRolemenuFull(ctx context.Context, mID int64) (*models.RoleMenu, error) {
-	return models.RoleMenus(qm.Where("message_id = ?", mID), qm.Load("RoleMenuOptions.RoleCommand"), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
+func FindRolemenuFull(ctx context.Context, mID int64, guildID int64) (*models.RoleMenu, error) {
+	return models.RoleMenus(qm.Where("message_id = ? AND guild_id = ?", mID, guildID), qm.Load("RoleMenuOptions.RoleCommand"), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
 }
 
 func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
-	menu, err := FindRolemenuFull(data.Context(), mID)
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -507,7 +507,7 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 
 func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
-	menu, err := FindRolemenuFull(data.Context(), mID)
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -522,7 +522,7 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 
 func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
-	menu, err := FindRolemenuFull(data.Context(), mID)
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
