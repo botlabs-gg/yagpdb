@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v3"
@@ -313,4 +314,44 @@ func RefreshStatus(session *discordgo.Session) {
 		session.UpdateStatus(0, status)
 	}
 
+}
+
+// IsMemberAbove returns wether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
+// assumes gs is locked, otherwise race conditions will occur
+func IsMemberAbove(gs *dstate.GuildState, ms1 *dstate.MemberState, ms2 *dstate.MemberState) bool {
+	highestMS1 := MemberHighestRole(gs, ms1)
+	highestMS2 := MemberHighestRole(gs, ms2)
+
+	if highestMS1 == nil && highestMS2 == nil {
+		// none of them has any roles
+		return false
+	} else if highestMS1 == nil && highestMS2 != nil {
+		// ms1 has no role but ms2 does
+		return false
+	} else if highestMS1 != nil && highestMS2 == nil {
+		// ms1 has a role but not ms2
+		return true
+	}
+
+	return dutil.IsRoleAbove(highestMS1, highestMS2)
+}
+
+// MemberHighestRole returns the highest role for ms, assumes gs is rlocked, otherwise race conditions will occur
+func MemberHighestRole(gs *dstate.GuildState, ms *dstate.MemberState) *discordgo.Role {
+	var highest *discordgo.Role
+	for _, rID := range ms.Roles {
+		for _, r := range gs.Guild.Roles {
+			if r.ID != rID {
+				continue
+			}
+
+			if highest == nil || dutil.IsRoleAbove(r, highest) {
+				highest = r
+			}
+
+			break
+		}
+	}
+
+	return highest
 }
