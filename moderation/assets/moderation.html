@@ -119,7 +119,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <input class="form-check-input" id="log-unbans" type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
             <label for="log-unbans">
                 Log unban events in the modlog channel<br/>
-                The bot won't know who did the unban but a reason can be assigned through the <code>reason</code> command.<br/>
+                For the author to show up when this is used you need to give the bot "audit log" permissions<br/>
             </label>
         </div>
     </div>
@@ -144,7 +144,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <input class="form-check-input" id="log-bans" type="checkbox" name="LogBans" {{if .ModConfig.LogBans}} checked{{end}}>
             <label for="log-bans">
                 Log ban events not made through the bot<br/>
-                The bot won't know who did the ban, but a reason can be assigned through the <code>reason</code> command.<br/>
+                For the author and reason to show up when this is used you need to give the bot "audit log" permissions
             </label>
         </div>
     </div>
