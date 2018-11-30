@@ -141,8 +141,8 @@ func workerScaler() {
 		}
 
 		// see if we should launch a worker
-		if current < 100 || time.Since(lastWorkerSpawnedAt) < time.Minute*5 {
-			// don't bother launching workers when below 100
+		if current < 100 || time.Since(lastWorkerSpawnedAt) < time.Minute*6 || deltaHistory.Len() < 6 {
+			// don't bother launching workers when below 100, and atleast have a minute of averages
 			continue
 		}
 
