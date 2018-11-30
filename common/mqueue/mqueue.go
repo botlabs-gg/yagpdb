@@ -177,7 +177,7 @@ func startPolling() {
 	started = true
 	startedLock.Unlock()
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Second * 5)
 	for {
 		select {
 		case wg := <-stopChan:
@@ -225,8 +225,8 @@ func pollRedis() {
 		return
 	}
 
-	workmu.Lock()
-	defer workmu.Unlock()
+	// smooth it out over 5 seconds to lower chance of global ratelimits
+	sleepPerElem := 5000 / len(results)
 
 	common.RedisPool.Do(radix.WithConn("mqueue", func(rc radix.Conn) error {
 		for _, elem := range results {
@@ -245,10 +245,14 @@ func pollRedis() {
 			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
 			rc.Do(radix.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
 
+			workmu.Lock()
 			workSlice = append(workSlice, &WorkItem{
 				elem: parsed,
 				raw:  elem,
 			})
+			workmu.Unlock()
+
+			time.Sleep(time.Duration(sleepPerElem) * time.Millisecond)
 		}
 
 		return nil
