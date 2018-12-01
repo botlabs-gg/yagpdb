@@ -49,6 +49,7 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 
 func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, neededPerm int, additionalPermRoles []int64, enabled bool) (oreason string, err error) {
 	cmdName := cmdData.Cmd.Trigger.Names[0]
+	oreason = reason
 	if !enabled {
 		return oreason, commands.NewPublicErrorF("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName)
 	}
