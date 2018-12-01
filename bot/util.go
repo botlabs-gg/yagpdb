@@ -68,6 +68,8 @@ var (
 	ErrGuildNotFound = errors.New("Guild not found")
 )
 
+// AdminOrPerm returns the permissions for the userID in the specified channel
+// returns an error if the user or channel is not found
 func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 	channel := State.Channel(true, channelID)
 	if channel == nil {
@@ -77,6 +79,24 @@ func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 	// Ensure the member is in state
 	GetMember(channel.Guild.ID, userID)
 	perms, err := channel.Guild.MemberPermissions(true, channelID, userID)
+	if err != nil {
+		return false, err
+	}
+
+	if perms&needed != 0 {
+		return true, nil
+	}
+
+	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// AdminOrPermMS is the same as AdminOrPerm but with a provided member state
+func AdminOrPermMS(ms *dstate.MemberState, channelID int64, needed int) (bool, error) {
+	perms, err := ms.Guild.MemberPermissionsMS(true, channelID, ms)
 	if err != nil {
 		return false, err
 	}
@@ -319,6 +339,12 @@ func RefreshStatus(session *discordgo.Session) {
 // IsMemberAbove returns wether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
 // assumes gs is locked, otherwise race conditions will occur
 func IsMemberAbove(gs *dstate.GuildState, ms1 *dstate.MemberState, ms2 *dstate.MemberState) bool {
+	if ms1.ID == gs.Guild.OwnerID {
+		return true
+	} else if ms2.ID == gs.Guild.OwnerID {
+		return false
+	}
+
 	highestMS1 := MemberHighestRole(gs, ms1)
 	highestMS2 := MemberHighestRole(gs, ms2)
 
