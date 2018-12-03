@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -80,7 +81,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 			return "", errors.New("Max number of commands executed in custom command")
 		}
 		maxExec -= 1
-		return execCmd(ctx, dryRun, ctx.BotUser, mc, cmd, args...)
+		return execCmd(ctx, dryRun, mc, cmd, args...)
 	}
 
 	execBot := func(cmd string, args ...interface{}) (string, error) {
@@ -96,13 +97,18 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 			return "", errors.New("Max number of commands executed in custom command")
 		}
 		maxExec -= 1
-		return execCmd(ctx, dryRun, ctx.BotUser, mc, cmd, args...)
+		return execCmd(ctx, dryRun, mc, cmd, args...)
 	}
 
 	return execUser, execBot
 }
 
-func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *discordgo.MessageCreate, cmd string, args ...interface{}) (string, error) {
+func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cmd string, args ...interface{}) (string, error) {
+	ctxMember, err := bot.GetMember(ctx.GS.ID, m.Author.ID)
+	if err != nil {
+		return "error retrieving member", err
+	}
+
 	fakeMsg := *m.Message
 	fakeMsg.Mentions = make([]*discordgo.User, 0)
 
@@ -169,6 +175,7 @@ func execCmd(ctx *templates.Context, dryRun bool, execCtx *discordgo.User, m *di
 		return "", errors.WithMessage(err, "tmplExecCmd")
 	}
 	data.MsgStrippedPrefix = fakeMsg.Content
+	data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ctxMember))
 
 	foundCmd, rest := CommandSystem.Root.FindCommand(cmdLine)
 	if foundCmd == nil {
