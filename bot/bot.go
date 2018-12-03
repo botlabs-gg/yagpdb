@@ -91,6 +91,7 @@ func setup() {
 	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
 	eventsystem.AddHandler(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
 	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(HandleResumed, eventsystem.EventResumed)
 }
 
 func Run() {

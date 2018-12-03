@@ -177,6 +177,33 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 	}
 }
 
+func HandleResumed(evt *eventsystem.EventData) {
+	guilds := State.GuildsSlice(true)
+
+	for _, v := range guilds {
+		v.RLock()
+		name := v.Guild.Name
+		mc := v.Guild.MemberCount
+		ownerID := v.Guild.OwnerID
+		icon := v.Guild.Icon
+		v.RUnlock()
+
+		gm := &models.JoinedGuild{
+			ID:          v.ID,
+			MemberCount: int64(mc),
+			OwnerID:     ownerID,
+			JoinedAt:    time.Now(),
+			Name:        name,
+			Avatar:      icon,
+		}
+
+		err := gm.Upsert(evt.Context(), common.PQ, false, []string{"id"}, boil.Infer(), boil.Infer())
+		if err != nil {
+			log.WithError(err).Error("failed upserting guild in resume")
+		}
+	}
+}
+
 // StateHandler updates the world state
 // use AddHandlerBefore to add handler before this one, otherwise they will alwyas be after
 func StateHandler(evt *eventsystem.EventData) {
