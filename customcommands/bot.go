@@ -114,7 +114,7 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 
 	botID := common.BotUser.ID
 
-	if botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate() {
+	if evt.Author == nil || botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate() || evt.WebhookID != 0 {
 		return true
 	}
 

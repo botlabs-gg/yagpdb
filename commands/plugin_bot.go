@@ -107,9 +107,15 @@ func AddRootCommands(cmds ...*YAGCommand) {
 }
 
 func handleMsgCreate(evt *eventsystem.EventData) {
+	m := evt.MessageCreate()
+	if m.Author == nil || m.Author.ID == common.BotUser.ID || m.WebhookID != 0 {
+		// Pls no panicerinos or banerinos self, also ignore webhooks
+		return
+	}
+
 	abort := false
 	for _, filterFunc := range MessageFilterFuncs {
-		if !filterFunc(evt.MessageCreate().Message) {
+		if !filterFunc(m.Message) {
 			abort = true
 		}
 	}
