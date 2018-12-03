@@ -212,6 +212,22 @@ func StateHandler(evt *eventsystem.EventData) {
 
 func HandleGuildUpdate(evt *eventsystem.EventData) {
 	InvalidateCache(evt.GuildUpdate().Guild.ID, 0)
+
+	g := evt.GuildUpdate().Guild
+
+	gm := &models.JoinedGuild{
+		ID:          g.ID,
+		MemberCount: int64(g.MemberCount),
+		OwnerID:     g.OwnerID,
+		JoinedAt:    time.Now(),
+		Name:        g.Name,
+		Avatar:      g.Icon,
+	}
+
+	err := gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("name", "avatar", "owner_id"), boil.Infer())
+	if err != nil {
+		log.WithError(err).Error("failed upserting guild in update")
+	}
 }
 
 func HandleGuildRoleUpdate(evt *eventsystem.EventData) {
