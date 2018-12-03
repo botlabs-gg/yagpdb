@@ -47,9 +47,8 @@ func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
 }
 
 func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
-
-	if msg.Author == nil || msg.Author.ID == common.BotUser.ID {
-		return false // Pls no panicerinos or banerinos self
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 {
+		return false // Pls no panicerinos or banerinos self, also ignore webhooks
 	}
 
 	cs := bot.State.Channel(true, msg.ChannelID)
@@ -218,6 +217,7 @@ func (p *Plugin) handleGuildMemberJoin(evt *eventsystem.EventData) {
 	gs := bot.State.Guild(true, evtData.GuildID)
 	ms := dstate.MSFromDGoMember(gs, evtData.Member)
 
+	p.checkJoin(ms)
 	p.checkUsername(ms)
 }
 
@@ -240,6 +240,17 @@ func (p *Plugin) checkUsername(ms *dstate.MemberState) {
 		}
 
 		return cast.CheckUsername(ms, trig.ParsedSettings)
+	})
+}
+
+func (p *Plugin) checkJoin(ms *dstate.MemberState) {
+	p.CheckTriggers(nil, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
+		cast, ok := trig.Part.(JoinListener)
+		if !ok {
+			return false, nil
+		}
+
+		return cast.CheckJoin(ms, trig.ParsedSettings)
 	})
 }
 

@@ -41,6 +41,7 @@ var RulePartMap = map[int]RulePart{
 	26: &UsernameRegexTrigger{BaseRegexTrigger{Inverse: false}},
 	27: &UsernameRegexTrigger{BaseRegexTrigger{Inverse: true}},
 	29: &UsernameInviteTrigger{},
+	30: &MemberJoinTrigger{},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
@@ -223,4 +224,11 @@ type UsernameListener interface {
 	RulePart
 
 	CheckUsername(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
+}
+
+// JoinListener is triggers that does stuff when members joins
+type JoinListener interface {
+	RulePart
+
+	CheckJoin(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
 }

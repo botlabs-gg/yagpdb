@@ -1232,3 +1232,34 @@ func (uv *UsernameInviteTrigger) CheckUsername(ms *dstate.MemberState, data inte
 
 	return false, nil
 }
+
+/////////////////////////////////////////////////////////////
+
+var _ JoinListener = (*MemberJoinTrigger)(nil)
+
+type MemberJoinTrigger struct {
+}
+
+func (mj *MemberJoinTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (mj *MemberJoinTrigger) DataType() interface{} {
+	return nil
+}
+
+func (mj *MemberJoinTrigger) Name() (name string) {
+	return "New Member"
+}
+
+func (mj *MemberJoinTrigger) Description() (description string) {
+	return "Triggers when a new member join"
+}
+
+func (mj *MemberJoinTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (mj *MemberJoinTrigger) CheckJoin(ms *dstate.MemberState, data interface{}) (isAffected bool, err error) {
+	return true, nil
+}
