@@ -3,11 +3,16 @@ package bot
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix.v3"
 	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sync"
+	"time"
 )
 
 var (
@@ -90,6 +95,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		log.WithError(err).Error("Redis error")
 	}
 
+	// check if this server is new
 	if n > 0 {
 		log.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
 		go eventsystem.EmitEvent(&eventsystem.EventData{
@@ -102,12 +108,27 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		}
 	}
 
+	// check if the server is banned from using the bot
 	var banned bool
 	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
 	if banned {
 		log.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
 		common.BotSession.GuildLeave(g.ID)
+	}
+
+	gm := &models.JoinedGuild{
+		ID:          g.ID,
+		MemberCount: int64(g.MemberCount),
+		OwnerID:     g.OwnerID,
+		JoinedAt:    time.Now(),
+		Name:        g.Name,
+		Avatar:      g.Icon,
+	}
+
+	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("member_count", "name", "avatar", "owner_id", "left_at"), boil.Infer())
+	if err != nil {
+		log.WithError(err).Error("failed upserting guild")
 	}
 }
 
@@ -130,6 +151,29 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 
 	if common.Statsd != nil {
 		common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
+	}
+
+	models.JoinedGuilds(qm.Where("id = ?", evt.GuildDelete().ID)).UpdateAll(evt.Context(), common.PQ, models.M{
+		"left_at": null.TimeFrom(time.Now()),
+	})
+}
+
+func HandleGuildMemberAdd(evt *eventsystem.EventData) {
+	ma := evt.GuildMemberAdd()
+
+	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
+
+	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
+	if err != nil {
+		log.WithError(err).Error("failed updating guild member count")
+	}
+}
+
+func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+	mr := evt.GuildMemberRemove()
+	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
+	if err != nil {
+		log.WithError(err).Error("failed updating guild member count")
 	}
 }
 

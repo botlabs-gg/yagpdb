@@ -1,5 +1,7 @@
 package bot
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardmanager"
@@ -50,6 +52,11 @@ var (
 )
 
 func setup() {
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		log.WithError(err).Fatal("failed initializing db schema")
+	}
+
 	discordgo.IdentifyRatelimiter = &identifyRatelimiter{}
 
 	// Things may rely on state being available at this point for initialization
@@ -80,6 +87,7 @@ func setup() {
 	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
 	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
 	eventsystem.AddHandler(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
 	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
