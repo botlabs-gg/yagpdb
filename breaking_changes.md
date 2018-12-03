@@ -1,5 +1,9 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**25th november 2018 (1.11.3)**
+
+ - To use external https through a reverse proxy, e.g public facing https while yagpdb itself listens on http, set use the command line flag `-exthttps` on the webserver.
+
 **24th november 2018 (1.10-dev)**
 
  - The old master slave system has now been removed in favor of a proper sharding orchestrator (github.com/jonas747/dshardorchestrator) that allows scaling shards across processes and in the future will do so over multiple machines (the latter is not fully implemented yet)
