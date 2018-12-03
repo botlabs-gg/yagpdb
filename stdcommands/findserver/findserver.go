@@ -5,9 +5,10 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
 )
 
@@ -27,7 +28,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "findserver",
 	Aliases:              []string{"findservers"},
-	Description:          "Looks for a server by server name or the servers a user was on",
+	Description:          "Looks for a server by server name or the servers a user owns",
 	HideFromHelp:         true,
 	ArgSwitches: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Switch: "name", Name: "name", Type: dcmd.String, Default: ""},
@@ -41,39 +42,24 @@ var Command = &commands.YAGCommand{
 			return "-name or -user not provided", nil
 		}
 
-		candidates := make([]*Candidate, 0, 0)
-
-		bot.State.RLock()
-		for _, v := range bot.State.Guilds {
-			bot.State.RUnlock()
-
-			v.RLock()
-			if candidate := CheckGuild(v, nameToMatch, userIDToMatch); candidate != nil {
-				candidates = append(candidates, candidate)
-			}
-			v.RUnlock()
-
-			bot.State.RLock()
-
-			if len(candidates) > 1000 {
-				break
-			}
+		var whereQM qm.QueryMod
+		if userIDToMatch != 0 {
+			whereQM = qm.Where("owner_id = ?", userIDToMatch)
+		} else {
+			whereQM = qm.Where("name ILIKE ?", "%"+nameToMatch+"%")
 		}
-		bot.State.RUnlock()
 
-		if len(candidates) < 1 {
-			return "No matches", nil
+		results, err := models.JoinedGuilds(qm.Where("left_at is null"), whereQM, qm.OrderBy("id desc"), qm.Limit(250)).AllG(data.Context())
+		if err != nil {
+			return nil, err
 		}
 
 		resp := ""
-		for _, candidate := range candidates {
-			resp += fmt.Sprintf("`%d`: **%s**", candidate.ID, candidate.Name)
-			if candidate.UserMatch {
-				resp += fmt.Sprintf(" (owner: `%t`, admin: `%t`, mod: `%t`)", candidate.Owner, candidate.Admin, candidate.Mod)
-			}
-
-			resp += "\n"
+		for _, v := range results {
+			resp += fmt.Sprintf("`%d`: **%s**\n", v.ID, v.Name)
 		}
+
+		resp += fmt.Sprintf("%d results", len(results))
 
 		return resp, nil
 	}),
