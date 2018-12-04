@@ -225,10 +225,10 @@ func pollRedis() {
 		return
 	}
 
-	// smooth it out over 5 seconds to lower chance of global ratelimits
-	sleepPerElem := 5000 / len(results)
-
 	common.RedisPool.Do(radix.WithConn("mqueue", func(rc radix.Conn) error {
+		workmu.Lock()
+		defer workmu.Unlock()
+
 		for _, elem := range results {
 
 			var parsed *QueuedElement
@@ -245,14 +245,11 @@ func pollRedis() {
 			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
 			rc.Do(radix.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
 
-			workmu.Lock()
 			workSlice = append(workSlice, &WorkItem{
 				elem: parsed,
 				raw:  elem,
 			})
-			workmu.Unlock()
 
-			time.Sleep(time.Duration(sleepPerElem) * time.Millisecond)
 		}
 
 		return nil
@@ -277,17 +274,6 @@ func processWorker() {
 	var currentItem *WorkItem
 	for {
 		workmu.Lock()
-
-		// if were done processing a item previously then remove it from the active processing slice
-		if currentItem != nil {
-			for i, v := range activeWork {
-				if v == currentItem {
-					activeWork = append(activeWork[:i], activeWork[i+1:]...)
-					break
-				}
-			}
-			currentItem = nil
-		}
 
 		// no new work to process
 		if len(workSlice) < 1 {
@@ -324,6 +310,30 @@ func processWorker() {
 		workmu.Unlock()
 
 		process(currentItem.elem, currentItem.raw)
+
+		workmu.Lock()
+
+		// if were done processing a item previously then remove it from the active processing slice
+		for i, v := range activeWork {
+			if v == currentItem {
+				activeWork = append(activeWork[:i], activeWork[i+1:]...)
+				break
+			}
+		}
+		currentItem = nil
+
+		l := len(workSlice)
+		workmu.Unlock()
+
+		// we sleep between each element as to avoid global ratelimits
+		// this amount will atuomatically scale with how many elements are in the queue, the max sleep is 1 second
+		var msSleep int
+		if l > 5 {
+			msSleep = 5000 / l
+		} else {
+			msSleep = 1000
+		}
+		time.Sleep(time.Millisecond * time.Duration(msSleep))
 	}
 }
 
