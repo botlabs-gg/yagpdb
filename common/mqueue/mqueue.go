@@ -292,7 +292,7 @@ func processWorker() {
 		// no new work to process
 		if len(workSlice) < 1 {
 			workmu.Unlock()
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 1)
 			continue
 		}
 
@@ -314,7 +314,7 @@ func processWorker() {
 		// did not find any
 		if workItemIndex == -1 {
 			workmu.Unlock()
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 1)
 			continue
 		}
 
