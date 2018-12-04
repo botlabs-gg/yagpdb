@@ -111,7 +111,7 @@ func (p *Plugin) Status() (string, string) {
 func (p *Plugin) ShardMigrationSend(shard int) int {
 
 	p.Manager.Lock()
-	games := make([]*cardsagainstdiscord.Game, 0, p.Manager.NumActiveGames)
+	games := make([]*cardsagainstdiscord.Game, 0)
 OUTER:
 	for k, v := range p.Manager.ActiveGames {
 		if bot.GuildShardID(v.GuildID) != shard {
