@@ -1,9 +1,10 @@
 package automod
 
 import (
+	"time"
+
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"time"
 )
 
 type Condition interface {
@@ -473,5 +474,71 @@ func (bc *BotCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bo
 }
 
 func (bc *BotCondition) MergeDuplicates(data []interface{}) interface{} {
+	return data[0] // no point in having duplicates of this
+}
+
+/////////////////////////////////////////////////////////////////
+
+type MessageEditedData struct {
+	Treshold int
+}
+
+var _ Condition = (*MessageEditedCondition)(nil)
+
+type MessageEditedCondition struct {
+	NewMessage bool // if true, then blacklist mode, otherwise whitelist mode
+}
+
+func (mc *MessageEditedCondition) Kind() RulePartType {
+	return RulePartCondition
+}
+
+func (mc *MessageEditedCondition) DataType() interface{} {
+	return &MessageEditedData{}
+}
+
+func (mc *MessageEditedCondition) Name() string {
+	if mc.NewMessage {
+		return "New message"
+	}
+
+	return "Edited message"
+}
+
+func (mc *MessageEditedCondition) Description() string {
+	if mc.Below {
+		return "Ignore edited messages"
+	}
+
+	return "Only examine edited messages"
+}
+
+func (mc *MessageEditedCondition) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+	if data.Message == nil {
+		// pass the condition if no message is found
+		return true, nil
+	}
+	if data.Message.EditedTimestamp == "" {
+		// new post
+		if mc.NewMessage {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	}
+
+	// account is older than threshold
+	if mc.NewMessage {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
+func (mc *MessageEditedCondition) MergeDuplicates(data []interface{}) interface{} {
 	return data[0] // no point in having duplicates of this
 }
