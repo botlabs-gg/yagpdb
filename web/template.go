@@ -233,7 +233,7 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 					continue
 				}
 
-				builder.WriteString("<optgroup label=" + template.HTMLEscapeString(cat.Name) + ">")
+				builder.WriteString("<optgroup label=\"" + template.HTMLEscapeString(cat.Name) + "\">")
 				for _, c := range channels {
 					if c.Type != channelType || c.ParentID != cat.ID {
 						continue
