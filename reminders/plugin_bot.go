@@ -167,19 +167,14 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 	for _, v := range reminders {
 		parsedCID, _ := strconv.ParseInt(v.ChannelID, 10, 64)
 
-		cs := bot.State.Channel(true, parsedCID)
-
 		t := time.Unix(v.When, 0)
 		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
 		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
-			channel := "Unknown channel"
-			if cs != nil {
-				channel = "<#" + discordgo.StrID(cs.ID) + ">"
-			}
+			channel := "<#" + discordgo.StrID(parsedCID) + ">"
 			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
-			member, _ := bot.GetMember(cs.Guild.ID, v.UserIDInt())
+			member, _ := bot.GetMember(v.GuildID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.Username
