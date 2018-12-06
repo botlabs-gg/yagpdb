@@ -665,9 +665,9 @@ func EvtProcesserGCs() {
 		if len(gc.Members) > 100 {
 			logrus.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
 			// Make sure this dosen't use all our resources
-			time.Sleep(time.Second * 4)
+			time.Sleep(time.Second * 10)
 		} else {
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second * 5)
 		}
 	}
 }
