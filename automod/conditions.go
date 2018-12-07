@@ -501,15 +501,13 @@ func (mc *MessageEditedCondition) Name() string {
 	if mc.NewMessage {
 		return "New message"
 	}
-
 	return "Edited message"
 }
 
 func (mc *MessageEditedCondition) Description() string {
-	if mc.Below {
+	if mc.NewMessage {
 		return "Ignore edited messages"
 	}
-
 	return "Only examine edited messages"
 }
 
@@ -526,17 +524,15 @@ func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings interf
 		// new post
 		if mc.NewMessage {
 			return true, nil
-		} else {
-			return false, nil
 		}
+		return false, nil
 	}
 
 	// account is older than threshold
 	if mc.NewMessage {
 		return false, nil
-	} else {
-		return true, nil
 	}
+	return true, nil
 }
 
 func (mc *MessageEditedCondition) MergeDuplicates(data []interface{}) interface{} {
