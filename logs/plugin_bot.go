@@ -631,43 +631,43 @@ type LightGC struct {
 
 func EvtProcesserGCs() {
 	for {
-		gc := <-evtChanGC
+		<-evtChanGC
 
-		tx := common.GORM.Begin()
+		// tx := common.GORM.Begin()
 
-		conf, err := GetConfig(gc.GuildID)
-		if err != nil {
-			logrus.WithError(err).Error("Failed fetching config")
-			continue
-		}
+		// conf, err := GetConfig(gc.GuildID)
+		// if err != nil {
+		// 	logrus.WithError(err).Error("Failed fetching config")
+		// 	continue
+		// }
 
-		started := time.Now()
+		// started := time.Now()
 
-		users := make([]*discordgo.User, len(gc.Members))
-		for i, m := range gc.Members {
-			users[i] = m.User
-		}
+		// users := make([]*discordgo.User, len(gc.Members))
+		// for i, m := range gc.Members {
+		// 	users[i] = m.User
+		// }
 
-		if conf.NicknameLoggingEnabled {
-			CheckNicknameBulk(tx, gc.GuildID, gc.Members)
-		}
+		// if conf.NicknameLoggingEnabled {
+		// 	CheckNicknameBulk(tx, gc.GuildID, gc.Members)
+		// }
 
-		if conf.UsernameLoggingEnabled {
-			CheckUsernameBulk(tx, users)
-		}
+		// if conf.UsernameLoggingEnabled {
+		// 	CheckUsernameBulk(tx, users)
+		// }
 
-		err = tx.Commit().Error
-		if err != nil {
-			logrus.WithError(err).Error("Failed committing transaction")
-			continue
-		}
+		// err = tx.Commit().Error
+		// if err != nil {
+		// 	logrus.WithError(err).Error("Failed committing transaction")
+		// 	continue
+		// }
 
-		if len(gc.Members) > 100 {
-			logrus.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
-			// Make sure this dosen't use all our resources
-			time.Sleep(time.Second * 10)
-		} else {
-			time.Sleep(time.Second * 5)
-		}
+		// if len(gc.Members) > 100 {
+		// 	logrus.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
+		// 	// Make sure this dosen't use all our resources
+		// 	time.Sleep(time.Second * 25)
+		// } else {
+		// 	time.Sleep(time.Second * 15)
+		// }
 	}
 }
