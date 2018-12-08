@@ -114,6 +114,7 @@ func Run() {
 
 	// Start monitoring the bot
 	go botrest.RunPinger()
+	go pollCommandsRan()
 
 	blogChannel := os.Getenv("YAGPDB_ANNOUNCEMENTS_CHANNEL")
 	parsedBlogChannel, _ := strconv.ParseInt(blogChannel, 10, 64)
@@ -125,6 +126,7 @@ func Run() {
 
 	log.Info("Running webservers")
 	runServers(mux)
+
 }
 
 func LoadAd() {

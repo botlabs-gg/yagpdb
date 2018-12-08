@@ -12,6 +12,7 @@ import (
 	"goji.io/pat"
 	"net/http"
 	"strconv"
+	"sync/atomic"
 	"time"
 )
 
@@ -63,17 +64,7 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	tmpl["JoinedServers"] = joinedServers
 
 	// Command stats
-	within := time.Now().Add(-24 * time.Hour)
-
-	var result struct {
-		Count int64
-	}
-	err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("COUNT(*)").Where("created_at > ?", within).Scan(&result).Error
-	if err != nil {
-		return tmpl, err
-	}
-
-	tmpl["Commands"] = result.Count
+	tmpl["Commands"] = atomic.LoadInt64(commandsRanToday)
 
 	return tmpl, nil
 }
@@ -135,4 +126,26 @@ func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{
 	}
 
 	return perms
+}
+
+var commandsRanToday = new(int64)
+
+func pollCommandsRan() {
+	t := time.NewTicker(time.Minute)
+	for {
+		var result struct {
+			Count int64
+		}
+
+		within := time.Now().Add(-24 * time.Hour)
+
+		err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("COUNT(*)").Where("created_at > ?", within).Scan(&result).Error
+		if err != nil {
+			logrus.WithError(err).Error("failed counting commands ran today")
+		} else {
+			atomic.StoreInt64(commandsRanToday, result.Count)
+		}
+
+		<-t.C
+	}
 }
