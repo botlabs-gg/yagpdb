@@ -30,9 +30,10 @@ CREATE TABLE IF NOT EXISTS role_commands (
 );
 
 CREATE INDEX IF NOT EXISTS role_commands_guild_idx ON role_commands(guild_id);
+CREATE INDEX IF NOT EXISTS role_commands_role_group_idx ON role_commands(role_group_id);
 
 CREATE TABLE IF NOT EXISTS role_menus (
-	message_id bigint NOT NULL PRIMARY KEY,
+ 	message_id bigint NOT NULL PRIMARY KEY,
 	guild_id bigint NOT NULL,
 	channel_id bigint NOT NULL,
 	owner_id bigint NOT NULL,
