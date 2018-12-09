@@ -56,7 +56,17 @@ CREATE TABLE IF NOT EXISTS role_menu_options (
 	role_menu_id bigint NOT NULL REFERENCES role_menus(message_id) ON DELETE CASCADE
 );
 
-ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS editing_option_id BIGINT references role_menu_options(id) ON DELETE SET NULL;
+ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS editing_option_id BIGINT;
+DO $$
+BEGIN
+
+  BEGIN
+    ALTER TABLE role_menus ADD CONSTRAINT role_menus_editing_option_id_fkey FOREIGN KEY (editing_option_id) REFERENCES role_menu_options(id) ON DELETE SET NULL;
+  EXCEPTION
+    WHEN duplicate_object THEN RAISE NOTICE 'Table constraint role_menus.role_menus_editing_option_id_fkey already exists';
+  END;
+
+END $$;
 
 ALTER TABLE role_menu_options ADD COLUMN IF NOT EXISTS emoji_animated BOOLEAN NOT NULL DEFAULT false;
 
