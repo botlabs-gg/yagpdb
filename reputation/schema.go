@@ -19,6 +19,18 @@ CREATE TABLE IF NOT EXISTS reputation_configs (
 
 ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS disable_thanks_detection BOOLEAN NOT NULL DEFAULT false;
 
+DO $$
+BEGIN
+
+IF (SELECT COUNT(*) FROM information_schema.columns WHERE table_name='reputation_configs' and column_name='max_remove_amount') < 1 THEN
+    ALTER TABLE reputation_configs ADD COLUMN max_remove_amount BIGINT NOT NULL DEFAULT 0;
+	UPDATE reputation_configs SET max_remove_amount=max_give_amount;
+END IF;
+
+END $$;
+
+
+
 -- DROP TABLE IF EXISTS reputation_users;
 
 CREATE TABLE IF NOT EXISTS reputation_users (

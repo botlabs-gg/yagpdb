@@ -147,12 +147,14 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return
 	}
 
-	if amount > conf.MaxGiveAmount {
-		err = UserError(fmt.Sprintf("Too big amount (max %d)", conf.MaxGiveAmount))
+	if amount > 0 && amount > conf.MaxGiveAmount {
+		err = UserError(fmt.Sprintf("Can't give that much (max %d)", conf.MaxGiveAmount))
 		return
-	} else if amount < -conf.MaxGiveAmount {
-		err = UserError(fmt.Sprintf("Too small amount (min -%d)", conf.MaxGiveAmount))
+	} else if amount < 0 && -amount > conf.MaxRemoveAmount {
+		err = UserError(fmt.Sprintf("Can't remove that much (max %d)", conf.MaxRemoveAmount))
 		return
+	} else if amount == 0 {
+		return nil
 	}
 
 	ok, err := CheckSetCooldown(conf, sender.ID)

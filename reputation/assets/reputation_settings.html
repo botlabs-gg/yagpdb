@@ -36,9 +36,15 @@
                                 <input type="number" class="form-control" id="cooldown" name="Cooldown" value="{{.RepSettings.Cooldown}}">
                             </div>
                             <div class="form-group">
-                                <label for="max-rep-amount">Maximum amount of rep that can be given/taken away in one command.</label>
-                                <input type="number" class="form-control" id="max-rep-amount" name="MaxGiveAmount" value="{{.RepSettings.MaxGiveAmount}}">
+                                <label for="max-rep-amount-give">Maximum amount of rep that can be given in one command.</label>
+                                <input type="number" class="form-control" id="max-rep-amount-give" name="MaxGiveAmount" value="{{.RepSettings.MaxGiveAmount}}">
                             </div>
+                            <div class="form-group">
+                                <label for="max-rep-amount-remove">Maximum amount of rep that can be removed in one command.</label>
+                                <input type="number" class="form-control" id="max-rep-amount-remove" name="MaxRemoveAmount" value="{{.RepSettings.MaxRemoveAmount}}">
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
                             <div class="form-group">
                                 <label>Admin role</label>
                                 <select class="form-control" name="AdminRole">
@@ -47,8 +53,6 @@
                                 </select>
                                 <p class="help-block">Admins can freely change anyone's points to any number</p>
                             </div>
-                        </div>
-                        <div class="col-lg-6">
                             <div class="form-group">
                                 <label>Required role to give/remove points</label>
                                 <select class="form-control" name="RequiredGiveRole">

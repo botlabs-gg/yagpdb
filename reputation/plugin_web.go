@@ -21,6 +21,7 @@ type PostConfigForm struct {
 	PointsName             string `valid:",50"`
 	Cooldown               int    `valid:"0,86401"` // One day
 	MaxGiveAmount          int64
+	MaxRemoveAmount        int64
 	RequiredGiveRole       string `valid:"role,true"`
 	RequiredReceiveRole    string `valid:"role,true"`
 	BlacklistedGiveRole    string `valid:"role,true"`
@@ -34,6 +35,7 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 		Enabled:                p.Enabled,
 		Cooldown:               p.Cooldown,
 		MaxGiveAmount:          p.MaxGiveAmount,
+		MaxRemoveAmount:        p.MaxRemoveAmount,
 		RequiredGiveRole:       null.NewString(p.RequiredGiveRole, true),
 		RequiredReceiveRole:    null.NewString(p.RequiredReceiveRole, true),
 		BlacklistedGiveRole:    null.NewString(p.BlacklistedGiveRole, true),
@@ -100,6 +102,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 		"enabled",
 		"cooldown",
 		"max_give_amount",
+		"max_remove_amount",
 		"required_give_role",
 		"required_receive_role",
 		"blacklisted_give_role",
