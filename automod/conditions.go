@@ -479,10 +479,6 @@ func (bc *BotCondition) MergeDuplicates(data []interface{}) interface{} {
 
 /////////////////////////////////////////////////////////////////
 
-type MessageEditedData struct {
-	Treshold int
-}
-
 var _ Condition = (*MessageEditedCondition)(nil)
 
 type MessageEditedCondition struct {
@@ -494,7 +490,7 @@ func (mc *MessageEditedCondition) Kind() RulePartType {
 }
 
 func (mc *MessageEditedCondition) DataType() interface{} {
-	return &MessageEditedData{}
+	return nil
 }
 
 func (mc *MessageEditedCondition) Name() string {
@@ -528,7 +524,7 @@ func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings interf
 		return false, nil
 	}
 
-	// account is older than threshold
+	// message was edited
 	if mc.NewMessage {
 		return false, nil
 	}
