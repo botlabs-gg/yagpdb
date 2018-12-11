@@ -220,56 +220,59 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		return "This menu is still being set up, wait until the owner of this menu is done.", nil
 	}
 
-	currentOpts := rm.R.RoleMenuOptions
+	// next role command id can be null if the relevant role command was deleted during setup
+	if rm.NextRoleCommandID.Valid {
+		currentOpts := rm.R.RoleMenuOptions
 
-	// Make sure this emoji isnt used to another option
-	for _, option := range currentOpts {
-		if emoji.ID != 0 {
-			if emoji.ID == option.EmojiID && option.EmojiID != 0 {
-				return "Emoji already used for another option", nil
-			}
-		} else {
-			if emoji.Name == option.UnicodeEmoji && option.UnicodeEmoji != "" {
-				return "Emoji already used for another option", nil
+		// Make sure this emoji isnt used to another option
+		for _, option := range currentOpts {
+			if emoji.ID != 0 {
+				if emoji.ID == option.EmojiID && option.EmojiID != 0 {
+					return "Emoji already used for another option", nil
+				}
+			} else {
+				if emoji.Name == option.UnicodeEmoji && option.UnicodeEmoji != "" {
+					return "Emoji already used for another option", nil
+				}
 			}
 		}
-	}
 
-	model := &models.RoleMenuOption{
-		RoleMenuID:    rm.MessageID,
-		RoleCommandID: rm.NextRoleCommandID,
-		EmojiID:       emoji.ID,
-		EmojiAnimated: emoji.Animated,
-	}
-
-	if emoji.ID == 0 {
-		model.UnicodeEmoji = emoji.Name
-	}
-
-	err = model.InsertG(ctx, boil.Infer())
-	if err != nil {
-		return "Failed inserting option", err
-	}
-
-	err = common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
-	if err != nil {
-		logrus.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
-	}
-
-	model.R = model.R.NewStruct()
-	for _, cmd := range rm.R.RoleGroup.R.RoleCommands {
-		if cmd.ID == model.RoleCommandID.Int64 {
-			model.R.RoleCommand = cmd
-			break
+		model := &models.RoleMenuOption{
+			RoleMenuID:    rm.MessageID,
+			RoleCommandID: rm.NextRoleCommandID,
+			EmojiID:       emoji.ID,
+			EmojiAnimated: emoji.Animated,
 		}
-	}
 
-	rm.R.RoleMenuOptions = append(rm.R.RoleMenuOptions, model)
+		if emoji.ID == 0 {
+			model.UnicodeEmoji = emoji.Name
+		}
 
-	if rm.OwnMessage {
-		err = UpdateRoleMenuMessage(ctx, rm)
+		err = model.InsertG(ctx, boil.Infer())
 		if err != nil {
-			return "Failed updating message", err
+			return "Failed inserting option", err
+		}
+
+		err = common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
+		if err != nil {
+			logrus.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
+		}
+
+		model.R = model.R.NewStruct()
+		for _, cmd := range rm.R.RoleGroup.R.RoleCommands {
+			if cmd.ID == model.RoleCommandID.Int64 {
+				model.R.RoleCommand = cmd
+				break
+			}
+		}
+
+		rm.R.RoleMenuOptions = append(rm.R.RoleMenuOptions, model)
+
+		if rm.OwnMessage {
+			err = UpdateRoleMenuMessage(ctx, rm)
+			if err != nil {
+				return "Failed updating message", err
+			}
 		}
 	}
 
@@ -495,7 +498,6 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 			emoji = "aaa:" + discordgo.StrID(option.EmojiID)
 		}
 
-		logrus.Println(emoji)
 		err := common.BotSession.MessageReactionAdd(menu.ChannelID, menu.MessageID, emoji)
 		if err != nil {
 			return nil, err
