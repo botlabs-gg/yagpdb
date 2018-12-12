@@ -56,6 +56,8 @@ var RulePartMap = map[int]RulePart{
 	210: &BotCondition{Ignore: false},
 	211: &ChannelCategoriesCondition{Blacklist: true},
 	212: &ChannelCategoriesCondition{Blacklist: false},
+	213: &MessageEditedCondition{NewMessage: true},
+	214: &MessageEditedCondition{NewMessage: false},
 
 	// Effects 3xx
 	300: &DeleteMessageEffect{},
