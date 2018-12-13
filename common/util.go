@@ -22,9 +22,6 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var DiscordInviteRegex = regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`)
-var ThirdPartyDiscordInviteRegex = regexp.MustCompile(`(discord\.me|invite\.gg|discord\.io|disco\.gg|disboard\.org\/server)(?:\/#)?\/([a-zA-Z0-9-]+)`)
-
 var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
 
 type WrappedGuild struct {
@@ -639,12 +636,6 @@ func HumanizePermissions(perms int64) (res []string) {
 	}
 
 	return
-}
-
-func ReplaceServerInvites(msg string, guildID int64, replacement string) string {
-	msg = ThirdPartyDiscordInviteRegex.ReplaceAllString(msg, replacement)
-	msg = DiscordInviteRegex.ReplaceAllString(msg, replacement)
-	return msg
 }
 
 func LogIgnoreError(err error, msg string, data log.Fields) {

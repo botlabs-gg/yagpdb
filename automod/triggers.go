@@ -1226,7 +1226,7 @@ func (uv *UsernameInviteTrigger) UserSettings() []*SettingDef {
 }
 
 func (uv *UsernameInviteTrigger) CheckUsername(ms *dstate.MemberState, data interface{}) (bool, error) {
-	if common.DiscordInviteRegex.MatchString(ms.Username) || common.ThirdPartyDiscordInviteRegex.MatchString(ms.Username) {
+	if common.ContainsInvite(ms.Username, true, true) != nil {
 		return true, nil
 	}
 

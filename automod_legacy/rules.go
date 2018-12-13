@@ -178,12 +178,12 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 }
 
 func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bool) {
-	// check discord.me
-	if common.ThirdPartyDiscordInviteRegex.MatchString(msg) {
+	// check third party sites
+	if common.ContainsInvite(msg, false, true) != nil {
 		return true
 	}
 
-	matches := common.DiscordInviteRegex.FindAllStringSubmatch(msg, -1)
+	matches := common.DiscordInviteSource.Regex.FindAllStringSubmatch(msg, -1)
 	if len(matches) < 1 {
 		return false
 	}
