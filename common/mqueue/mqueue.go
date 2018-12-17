@@ -267,6 +267,30 @@ var (
 	workmu     sync.Mutex
 )
 
+func findWork() int {
+	// find a work item that does not share a channel with any other item being processed (so ratelimits only take up max 1 worker)
+OUTER:
+	for i, v := range workSlice {
+		for _, active := range activeWork {
+			if active.elem.Channel == v.elem.Channel {
+				continue OUTER
+			}
+		}
+
+		b := common.BotSession.Ratelimiter.GetBucket(discordgo.EndpointChannelMessages(v.elem.Channel))
+		b.Lock()
+		waitTime := common.BotSession.Ratelimiter.GetWaitTime(b, 1)
+		b.Unlock()
+		if waitTime > time.Millisecond*250 {
+			continue
+		}
+
+		return i
+	}
+
+	return -1
+}
+
 func processWorker() {
 	atomic.AddInt32(numWorkers, 1)
 	defer atomic.AddInt32(numWorkers, -1)
@@ -275,27 +299,8 @@ func processWorker() {
 	for {
 		workmu.Lock()
 
-		// no new work to process
-		if len(workSlice) < 1 {
-			workmu.Unlock()
-			time.Sleep(time.Second * 1)
-			continue
-		}
-
 		// find a work item that does not share a channel with any other item being processed (so ratelimits only take up max 1 worker)
-		workItemIndex := -1
-
-	OUTER:
-		for i, v := range workSlice {
-			for _, active := range activeWork {
-				if active.elem.Channel == v.elem.Channel {
-					continue OUTER
-				}
-			}
-
-			workItemIndex = i
-			break
-		}
+		workItemIndex := findWork()
 
 		// did not find any
 		if workItemIndex == -1 {
