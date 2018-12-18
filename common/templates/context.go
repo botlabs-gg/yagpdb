@@ -84,6 +84,8 @@ type Context struct {
 	EmebdsToSend []*discordgo.MessageEmbed
 
 	AddResponseReactionNames []string
+
+	FixedOutput string
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -166,6 +168,11 @@ func (c *Context) Execute(source string) (string, error) {
 	w := LimitWriter(&buf, 25000)
 
 	err = parsed.Execute(w, c.Data)
+
+	if c.FixedOutput != "" {
+		result := common.EscapeSpecialMentionsConditional(c.FixedOutput, c.MentionEveryone, c.MentionHere, c.MentionRoles)
+		return result, nil
+	}
 
 	result := common.EscapeSpecialMentionsConditional(buf.String(), c.MentionEveryone, c.MentionHere, c.MentionRoles)
 	if err != nil {
