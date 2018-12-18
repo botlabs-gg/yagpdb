@@ -321,20 +321,8 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 	if !cmd.CaseSensitive && cmd.TriggerType != CommandTriggerRegex {
 		stripped = strings.ToLower(msg)
 	}
-	switch cmd.TriggerType {
-	case CommandTriggerStartsWith:
-		stripped = args[0]
-	case CommandTriggerCommand:
-		stripped = strings.TrimSpace(stripped)
-	case CommandTriggerContains:
-	case CommandTriggerRegex:
-		break
-	case CommandTriggerExact:
-		stripped = ""
-	default:
-		panic(fmt.Sprintf("Unknown TriggerType %s", cmd.TriggerType))
-	}
 
+	stripped = msg[idx[1]:]
 	match = true
 	return
 }
