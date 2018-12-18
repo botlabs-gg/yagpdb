@@ -486,7 +486,7 @@ func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, erro
 		return reflect.ValueOf(""), nil
 	}
 
-	return callVariadic(f, values...)
+	return callVariadic(f, true, values...)
 }
 
 func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Value, error) {
@@ -501,7 +501,45 @@ func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Val
 		return reflect.ValueOf(""), nil
 	}
 
-	return callVariadic(f, values...)
+	return callVariadic(f, true, values...)
+}
+
+func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Value, error) {
+	f := func(args []reflect.Value) (reflect.Value, error) {
+		if len(args) < 2 {
+			return reflect.Value{}, errors.New("Not enough arguments (need channel and message-id)")
+		}
+
+		// cArg := args[0].Interface()
+		var cArg interface{}
+		if args[0].IsValid() {
+			cArg = args[0].Interface()
+		}
+
+		cID := c.channelArg(cArg)
+		mID := ToInt64(args[1].Interface())
+
+		if cID == 0 {
+			return reflect.ValueOf(""), nil
+		}
+
+		for i, reaction := range args {
+			if i < 2 {
+				continue
+			}
+
+			if c.IncreaseCheckCallCounter("add_reaction_message", 20) {
+				return reflect.Value{}, ErrTooManyCalls
+			}
+
+			if err := common.BotSession.MessageReactionAdd(cID, mID, reaction.String()); err != nil {
+				return reflect.Value{}, err
+			}
+		}
+		return reflect.ValueOf(""), nil
+	}
+
+	return callVariadic(f, false, values...)
 }
 
 func (c *Context) tmplCurrentUserAgeHuman() string {

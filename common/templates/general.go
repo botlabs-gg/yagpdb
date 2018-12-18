@@ -325,13 +325,17 @@ type variadicFunc func([]reflect.Value) (reflect.Value, error)
 // sequence of arguments (i.e., fixed in the template definition) or a slice
 // (i.e., from a pipeline or context variable). In effect, a limited `flatten`
 // operation.
-func callVariadic(f variadicFunc, values ...reflect.Value) (reflect.Value, error) {
+func callVariadic(f variadicFunc, skipNil bool, values ...reflect.Value) (reflect.Value, error) {
 	var vs []reflect.Value
 	for _, val := range values {
 		v, _ := indirect(val)
 		switch {
 		case !v.IsValid():
-			continue
+			if !skipNil {
+				vs = append(vs, v)
+			} else {
+				continue
+			}
 		case v.Kind() == reflect.Array || v.Kind() == reflect.Slice:
 			for i := 0; i < v.Len(); i++ {
 				vs = append(vs, v.Index(i))

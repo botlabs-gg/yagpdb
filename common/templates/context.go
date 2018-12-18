@@ -227,6 +227,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["deleteMessage"] = c.tmplDelMessage
 	c.ContextFuncs["addReactions"] = c.tmplAddReactions
 	c.ContextFuncs["addResponseReactions"] = c.tmplAddResponseReactions
+	c.ContextFuncs["addMessageReactions"] = c.tmplAddMessageReactions
 
 	c.ContextFuncs["currentUserCreated"] = c.tmplCurrentUserCreated
 	c.ContextFuncs["currentUserAgeHuman"] = c.tmplCurrentUserAgeHuman
