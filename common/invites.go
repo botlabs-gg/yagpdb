@@ -15,10 +15,11 @@ var DiscordInviteSource = &InviteSource{
 }
 
 var ThirdpartyDiscordSites = []*InviteSource{
-	&InviteSource{Name: "", Regex: regexp.MustCompile(`discord\.me\/.+`)},
-	&InviteSource{Name: "", Regex: regexp.MustCompile(`invite\.gg\/.+`)},
-	&InviteSource{Name: "", Regex: regexp.MustCompile(`discord\.io\/.+`)},
-	&InviteSource{Name: "", Regex: regexp.MustCompile(`disboard\.org\/server\/join\/.+`)},
+	&InviteSource{Name: "discord.me", Regex: regexp.MustCompile(`discord\.me\/.+`)},
+	&InviteSource{Name: "invite.gg", Regex: regexp.MustCompile(`invite\.gg\/.+`)},
+	&InviteSource{Name: "discord.io", Regex: regexp.MustCompile(`discord\.io\/.+`)},
+	&InviteSource{Name: "disboard.org", Regex: regexp.MustCompile(`disboard\.org\/server\/join\/.+`)},
+	&InviteSource{Name: "discordy.com", Regex: regexp.MustCompile(`discordy\.com\/server\.php`)},
 
 	// regexp.MustCompile(`disco\.gg\/.+`), Youc can't actually link to specific servers here can you, so not needed for now?
 }
