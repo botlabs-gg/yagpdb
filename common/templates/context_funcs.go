@@ -42,8 +42,8 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-func (c *Context) tmplSendMessage(filterSpecialMentions bool) func(channel interface{}, msg interface{}) string {
-	return func(channel interface{}, msg interface{}) string {
+func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
+	return func(channel interface{}, msg interface{}) interface{} {
 
 		if c.IncreaseCheckCallCounter("send_message", 3) {
 			return ""
@@ -95,18 +95,23 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool) func(channel inter
 			return ""
 		}
 
+		var m *discordgo.Message
+		var err error
 		if embed, ok := msg.(*discordgo.MessageEmbed); ok {
-			common.BotSession.ChannelMessageSendEmbed(cid, embed)
-			return ""
+			m, err = common.BotSession.ChannelMessageSendEmbed(cid, embed)
+		} else {
+			strMsg := fmt.Sprint(msg)
+
+			if filterSpecialMentions {
+				strMsg = common.EscapeSpecialMentions(strMsg)
+			}
+
+			m, err = common.BotSession.ChannelMessageSend(cid, strMsg)
 		}
 
-		strMsg := fmt.Sprint(msg)
-
-		if filterSpecialMentions {
-			strMsg = common.EscapeSpecialMentions(strMsg)
+		if err == nil && returnID {
+			return m.ID
 		}
-
-		common.BotSession.ChannelMessageSend(cid, strMsg)
 
 		return ""
 	}
