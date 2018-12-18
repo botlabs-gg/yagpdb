@@ -42,6 +42,59 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
+func (c *Context) channelArg(v interface{}) int64 {
+
+	c.GS.RLock()
+	defer c.GS.RUnlock()
+
+	// Look for the channel
+	if v == nil && c.CS != nil {
+		// No channel passed, assume current channel
+		return c.CS.ID
+	}
+
+	verifiedExistence := false
+	var cid int64
+	if v != nil {
+		switch t := v.(type) {
+		case int, int64:
+			// Channel id passed
+			cid = ToInt64(t)
+		case string:
+			parsed, err := strconv.ParseInt(t, 10, 64)
+			if err == nil {
+				// Channel id passed in string format
+				cid = parsed
+			} else {
+				// Channel name, look for it
+				for _, v := range c.GS.Channels {
+					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
+						cid = v.ID
+						verifiedExistence = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if !verifiedExistence {
+		// Make sure the channel is part of the guild
+		for k, _ := range c.GS.Channels {
+			if k == cid {
+				verifiedExistence = true
+				break
+			}
+		}
+	}
+
+	if !verifiedExistence {
+		return 0
+	}
+
+	return cid
+}
+
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
 	return func(channel interface{}, msg interface{}) interface{} {
 
@@ -49,49 +102,8 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			return ""
 		}
 
-		var cid int64
-		verifiedExistence := false
-
-		c.GS.RLock()
-		// Look for the channel
-		if channel == nil && c.CS != nil {
-			// No channel passed, assume current channel
-			cid = c.CS.ID
-		} else if channel != nil {
-			switch t := channel.(type) {
-			case int, int64:
-				// Channel id passed
-				cid = ToInt64(t)
-			case string:
-				parsed, err := strconv.ParseInt(t, 10, 64)
-				if err == nil {
-					// Channel id passed in string format
-					cid = parsed
-				} else {
-					// Channel name, look for it
-					for _, v := range c.GS.Channels {
-						if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-							cid = v.ID
-							verifiedExistence = true
-							break
-						}
-					}
-				}
-			}
-		}
-
-		if !verifiedExistence {
-			// Make sure the channel is part of the guild
-			for k, _ := range c.GS.Channels {
-				if k == cid {
-					verifiedExistence = true
-					break
-				}
-			}
-		}
-		c.GS.RUnlock()
-
-		if cid == 0 || !verifiedExistence {
+		cid := c.channelArg(channel)
+		if cid == 0 {
 			return ""
 		}
 
@@ -436,6 +448,27 @@ func (c *Context) tmplDelTrigger(args ...interface{}) string {
 
 	c.DelTriggerDelay = dur
 	c.DelTrigger = true
+	return ""
+}
+
+func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}) string {
+	cID := c.channelArg(channel)
+	if cID == 0 {
+		return ""
+	}
+
+	mID := ToInt64(msgID)
+
+	dur := 10
+	if len(args) > 0 {
+		dur = int(ToInt64(args[0]))
+	}
+
+	if dur > 60 {
+		dur = 60
+	}
+
+	go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(dur), cID, mID)
 	return ""
 }
 
