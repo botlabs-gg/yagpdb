@@ -42,7 +42,7 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 var roleCommands = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CmdCategory: commands.CategoryDebug,
-		Name:        "roledbg",
+		Name:        "Roledbg",
 		Description: "Debug debug debug autorole assignment",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
