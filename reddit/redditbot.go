@@ -158,10 +158,16 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	plainMessage := fmt.Sprintf("<:reddit:462994034428870656> **/u/%s** posted a new %s in **/r/%s**\n**%s** - <%s>\n",
 		post.Author, typeStr, post.Subreddit, html.UnescapeString(post.Title), "https://redd.it/"+post.ID)
 
+	plainBody := ""
 	if post.IsSelf {
-		plainMessage += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
+		plainBody = common.CutStringShort(html.UnescapeString(post.Selftext), 250)
 	} else {
-		plainMessage += post.URL
+		plainBody = post.URL
+	}
+	if post.Spoiler {
+		plainMessage += "{{" + plainBody + "}}"
+	} else {
+		plainMessage += plainBody
 	}
 
 	embed := &discordgo.MessageEmbed{
@@ -180,18 +186,27 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 
 	if post.IsSelf {
 		embed.Title = "New self post in /r/" + post.Subreddit
-		embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
+		if post.Spoiler {
+			embed.Description += "{{" + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + "}}"
+		} else {
+			embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
+		}
+
 		embed.Color = 0xc3fc7e
 	} else {
 		embed.Color = 0x718aed
 		embed.Title = "New link post in /r/" + post.Subreddit
 		embed.Description += post.URL
 
-		if post.Media.Type == "" {
+		if post.Media.Type == "" && !post.Spoiler {
 			embed.Image = &discordgo.MessageEmbedImage{
 				URL: post.URL,
 			}
 		}
+	}
+
+	if post.Spoiler {
+		embed.Title += " [spoiler]"
 	}
 
 	plainMessage = common.EscapeSpecialMentions(plainMessage)
