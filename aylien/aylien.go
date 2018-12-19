@@ -55,7 +55,7 @@ func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Cooldown:    5,
-		Name:        "sentiment",
+		Name:        "Sentiment",
 		Aliases:     []string{"sent"},
 		Description: "Does sentiment analysis on a message or your last 5 messages longer than 3 words",
 		Arguments: []*dcmd.ArgDef{
