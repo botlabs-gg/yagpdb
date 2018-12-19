@@ -11,7 +11,7 @@ import (
 func (p *Plugin) AddCommands() {
 
 	cmdCreate := &commands.YAGCommand{
-		Name:        "create",
+		Name:        "Create",
 		CmdCategory: commands.CategoryFun,
 		Aliases:     []string{"c"},
 		Description: "Creates a cards against humanity game in this channel, add packs after commands, or * for all packs. (-v for vote mode without a card czar)",
@@ -41,7 +41,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdEnd := &commands.YAGCommand{
-		Name:        "end",
+		Name:        "End",
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a cards against humanity game thats ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
@@ -65,7 +65,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdKick := &commands.YAGCommand{
-		Name:         "kick",
+		Name:         "Kick",
 		CmdCategory:  commands.CategoryFun,
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
@@ -88,7 +88,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdPacks := &commands.YAGCommand{
-		Name:         "packs",
+		Name:         "Packs",
 		CmdCategory:  commands.CategoryFun,
 		RequiredArgs: 0,
 		Description:  "Lists available packs",
@@ -109,7 +109,7 @@ func (p *Plugin) AddCommands() {
 			return resp[0], nil
 		}
 
-		return "Unknown cah command", nil
+		return "Unknown CAH command", nil
 	}
 
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
