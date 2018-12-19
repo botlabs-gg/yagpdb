@@ -17,10 +17,11 @@ import (
 )
 
 var (
-	ClientID     = os.Getenv("YAGPDB_REDDIT_CLIENTID")
-	ClientSecret = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
-	RedirectURI  = os.Getenv("YAGPDB_REDDIT_REDIRECT")
-	RefreshToken = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
+	ClientID           = os.Getenv("YAGPDB_REDDIT_CLIENTID")
+	ClientSecret       = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
+	RedirectURI        = os.Getenv("YAGPDB_REDDIT_REDIRECT")
+	RefreshToken       = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
+	UseDiscordSpoilers = os.Getenv("YAGPDB_REDDIT_USE_DISCORD_SPOILERS") != ""
 )
 
 func (p *Plugin) StartFeed() {
@@ -164,7 +165,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	} else {
 		plainBody = post.URL
 	}
-	if post.Spoiler {
+	if post.Spoiler && UseDiscordSpoilers {
 		plainMessage += "{{" + plainBody + "}}"
 	} else {
 		plainMessage += plainBody
@@ -186,7 +187,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 
 	if post.IsSelf {
 		embed.Title = "New self post in /r/" + post.Subreddit
-		if post.Spoiler {
+		if post.Spoiler && UseDiscordSpoilers {
 			embed.Description += "{{" + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + "}}"
 		} else {
 			embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
