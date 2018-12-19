@@ -12,7 +12,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "Advice",
-	Description: "Dont be afraid to ask for advice!",
+	Description: "Don't be afraid to ask for advice!",
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "What", Type: dcmd.String},
 	},
