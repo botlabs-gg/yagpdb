@@ -3,7 +3,7 @@ YAGPDB
 
 ### Yet another general purpose discord bot
 
-YAGPDB is a multifunctional modular discord bot, it's modular in that plugins exist for the most part on their own (with exceptions to some lazy things in the main stylesheet), some plugins do however depend on other plugins, (most plugins depends on the commands plugin for example)
+YAGPDB is a multifunctional, modular Discord bot. It's modular in that plugins exist for the most part on their own (with exceptions to some lazy things in the main stylesheet), some plugins do however depend on other plugins (most plugins depend on the commands plugin, for example).
 
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
@@ -12,7 +12,7 @@ YAGPDB is a multifunctional modular discord bot, it's modular in that plugins ex
 
 ### Running YAGPDB yourself
 
-Running this bot may seem challenging and that's because I don't have time to make it easy to run for everyone, for the most part, it should run fine after the initial work has been done.
+Running this bot may seem challenging, and that's because I don't have time to make it easy to run for everyone, for the most part, it should run fine after the initial work has been done. Please view [this page](https://docs.yagpdb.xyz/others/self-hosting-with-docker) for more information.
 
 #### Updating
 Updating after v1 should migrate schemas automatically, but you should always take backups beforehand if things go wrong.
@@ -24,7 +24,7 @@ I will put breaking changes in the breaking_changes.md file, which you should al
 1. Using Docker
 2. Standalone
 
-**I will not help with basic problems or how to do unrelated things (how to run it on startup for example), use google, if those well written tutorials and aritcles confuse you, how the hell is a guy with english as a second language gonne be any better?**
+**I will not help with basic problems or how to do unrelated things (how to run it on startup for example), use Google, if those well written tutorials and aritcles confuse you, how the hell is a guy with english as a second language gonne be any better?**
 
 (There's still a lot of contributing you can do without this though, such as writing docs, fixing my horrible typos and so on)
 
@@ -42,7 +42,7 @@ In addition, you will need to add the following urls to the bot's "REDIRECT URI(
 
 #### Docker quickstart
 
-If you have docker-compose installed it will offer the fastest route to getting
+If you have docker-compose installed, it will offer the fastest route to getting
 up-and-running.
 
 ```bash
@@ -76,24 +76,24 @@ And then start the bot using the proxy:
 #### Standalone/Manual setup
 
 **Requirements**
- - Fairly recent go version (1.11 or later, i use new features as soon as they're out so watch out in breaking_changes)
+ - Fairly recent go version (1.11 or later, I use new features as soon as they're out, so watch out in breaking_changes)
  - PostgreSQL 9.6 or later
- - Redis version 3.x or later (maybe its possible to get it working with earlier versions, i don't know personally though)
+ - Redis version 3.x or later (maybe it's possible to get it working with earlier versions, however I'm not 100% sure)
 
 I may update the bot at any point to require newer versions of any of these, so you should ALWAYS check breaking_changes before updating.
 
 **First step** is to set those up and get them running:
 
- 1. Install and configure redis and postgres with your desired settings (my dm's are not google, you'll have to figure atleast this much out on your own...)
+ 1. Install and configure redis and postgres with your desired settings (my DM's are not Google, you'll have to figure at least this much out on your own...)
  2. Create a user named `yagpdb` and database named `yagpdb` which the user `yagpdb` has write access to
  3. Update your env vars with the config (see example env file in `cmd/yagpdb/`)
  4. Done.
 
 **Steps for building:**
 
-YAGPDB currently use a lot of alternative branches of my projects, mainly because i also use a discordgo fork with a lot of goodies in (why not push my changes upstream? cause a shit ton of breaking changes that would never get accepted)
+YAGPDB currently uses a lot of alternative branches of my projects, mainly because I also use a discordgo fork with a lot of goodies in it (why not push my changes upstream? cause a shit ton of breaking changes that would never get accepted)
 
-I'm working towards making yagpdb fully `go get ...`-able 
+I'm working towards making YAGPDB fully `go get ...`-able 
 
 ```bash
 git clone -b yagpdb https://github.com/jonas747/discordgo $GOPATH/src/github.com/jonas747/discordgo
@@ -131,7 +131,7 @@ So if you're behind a NAT, forward those, if not you can either use the `-pa` sw
 * Notifications
 * Moderation
 * Logs
-* Customcommands
+* Custom commands
 * And More!
 
 **Planned plugins**
