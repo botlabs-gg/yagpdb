@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-func (p *Plugin) BotInit() {
-	go transcoderLoop()
-}
-
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,

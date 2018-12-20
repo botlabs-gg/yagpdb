@@ -2,7 +2,6 @@ package soundboard
 
 import (
 	"github.com/jonas747/dca"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -28,7 +27,6 @@ func init() {
 	transcoderOptions.Bitrate = 100
 }
 
-var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 var _ common.BackgroundWorkerPlugin = (*Plugin)(nil)
 
