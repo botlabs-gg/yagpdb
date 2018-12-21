@@ -91,7 +91,7 @@ I may update the bot at any point to require newer versions of any of these, so 
 
 **Steps for building:**
 
-YAGPDB currently uses a lot of alternative branches of my projects, mainly because I also use a discordgo fork with a lot of goodies in it (why not push my changes upstream? cause a shit ton of breaking changes that would never get accepted)
+YAGPDB currently uses a lot of alternative branches of my projects, mainly because I also use a discordgo fork with a lot of goodies in it (why not push my changes upstream? Cause a shit ton of breaking changes that would never get accepted)
 
 I'm working towards making YAGPDB fully `go get ...`-able
 
