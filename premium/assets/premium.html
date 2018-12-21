@@ -16,7 +16,7 @@
 
             <div class="card-body">
                 <p>Here you can redeem codes from giveaways and assign premium slots to servers.</p>
-                <p>Keeping Discord bots running isn't cheap when they're on tens of thousands of servers, and Patreon donations alone without any benefits aside from priority support didn't get enough income to run YAGPDB without a loss, therefore I've had implement a premium functionality to increase the intensive to support the bot. You can find the features behind the paywall in the list below.</p>
+                <p>Keeping Discord bots running isn't cheap when they're on tens of thousands of servers, and Patreon donations alone without any benefits aside from priority support didn't get enough income to run YAGPDB without a loss, therefore I've had implement a premium functionality to increase the incentive to support the bot. You can find the features behind the paywall in the list below.</p>
                 <p><b>If you come across any issues with premium, please let me know!</b></p>
                 <p><b>Note:</b> This is still a hobby project run by 1 guy in his spare time with occasional code contributions here and there and support provided by unpaid volunteers in their free time. The premium functionality is just a bonus for supporting the bot and not a "product".</p>
 
@@ -48,10 +48,10 @@
                     <section class="card">
                         <div class="card-body">
                             <b>General goodies</b>
-                            <ul> 
+                            <ul>
                                 <li>Coming soon...</li>
                             </ul>
-                                
+
                             <b>Extended limits:</b>
                             <ul>
                                 <li>Message cache duration increased from 1 hour to 12 hours, which means you will be able to see the removed messages in the logs if the message was sent in the previous 12 hours</li>
@@ -69,7 +69,7 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
-<!-- /.row -->            
+<!-- /.row -->
 <div class="row">
     <div class="col-lg-12">
         <section class="card">
@@ -110,7 +110,7 @@
                 <ul>
                     <li>{{if not .Permanent}}Expires in: <code>{{humanizeDurationHours (call $dot.PremiumSlotDurationRemaining .)}}</code>{{else}}Expires never{{end}}.</li>
                     {{if .Message}}<li>{{.Message}}</li>{{end}}
-                </ul>   
+                </ul>
 
                 <form action="/premium/updateslot/{{.ID}}" method="post" data-async-form>
                     <div class="form-group">
@@ -118,7 +118,7 @@
                         <select name="GuildID" class="form-control" id="slot-{{.ID}}">
                             {{$found := false}}
                             <option value="0" {{if not .GuildID.Valid}}{{$found = true}} selected{{end}}>None</option>
-                            
+
 
                             {{$selected := .GuildID.Int64}}
                             {{range  $dot.ManagedGuilds}}
