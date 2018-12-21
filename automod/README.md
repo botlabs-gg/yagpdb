@@ -32,7 +32,7 @@ Ruleset Rules:
 Ruleset punishments:
  - Punishment 1
      + Conditions:
-         *  (rulesetbased | global | custom keybased "key here") infringements within x, higher than or equal to x
+         *  (ruleset based | global | custom key based "key here") infringements within x, higher than or equal to x
          * general user specific filters
          * only apply once per x interval
          * punishment x
