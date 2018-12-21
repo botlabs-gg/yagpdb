@@ -1,4 +1,4 @@
-Package premium provides functionality to give guilds premium status through various sources (patreon only atm)
+Package premium provides functionality to give guilds premium status through various sources (patreon only atm).
 
 It maintains a list of premium users and guilds and their slots in redis, compiled from each source.
 
