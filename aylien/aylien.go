@@ -34,7 +34,7 @@ func RegisterPlugin() {
 
 	client, err := textapi.NewClient(textapi.Auth{ApplicationID: appID, ApplicationKey: appKey}, true)
 	if err != nil {
-		log.WithError(err).Error("Failed initializing aylien client")
+		log.WithError(err).Error("Failed initializing AYLIEN client")
 		return
 	}
 
@@ -68,7 +68,7 @@ func (p *Plugin) AddCommands() {
 					Text: cmd.Args[0].Str(),
 				})
 				if err != nil {
-					return "Error querying aylien api", err
+					return "Error querying AYLIEN API", err
 				}
 				responses = []*textapi.SentimentResponse{resp}
 			} else {
@@ -105,7 +105,7 @@ func (p *Plugin) AddCommands() {
 				for _, msg := range toAnalyze {
 					resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: msg.ContentWithMentionsReplaced()})
 					if err != nil {
-						return "Error querying aylien api", err
+						return "Error querying AYLIEN API", err
 					}
 
 					responses = append(responses, resp)
