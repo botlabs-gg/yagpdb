@@ -5,10 +5,14 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/template"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
+	"time"
 )
 
 var (
@@ -260,4 +264,21 @@ func (l *limitedWriter) Write(p []byte) (n int, err error) {
 // bytes are attempted to be written.
 func LimitWriter(w io.Writer, n int64) io.Writer {
 	return &limitedWriter{W: w, N: n}
+}
+
+func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySeconds int) {
+	if delaySeconds > 10 {
+		err := scheduledevents2.ScheduleDeleteMessages(guildID, channelID, time.Now().Add(time.Second*time.Duration(delaySeconds)), messageID)
+		if err != nil {
+			logrus.WithError(err).Error("failed scheduling message deletion")
+		}
+	} else {
+		go func() {
+			if delaySeconds > 0 {
+				time.Sleep(time.Duration(delaySeconds) * time.Second)
+			}
+
+			bot.MessageDeleteQueue.DeleteMessages(channelID, messageID)
+		}()
+	}
 }
