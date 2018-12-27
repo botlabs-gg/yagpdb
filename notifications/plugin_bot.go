@@ -35,7 +35,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 
 	gs := bot.State.Guild(true, evt.GuildID)
 
-	ms := gs.MemberCopy(true, evt.User.ID)
+	ms := dstate.MSFromDGoMember(gs, evt.Member)
 
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled && !evt.User.Bot {
