@@ -199,7 +199,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	if tmplCtx.DelTrigger {
-		go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelTriggerDelay), mc.ChannelID, mc.ID)
+		templates.MaybeScheduledDeleteMessage(mc.GuildID, mc.ChannelID, mc.ID, tmplCtx.DelTriggerDelay)
 	}
 
 	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
@@ -208,7 +208,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 			log.WithError(err).Error("Failed sending message")
 		} else {
 			if tmplCtx.DelResponse {
-				go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(tmplCtx.DelResponseDelay), m.ChannelID, m.ID)
+				templates.MaybeScheduledDeleteMessage(mc.GuildID, mc.ChannelID, m.ID, tmplCtx.DelResponseDelay)
 			}
 
 			if len(tmplCtx.AddResponseReactionNames) > 0 {
