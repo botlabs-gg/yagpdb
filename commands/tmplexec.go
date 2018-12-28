@@ -177,7 +177,7 @@ func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cm
 	data.MsgStrippedPrefix = fakeMsg.Content
 	data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ctxMember))
 
-	foundCmd, rest := CommandSystem.Root.FindCommand(cmdLine)
+	foundCmd, foundContainer, rest := CommandSystem.Root.AbsFindCommandWithRest(cmdLine)
 	if foundCmd == nil {
 		return "Unknown command", nil
 	}
@@ -186,6 +186,9 @@ func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cm
 
 	data.Cmd = foundCmd
 	data.ContainerChain = []*dcmd.Container{CommandSystem.Root}
+	if foundContainer != CommandSystem.Root {
+		data.ContainerChain = append(data.ContainerChain, foundContainer)
+	}
 
 	cast := foundCmd.Command.(*YAGCommand)
 
