@@ -20,6 +20,12 @@ export YAGPDB_REDIS="redis address"
 # Set to yes or anything really to run in testing mode (cooldowns, verbose logging, laod templates from plugin folders etc..)
 export YAGPDB_TESTING=""
 
+# This is the max amount of concurrent requests the bot can send to discord
+# If you're running a lot of shards and guilds in the same process (25k+ guilds), and/or have a higher latency, you might need to increase this
+# Recommended setup for a clustered setup of 10 shards per node is around 10 max ccr
+# Defaults to 25
+# export YAGPDB_MAX_CCR="25"
+
 ###################################################################
 # Plugins and various other optional features below, not required #
 ##################################################################

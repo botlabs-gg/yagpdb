@@ -12,6 +12,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
 	"os"
+	"strconv"
 )
 
 const (
@@ -96,8 +97,15 @@ func setupGlobalDGoSession() (err error) {
 		return err
 	}
 
+	maxCCReqs, _ := strconv.Atoi(os.Getenv("YAGPDB_MAX_CCR"))
+	if maxCCReqs < 1 {
+		maxCCReqs = 25
+	}
+
+	logrus.Info("max ccr set to: ", maxCCReqs)
+
 	BotSession.MaxRestRetries = 3
-	BotSession.Ratelimiter.MaxConcurrentRequests = 25
+	BotSession.Ratelimiter.MaxConcurrentRequests = maxCCReqs
 
 	return nil
 }
