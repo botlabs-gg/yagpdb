@@ -104,7 +104,7 @@ func setupGlobalDGoSession() (err error) {
 
 	logrus.Info("max ccr set to: ", maxCCReqs)
 
-	BotSession.MaxRestRetries = 3
+	BotSession.MaxRestRetries = 5
 	BotSession.Ratelimiter.MaxConcurrentRequests = maxCCReqs
 
 	return nil
