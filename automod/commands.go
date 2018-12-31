@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"strings"
 )
 
 func (p *Plugin) AddCommands() {
@@ -47,8 +48,41 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
+	cmdViewRulesets := &commands.YAGCommand{
+		Name:                "rulesets",
+		Aliases:             []string{"r"},
+		CmdCategory:         commands.CategoryModeration,
+		Description:         "Lists all rulesets and their status",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
+			if err != nil {
+				return nil, err
+			}
+
+			if len(rulesets) < 1 {
+				return "No automod v2 rulesets set up on this server", nil
+			}
+
+			out := &strings.Builder{}
+			out.WriteString("Rulesets on this server:\n```\n")
+			for _, v := range rulesets {
+				onOff := "Enabled"
+				if !v.Enabled {
+					onOff = "Disabled"
+				}
+
+				out.WriteString(fmt.Sprintf("%s: %s", v.Name, onOff))
+			}
+			out.WriteString("\n```")
+
+			return out.String(), nil
+		},
+	}
+
 	container := commands.CommandSystem.Root.Sub("automod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
+	container.AddCommand(cmdViewRulesets, cmdViewRulesets.GetTrigger())
 	container.AddCommand(cmdToggleRuleset, cmdToggleRuleset.GetTrigger())
 }
