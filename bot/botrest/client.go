@@ -158,6 +158,31 @@ type NodeStatus struct {
 
 func GetNodeStatuses() (st []*NodeStatus, err error) {
 	// retrieve a list of nodes
+
+	// Special handling if were in clustered mode
+	var clustered bool
+	err = common.RedisPool.Do(radix.Cmd(&clustered, "EXISTS", "dshardorchestrator_nodes"))
+	if err != nil {
+		return nil, err
+	}
+
+	if clustered {
+		return getNodeStatusesClustered()
+	}
+
+	var status []*ShardStatus
+	err = Get(0, "gw_status", &status)
+	if err != nil {
+		return nil, err
+	}
+
+	return []*NodeStatus{&NodeStatus{
+		ID:     "N/A",
+		Shards: status,
+	}}, nil
+}
+
+func getNodeStatusesClustered() (st []*NodeStatus, err error) {
 	var nodeIDs []string
 	err = common.RedisPool.Do(radix.Cmd(&nodeIDs, "SMEMBERS", "dshardorchestrator_nodes"))
 	if err != nil {
