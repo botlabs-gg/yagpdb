@@ -80,7 +80,7 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	container := commands.CommandSystem.Root.Sub("automod")
+	container := commands.CommandSystem.Root.Sub("automod", "amod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
 	container.AddCommand(cmdViewRulesets, cmdViewRulesets.GetTrigger())
