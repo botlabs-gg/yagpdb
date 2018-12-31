@@ -22,6 +22,7 @@ var (
 		"cembed":                CreateEmbed,
 		"json":                  tmplJson,
 		"in":                    in,
+		"inFold":                inFold,
 		"title":                 strings.Title,
 		"add":                   add,
 		"roleAbove":             roleIsAbove,
