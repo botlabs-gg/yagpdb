@@ -132,13 +132,16 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 	strSlotID := pat.Param(r, "slotID")
 	parsedSlotID, _ := strconv.ParseInt(strSlotID, 10, 64)
 
+	err = DetachSlotFromGuild(r.Context(), parsedSlotID, user.ID)
+	if err != nil {
+		return tmpl, err
+	}
+
 	if data.GuildID != 0 {
 		err = AttachSlotToGuild(r.Context(), parsedSlotID, user.ID, data.GuildID)
 		if err == ErrGuildAlreadyPremium {
 			tmpl.AddAlerts(web.ErrorAlert("Server already has premium from another slot (possibly from another user)"))
 		}
-	} else {
-		err = DetachSlotFromGuild(r.Context(), parsedSlotID, user.ID)
 	}
 
 	return tmpl, err
