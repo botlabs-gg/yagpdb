@@ -48,14 +48,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	container := commands.CommandSystem.Root.Sub("automod")
-	container.NotFound = func(data *dcmd.Data) (interface{}, error) {
-		resp := dcmd.GenerateHelp(data, container, &dcmd.StdHelpFormatter{})
-		if len(resp) > 0 {
-			return resp[0], nil
-		}
-
-		return "Unknown automod command", nil
-	}
+	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
 	container.AddCommand(cmdToggleRuleset, cmdToggleRuleset.GetTrigger())
 }
