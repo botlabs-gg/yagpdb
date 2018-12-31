@@ -50,7 +50,7 @@ func (p *Plugin) AddCommands() {
 
 	cmdViewRulesets := &commands.YAGCommand{
 		Name:                "rulesets",
-		Aliases:             []string{"r"},
+		Aliases:             []string{"r", "list", "l"},
 		CmdCategory:         commands.CategoryModeration,
 		Description:         "Lists all rulesets and their status",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
