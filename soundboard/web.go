@@ -1,11 +1,14 @@
 package soundboard
 
 import (
-	"errors"
 	"fmt"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/soundboard/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -16,6 +19,21 @@ import (
 	"strconv"
 	"strings"
 )
+
+type PostForm struct {
+	ID           int
+	RequiredRole string `valid:"role,true"`
+	Name         string `valid:",100"`
+}
+
+func (pf *PostForm) ToDBModel() *models.SoundboardSound {
+	return &models.SoundboardSound{
+		ID: pf.ID,
+
+		Name:         pf.Name,
+		RequiredRole: pf.RequiredRole,
+	}
+}
 
 func (p *Plugin) InitWeb() {
 	tmplPath := "templates/plugins/soundboard.html"
@@ -37,23 +55,21 @@ func (p *Plugin) InitWeb() {
 
 	cpMux.Handle(pat.Get("/"), getHandler)
 	//cpMux.Handle(pat.Get(""), getHandler)
-	cpMux.Handle(pat.Post("/new"), web.ControllerPostHandler(HandleNew, getHandler, SoundboardSound{}, "Added a new sound to the soundboard"))
-	cpMux.Handle(pat.Post("/update"), web.ControllerPostHandler(HandleUpdate, getHandler, SoundboardSound{}, "Updated a soundboard sound"))
-	cpMux.Handle(pat.Post("/delete"), web.ControllerPostHandler(HandleDelete, getHandler, SoundboardSound{}, "Removed a sound from the soundboard"))
+	cpMux.Handle(pat.Post("/new"), web.ControllerPostHandler(HandleNew, getHandler, PostForm{}, "Added a new sound to the soundboard"))
+	cpMux.Handle(pat.Post("/update"), web.ControllerPostHandler(HandleUpdate, getHandler, PostForm{}, "Updated a soundboard sound"))
+	cpMux.Handle(pat.Post("/delete"), web.ControllerPostHandler(HandleDelete, getHandler, PostForm{}, "Removed a sound from the soundboard"))
 }
 
 func HandleGetCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	g, tmpl := web.GetBaseCPContextData(ctx)
 
-	var config SoundboardConfig
-	err := configstore.Cached.GetGuildConfig(ctx, g.ID, &config)
-
+	sounds, err := GetSoundboardSounds(g.ID, ctx)
 	if err != nil {
 		return tmpl, err
 	}
 
-	tmpl["Config"] = config
+	tmpl["SoundboardSounds"] = sounds
 	return tmpl, nil
 }
 
@@ -75,50 +91,53 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		}
 	}
 
-	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
-	data.Status = TranscodingStatusQueued
-	if isDCA {
-		data.Status = TranscodingStatusReady
-	}
-	data.GuildID = g.ID
+	data := ctx.Value(common.ContextKeyParsedForm).(*PostForm)
 
-	count := 0
-	err := common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ?", g.ID, data.Name).Count(&count).Error
+	dbModel := data.ToDBModel()
+	dbModel.Status = int(TranscodingStatusQueued)
+	if isDCA {
+		dbModel.Status = int(TranscodingStatusReady)
+	}
+	dbModel.GuildID = g.ID
+
+	// check for name conflict
+	nameConflict, err := models.SoundboardSounds(qm.Where("guild_id=? AND name=?", g.ID, data.Name)).ExistsG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
 
-	if count > 0 {
+	if nameConflict {
 		tmpl.AddAlerts(web.ErrorAlert("Name already used"))
 		return tmpl, nil
 	}
 
-	err = common.GORM.Model(SoundboardSound{}).Where("guild_id = ?", g.ID).Count(&count).Error
+	// check sound limit
+	count, err := models.SoundboardSounds(qm.Where("guild_id=?", g.ID)).CountG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
-	if count >= MaxSoundsForContext(ctx) {
+	if count >= int64(MaxSoundsForContext(ctx)) {
 		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d sounds allowed (%d for premium servers)", MaxGuildSounds, MaxGuildSoundsPremium)))
 		return tmpl, nil
 	}
 
-	err = common.GORM.Create(data).Error
+	err = dbModel.InsertG(r.Context(), boil.Infer())
 	if err != nil {
 		return tmpl, err
 	}
 
 	// Lock it
-	locked, err := common.TryLockRedisKey(KeySoundLock(data.ID), 60)
+	locked, err := common.TryLockRedisKey(KeySoundLock(dbModel.ID), 60)
 	if err != nil || !locked {
 		if !locked {
 			tmpl.AddAlerts(web.ErrorAlert("Uh oh failed locking"))
 		}
 		return tmpl, err
 	}
-	defer common.UnlockRedisKey(KeySoundLock(data.ID))
+	defer common.UnlockRedisKey(KeySoundLock(dbModel.ID))
 
 	//logrus.Error("CREAte errror:", err)
-	fname := "soundboard/queue/" + strconv.Itoa(int(data.ID))
+	fname := "soundboard/queue/" + strconv.Itoa(int(dbModel.ID))
 	if isDCA {
 		fname += ".dca"
 	}
@@ -151,11 +170,10 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		if tooBig {
 			tmpl.AddAlerts(web.ErrorAlert("Max 10MB files allowed"))
 		}
-		common.GORM.Delete(data)
+		dbModel.DeleteG(ctx)
 		return tmpl, err
 	}
 
-	configstore.InvalidateGuildCache(g.ID, &SoundboardConfig{})
 	return tmpl, err
 }
 
@@ -195,26 +213,33 @@ func DownloadNewSoundFile(r io.Reader, w io.Writer, limit int) (tooBig bool, err
 func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	g, tmpl := web.GetBaseCPContextData(ctx)
-	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
-	data.GuildID = g.ID
+	data := ctx.Value(common.ContextKeyParsedForm).(*PostForm)
 
-	count := 0
-	common.GORM.Model(SoundboardSound{}).Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID).Count(&count)
-	if count > 0 {
+	dbModel, err := models.SoundboardSounds(qm.Where("guild_id = ? AND id = ?", g.ID, data.ID)).OneG(ctx)
+	if err != nil {
+		return tmpl.AddAlerts(web.ErrorAlert("Error retrieiving sound")), errors.Wrap(err, "unknown sound")
+	}
+
+	nameConflict, err := models.SoundboardSounds(qm.Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID)).ExistsG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+
+	if nameConflict {
 		tmpl.AddAlerts(web.ErrorAlert("Name already used"))
 		return tmpl, nil
 	}
 
-	err := common.GORM.Model(data).Updates(map[string]interface{}{"name": data.Name, "required_role": data.RequiredRole}).Error
-	configstore.InvalidateGuildCache(g.ID, &SoundboardConfig{})
+	dbModel.Name = data.Name
+	dbModel.RequiredRole = data.RequiredRole
+	_, err = dbModel.UpdateG(ctx, boil.Whitelist("name", "required_role", "updated_at"))
 	return tmpl, err
 }
 
 func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	g, tmpl := web.GetBaseCPContextData(ctx)
-	data := ctx.Value(common.ContextKeyParsedForm).(*SoundboardSound)
-	data.GuildID = g.ID
+	data := ctx.Value(common.ContextKeyParsedForm).(*PostForm)
 
 	locked, err := common.TryLockRedisKey(KeySoundLock(data.ID), 10)
 	if err != nil {
@@ -226,15 +251,14 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 	defer common.UnlockRedisKey(KeySoundLock(data.ID))
 
-	var storedSound SoundboardSound
-	err = common.GORM.Where("guild_id = ? AND id = ?", g.ID, data.ID).First(&storedSound).Error
+	storedSound, err := models.SoundboardSounds(qm.Where("guild_id = ? AND id = ?", g.ID, data.ID)).OneG(ctx)
 	if err != nil {
-		return tmpl, nil
+		return tmpl, err
 	}
 
-	switch storedSound.Status {
+	switch TranscodingStatus(storedSound.Status) {
 	case TranscodingStatusQueued, TranscodingStatusReady:
-		err = os.Remove(SoundFilePath(data.ID, storedSound.Status))
+		err = os.Remove(SoundFilePath(data.ID, TranscodingStatus(storedSound.Status)))
 	case TranscodingStatusTranscoding:
 		tmpl.AddAlerts(web.ErrorAlert("This sound is busy? try again in a minute and if its still busy contact support"))
 		return tmpl, nil
@@ -246,8 +270,6 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		}
 	}
 
-	err = common.GORM.Delete(storedSound).Error
-	configstore.InvalidateGuildCache(g.ID, &SoundboardConfig{})
-
+	_, err = storedSound.DeleteG(ctx)
 	return tmpl, err
 }

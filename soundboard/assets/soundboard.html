@@ -48,7 +48,7 @@
             </div>
             <div class="card-body">
                 {{$dot := .}}
-                {{range .Config.Sounds}}
+                {{range .SoundboardSounds}}
                 <form id="sound-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/soundboard/update"><input type="text" class="hidden form-control" name="ID" value="{{.ID}}"></form>{{end}}
 
                 <table class="table table-responsive-md table-sm mb-0">
@@ -64,7 +64,7 @@
                         {{$guildmember := .ActiveGuild.ID}}
                         {{$roles := .ActiveGuild.Roles}}
                         {{$highest := .HighestRole}}
-                        {{range .Config.Sounds}}
+                        {{range .SoundboardSounds}}
                         <tr>
                             <td>
                                 <input form="sound-item-{{.ID}}" type="text" class="form-control" name="Name" placeholder="" value="{{.Name}}">
@@ -77,7 +77,7 @@
                             </td>
 
                             <td>
-                                <p class="form-control-static">{{.Status}}</p>
+                                <p class="form-control-static">{{if eq .Status 0}}Queued{{else if eq .Status 1}}Ready{{else if eq .Status 2}}Processing{{else if eq .Status 3}}Too long{{else if eq .Status 4}}Failed, contact support{{end}}</p>
                             </td>
                             
                             <td>

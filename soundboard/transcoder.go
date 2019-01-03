@@ -1,10 +1,11 @@
 package soundboard
 
 import (
+	"context"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/soundboard/models"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -87,13 +88,13 @@ func handleQueueItem(item string) error {
 		idStr = strings.SplitN(item, ".", 2)[0]
 	}
 
-	parsedId, err := strconv.ParseInt(idStr, 10, 32)
+	parsedId, err := strconv.Atoi(idStr)
 	if err != nil {
 		return err
 	}
 
 	// lock it for max 10 minutes, after that something must've gone wrong
-	locked, err := common.TryLockRedisKey(KeySoundLock(uint(parsedId)), 10*60)
+	locked, err := common.TryLockRedisKey(KeySoundLock(parsedId), 10*60)
 	if err != nil {
 		return err
 	}
@@ -101,10 +102,9 @@ func handleQueueItem(item string) error {
 		logrus.WithField("sound", parsedId).Warn("Sound is busy, handling it later")
 		return nil
 	}
-	defer common.UnlockRedisKey(KeySoundLock(uint(parsedId)))
+	defer common.UnlockRedisKey(KeySoundLock(parsedId))
 
-	var sound SoundboardSound
-	err = common.GORM.Where(uint(parsedId)).First(&sound).Error
+	sound, err := models.FindSoundboardSoundG(context.Background(), parsedId)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func handleQueueItem(item string) error {
 	logrus.WithField("sound", sound.ID).Info("Handling queued sound ", sound.Name)
 
 	if !skipTranscode {
-		err = transcodeSound(&sound)
+		err = transcodeSound(sound)
 		if err != nil {
 			logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
 			common.GORM.Model(&sound).Update("Status", TranscodingStatusFailedOther)
@@ -121,7 +121,6 @@ func handleQueueItem(item string) error {
 			common.GORM.Model(&sound).Update("Status", TranscodingStatusReady)
 		}
 
-		configstore.InvalidateGuildCache(sound.GuildID, &SoundboardConfig{})
 		err = os.Remove(SoundFilePath(sound.ID, TranscodingStatusQueued))
 	} else {
 		os.Rename(SoundFilePath(sound.ID, TranscodingStatusQueued)+".dca", SoundFilePath(sound.ID, TranscodingStatusReady))
@@ -129,14 +128,14 @@ func handleQueueItem(item string) error {
 	return err
 }
 
-func transcodeSound(sound *SoundboardSound) error {
+func transcodeSound(sound *models.SoundboardSound) error {
 	destFile, err := os.Create(SoundFilePath(sound.ID, TranscodingStatusReady))
 	if err != nil {
 		return err
 	}
 	defer destFile.Close()
 
-	session, err := dca.EncodeFile(SoundFilePath(sound.ID, sound.Status), transcoderOptions)
+	session, err := dca.EncodeFile(SoundFilePath(sound.ID, TranscodingStatus(sound.Status)), transcoderOptions)
 	if err != nil {
 		return err
 	}

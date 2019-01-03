@@ -17,7 +17,7 @@ type PlayRequest struct {
 	ChannelID      int64
 	GuildID        int64
 	CommandRanFrom int64
-	Sound          uint
+	Sound          int
 }
 
 var (
@@ -27,7 +27,7 @@ var (
 )
 
 // RequestPlaySound either queues up a sound to be played in an existing player or creates a new one
-func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID uint) (queued bool) {
+func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID int) (queued bool) {
 	item := &PlayRequest{
 		ChannelID:      channelID,
 		GuildID:        guildID,
