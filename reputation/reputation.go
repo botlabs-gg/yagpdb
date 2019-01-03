@@ -127,8 +127,8 @@ func (b UserError) Error() string {
 }
 
 var (
-	ErrMissingRequiredGiveRole    = UserError("Missing the required role to give points")
-	ErrMissingRequiredReceiveRole = UserError("Missing the required role to receive points")
+	ErrMissingRequiredGiveRole    = UserError("You don't have any of the required roles to give points")
+	ErrMissingRequiredReceiveRole = UserError("Target don't have any of the required roles to receive points")
 
 	ErrBlacklistedGive    = UserError("Blaclisted from giving points")
 	ErrBlacklistedReceive = UserError("Blacklisted from receiving points")
@@ -219,28 +219,23 @@ func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int6
 // Returns a user error if the sender can not modify the rep of receiver
 // Admins are always able to modify the rep of everyone
 func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.MemberState) error {
-	parsedAdminRole, _ := strconv.ParseInt(conf.AdminRole.String, 10, 64)
-	if conf.AdminRole.String != "" && common.ContainsInt64Slice(sender.Roles, parsedAdminRole) {
+	if common.ContainsInt64SliceOneOf(sender.Roles, conf.AdminRoles) {
 		return nil
 	}
 
-	parsedRequiredGiveRole, _ := strconv.ParseInt(conf.RequiredGiveRole.String, 10, 64)
-	if conf.RequiredGiveRole.String != "" && !common.ContainsInt64Slice(sender.Roles, parsedRequiredGiveRole) {
+	if len(conf.RequiredGiveRoles) > 0 && !common.ContainsInt64SliceOneOf(sender.Roles, conf.RequiredGiveRoles) {
 		return ErrMissingRequiredGiveRole
 	}
 
-	parsedRequiredReceiveRole, _ := strconv.ParseInt(conf.RequiredReceiveRole.String, 10, 64)
-	if conf.RequiredReceiveRole.String != "" && !common.ContainsInt64Slice(receiver.Roles, parsedRequiredReceiveRole) {
+	if len(conf.RequiredReceiveRoles) > 0 && !common.ContainsInt64SliceOneOf(receiver.Roles, conf.RequiredReceiveRoles) {
 		return ErrMissingRequiredReceiveRole
 	}
 
-	parsedBlacklistedGiveRole, _ := strconv.ParseInt(conf.BlacklistedGiveRole.String, 10, 64)
-	if conf.BlacklistedGiveRole.String != "" && common.ContainsInt64Slice(sender.Roles, parsedBlacklistedGiveRole) {
+	if common.ContainsInt64SliceOneOf(sender.Roles, conf.BlacklistedGiveRoles) {
 		return ErrBlacklistedGive
 	}
 
-	parsedBlacklistedReceiveRole, _ := strconv.ParseInt(conf.BlacklistedReceiveRole.String, 10, 64)
-	if conf.BlacklistedReceiveRole.String != "" && common.ContainsInt64Slice(receiver.Roles, parsedBlacklistedReceiveRole) {
+	if common.ContainsInt64SliceOneOf(receiver.Roles, conf.BlacklistedReceiveRoles) {
 		return ErrBlacklistedReceive
 	}
 
@@ -255,11 +250,8 @@ func IsAdmin(gs *dstate.GuildState, member *dstate.MemberState, config *models.R
 		return true
 	}
 
-	if config.AdminRole.String != "" {
-		parsedAdminRole, _ := strconv.ParseInt(config.AdminRole.String, 10, 64)
-		if common.ContainsInt64Slice(member.Roles, parsedAdminRole) {
-			return true
-		}
+	if common.ContainsInt64SliceOneOf(member.Roles, config.AdminRoles) {
+		return true
 	}
 
 	return false

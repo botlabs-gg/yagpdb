@@ -46,35 +46,34 @@
                         </div>
                         <div class="col-lg-6">
                             <div class="form-group">
-                                <label>Admin role</label>
-                                <select class="form-control" name="AdminRole">
-                                    <option value="" {{if eq .RepSettings.AdminRole.String ""}} selected{{end}}>None</option>
-                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.AdminRole.String "None"}}
+                                <label>Admin roles</label><br>
+                                <select name="AdminRoles" class="multiselect form-control" multiple="multiple" id="admin-roles" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.AdminRoles}}
                                 </select>
                                 <p class="help-block">Admins can freely change anyone's points to any number</p>
                             </div>
                             <div class="form-group">
-                                <label>Required role to give/remove points</label>
-                                <select class="form-control" name="RequiredGiveRole">
-                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.RequiredGiveRole.String "None"}}
+                                <label>Allowed roles to give/remove points (empty for all)</label><br>
+                                <select name="RequiredGiveRoles" class="multiselect form-control" multiple="multiple" id="require-roles-give" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.RequiredGiveRoles}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Required role to receive/being taken away points from</label>
-                                <select class="form-control" name="RequiredReceiveRole">
-                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.RequiredReceiveRole.String "None"}}
+                                <label>Allowed roles to receive/being taken away points from (empty for all)</label><br>
+                                <select name="RequiredReceiveRoles" class="multiselect form-control" multiple="multiple" id="require-roles-receive" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.RequiredReceiveRoles}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Blacklisted role for giving/taking away points</label>
-                                <select class="form-control" name="BlacklistedGiveRole">
-                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.BlacklistedGiveRole.String "None"}}
+                                <label>Blacklisted roles for giving/taking away points</label><br>
+                                <select name="BlacklistedGiveRoles" class="multiselect form-control" multiple="multiple" id="blacklisted-roles-give" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.BlacklistedGiveRoles}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Blacklisted role for receiving/being taken away points from</label>
-                                <select class="form-control" name="BlacklistedReceiveRole">
-                                    {{roleOptions .ActiveGuild.Roles nil .RepSettings.BlacklistedReceiveRole.String "None"}}
+                                <label>Blacklisted roles for receiving/being taken away points from</label><br>
+                                <select name="BlacklistedReceiveRoles" class="multiselect form-control" multiple="multiple" id="blacklisted-roles-receive" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.BlacklistedReceiveRoles}}
                                 </select>
                             </div>
                         </div>
