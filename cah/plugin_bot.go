@@ -105,7 +105,7 @@ func (p *Plugin) Status() (string, string) {
 		countedGames = append(countedGames, v.MasterChannel)
 	}
 
-	return "Games/ Tot. players / Act. players", fmt.Sprintf("%d / %d / %d", games, totalPlayers, activePlayers)
+	return "Games / Tot. players / Act. players", fmt.Sprintf("%d / %d / %d", games, totalPlayers, activePlayers)
 }
 
 func (p *Plugin) ShardMigrationSend(shard int) int {
@@ -134,7 +134,7 @@ OUTER:
 		v.Stop()
 
 		v.Lock()
-		common.BotSession.ChannelMessageSend(v.MasterChannel, "**Cards against humanity:** Bot undergoing upgrade, game will resume in around 10 seconds.")
+		common.BotSession.ChannelMessageSend(v.MasterChannel, "**Cards Against Humanity:** Bot undergoing upgrade: Your game will resume in around 10 seconds.")
 		bot.NodeConn.Send(ShardMigrationEvtGame, v, false)
 		v.Unlock()
 	}

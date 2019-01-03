@@ -1,4 +1,4 @@
-YAGPDB 
+YAGPDB
 ================
 
 ### Yet another general purpose discord bot
@@ -24,7 +24,7 @@ I will put breaking changes in the breaking_changes.md file, which you should al
 1. Using Docker
 2. Standalone
 
-**I will not help with basic problems or how to do unrelated things (how to run it on startup for example), use Google, if those well written tutorials and aritcles confuse you, how the hell is a guy with english as a second language gonne be any better?**
+**I will not help with basic problems or how to do unrelated things (how to run it on startup for example), use Google, if those well written tutorials and articles confuse you, how the hell is a guy with English as a second language gonna be any better?**
 
 (There's still a lot of contributing you can do without this though, such as writing docs, fixing my horrible typos and so on)
 
@@ -91,9 +91,9 @@ I may update the bot at any point to require newer versions of any of these, so 
 
 **Steps for building:**
 
-YAGPDB currently uses a lot of alternative branches of my projects, mainly because I also use a discordgo fork with a lot of goodies in it (why not push my changes upstream? cause a shit ton of breaking changes that would never get accepted)
+YAGPDB currently uses a lot of alternative branches of my projects, mainly because I also use a discordgo fork with a lot of goodies in it (why not push my changes upstream? Cause a shit ton of breaking changes that would never get accepted)
 
-I'm working towards making YAGPDB fully `go get ...`-able 
+I'm working towards making YAGPDB fully `go get ...`-able
 
 ```bash
 git clone -b yagpdb https://github.com/jonas747/discordgo $GOPATH/src/github.com/jonas747/discordgo
@@ -101,7 +101,7 @@ git clone -b dgofork https://github.com/jonas747/dutil $GOPATH/src/github.com/jo
 git clone -b dgofork https://github.com/jonas747/dshardmanager $GOPATH/src/github.com/jonas747/dshardmanager
 go get -v -d github.com/jonas747/yagpdb/cmd/yagpdb
 cd $GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb
-go build 
+go build
 ```
 
 After this, unless you wanna run it in testing mode using `YAGPDB_TESTING=yes` you have to run `cmd/yagpdb/copytemplates.sh` to copy all the plugin specific template files into the `cmd/yagpdb/templates/plugins` folder.
@@ -162,4 +162,4 @@ Expect web, bot and feed instances to be run separately.
 
 For basic utility/fun commands, you can just jam them in stdcommands. Use the existing commands there as an example of how to add one.
 
-**If you need any help finding things in the source or have any other questions, don't be afraid of messaging me**
+**If you need any help finding things in the source or have any other questions, don't be afraid of messaging me.**
