@@ -470,6 +470,17 @@ func ContainsInt64Slice(slice []int64, search int64) bool {
 	return false
 }
 
+// ContainsInt64SliceOneOf returns true if slice contains one of search
+func ContainsInt64SliceOneOf(slice []int64, search []int64) bool {
+	for _, v := range search {
+		if ContainsInt64Slice(slice, v) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func ContainsIntSlice(slice []int, search int) bool {
 	for _, v := range slice {
 		if v == search {
