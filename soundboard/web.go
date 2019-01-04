@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/soundboard/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -21,17 +20,20 @@ import (
 )
 
 type PostForm struct {
-	ID           int
-	RequiredRole string `valid:"role,true"`
-	Name         string `valid:",100"`
+	ID   int
+	Name string `valid:",100"`
+
+	RequiredRoles    []int64 `valid:"role"`
+	BlacklistedRoles []int64 `valid:"role"`
 }
 
 func (pf *PostForm) ToDBModel() *models.SoundboardSound {
 	return &models.SoundboardSound{
 		ID: pf.ID,
 
-		Name:         pf.Name,
-		RequiredRole: pf.RequiredRole,
+		Name:             pf.Name,
+		RequiredRoles:    pf.RequiredRoles,
+		BlacklistedRoles: pf.BlacklistedRoles,
 	}
 }
 
@@ -231,8 +233,10 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	dbModel.Name = data.Name
-	dbModel.RequiredRole = data.RequiredRole
-	_, err = dbModel.UpdateG(ctx, boil.Whitelist("name", "required_role", "updated_at"))
+	dbModel.RequiredRoles = data.RequiredRoles
+	dbModel.BlacklistedRoles = data.BlacklistedRoles
+
+	_, err = dbModel.UpdateG(ctx, boil.Whitelist("name", "required_roles", "blacklisted_roles", "updated_at"))
 	return tmpl, err
 }
 

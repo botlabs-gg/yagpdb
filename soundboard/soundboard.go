@@ -4,7 +4,6 @@ package soundboard
 
 import (
 	"fmt"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/soundboard/models"
@@ -70,17 +69,15 @@ func (s TranscodingStatus) String() string {
 }
 
 func CanPlaySound(s *models.SoundboardSound, roles []int64) bool {
-	if s.RequiredRole == "" {
-		return true
+	if len(s.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(roles, s.RequiredRoles) {
+		return false
 	}
 
-	for _, v := range roles {
-		if discordgo.StrID(v) == s.RequiredRole {
-			return true
-		}
+	if common.ContainsInt64SliceOneOf(roles, s.BlacklistedRoles) {
+		return false
 	}
 
-	return false
+	return true
 }
 
 func KeySoundLock(id int) string {

@@ -19,9 +19,15 @@
                         <input type="text" class="form-control" name="Name" placeholder="name">
                     </div>
                     <div class="form-group">
-                        <label>Required Role</label>
-                        <select class="form-control" name="RequiredRole">
-                            {{roleOptions .ActiveGuild.Roles nil "" "None"}}
+                        <label>Allowed roles</label>
+                        <select name="RequiredRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect data-placeholder="Everyone">
+                            {{roleOptionsMulti .ActiveGuild.Roles nil nil}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Blacklisted roles</label>
+                        <select name="BlacklistedRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                            {{roleOptionsMulti .ActiveGuild.Roles nil nil}}
                         </select>
                     </div>
 
@@ -55,7 +61,8 @@
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Required role</th>
+                            <th>Allowed roles</th>
+                            <th>Blacklisted role</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -71,8 +78,13 @@
                             </td>
 
                             <td>
-                                <select form="sound-item-{{.ID}}" class="form-control" name="RequiredRole">
-                                    {{roleOptions $roles nil .RequiredRole "None"}}
+                                <select form="sound-item-{{.ID}}" name="RequiredRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect data-placeholder="Everyone">
+                                    {{roleOptionsMulti $roles nil .RequiredRoles}}
+                                </select>
+                            </td>
+                            <td>
+                                <select form="sound-item-{{.ID}}" name="BlacklistedRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    {{roleOptionsMulti $roles nil .BlacklistedRoles}}
                                 </select>
                             </td>
 
