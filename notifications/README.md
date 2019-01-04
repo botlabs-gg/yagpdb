@@ -6,5 +6,5 @@ Will provide general notifications in a server for the following events:
 
  - User join
  - User leave
- - Topc changed
+ - Topic changed
  - Message pinned
