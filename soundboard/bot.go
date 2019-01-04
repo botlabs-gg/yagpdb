@@ -42,7 +42,7 @@ func (p *Plugin) AddCommands() {
 			if sound == nil {
 				return "Sound not found, " + ListSounds(sounds, member), nil
 			} else if !CanPlaySound(sound, member.Roles) {
-				return "You can't play that sound, " + ListSounds(sounds, member), nil
+				return "You can't play that sound, either you have a blacklisted role or missing a required role for this sound", nil
 			}
 
 			data.GS.RLock()
