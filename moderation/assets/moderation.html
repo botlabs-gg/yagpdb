@@ -103,7 +103,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         <div class="form-group">
             <label>Channel to announce bans and kicks through the bot in (modlog)</label>
             <select class="form-control" name="ActionChannel" data-requireperms-embed>
-                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "Same as command was sent in"}}
+                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "None"}}
             </select>
         </div>
         <div class="form-check mb-2">

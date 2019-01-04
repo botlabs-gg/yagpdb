@@ -35,6 +35,10 @@ var (
 )
 
 func CreateModlogEmbed(channelID int64, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {
+	if channelID == 0 {
+		return nil
+	}
+
 	emptyAuthor := false
 	if author == nil {
 		emptyAuthor = true

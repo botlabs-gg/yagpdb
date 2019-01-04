@@ -67,11 +67,6 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		}
 	}
 
-	actionChannel := config.IntActionChannel()
-	if actionChannel == 0 {
-		actionChannel = channelID
-	}
-
 	gs := bot.State.Guild(true, guildID)
 
 	member, memberNotFound := getMemberWithFallback(gs, user)
@@ -124,6 +119,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		}
 	}
 
+	actionChannel := config.IntActionChannel()
 	err = CreateModlogEmbed(actionChannel, author, action, user, reason, logLink)
 	return err
 }
