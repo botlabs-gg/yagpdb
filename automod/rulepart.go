@@ -42,6 +42,8 @@ var RulePartMap = map[int]RulePart{
 	27: &UsernameRegexTrigger{BaseRegexTrigger{Inverse: true}},
 	29: &UsernameInviteTrigger{},
 	30: &MemberJoinTrigger{},
+	31: &MessageAttachmentTrigger{},
+	32: &MessageAttachmentTrigger{RequiresAttachment: true},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
