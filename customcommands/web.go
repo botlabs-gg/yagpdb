@@ -5,7 +5,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"

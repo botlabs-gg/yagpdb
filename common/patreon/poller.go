@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"os"

@@ -10,7 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"

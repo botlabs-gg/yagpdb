@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/jonas747/oauth2"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
