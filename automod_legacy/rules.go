@@ -6,7 +6,7 @@ import (
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/safebrowsing"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"net/url"
 	"regexp"

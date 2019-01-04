@@ -10,7 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/premium"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"

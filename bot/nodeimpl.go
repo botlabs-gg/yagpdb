@@ -5,7 +5,7 @@ import (
 	"github.com/jonas747/dshardorchestrator/node"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"os"
 	"runtime/debug"

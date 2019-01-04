@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"strconv"
 	"time"

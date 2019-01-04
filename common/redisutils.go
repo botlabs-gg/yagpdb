@@ -2,7 +2,7 @@ package common
 
 import (
 	"encoding/json"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 )
 
 // GetRedisJson executes a get redis command and unmarshals the value into out

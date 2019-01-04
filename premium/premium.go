@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
