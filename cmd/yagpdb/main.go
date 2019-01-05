@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/evalphobia/logrus_sentry"
+	// "github.com/evalphobia/logrus_sentry"
 	"github.com/jonas747/yagpdb/automod"
 	"github.com/jonas747/yagpdb/safebrowsing"
 	log "github.com/sirupsen/logrus"
@@ -89,20 +89,20 @@ func main() {
 		AddSyslogHooks()
 	}
 
-	if os.Getenv("YAGPDB_SENTRY_DSN") != "" {
-		hook, err := logrus_sentry.NewSentryHook(os.Getenv("YAGPDB_SENTRY_DSN"), []log.Level{
-			log.PanicLevel,
-			log.FatalLevel,
-			log.ErrorLevel,
-		})
+	// if os.Getenv("YAGPDB_SENTRY_DSN") != "" {
+	// 	hook, err := logrus_sentry.NewSentryHook(os.Getenv("YAGPDB_SENTRY_DSN"), []log.Level{
+	// 		log.PanicLevel,
+	// 		log.FatalLevel,
+	// 		log.ErrorLevel,
+	// 	})
 
-		if err == nil {
-			log.AddHook(hook)
-			log.Info("Added Sentry Hook")
-		} else {
-			log.WithError(err).Error("Failed adding sentry hook")
-		}
-	}
+	// 	if err == nil {
+	// 		log.AddHook(hook)
+	// 		log.Info("Added Sentry Hook")
+	// 	} else {
+	// 		log.WithError(err).Error("Failed adding sentry hook")
+	// 	}
+	// }
 
 	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC {
 		log.Error("Didnt specify what to run, see -h for more info")
