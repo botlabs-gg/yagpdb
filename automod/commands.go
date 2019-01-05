@@ -72,9 +72,9 @@ func (p *Plugin) AddCommands() {
 					onOff = "Disabled"
 				}
 
-				out.WriteString(fmt.Sprintf("%s: %s", v.Name, onOff))
+				out.WriteString(fmt.Sprintf("%s: %s\n", v.Name, onOff))
 			}
-			out.WriteString("\n```")
+			out.WriteString("```")
 
 			return out.String(), nil
 		},
