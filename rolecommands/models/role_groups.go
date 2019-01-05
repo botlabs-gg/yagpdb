@@ -277,6 +277,10 @@ func (roleGroupL) LoadRoleCommands(ctx context.Context, e boil.ContextExecutor, 
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`role_commands`), qm.WhereIn(`role_group_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -359,6 +363,10 @@ func (roleGroupL) LoadRoleMenus(ctx context.Context, e boil.ContextExecutor, sin
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`role_menus`), qm.WhereIn(`role_group_id in ?`, args...))

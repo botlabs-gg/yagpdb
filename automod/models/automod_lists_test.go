@@ -427,7 +427,7 @@ func testAutomodListsSelect(t *testing.T) {
 }
 
 var (
-	automodListDBTypes = map[string]string{`Content`: `ARRAYtext`, `GuildID`: `bigint`, `ID`: `bigint`, `Kind`: `integer`, `Name`: `text`}
+	automodListDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `Name`: `text`, `Kind`: `integer`, `Content`: `ARRAYtext`}
 	_                  = bytes.MinRead
 )
 

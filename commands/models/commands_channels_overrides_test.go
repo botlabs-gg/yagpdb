@@ -388,13 +388,13 @@ func testCommandsChannelsOverrideToManyCommandsCommandOverrides(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	commandsCommandOverride, err := a.CommandsCommandOverrides().All(ctx, tx)
+	check, err := a.CommandsCommandOverrides().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range commandsCommandOverride {
+	for _, v := range check {
 		if v.CommandsChannelsOverridesID == b.CommandsChannelsOverridesID {
 			bFound = true
 		}
@@ -427,7 +427,7 @@ func testCommandsChannelsOverrideToManyCommandsCommandOverrides(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", commandsCommandOverride)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -581,7 +581,7 @@ func testCommandsChannelsOverridesSelect(t *testing.T) {
 }
 
 var (
-	commandsChannelsOverrideDBTypes = map[string]string{`AutodeleteResponse`: `boolean`, `AutodeleteResponseDelay`: `integer`, `AutodeleteTrigger`: `boolean`, `AutodeleteTriggerDelay`: `integer`, `ChannelCategories`: `ARRAYbigint`, `Channels`: `ARRAYbigint`, `CommandsEnabled`: `boolean`, `Global`: `boolean`, `GuildID`: `bigint`, `ID`: `bigint`, `IgnoreRoles`: `ARRAYbigint`, `RequireRoles`: `ARRAYbigint`}
+	commandsChannelsOverrideDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `Channels`: `ARRAYbigint`, `ChannelCategories`: `ARRAYbigint`, `Global`: `boolean`, `CommandsEnabled`: `boolean`, `AutodeleteResponse`: `boolean`, `AutodeleteTrigger`: `boolean`, `AutodeleteResponseDelay`: `integer`, `AutodeleteTriggerDelay`: `integer`, `RequireRoles`: `ARRAYbigint`, `IgnoreRoles`: `ARRAYbigint`}
 	_                               = bytes.MinRead
 )
 

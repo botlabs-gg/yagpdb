@@ -188,6 +188,7 @@ func (q commandsCommandOverrideQuery) ExistsG(ctx context.Context) (bool, error)
 func (q commandsCommandOverrideQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -231,6 +232,7 @@ func (commandsCommandOverrideL) LoadCommandsChannelsOverride(ctx context.Context
 			object.R = &commandsCommandOverrideR{}
 		}
 		args = append(args, object.CommandsChannelsOverridesID)
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -245,7 +247,12 @@ func (commandsCommandOverrideL) LoadCommandsChannelsOverride(ctx context.Context
 			}
 
 			args = append(args, obj.CommandsChannelsOverridesID)
+
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`commands_channels_overrides`), qm.WhereIn(`id in ?`, args...))
@@ -535,6 +542,11 @@ func (o *CommandsCommandOverride) Update(ctx context.Context, exec boil.ContextE
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q commandsCommandOverrideQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

@@ -322,6 +322,10 @@ func (roleMenuL) LoadNextRoleCommand(ctx context.Context, e boil.ContextExecutor
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`role_commands`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -413,6 +417,10 @@ func (roleMenuL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, sing
 			}
 
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`role_groups`), qm.WhereIn(`id in ?`, args...))
@@ -508,6 +516,10 @@ func (roleMenuL) LoadEditingOption(ctx context.Context, e boil.ContextExecutor, 
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`role_menu_options`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -593,6 +605,10 @@ func (roleMenuL) LoadRoleMenuOptions(ctx context.Context, e boil.ContextExecutor
 
 			args = append(args, obj.MessageID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`role_menu_options`), qm.WhereIn(`role_menu_id in ?`, args...))

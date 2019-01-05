@@ -178,6 +178,7 @@ func (q automodRuleQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q automodRuleQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -284,6 +285,7 @@ func (automodRuleL) LoadRuleset(ctx context.Context, e boil.ContextExecutor, sin
 			object.R = &automodRuleR{}
 		}
 		args = append(args, object.RulesetID)
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -298,7 +300,12 @@ func (automodRuleL) LoadRuleset(ctx context.Context, e boil.ContextExecutor, sin
 			}
 
 			args = append(args, obj.RulesetID)
+
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_rulesets`), qm.WhereIn(`id in ?`, args...))
@@ -388,6 +395,10 @@ func (automodRuleL) LoadRuleAutomodRuleData(ctx context.Context, e boil.ContextE
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`automod_rule_data`), qm.WhereIn(`rule_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -472,6 +483,10 @@ func (automodRuleL) LoadRuleAutomodTriggeredRules(ctx context.Context, e boil.Co
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`automod_triggered_rules`), qm.WhereIn(`rule_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -554,6 +569,10 @@ func (automodRuleL) LoadRuleAutomodViolations(ctx context.Context, e boil.Contex
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_violations`), qm.WhereIn(`rule_id in ?`, args...))
@@ -1204,6 +1223,11 @@ func (o *AutomodRule) Update(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q automodRuleQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

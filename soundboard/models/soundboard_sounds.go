@@ -240,13 +240,15 @@ func (o *SoundboardSound) Insert(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
-	}
-	if o.UpdatedAt.IsZero() {
-		o.UpdatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(soundboardSoundColumnsWithDefault, o)
@@ -324,9 +326,11 @@ func (o *SoundboardSound) UpdateG(ctx context.Context, columns boil.Columns) (in
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *SoundboardSound) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	o.UpdatedAt = currTime
+		o.UpdatedAt = currTime
+	}
 
 	var err error
 	key := makeCacheKey(columns, nil)
@@ -470,12 +474,14 @@ func (o *SoundboardSound) Upsert(ctx context.Context, exec boil.ContextExecutor,
 	if o == nil {
 		return errors.New("models: no soundboard_sounds provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		o.UpdatedAt = currTime
 	}
-	o.UpdatedAt = currTime
 
 	nzDefaults := queries.NonZeroDefaultSet(soundboardSoundColumnsWithDefault, o)
 

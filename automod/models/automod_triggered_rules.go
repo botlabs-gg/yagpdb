@@ -198,6 +198,7 @@ func (q automodTriggeredRuleQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q automodTriggeredRuleQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -254,7 +255,10 @@ func (automodTriggeredRuleL) LoadTrigger(ctx context.Context, e boil.ContextExec
 		if object.R == nil {
 			object.R = &automodTriggeredRuleR{}
 		}
-		args = append(args, object.TriggerID)
+		if !queries.IsNil(object.TriggerID) {
+			args = append(args, object.TriggerID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -268,8 +272,15 @@ func (automodTriggeredRuleL) LoadTrigger(ctx context.Context, e boil.ContextExec
 				}
 			}
 
-			args = append(args, obj.TriggerID)
+			if !queries.IsNil(obj.TriggerID) {
+				args = append(args, obj.TriggerID)
+			}
+
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_rule_data`), qm.WhereIn(`id in ?`, args...))
@@ -341,7 +352,10 @@ func (automodTriggeredRuleL) LoadRule(ctx context.Context, e boil.ContextExecuto
 		if object.R == nil {
 			object.R = &automodTriggeredRuleR{}
 		}
-		args = append(args, object.RuleID)
+		if !queries.IsNil(object.RuleID) {
+			args = append(args, object.RuleID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -355,8 +369,15 @@ func (automodTriggeredRuleL) LoadRule(ctx context.Context, e boil.ContextExecuto
 				}
 			}
 
-			args = append(args, obj.RuleID)
+			if !queries.IsNil(obj.RuleID) {
+				args = append(args, obj.RuleID)
+			}
+
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_rules`), qm.WhereIn(`id in ?`, args...))
@@ -649,10 +670,12 @@ func (o *AutomodTriggeredRule) Insert(ctx context.Context, exec boil.ContextExec
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(automodTriggeredRuleColumnsWithDefault, o)
@@ -786,6 +809,11 @@ func (o *AutomodTriggeredRule) Update(ctx context.Context, exec boil.ContextExec
 	return rowsAff, nil
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q automodTriggeredRuleQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
 func (q automodTriggeredRuleQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
@@ -867,10 +895,12 @@ func (o *AutomodTriggeredRule) Upsert(ctx context.Context, exec boil.ContextExec
 	if o == nil {
 		return errors.New("models: no automod_triggered_rules provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(automodTriggeredRuleColumnsWithDefault, o)

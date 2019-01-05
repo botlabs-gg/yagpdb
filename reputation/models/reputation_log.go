@@ -239,10 +239,12 @@ func (o *ReputationLog) Insert(ctx context.Context, exec boil.ContextExecutor, c
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(reputationLogColumnsWithDefault, o)
@@ -462,10 +464,12 @@ func (o *ReputationLog) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 	if o == nil {
 		return errors.New("models: no reputation_log provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(reputationLogColumnsWithDefault, o)

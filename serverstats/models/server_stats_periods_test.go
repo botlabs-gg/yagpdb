@@ -427,7 +427,7 @@ func testServerStatsPeriodsSelect(t *testing.T) {
 }
 
 var (
-	serverStatsPeriodDBTypes = map[string]string{`ChannelID`: `bigint`, `Count`: `bigint`, `Duration`: `bigint`, `GuildID`: `bigint`, `ID`: `bigint`, `Started`: `timestamp with time zone`, `UserID`: `bigint`}
+	serverStatsPeriodDBTypes = map[string]string{`ID`: `bigint`, `Started`: `timestamp with time zone`, `Duration`: `bigint`, `GuildID`: `bigint`, `UserID`: `bigint`, `ChannelID`: `bigint`, `Count`: `bigint`}
 	_                        = bytes.MinRead
 )
 

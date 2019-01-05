@@ -387,13 +387,13 @@ func testRoleCommandToManyRoleMenuOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roleMenuOption, err := a.RoleMenuOptions().All(ctx, tx)
+	check, err := a.RoleMenuOptions().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range roleMenuOption {
+	for _, v := range check {
 		if queries.Equal(v.RoleCommandID, b.RoleCommandID) {
 			bFound = true
 		}
@@ -426,7 +426,7 @@ func testRoleCommandToManyRoleMenuOptions(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", roleMenuOption)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -464,13 +464,13 @@ func testRoleCommandToManyNextRoleCommandRoleMenus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roleMenu, err := a.NextRoleCommandRoleMenus().All(ctx, tx)
+	check, err := a.NextRoleCommandRoleMenus().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range roleMenu {
+	for _, v := range check {
 		if queries.Equal(v.NextRoleCommandID, b.NextRoleCommandID) {
 			bFound = true
 		}
@@ -503,7 +503,7 @@ func testRoleCommandToManyNextRoleCommandRoleMenus(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", roleMenu)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1243,7 +1243,7 @@ func testRoleCommandsSelect(t *testing.T) {
 }
 
 var (
-	roleCommandDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `ID`: `bigint`, `IgnoreRoles`: `ARRAYbigint`, `Name`: `text`, `Position`: `bigint`, `RequireRoles`: `ARRAYbigint`, `Role`: `bigint`, `RoleGroupID`: `bigint`, `UpdatedAt`: `timestamp with time zone`}
+	roleCommandDBTypes = map[string]string{`ID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `Name`: `text`, `RoleGroupID`: `bigint`, `Role`: `bigint`, `RequireRoles`: `ARRAYbigint`, `IgnoreRoles`: `ARRAYbigint`, `Position`: `bigint`}
 	_                  = bytes.MinRead
 )
 

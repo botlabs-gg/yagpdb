@@ -388,13 +388,13 @@ func testAutomodRuleToManyRuleAutomodRuleData(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	automodRuleDatum, err := a.RuleAutomodRuleData().All(ctx, tx)
+	check, err := a.RuleAutomodRuleData().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range automodRuleDatum {
+	for _, v := range check {
 		if v.RuleID == b.RuleID {
 			bFound = true
 		}
@@ -427,7 +427,7 @@ func testAutomodRuleToManyRuleAutomodRuleData(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", automodRuleDatum)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -465,13 +465,13 @@ func testAutomodRuleToManyRuleAutomodTriggeredRules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	automodTriggeredRule, err := a.RuleAutomodTriggeredRules().All(ctx, tx)
+	check, err := a.RuleAutomodTriggeredRules().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range automodTriggeredRule {
+	for _, v := range check {
 		if queries.Equal(v.RuleID, b.RuleID) {
 			bFound = true
 		}
@@ -504,7 +504,7 @@ func testAutomodRuleToManyRuleAutomodTriggeredRules(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", automodTriggeredRule)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -542,13 +542,13 @@ func testAutomodRuleToManyRuleAutomodViolations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	automodViolation, err := a.RuleAutomodViolations().All(ctx, tx)
+	check, err := a.RuleAutomodViolations().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range automodViolation {
+	for _, v := range check {
 		if queries.Equal(v.RuleID, b.RuleID) {
 			bFound = true
 		}
@@ -581,7 +581,7 @@ func testAutomodRuleToManyRuleAutomodViolations(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", automodViolation)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1345,7 +1345,7 @@ func testAutomodRulesSelect(t *testing.T) {
 }
 
 var (
-	automodRuleDBTypes = map[string]string{`GuildID`: `bigint`, `ID`: `bigint`, `Name`: `text`, `RulesetID`: `bigint`, `TriggerCounter`: `bigint`}
+	automodRuleDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `RulesetID`: `bigint`, `Name`: `text`, `TriggerCounter`: `bigint`}
 	_                  = bytes.MinRead
 )
 

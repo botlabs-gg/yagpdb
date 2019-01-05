@@ -65,8 +65,8 @@ type serverStatsConfigL struct{}
 
 var (
 	serverStatsConfigColumns               = []string{"guild_id", "created_at", "updated_at", "public", "ignore_channels"}
-	serverStatsConfigColumnsWithoutDefault = []string{"created_at", "updated_at", "public", "ignore_channels"}
-	serverStatsConfigColumnsWithDefault    = []string{"guild_id"}
+	serverStatsConfigColumnsWithoutDefault = []string{"guild_id", "created_at", "updated_at", "public", "ignore_channels"}
+	serverStatsConfigColumnsWithDefault    = []string{}
 	serverStatsConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
 
@@ -166,6 +166,7 @@ func (q serverStatsConfigQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q serverStatsConfigQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -227,13 +228,15 @@ func (o *ServerStatsConfig) Insert(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if queries.MustTime(o.CreatedAt).IsZero() {
-		queries.SetScanner(&o.CreatedAt, currTime)
-	}
-	if queries.MustTime(o.UpdatedAt).IsZero() {
-		queries.SetScanner(&o.UpdatedAt, currTime)
+		if queries.MustTime(o.CreatedAt).IsZero() {
+			queries.SetScanner(&o.CreatedAt, currTime)
+		}
+		if queries.MustTime(o.UpdatedAt).IsZero() {
+			queries.SetScanner(&o.UpdatedAt, currTime)
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(serverStatsConfigColumnsWithDefault, o)
@@ -311,9 +314,11 @@ func (o *ServerStatsConfig) UpdateG(ctx context.Context, columns boil.Columns) (
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *ServerStatsConfig) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	queries.SetScanner(&o.UpdatedAt, currTime)
+		queries.SetScanner(&o.UpdatedAt, currTime)
+	}
 
 	var err error
 	key := makeCacheKey(columns, nil)
@@ -369,6 +374,11 @@ func (o *ServerStatsConfig) Update(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q serverStatsConfigQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -452,12 +462,14 @@ func (o *ServerStatsConfig) Upsert(ctx context.Context, exec boil.ContextExecuto
 	if o == nil {
 		return errors.New("models: no server_stats_configs provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if queries.MustTime(o.CreatedAt).IsZero() {
-		queries.SetScanner(&o.CreatedAt, currTime)
+		if queries.MustTime(o.CreatedAt).IsZero() {
+			queries.SetScanner(&o.CreatedAt, currTime)
+		}
+		queries.SetScanner(&o.UpdatedAt, currTime)
 	}
-	queries.SetScanner(&o.UpdatedAt, currTime)
 
 	nzDefaults := queries.NonZeroDefaultSet(serverStatsConfigColumnsWithDefault, o)
 

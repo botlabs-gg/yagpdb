@@ -387,13 +387,13 @@ func testRoleGroupToManyRoleCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roleCommand, err := a.RoleCommands().All(ctx, tx)
+	check, err := a.RoleCommands().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range roleCommand {
+	for _, v := range check {
 		if queries.Equal(v.RoleGroupID, b.RoleGroupID) {
 			bFound = true
 		}
@@ -426,7 +426,7 @@ func testRoleGroupToManyRoleCommands(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", roleCommand)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -464,13 +464,13 @@ func testRoleGroupToManyRoleMenus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roleMenu, err := a.RoleMenus().All(ctx, tx)
+	check, err := a.RoleMenus().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range roleMenu {
+	for _, v := range check {
 		if queries.Equal(v.RoleGroupID, b.RoleGroupID) {
 			bFound = true
 		}
@@ -503,7 +503,7 @@ func testRoleGroupToManyRoleMenus(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", roleMenu)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1083,7 +1083,7 @@ func testRoleGroupsSelect(t *testing.T) {
 }
 
 var (
-	roleGroupDBTypes = map[string]string{`GuildID`: `bigint`, `ID`: `bigint`, `IgnoreRoles`: `ARRAYbigint`, `Mode`: `bigint`, `MultipleMax`: `bigint`, `MultipleMin`: `bigint`, `Name`: `text`, `RequireRoles`: `ARRAYbigint`, `SingleAutoToggleOff`: `boolean`, `SingleRequireOne`: `boolean`}
+	roleGroupDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `Name`: `text`, `RequireRoles`: `ARRAYbigint`, `IgnoreRoles`: `ARRAYbigint`, `Mode`: `bigint`, `MultipleMax`: `bigint`, `MultipleMin`: `bigint`, `SingleAutoToggleOff`: `boolean`, `SingleRequireOne`: `boolean`}
 	_                = bytes.MinRead
 )
 

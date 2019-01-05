@@ -388,13 +388,13 @@ func testAutomodRulesetToManyRulesetAutomodRules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	automodRule, err := a.RulesetAutomodRules().All(ctx, tx)
+	check, err := a.RulesetAutomodRules().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range automodRule {
+	for _, v := range check {
 		if v.RulesetID == b.RulesetID {
 			bFound = true
 		}
@@ -427,7 +427,7 @@ func testAutomodRulesetToManyRulesetAutomodRules(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", automodRule)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -466,13 +466,13 @@ func testAutomodRulesetToManyRulesetAutomodRulesetConditions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	automodRulesetCondition, err := a.RulesetAutomodRulesetConditions().All(ctx, tx)
+	check, err := a.RulesetAutomodRulesetConditions().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range automodRulesetCondition {
+	for _, v := range check {
 		if v.RulesetID == b.RulesetID {
 			bFound = true
 		}
@@ -505,7 +505,7 @@ func testAutomodRulesetToManyRulesetAutomodRulesetConditions(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", automodRulesetCondition)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -734,7 +734,7 @@ func testAutomodRulesetsSelect(t *testing.T) {
 }
 
 var (
-	automodRulesetDBTypes = map[string]string{`Enabled`: `boolean`, `GuildID`: `bigint`, `ID`: `bigint`, `Name`: `text`}
+	automodRulesetDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `Name`: `text`, `Enabled`: `boolean`}
 	_                     = bytes.MinRead
 )
 

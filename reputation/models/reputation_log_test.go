@@ -427,7 +427,7 @@ func testReputationLogsSelect(t *testing.T) {
 }
 
 var (
-	reputationLogDBTypes = map[string]string{`Amount`: `bigint`, `CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `ID`: `bigint`, `ReceiverID`: `bigint`, `ReceiverUsername`: `text`, `SenderID`: `bigint`, `SenderUsername`: `text`, `SetFixedAmount`: `boolean`}
+	reputationLogDBTypes = map[string]string{`ID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `SenderID`: `bigint`, `ReceiverID`: `bigint`, `SetFixedAmount`: `boolean`, `Amount`: `bigint`, `ReceiverUsername`: `text`, `SenderUsername`: `text`}
 	_                    = bytes.MinRead
 )
 

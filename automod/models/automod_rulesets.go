@@ -169,6 +169,7 @@ func (q automodRulesetQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q automodRulesetQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -257,6 +258,10 @@ func (automodRulesetL) LoadRulesetAutomodRules(ctx context.Context, e boil.Conte
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`automod_rules`), qm.WhereIn(`ruleset_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -339,6 +344,10 @@ func (automodRulesetL) LoadRulesetAutomodRulesetConditions(ctx context.Context, 
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_ruleset_conditions`), qm.WhereIn(`ruleset_id in ?`, args...))
@@ -694,6 +703,11 @@ func (o *AutomodRuleset) Update(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q automodRulesetQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

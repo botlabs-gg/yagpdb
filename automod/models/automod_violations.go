@@ -173,6 +173,7 @@ func (q automodViolationQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q automodViolationQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -215,7 +216,10 @@ func (automodViolationL) LoadRule(ctx context.Context, e boil.ContextExecutor, s
 		if object.R == nil {
 			object.R = &automodViolationR{}
 		}
-		args = append(args, object.RuleID)
+		if !queries.IsNil(object.RuleID) {
+			args = append(args, object.RuleID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -229,8 +233,15 @@ func (automodViolationL) LoadRule(ctx context.Context, e boil.ContextExecutor, s
 				}
 			}
 
-			args = append(args, obj.RuleID)
+			if !queries.IsNil(obj.RuleID) {
+				args = append(args, obj.RuleID)
+			}
+
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_rules`), qm.WhereIn(`id in ?`, args...))
@@ -429,10 +440,12 @@ func (o *AutomodViolation) Insert(ctx context.Context, exec boil.ContextExecutor
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(automodViolationColumnsWithDefault, o)
@@ -566,6 +579,11 @@ func (o *AutomodViolation) Update(ctx context.Context, exec boil.ContextExecutor
 	return rowsAff, nil
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q automodViolationQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
 func (q automodViolationQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
@@ -647,10 +665,12 @@ func (o *AutomodViolation) Upsert(ctx context.Context, exec boil.ContextExecutor
 	if o == nil {
 		return errors.New("models: no automod_violations provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(automodViolationColumnsWithDefault, o)

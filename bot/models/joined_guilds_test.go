@@ -427,7 +427,7 @@ func testJoinedGuildsSelect(t *testing.T) {
 }
 
 var (
-	joinedGuildDBTypes = map[string]string{`Avatar`: `text`, `ID`: `bigint`, `JoinedAt`: `timestamp with time zone`, `LeftAt`: `timestamp with time zone`, `MemberCount`: `bigint`, `Name`: `text`, `OwnerID`: `bigint`}
+	joinedGuildDBTypes = map[string]string{`ID`: `bigint`, `JoinedAt`: `timestamp with time zone`, `LeftAt`: `timestamp with time zone`, `MemberCount`: `bigint`, `Name`: `text`, `OwnerID`: `bigint`, `Avatar`: `text`}
 	_                  = bytes.MinRead
 )
 
