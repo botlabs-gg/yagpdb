@@ -150,6 +150,9 @@ func (c *Context) Execute(source string) (string, error) {
 			// This may fail in some cases
 			c.Msg.ChannelID = c.GS.ID
 		}
+		if c.GS != nil {
+			c.Msg.GuildID = c.GS.ID
+		}
 	}
 
 	if c.GS != nil {
