@@ -116,7 +116,7 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 }
 
 func workerScaler() {
-	var lastWorkerSpawnedAt time.Time
+	lastWorkerSpawnedAt := time.Now()
 	t := time.NewTicker(time.Second * 10)
 
 	deltaHistory := list.New()
@@ -141,7 +141,7 @@ func workerScaler() {
 		}
 
 		// see if we should launch a worker
-		if current < 100 || time.Since(lastWorkerSpawnedAt) < time.Minute*6 || deltaHistory.Len() < 6 {
+		if current < 100 || time.Since(lastWorkerSpawnedAt) < time.Minute*10 || deltaHistory.Len() < 6 {
 			// don't bother launching workers when below 100, and atleast have a minute of averages
 			continue
 		}
@@ -150,7 +150,7 @@ func workerScaler() {
 		deltaAverage := calcListAverage(deltaHistory)
 		sizeAverage := calcListAverage(sizeHistory)
 
-		if deltaAverage > 1 && sizeAverage > 100 {
+		if deltaAverage > 1 && sizeAverage > 1000 {
 			logrus.Info("Launched new mqueue worker, total workers: ", atomic.LoadInt32(numWorkers)+1)
 			go processWorker()
 			lastWorkerSpawnedAt = time.Now()

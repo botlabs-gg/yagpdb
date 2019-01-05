@@ -211,7 +211,7 @@
                         {{range .Commands}}
                             <optgroup label="{{.Category}}">>
                                 {{range .Commands}}
-                                <option value="{{.}}" {{if in $selected .}}selected{{end}}>{{.}}</option>
+                                <option value="{{.}}" {{if inFold $selected .}}selected{{end}}>{{.}}</option>
                                 {{end}}
                             </optgroup>
                         {{end}}

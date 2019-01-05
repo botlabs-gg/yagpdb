@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"strings"
 )
 
 func (p *Plugin) AddCommands() {
@@ -47,15 +48,91 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	container := commands.CommandSystem.Root.Sub("automod")
-	container.NotFound = func(data *dcmd.Data) (interface{}, error) {
-		resp := dcmd.GenerateHelp(data, container, &dcmd.StdHelpFormatter{})
-		if len(resp) > 0 {
-			return resp[0], nil
-		}
+	cmdViewRulesets := &commands.YAGCommand{
+		Name:                "rulesets",
+		Aliases:             []string{"r", "list", "l"},
+		CmdCategory:         commands.CategoryModeration,
+		Description:         "Lists all rulesets and their status",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
+			if err != nil {
+				return nil, err
+			}
 
-		return "Unknown automod command", nil
+			if len(rulesets) < 1 {
+				return "No automod v2 rulesets set up on this server", nil
+			}
+
+			out := &strings.Builder{}
+			out.WriteString("Rulesets on this server:\n```\n")
+			for _, v := range rulesets {
+				onOff := "Enabled"
+				if !v.Enabled {
+					onOff = "Disabled"
+				}
+
+				out.WriteString(fmt.Sprintf("%s: %s", v.Name, onOff))
+			}
+			out.WriteString("\n```")
+
+			return out.String(), nil
+		},
 	}
 
+	cmdLogs := &commands.YAGCommand{
+		Name:        "logs",
+		Aliases:     []string{"log"},
+		CmdCategory: commands.CategoryModeration,
+		Description: "Shows the log of the last triggered automod rules, optionally filtering by user",
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "skip", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "user", Type: dcmd.UserID},
+		},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+
+			skip := data.Args[0].Int()
+			userID := data.Switch("user").Int64()
+
+			qms := []qm.QueryMod{qm.Where("guild_id=?", data.GS.ID), qm.OrderBy("id desc"), qm.Limit(15)}
+			if skip != 0 {
+				qms = append(qms, qm.Offset(skip))
+			}
+
+			if userID != 0 {
+				qms = append(qms, qm.Where("user_id = ? ", userID))
+			}
+
+			entries, err := models.AutomodTriggeredRules(qms...).AllG(data.Context())
+			if err != nil {
+				return nil, err
+			}
+
+			out := &strings.Builder{}
+
+			offsetStr := ""
+			if skip != 0 {
+				offsetStr = fmt.Sprintf(" (skipping %d)", skip)
+			}
+
+			out.WriteString(fmt.Sprintf("Last 15%s triggered automod v2 rules (UTC):\n```\n", offsetStr))
+			for _, v := range entries {
+				t := v.CreatedAt.UTC().Format("02 Jan 2006 15:04")
+				out.WriteString(fmt.Sprintf("%-17s - %s - RS:%s - R:%s - T:%s\n", t, v.UserName, v.RulesetName, v.RuleName, RulePartMap[v.TriggerTypeid].Name()))
+			}
+			out.WriteString("``` `RS` = ruleset, `R` = rule, `T` = trigger")
+
+			return out.String(), nil
+		},
+	}
+
+	container := commands.CommandSystem.Root.Sub("automod", "amod")
+	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
+
+	container.AddCommand(cmdViewRulesets, cmdViewRulesets.GetTrigger())
 	container.AddCommand(cmdToggleRuleset, cmdToggleRuleset.GetTrigger())
+	container.AddCommand(cmdLogs, cmdLogs.GetTrigger())
 }

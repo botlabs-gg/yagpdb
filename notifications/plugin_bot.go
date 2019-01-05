@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"strings"
-	"time"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -36,7 +35,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 
 	gs := bot.State.Guild(true, evt.GuildID)
 
-	ms := gs.MemberCopy(true, evt.User.ID)
+	ms := dstate.MSFromDGoMember(gs, evt.Member)
 
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled && !evt.User.Bot {
@@ -126,12 +125,8 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 		bot.QueueMergedMessage(cs.ID, msg)
 	} else {
 		m, err := common.BotSession.ChannelMessageSend(cs.ID, msg)
-		if err == nil {
-			if ctx.DelResponseDelay > 0 {
-				go common.DelayedMessageDelete(common.BotSession, time.Duration(ctx.DelResponseDelay)*time.Second, cs.ID, m.ID)
-			} else {
-				go bot.MessageDeleteQueue.DeleteMessages(cs.ID, m.ID)
-			}
+		if err == nil && ctx.DelResponse {
+			templates.MaybeScheduledDeleteMessage(cs.Guild.ID, cs.ID, m.ID, ctx.DelResponseDelay)
 		}
 	}
 }

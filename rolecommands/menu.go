@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sort"
+	"time"
 )
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
@@ -92,14 +93,8 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	model.R.RoleGroup = group
 
 	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, true)
-
-	if model.OwnMessage {
-		content := msg.Content + "\n" + resp
-		_, err = common.BotSession.ChannelMessageEdit(parsed.CS.ID, msg.ID, content)
-		return "", err
-	}
-
-	return resp, err
+	updateSetupMessage(parsed.Context(), model, resp)
+	return nil, err
 }
 
 func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
@@ -127,6 +122,9 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 		menu.RemoveRoleOnReactionRemove = !menu.RemoveRoleOnReactionRemove
 	}
 
+	// don't reuse the old setup message
+	menu.SetupMSGID = 0
+
 	menu.UpdateG(parsed.Context(), boil.Infer())
 
 	if menu.OwnMessage {
@@ -134,7 +132,11 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	}
 
 	// Add all mising options
-	return NextRoleMenuSetupStep(parsed.Context(), menu, false)
+	resp, err := NextRoleMenuSetupStep(parsed.Context(), menu, false)
+	if resp != "" {
+		createSetupMessage(parsed.Context(), menu, resp, true)
+	}
+	return nil, err
 }
 
 func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, first bool) (resp string, err error) {
@@ -143,6 +145,7 @@ func NextRoleMenuSetupStep(ctx context.Context, rm *models.RoleMenu, first bool)
 	sort.Slice(commands, RoleCommandsLessFunc(commands))
 
 	var nextCmd *models.RoleCommand
+	numDone := 0
 
 OUTER:
 	for i, cmd := range commands {
@@ -152,13 +155,15 @@ OUTER:
 
 		for _, option := range rm.R.RoleMenuOptions {
 			if cmd.ID == option.RoleCommandID.Int64 {
+				numDone++
 				continue OUTER
 			}
 		}
 
 		// New command is cmd
-		nextCmd = cmd
-		break
+		if nextCmd == nil {
+			nextCmd = cmd
+		}
 	}
 
 	if nextCmd == nil || len(rm.R.RoleMenuOptions) >= 20 {
@@ -177,10 +182,11 @@ OUTER:
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
 	rm.UpdateG(ctx, boil.Whitelist(models.RoleMenuColumns.NextRoleCommandID))
-	if first && rm.OwnMessage {
-		return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on this message\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
-	}
-	return "**Rolemenu Setup**: React with the emoji for the role command: `" + nextCmd.Name + "` on the **Menu message (not this one)**\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
+
+	totalCommands := len(commands) - rm.SkipAmount
+	resp = fmt.Sprintf("[%d/%d]\n", numDone, totalCommands)
+
+	return resp + "React with the emoji for the role command: `" + nextCmd.Name + "`\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 }
 
 func StrFlags(rm *models.RoleMenu) string {
@@ -322,7 +328,7 @@ func findOptionFromEmoji(emoji *discordgo.Emoji, opts []*models.RoleMenuOption) 
 }
 
 func handleReactionAddRemove(evt *eventsystem.EventData) {
-	emoji, cID, gID, uID, mID, raAdd := getReactionDetails(evt)
+	emoji, _, gID, uID, mID, raAdd := getReactionDetails(evt)
 	if uID == common.BotUser.ID {
 		return
 	}
@@ -348,9 +354,10 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 		}
 
 		if resp != "" {
-			_, err = common.BotSession.ChannelMessageSend(cID, "Role menu setup: "+resp)
 			if err != nil {
-				logrus.WithError(err).Error("RoleCommandsMenu: Failed sending new response")
+				createSetupMessage(evt.Context(), menu, resp, false)
+			} else {
+				updateSetupMessage(evt.Context(), menu, resp)
 			}
 		}
 
@@ -359,6 +366,10 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 	if !menu.RemoveRoleOnReactionRemove && !raAdd {
 		return // only go further is this flag is enabled
+	}
+
+	if mID != menu.MessageID {
+		return // reacted on the seutp message id, only allow setup actions there
 	}
 
 	// Find the option model from the reaction
@@ -475,7 +486,7 @@ func messageRemoved(ctx context.Context, id int64) {
 }
 
 func FindRolemenuFull(ctx context.Context, mID int64, guildID int64) (*models.RoleMenu, error) {
-	return models.RoleMenus(qm.Where("message_id = ? AND guild_id = ?", mID, guildID), qm.Load("RoleMenuOptions.RoleCommand"), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
+	return models.RoleMenus(qm.Where("guild_id = ? AND (message_id = ? OR setup_msg_id = ?)", guildID, mID, mID), qm.Load("RoleMenuOptions.RoleCommand"), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
 }
 
 func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
@@ -535,11 +546,14 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 
 	menu.State = RoleMenuStateEditingOptionSelecting
 	menu.OwnerID = data.Msg.Author.ID
-	_, err = menu.UpdateG(data.Context(), boil.Whitelist("state", "owner_id"))
+	menu.SetupMSGID = 0
+	_, err = menu.UpdateG(data.Context(), boil.Whitelist("state", "owner_id", "setup_msg_id"))
 	if err != nil {
 		return "", err
 	}
-	return "React on the emoji for the option you want to change", nil
+
+	createSetupMessage(data.Context(), menu, "React on the emoji for the option you want to change", true)
+	return nil, nil
 }
 
 func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
@@ -607,4 +621,44 @@ func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discord
 	}
 
 	return "", nil
+}
+
+func updateSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents string) {
+	msgContents = msgContents + "\n\n*this message will be updated with new info throughout the setup*"
+
+	if rm.SetupMSGID == 0 {
+		createSetupMessage(ctx, rm, msgContents, true)
+		return
+	}
+
+	// if this is a old message, then don't reuse it
+	msgAge := bot.SnowflakeToTime(rm.SetupMSGID)
+	if msgAge.Before(time.Now().Add(-time.Hour)) {
+		createSetupMessage(ctx, rm, msgContents, true)
+		return
+	}
+
+	_, err := common.BotSession.ChannelMessageEdit(rm.ChannelID, rm.SetupMSGID, msgContents)
+	if err != nil {
+		createSetupMessage(ctx, rm, msgContents, true)
+		return
+	}
+}
+
+func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents string, updateModel bool) {
+	msgContents = "**Rolemenu setup:** " + msgContents
+
+	msg, err := common.BotSession.ChannelMessageSend(rm.ChannelID, msgContents)
+	if err != nil {
+		logrus.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed creating setup message for menu")
+		return
+	}
+
+	if updateModel {
+		rm.SetupMSGID = msg.ID
+		_, err = rm.UpdateG(ctx, boil.Whitelist("setup_msg_id"))
+		if err != nil {
+			logrus.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed upating menu model")
+		}
+	}
 }

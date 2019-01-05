@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
@@ -168,4 +169,59 @@ func NewPublicErrorF(f string, a ...interface{}) PublicError {
 
 func FilterBadInvites(msg string, guildID int64, replacement string) string {
 	return common.ReplaceServerInvites(msg, guildID, replacement)
+}
+
+// CommonContainerNotFoundHandler is a common "NotFound" handler that should be used with dcmd containers
+// it ensures that no messages is sent if none of the commands in te container is enabeld
+// if "fixedMessage" is empty, then it shows default generated container help
+func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage string) func(data *dcmd.Data) (interface{}, error) {
+	return func(data *dcmd.Data) (interface{}, error) {
+		// Only show stuff if atleast 1 of the commands in the container is enabled
+		if data.GS != nil {
+			data.GS.RLock()
+			cParentID := data.CS.ParentID
+			data.GS.RUnlock()
+
+			channelOverrides, err := GetOverridesForChannel(data.CS.ID, cParentID, data.GS.ID)
+			if err != nil {
+				logrus.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed retrieving command overrides")
+				return nil, nil
+			}
+
+			chain := []*dcmd.Container{CommandSystem.Root, container}
+
+			enabled := false
+
+			// make sure that atleast 1 command in the container is enabled
+			for _, v := range container.Commands {
+				cast := v.Command.(*YAGCommand)
+				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GS.ID, channelOverrides)
+				if err != nil {
+					logrus.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed checking if command was enabled")
+					continue
+				}
+
+				if settings.Enabled {
+					enabled = true
+					break
+				}
+			}
+
+			// no commands enabled, do nothing
+			if !enabled {
+				return nil, nil
+			}
+		}
+
+		if fixedMessage != "" {
+			return fixedMessage, nil
+		}
+
+		resp := dcmd.GenerateHelp(data, container, &dcmd.StdHelpFormatter{})
+		if len(resp) > 0 {
+			return resp[0], nil
+		}
+
+		return nil, nil
+	}
 }

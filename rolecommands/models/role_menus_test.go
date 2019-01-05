@@ -1060,7 +1060,7 @@ func testRoleMenusSelect(t *testing.T) {
 }
 
 var (
-	roleMenuDBTypes = map[string]string{`ChannelID`: `bigint`, `DisableSendDM`: `boolean`, `EditingOptionID`: `bigint`, `FixedAmount`: `boolean`, `GuildID`: `bigint`, `MessageID`: `bigint`, `NextRoleCommandID`: `bigint`, `OwnMessage`: `boolean`, `OwnerID`: `bigint`, `RemoveRoleOnReactionRemove`: `boolean`, `RoleGroupID`: `bigint`, `SkipAmount`: `integer`, `State`: `bigint`}
+	roleMenuDBTypes = map[string]string{`ChannelID`: `bigint`, `DisableSendDM`: `boolean`, `EditingOptionID`: `bigint`, `FixedAmount`: `boolean`, `GuildID`: `bigint`, `MessageID`: `bigint`, `NextRoleCommandID`: `bigint`, `OwnMessage`: `boolean`, `OwnerID`: `bigint`, `RemoveRoleOnReactionRemove`: `boolean`, `RoleGroupID`: `bigint`, `SetupMSGID`: `bigint`, `SkipAmount`: `integer`, `State`: `bigint`}
 	_               = bytes.MinRead
 )
 

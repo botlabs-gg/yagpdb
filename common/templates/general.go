@@ -132,6 +132,36 @@ func in(l interface{}, v interface{}) bool {
 	return false
 }
 
+// in returns whether v is in the set l. l may only be a slice of strings, or a string, v may only be a string
+// it differs from "in" because its case insensitive
+func inFold(l interface{}, v string) bool {
+	lv := reflect.ValueOf(l)
+	vv := reflect.ValueOf(v)
+
+	switch lv.Kind() {
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < lv.Len(); i++ {
+			lvv := lv.Index(i)
+			lvv, isNil := indirect(lvv)
+			if isNil {
+				continue
+			}
+			switch lvv.Kind() {
+			case reflect.String:
+				if vv.Type() == lvv.Type() && strings.EqualFold(vv.String(), lvv.String()) {
+					return true
+				}
+			}
+		}
+	case reflect.String:
+		if vv.Type() == lv.Type() && strings.Contains(strings.ToLower(lv.String()), strings.ToLower(vv.String())) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func add(x, y int) int {
 	return x + y
 }

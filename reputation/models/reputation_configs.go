@@ -19,53 +19,69 @@ import (
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 // ReputationConfig is an object representing the database table.
 type ReputationConfig struct {
-	GuildID                int64       `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	PointsName             string      `boil:"points_name" json:"points_name" toml:"points_name" yaml:"points_name"`
-	Enabled                bool        `boil:"enabled" json:"enabled" toml:"enabled" yaml:"enabled"`
-	Cooldown               int         `boil:"cooldown" json:"cooldown" toml:"cooldown" yaml:"cooldown"`
-	MaxGiveAmount          int64       `boil:"max_give_amount" json:"max_give_amount" toml:"max_give_amount" yaml:"max_give_amount"`
-	RequiredGiveRole       null.String `boil:"required_give_role" json:"required_give_role,omitempty" toml:"required_give_role" yaml:"required_give_role,omitempty"`
-	RequiredReceiveRole    null.String `boil:"required_receive_role" json:"required_receive_role,omitempty" toml:"required_receive_role" yaml:"required_receive_role,omitempty"`
-	BlacklistedGiveRole    null.String `boil:"blacklisted_give_role" json:"blacklisted_give_role,omitempty" toml:"blacklisted_give_role" yaml:"blacklisted_give_role,omitempty"`
-	BlacklistedReceiveRole null.String `boil:"blacklisted_receive_role" json:"blacklisted_receive_role,omitempty" toml:"blacklisted_receive_role" yaml:"blacklisted_receive_role,omitempty"`
-	AdminRole              null.String `boil:"admin_role" json:"admin_role,omitempty" toml:"admin_role" yaml:"admin_role,omitempty"`
-	DisableThanksDetection bool        `boil:"disable_thanks_detection" json:"disable_thanks_detection" toml:"disable_thanks_detection" yaml:"disable_thanks_detection"`
-	MaxRemoveAmount        int64       `boil:"max_remove_amount" json:"max_remove_amount" toml:"max_remove_amount" yaml:"max_remove_amount"`
+	GuildID                 int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	PointsName              string           `boil:"points_name" json:"points_name" toml:"points_name" yaml:"points_name"`
+	Enabled                 bool             `boil:"enabled" json:"enabled" toml:"enabled" yaml:"enabled"`
+	Cooldown                int              `boil:"cooldown" json:"cooldown" toml:"cooldown" yaml:"cooldown"`
+	MaxGiveAmount           int64            `boil:"max_give_amount" json:"max_give_amount" toml:"max_give_amount" yaml:"max_give_amount"`
+	RequiredGiveRole        null.String      `boil:"required_give_role" json:"required_give_role,omitempty" toml:"required_give_role" yaml:"required_give_role,omitempty"`
+	RequiredReceiveRole     null.String      `boil:"required_receive_role" json:"required_receive_role,omitempty" toml:"required_receive_role" yaml:"required_receive_role,omitempty"`
+	BlacklistedGiveRole     null.String      `boil:"blacklisted_give_role" json:"blacklisted_give_role,omitempty" toml:"blacklisted_give_role" yaml:"blacklisted_give_role,omitempty"`
+	BlacklistedReceiveRole  null.String      `boil:"blacklisted_receive_role" json:"blacklisted_receive_role,omitempty" toml:"blacklisted_receive_role" yaml:"blacklisted_receive_role,omitempty"`
+	AdminRole               null.String      `boil:"admin_role" json:"admin_role,omitempty" toml:"admin_role" yaml:"admin_role,omitempty"`
+	DisableThanksDetection  bool             `boil:"disable_thanks_detection" json:"disable_thanks_detection" toml:"disable_thanks_detection" yaml:"disable_thanks_detection"`
+	MaxRemoveAmount         int64            `boil:"max_remove_amount" json:"max_remove_amount" toml:"max_remove_amount" yaml:"max_remove_amount"`
+	RequiredGiveRoles       types.Int64Array `boil:"required_give_roles" json:"required_give_roles,omitempty" toml:"required_give_roles" yaml:"required_give_roles,omitempty"`
+	RequiredReceiveRoles    types.Int64Array `boil:"required_receive_roles" json:"required_receive_roles,omitempty" toml:"required_receive_roles" yaml:"required_receive_roles,omitempty"`
+	BlacklistedGiveRoles    types.Int64Array `boil:"blacklisted_give_roles" json:"blacklisted_give_roles,omitempty" toml:"blacklisted_give_roles" yaml:"blacklisted_give_roles,omitempty"`
+	BlacklistedReceiveRoles types.Int64Array `boil:"blacklisted_receive_roles" json:"blacklisted_receive_roles,omitempty" toml:"blacklisted_receive_roles" yaml:"blacklisted_receive_roles,omitempty"`
+	AdminRoles              types.Int64Array `boil:"admin_roles" json:"admin_roles,omitempty" toml:"admin_roles" yaml:"admin_roles,omitempty"`
 
 	R *reputationConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L reputationConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ReputationConfigColumns = struct {
-	GuildID                string
-	PointsName             string
-	Enabled                string
-	Cooldown               string
-	MaxGiveAmount          string
-	RequiredGiveRole       string
-	RequiredReceiveRole    string
-	BlacklistedGiveRole    string
-	BlacklistedReceiveRole string
-	AdminRole              string
-	DisableThanksDetection string
-	MaxRemoveAmount        string
+	GuildID                 string
+	PointsName              string
+	Enabled                 string
+	Cooldown                string
+	MaxGiveAmount           string
+	RequiredGiveRole        string
+	RequiredReceiveRole     string
+	BlacklistedGiveRole     string
+	BlacklistedReceiveRole  string
+	AdminRole               string
+	DisableThanksDetection  string
+	MaxRemoveAmount         string
+	RequiredGiveRoles       string
+	RequiredReceiveRoles    string
+	BlacklistedGiveRoles    string
+	BlacklistedReceiveRoles string
+	AdminRoles              string
 }{
-	GuildID:                "guild_id",
-	PointsName:             "points_name",
-	Enabled:                "enabled",
-	Cooldown:               "cooldown",
-	MaxGiveAmount:          "max_give_amount",
-	RequiredGiveRole:       "required_give_role",
-	RequiredReceiveRole:    "required_receive_role",
-	BlacklistedGiveRole:    "blacklisted_give_role",
-	BlacklistedReceiveRole: "blacklisted_receive_role",
-	AdminRole:              "admin_role",
-	DisableThanksDetection: "disable_thanks_detection",
-	MaxRemoveAmount:        "max_remove_amount",
+	GuildID:                 "guild_id",
+	PointsName:              "points_name",
+	Enabled:                 "enabled",
+	Cooldown:                "cooldown",
+	MaxGiveAmount:           "max_give_amount",
+	RequiredGiveRole:        "required_give_role",
+	RequiredReceiveRole:     "required_receive_role",
+	BlacklistedGiveRole:     "blacklisted_give_role",
+	BlacklistedReceiveRole:  "blacklisted_receive_role",
+	AdminRole:               "admin_role",
+	DisableThanksDetection:  "disable_thanks_detection",
+	MaxRemoveAmount:         "max_remove_amount",
+	RequiredGiveRoles:       "required_give_roles",
+	RequiredReceiveRoles:    "required_receive_roles",
+	BlacklistedGiveRoles:    "blacklisted_give_roles",
+	BlacklistedReceiveRoles: "blacklisted_receive_roles",
+	AdminRoles:              "admin_roles",
 }
 
 // ReputationConfigRels is where relationship names are stored.
@@ -85,8 +101,8 @@ func (*reputationConfigR) NewStruct() *reputationConfigR {
 type reputationConfigL struct{}
 
 var (
-	reputationConfigColumns               = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "disable_thanks_detection", "max_remove_amount"}
-	reputationConfigColumnsWithoutDefault = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role"}
+	reputationConfigColumns               = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "disable_thanks_detection", "max_remove_amount", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles", "admin_roles"}
+	reputationConfigColumnsWithoutDefault = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles", "admin_roles"}
 	reputationConfigColumnsWithDefault    = []string{"disable_thanks_detection", "max_remove_amount"}
 	reputationConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
@@ -187,6 +203,7 @@ func (q reputationConfigQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q reputationConfigQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -378,6 +395,11 @@ func (o *ReputationConfig) Update(ctx context.Context, exec boil.ContextExecutor
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q reputationConfigQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

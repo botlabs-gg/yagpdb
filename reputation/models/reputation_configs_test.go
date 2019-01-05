@@ -427,7 +427,7 @@ func testReputationConfigsSelect(t *testing.T) {
 }
 
 var (
-	reputationConfigDBTypes = map[string]string{`AdminRole`: `character varying`, `BlacklistedGiveRole`: `character varying`, `BlacklistedReceiveRole`: `character varying`, `Cooldown`: `integer`, `DisableThanksDetection`: `boolean`, `Enabled`: `boolean`, `GuildID`: `bigint`, `MaxGiveAmount`: `bigint`, `MaxRemoveAmount`: `bigint`, `PointsName`: `character varying`, `RequiredGiveRole`: `character varying`, `RequiredReceiveRole`: `character varying`}
+	reputationConfigDBTypes = map[string]string{`AdminRole`: `character varying`, `AdminRoles`: `ARRAYbigint`, `BlacklistedGiveRole`: `character varying`, `BlacklistedGiveRoles`: `ARRAYbigint`, `BlacklistedReceiveRole`: `character varying`, `BlacklistedReceiveRoles`: `ARRAYbigint`, `Cooldown`: `integer`, `DisableThanksDetection`: `boolean`, `Enabled`: `boolean`, `GuildID`: `bigint`, `MaxGiveAmount`: `bigint`, `MaxRemoveAmount`: `bigint`, `PointsName`: `character varying`, `RequiredGiveRole`: `character varying`, `RequiredGiveRoles`: `ARRAYbigint`, `RequiredReceiveRole`: `character varying`, `RequiredReceiveRoles`: `ARRAYbigint`}
 	_                       = bytes.MinRead
 )
 

@@ -1263,3 +1263,54 @@ func (mj *MemberJoinTrigger) UserSettings() []*SettingDef {
 func (mj *MemberJoinTrigger) CheckJoin(ms *dstate.MemberState, data interface{}) (isAffected bool, err error) {
 	return true, nil
 }
+
+/////////////////////////////////////////////////////////////
+
+var _ MessageTrigger = (*MessageAttachmentTrigger)(nil)
+
+type MessageAttachmentTrigger struct {
+	RequiresAttachment bool
+}
+
+func (mat *MessageAttachmentTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (mat *MessageAttachmentTrigger) DataType() interface{} {
+	return nil
+}
+
+func (mat *MessageAttachmentTrigger) Name() string {
+	if mat.RequiresAttachment {
+		return "Message with attachments"
+	}
+
+	return "Message without attachments"
+}
+
+func (mat *MessageAttachmentTrigger) Description() string {
+	if mat.RequiresAttachment {
+		return "Triggers when a message contains an attachment"
+	}
+
+	return "Triggers when a message does not contain an attachment"
+}
+
+func (mat *MessageAttachmentTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (mat *MessageAttachmentTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+	contains := len(m.Attachments) > 0
+	if contains && mat.RequiresAttachment {
+		return true, nil
+	} else if !contains && !mat.RequiresAttachment {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (mat *MessageAttachmentTrigger) MergeDuplicates(data []interface{}) interface{} {
+	return data[0] // no point in having duplicates of this
+}

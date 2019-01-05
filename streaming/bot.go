@@ -387,7 +387,10 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 		return
 	}
 
-	common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
+	m, err := common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
+	if err == nil && ctx.DelResponse {
+		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.DelResponseDelay)
+	}
 }
 
 func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guild) {

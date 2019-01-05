@@ -177,6 +177,7 @@ func (q reputationLogQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q reputationLogQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -373,6 +374,11 @@ func (o *ReputationLog) Update(ctx context.Context, exec boil.ContextExecutor, c
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q reputationLogQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

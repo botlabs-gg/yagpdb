@@ -123,6 +123,7 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, 
     });
 
     req.open(method, url);
+	req.setRequestHeader('Cache-Control', 'no-cache');
     
     if (data) {
         req.setRequestHeader("content-type", "application/x-www-form-urlencoded");

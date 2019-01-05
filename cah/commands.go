@@ -103,14 +103,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	container := commands.CommandSystem.Root.Sub("cah")
-	container.NotFound = func(data *dcmd.Data) (interface{}, error) {
-		resp := dcmd.GenerateHelp(data, container, &dcmd.StdHelpFormatter{})
-		if len(resp) > 0 {
-			return resp[0], nil
-		}
-
-		return "Unknown CAH command", nil
-	}
+	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())

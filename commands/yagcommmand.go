@@ -297,7 +297,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 
 		cop := cState.Copy(true, false)
 
-		settings, err = yc.GetSettings(data, cState.ID, cop.ParentID, guild.ID)
+		settings, err = yc.GetSettings(data.ContainerChain, cState.ID, cop.ParentID, guild.ID)
 		if err != nil {
 			err = errors.WithMessage(err, "cs.GetSettings")
 			resp = "Bot is having isssues, contact the bot owner."
@@ -456,9 +456,30 @@ type CommandSettings struct {
 	IgnoreRoles   []int64
 }
 
-// GetSettings returns the settings from the command, generated from the servers channel and command overrides
-func (cs *YAGCommand) GetSettings(data *dcmd.Data, channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
+func GetOverridesForChannel(channelID, channelParentID, guildID int64) ([]*models.CommandsChannelsOverride, error) {
+	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
+	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", channelID, channelParentID, guildID), qm.Load("CommandsCommandOverrides")).AllG(context.Background())
+	if err != nil {
+		return nil, err
+	}
 
+	return channelOverrides, nil
+}
+
+// GetSettings returns the settings from the command, generated from the servers channel and command overrides
+func (cs *YAGCommand) GetSettings(containerChain []*dcmd.Container, channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
+
+	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
+	channelOverrides, err := GetOverridesForChannel(channelID, channelParentID, guildID)
+	if err != nil {
+		err = errors.WithMessage(err, "GetOverridesForChannel")
+		return
+	}
+
+	return cs.GetSettingsWithLoadedOverrides(containerChain, guildID, channelOverrides)
+}
+
+func (cs *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Container, guildID int64, channelOverrides []*models.CommandsChannelsOverride) (settings *CommandSettings, err error) {
 	settings = &CommandSettings{}
 
 	// Some commands have custom places to toggle their enabled status
@@ -474,13 +495,6 @@ func (cs *YAGCommand) GetSettings(data *dcmd.Data, channelID, channelParentID, g
 
 	if cs.HideFromCommandsPage {
 		settings.Enabled = true
-		return
-	}
-
-	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
-	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", channelID, channelParentID, guildID), qm.Load("CommandsCommandOverrides")).AllG(context.Background())
-	if err != nil {
-		err = errors.WithMessage(err, "query channel overrides")
 		return
 	}
 
@@ -502,8 +516,8 @@ func (cs *YAGCommand) GetSettings(data *dcmd.Data, channelID, channelParentID, g
 	}
 
 	cmdFullName := cs.Name
-	if len(data.ContainerChain) > 1 {
-		lastContainer := data.ContainerChain[len(data.ContainerChain)-1]
+	if len(containerChain) > 1 {
+		lastContainer := containerChain[len(containerChain)-1]
 		cmdFullName = lastContainer.Names[0] + " " + cmdFullName
 	}
 
@@ -535,7 +549,7 @@ func (cs *YAGCommand) fillSettings(cmdFullName string, override *models.Commands
 OUTER:
 	for _, cmdOverride := range override.R.CommandsCommandOverrides {
 		for _, cmd := range cmdOverride.Commands {
-			if cmd == cmdFullName {
+			if strings.EqualFold(cmd, cmdFullName) {
 				settings.Enabled = cmdOverride.CommandsEnabled
 
 				settings.IgnoreRoles = cmdOverride.IgnoreRoles

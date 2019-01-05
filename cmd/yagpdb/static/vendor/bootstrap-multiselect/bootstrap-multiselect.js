@@ -886,6 +886,11 @@
 
             var $li = $(this.options.templates.li);
             var $label = $('label', $li);
+
+            if($element.attr("data-color")){
+                $label.css("color", $element.attr("data-color"))
+            }
+
             $label.addClass(inputType);
             $label.attr("title", label);
             $li.addClass(classes);

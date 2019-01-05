@@ -428,8 +428,8 @@ func (c *Context) tmplDelResponse(args ...interface{}) string {
 	if len(args) > 0 {
 		dur = int(ToInt64(args[0]))
 	}
-	if dur > 60 {
-		dur = 60
+	if dur > 86400 {
+		dur = 86400
 	}
 
 	c.DelResponseDelay = dur
@@ -442,8 +442,8 @@ func (c *Context) tmplDelTrigger(args ...interface{}) string {
 	if len(args) > 0 {
 		dur = int(ToInt64(args[0]))
 	}
-	if dur > 60 {
-		dur = 60
+	if dur > 86400 {
+		dur = 86400
 	}
 
 	c.DelTriggerDelay = dur
@@ -464,11 +464,12 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 		dur = int(ToInt64(args[0]))
 	}
 
-	if dur > 60 {
-		dur = 60
+	if dur > 86400 {
+		dur = 86400
 	}
 
-	go common.DelayedMessageDelete(common.BotSession, time.Second*time.Duration(dur), cID, mID)
+	MaybeScheduledDeleteMessage(c.GS.ID, cID, mID, dur)
+
 	return ""
 }
 
