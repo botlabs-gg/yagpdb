@@ -36,6 +36,7 @@ type RoleMenu struct {
 	FixedAmount                bool       `boil:"fixed_amount" json:"fixed_amount" toml:"fixed_amount" yaml:"fixed_amount"`
 	SkipAmount                 int        `boil:"skip_amount" json:"skip_amount" toml:"skip_amount" yaml:"skip_amount"`
 	EditingOptionID            null.Int64 `boil:"editing_option_id" json:"editing_option_id,omitempty" toml:"editing_option_id" yaml:"editing_option_id,omitempty"`
+	SetupMSGID                 int64      `boil:"setup_msg_id" json:"setup_msg_id" toml:"setup_msg_id" yaml:"setup_msg_id"`
 
 	R *roleMenuR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L roleMenuL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -55,6 +56,7 @@ var RoleMenuColumns = struct {
 	FixedAmount                string
 	SkipAmount                 string
 	EditingOptionID            string
+	SetupMSGID                 string
 }{
 	MessageID:                  "message_id",
 	GuildID:                    "guild_id",
@@ -69,6 +71,7 @@ var RoleMenuColumns = struct {
 	FixedAmount:                "fixed_amount",
 	SkipAmount:                 "skip_amount",
 	EditingOptionID:            "editing_option_id",
+	SetupMSGID:                 "setup_msg_id",
 }
 
 // RoleMenuRels is where relationship names are stored.
@@ -101,9 +104,9 @@ func (*roleMenuR) NewStruct() *roleMenuR {
 type roleMenuL struct{}
 
 var (
-	roleMenuColumns               = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount", "editing_option_id"}
+	roleMenuColumns               = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount", "editing_option_id", "setup_msg_id"}
 	roleMenuColumnsWithoutDefault = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "editing_option_id"}
-	roleMenuColumnsWithDefault    = []string{"disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount"}
+	roleMenuColumnsWithDefault    = []string{"disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount", "setup_msg_id"}
 	roleMenuPrimaryKeyColumns     = []string{"message_id"}
 )
 
@@ -203,6 +206,7 @@ func (q roleMenuQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q roleMenuQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -294,7 +298,10 @@ func (roleMenuL) LoadNextRoleCommand(ctx context.Context, e boil.ContextExecutor
 		if object.R == nil {
 			object.R = &roleMenuR{}
 		}
-		args = append(args, object.NextRoleCommandID)
+		if !queries.IsNil(object.NextRoleCommandID) {
+			args = append(args, object.NextRoleCommandID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -308,7 +315,10 @@ func (roleMenuL) LoadNextRoleCommand(ctx context.Context, e boil.ContextExecutor
 				}
 			}
 
-			args = append(args, obj.NextRoleCommandID)
+			if !queries.IsNil(obj.NextRoleCommandID) {
+				args = append(args, obj.NextRoleCommandID)
+			}
+
 		}
 	}
 
@@ -381,7 +391,10 @@ func (roleMenuL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, sing
 		if object.R == nil {
 			object.R = &roleMenuR{}
 		}
-		args = append(args, object.RoleGroupID)
+		if !queries.IsNil(object.RoleGroupID) {
+			args = append(args, object.RoleGroupID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -395,7 +408,10 @@ func (roleMenuL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, sing
 				}
 			}
 
-			args = append(args, obj.RoleGroupID)
+			if !queries.IsNil(obj.RoleGroupID) {
+				args = append(args, obj.RoleGroupID)
+			}
+
 		}
 	}
 
@@ -468,7 +484,10 @@ func (roleMenuL) LoadEditingOption(ctx context.Context, e boil.ContextExecutor, 
 		if object.R == nil {
 			object.R = &roleMenuR{}
 		}
-		args = append(args, object.EditingOptionID)
+		if !queries.IsNil(object.EditingOptionID) {
+			args = append(args, object.EditingOptionID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -482,7 +501,10 @@ func (roleMenuL) LoadEditingOption(ctx context.Context, e boil.ContextExecutor, 
 				}
 			}
 
-			args = append(args, obj.EditingOptionID)
+			if !queries.IsNil(obj.EditingOptionID) {
+				args = append(args, obj.EditingOptionID)
+			}
+
 		}
 	}
 
@@ -1146,6 +1168,11 @@ func (o *RoleMenu) Update(ctx context.Context, exec boil.ContextExecutor, column
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q roleMenuQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

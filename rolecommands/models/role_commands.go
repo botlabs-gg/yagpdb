@@ -192,6 +192,7 @@ func (q roleCommandQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q roleCommandQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -276,7 +277,10 @@ func (roleCommandL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, s
 		if object.R == nil {
 			object.R = &roleCommandR{}
 		}
-		args = append(args, object.RoleGroupID)
+		if !queries.IsNil(object.RoleGroupID) {
+			args = append(args, object.RoleGroupID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -290,7 +294,10 @@ func (roleCommandL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, s
 				}
 			}
 
-			args = append(args, obj.RoleGroupID)
+			if !queries.IsNil(obj.RoleGroupID) {
+				args = append(args, obj.RoleGroupID)
+			}
+
 		}
 	}
 
@@ -1102,6 +1109,11 @@ func (o *RoleCommand) Update(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q roleCommandQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

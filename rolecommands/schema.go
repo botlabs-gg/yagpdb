@@ -47,6 +47,9 @@ ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS disable_send_dm BOOLEAN NOT NULL
 ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS remove_role_on_reaction_remove BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS fixed_amount BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS skip_amount INT NOT NULL DEFAULT 0;
+ALTER TABLE role_menus ADD COLUMN IF NOT EXISTS setup_msg_id BIGINT NOT NULL DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS role_menus_setup_msg_idx ON role_menus(setup_msg_id);
 
 CREATE TABLE IF NOT EXISTS role_menu_options (
 	id bigserial NOT NULL PRIMARY KEY,

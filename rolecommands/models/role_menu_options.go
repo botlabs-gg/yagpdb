@@ -179,6 +179,7 @@ func (q roleMenuOptionQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q roleMenuOptionQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -256,7 +257,10 @@ func (roleMenuOptionL) LoadRoleCommand(ctx context.Context, e boil.ContextExecut
 		if object.R == nil {
 			object.R = &roleMenuOptionR{}
 		}
-		args = append(args, object.RoleCommandID)
+		if !queries.IsNil(object.RoleCommandID) {
+			args = append(args, object.RoleCommandID)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -270,7 +274,10 @@ func (roleMenuOptionL) LoadRoleCommand(ctx context.Context, e boil.ContextExecut
 				}
 			}
 
-			args = append(args, obj.RoleCommandID)
+			if !queries.IsNil(obj.RoleCommandID) {
+				args = append(args, obj.RoleCommandID)
+			}
+
 		}
 	}
 
@@ -344,6 +351,7 @@ func (roleMenuOptionL) LoadRoleMenu(ctx context.Context, e boil.ContextExecutor,
 			object.R = &roleMenuOptionR{}
 		}
 		args = append(args, object.RoleMenuID)
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -358,6 +366,7 @@ func (roleMenuOptionL) LoadRoleMenu(ctx context.Context, e boil.ContextExecutor,
 			}
 
 			args = append(args, obj.RoleMenuID)
+
 		}
 	}
 
@@ -977,6 +986,11 @@ func (o *RoleMenuOption) Update(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q roleMenuOptionQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.
