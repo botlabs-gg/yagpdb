@@ -9,6 +9,8 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 )
 
@@ -124,9 +126,18 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 }
 
+type ScheduledMemberRoleRemoveData struct {
+	GuildID int64 `json:"guild_id"`
+	GroupID int64 `json:"group_id"`
+	UserID  int64 `json:"user_id"`
+	RoleID  int64 `json:"role_id"`
+}
+
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+
+	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
 }
 
 func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
@@ -243,4 +254,10 @@ func StringCommands(cmds []*models.RoleCommand) string {
 	}
 
 	return output + "```\n"
+}
+
+func handleRemoveMemberRole(evt *schEvtsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	dataCast := data.(*ScheduledMemberRoleRemoveData)
+	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
+	return scheduledevents2.CheckDiscordErrRetry(err), err
 }

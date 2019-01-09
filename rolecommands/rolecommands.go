@@ -11,6 +11,8 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/sirupsen/logrus"
@@ -239,7 +241,11 @@ func GroupToggleRole(ctx context.Context, ms *dstate.MemberState, targetRole *mo
 	// Default behaviour of groups is no more restrictions than reuiqred and ignore roles
 	if rg.Mode != GroupModeSingle {
 		// We already passed all checks
-		return ToggleRole(ms, targetRole.Role)
+		gaveRole, err = ToggleRole(ms, targetRole.Role)
+		if gaveRole && err == nil {
+			err = GroupMaybeScheduleRoleRemoval(ctx, ms, targetRole)
+		}
+		return gaveRole, err
 	}
 
 	// If user already has role it's attempting to give itself
@@ -261,7 +267,37 @@ func GroupToggleRole(ctx context.Context, ms *dstate.MemberState, targetRole *mo
 
 	// Finally give the role
 	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, targetRole.Role)
+	if err == nil {
+		err = GroupMaybeScheduleRoleRemoval(ctx, ms, targetRole)
+	}
 	return true, err
+}
+
+func GroupMaybeScheduleRoleRemoval(ctx context.Context, ms *dstate.MemberState, targetRole *models.RoleCommand) error {
+	temporaryDuration := targetRole.R.RoleGroup.TemporaryRoleDuration
+	if temporaryDuration == 0 {
+		return nil
+	}
+
+	// remove existing role removal events for this role
+	_, err := schEvtsModels.ScheduledEvents(qm.Where("event_name='remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ?", ms.Guild.ID, ms.ID, targetRole.Role)).DeleteAll(ctx, common.PQ)
+	if err != nil {
+		return err
+	}
+
+	// add the scheduled event for it
+	err = scheduledevents2.ScheduleEvent("remove_member_role", ms.Guild.ID, time.Now().Add(time.Duration(temporaryDuration)*time.Minute), &ScheduledMemberRoleRemoveData{
+		GuildID: ms.Guild.ID,
+		GroupID: targetRole.R.RoleGroup.ID,
+		UserID:  ms.ID,
+		RoleID:  targetRole.Role,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func CanAssignRoleCmdTo(r *models.RoleCommand, memberRoles []int64) error {

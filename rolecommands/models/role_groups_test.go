@@ -1083,7 +1083,7 @@ func testRoleGroupsSelect(t *testing.T) {
 }
 
 var (
-	roleGroupDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `Name`: `text`, `RequireRoles`: `ARRAYbigint`, `IgnoreRoles`: `ARRAYbigint`, `Mode`: `bigint`, `MultipleMax`: `bigint`, `MultipleMin`: `bigint`, `SingleAutoToggleOff`: `boolean`, `SingleRequireOne`: `boolean`}
+	roleGroupDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `Name`: `text`, `RequireRoles`: `ARRAYbigint`, `IgnoreRoles`: `ARRAYbigint`, `Mode`: `bigint`, `MultipleMax`: `bigint`, `MultipleMin`: `bigint`, `SingleAutoToggleOff`: `boolean`, `SingleRequireOne`: `boolean`, `TemporaryRoleDuration`: `integer`}
 	_                = bytes.MinRead
 )
 
