@@ -22,10 +22,13 @@ var (
 	RedirectURI        = os.Getenv("YAGPDB_REDDIT_REDIRECT")
 	RefreshToken       = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
 	UseDiscordSpoilers = os.Getenv("YAGPDB_REDDIT_USE_DISCORD_SPOILERS") != ""
+
+	ratelimiter = NewRatelimiter()
 )
 
 func (p *Plugin) StartFeed() {
 	go p.runBot()
+	go ratelimiter.RunGCLoop()
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
@@ -106,19 +109,23 @@ func (p *Plugin) handlePost(post *reddit.Link) error {
 		return err
 	}
 
-	// Get the channels that listens to this subreddit, if any
-
+	// Get the configs that listens to this subreddit, if any
 	filteredItems := make([]*SubredditWatchItem, 0, len(config))
 
 OUTER:
 	for _, c := range config {
+		// remove duplicates
 		for _, v := range filteredItems {
 			if v.Channel == c.Channel {
 				continue OUTER
 			}
 		}
 
-		filteredItems = append(filteredItems, c)
+		// apply ratelimiting
+		parsedGuildID, _ := strconv.ParseInt(c.Guild, 10, 64)
+		if ratelimiter.CheckIncrement(time.Now(), parsedGuildID, 1100) {
+			filteredItems = append(filteredItems, c)
+		}
 	}
 
 	// No channels nothing to do...
