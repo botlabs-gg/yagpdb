@@ -269,6 +269,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		defer func() {
 			inner.ServeHTTP(w, r)
 		}()
+
 		ctx := r.Context()
 		guildID, err := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 
