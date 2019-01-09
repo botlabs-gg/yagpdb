@@ -49,7 +49,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdViewRulesets := &commands.YAGCommand{
-		Name:                "rulesets",
+		Name:                "Rulesets",
 		Aliases:             []string{"r", "list", "l"},
 		CmdCategory:         commands.CategoryModeration,
 		Description:         "Lists all rulesets and their status",
@@ -81,7 +81,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdLogs := &commands.YAGCommand{
-		Name:        "logs",
+		Name:        "Logs",
 		Aliases:     []string{"log"},
 		CmdCategory: commands.CategoryModeration,
 		Description: "Shows the log of the last triggered automod rules, optionally filtering by user",
