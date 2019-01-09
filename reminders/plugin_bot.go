@@ -35,7 +35,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "Remindme",
 		Description:  "Schedules a reminder, example: 'remindme 1h30min are you alive still?'",
-		Aliases:      []string{"remind"},
+		Aliases:      []string{"remind", "reminder"},
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "Time", Type: &commands.DurationArg{}},
@@ -107,7 +107,7 @@ var cmds = []*commands.YAGCommand{
 	},
 	&commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
-		Name:         "Delreminder",
+		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
 		Description:  "Deletes a reminder.",
 		RequiredArgs: 1,
