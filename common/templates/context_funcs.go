@@ -473,6 +473,18 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	return ""
 }
 
+func (c *Context) tmplGetMessage(channel, msgID interface{}) *discordgo.Message {
+	cID := c.channelArg(channel)
+	if cID == 0 {
+		return nil
+	}
+
+	mID := ToInt64(msgID)
+
+	message, _ := common.BotSession.ChannelMessage(cID, mID)
+	return message
+}
+
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		for _, reaction := range args {
