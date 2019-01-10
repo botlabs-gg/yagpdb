@@ -145,7 +145,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	err = scheduledevents2.ScheduleEvent("reset_mentionable_role", data.GS.ID, time.Now().Add(time.Second*30), &EvtData{
+	err = scheduledevents2.ScheduleEvent("reset_mentionable_role", data.GS.ID, time.Now().Add(time.Second*10), &EvtData{
 		GuildID: data.GS.ID,
 		RoleID:  role.ID,
 	})
