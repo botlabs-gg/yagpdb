@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"context"
 	"database/sql"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -12,6 +13,8 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func (p *Plugin) AddCommands() {
@@ -259,5 +262,36 @@ func StringCommands(cmds []*models.RoleCommand) string {
 func handleRemoveMemberRole(evt *schEvtsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	dataCast := data.(*ScheduledMemberRoleRemoveData)
 	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	// remove the reaction
+	menus, err := models.RoleMenus(
+		qm.Where("role_group_id = ? AND guild_id =?", dataCast.GroupID, dataCast.GuildID),
+		qm.OrderBy("message_id desc"),
+		qm.Limit(10),
+		qm.Load("RoleMenuOptions.RoleCommand")).AllG(context.Background())
+	if err != nil {
+		return false, err
+	}
+
+OUTER:
+	for _, v := range menus {
+		for _, opt := range v.R.RoleMenuOptions {
+			if opt.R.RoleCommand.Role == dataCast.RoleID {
+				// remove it
+				emoji := opt.UnicodeEmoji
+				if opt.EmojiID != 0 {
+					emoji = "aaa:" + discordgo.StrID(opt.EmojiID)
+				}
+
+				err := common.BotSession.MessageReactionRemove(v.ChannelID, v.MessageID, emoji, dataCast.UserID)
+				common.LogIgnoreError(err, "rolecommands: failed removing reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
+				continue OUTER
+			}
+		}
+	}
+
 	return scheduledevents2.CheckDiscordErrRetry(err), err
 }
