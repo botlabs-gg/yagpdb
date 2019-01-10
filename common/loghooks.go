@@ -104,11 +104,12 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 
 	floored := int(math.Floor(float64(code) / 100))
 
-	since := strconv.Itoa(int(time.Since(started).Seconds() * 1000))
+	since := time.Since(started).Seconds() * 1000
 	go func() {
 		path := numberRemover.Replace(request.URL.Path)
 
-		Statsd.Incr("discord.num_requsts", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(floored), "path:" + request.Method + "-" + path, "lat:" + since}, 1)
+		Statsd.Incr("discord.num_requsts", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(floored), "path:" + request.Method + "-" + path}, 1)
+		Statsd.Gauge("discord.http_latency", since, nil, 1)
 		if code == 429 {
 			Statsd.Incr("discord.requests.429", []string{"method:" + request.Method, "path:" + request.Method + "-" + path}, 1)
 		}
