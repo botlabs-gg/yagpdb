@@ -234,6 +234,16 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		resp = fmt.Sprintf("%q command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err)
 	}
 
+	// send a alternative message in case of embeds in channels with no embeds perms
+	if cmdData.GS != nil {
+		switch resp.(type) {
+		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
+			if !bot.BotProbablyHasPermissionGS(true, cmdData.GS, cmdData.CS.ID, discordgo.PermissionEmbedLinks) {
+				resp = "This command returned an embed but the bot does not have embed links permissions in this channel, cannot send the response."
+			}
+		}
+	}
+
 	// Send the response
 	var replies []*discordgo.Message
 	if resp != nil {
