@@ -249,7 +249,7 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 	} else {
 		tmplCtx.Data["CmdArgs"] = []string{}
 	}
-	tmplCtx.Data["Message"] = m
+	tmplCtx.Data["Message"] = m.Message
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
