@@ -4,16 +4,25 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix"
+	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"os"
+	"strconv"
 	"unicode/utf8"
 )
 
 func (p *Plugin) InitWeb() {
+	if os.Getenv("YAGPDB_CC_DISABLE_REDIS_PQ_MIGRATION") == "" {
+		go migrateFromRedis()
+	}
+
 	tmplPathSettings := "templates/plugins/customcommands.html"
 	if common.Testing {
 		tmplPathSettings = "../../customcommands/assets/customcommands.html"
@@ -45,7 +54,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	_, ok := templateData["CustomCommands"]
 	if !ok {
-		commands, _, err := GetCommands(activeGuild.ID)
+		commands, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).AllG(r.Context())
 		if err != nil {
 			return templateData, err
 		}
@@ -62,26 +71,33 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
-	currentCommands, highest, err := GetCommands(activeGuild.ID)
+	currentCommands, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).AllG(ctx)
 	if err != nil {
 		return templateData, err
 	}
+
+	templateData["CustomCommands"] = currentCommands
 
 	if len(currentCommands) >= MaxCommandsForContext(ctx) {
 		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
 	}
 
-	templateData["CustomCommands"] = currentCommands
+	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
+	if err != nil {
+		return templateData, errors.Wrap(err, "error generating local id")
+	}
 
-	newCmd.TriggerType = TriggerTypeFromForm(newCmd.TriggerTypeForm)
-	newCmd.ID = highest + 1
+	dbModel := newCmd.ToDBModel()
+	dbModel.GuildID = activeGuild.ID
+	dbModel.LocalID = localID
+	dbModel.TriggerType = int(TriggerTypeFromForm(newCmd.TriggerTypeForm))
 
-	err = newCmd.Save(activeGuild.ID)
+	err = dbModel.InsertG(ctx, boil.Infer())
 	if err != nil {
 		return templateData, err
 	}
 
-	templateData["CustomCommands"] = append(currentCommands, newCmd)
+	templateData["CustomCommands"] = append(currentCommands, dbModel)
 	return templateData, nil
 }
 
@@ -92,16 +108,17 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
-	// Validate that they haven't messed with the id
-	var exists bool
-	common.RedisPool.Do(radix.FlatCmd(&exists, "HEXISTS", KeyCommands(activeGuild.ID), cmd.ID))
-	if !exists {
-		return templateData, web.NewPublicError("That command dosen't exist?")
-	}
+	// savedCmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, cmd.ID)).OneG(ctx)
+	// if err != nil {
+	// 	return templateData, err
+	// }
 
-	cmd.TriggerType = TriggerTypeFromForm(cmd.TriggerTypeForm)
+	dbModel := cmd.ToDBModel()
+	dbModel.GuildID = activeGuild.ID
+	dbModel.LocalID = cmd.ID
+	dbModel.TriggerType = int(TriggerTypeFromForm(cmd.TriggerTypeForm))
 
-	err := cmd.Save(activeGuild.ID)
+	_, err := dbModel.UpdateG(ctx, boil.Infer())
 
 	return templateData, err
 }
@@ -111,15 +128,18 @@ func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/customcommands/"
 
-	cmdIndex := pat.Param(r, "cmd")
+	cmdID, err := strconv.ParseInt(pat.Param(r, "cmd"), 10, 64)
+	if err != nil {
+		return templateData, err
+	}
 
-	err := common.RedisPool.Do(radix.Cmd(nil, "HDEL", KeyCommands(activeGuild.ID), cmdIndex))
+	_, err = models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, cmdID)).DeleteAll(ctx, common.PQ)
 	if err != nil {
 		return templateData, err
 	}
 
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Deleted command #"+cmdIndex)
+	go common.AddCPLogEntry(user, activeGuild.ID, "Deleted custom command #"+strconv.FormatInt(cmdID, 10))
 
 	return HandleCommands(w, r)
 }

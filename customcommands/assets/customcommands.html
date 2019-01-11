@@ -97,23 +97,23 @@
     {{$guild := .ActiveGuild.ID}}
     {{$g := .ActiveGuild}}
     {{range .CustomCommands}}
-    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form>
-        <button type="submit" class="hidden" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form-alertsonly></button>
+    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.LocalID}}/update" data-async-form>
+        <button type="submit" class="hidden" formaction="/manage/{{$guild}}/customcommands/{{.LocalID}}/update" data-async-form-alertsonly></button>
         
         <div class="card">
             <div class="card-header clearfix">
                 <div class="pull-right">
-                    <button type="submit" title="#{{.ID}} - {{.Trigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
+                    <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/{{.LocalID}}/delete">Delete</button>
                 </div>
                 <h2 class="card-title">
 
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.ID}}" aria-expanded="false" aria-controls="collapse_cmd{{.ID}}">
-                        #{{.ID}} - {{.Trigger}}
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}">
+                        #{{.LocalID}} - {{.TextTrigger}}
                     </a>
                 </h2>
             </div>
-            <div id="collapse_cmd{{.ID}}" class="collapse">
-                <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
+            <div id="collapse_cmd{{.LocalID}}" class="collapse">
+                <input type="text" class="hidden form-control" name="id" value="{{.LocalID}}">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-sm-4">
@@ -131,10 +131,10 @@
                         <div class="col-sm-8">
                             <div class="form-group">
                                 <label for="trigger">Trigger</label>
-                                <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.Trigger}}">
+                                <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.TextTrigger}}">
                                 <div class="checkbox">
                                     <label>
-                                        <input type="checkbox" name="case_sensitive" {{if .CaseSensitive}} checked{{end}}> Case sensitive
+                                        <input type="checkbox" name="case_sensitive" {{if .TextTriggerCaseSensitive}} checked{{end}}> Case sensitive
                                     </label>
                                 </div>
                             </div>
@@ -163,40 +163,40 @@
                         <div class="col-sm-6">
                             <div class="radio">
                               <label>
-                                <input type="radio" name="require_roles" value="on" {{if .RequireRoles}}checked{{end}}>
+                                <input type="radio" name="require_roles" value="on" {{if .RolesWhitelistMode}}checked{{end}}>
                                 Require at least one of the roles in the following lists
                               </label>
                             </div>
                             <div class="radio">
                               <label>
-                                <input type="radio" name="require_roles" value="" {{if not .RequireRoles}}checked{{end}}>
+                                <input type="radio" name="require_roles" value="" {{if not .RolesWhitelistMode}}checked{{end}}>
                                 Ignore the roles in the following list
                               </label>
                             </div>
-                            <label for="new-command-roles">Roles</label><br>
-                            <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                            <label for="command-roles-{{.LocalID}}">Roles</label><br>
+                            <select name="roles" class="multiselect form-control" multiple="multiple" id="command-roles-{{.LocalID}}" data-plugin-multiselect>
                                 {{roleOptionsMulti $g.Roles nil .Roles}}
                             </select>
                         </div>
                         <div class="col-sm-6">
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="require_channels" value="on" {{if .RequireChannels}}checked{{end}}>
+                                    <input type="radio" name="require_channels" value="on" {{if .ChannelsWhitelistMode}}checked{{end}}>
                                     Only run in the following channels
                                     </label>
                                 </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="require_channels" value="" {{if not .RequireChannels}}checked{{end}}>
+                                    <input type="radio" name="require_channels" value="" {{if not .ChannelsWhitelistMode}}checked{{end}}>
                                     Ignore the channels in the following list
                                 </label>
                             </div>
-                            <label for="new-command-roles">Channels</label><br>
-                            <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                            <label for="command-channels-{{.LocalID}}">Channels</label><br>
+                            <select name="channels" class="multiselect form-control" multiple="multiple" id="command-channels-{{.LocalID}}" data-plugin-multiselect>
                                 {{textChannelOptionsMulti $g.Channels .Channels}}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                        <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/{{.LocalID}}/update" data-async-form-alertsonly>Save</button>
                     </div>
                 </div>
             </div>

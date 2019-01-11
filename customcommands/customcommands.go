@@ -1,11 +1,14 @@
 package customcommands
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"context"
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix"
@@ -22,6 +25,12 @@ func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.S
 type Plugin struct{}
 
 func RegisterPlugin() {
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		log.WithError(err).Error("failed initializing custom commands schema, not enabling")
+		return
+	}
+
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
 	RegexCache = ccache.New(ccache.Configure())
@@ -63,7 +72,7 @@ type CustomCommand struct {
 	Response      string   `json:"response,omitempty" schema:"response" valid:",3000"`
 	Responses     []string `json:"responses" schema:"responses" valid:",3000"`
 	CaseSensitive bool     `json:"case_sensitive" schema:"case_sensitive"`
-	ID            int      `json:"id"`
+	ID            int64    `json:"id"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -74,20 +83,30 @@ type CustomCommand struct {
 	Roles        []int64 `json:"roles" schema:"roles"`
 }
 
-func (cc *CustomCommand) Save(guildID int64) error {
-	serialized, err := json.Marshal(cc.Migrate())
-	if err != nil {
-		return err
+func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
+	pqCommand := &models.CustomCommand{
+		TriggerType:              int(cc.TriggerType),
+		TextTrigger:              cc.Trigger,
+		TextTriggerCaseSensitive: cc.CaseSensitive,
+
+		Channels:              cc.Channels,
+		ChannelsWhitelistMode: cc.RequireChannels,
+		Roles:                 cc.Roles,
+		RolesWhitelistMode:    cc.RequireRoles,
+
+		TimeTriggerExcludingDays:  []int64{},
+		TimeTriggerExcludingHours: []int64{},
+
+		Responses: cc.Responses,
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", KeyCommands(guildID), cc.ID, serialized))
-	return err
+	return pqCommand
 }
 
-func (cc *CustomCommand) RunsInChannel(channel int64) bool {
+func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
 	for _, v := range cc.Channels {
 		if v == channel {
-			if cc.RequireChannels {
+			if cc.ChannelsWhitelistMode {
 				return true
 			}
 
@@ -97,7 +116,7 @@ func (cc *CustomCommand) RunsInChannel(channel int64) bool {
 	}
 
 	// Not found
-	if cc.RequireChannels {
+	if cc.ChannelsWhitelistMode {
 		return false
 	}
 
@@ -105,11 +124,11 @@ func (cc *CustomCommand) RunsInChannel(channel int64) bool {
 	return true
 }
 
-func (cc *CustomCommand) RunsForUser(ms *dstate.MemberState) bool {
+func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
 
 	if len(cc.Roles) == 0 {
 		// Fast path
-		if cc.RequireRoles {
+		if cc.RolesWhitelistMode {
 			return false
 		}
 
@@ -118,7 +137,7 @@ func (cc *CustomCommand) RunsForUser(ms *dstate.MemberState) bool {
 
 	for _, v := range cc.Roles {
 		if common.ContainsInt64Slice(ms.Roles, v) {
-			if cc.RequireRoles {
+			if cc.RolesWhitelistMode {
 				return true
 			}
 
@@ -127,7 +146,7 @@ func (cc *CustomCommand) RunsForUser(ms *dstate.MemberState) bool {
 	}
 
 	// Not found
-	if cc.RequireRoles {
+	if cc.RolesWhitelistMode {
 		return false
 	}
 
@@ -145,7 +164,7 @@ func (cc *CustomCommand) Migrate() *CustomCommand {
 	return cc
 }
 
-func GetCommands(guild int64) ([]*CustomCommand, int, error) {
+func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 	var hashMap map[string]string
 
 	err := common.RedisPool.Do(radix.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
@@ -153,7 +172,7 @@ func GetCommands(guild int64) ([]*CustomCommand, int, error) {
 		return nil, 0, err
 	}
 
-	highest := 0
+	highest := int64(0)
 	result := make([]*CustomCommand, len(hashMap))
 
 	// Decode the commands, and also calculate the highest id
