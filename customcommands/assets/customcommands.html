@@ -6,12 +6,88 @@
 
 {{template "cp_alerts" .}}
 
+<div class="row">
+    <div class="col">
+        <!-- Nav tabs -->
+        <div class="tabs">
+            <ul class="nav nav-tabs">
+                <li class="nav-item {{if and (not .CurrentCommandGroup)}}active{{end}}">
+                    <a data-partial-load="true" class="nav-link show {{if not .CurrentCommandGroup}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/customcommands/">Ungrouped</a>
+                </li>
+                {{$dot := .}}
+                {{range .CommandGroups}}
+                <li class="nav-item {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}">
+                    <a data-partial-load="true" class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}" href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}</a>
+                </li>
+                {{end}}
+                <li class="nav-item">
+                    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/creategroup" data-async-form>
+                        <input type="text" class="hidden" name="Name" value="Unnamed group">
+                        <input clasS="nav-link show" type="submit" value="+"></input>
+                    </form>
+                </li>
+            </ul>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div class="tab-pane active">
+                    {{if not .CurrentCommandGroup}}<p>Create a new group to put white-list/blacklist roles/channels on multiple commands at the same time, as well as keeping things organized</p>{{else}}
+                    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update" data-async-form>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Name </label>
+                                    <input type="text" class="form-control" value="{{.CurrentCommandGroup.Name}}" name="Name" />
+                                </div>
+                                <div class="form-group">
+                                    <label>White-list roles for who can use these commands</label><br>
+                                    <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple" id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
+                                        {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Blacklisted roles</label><br>
+                                    <select name="BlacklistRoles" class="multiselect form-control" multiple="multiple" id="blacklisted-roles-give" data-plugin-multiselect>
+                                        {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.IgnoreRoles}}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-success">Save group settings</button>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Channels these commands can be used in (empty for all)</label><br>
+                                    <select multiple="multiple" class="form-control" data-plugin-multiselect name="WhitelistChannels" data-placeholder="Everywhere" >
+                                        {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.WhitelistChannels }}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Channels blacklisted</label><br>
+                                    <select multiple="multiple" class="form-control" data-plugin-multiselect name="BlacklistChannels">
+                                        {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}
+                                    </select>
+                                </div>  
+                                <div class="form-group">
+                                    <button type="submit" title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}}" class="btn btn-danger" formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete group (commands will become un-grouped)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <section class="card">
     <header class="card-header">
-        Create new custom command
+        Create new custom command{{if.CurrentCommandGroup}} in {{.CurrentCommandGroup.Name}}{{end}}
     </header>
     <div class="card-body">
-        <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands" data-async-form>
+        <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/createcommand" data-async-form>
+            {{if .CurrentCommandGroup}}<input type="text" class="hidden" value="{{.CurrentCommandGroup.ID}}" name="GroupID">{{end}}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="form-group">
@@ -93,17 +169,19 @@
         </form>
     </div>
 </section>
+
 <div class="accordion accordion-primary" id="accordion" role="tablist">
     {{$guild := .ActiveGuild.ID}}
     {{$g := .ActiveGuild}}
+    {{$dot := .}}
     {{range .CustomCommands}}
-    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.LocalID}}/update" data-async-form>
-        <button type="submit" class="hidden" formaction="/manage/{{$guild}}/customcommands/{{.LocalID}}/update" data-async-form-alertsonly></button>
+    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
+        <button type="submit" class="hidden" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form-alertsonly></button>
         
         <div class="card">
             <div class="card-header clearfix">
                 <div class="pull-right">
-                    <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/{{.LocalID}}/delete">Delete</button>
+                    <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete">Delete</button>
                 </div>
                 <h2 class="card-title">
 
@@ -137,6 +215,19 @@
                                         <input type="checkbox" name="case_sensitive" {{if .TextTriggerCaseSensitive}} checked{{end}}> Case sensitive
                                     </label>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Custom command group</label>
+                                {{$selectedGroup := .GroupID.Int64}}
+                                <select Name="GroupID" class="form-control">
+                                    <option {{if eq $selectedGroup 0}}selected{{end}} value="0">None</option>
+                                    {{range $dot.CommandGroups}}<option value="{{.ID}}" {{if eq $selectedGroup .ID}}selected{{end}}>{{.Name}}</option>
+                                    {{end}}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -196,7 +287,7 @@
                                 {{textChannelOptionsMulti $g.Channels .Channels}}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/{{.LocalID}}/update" data-async-form-alertsonly>Save</button>
+                        <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form-alertsonly>Save</button>
                     </div>
                 </div>
             </div>

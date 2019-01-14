@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	log "github.com/sirupsen/logrus"
+	"goji.io/pattern"
 	"net/http"
 	"net/url"
 	"strings"
@@ -239,4 +240,13 @@ func IsRequestPartial(ctx context.Context) bool {
 
 func ContextUser(ctx context.Context) *discordgo.User {
 	return ctx.Value(common.ContextKeyUser).(*discordgo.User)
+}
+
+func ParamOrEmpty(r *http.Request, key string) string {
+	s := r.Context().Value(pattern.Variable(key))
+	if s != nil {
+		return s.(string)
+	}
+
+	return ""
 }

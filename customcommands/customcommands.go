@@ -13,6 +13,7 @@ import (
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 	"sort"
 )
 
@@ -81,6 +82,8 @@ type CustomCommand struct {
 	// If set, then one of the following channels are required, otherwise they are ignored
 	RequireRoles bool    `json:"require_roles" schema:"require_roles"`
 	Roles        []int64 `json:"roles" schema:"roles"`
+
+	GroupID int64
 }
 
 func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
@@ -100,10 +103,28 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		Responses: cc.Responses,
 	}
 
+	if cc.GroupID != 0 {
+		pqCommand.GroupID = null.Int64From(cc.GroupID)
+	}
+
 	return pqCommand
 }
 
 func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
+	if cc.GroupID.Valid {
+		// check group restrictions
+		if common.ContainsInt64Slice(cc.R.Group.IgnoreChannels, channel) {
+			return false
+		}
+
+		if len(cc.R.Group.WhitelistChannels) > 0 {
+			if !common.ContainsInt64Slice(cc.R.Group.WhitelistChannels, channel) {
+				return false
+			}
+		}
+	}
+
+	// check command specifc restrictions
 	for _, v := range cc.Channels {
 		if v == channel {
 			if cc.ChannelsWhitelistMode {
@@ -125,7 +146,18 @@ func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
 }
 
 func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
+	if cc.GroupID.Valid {
+		// check group restrictions
+		if common.ContainsInt64SliceOneOf(cc.R.Group.IgnoreRoles, ms.Roles) {
+			return false
+		}
 
+		if len(cc.R.Group.WhitelistRoles) > 0 && !common.ContainsInt64SliceOneOf(cc.R.Group.WhitelistRoles, ms.Roles) {
+			return false
+		}
+	}
+
+	// check command specific restrictions
 	if len(cc.Roles) == 0 {
 		// Fast path
 		if cc.RolesWhitelistMode {
@@ -237,6 +269,7 @@ const (
 	MaxCommands        = 100
 	MaxCommandsPremium = 250
 	MaxUserMessages    = 20
+	MaxGroups          = 50
 )
 
 func MaxCommandsForContext(ctx context.Context) int {

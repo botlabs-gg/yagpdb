@@ -137,7 +137,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	cmds, err := models.CustomCommands(qm.Where("guild_id = ?", mc.GuildID)).AllG(evt.Context())
+	cmds, err := models.CustomCommands(qm.Where("guild_id = ?", mc.GuildID), qm.Load("Group")).AllG(evt.Context())
 	if err != nil {
 		log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
 		return
