@@ -251,7 +251,7 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 		return false
 	}
 
-	ts := bot.GetMember(cs.Guild.ID, targetID)
+	ts := bot.GetMember(c.GS.ID, targetID)
 
 	role := ToInt64(roleID)
 	if role == 0 {
@@ -275,7 +275,7 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 		return false
 	}
 
-	ts := bot.GetMember(cs.Guild.ID, targetID)
+	ts := bot.GetMember(c.GS.ID, targetID)
 	
 	c.GS.RLock()
 
