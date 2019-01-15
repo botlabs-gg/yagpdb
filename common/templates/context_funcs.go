@@ -241,6 +241,62 @@ func targetUserID(input interface{}) int64 {
 	}
 }
 
+func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
+	if c.IncreaseCheckCallCounter("has_role", 200) {
+		return false
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false
+	}
+
+	ts := bot.GetMember(cs.Guild.ID, targetID)
+
+	role := ToInt64(roleID)
+	if role == 0 {
+		return false
+	}
+
+	c.GS.RLock()
+	contains := common.ContainsInt64Slice(ts.Roles, role)
+	c.GS.RUnlock()
+	return contains
+
+}
+
+func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
+	if c.IncreaseCheckCallCounter("has_role", 200) {
+		return false
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false
+	}
+
+	ts := bot.GetMember(cs.Guild.ID, targetID)
+	
+	c.GS.RLock()
+
+	for _, r := range c.GS.Guild.Roles {
+		if strings.EqualFold(r.Name, name) {
+			if common.ContainsInt64Slice(ts.Roles, r.ID) {
+				c.GS.RUnlock()
+				return true
+			}
+
+			c.GS.RUnlock()
+			return false
+		}
+	}
+
+	c.GS.RUnlock()
+	return false
+
+}
+
+
 func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
 	if c.IncreaseCheckCallCounter("add_role", 10) {
 		return ""
