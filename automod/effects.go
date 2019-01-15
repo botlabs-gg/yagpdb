@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"time"
 )
 
@@ -424,4 +425,47 @@ func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interfac
 
 func (sn *SetNicknameEffect) MergeDuplicates(data []interface{}) interface{} {
 	return data[0]
+}
+
+/////////////////////////////////////////////////////////////
+
+type ResetViolationsEffect struct{}
+
+type ResetViolationsEffectData struct {
+	Name string `valid:",0,50,trimspace"`
+}
+
+func (rv *ResetViolationsEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (rv *ResetViolationsEffect) DataType() interface{} {
+	return &ResetViolationsEffectData{}
+}
+
+func (rv *ResetViolationsEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Name",
+			Key:     "Name",
+			Default: "name",
+			Min:     0,
+			Max:     50,
+			Kind:    SettingTypeString,
+		},
+	}
+}
+
+func (rv *ResetViolationsEffect) Name() (name string) {
+	return "Reset violations"
+}
+
+func (rv *ResetViolationsEffect) Description() (description string) {
+	return "Resets the violations of a user"
+}
+
+func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*ResetViolationsEffectData)
+	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
+	return err
 }

@@ -69,6 +69,7 @@ var RulePartMap = map[int]RulePart{
 	304: &MuteUserEffect{},
 	305: &WarnUserEffect{},
 	306: &SetNicknameEffect{},
+	307: &ResetViolationsEffect{},
 }
 
 var InverseRulePartMap = make(map[RulePart]int)
