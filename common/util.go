@@ -22,7 +22,7 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
+var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
 
 type WrappedGuild struct {
 	*discordgo.UserGuild

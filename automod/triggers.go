@@ -121,7 +121,7 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
+var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
 
 func (alc *AnyLinkTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, stripped string, data interface{}) (bool, error) {
 	if LinkRegex.MatchString(m.Content) {
@@ -286,6 +286,10 @@ func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 }
 
 func (dt *DomainTrigger) containsDomain(link string, list []string) (bool, string) {
+	if !strings.HasPrefix(link, "http://") || !strings.HasPrefix(link, "http://") {
+		link = "http://" + link
+	}
+
 	parsed, err := url.ParseRequestURI(link)
 	if err != nil {
 		logrus.WithError(err).WithField("url", link).Error("Failed parsing request url matched with regex")

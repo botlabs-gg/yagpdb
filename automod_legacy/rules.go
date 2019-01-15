@@ -256,7 +256,7 @@ type LinksRule struct {
 	BaseRule `valid:"traverse"`
 }
 
-var LinkRegex = regexp.MustCompile(`((https?|steam):\/\/[^\s<]+[^<.,:;"')\]\s])`)
+var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
 
 func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
 
@@ -378,6 +378,11 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	matches := LinkRegex.FindAllString(message, -1)
 
 	for _, v := range matches {
+
+		if !strings.HasPrefix(v, "http://") || !strings.HasPrefix(v, "http://") {
+			v = "http://" + v
+		}
+
 		parsed, err := url.ParseRequestURI(v)
 		if err != nil {
 			logrus.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
