@@ -98,7 +98,7 @@ func (c *Context) channelArg(v interface{}) int64 {
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
 	return func(channel interface{}, msg interface{}) interface{} {
 
-		if c.IncreaseCheckCallCounter("send_message", 3) {
+		if c.IncreaseCheckCallCounter("send_message", 4) {
 			return ""
 		}
 
