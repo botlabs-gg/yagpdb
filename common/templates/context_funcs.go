@@ -242,7 +242,6 @@ func targetUserID(input interface{}) int64 {
 	}
 }
 
-/*
 func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
 	if c.IncreaseCheckCallCounter("has_role", 200) {
 		return false
@@ -253,7 +252,10 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 		return false
 	}
 
-	ts := bot.GetMember(c.GS.ID, targetID)
+	ts, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false
+	}
 
 	role := ToInt64(roleID)
 	if role == 0 {
@@ -277,7 +279,10 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 		return false
 	}
 
-	ts := bot.GetMember(c.GS.ID, targetID)
+	ts, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false
+	}
 
 	c.GS.RLock()
 
@@ -297,7 +302,6 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 	return false
 
 }
-*/
 
 func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
 	if c.IncreaseCheckCallCounter("add_role", 10) {
