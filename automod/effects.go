@@ -46,7 +46,12 @@ func (del *DeleteMessageEffect) Apply(ctxData *TriggeredRuleData, settings inter
 		return nil // no message to delete
 	}
 
-	go bot.MessageDeleteQueue.DeleteMessages(ctxData.Message.ChannelID, ctxData.Message.ID)
+	go func(cID int64, messages []int64) {
+		// deleting messages too fast can sometimes make them still show in the discord client even after deleted
+		time.Sleep(500 * time.Millisecond)
+		bot.MessageDeleteQueue.DeleteMessages(cID, messages...)
+	}(ctxData.Message.ChannelID, []int64{ctxData.Message.ID})
+
 	return nil
 }
 
