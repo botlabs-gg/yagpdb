@@ -2,7 +2,6 @@ package customcommands
 
 import (
 	"fmt"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
@@ -59,9 +58,9 @@ func (p *Plugin) InitWeb() {
 	newCommandHandler := web.ControllerPostHandler(HandleNewCommand, getHandler, CustomCommand{}, "Created a new custom command")
 	subMux.Handle(pat.Post("/createcommand"), newCommandHandler)
 	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
-	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerHandler(HandleDeleteCommand, "cp_custom_commands"))
+	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(HandleDeleteCommand, getHandler, nil, "Deleted a custom command"))
 
-	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(HandleNewGroup, nil, GroupForm{}, "Created a new custom command group"))
+	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(HandleNewGroup, getHandler, GroupForm{}, "Created a new custom command group"))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(HandleUpdateGroup, getGroupHandler, GroupForm{}, "Updated a custom command group"))
 	subMux.Handle(pat.Post("/groups/:group/delete"), web.ControllerPostHandler(HandleDeleteGroup, getHandler, nil, "Deleted a custom command group"))
 }
@@ -123,14 +122,12 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 
-	currentCommands, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).AllG(ctx)
+	c, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
 	if err != nil {
 		return templateData, err
 	}
 
-	templateData["CustomCommands"] = currentCommands
-
-	if len(currentCommands) >= MaxCommandsForContext(ctx) {
+	if int(c) >= MaxCommandsForContext(ctx) {
 		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
 	}
 
@@ -163,7 +160,6 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, err
 	}
 
-	templateData["CustomCommands"] = append(currentCommands, dbModel)
 	return templateData, nil
 }
 
@@ -206,15 +202,22 @@ func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData, err
 	}
 
-	_, err = models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, cmdID)).DeleteAll(ctx, common.PQ)
+	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, cmdID)).OneG(ctx)
 	if err != nil {
 		return templateData, err
 	}
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Deleted custom command #"+strconv.FormatInt(cmdID, 10))
+	groupID := cmd.GroupID.Int64
+	if groupID != 0 {
+		templateData["CurrentGroupID"] = groupID
+	}
 
-	return HandleCommands(w, r)
+	_, err = cmd.DeleteG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	return templateData, err
 }
 
 func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
