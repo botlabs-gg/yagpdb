@@ -81,9 +81,11 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, 
 	var req = new XMLHttpRequest();
     req.addEventListener("load", function(){
     	currentlyLoading = false;
-		if (this.status != 200) {
+		if (this.status !== 200 && this.status !== 400) {
 	    	window.location.href = '/';
 	    	return;
+		}else if(this.status === 400){
+			alertsOnly = true;
 		}
 
 		if (updateHistory) {	
@@ -464,10 +466,7 @@ function initializeMultiselect(selectorPrefix){
 	// $(selectorPrefix+".multiselect").multiselect();
 }
 
-function formSubmissionEvents(){
-	// Form submission fuckery
-	$(document).on("submit", "form", submitform);
-	
+function formSubmissionEvents(){	
 	// forms.each(function(i, elem){
 	// 	elem.onsubmit = submitform;
 	// })
@@ -497,19 +496,6 @@ function formSubmissionEvents(){
 
 	$(document).on("click", ".btn-danger", dangerButtonClick);
 	$(document).on("click", ".delete-button", dangerButtonClick);
-
-	
-
-	function submitform(evt){
-		for(var i = 0; i < evt.target.elements.length; i++){
-			var control = evt.target.elements[i];
-			if (control.type === "submit") {
-				$(control).addClass("disabled").attr("disabled");
-				// var endless = getRandomInt(0, possibilities.length-1)
-				// $(control).text(possibilities[endless]);
-			}						
-		}
-	}
 
 	function getRandomInt(min, max) {
 		min = Math.ceil(min);
