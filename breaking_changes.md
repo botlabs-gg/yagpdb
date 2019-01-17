@@ -1,5 +1,9 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**17th january 2019**
+
+ - Custom commands are now stored in postgres, a migration from the old system is automtically started on the web server and can be disabled by setting YAGPDB_CC_DISABLE_REDIS_PQ_MIGRATION to anything but empty, this auto-migration will likely be removed in 2 or 3 versions (changing from opt-out to opt-in or complete removal)
+
 **25th november 2018 (1.11.3)**
 
  - To use external https through a reverse proxy, e.g public facing https while yagpdb itself listens on http, set use the command line flag `-exthttps` on the webserver.
