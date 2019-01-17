@@ -72,8 +72,8 @@ type CustomCommand struct {
 	TriggerTypeForm string             `json:"-" schema:"type"`
 	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,1000"`
 	// TODO: Retire the legacy Response field.
-	Response      string   `json:"response,omitempty" schema:"response" valid:",3000"`
-	Responses     []string `json:"responses" schema:"responses" valid:",3000"`
+	Response      string   `json:"response,omitempty" schema:"response" valid:"template,5000"`
+	Responses     []string `json:"responses" schema:"responses" valid:"template,5000"`
 	CaseSensitive bool     `json:"case_sensitive" schema:"case_sensitive"`
 	ID            int64    `json:"id"`
 
