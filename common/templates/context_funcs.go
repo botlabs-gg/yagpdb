@@ -3,13 +3,14 @@ package templates
 import (
 	"errors"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
 )
 
 var ErrTooManyCalls = errors.New("Too many calls to this function")
@@ -239,6 +240,67 @@ func targetUserID(input interface{}) int64 {
 	default:
 		return ToInt64(input)
 	}
+}
+
+func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
+	if c.IncreaseCheckCallCounter("has_role", 200) {
+		return false
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false
+	}
+
+	ts, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false
+	}
+
+	role := ToInt64(roleID)
+	if role == 0 {
+		return false
+	}
+
+	
+	contains := common.ContainsInt64Slice(ts.Roles, role)
+	
+	return contains
+
+}
+
+func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
+	if c.IncreaseCheckCallCounter("has_role", 200) {
+		return false
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false
+	}
+
+	ts, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false
+	}
+
+	c.GS.RLock()
+
+	for _, r := range c.GS.Guild.Roles {
+		if strings.EqualFold(r.Name, name) {
+			if common.ContainsInt64Slice(ts.Roles, r.ID) {
+				c.GS.RUnlock()
+				return true
+			}
+
+			c.GS.RUnlock()
+			return false
+		}
+	}
+
+	c.GS.RUnlock()
+	return false
+
 }
 
 func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
