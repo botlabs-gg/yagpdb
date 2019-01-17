@@ -139,6 +139,19 @@ func (c *Context) setupBaseData() {
 	}
 }
 
+func (c *Context) Parse(source string) (*template.Template, error) {
+	tmpl := template.New("")
+	tmpl.Funcs(StandardFuncMap)
+	tmpl.Funcs(c.ContextFuncs)
+
+	parsed, err := tmpl.Parse(source)
+	if err != nil {
+		return nil, err
+	}
+
+	return parsed, nil
+}
+
 func (c *Context) Execute(source string) (string, error) {
 	if c.Msg == nil {
 		// Construct a fake message
@@ -163,11 +176,7 @@ func (c *Context) Execute(source string) (string, error) {
 		c.GS.RUnlock()
 	}
 
-	tmpl := template.New("")
-	tmpl.Funcs(StandardFuncMap)
-	tmpl.Funcs(c.ContextFuncs)
-
-	parsed, err := tmpl.Parse(source)
+	parsed, err := c.Parse(source)
 	if err != nil {
 		return "", errors.WithMessage(err, "Failed parsing template")
 	}
