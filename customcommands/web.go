@@ -3,6 +3,7 @@ package customcommands
 import (
 	"fmt"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
@@ -160,6 +161,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, err
 	}
 
+	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, nil
 }
 
@@ -190,6 +192,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	templateData["CurrentGroupID"] = dbModel.GroupID.Int64
 
+	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }
 
@@ -217,6 +220,7 @@ func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData, err
 	}
 
+	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }
 
@@ -247,6 +251,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	templateData["CurrentGroupID"] = dbModel.ID
 
+	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, nil
 }
 
@@ -269,6 +274,8 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	model.Name = groupForm.Name
 
 	_, err = model.UpdateG(ctx, boil.Infer())
+
+	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }
 
@@ -286,6 +293,7 @@ func HandleDeleteGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		return templateData, err
 	}
 
+	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }
 

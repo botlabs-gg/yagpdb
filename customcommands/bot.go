@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -9,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	log "github.com/sirupsen/logrus"
@@ -29,6 +31,16 @@ func (p *Plugin) AddCommands() {
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+
+	// add the pubsub handler for cache eviction
+	pubsub.AddHandler("custom_commands_clear_cache", func(event *pubsub.Event) {
+		gs := bot.State.Guild(true, event.TargetGuildInt)
+		if gs == nil {
+			return
+		}
+
+		gs.UserCacheDel(true, CacheKeyCommands)
+	}, nil)
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -137,7 +149,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	cmds, err := models.CustomCommands(qm.Where("guild_id = ?", mc.GuildID), qm.Load("Group")).AllG(evt.Context())
+	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, evt.Context())
 	if err != nil {
 		log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
 		return
@@ -328,4 +340,22 @@ func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (mat
 	stripped = msg[idx[1]:]
 	match = true
 	return
+}
+
+type CacheKey int
+
+const (
+	CacheKeyCommands CacheKey = iota
+)
+
+func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
+	v, err := gs.UserCacheFetch(true, CacheKeyCommands, func() (interface{}, error) {
+		return models.CustomCommands(qm.Where("guild_id = ?", gs.Guild.ID), qm.Load("Group")).AllG(ctx)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(models.CustomCommandSlice), nil
 }
