@@ -22,6 +22,8 @@ package web
 //    - Makes sure the role is part of the guild
 //
 // []int64 and []string applies the validation tags on the individual elements
+//
+// if the struct also implements CustomValidator then that will also be ran
 import (
 	"errors"
 	"fmt"
@@ -37,6 +39,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 )
+
+type CustomValidator interface {
+	Validate(tmplData TemplateData) (ok bool)
+}
 
 type ValidationTag struct {
 	values []string
@@ -190,6 +196,13 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			prettyField = strings.TrimSpace(prettyField)
 
 			tmpl.AddAlerts(ErrorAlert(prettyField, ": ", err.Error()))
+			ok = false
+		}
+	}
+
+	if validator, okc := form.(CustomValidator); okc {
+		ok2 := validator.Validate(tmpl)
+		if !ok2 {
 			ok = false
 		}
 	}
