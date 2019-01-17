@@ -262,9 +262,9 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 		return false
 	}
 
-	c.GS.RLock()
+	
 	contains := common.ContainsInt64Slice(ts.Roles, role)
-	c.GS.RUnlock()
+	
 	return contains
 
 }
