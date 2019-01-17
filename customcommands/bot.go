@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -9,8 +10,11 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/jonas747/yagpdb/customcommands/models"
 	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -27,6 +31,16 @@ func (p *Plugin) AddCommands() {
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+
+	// add the pubsub handler for cache eviction
+	pubsub.AddHandler("custom_commands_clear_cache", func(event *pubsub.Event) {
+		gs := bot.State.Guild(true, event.TargetGuildInt)
+		if gs == nil {
+			return
+		}
+
+		gs.UserCacheDel(true, CacheKeyCommands)
+	}, nil)
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -40,7 +54,7 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		ccs, _, err := GetCommands(data.GS.ID)
+		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GS.ID)).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
@@ -61,20 +75,20 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` \n```\n%s\n```", cc.ID, cc.TriggerType, cc.Trigger, cc.CaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
-
+		return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` \n```\n%s\n```",
+			cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
 	},
 }
 
-func FindCommands(ccs []*CustomCommand, data *dcmd.Data) (foundCCS []*CustomCommand, provided bool) {
-	foundCCS = make([]*CustomCommand, 0, len(ccs))
+func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*models.CustomCommand, provided bool) {
+	foundCCS = make([]*models.CustomCommand, 0, len(ccs))
 
 	provided = true
 	if data.Args[0].Value != nil {
 		// Find by ID
-		id := data.Args[0].Int()
+		id := data.Args[0].Int64()
 		for _, v := range ccs {
-			if v.ID == id {
+			if v.LocalID == id {
 				foundCCS = append(foundCCS, v)
 			}
 		}
@@ -82,7 +96,7 @@ func FindCommands(ccs []*CustomCommand, data *dcmd.Data) (foundCCS []*CustomComm
 		// Find by name
 		name := data.Args[1].Str()
 		for _, v := range ccs {
-			if strings.EqualFold(name, v.Trigger) {
+			if strings.EqualFold(name, v.TextTrigger) {
 				foundCCS = append(foundCCS, v)
 			}
 		}
@@ -93,10 +107,10 @@ func FindCommands(ccs []*CustomCommand, data *dcmd.Data) (foundCCS []*CustomComm
 	return
 }
 
-func StringCommands(ccs []*CustomCommand) string {
+func StringCommands(ccs []*models.CustomCommand) string {
 	out := ""
 	for _, cc := range ccs {
-		out += fmt.Sprintf("`#%3d:` `%s`: %s\n", cc.ID, cc.Trigger, cc.TriggerType.String())
+		out += fmt.Sprintf("`#%3d:` `%s`: %s\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String())
 	}
 
 	return out
@@ -134,7 +148,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	cmds, _, err := GetCommands(cs.Guild.ID)
+	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, evt.Context())
 	if err != nil {
 		log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
 		return
@@ -155,11 +169,11 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	var matched *CustomCommand
+	var matched *models.CustomCommand
 	var stripped string
 	var args []string
 	for _, cmd := range cmds {
-		if !cmd.RunsInChannel(mc.ChannelID) || !cmd.RunsForUser(member) {
+		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, member) {
 			continue
 		}
 
@@ -181,7 +195,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	channel := cs.Copy(true, true)
 	log.WithFields(log.Fields{
-		"trigger":      matched.Trigger,
+		"trigger":      matched.TextTrigger,
 		"trigger_type": matched.TriggerType,
 		"guild":        channel.Guild.ID,
 		"channel_name": channel.Name,
@@ -222,7 +236,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 }
 
-func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
+func ExecuteCustomCommand(cmd *models.CustomCommand, cmdArgs []string, stripped string, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
 
 	cs := bot.State.Channel(true, m.ChannelID)
 	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
@@ -265,15 +279,15 @@ func ExecuteCustomCommand(cmd *CustomCommand, cmdArgs []string, stripped string,
 // CheckMatch returns true if the given cmd matches, as well as the arguments
 // following the command trigger (arg 0 being the message up to, and including,
 // the trigger).
-func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool, stripped string, args []string) {
-	trigger := cmd.Trigger
+func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (match bool, stripped string, args []string) {
+	trigger := cmd.TextTrigger
 
 	cmdMatch := "(?m)"
-	if !cmd.CaseSensitive {
+	if !cmd.TextTriggerCaseSensitive {
 		cmdMatch += "(?i)"
 	}
 
-	switch cmd.TriggerType {
+	switch CommandTriggerType(cmd.TriggerType) {
 	case CommandTriggerCommand:
 		// Regex is:
 		// ^(<@!?bot_id> ?|server_cmd_prefix)trigger($|[[:space:]])
@@ -318,11 +332,29 @@ func CheckMatch(globalPrefix string, cmd *CustomCommand, msg string) (match bool
 	}
 
 	// The following simply matches the legacy behavior as I'm not sure if anyone is relying on it.
-	if !cmd.CaseSensitive && cmd.TriggerType != CommandTriggerRegex {
+	if !cmd.TextTriggerCaseSensitive && cmd.TriggerType != int(CommandTriggerRegex) {
 		stripped = strings.ToLower(msg)
 	}
 
 	stripped = msg[idx[1]:]
 	match = true
 	return
+}
+
+type CacheKey int
+
+const (
+	CacheKeyCommands CacheKey = iota
+)
+
+func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
+	v, err := gs.UserCacheFetch(true, CacheKeyCommands, func() (interface{}, error) {
+		return models.CustomCommands(qm.Where("guild_id = ?", gs.Guild.ID), qm.Load("Group")).AllG(ctx)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(models.CustomCommandSlice), nil
 }
