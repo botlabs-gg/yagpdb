@@ -5,11 +5,13 @@ package customcommands
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
+	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
@@ -84,6 +86,17 @@ type CustomCommand struct {
 	Roles        []int64 `json:"roles" schema:"roles"`
 
 	GroupID int64
+}
+
+var _ web.CustomValidator = (*CustomCommand)(nil)
+
+func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
+	if len(cc.Responses) > MaxUserMessages {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Too many responses, max %d", MaxUserMessages)))
+		return false
+	}
+
+	return true
 }
 
 func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
