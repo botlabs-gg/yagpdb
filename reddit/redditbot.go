@@ -166,7 +166,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		plainBody = post.URL
 	}
 	if post.Spoiler && UseDiscordSpoilers {
-		plainMessage += "{{" + plainBody + "}}"
+		plainMessage += "||" + plainBody + "||"
 	} else if post.Spoiler && !UseDiscordSpoilers {
 		plainMessage += "Content marked as spoiler"
 	} else {
@@ -190,7 +190,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	if post.IsSelf {
 		embed.Title = "New self post in /r/" + post.Subreddit
 		if post.Spoiler && UseDiscordSpoilers {
-			embed.Description += "{{" + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + "}}"
+			embed.Description += "||" + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + "||"
 		} else if post.Spoiler && !UseDiscordSpoilers {
 			embed.Description += "Content marked as spoiler"
 		} else {
