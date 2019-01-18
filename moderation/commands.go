@@ -167,13 +167,13 @@ var ModerationCommands = []*commands.YAGCommand{
 		Name:          "Mute",
 		Description:   "Mutes a member",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Duration", Default: time.Minute * 10, Type: &commands.DurationArg{Max: time.Hour * 24 * 7}},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 2, 1}, []int{0, 1}, []int{0, 2}, []int{0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			config, target, err := MBaseCmd(parsed, parsed.Args[0].Value.(*discordgo.User).ID)
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
@@ -210,11 +210,11 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Unmutes a member",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			config, target, err := MBaseCmd(parsed, parsed.Args[0].Value.(*discordgo.User).ID)
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
@@ -297,7 +297,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequiredArgs:    1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "Num", Type: &dcmd.IntArg{Min: 1, Max: 100}},
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "r", Name: "Regex", Type: dcmd.String},
@@ -316,10 +316,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			var userFilter int64
-			if parsed.Args[1].Value != nil {
-				userFilter = parsed.Args[1].Value.(*discordgo.User).ID
-			}
+			userFilter := parsed.Args[1].Int64()
 
 			num := parsed.Args[0].Int()
 			if userFilter == 0 || userFilter == parsed.Msg.Author.ID {
@@ -431,11 +428,11 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Warns a user, warnings are saved using the bot. Use -warnings to view them.",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserReqMention},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			config, target, err := MBaseCmd(parsed, parsed.Args[0].Value.(*discordgo.User).ID)
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
