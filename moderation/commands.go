@@ -3,6 +3,7 @@ package moderation
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -96,6 +97,23 @@ func SafeArgString(data *dcmd.Data, arg int) string {
 	return data.Args[arg].Str()
 }
 
+func GenericCmdResp(action ModlogAction, target *discordgo.User, duration time.Duration, zeroDurPermanent bool, noDur bool) string {
+	durStr := " indefinitely"
+	if duration > 0 || !zeroDurPermanent {
+		durStr = " for `" + common.HumanizeDuration(common.DurationPrecisionMinutes, duration) + "`"
+	}
+	if noDur {
+		durStr = ""
+	}
+
+	userStr := target.Username + "#" + target.Discriminator
+	if target.Discriminator == "????" {
+		userStr = strconv.FormatInt(target.ID, 10)
+	}
+
+	return fmt.Sprintf("%s %s `%s`%s", action.Emoji, action.Prefix, userStr, durStr)
+}
+
 var ModerationCommands = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CustomEnabled: true,
@@ -128,7 +146,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "👌", nil
+			return GenericCmdResp(MABanned, target, parsed.Switch("d").Value.(time.Duration), true, false), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -158,7 +176,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "👌", nil
+			return GenericCmdResp(MAKick, target, 0, true, true), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -200,7 +218,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "👌", nil
+			return GenericCmdResp(MAMute, target, time.Duration(muteDuration)*time.Minute, false, false), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -239,7 +257,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "👌", nil
+			return GenericCmdResp(MAUnmute, target, 0, false, true), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -284,7 +302,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if channelID != parsed.Msg.ChannelID {
 				return "User reported to the proper authorities", nil
 			}
-			return "👌", nil
+			return nil, nil
 		},
 	},
 	&commands.YAGCommand{
@@ -446,7 +464,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "👌", nil
+			return GenericCmdResp(MAWarned, target, 0, false, true), nil
 		},
 	},
 	&commands.YAGCommand{
