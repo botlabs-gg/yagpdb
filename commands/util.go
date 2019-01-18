@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -93,9 +93,11 @@ func ParseDuration(str string) (time.Duration, error) {
 
 	if currentNumBuf != "" {
 		d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
-		if err == nil {
-			dur += d
+		if err != nil {
+			return dur, errors.Wrap(err, "not a duration")
 		}
+
+		dur += d
 	}
 
 	return dur, nil
@@ -124,7 +126,7 @@ func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
 	} else if strings.HasPrefix(modifierStr, "y") {
 		parsedDur = parsedDur * time.Hour * 24 * 365
 	} else {
-		return parsedDur, errors.New("Couldn't figure out what '" + numStr + modifierStr + "` was")
+		return parsedDur, errors.New("couldn't figure out what '" + numStr + modifierStr + "` was")
 	}
 
 	return parsedDur, nil
