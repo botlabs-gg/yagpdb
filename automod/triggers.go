@@ -286,7 +286,7 @@ func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 }
 
 func (dt *DomainTrigger) containsDomain(link string, list []string) (bool, string) {
-	if !strings.HasPrefix(link, "http://") || !strings.HasPrefix(link, "http://") {
+	if !strings.HasPrefix(link, "http://") && !strings.HasPrefix(link, "https://") && strings.HasPrefix(link, "steam://") {
 		link = "http://" + link
 	}
 
