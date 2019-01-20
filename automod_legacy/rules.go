@@ -379,7 +379,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 
 	for _, v := range matches {
 
-		if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") && strings.HasPrefix(v, "steam://") {
+		if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") && !strings.HasPrefix(v, "steam://") {
 			v = "http://" + v
 		}
 
