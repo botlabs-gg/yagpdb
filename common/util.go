@@ -681,3 +681,9 @@ func GetJoinedServerCount() (int64, error) {
 	err := RedisPool.Do(radix.Cmd(&count, "SCARD", "connected_guilds"))
 	return count, err
 }
+
+func BotIsOnGuild(guildID int64) (bool, error) {
+	isOnGuild := false
+	err := RedisPool.Do(radix.FlatCmd(&isOnGuild, "SISMEMBER", "connected_guilds", guildID))
+	return isOnGuild, err
+}
