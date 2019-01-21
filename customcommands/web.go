@@ -84,6 +84,9 @@ func HandleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.Templat
 }
 
 func ServeGroupSelected(r *http.Request, templateData web.TemplateData, groupID int64, guildID int64) (web.TemplateData, error) {
+	templateData["GetCCIntervalType"] = tmplGetCCIntervalTriggerType
+	templateData["GetCCInterval"] = tmplGetCCInterval
+
 	_, ok := templateData["CustomCommands"]
 	if !ok {
 		var err error
@@ -307,6 +310,10 @@ func TriggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerContains
 	case "exact":
 		return CommandTriggerExact
+	case "command":
+		return CommandTriggerCommand
+	case "interval_minutes", "interval_hours":
+		return CommandTriggerInterval
 	default:
 		return CommandTriggerCommand
 
@@ -320,4 +327,26 @@ func CheckLimits(in ...string) bool {
 		}
 	}
 	return true
+}
+
+// returns 1 for hours, 0 for minutes, -1 otherwise
+func tmplGetCCIntervalTriggerType(cc *models.CustomCommand) int {
+	if cc.TriggerType != int(CommandTriggerInterval) {
+		return -1
+	}
+
+	if (cc.TimeTriggerInterval % 60) == 0 {
+		return 1
+	}
+
+	return 0
+}
+
+// returns the proper interval number dispalyed, depending on if it can be rounded to hours or not
+func tmplGetCCInterval(cc *models.CustomCommand) int {
+	if tmplGetCCIntervalTriggerType(cc) == 1 {
+		return cc.TimeTriggerInterval / 60
+	}
+
+	return cc.TimeTriggerInterval
 }

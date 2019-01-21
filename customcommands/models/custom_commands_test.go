@@ -587,7 +587,7 @@ func testCustomCommandsSelect(t *testing.T) {
 }
 
 var (
-	customCommandDBTypes = map[string]string{`LocalID`: `bigint`, `GuildID`: `bigint`, `GroupID`: `bigint`, `TriggerType`: `integer`, `TextTrigger`: `text`, `TextTriggerCaseSensitive`: `boolean`, `TimeTriggerInterval`: `integer`, `TimeTriggerExcludingDays`: `ARRAYsmallint`, `TimeTriggerExcludingHours`: `ARRAYsmallint`, `LastRun`: `timestamp with time zone`, `NextRun`: `timestamp with time zone`, `Responses`: `ARRAYtext`, `Channels`: `ARRAYbigint`, `ChannelsWhitelistMode`: `boolean`, `Roles`: `ARRAYbigint`, `RolesWhitelistMode`: `boolean`}
+	customCommandDBTypes = map[string]string{`LocalID`: `bigint`, `GuildID`: `bigint`, `GroupID`: `bigint`, `TriggerType`: `integer`, `TextTrigger`: `text`, `TextTriggerCaseSensitive`: `boolean`, `TimeTriggerInterval`: `integer`, `TimeTriggerExcludingDays`: `ARRAYsmallint`, `TimeTriggerExcludingHours`: `ARRAYsmallint`, `LastRun`: `timestamp with time zone`, `NextRun`: `timestamp with time zone`, `Responses`: `ARRAYtext`, `Channels`: `ARRAYbigint`, `ChannelsWhitelistMode`: `boolean`, `Roles`: `ARRAYbigint`, `RolesWhitelistMode`: `boolean`, `ContextChannel`: `bigint`}
 	_                    = bytes.MinRead
 )
 

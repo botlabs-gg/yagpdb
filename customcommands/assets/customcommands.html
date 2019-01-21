@@ -91,24 +91,73 @@
             <div class="row">
                 <div class="col-sm-4">
                     <div class="form-group">
-                        <label for="trigger_type">Trigger type</label>
-                        <select id="trigger_type" class="form-control" name="type">
+                        <label>Trigger type</label>
+                        <select class="form-control" name="type" onchange="triggerTypeChanged('new', this)">
                             <option value="cmd">Command (mention/cmd prefix)</option>
                             <option value="prefix">Starts with</option>
                             <option value="contains">Contains</option>
                             <option value="regex">Regex</option>
                             <option value="exact">Exact match</option>
+                            <option value="interval_hours">Hourly interval</option>
+                            <option value="interval_minutes">Minute interval</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-sm-8">
-                    <div class="form-group">
-                        <label for="trigger">Trigger</label>
-                        <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun">
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="case_sensitive"> Case sensitive
-                            </label>
+                <div id="new-cc-text-trigger-details" class="col-sm-8">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label>Trigger</label>
+                                <input type="text" class="form-control" name="trigger" placeholder="!fun">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="case_sensitive"> Case sensitive
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="new-cc-time-trigger-details" class="hidden col-sm-8">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label>Interval</label>
+                                <input type="number" class="form-control" name="trigger" placeholder="1">
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select name="context_channel" class="form-control">
+                                    {{textChannelOptions .ActiveGuild.Channels nil true "None"}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="trigger">Excluding hours (UTC)</label><br>
+                                <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    {{range seq 0 24}}<option value="{{.}}">{{.}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="trigger">Excluding weekdays (UTC)</label><br>
+                                <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    <option value="1">Monday</option>
+                                    <option value="2">Tuesday</option>
+                                    <option value="3">Wednesday</option>
+                                    <option value="4">Thursday</option>
+                                    <option value="5">Friday</option>
+                                    <option value="6">Saturday</option>
+                                    <option value="7">Sunday</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -127,7 +176,7 @@
                     <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#cc-help-modal">Info</a>
                 </div>
             </div>
-            <div class="row mb-4">
+            <div class="row mb-4" id="new-cc-extra-settings">
                 <div class="col-sm-6">
                     <div class="radio">
                       <label>
@@ -196,24 +245,74 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="form-group">
-                                <label for="trigger_type">Trigger type</label>
-                                <select id="trigger_type" class="form-control" name="type">
+                                <label>Trigger type</label>
+                                <select class="form-control" name="type" onchange="triggerTypeChanged('{{.LocalID}}', this)">
                                     <option value="cmd" {{if eq .TriggerType 0}} selected{{end}}>Command (mention/cmd prefix)</option>
                                     <option value="prefix" {{if eq .TriggerType 1}} selected{{end}}>Starts with</option>
                                     <option value="contains" {{if eq .TriggerType 2}} selected{{end}}>Contains</option>
                                     <option value="regex" {{if eq .TriggerType 3}} selected{{end}}>Regex</option>
                                     <option value="exact"{{if eq .TriggerType 4}} selected{{end}}>Exact match</option>
+                                    <option value="interval_hours" {{if eq (call $dot.GetCCIntervalType .) 1}}selected{{end}}>Hourly interval</option>
+                                    <option value="interval_minutes" {{if eq (call $dot.GetCCIntervalType .) 0}}selected{{end}}>Minute interval</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-sm-8">
-                            <div class="form-group">
-                                <label for="trigger">Trigger</label>
-                                <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.TextTrigger}}">
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="case_sensitive" {{if .TextTriggerCaseSensitive}} checked{{end}}> Case sensitive
-                                    </label>
+                        <div id="{{.LocalID}}-cc-text-trigger-details" class="{{if eq .TriggerType 5}}hidden{{end}} col-sm-8">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label>Trigger</label>
+                                        <input type="text" class="form-control" name="trigger" placeholder="!fun" value="{{.TextTrigger}}">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input type="checkbox" name="case_sensitive"> Case sensitive
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="{{.LocalID}}-cc-time-trigger-details" class="{{if ne .TriggerType 5}}hidden{{end}} col-sm-8">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <div class="form-group">
+                                        <label>Interval</label>
+                                        <input type="number" class="form-control" name="time_trigger_interval" placeholder="1" value="{{call $dot.GetCCInterval .}}">
+                                    </div>
+                                </div>
+                                <div class="col-sm-8">
+                                    <div class="form-group">
+                                        <label>Channel</label>
+                                        <select name="context_channel" class="form-control">
+                                            {{textChannelOptions $g.Channels .ContextChannel true "None"}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="trigger">Excluding hours (UTC)</label><br>
+                                        <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                            {{$selectedExclHours := .TimeTriggerExcludingHours}}
+                                            {{range seq 0 24}}<option value="{{.}}" {{if in $selectedExclHours .}}selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="trigger">Excluding weekdays (UTC)</label><br>
+                                            <select name="time_trigger_excluding_days" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                            <option value="1" {{if in .TimeTriggerExcludingDays 1}}selected{{end}}>Monday</option>
+                                            <option value="2" {{if in .TimeTriggerExcludingDays 2}}selected{{end}}>Tuesday</option>
+                                            <option value="3" {{if in .TimeTriggerExcludingDays 3}}selected{{end}}>Wednesday</option>
+                                            <option value="4" {{if in .TimeTriggerExcludingDays 4}}selected{{end}}>Thursday</option>
+                                            <option value="5" {{if in .TimeTriggerExcludingDays 5}}selected{{end}}>Friday</option>
+                                            <option value="6" {{if in .TimeTriggerExcludingDays 6}}selected{{end}}>Saturday</option>
+                                            <option value="7" {{if in .TimeTriggerExcludingDays 7}}selected{{end}}>Sunday</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -259,7 +358,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row {{if eq .TriggerType 5}}hidden{{end}}" id="{{.LocalID}}-cc-extra-settings">
                         <div class="col-sm-6">
                             <div class="radio">
                               <label>
@@ -296,8 +395,8 @@
                                 {{textChannelOptionsMulti $g.Channels .Channels}}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form-alertsonly>Save</button>
                     </div>
+                    <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form-alertsonly>Save</button>
                 </div>
             </div>
         </div>
@@ -331,6 +430,19 @@
 		</footer>
 	</section>
 </div>
+<script type="text/javascript">
+    function triggerTypeChanged(trigID, dropdown){
+        if(dropdown.value === "interval_hours" || dropdown.value === "interval_minutes"){
+            $("#"+trigID+"-cc-time-trigger-details").removeClass("hidden");
+            $("#"+trigID+"-cc-text-trigger-details").addClass("hidden");
+            $("#"+trigID+"-cc-extra-settings").addClass("hidden");
+        }else{
+            $("#"+trigID+"-cc-time-trigger-details").addClass("hidden");
+            $("#"+trigID+"-cc-text-trigger-details").removeClass("hidden");
+            $("#"+trigID+"-cc-extra-settings").removeClass("hidden");
+        }
+    }
+</script>
 {{template "cp_footer" .}}
 
 {{end}}

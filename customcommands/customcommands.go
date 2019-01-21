@@ -46,20 +46,32 @@ func (p *Plugin) Name() string {
 type CommandTriggerType int
 
 const (
-	CommandTriggerCommand CommandTriggerType = iota
-	CommandTriggerStartsWith
-	CommandTriggerContains
-	CommandTriggerRegex
-	CommandTriggerExact
+	CommandTriggerCommand    CommandTriggerType = 0
+	CommandTriggerStartsWith CommandTriggerType = 1
+	CommandTriggerContains   CommandTriggerType = 2
+	CommandTriggerRegex      CommandTriggerType = 3
+	CommandTriggerExact      CommandTriggerType = 4
+
+	CommandTriggerInterval CommandTriggerType = 5
 )
 
 var (
+	AllTriggerTypes = []CommandTriggerType{
+		CommandTriggerCommand,
+		CommandTriggerStartsWith,
+		CommandTriggerContains,
+		CommandTriggerRegex,
+		CommandTriggerExact,
+		CommandTriggerInterval,
+	}
+
 	triggerStrings = map[CommandTriggerType]string{
 		CommandTriggerCommand:    "Command",
 		CommandTriggerStartsWith: "StartsWith",
 		CommandTriggerContains:   "Contains",
 		CommandTriggerRegex:      "Regex",
 		CommandTriggerExact:      "Exact",
+		CommandTriggerInterval:   "Interval",
 	}
 )
 
@@ -70,12 +82,18 @@ func (t CommandTriggerType) String() string {
 type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
 	TriggerTypeForm string             `json:"-" schema:"type"`
-	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,1000"`
+	Trigger         string             `json:"trigger" schema:"trigger" valid:",0,1000"`
 	// TODO: Retire the legacy Response field.
 	Response      string   `json:"response,omitempty" schema:"response" valid:"template,5000"`
 	Responses     []string `json:"responses" schema:"responses" valid:"template,5000"`
 	CaseSensitive bool     `json:"case_sensitive" schema:"case_sensitive"`
 	ID            int64    `json:"id"`
+
+	ContextChannel int64 `schema:"context_channel" valid:"channel,true"`
+
+	TimeTriggerInterval       int     `schema:"time_trigger_interval"`
+	TimeTriggerExcludingDays  []int64 `schema:"time_trigger_excluding_days"`
+	TimeTriggerExcludingHours []int64 `schema:"time_trigger_excluding_hours"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -110,14 +128,20 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		Roles:                 cc.Roles,
 		RolesWhitelistMode:    cc.RequireRoles,
 
-		TimeTriggerExcludingDays:  []int64{},
-		TimeTriggerExcludingHours: []int64{},
+		TimeTriggerInterval:       cc.TimeTriggerInterval,
+		TimeTriggerExcludingDays:  cc.TimeTriggerExcludingDays,
+		TimeTriggerExcludingHours: cc.TimeTriggerExcludingHours,
+		ContextChannel:            cc.ContextChannel,
 
 		Responses: cc.Responses,
 	}
 
 	if cc.GroupID != 0 {
 		pqCommand.GroupID = null.Int64From(cc.GroupID)
+	}
+
+	if cc.TriggerTypeForm == "interval_hours" {
+		pqCommand.TimeTriggerInterval *= 60
 	}
 
 	return pqCommand
