@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	RegexCache *ccache.Cache
+	RegexCache = *ccache.New(ccache.Configure())
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -36,7 +36,6 @@ func RegisterPlugin() {
 
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
-	RegexCache = ccache.New(ccache.Configure())
 }
 
 func (p *Plugin) Name() string {
@@ -134,6 +133,14 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		ContextChannel:            cc.ContextChannel,
 
 		Responses: cc.Responses,
+	}
+
+	if cc.TimeTriggerExcludingDays == nil {
+		pqCommand.TimeTriggerExcludingDays = []int64{}
+	}
+
+	if cc.TimeTriggerExcludingHours == nil {
+		pqCommand.TimeTriggerExcludingHours = []int64{}
 	}
 
 	if cc.GroupID != 0 {

@@ -1,12 +1,14 @@
 package customcommands
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -159,9 +161,25 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	dbModel.LocalID = localID
 	dbModel.TriggerType = int(TriggerTypeFromForm(newCmd.TriggerTypeForm))
 
+	// check low interval limits
+	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval < 10 {
+		ok, err := CheckIntervalLimits(ctx, activeGuild.ID, -1, templateData)
+		if err != nil || !ok {
+			return templateData, err
+		}
+	}
+
 	err = dbModel.InsertG(ctx, boil.Infer())
 	if err != nil {
 		return templateData, err
+	}
+
+	if dbModel.TriggerType == int(CommandTriggerInterval) {
+		// create, update or remove the next run time and scheduled event
+		err = UpdateCommandNextRunTime(dbModel, true)
+		if err != nil {
+			logrus.WithError(err).WithField("guild", dbModel.GuildID).Error("failed updating next custom command run time")
+		}
 	}
 
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
@@ -187,13 +205,31 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	dbModel := cmd.ToDBModel()
+
+	templateData["CurrentGroupID"] = dbModel.GroupID.Int64
+
 	dbModel.GuildID = activeGuild.ID
 	dbModel.LocalID = cmd.ID
 	dbModel.TriggerType = int(TriggerTypeFromForm(cmd.TriggerTypeForm))
 
-	_, err := dbModel.UpdateG(ctx, boil.Infer())
+	// check low interval limits
+	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval < 10 {
+		ok, err := CheckIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
+		if err != nil || !ok {
+			return templateData, err
+		}
+	}
 
-	templateData["CurrentGroupID"] = dbModel.GroupID.Int64
+	_, err := dbModel.UpdateG(ctx, boil.Infer())
+	if err != nil {
+		return templateData, nil
+	}
+
+	// create, update or remove the next run time and scheduled event
+	err = UpdateCommandNextRunTime(dbModel, true)
+	if err != nil {
+		logrus.WithError(err).WithField("guild", dbModel.GuildID).Error("failed updating next custom command run time")
+	}
 
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
@@ -223,8 +259,24 @@ func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData, err
 	}
 
+	err = DelNextRunEvent(cmd.GuildID, cmd.LocalID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
+}
+
+// allow for max 5 triggers with intervals of less than 10 minutes
+func CheckIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templateData web.TemplateData) (ok bool, err error) {
+	num, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id != ? AND trigger_type = 5 AND time_trigger_interval < 10", guildID, cmdID)).CountG(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	if num < 5 {
+		return true, nil
+	}
+
+	templateData.AddAlerts(web.ErrorAlert("You can have max 5 triggers on less than 10 minute intervals"))
+	return false, nil
 }
 
 func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
