@@ -302,7 +302,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	if numCurrentGroups >= MaxGroups {
-		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom command groups", MaxCommands))
+		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom command groups", MaxGroups))
 	}
 
 	dbModel := &models.CustomCommandGroup{
