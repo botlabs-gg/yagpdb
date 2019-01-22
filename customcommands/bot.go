@@ -397,7 +397,7 @@ const (
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(true, CacheKeyCommands, func() (interface{}, error) {
-		return models.CustomCommands(qm.Where("guild_id = ?", gs.Guild.ID), qm.Load("Group")).AllG(ctx)
+		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type != 5", gs.Guild.ID), qm.Load("Group")).AllG(ctx)
 	})
 
 	if err != nil {
