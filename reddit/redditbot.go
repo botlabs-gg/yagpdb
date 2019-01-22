@@ -123,7 +123,7 @@ OUTER:
 
 		// apply ratelimiting
 		parsedGuildID, _ := strconv.ParseInt(c.Guild, 10, 64)
-		if ratelimiter.CheckIncrement(time.Now(), parsedGuildID, 1100) {
+		if ratelimiter.CheckIncrement(time.Now(), parsedGuildID, 600) {
 			filteredItems = append(filteredItems, c)
 		}
 	}
