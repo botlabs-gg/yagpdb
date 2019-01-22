@@ -235,7 +235,7 @@
                 <h2 class="card-title">
 
                     <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}">
-                        #{{.LocalID}} - {{.TextTrigger}}
+                        #{{.LocalID}} - {{if ne .TriggerType 5}}{{.TextTrigger}}{{else}}Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(S){{end}}{{end}}
                     </a>
                 </h2>
             </div>
