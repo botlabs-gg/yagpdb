@@ -220,13 +220,24 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 	}
 
-	_, err := dbModel.UpdateG(ctx, boil.Infer())
+	_, err := dbModel.UpdateG(ctx, boil.Blacklist("last_run", "next_run", "local_id", "guild_id"))
 	if err != nil {
 		return templateData, nil
 	}
 
 	// create, update or remove the next run time and scheduled event
-	err = UpdateCommandNextRunTime(dbModel, true)
+	if dbModel.TriggerType == int(CommandTriggerInterval) {
+		// need the last run time
+		fullModel, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, dbModel.LocalID)).OneG(ctx)
+		if err != nil {
+			web.CtxLogger(ctx).WithError(err).Error("failed retrieving full model")
+		} else {
+			err = UpdateCommandNextRunTime(fullModel, true)
+		}
+	} else {
+		err = DelNextRunEvent(activeGuild.ID, dbModel.LocalID)
+	}
+
 	if err != nil {
 		logrus.WithError(err).WithField("guild", dbModel.GuildID).Error("failed updating next custom command run time")
 	}
