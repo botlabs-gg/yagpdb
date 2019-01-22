@@ -9,7 +9,6 @@ import (
 	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -256,11 +255,9 @@ type LinksRule struct {
 	BaseRule `valid:"traverse"`
 }
 
-var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
-
 func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
 
-	if !LinkRegex.MatchString(evt.ContentWithMentionsReplaced()) {
+	if !common.LinkRegex.MatchString(evt.ContentWithMentionsReplaced()) {
 		return
 	}
 
@@ -375,7 +372,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 }
 
 func (s *SitesRule) checkMessage(message string) (banned bool, item string, threatList string) {
-	matches := LinkRegex.FindAllString(message, -1)
+	matches := common.LinkRegex.FindAllString(message, -1)
 
 	for _, v := range matches {
 

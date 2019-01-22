@@ -121,10 +121,8 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
-
 func (alc *AnyLinkTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, stripped string, data interface{}) (bool, error) {
-	if LinkRegex.MatchString(m.Content) {
+	if common.LinkRegex.MatchString(m.Content) {
 		return true, nil
 	}
 
@@ -267,7 +265,7 @@ func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 		return false, err
 	}
 
-	matches := LinkRegex.FindAllString(m.Content, -1)
+	matches := common.LinkRegex.FindAllString(m.Content, -1)
 
 	for _, v := range matches {
 		if contains, _ := dt.containsDomain(v, list.Content); contains {
