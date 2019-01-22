@@ -17,6 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"sort"
+	"strings"
 )
 
 var (
@@ -110,6 +111,19 @@ var _ web.CustomValidator = (*CustomCommand)(nil)
 func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 	if len(cc.Responses) > MaxUserMessages {
 		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Too many responses, max %d", MaxUserMessages)))
+		return false
+	}
+
+	foundOkayResponse := false
+	for _, v := range cc.Responses {
+		if strings.TrimSpace(v) != "" {
+			foundOkayResponse = true
+			break
+		}
+	}
+
+	if !foundOkayResponse {
+		tmpl.AddAlerts(web.ErrorAlert("No response set"))
 		return false
 	}
 
