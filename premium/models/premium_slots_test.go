@@ -387,13 +387,13 @@ func testPremiumSlotToManySlotPremiumCodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	premiumCode, err := a.SlotPremiumCodes().All(ctx, tx)
+	check, err := a.SlotPremiumCodes().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range premiumCode {
+	for _, v := range check {
 		if queries.Equal(v.SlotID, b.SlotID) {
 			bFound = true
 		}
@@ -426,7 +426,7 @@ func testPremiumSlotToManySlotPremiumCodes(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", premiumCode)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -755,7 +755,7 @@ func testPremiumSlotsSelect(t *testing.T) {
 }
 
 var (
-	premiumSlotDBTypes = map[string]string{`AttachedAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`, `DurationRemaining`: `bigint`, `FullDuration`: `bigint`, `GuildID`: `bigint`, `ID`: `bigint`, `Message`: `text`, `Permanent`: `boolean`, `Source`: `text`, `SourceID`: `bigint`, `Title`: `text`, `UserID`: `bigint`}
+	premiumSlotDBTypes = map[string]string{`ID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `AttachedAt`: `timestamp with time zone`, `UserID`: `bigint`, `GuildID`: `bigint`, `Title`: `text`, `Message`: `text`, `Source`: `text`, `SourceID`: `bigint`, `FullDuration`: `bigint`, `Permanent`: `boolean`, `DurationRemaining`: `bigint`}
 	_                  = bytes.MinRead
 )
 

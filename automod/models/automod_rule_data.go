@@ -176,6 +176,7 @@ func (q automodRuleDatumQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q automodRuleDatumQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -240,6 +241,7 @@ func (automodRuleDatumL) LoadRule(ctx context.Context, e boil.ContextExecutor, s
 			object.R = &automodRuleDatumR{}
 		}
 		args = append(args, object.RuleID)
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -254,7 +256,12 @@ func (automodRuleDatumL) LoadRule(ctx context.Context, e boil.ContextExecutor, s
 			}
 
 			args = append(args, obj.RuleID)
+
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_rules`), qm.WhereIn(`id in ?`, args...))
@@ -342,6 +349,10 @@ func (automodRuleDatumL) LoadTriggerAutomodTriggeredRules(ctx context.Context, e
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`automod_triggered_rules`), qm.WhereIn(`trigger_id in ?`, args...))
@@ -779,6 +790,11 @@ func (o *AutomodRuleDatum) Update(ctx context.Context, exec boil.ContextExecutor
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q automodRuleDatumQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

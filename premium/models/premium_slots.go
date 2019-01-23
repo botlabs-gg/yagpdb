@@ -191,6 +191,7 @@ func (q premiumSlotQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q premiumSlotQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -256,6 +257,10 @@ func (premiumSlotL) LoadSlotPremiumCodes(ctx context.Context, e boil.ContextExec
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`premium_codes`), qm.WhereIn(`slot_id in ?`, args...))
@@ -508,10 +513,12 @@ func (o *PremiumSlot) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(premiumSlotColumnsWithDefault, o)
@@ -645,6 +652,11 @@ func (o *PremiumSlot) Update(ctx context.Context, exec boil.ContextExecutor, col
 	return rowsAff, nil
 }
 
+// UpdateAllG updates all rows with the specified column values.
+func (q premiumSlotQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
+}
+
 // UpdateAll updates all rows with the specified column values.
 func (q premiumSlotQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
@@ -726,10 +738,12 @@ func (o *PremiumSlot) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 	if o == nil {
 		return errors.New("models: no premium_slots provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(premiumSlotColumnsWithDefault, o)

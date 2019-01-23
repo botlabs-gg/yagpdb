@@ -536,7 +536,7 @@ func testAutomodRulesetConditionsSelect(t *testing.T) {
 }
 
 var (
-	automodRulesetConditionDBTypes = map[string]string{`GuildID`: `bigint`, `ID`: `bigint`, `Kind`: `integer`, `RulesetID`: `bigint`, `Settings`: `jsonb`, `TypeID`: `integer`}
+	automodRulesetConditionDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `RulesetID`: `bigint`, `Kind`: `integer`, `TypeID`: `integer`, `Settings`: `jsonb`}
 	_                              = bytes.MinRead
 )
 

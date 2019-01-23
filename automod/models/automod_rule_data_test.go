@@ -387,13 +387,13 @@ func testAutomodRuleDatumToManyTriggerAutomodTriggeredRules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	automodTriggeredRule, err := a.TriggerAutomodTriggeredRules().All(ctx, tx)
+	check, err := a.TriggerAutomodTriggeredRules().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range automodTriggeredRule {
+	for _, v := range check {
 		if queries.Equal(v.TriggerID, b.TriggerID) {
 			bFound = true
 		}
@@ -426,7 +426,7 @@ func testAutomodRuleDatumToManyTriggerAutomodTriggeredRules(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", automodTriggeredRule)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -864,7 +864,7 @@ func testAutomodRuleDataSelect(t *testing.T) {
 }
 
 var (
-	automodRuleDatumDBTypes = map[string]string{`GuildID`: `bigint`, `ID`: `bigint`, `Kind`: `integer`, `RuleID`: `bigint`, `Settings`: `jsonb`, `TypeID`: `integer`}
+	automodRuleDatumDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `RuleID`: `bigint`, `Kind`: `integer`, `TypeID`: `integer`, `Settings`: `jsonb`}
 	_                       = bytes.MinRead
 )
 

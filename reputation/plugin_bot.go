@@ -32,7 +32,7 @@ var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?|danks|ty|thx|\+rep|\+
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
 
-	if msg.Author == nil || msg.WebhookID != 0 || len(msg.Mentions) < 1 || msg.GuildID == 0 {
+	if msg.Author == nil || msg.WebhookID != 0 || len(msg.Mentions) < 1 || msg.GuildID == 0 || msg.Author.Bot {
 		return
 	}
 

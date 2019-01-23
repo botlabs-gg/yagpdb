@@ -301,6 +301,10 @@ func (roleCommandL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, s
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`role_groups`), qm.WhereIn(`id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -388,6 +392,10 @@ func (roleCommandL) LoadRoleMenuOptions(ctx context.Context, e boil.ContextExecu
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`role_menu_options`), qm.WhereIn(`role_command_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -470,6 +478,10 @@ func (roleCommandL) LoadNextRoleCommandRoleMenus(ctx context.Context, e boil.Con
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`role_menus`), qm.WhereIn(`next_role_command_id in ?`, args...))
@@ -967,13 +979,15 @@ func (o *RoleCommand) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
-	}
-	if o.UpdatedAt.IsZero() {
-		o.UpdatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(roleCommandColumnsWithDefault, o)
@@ -1051,9 +1065,11 @@ func (o *RoleCommand) UpdateG(ctx context.Context, columns boil.Columns) (int64,
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *RoleCommand) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	o.UpdatedAt = currTime
+		o.UpdatedAt = currTime
+	}
 
 	var err error
 	key := makeCacheKey(columns, nil)
@@ -1197,12 +1213,14 @@ func (o *RoleCommand) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 	if o == nil {
 		return errors.New("models: no role_commands provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		o.UpdatedAt = currTime
 	}
-	o.UpdatedAt = currTime
 
 	nzDefaults := queries.NonZeroDefaultSet(roleCommandColumnsWithDefault, o)
 

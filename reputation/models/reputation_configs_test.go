@@ -427,7 +427,7 @@ func testReputationConfigsSelect(t *testing.T) {
 }
 
 var (
-	reputationConfigDBTypes = map[string]string{`AdminRole`: `character varying`, `AdminRoles`: `ARRAYbigint`, `BlacklistedGiveRole`: `character varying`, `BlacklistedGiveRoles`: `ARRAYbigint`, `BlacklistedReceiveRole`: `character varying`, `BlacklistedReceiveRoles`: `ARRAYbigint`, `Cooldown`: `integer`, `DisableThanksDetection`: `boolean`, `Enabled`: `boolean`, `GuildID`: `bigint`, `MaxGiveAmount`: `bigint`, `MaxRemoveAmount`: `bigint`, `PointsName`: `character varying`, `RequiredGiveRole`: `character varying`, `RequiredGiveRoles`: `ARRAYbigint`, `RequiredReceiveRole`: `character varying`, `RequiredReceiveRoles`: `ARRAYbigint`}
+	reputationConfigDBTypes = map[string]string{`GuildID`: `bigint`, `PointsName`: `character varying`, `Enabled`: `boolean`, `Cooldown`: `integer`, `MaxGiveAmount`: `bigint`, `RequiredGiveRole`: `character varying`, `RequiredReceiveRole`: `character varying`, `BlacklistedGiveRole`: `character varying`, `BlacklistedReceiveRole`: `character varying`, `AdminRole`: `character varying`, `DisableThanksDetection`: `boolean`, `MaxRemoveAmount`: `bigint`, `AdminRoles`: `ARRAYbigint`, `RequiredGiveRoles`: `ARRAYbigint`, `RequiredReceiveRoles`: `ARRAYbigint`, `BlacklistedGiveRoles`: `ARRAYbigint`, `BlacklistedReceiveRoles`: `ARRAYbigint`}
 	_                       = bytes.MinRead
 )
 

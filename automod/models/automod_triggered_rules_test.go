@@ -747,7 +747,7 @@ func testAutomodTriggeredRulesSelect(t *testing.T) {
 }
 
 var (
-	automodTriggeredRuleDBTypes = map[string]string{`ChannelID`: `bigint`, `ChannelName`: `text`, `CreatedAt`: `timestamp with time zone`, `Extradata`: `jsonb`, `GuildID`: `bigint`, `ID`: `bigint`, `RuleID`: `bigint`, `RuleName`: `text`, `RulesetName`: `text`, `TriggerID`: `bigint`, `TriggerTypeid`: `integer`, `UserID`: `bigint`, `UserName`: `text`}
+	automodTriggeredRuleDBTypes = map[string]string{`ID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `ChannelID`: `bigint`, `ChannelName`: `text`, `GuildID`: `bigint`, `TriggerID`: `bigint`, `TriggerTypeid`: `integer`, `RuleID`: `bigint`, `RuleName`: `text`, `RulesetName`: `text`, `UserID`: `bigint`, `UserName`: `text`, `Extradata`: `jsonb`}
 	_                           = bytes.MinRead
 )
 

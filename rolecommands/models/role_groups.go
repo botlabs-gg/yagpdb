@@ -23,43 +23,46 @@ import (
 
 // RoleGroup is an object representing the database table.
 type RoleGroup struct {
-	ID                  int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GuildID             int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	Name                string           `boil:"name" json:"name" toml:"name" yaml:"name"`
-	RequireRoles        types.Int64Array `boil:"require_roles" json:"require_roles,omitempty" toml:"require_roles" yaml:"require_roles,omitempty"`
-	IgnoreRoles         types.Int64Array `boil:"ignore_roles" json:"ignore_roles,omitempty" toml:"ignore_roles" yaml:"ignore_roles,omitempty"`
-	Mode                int64            `boil:"mode" json:"mode" toml:"mode" yaml:"mode"`
-	MultipleMax         int64            `boil:"multiple_max" json:"multiple_max" toml:"multiple_max" yaml:"multiple_max"`
-	MultipleMin         int64            `boil:"multiple_min" json:"multiple_min" toml:"multiple_min" yaml:"multiple_min"`
-	SingleAutoToggleOff bool             `boil:"single_auto_toggle_off" json:"single_auto_toggle_off" toml:"single_auto_toggle_off" yaml:"single_auto_toggle_off"`
-	SingleRequireOne    bool             `boil:"single_require_one" json:"single_require_one" toml:"single_require_one" yaml:"single_require_one"`
+	ID                    int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
+	GuildID               int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	Name                  string           `boil:"name" json:"name" toml:"name" yaml:"name"`
+	RequireRoles          types.Int64Array `boil:"require_roles" json:"require_roles,omitempty" toml:"require_roles" yaml:"require_roles,omitempty"`
+	IgnoreRoles           types.Int64Array `boil:"ignore_roles" json:"ignore_roles,omitempty" toml:"ignore_roles" yaml:"ignore_roles,omitempty"`
+	Mode                  int64            `boil:"mode" json:"mode" toml:"mode" yaml:"mode"`
+	MultipleMax           int64            `boil:"multiple_max" json:"multiple_max" toml:"multiple_max" yaml:"multiple_max"`
+	MultipleMin           int64            `boil:"multiple_min" json:"multiple_min" toml:"multiple_min" yaml:"multiple_min"`
+	SingleAutoToggleOff   bool             `boil:"single_auto_toggle_off" json:"single_auto_toggle_off" toml:"single_auto_toggle_off" yaml:"single_auto_toggle_off"`
+	SingleRequireOne      bool             `boil:"single_require_one" json:"single_require_one" toml:"single_require_one" yaml:"single_require_one"`
+	TemporaryRoleDuration int              `boil:"temporary_role_duration" json:"temporary_role_duration" toml:"temporary_role_duration" yaml:"temporary_role_duration"`
 
 	R *roleGroupR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L roleGroupL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var RoleGroupColumns = struct {
-	ID                  string
-	GuildID             string
-	Name                string
-	RequireRoles        string
-	IgnoreRoles         string
-	Mode                string
-	MultipleMax         string
-	MultipleMin         string
-	SingleAutoToggleOff string
-	SingleRequireOne    string
+	ID                    string
+	GuildID               string
+	Name                  string
+	RequireRoles          string
+	IgnoreRoles           string
+	Mode                  string
+	MultipleMax           string
+	MultipleMin           string
+	SingleAutoToggleOff   string
+	SingleRequireOne      string
+	TemporaryRoleDuration string
 }{
-	ID:                  "id",
-	GuildID:             "guild_id",
-	Name:                "name",
-	RequireRoles:        "require_roles",
-	IgnoreRoles:         "ignore_roles",
-	Mode:                "mode",
-	MultipleMax:         "multiple_max",
-	MultipleMin:         "multiple_min",
-	SingleAutoToggleOff: "single_auto_toggle_off",
-	SingleRequireOne:    "single_require_one",
+	ID:                    "id",
+	GuildID:               "guild_id",
+	Name:                  "name",
+	RequireRoles:          "require_roles",
+	IgnoreRoles:           "ignore_roles",
+	Mode:                  "mode",
+	MultipleMax:           "multiple_max",
+	MultipleMin:           "multiple_min",
+	SingleAutoToggleOff:   "single_auto_toggle_off",
+	SingleRequireOne:      "single_require_one",
+	TemporaryRoleDuration: "temporary_role_duration",
 }
 
 // RoleGroupRels is where relationship names are stored.
@@ -86,9 +89,9 @@ func (*roleGroupR) NewStruct() *roleGroupR {
 type roleGroupL struct{}
 
 var (
-	roleGroupColumns               = []string{"id", "guild_id", "name", "require_roles", "ignore_roles", "mode", "multiple_max", "multiple_min", "single_auto_toggle_off", "single_require_one"}
+	roleGroupColumns               = []string{"id", "guild_id", "name", "require_roles", "ignore_roles", "mode", "multiple_max", "multiple_min", "single_auto_toggle_off", "single_require_one", "temporary_role_duration"}
 	roleGroupColumnsWithoutDefault = []string{"guild_id", "name", "require_roles", "ignore_roles", "mode", "multiple_max", "multiple_min", "single_auto_toggle_off", "single_require_one"}
-	roleGroupColumnsWithDefault    = []string{"id"}
+	roleGroupColumnsWithDefault    = []string{"id", "temporary_role_duration"}
 	roleGroupPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -277,6 +280,10 @@ func (roleGroupL) LoadRoleCommands(ctx context.Context, e boil.ContextExecutor, 
 		}
 	}
 
+	if len(args) == 0 {
+		return nil
+	}
+
 	query := NewQuery(qm.From(`role_commands`), qm.WhereIn(`role_group_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
@@ -359,6 +366,10 @@ func (roleGroupL) LoadRoleMenus(ctx context.Context, e boil.ContextExecutor, sin
 
 			args = append(args, obj.ID)
 		}
+	}
+
+	if len(args) == 0 {
+		return nil
 	}
 
 	query := NewQuery(qm.From(`role_menus`), qm.WhereIn(`role_group_id in ?`, args...))

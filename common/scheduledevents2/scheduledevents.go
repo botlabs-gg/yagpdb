@@ -15,6 +15,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"math/rand"
 	"reflect"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -184,6 +185,13 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 			return
 		}
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			stack := string(debug.Stack())
+			l.Errorf("[scheduledevents2] recovered from panic in scheduled event handler \n%v\n%v", r, stack)
+		}
+	}()
 
 	for {
 		retry, err := handler.Handler(item, decodedData)

@@ -22,11 +22,14 @@ package web
 //    - Makes sure the role is part of the guild
 //
 // []int64 and []string applies the validation tags on the individual elements
+//
+// if the struct also implements CustomValidator then that will also be ran
 import (
 	"errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"reflect"
@@ -36,6 +39,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 )
+
+type CustomValidator interface {
+	Validate(tmplData TemplateData) (ok bool)
+}
 
 type ValidationTag struct {
 	values []string
@@ -189,6 +196,13 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			prettyField = strings.TrimSpace(prettyField)
 
 			tmpl.AddAlerts(ErrorAlert(prettyField, ": ", err.Error()))
+			ok = false
+		}
+	}
+
+	if validator, okc := form.(CustomValidator); okc {
+		ok2 := validator.Validate(tmpl)
+		if !ok2 {
 			ok = false
 		}
 	}
@@ -378,8 +392,8 @@ func ValidateTemplateField(s string, max int) error {
 		return fmt.Errorf("Too long (max %d)", max)
 	}
 
-	// _, err := common.ParseExecuteTemplate(s, nil)
-	return nil
+	_, err := templates.NewContext(nil, nil, nil).Parse(s)
+	return err
 }
 
 func ValidateChannelField(s int64, channels []*discordgo.Channel, allowEmpty bool) error {

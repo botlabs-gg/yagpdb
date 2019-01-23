@@ -172,6 +172,7 @@ func (q serverStatsPeriodQuery) ExistsG(ctx context.Context) (bool, error) {
 func (q serverStatsPeriodQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
@@ -363,6 +364,11 @@ func (o *ServerStatsPeriod) Update(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	return rowsAff, nil
+}
+
+// UpdateAllG updates all rows with the specified column values.
+func (q serverStatsPeriodQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values.

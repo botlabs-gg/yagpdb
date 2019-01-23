@@ -388,13 +388,13 @@ func testRoleMenuToManyRoleMenuOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roleMenuOption, err := a.RoleMenuOptions().All(ctx, tx)
+	check, err := a.RoleMenuOptions().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range roleMenuOption {
+	for _, v := range check {
 		if v.RoleMenuID == b.RoleMenuID {
 			bFound = true
 		}
@@ -427,7 +427,7 @@ func testRoleMenuToManyRoleMenuOptions(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", roleMenuOption)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1060,7 +1060,7 @@ func testRoleMenusSelect(t *testing.T) {
 }
 
 var (
-	roleMenuDBTypes = map[string]string{`ChannelID`: `bigint`, `DisableSendDM`: `boolean`, `EditingOptionID`: `bigint`, `FixedAmount`: `boolean`, `GuildID`: `bigint`, `MessageID`: `bigint`, `NextRoleCommandID`: `bigint`, `OwnMessage`: `boolean`, `OwnerID`: `bigint`, `RemoveRoleOnReactionRemove`: `boolean`, `RoleGroupID`: `bigint`, `SetupMSGID`: `bigint`, `SkipAmount`: `integer`, `State`: `bigint`}
+	roleMenuDBTypes = map[string]string{`MessageID`: `bigint`, `GuildID`: `bigint`, `ChannelID`: `bigint`, `OwnerID`: `bigint`, `OwnMessage`: `boolean`, `State`: `bigint`, `NextRoleCommandID`: `bigint`, `RoleGroupID`: `bigint`, `DisableSendDM`: `boolean`, `RemoveRoleOnReactionRemove`: `boolean`, `FixedAmount`: `boolean`, `SkipAmount`: `integer`, `EditingOptionID`: `bigint`, `SetupMSGID`: `bigint`}
 	_               = bytes.MinRead
 )
 

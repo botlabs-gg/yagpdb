@@ -427,7 +427,7 @@ func testReputationUsersSelect(t *testing.T) {
 }
 
 var (
-	reputationUserDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `Points`: `bigint`, `UserID`: `bigint`}
+	reputationUserDBTypes = map[string]string{`UserID`: `bigint`, `GuildID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `Points`: `bigint`}
 	_                     = bytes.MinRead
 )
 

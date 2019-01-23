@@ -224,10 +224,12 @@ func (o *ReputationUser) Insert(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	var err error
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(reputationUserColumnsWithDefault, o)
@@ -447,10 +449,12 @@ func (o *ReputationUser) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 	if o == nil {
 		return errors.New("models: no reputation_users provided for upsert")
 	}
-	currTime := time.Now().In(boil.GetLocation())
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
 
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = currTime
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(reputationUserColumnsWithDefault, o)

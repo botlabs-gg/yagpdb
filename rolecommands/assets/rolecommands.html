@@ -202,13 +202,20 @@ $(function(){
 <div class="row">
     <div class="col">
         <section class="card card-featured card-featured-warning">
-            <header class="card-header">
-                <h2 class="card-title">Group settings for: <b>{{.Group.Name}}</b></h2>
-            </header>
-            <div class="card-body">
-                <form data-async-form action action="/manage/{{$ag.ID}}/rolecommands/update_group" method="post">
+            <form data-async-form action action="/manage/{{$ag.ID}}/rolecommands/update_group" method="post">
+                <header class="card-header">
+                    <div class="pull-right">
+                        <div class="btn-group flex-wrap">
+                            <button type="submit" class="btn btn-success" formaction="/manage/{{$ag.ID}}/rolecommands/update_group"><i class="fas fa-save"></i></button>
+                            <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/remove_group"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <!-- <button type="submit" class="btn btn-danger" formaction="/manage//automod/ruleset//rule//delete">Delete</button> -->
+                    </div>
+                    <h2 class="card-title">Group settings for: <b>{{.Group.Name}}</b></h2>
+                </header>
+                <div class="card-body">
+                    <input type="number" name="ID" class="hidden" value="{{.Group.ID}}">
                     <div class="row">
-                        <input type="number" name="ID" class="hidden" value="{{.Group.ID}}">
                         <div class="form-group col">
                             <label for="{{.Group.ID}}-group-name">Name</label>
                             <input type="text" class="form-control" id="{{.Group.ID}}-group-name" name="Name" value="{{.Group.Name}}">
@@ -235,8 +242,15 @@ $(function(){
                                 {{roleOptionsMulti $ag.Roles nil .Group.IgnoreRoles}}
                             </select>
                         </div>
-
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-lg-4">
+                            <label for="group-temporary-role">Temporary roles (minutes)</label>
+                            <input type="number" min="0" max="1440" class="form-control" id="group-temporary-role" name="TemporaryRoleDuration" value="{{.Group.TemporaryRoleDuration}}">
+                            <p class="help-block">Remove roles in this group after a certain duration after assignment (0 to disable)</p>
+                        </div>
                         <div id="{{.Group.ID}}-group-single-opts" class="col-lg-4 {{if ne .Group.Mode 1}}hidden{{end}}">
+                            <p class="help-block">Mode specific settings</p>
                             <div class="form-group">
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="{{.Group.ID}}-single-require-one" name="SingleRequireOne" {{if .Group.SingleRequireOne}}checked{{end}}>
@@ -251,6 +265,7 @@ $(function(){
                             </div>
                         </div>
                         <div id="{{.Group.ID}}-group-multi-opts" class="col-lg-4 {{if ne .Group.Mode 2}}hidden{{end}}">
+                            <p class="help-block">Mode specific settings</p>
                             <div class="form-group">
                                 <label for="{{.Group.ID}}-group-min-roles">Minimum number of roles</label><br>
                                 <input type="text" class="form-control" id="{{.Group.ID}}-group-min-roles" name="MultipleMin" value="{{.Group.MultipleMin}}">
@@ -260,16 +275,9 @@ $(function(){
                                 <input type="text" class="form-control" id="{{.Group.ID}}-group-max-roles" name="MultipleMax" value="{{.Group.MultipleMax}}">
                             </div>
                         </div>
-
-                        <div class="col" style="padding-top: 10px">
-                            <div class="btn-group flex-wrap">
-                                <button type="submit" class="btn btn-success" formaction="/manage/{{$ag.ID}}/rolecommands/update_group"><i class="fas fa-save"></i></button>
-                                <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/remove_group"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </form>
         </section>
     </div>
 </div>

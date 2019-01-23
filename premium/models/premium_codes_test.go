@@ -587,7 +587,7 @@ func testPremiumCodesSelect(t *testing.T) {
 }
 
 var (
-	premiumCodeDBTypes = map[string]string{`Code`: `text`, `CreatedAt`: `timestamp with time zone`, `Duration`: `bigint`, `GuildID`: `bigint`, `ID`: `bigint`, `Message`: `text`, `Permanent`: `boolean`, `SlotID`: `bigint`, `UsedAt`: `timestamp with time zone`, `UserID`: `bigint`}
+	premiumCodeDBTypes = map[string]string{`ID`: `bigint`, `Code`: `text`, `Message`: `text`, `CreatedAt`: `timestamp with time zone`, `UsedAt`: `timestamp with time zone`, `SlotID`: `bigint`, `UserID`: `bigint`, `GuildID`: `bigint`, `Permanent`: `boolean`, `Duration`: `bigint`}
 	_                  = bytes.MinRead
 )
 

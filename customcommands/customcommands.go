@@ -1,20 +1,27 @@
 package customcommands
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
+	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 	"sort"
+	"strings"
 )
 
 var (
-	RegexCache *ccache.Cache
+	RegexCache = *ccache.New(ccache.Configure())
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -22,9 +29,14 @@ func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.S
 type Plugin struct{}
 
 func RegisterPlugin() {
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		log.WithError(err).Error("failed initializing custom commands schema, not enabling")
+		return
+	}
+
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
-	RegexCache = ccache.New(ccache.Configure())
 }
 
 func (p *Plugin) Name() string {
@@ -34,20 +46,32 @@ func (p *Plugin) Name() string {
 type CommandTriggerType int
 
 const (
-	CommandTriggerCommand CommandTriggerType = iota
-	CommandTriggerStartsWith
-	CommandTriggerContains
-	CommandTriggerRegex
-	CommandTriggerExact
+	CommandTriggerCommand    CommandTriggerType = 0
+	CommandTriggerStartsWith CommandTriggerType = 1
+	CommandTriggerContains   CommandTriggerType = 2
+	CommandTriggerRegex      CommandTriggerType = 3
+	CommandTriggerExact      CommandTriggerType = 4
+
+	CommandTriggerInterval CommandTriggerType = 5
 )
 
 var (
+	AllTriggerTypes = []CommandTriggerType{
+		CommandTriggerCommand,
+		CommandTriggerStartsWith,
+		CommandTriggerContains,
+		CommandTriggerRegex,
+		CommandTriggerExact,
+		CommandTriggerInterval,
+	}
+
 	triggerStrings = map[CommandTriggerType]string{
 		CommandTriggerCommand:    "Command",
 		CommandTriggerStartsWith: "StartsWith",
 		CommandTriggerContains:   "Contains",
 		CommandTriggerRegex:      "Regex",
 		CommandTriggerExact:      "Exact",
+		CommandTriggerInterval:   "Interval",
 	}
 )
 
@@ -58,12 +82,18 @@ func (t CommandTriggerType) String() string {
 type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
 	TriggerTypeForm string             `json:"-" schema:"type"`
-	Trigger         string             `json:"trigger" schema:"trigger" valid:",1,1000"`
+	Trigger         string             `json:"trigger" schema:"trigger" valid:",0,1000"`
 	// TODO: Retire the legacy Response field.
-	Response      string   `json:"response,omitempty" schema:"response" valid:",3000"`
-	Responses     []string `json:"responses" schema:"responses" valid:",3000"`
+	Response      string   `json:"response,omitempty" schema:"response" valid:"template,5000"`
+	Responses     []string `json:"responses" schema:"responses" valid:"template,5000"`
 	CaseSensitive bool     `json:"case_sensitive" schema:"case_sensitive"`
-	ID            int      `json:"id"`
+	ID            int64    `json:"id"`
+
+	ContextChannel int64 `schema:"context_channel" valid:"channel,true"`
+
+	TimeTriggerInterval       int     `schema:"time_trigger_interval"`
+	TimeTriggerExcludingDays  []int64 `schema:"time_trigger_excluding_days"`
+	TimeTriggerExcludingHours []int64 `schema:"time_trigger_excluding_hours"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -72,22 +102,90 @@ type CustomCommand struct {
 	// If set, then one of the following channels are required, otherwise they are ignored
 	RequireRoles bool    `json:"require_roles" schema:"require_roles"`
 	Roles        []int64 `json:"roles" schema:"roles"`
+
+	GroupID int64
 }
 
-func (cc *CustomCommand) Save(guildID int64) error {
-	serialized, err := json.Marshal(cc.Migrate())
-	if err != nil {
-		return err
+var _ web.CustomValidator = (*CustomCommand)(nil)
+
+func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
+	if len(cc.Responses) > MaxUserMessages {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Too many responses, max %d", MaxUserMessages)))
+		return false
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", KeyCommands(guildID), cc.ID, serialized))
-	return err
+	foundOkayResponse := false
+	for _, v := range cc.Responses {
+		if strings.TrimSpace(v) != "" {
+			foundOkayResponse = true
+			break
+		}
+	}
+
+	if !foundOkayResponse {
+		tmpl.AddAlerts(web.ErrorAlert("No response set"))
+		return false
+	}
+
+	return true
 }
 
-func (cc *CustomCommand) RunsInChannel(channel int64) bool {
+func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
+	pqCommand := &models.CustomCommand{
+		TriggerType:              int(cc.TriggerType),
+		TextTrigger:              cc.Trigger,
+		TextTriggerCaseSensitive: cc.CaseSensitive,
+
+		Channels:              cc.Channels,
+		ChannelsWhitelistMode: cc.RequireChannels,
+		Roles:                 cc.Roles,
+		RolesWhitelistMode:    cc.RequireRoles,
+
+		TimeTriggerInterval:       cc.TimeTriggerInterval,
+		TimeTriggerExcludingDays:  cc.TimeTriggerExcludingDays,
+		TimeTriggerExcludingHours: cc.TimeTriggerExcludingHours,
+		ContextChannel:            cc.ContextChannel,
+
+		Responses: cc.Responses,
+	}
+
+	if cc.TimeTriggerExcludingDays == nil {
+		pqCommand.TimeTriggerExcludingDays = []int64{}
+	}
+
+	if cc.TimeTriggerExcludingHours == nil {
+		pqCommand.TimeTriggerExcludingHours = []int64{}
+	}
+
+	if cc.GroupID != 0 {
+		pqCommand.GroupID = null.Int64From(cc.GroupID)
+	}
+
+	if cc.TriggerTypeForm == "interval_hours" {
+		pqCommand.TimeTriggerInterval *= 60
+	}
+
+	return pqCommand
+}
+
+func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
+	if cc.GroupID.Valid {
+		// check group restrictions
+		if common.ContainsInt64Slice(cc.R.Group.IgnoreChannels, channel) {
+			return false
+		}
+
+		if len(cc.R.Group.WhitelistChannels) > 0 {
+			if !common.ContainsInt64Slice(cc.R.Group.WhitelistChannels, channel) {
+				return false
+			}
+		}
+	}
+
+	// check command specifc restrictions
 	for _, v := range cc.Channels {
 		if v == channel {
-			if cc.RequireChannels {
+			if cc.ChannelsWhitelistMode {
 				return true
 			}
 
@@ -97,7 +195,7 @@ func (cc *CustomCommand) RunsInChannel(channel int64) bool {
 	}
 
 	// Not found
-	if cc.RequireChannels {
+	if cc.ChannelsWhitelistMode {
 		return false
 	}
 
@@ -105,11 +203,22 @@ func (cc *CustomCommand) RunsInChannel(channel int64) bool {
 	return true
 }
 
-func (cc *CustomCommand) RunsForUser(ms *dstate.MemberState) bool {
+func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
+	if cc.GroupID.Valid {
+		// check group restrictions
+		if common.ContainsInt64SliceOneOf(cc.R.Group.IgnoreRoles, ms.Roles) {
+			return false
+		}
 
+		if len(cc.R.Group.WhitelistRoles) > 0 && !common.ContainsInt64SliceOneOf(cc.R.Group.WhitelistRoles, ms.Roles) {
+			return false
+		}
+	}
+
+	// check command specific restrictions
 	if len(cc.Roles) == 0 {
 		// Fast path
-		if cc.RequireRoles {
+		if cc.RolesWhitelistMode {
 			return false
 		}
 
@@ -118,7 +227,7 @@ func (cc *CustomCommand) RunsForUser(ms *dstate.MemberState) bool {
 
 	for _, v := range cc.Roles {
 		if common.ContainsInt64Slice(ms.Roles, v) {
-			if cc.RequireRoles {
+			if cc.RolesWhitelistMode {
 				return true
 			}
 
@@ -127,7 +236,7 @@ func (cc *CustomCommand) RunsForUser(ms *dstate.MemberState) bool {
 	}
 
 	// Not found
-	if cc.RequireRoles {
+	if cc.RolesWhitelistMode {
 		return false
 	}
 
@@ -145,7 +254,7 @@ func (cc *CustomCommand) Migrate() *CustomCommand {
 	return cc
 }
 
-func GetCommands(guild int64) ([]*CustomCommand, int, error) {
+func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 	var hashMap map[string]string
 
 	err := common.RedisPool.Do(radix.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
@@ -153,7 +262,7 @@ func GetCommands(guild int64) ([]*CustomCommand, int, error) {
 		return nil, 0, err
 	}
 
-	highest := 0
+	highest := int64(0)
 	result := make([]*CustomCommand, len(hashMap))
 
 	// Decode the commands, and also calculate the highest id
@@ -218,6 +327,7 @@ const (
 	MaxCommands        = 100
 	MaxCommandsPremium = 250
 	MaxUserMessages    = 20
+	MaxGroups          = 50
 )
 
 func MaxCommandsForContext(ctx context.Context) int {

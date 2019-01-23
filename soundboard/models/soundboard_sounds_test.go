@@ -427,7 +427,7 @@ func testSoundboardSoundsSelect(t *testing.T) {
 }
 
 var (
-	soundboardSoundDBTypes = map[string]string{`BlacklistedRoles`: `ARRAYbigint`, `CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `ID`: `integer`, `Name`: `text`, `RequiredRole`: `text`, `RequiredRoles`: `ARRAYbigint`, `Status`: `integer`, `UpdatedAt`: `timestamp with time zone`}
+	soundboardSoundDBTypes = map[string]string{`ID`: `integer`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `RequiredRole`: `text`, `Name`: `text`, `Status`: `integer`, `RequiredRoles`: `ARRAYbigint`, `BlacklistedRoles`: `ARRAYbigint`}
 	_                      = bytes.MinRead
 )
 

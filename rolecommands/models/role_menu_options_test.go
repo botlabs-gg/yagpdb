@@ -387,13 +387,13 @@ func testRoleMenuOptionToManyEditingOptionRoleMenus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roleMenu, err := a.EditingOptionRoleMenus().All(ctx, tx)
+	check, err := a.EditingOptionRoleMenus().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range roleMenu {
+	for _, v := range check {
 		if queries.Equal(v.EditingOptionID, b.EditingOptionID) {
 			bFound = true
 		}
@@ -426,7 +426,7 @@ func testRoleMenuOptionToManyEditingOptionRoleMenus(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", roleMenu)
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1024,7 +1024,7 @@ func testRoleMenuOptionsSelect(t *testing.T) {
 }
 
 var (
-	roleMenuOptionDBTypes = map[string]string{`EmojiAnimated`: `boolean`, `EmojiID`: `bigint`, `ID`: `bigint`, `RoleCommandID`: `bigint`, `RoleMenuID`: `bigint`, `UnicodeEmoji`: `text`}
+	roleMenuOptionDBTypes = map[string]string{`ID`: `bigint`, `RoleCommandID`: `bigint`, `EmojiID`: `bigint`, `UnicodeEmoji`: `text`, `RoleMenuID`: `bigint`, `EmojiAnimated`: `boolean`}
 	_                     = bytes.MinRead
 )
 

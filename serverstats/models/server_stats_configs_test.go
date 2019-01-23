@@ -427,7 +427,7 @@ func testServerStatsConfigsSelect(t *testing.T) {
 }
 
 var (
-	serverStatsConfigDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `IgnoreChannels`: `text`, `Public`: `boolean`, `UpdatedAt`: `timestamp with time zone`}
+	serverStatsConfigDBTypes = map[string]string{`GuildID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `Public`: `boolean`, `IgnoreChannels`: `text`}
 	_                        = bytes.MinRead
 )
 

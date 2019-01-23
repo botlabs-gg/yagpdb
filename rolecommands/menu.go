@@ -16,7 +16,9 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"os"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -407,12 +409,13 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 		return "", nil
 	}
 
+	var given bool
+
 	if rm.RemoveRoleOnReactionRemove {
 		//  Strictly assign or remove based on wether the reaction was added or removed
 		if raAdd {
-			var added bool
-			added, err = AssignRole(ctx, member, cmd)
-			if err == nil && added {
+			given, err = AssignRole(ctx, member, cmd)
+			if err == nil && given {
 				resp = "Gave you the role!"
 			}
 		} else {
@@ -424,7 +427,6 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 		}
 	} else {
 		// Just toggle...
-		var given bool
 		given, err = CheckToggleRole(ctx, member, cmd)
 		if err == nil {
 			if given {
@@ -444,6 +446,8 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 			common.BotSession.MessageReactionRemove(rm.ChannelID, rm.MessageID, emoji.APIName(), userID)
 		}
 		resp, err = HumanizeAssignError(gs, err)
+	} else if rm.R.RoleGroup.Mode == GroupModeSingle && given {
+		go removeOtherReactions(rm, option, userID)
 	}
 
 	if resp != "" {
@@ -451,6 +455,80 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 	}
 
 	return
+}
+
+// track reaction removal loop so that we can cancel them
+type reactionRemovalOccurence struct {
+	MessageID int64
+	UserID    int64
+
+	Stopmu sync.Mutex
+	Stop   bool
+}
+
+var (
+	activeReactionRemovals   = make([]*reactionRemovalOccurence, 0)
+	activeReactionRemovalsmu sync.Mutex
+)
+
+func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, userID int64) {
+	if os.Getenv("YAGPDB_DISABLE_REACTION_REMOVAL_SINGLE_MODE") != "" {
+		// since this is an experimental feature
+		return
+	}
+
+	activeReactionRemovalsmu.Lock()
+	// cancel existing ones
+	for _, v := range activeReactionRemovals {
+		if v.MessageID == rm.MessageID && v.UserID == userID {
+			v.Stopmu.Lock()
+			v.Stop = true
+			v.Stopmu.Unlock()
+		}
+	}
+
+	// add the new one
+	cur := &reactionRemovalOccurence{
+		MessageID: rm.MessageID,
+		UserID:    userID,
+	}
+	activeReactionRemovals = append(activeReactionRemovals, cur)
+
+	activeReactionRemovalsmu.Unlock()
+
+	// make sure to remove it when we return
+	defer func() {
+		activeReactionRemovalsmu.Lock()
+		for i, v := range activeReactionRemovals {
+			if v == cur {
+				activeReactionRemovals = append(activeReactionRemovals[:i], activeReactionRemovals[i+1:]...)
+				break
+			}
+		}
+		activeReactionRemovalsmu.Unlock()
+	}()
+
+	// actually start the reaction removal process
+	for _, v := range rm.R.RoleMenuOptions {
+		if v.ID == option.ID {
+			continue
+		}
+
+		// check if we were cancelled
+		cur.Stopmu.Lock()
+		stop := cur.Stop
+		cur.Stopmu.Unlock()
+		if stop {
+			break
+		}
+
+		emoji := v.UnicodeEmoji
+		if v.EmojiID != 0 {
+			emoji = "aaa:" + discordgo.StrID(v.EmojiID)
+		}
+
+		common.BotSession.MessageReactionRemove(rm.ChannelID, rm.MessageID, emoji, userID)
+	}
 }
 
 func OptionsLessFunc(slice []*models.RoleMenuOption) func(int, int) bool {

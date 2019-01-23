@@ -231,9 +231,7 @@ func InitPlugins() {
 	if common.Statsd != nil {
 		go goroutineLogger()
 	}
-}
 
-func BotStarted() {
 	go loopCheckAdmins()
 }
 

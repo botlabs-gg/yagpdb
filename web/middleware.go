@@ -476,6 +476,15 @@ type CustomHandlerFunc func(w http.ResponseWriter, r *http.Request) interface{}
 func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		alertsOnly := r.URL.Query().Get("alertsonly") == "1"
+
+		respCode := 200
+		if isPArtial := r.Context().Value(common.ContextKeyIsPartial); isPArtial != nil && isPArtial.(bool) {
+			if formOK := r.Context().Value(common.ContextKeyFormOk); formOK != nil && !formOK.(bool) {
+				alertsOnly = true
+				respCode = 400
+			}
+		}
+
 		if alertsOnly {
 			w.Header().Set("Content-Type", "application/json")
 		} else {
@@ -492,6 +501,8 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 				out = d
 			}
 		}
+
+		w.WriteHeader(respCode)
 
 		if !alertsOnly {
 			err := Templates.ExecuteTemplate(w, tmpl, out)

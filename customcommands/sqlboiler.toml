@@ -1,0 +1,10 @@
+add-global-variants="true"
+no-hooks="true"
+
+[psql]
+dbname="yagpdb"
+host="localhost"
+user="postgres"
+pass="123"
+sslmode="disable"
+whitelist=["custom_command_groups", "custom_commands"]

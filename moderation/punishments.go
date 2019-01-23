@@ -365,10 +365,6 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 
 	// Create the modlog entry
 	logChannel, _ := strconv.ParseInt(config.ActionChannel, 10, 64)
-	if config.ActionChannel == "" {
-		logChannel = channelID
-	}
-
 	if logChannel != 0 {
 		return CreateModlogEmbed(logChannel, author, action, member.DGoUser(), reason, logLink)
 	}

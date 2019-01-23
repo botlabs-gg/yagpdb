@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"context"
 	"database/sql"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -9,7 +10,11 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func (p *Plugin) AddCommands() {
@@ -124,9 +129,18 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 }
 
+type ScheduledMemberRoleRemoveData struct {
+	GuildID int64 `json:"guild_id"`
+	GroupID int64 `json:"group_id"`
+	UserID  int64 `json:"user_id"`
+	RoleID  int64 `json:"role_id"`
+}
+
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+
+	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
 }
 
 func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
@@ -243,4 +257,41 @@ func StringCommands(cmds []*models.RoleCommand) string {
 	}
 
 	return output + "```\n"
+}
+
+func handleRemoveMemberRole(evt *schEvtsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	dataCast := data.(*ScheduledMemberRoleRemoveData)
+	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	// remove the reaction
+	menus, err := models.RoleMenus(
+		qm.Where("role_group_id = ? AND guild_id =?", dataCast.GroupID, dataCast.GuildID),
+		qm.OrderBy("message_id desc"),
+		qm.Limit(10),
+		qm.Load("RoleMenuOptions.RoleCommand")).AllG(context.Background())
+	if err != nil {
+		return false, err
+	}
+
+OUTER:
+	for _, v := range menus {
+		for _, opt := range v.R.RoleMenuOptions {
+			if opt.R.RoleCommand.Role == dataCast.RoleID {
+				// remove it
+				emoji := opt.UnicodeEmoji
+				if opt.EmojiID != 0 {
+					emoji = "aaa:" + discordgo.StrID(opt.EmojiID)
+				}
+
+				err := common.BotSession.MessageReactionRemove(v.ChannelID, v.MessageID, emoji, dataCast.UserID)
+				common.LogIgnoreError(err, "rolecommands: failed removing reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
+				continue OUTER
+			}
+		}
+	}
+
+	return scheduledevents2.CheckDiscordErrRetry(err), err
 }

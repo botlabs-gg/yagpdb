@@ -2,6 +2,7 @@ package automod
 
 import (
 	"context"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -9,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"time"
 )
 
@@ -45,12 +47,140 @@ func (del *DeleteMessageEffect) Apply(ctxData *TriggeredRuleData, settings inter
 		return nil // no message to delete
 	}
 
-	go bot.MessageDeleteQueue.DeleteMessages(ctxData.Message.ChannelID, ctxData.Message.ID)
+	go func(cID int64, messages []int64) {
+		// deleting messages too fast can sometimes make them still show in the discord client even after deleted
+		time.Sleep(500 * time.Millisecond)
+		bot.MessageDeleteQueue.DeleteMessages(cID, messages...)
+	}(ctxData.Message.ChannelID, []int64{ctxData.Message.ID})
+
 	return nil
 }
 
 func (del *DeleteMessageEffect) MergeDuplicates(data []interface{}) interface{} {
 	return nil // no user data
+}
+
+///////////////////////////////////////////////////////
+
+type DeleteMessagesEffectData struct {
+	NumMessages int
+	TimeLimit   int
+}
+
+type DeleteMessagesEffect struct{}
+
+func (del *DeleteMessagesEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (del *DeleteMessagesEffect) DataType() interface{} {
+	return &DeleteMessagesEffectData{}
+}
+
+func (del *DeleteMessagesEffect) Name() (name string) {
+	return "Delete mutliple messages"
+}
+
+func (del *DeleteMessagesEffect) Description() (description string) {
+	return "Deletes a certain number of the users last messages in this channel"
+}
+
+func (del *DeleteMessagesEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Number of messages",
+			Key:     "NumMessages",
+			Kind:    SettingTypeInt,
+			Min:     1,
+			Max:     100,
+			Default: 3,
+		},
+		&SettingDef{
+			Name:    "Max age (seconds)",
+			Key:     "TimeLimit",
+			Kind:    SettingTypeInt,
+			Min:     1,
+			Max:     1000000,
+			Default: 15,
+		},
+	}
+}
+
+func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+
+	settingsCast := settings.(*DeleteMessagesEffectData)
+	timeLimit := time.Now().Add(-time.Second * time.Duration(settingsCast.TimeLimit))
+
+	ctxData.GS.RLock()
+	defer ctxData.GS.RUnlock()
+
+	var channel *dstate.ChannelState
+	if ctxData.CS != nil {
+		channel = ctxData.CS
+	} else {
+
+		// no channel in context, attempt to find the last channel the user spoke in
+		var lastMessage *dstate.MessageState
+
+		for _, c := range ctxData.GS.Channels {
+			for i := len(c.Messages) - 1; i >= 0; i-- {
+				cMsg := c.Messages[i]
+
+				if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreated) {
+					break
+				}
+
+				if lastMessage != nil && lastMessage.ParsedCreated.After(cMsg.ParsedCreated) {
+					break
+				}
+
+				if cMsg.Message.Author.ID == ctxData.MS.ID {
+					channel = c
+					lastMessage = cMsg
+					break
+				}
+			}
+		}
+	}
+
+	if channel == nil {
+		return nil
+	}
+
+	messages := make([]int64, 0, 100)
+
+	for i := len(channel.Messages) - 1; i >= 0; i-- {
+		cMsg := channel.Messages[i]
+
+		if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreated) {
+			break
+		}
+
+		if cMsg.Message.Author.ID != ctxData.MS.ID {
+			continue
+		}
+
+		messages = append(messages, cMsg.Message.ID)
+		if len(messages) >= 100 || len(messages) >= settingsCast.NumMessages {
+			break
+		}
+	}
+
+	if len(messages) < 0 {
+		return nil
+	}
+
+	go func(cID int64, messages []int64) {
+		// deleting messages too fast can sometimes make them still show in the discord client even after deleted
+		time.Sleep(500 * time.Millisecond)
+		bot.MessageDeleteQueue.DeleteMessages(cID, messages...)
+	}(channel.ID, messages)
+
+	return nil
+}
+
+func (del *DeleteMessagesEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
 }
 
 ///////////////////////////////////////////////////////
@@ -424,4 +554,47 @@ func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interfac
 
 func (sn *SetNicknameEffect) MergeDuplicates(data []interface{}) interface{} {
 	return data[0]
+}
+
+/////////////////////////////////////////////////////////////
+
+type ResetViolationsEffect struct{}
+
+type ResetViolationsEffectData struct {
+	Name string `valid:",0,50,trimspace"`
+}
+
+func (rv *ResetViolationsEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (rv *ResetViolationsEffect) DataType() interface{} {
+	return &ResetViolationsEffectData{}
+}
+
+func (rv *ResetViolationsEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Name",
+			Key:     "Name",
+			Default: "name",
+			Min:     0,
+			Max:     50,
+			Kind:    SettingTypeString,
+		},
+	}
+}
+
+func (rv *ResetViolationsEffect) Name() (name string) {
+	return "Reset violations"
+}
+
+func (rv *ResetViolationsEffect) Description() (description string) {
+	return "Resets the violations of a user"
+}
+
+func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*ResetViolationsEffectData)
+	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
+	return err
 }

@@ -3,13 +3,14 @@ package templates
 import (
 	"errors"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
 )
 
 var ErrTooManyCalls = errors.New("Too many calls to this function")
@@ -98,7 +99,7 @@ func (c *Context) channelArg(v interface{}) int64 {
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
 	return func(channel interface{}, msg interface{}) interface{} {
 
-		if c.IncreaseCheckCallCounter("send_message", 3) {
+		if c.IncreaseCheckCallCounter("send_message", 4) {
 			return ""
 		}
 
@@ -239,6 +240,67 @@ func targetUserID(input interface{}) int64 {
 	default:
 		return ToInt64(input)
 	}
+}
+
+func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
+	if c.IncreaseCheckCallCounter("has_role", 200) {
+		return false
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false
+	}
+
+	ts, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false
+	}
+
+	role := ToInt64(roleID)
+	if role == 0 {
+		return false
+	}
+
+	
+	contains := common.ContainsInt64Slice(ts.Roles, role)
+	
+	return contains
+
+}
+
+func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
+	if c.IncreaseCheckCallCounter("has_role", 200) {
+		return false
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false
+	}
+
+	ts, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false
+	}
+
+	c.GS.RLock()
+
+	for _, r := range c.GS.Guild.Roles {
+		if strings.EqualFold(r.Name, name) {
+			if common.ContainsInt64Slice(ts.Roles, r.ID) {
+				c.GS.RUnlock()
+				return true
+			}
+
+			c.GS.RUnlock()
+			return false
+		}
+	}
+
+	c.GS.RUnlock()
+	return false
+
 }
 
 func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
@@ -471,6 +533,18 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	MaybeScheduledDeleteMessage(c.GS.ID, cID, mID, dur)
 
 	return ""
+}
+
+func (c *Context) tmplGetMessage(channel, msgID interface{}) *discordgo.Message {
+	cID := c.channelArg(channel)
+	if cID == 0 {
+		return nil
+	}
+
+	mID := ToInt64(msgID)
+
+	message, _ := common.BotSession.ChannelMessage(cID, mID)
+	return message
 }
 
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {

@@ -139,6 +139,19 @@ func (c *Context) setupBaseData() {
 	}
 }
 
+func (c *Context) Parse(source string) (*template.Template, error) {
+	tmpl := template.New("")
+	tmpl.Funcs(StandardFuncMap)
+	tmpl.Funcs(c.ContextFuncs)
+
+	parsed, err := tmpl.Parse(source)
+	if err != nil {
+		return nil, err
+	}
+
+	return parsed, nil
+}
+
 func (c *Context) Execute(source string) (string, error) {
 	if c.Msg == nil {
 		// Construct a fake message
@@ -150,6 +163,9 @@ func (c *Context) Execute(source string) (string, error) {
 			// This may fail in some cases
 			c.Msg.ChannelID = c.GS.ID
 		}
+		if c.GS != nil {
+			c.Msg.GuildID = c.GS.ID
+		}
 	}
 
 	if c.GS != nil {
@@ -160,11 +176,7 @@ func (c *Context) Execute(source string) (string, error) {
 		c.GS.RUnlock()
 	}
 
-	tmpl := template.New("")
-	tmpl.Funcs(StandardFuncMap)
-	tmpl.Funcs(c.ContextFuncs)
-
-	parsed, err := tmpl.Parse(source)
+	parsed, err := c.Parse(source)
 	if err != nil {
 		return "", errors.WithMessage(err, "Failed parsing template")
 	}
@@ -226,10 +238,15 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
 	c.ContextFuncs["takeRoleID"] = c.tmplTakeRoleID
 	c.ContextFuncs["takeRoleName"] = c.tmplTakeRoleName
+	
+	c.ContextFuncs["targetHasRoleID"] = c.tmplTargetHasRoleID
+	c.ContextFuncs["targetHasRoleName"] = c.tmplTargetHasRoleName
+	
 
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
 	c.ContextFuncs["deleteMessage"] = c.tmplDelMessage
+	c.ContextFuncs["getMessage"] = c.tmplGetMessage
 	c.ContextFuncs["addReactions"] = c.tmplAddReactions
 	c.ContextFuncs["addResponseReactions"] = c.tmplAddResponseReactions
 	c.ContextFuncs["addMessageReactions"] = c.tmplAddMessageReactions

@@ -3,6 +3,7 @@ package rolecommands
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
@@ -38,8 +39,9 @@ type FormGroup struct {
 	MultipleMax int
 	MultipleMin int
 
-	SingleAutoToggleOff bool
-	SingleRequireOne    bool
+	SingleAutoToggleOff   bool
+	SingleRequireOne      bool
+	TemporaryRoleDuration int `valid:"0,1440"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -380,10 +382,19 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 	group.MultipleMax = int64(formGroup.MultipleMax)
 	group.MultipleMin = int64(formGroup.MultipleMin)
 	group.Mode = int64(formGroup.Mode)
+	group.TemporaryRoleDuration = formGroup.TemporaryRoleDuration
 
 	tmpl["GroupID"] = group.ID
 
 	_, err = group.UpdateG(r.Context(), boil.Infer())
+	if err != nil {
+		return
+	}
+
+	if group.TemporaryRoleDuration < 1 {
+		_, err = schEvtsModels.ScheduledEvents(qm.Where("event_name='remove_member_role' AND guild_id = ? AND (data->>'group_id')::bigint = ?", g.ID, group.ID)).DeleteAll(r.Context(), common.PQ)
+	}
+
 	return
 }
 

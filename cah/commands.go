@@ -14,12 +14,12 @@ func (p *Plugin) AddCommands() {
 		Name:        "Create",
 		CmdCategory: commands.CategoryFun,
 		Aliases:     []string{"c"},
-		Description: "Creates a cards against humanity game in this channel, add packs after commands, or * for all packs. (-v for vote mode without a card czar)",
+		Description: "Creates a Cards Against Humanity game in this channel, add packs after commands, or * for all packs. (-v for vote mode without a card czar).",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them"},
+			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them."},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Switch: "v", Name: "Vote mode - players vote instead of having a cardczar"},
+			{Switch: "v", Name: "Vote mode - players vote instead of having a card czar."},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			voteMode := data.Switch("v").Bool()
@@ -43,7 +43,7 @@ func (p *Plugin) AddCommands() {
 	cmdEnd := &commands.YAGCommand{
 		Name:        "End",
 		CmdCategory: commands.CategoryFun,
-		Description: "Ends a cards against humanity game thats ongoing in this channel.",
+		Description: "Ends a Cards Against Humanity game that is ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			isAdmin, err := bot.AdminOrPerm(0, data.Msg.Author.ID, data.CS.ID)
 			if err == nil && isAdmin {
@@ -71,7 +71,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "user", Type: dcmd.UserID},
 		},
-		Description: "Kicks a player from the ongoing cards against humanity game in this channel.",
+		Description: "Kicks a player from the ongoing Cards Against Humanity game in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			userID := data.Args[0].Int64()
 			err := p.Manager.AdminKickUser(data.Msg.Author.ID, userID)
@@ -91,7 +91,7 @@ func (p *Plugin) AddCommands() {
 		Name:         "Packs",
 		CmdCategory:  commands.CategoryFun,
 		RequiredArgs: 0,
-		Description:  "Lists available packs",
+		Description:  "Lists all available packs.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			resp := "Available packs: \n\n"
 			for _, v := range cardsagainstdiscord.Packs {

@@ -587,7 +587,7 @@ func testAutomodViolationsSelect(t *testing.T) {
 }
 
 var (
-	automodViolationDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `ID`: `bigint`, `Name`: `text`, `RuleID`: `bigint`, `UserID`: `bigint`}
+	automodViolationDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `UserID`: `bigint`, `RuleID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `Name`: `text`}
 	_                       = bytes.MinRead
 )
 

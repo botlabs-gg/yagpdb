@@ -262,6 +262,7 @@ func setupRoutes() *goji.Mux {
 
 	ServerPubliAPIMux = goji.SubMux()
 	ServerPubliAPIMux.Use(ActiveServerMW)
+	ServerPubliAPIMux.Use(RequireActiveServer)
 	mux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
 	mux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
 
@@ -282,6 +283,7 @@ func setupRoutes() *goji.Mux {
 	serverCpMuxer := goji.SubMux()
 	serverCpMuxer.Use(RequireSessionMiddleware)
 	serverCpMuxer.Use(ActiveServerMW)
+	serverCpMuxer.Use(RequireActiveServer)
 	serverCpMuxer.Use(RequireServerAdminMiddleware)
 
 	mux.Handle(pat.New("/manage/:server"), serverCpMuxer)
