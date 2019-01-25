@@ -144,10 +144,10 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		gs.RLock()
 		if gs.Guild.Unavailable {
 			gs.RUnlock()
-			return false, nil
+			return true, nil
 		}
 		gs.RUnlock()
-		return true, nil
+		return false, nil
 	}
 
 	tmplCtx := templates.NewContext(gs, cs, nil)
