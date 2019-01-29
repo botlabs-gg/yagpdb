@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -45,6 +46,70 @@ var AutomodListColumns = struct {
 	Name:    "name",
 	Kind:    "kind",
 	Content: "content",
+}
+
+// Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperstring struct{ field string }
+
+func (w whereHelperstring) EQ(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperstring) NEQ(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperstring) LT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperstring) LTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelpertypes_StringArray struct{ field string }
+
+func (w whereHelpertypes_StringArray) EQ(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertypes_StringArray) NEQ(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertypes_StringArray) LT(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_StringArray) LTE(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_StringArray) GT(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_StringArray) GTE(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var AutomodListWhere = struct {
+	ID      whereHelperint64
+	GuildID whereHelperint64
+	Name    whereHelperstring
+	Kind    whereHelperint
+	Content whereHelpertypes_StringArray
+}{
+	ID:      whereHelperint64{field: `id`},
+	GuildID: whereHelperint64{field: `guild_id`},
+	Name:    whereHelperstring{field: `name`},
+	Kind:    whereHelperint{field: `kind`},
+	Content: whereHelpertypes_StringArray{field: `content`},
 }
 
 // AutomodListRels is where relationship names are stored.
@@ -96,6 +161,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single automodList record from the query using the global executor.
@@ -495,7 +563,7 @@ func (o *AutomodList) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 			automodListPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert automod_lists, could not build update column list")
 		}
 

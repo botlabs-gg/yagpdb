@@ -830,7 +830,7 @@ func (o *CustomCommandGroup) Upsert(ctx context.Context, exec boil.ContextExecut
 			customCommandGroupPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert custom_command_groups, could not build update column list")
 		}
 

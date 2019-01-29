@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -84,6 +85,128 @@ var ReputationConfigColumns = struct {
 	BlacklistedReceiveRoles: "blacklisted_receive_roles",
 }
 
+// Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperstring struct{ field string }
+
+func (w whereHelperstring) EQ(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperstring) NEQ(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperstring) LT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperstring) LTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpertypes_Int64Array struct{ field string }
+
+func (w whereHelpertypes_Int64Array) EQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpertypes_Int64Array) NEQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpertypes_Int64Array) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpertypes_Int64Array) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpertypes_Int64Array) LT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_Int64Array) LTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_Int64Array) GT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var ReputationConfigWhere = struct {
+	GuildID                 whereHelperint64
+	PointsName              whereHelperstring
+	Enabled                 whereHelperbool
+	Cooldown                whereHelperint
+	MaxGiveAmount           whereHelperint64
+	RequiredGiveRole        whereHelpernull_String
+	RequiredReceiveRole     whereHelpernull_String
+	BlacklistedGiveRole     whereHelpernull_String
+	BlacklistedReceiveRole  whereHelpernull_String
+	AdminRole               whereHelpernull_String
+	DisableThanksDetection  whereHelperbool
+	MaxRemoveAmount         whereHelperint64
+	AdminRoles              whereHelpertypes_Int64Array
+	RequiredGiveRoles       whereHelpertypes_Int64Array
+	RequiredReceiveRoles    whereHelpertypes_Int64Array
+	BlacklistedGiveRoles    whereHelpertypes_Int64Array
+	BlacklistedReceiveRoles whereHelpertypes_Int64Array
+}{
+	GuildID:                 whereHelperint64{field: `guild_id`},
+	PointsName:              whereHelperstring{field: `points_name`},
+	Enabled:                 whereHelperbool{field: `enabled`},
+	Cooldown:                whereHelperint{field: `cooldown`},
+	MaxGiveAmount:           whereHelperint64{field: `max_give_amount`},
+	RequiredGiveRole:        whereHelpernull_String{field: `required_give_role`},
+	RequiredReceiveRole:     whereHelpernull_String{field: `required_receive_role`},
+	BlacklistedGiveRole:     whereHelpernull_String{field: `blacklisted_give_role`},
+	BlacklistedReceiveRole:  whereHelpernull_String{field: `blacklisted_receive_role`},
+	AdminRole:               whereHelpernull_String{field: `admin_role`},
+	DisableThanksDetection:  whereHelperbool{field: `disable_thanks_detection`},
+	MaxRemoveAmount:         whereHelperint64{field: `max_remove_amount`},
+	AdminRoles:              whereHelpertypes_Int64Array{field: `admin_roles`},
+	RequiredGiveRoles:       whereHelpertypes_Int64Array{field: `required_give_roles`},
+	RequiredReceiveRoles:    whereHelpertypes_Int64Array{field: `required_receive_roles`},
+	BlacklistedGiveRoles:    whereHelpertypes_Int64Array{field: `blacklisted_give_roles`},
+	BlacklistedReceiveRoles: whereHelpertypes_Int64Array{field: `blacklisted_receive_roles`},
+}
+
 // ReputationConfigRels is where relationship names are stored.
 var ReputationConfigRels = struct {
 }{}
@@ -133,6 +256,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single reputationConfig record from the query using the global executor.
@@ -532,7 +658,7 @@ func (o *ReputationConfig) Upsert(ctx context.Context, exec boil.ContextExecutor
 			reputationConfigPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert reputation_configs, could not build update column list")
 		}
 

@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -48,6 +49,24 @@ var AutomodRulesetConditionColumns = struct {
 	Kind:      "kind",
 	TypeID:    "type_id",
 	Settings:  "settings",
+}
+
+// Generated where
+
+var AutomodRulesetConditionWhere = struct {
+	ID        whereHelperint64
+	GuildID   whereHelperint64
+	RulesetID whereHelperint64
+	Kind      whereHelperint
+	TypeID    whereHelperint
+	Settings  whereHelpertypes_JSON
+}{
+	ID:        whereHelperint64{field: `id`},
+	GuildID:   whereHelperint64{field: `guild_id`},
+	RulesetID: whereHelperint64{field: `ruleset_id`},
+	Kind:      whereHelperint{field: `kind`},
+	TypeID:    whereHelperint{field: `type_id`},
+	Settings:  whereHelpertypes_JSON{field: `settings`},
 }
 
 // AutomodRulesetConditionRels is where relationship names are stored.
@@ -103,6 +122,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single automodRulesetCondition record from the query using the global executor.
@@ -664,7 +686,7 @@ func (o *AutomodRulesetCondition) Upsert(ctx context.Context, exec boil.ContextE
 			automodRulesetConditionPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert automod_ruleset_conditions, could not build update column list")
 		}
 

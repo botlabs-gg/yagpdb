@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -45,6 +46,100 @@ var ServerStatsConfigColumns = struct {
 	UpdatedAt:      "updated_at",
 	Public:         "public",
 	IgnoreChannels: "ignore_channels",
+}
+
+// Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelpernull_Time struct{ field string }
+
+func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_Bool struct{ field string }
+
+func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var ServerStatsConfigWhere = struct {
+	GuildID        whereHelperint64
+	CreatedAt      whereHelpernull_Time
+	UpdatedAt      whereHelpernull_Time
+	Public         whereHelpernull_Bool
+	IgnoreChannels whereHelpernull_String
+}{
+	GuildID:        whereHelperint64{field: `guild_id`},
+	CreatedAt:      whereHelpernull_Time{field: `created_at`},
+	UpdatedAt:      whereHelpernull_Time{field: `updated_at`},
+	Public:         whereHelpernull_Bool{field: `public`},
+	IgnoreChannels: whereHelpernull_String{field: `ignore_channels`},
 }
 
 // ServerStatsConfigRels is where relationship names are stored.
@@ -96,6 +191,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single serverStatsConfig record from the query using the global executor.
@@ -519,7 +617,7 @@ func (o *ServerStatsConfig) Upsert(ctx context.Context, exec boil.ContextExecuto
 			serverStatsConfigPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert server_stats_configs, could not build update column list")
 		}
 

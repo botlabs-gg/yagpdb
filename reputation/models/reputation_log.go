@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -56,6 +57,51 @@ var ReputationLogColumns = struct {
 	Amount:           "amount",
 	ReceiverUsername: "receiver_username",
 	SenderUsername:   "sender_username",
+}
+
+// Generated where
+
+type whereHelpertime_Time struct{ field string }
+
+func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var ReputationLogWhere = struct {
+	ID               whereHelperint64
+	CreatedAt        whereHelpertime_Time
+	GuildID          whereHelperint64
+	SenderID         whereHelperint64
+	ReceiverID       whereHelperint64
+	SetFixedAmount   whereHelperbool
+	Amount           whereHelperint64
+	ReceiverUsername whereHelperstring
+	SenderUsername   whereHelperstring
+}{
+	ID:               whereHelperint64{field: `id`},
+	CreatedAt:        whereHelpertime_Time{field: `created_at`},
+	GuildID:          whereHelperint64{field: `guild_id`},
+	SenderID:         whereHelperint64{field: `sender_id`},
+	ReceiverID:       whereHelperint64{field: `receiver_id`},
+	SetFixedAmount:   whereHelperbool{field: `set_fixed_amount`},
+	Amount:           whereHelperint64{field: `amount`},
+	ReceiverUsername: whereHelperstring{field: `receiver_username`},
+	SenderUsername:   whereHelperstring{field: `sender_username`},
 }
 
 // ReputationLogRels is where relationship names are stored.
@@ -107,6 +153,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single reputationLog record from the query using the global executor.
@@ -520,7 +569,7 @@ func (o *ReputationLog) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 			reputationLogPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert reputation_log, could not build update column list")
 		}
 

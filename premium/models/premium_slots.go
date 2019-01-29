@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -66,6 +67,36 @@ var PremiumSlotColumns = struct {
 	FullDuration:      "full_duration",
 	Permanent:         "permanent",
 	DurationRemaining: "duration_remaining",
+}
+
+// Generated where
+
+var PremiumSlotWhere = struct {
+	ID                whereHelperint64
+	CreatedAt         whereHelpertime_Time
+	AttachedAt        whereHelpernull_Time
+	UserID            whereHelperint64
+	GuildID           whereHelpernull_Int64
+	Title             whereHelperstring
+	Message           whereHelperstring
+	Source            whereHelperstring
+	SourceID          whereHelperint64
+	FullDuration      whereHelperint64
+	Permanent         whereHelperbool
+	DurationRemaining whereHelperint64
+}{
+	ID:                whereHelperint64{field: `id`},
+	CreatedAt:         whereHelpertime_Time{field: `created_at`},
+	AttachedAt:        whereHelpernull_Time{field: `attached_at`},
+	UserID:            whereHelperint64{field: `user_id`},
+	GuildID:           whereHelpernull_Int64{field: `guild_id`},
+	Title:             whereHelperstring{field: `title`},
+	Message:           whereHelperstring{field: `message`},
+	Source:            whereHelperstring{field: `source`},
+	SourceID:          whereHelperint64{field: `source_id`},
+	FullDuration:      whereHelperint64{field: `full_duration`},
+	Permanent:         whereHelperbool{field: `permanent`},
+	DurationRemaining: whereHelperint64{field: `duration_remaining`},
 }
 
 // PremiumSlotRels is where relationship names are stored.
@@ -121,6 +152,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single premiumSlot record from the query using the global executor.
@@ -794,7 +828,7 @@ func (o *PremiumSlot) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 			premiumSlotPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert premium_slots, could not build update column list")
 		}
 

@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -70,6 +71,82 @@ var AutomodTriggeredRuleColumns = struct {
 	UserID:        "user_id",
 	UserName:      "user_name",
 	Extradata:     "extradata",
+}
+
+// Generated where
+
+type whereHelpertime_Time struct{ field string }
+
+func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelpernull_Int64 struct{ field string }
+
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var AutomodTriggeredRuleWhere = struct {
+	ID            whereHelperint64
+	CreatedAt     whereHelpertime_Time
+	ChannelID     whereHelperint64
+	ChannelName   whereHelperstring
+	GuildID       whereHelperint64
+	TriggerID     whereHelpernull_Int64
+	TriggerTypeid whereHelperint
+	RuleID        whereHelpernull_Int64
+	RuleName      whereHelperstring
+	RulesetName   whereHelperstring
+	UserID        whereHelperint64
+	UserName      whereHelperstring
+	Extradata     whereHelpertypes_JSON
+}{
+	ID:            whereHelperint64{field: `id`},
+	CreatedAt:     whereHelpertime_Time{field: `created_at`},
+	ChannelID:     whereHelperint64{field: `channel_id`},
+	ChannelName:   whereHelperstring{field: `channel_name`},
+	GuildID:       whereHelperint64{field: `guild_id`},
+	TriggerID:     whereHelpernull_Int64{field: `trigger_id`},
+	TriggerTypeid: whereHelperint{field: `trigger_typeid`},
+	RuleID:        whereHelpernull_Int64{field: `rule_id`},
+	RuleName:      whereHelperstring{field: `rule_name`},
+	RulesetName:   whereHelperstring{field: `ruleset_name`},
+	UserID:        whereHelperint64{field: `user_id`},
+	UserName:      whereHelperstring{field: `user_name`},
+	Extradata:     whereHelpertypes_JSON{field: `extradata`},
 }
 
 // AutomodTriggeredRuleRels is where relationship names are stored.
@@ -128,6 +205,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single automodTriggeredRule record from the query using the global executor.
@@ -951,7 +1031,7 @@ func (o *AutomodTriggeredRule) Upsert(ctx context.Context, exec boil.ContextExec
 			automodTriggeredRulePrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert automod_triggered_rules, could not build update column list")
 		}
 

@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -51,6 +52,49 @@ var ServerStatsPeriodColumns = struct {
 	UserID:    "user_id",
 	ChannelID: "channel_id",
 	Count:     "count",
+}
+
+// Generated where
+
+type whereHelpernull_Int64 struct{ field string }
+
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var ServerStatsPeriodWhere = struct {
+	ID        whereHelperint64
+	Started   whereHelpernull_Time
+	Duration  whereHelpernull_Int64
+	GuildID   whereHelpernull_Int64
+	UserID    whereHelpernull_Int64
+	ChannelID whereHelpernull_Int64
+	Count     whereHelpernull_Int64
+}{
+	ID:        whereHelperint64{field: `id`},
+	Started:   whereHelpernull_Time{field: `started`},
+	Duration:  whereHelpernull_Int64{field: `duration`},
+	GuildID:   whereHelpernull_Int64{field: `guild_id`},
+	UserID:    whereHelpernull_Int64{field: `user_id`},
+	ChannelID: whereHelpernull_Int64{field: `channel_id`},
+	Count:     whereHelpernull_Int64{field: `count`},
 }
 
 // ServerStatsPeriodRels is where relationship names are stored.
@@ -102,6 +146,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single serverStatsPeriod record from the query using the global executor.
@@ -501,7 +548,7 @@ func (o *ServerStatsPeriod) Upsert(ctx context.Context, exec boil.ContextExecuto
 			serverStatsPeriodPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert server_stats_periods, could not build update column list")
 		}
 

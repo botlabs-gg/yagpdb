@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -48,6 +49,24 @@ var RoleMenuOptionColumns = struct {
 	UnicodeEmoji:  "unicode_emoji",
 	RoleMenuID:    "role_menu_id",
 	EmojiAnimated: "emoji_animated",
+}
+
+// Generated where
+
+var RoleMenuOptionWhere = struct {
+	ID            whereHelperint64
+	RoleCommandID whereHelpernull_Int64
+	EmojiID       whereHelperint64
+	UnicodeEmoji  whereHelperstring
+	RoleMenuID    whereHelperint64
+	EmojiAnimated whereHelperbool
+}{
+	ID:            whereHelperint64{field: `id`},
+	RoleCommandID: whereHelpernull_Int64{field: `role_command_id`},
+	EmojiID:       whereHelperint64{field: `emoji_id`},
+	UnicodeEmoji:  whereHelperstring{field: `unicode_emoji`},
+	RoleMenuID:    whereHelperint64{field: `role_menu_id`},
+	EmojiAnimated: whereHelperbool{field: `emoji_animated`},
 }
 
 // RoleMenuOptionRels is where relationship names are stored.
@@ -109,6 +128,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single roleMenuOption record from the query using the global executor.
@@ -1135,7 +1157,7 @@ func (o *RoleMenuOption) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 			roleMenuOptionPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert role_menu_options, could not build update column list")
 		}
 

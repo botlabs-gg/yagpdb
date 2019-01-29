@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -41,6 +42,20 @@ var ReputationUserColumns = struct {
 	GuildID:   "guild_id",
 	CreatedAt: "created_at",
 	Points:    "points",
+}
+
+// Generated where
+
+var ReputationUserWhere = struct {
+	UserID    whereHelperint64
+	GuildID   whereHelperint64
+	CreatedAt whereHelpertime_Time
+	Points    whereHelperint64
+}{
+	UserID:    whereHelperint64{field: `user_id`},
+	GuildID:   whereHelperint64{field: `guild_id`},
+	CreatedAt: whereHelpertime_Time{field: `created_at`},
+	Points:    whereHelperint64{field: `points`},
 }
 
 // ReputationUserRels is where relationship names are stored.
@@ -92,6 +107,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single reputationUser record from the query using the global executor.
@@ -505,7 +523,7 @@ func (o *ReputationUser) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 			reputationUserPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert reputation_users, could not build update column list")
 		}
 

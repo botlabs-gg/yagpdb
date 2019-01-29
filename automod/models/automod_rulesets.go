@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -41,6 +42,29 @@ var AutomodRulesetColumns = struct {
 	GuildID: "guild_id",
 	Name:    "name",
 	Enabled: "enabled",
+}
+
+// Generated where
+
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+var AutomodRulesetWhere = struct {
+	ID      whereHelperint64
+	GuildID whereHelperint64
+	Name    whereHelperstring
+	Enabled whereHelperbool
+}{
+	ID:      whereHelperint64{field: `id`},
+	GuildID: whereHelperint64{field: `guild_id`},
+	Name:    whereHelperstring{field: `name`},
+	Enabled: whereHelperbool{field: `enabled`},
 }
 
 // AutomodRulesetRels is where relationship names are stored.
@@ -99,6 +123,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single automodRuleset record from the query using the global executor.
@@ -840,7 +867,7 @@ func (o *AutomodRuleset) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 			automodRulesetPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert automod_rulesets, could not build update column list")
 		}
 
