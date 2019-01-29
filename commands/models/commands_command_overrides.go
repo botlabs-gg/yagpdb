@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -63,6 +64,55 @@ var CommandsCommandOverrideColumns = struct {
 	AutodeleteTriggerDelay:      "autodelete_trigger_delay",
 	RequireRoles:                "require_roles",
 	IgnoreRoles:                 "ignore_roles",
+}
+
+// Generated where
+
+type whereHelpertypes_StringArray struct{ field string }
+
+func (w whereHelpertypes_StringArray) EQ(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertypes_StringArray) NEQ(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertypes_StringArray) LT(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_StringArray) LTE(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_StringArray) GT(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_StringArray) GTE(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var CommandsCommandOverrideWhere = struct {
+	ID                          whereHelperint64
+	GuildID                     whereHelperint64
+	CommandsChannelsOverridesID whereHelperint64
+	Commands                    whereHelpertypes_StringArray
+	CommandsEnabled             whereHelperbool
+	AutodeleteResponse          whereHelperbool
+	AutodeleteTrigger           whereHelperbool
+	AutodeleteResponseDelay     whereHelperint
+	AutodeleteTriggerDelay      whereHelperint
+	RequireRoles                whereHelpertypes_Int64Array
+	IgnoreRoles                 whereHelpertypes_Int64Array
+}{
+	ID:                          whereHelperint64{field: `id`},
+	GuildID:                     whereHelperint64{field: `guild_id`},
+	CommandsChannelsOverridesID: whereHelperint64{field: `commands_channels_overrides_id`},
+	Commands:                    whereHelpertypes_StringArray{field: `commands`},
+	CommandsEnabled:             whereHelperbool{field: `commands_enabled`},
+	AutodeleteResponse:          whereHelperbool{field: `autodelete_response`},
+	AutodeleteTrigger:           whereHelperbool{field: `autodelete_trigger`},
+	AutodeleteResponseDelay:     whereHelperint{field: `autodelete_response_delay`},
+	AutodeleteTriggerDelay:      whereHelperint{field: `autodelete_trigger_delay`},
+	RequireRoles:                whereHelpertypes_Int64Array{field: `require_roles`},
+	IgnoreRoles:                 whereHelpertypes_Int64Array{field: `ignore_roles`},
 }
 
 // CommandsCommandOverrideRels is where relationship names are stored.
@@ -118,6 +168,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single commandsCommandOverride record from the query using the global executor.
@@ -679,7 +732,7 @@ func (o *CommandsCommandOverride) Upsert(ctx context.Context, exec boil.ContextE
 			commandsCommandOverridePrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert commands_command_overrides, could not build update column list")
 		}
 

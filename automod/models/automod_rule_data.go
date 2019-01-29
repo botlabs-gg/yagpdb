@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -48,6 +49,45 @@ var AutomodRuleDatumColumns = struct {
 	Kind:     "kind",
 	TypeID:   "type_id",
 	Settings: "settings",
+}
+
+// Generated where
+
+type whereHelpertypes_JSON struct{ field string }
+
+func (w whereHelpertypes_JSON) EQ(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertypes_JSON) NEQ(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertypes_JSON) LT(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_JSON) LTE(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_JSON) GT(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_JSON) GTE(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var AutomodRuleDatumWhere = struct {
+	ID       whereHelperint64
+	GuildID  whereHelperint64
+	RuleID   whereHelperint64
+	Kind     whereHelperint
+	TypeID   whereHelperint
+	Settings whereHelpertypes_JSON
+}{
+	ID:       whereHelperint64{field: `id`},
+	GuildID:  whereHelperint64{field: `guild_id`},
+	RuleID:   whereHelperint64{field: `rule_id`},
+	Kind:     whereHelperint{field: `kind`},
+	TypeID:   whereHelperint{field: `type_id`},
+	Settings: whereHelpertypes_JSON{field: `settings`},
 }
 
 // AutomodRuleDatumRels is where relationship names are stored.
@@ -106,6 +146,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single automodRuleDatum record from the query using the global executor.
@@ -927,7 +970,7 @@ func (o *AutomodRuleDatum) Upsert(ctx context.Context, exec boil.ContextExecutor
 			automodRuleDatumPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert automod_rule_data, could not build update column list")
 		}
 

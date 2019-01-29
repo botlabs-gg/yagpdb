@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -48,6 +49,24 @@ var AutomodViolationColumns = struct {
 	RuleID:    "rule_id",
 	CreatedAt: "created_at",
 	Name:      "name",
+}
+
+// Generated where
+
+var AutomodViolationWhere = struct {
+	ID        whereHelperint64
+	GuildID   whereHelperint64
+	UserID    whereHelperint64
+	RuleID    whereHelpernull_Int64
+	CreatedAt whereHelpertime_Time
+	Name      whereHelperstring
+}{
+	ID:        whereHelperint64{field: `id`},
+	GuildID:   whereHelperint64{field: `guild_id`},
+	UserID:    whereHelperint64{field: `user_id`},
+	RuleID:    whereHelpernull_Int64{field: `rule_id`},
+	CreatedAt: whereHelpertime_Time{field: `created_at`},
+	Name:      whereHelperstring{field: `name`},
 }
 
 // AutomodViolationRels is where relationship names are stored.
@@ -103,6 +122,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single automodViolation record from the query using the global executor.
@@ -721,7 +743,7 @@ func (o *AutomodViolation) Upsert(ctx context.Context, exec boil.ContextExecutor
 			automodViolationPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert automod_violations, could not build update column list")
 		}
 

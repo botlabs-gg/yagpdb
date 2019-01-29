@@ -18,6 +18,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
@@ -72,6 +73,40 @@ var RoleMenuColumns = struct {
 	SkipAmount:                 "skip_amount",
 	EditingOptionID:            "editing_option_id",
 	SetupMSGID:                 "setup_msg_id",
+}
+
+// Generated where
+
+var RoleMenuWhere = struct {
+	MessageID                  whereHelperint64
+	GuildID                    whereHelperint64
+	ChannelID                  whereHelperint64
+	OwnerID                    whereHelperint64
+	OwnMessage                 whereHelperbool
+	State                      whereHelperint64
+	NextRoleCommandID          whereHelpernull_Int64
+	RoleGroupID                whereHelpernull_Int64
+	DisableSendDM              whereHelperbool
+	RemoveRoleOnReactionRemove whereHelperbool
+	FixedAmount                whereHelperbool
+	SkipAmount                 whereHelperint
+	EditingOptionID            whereHelpernull_Int64
+	SetupMSGID                 whereHelperint64
+}{
+	MessageID:                  whereHelperint64{field: `message_id`},
+	GuildID:                    whereHelperint64{field: `guild_id`},
+	ChannelID:                  whereHelperint64{field: `channel_id`},
+	OwnerID:                    whereHelperint64{field: `owner_id`},
+	OwnMessage:                 whereHelperbool{field: `own_message`},
+	State:                      whereHelperint64{field: `state`},
+	NextRoleCommandID:          whereHelpernull_Int64{field: `next_role_command_id`},
+	RoleGroupID:                whereHelpernull_Int64{field: `role_group_id`},
+	DisableSendDM:              whereHelperbool{field: `disable_send_dm`},
+	RemoveRoleOnReactionRemove: whereHelperbool{field: `remove_role_on_reaction_remove`},
+	FixedAmount:                whereHelperbool{field: `fixed_amount`},
+	SkipAmount:                 whereHelperint{field: `skip_amount`},
+	EditingOptionID:            whereHelpernull_Int64{field: `editing_option_id`},
+	SetupMSGID:                 whereHelperint64{field: `setup_msg_id`},
 }
 
 // RoleMenuRels is where relationship names are stored.
@@ -136,6 +171,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single roleMenu record from the query using the global executor.
@@ -1321,7 +1359,7 @@ func (o *RoleMenu) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 			roleMenuPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert role_menus, could not build update column list")
 		}
 

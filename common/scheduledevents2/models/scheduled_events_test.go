@@ -427,7 +427,7 @@ func testScheduledEventsSelect(t *testing.T) {
 }
 
 var (
-	scheduledEventDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `Data`: `jsonb`, `EventName`: `text`, `GuildID`: `bigint`, `ID`: `bigint`, `Processed`: `boolean`, `RetryOnError`: `boolean`, `TriggersAt`: `timestamp with time zone`}
+	scheduledEventDBTypes = map[string]string{`ID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `TriggersAt`: `timestamp with time zone`, `RetryOnError`: `boolean`, `GuildID`: `bigint`, `EventName`: `text`, `Data`: `jsonb`, `Processed`: `boolean`}
 	_                     = bytes.MinRead
 )
 

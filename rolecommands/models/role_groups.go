@@ -17,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -63,6 +64,52 @@ var RoleGroupColumns = struct {
 	SingleAutoToggleOff:   "single_auto_toggle_off",
 	SingleRequireOne:      "single_require_one",
 	TemporaryRoleDuration: "temporary_role_duration",
+}
+
+// Generated where
+
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+var RoleGroupWhere = struct {
+	ID                    whereHelperint64
+	GuildID               whereHelperint64
+	Name                  whereHelperstring
+	RequireRoles          whereHelpertypes_Int64Array
+	IgnoreRoles           whereHelpertypes_Int64Array
+	Mode                  whereHelperint64
+	MultipleMax           whereHelperint64
+	MultipleMin           whereHelperint64
+	SingleAutoToggleOff   whereHelperbool
+	SingleRequireOne      whereHelperbool
+	TemporaryRoleDuration whereHelperint
+}{
+	ID:                    whereHelperint64{field: `id`},
+	GuildID:               whereHelperint64{field: `guild_id`},
+	Name:                  whereHelperstring{field: `name`},
+	RequireRoles:          whereHelpertypes_Int64Array{field: `require_roles`},
+	IgnoreRoles:           whereHelpertypes_Int64Array{field: `ignore_roles`},
+	Mode:                  whereHelperint64{field: `mode`},
+	MultipleMax:           whereHelperint64{field: `multiple_max`},
+	MultipleMin:           whereHelperint64{field: `multiple_min`},
+	SingleAutoToggleOff:   whereHelperbool{field: `single_auto_toggle_off`},
+	SingleRequireOne:      whereHelperbool{field: `single_require_one`},
+	TemporaryRoleDuration: whereHelperint{field: `temporary_role_duration`},
 }
 
 // RoleGroupRels is where relationship names are stored.
@@ -121,6 +168,9 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
 // OneG returns a single roleGroup record from the query using the global executor.
@@ -1040,7 +1090,7 @@ func (o *RoleGroup) Upsert(ctx context.Context, exec boil.ContextExecutor, updat
 			roleGroupPrimaryKeyColumns,
 		)
 
-		if len(update) == 0 {
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert role_groups, could not build update column list")
 		}
 
