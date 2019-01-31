@@ -41,6 +41,7 @@ var (
 		"slice":                 slice,
 		"cslice":                CreateSlice,
 		"currentTime":           tmplCurrentTime,
+		"split":                 strings.Split,
 		"escapeHere":            tmplEscapeHere,
 		"escapeEveryone":        tmplEscapeEveryone,
 		"escapeEveryoneHere":    tmplEscapeEveryoneHere,
@@ -238,10 +239,9 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
 	c.ContextFuncs["takeRoleID"] = c.tmplTakeRoleID
 	c.ContextFuncs["takeRoleName"] = c.tmplTakeRoleName
-	
+
 	c.ContextFuncs["targetHasRoleID"] = c.tmplTargetHasRoleID
 	c.ContextFuncs["targetHasRoleName"] = c.tmplTargetHasRoleName
-	
 
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
