@@ -336,7 +336,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	pu := evt.PresenceUpdate()
 	gs := bot.State.Guild(true, pu.GuildID)
 	if gs == nil {
-		go func() { evtChan <- evt }()
+		go func() { evtChan <- pu }()
 		return
 	}
 
@@ -344,21 +344,22 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	ms := gs.Member(false, pu.User.ID)
 	if ms == nil || !ms.PresenceSet || !ms.MemberSet {
 		gs.RUnlock()
-		go func() { evtChan <- evt }()
+
+		go func() { evtChan <- pu }()
 		return
 	}
 
 	if pu.User.Username != "" {
 		if pu.User.Username != ms.Username {
 			gs.RUnlock()
-			go func() { evtChan <- evt }()
+			go func() { evtChan <- pu }()
 			return
 		}
 	}
 
 	if pu.Nick != ms.Nick {
 		gs.RUnlock()
-		go func() { evtChan <- evt }()
+		go func() { evtChan <- pu }()
 		return
 	}
 
@@ -396,6 +397,7 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 	var lastUsername string
 	row := usernameStmt.QueryRow(user.ID)
 	err := row.Scan(&lastUsername)
+
 	if err == nil && lastUsername == user.Username {
 		// Not changed
 		return
