@@ -36,7 +36,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 
 	cmdsLen := len(group.R.RoleCommands)
 	if cmdsLen < 1 {
-		return "No commands in group, set them up in the control panel.", nil
+		return "No commands in this group, set them up in the control panel.", nil
 	}
 
 	model := &models.RoleMenu{
@@ -74,7 +74,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 			_, dErr := common.DiscordError(err)
 			errStr := "Failed creating the menu message, check the permissions on the channel"
 			if dErr != "" {
-				errStr += ", discord responded with: " + errStr
+				errStr += ", Discord responded with: " + errStr
 			}
 			return errStr, err
 		}
@@ -85,7 +85,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	err = model.InsertG(parsed.Context(), boil.Infer())
 	if err != nil {
 		if common.ErrPQIsUniqueViolation(err) {
-			return "Already a menu on that message, use `rolemenu update ...` to update it", nil
+			return "There is already a menu on that message, use `rolemenu update ...` to update it", nil
 		}
 
 		return "Failed setting up menu", err
@@ -179,7 +179,7 @@ OUTER:
 		rm.UpdateG(ctx, boil.Infer())
 
 		flagHelp := StrFlags(rm)
-		return fmt.Sprintf("Done setting up! you can delete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
+		return fmt.Sprintf("Done setting up! You can delete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
@@ -188,7 +188,7 @@ OUTER:
 	totalCommands := len(commands) - rm.SkipAmount
 	resp = fmt.Sprintf("[%d/%d]\n", numDone, totalCommands)
 
-	return resp + "React with the emoji for the role command: `" + nextCmd.Name + "`\nNote: the bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
+	return resp + "React with the emoji for the role command: `" + nextCmd.Name + "`\nNote: The bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 }
 
 func StrFlags(rm *models.RoleMenu) string {
@@ -702,7 +702,7 @@ func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discord
 }
 
 func updateSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents string) {
-	msgContents = msgContents + "\n\n*this message will be updated with new info throughout the setup*"
+	msgContents = msgContents + "\n\n*This message will be updated with new info throughout the setup.*"
 
 	if rm.SetupMSGID == 0 {
 		createSetupMessage(ctx, rm, msgContents, true)
