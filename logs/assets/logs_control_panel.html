@@ -19,7 +19,7 @@
                         <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
-                                <input type="checkbox" name="UsernameLoggingEnabled" {{if .Config.UsernameLoggingEnabled}} checked{{end}}>
+                                <input type="checkbox" name="UsernameLoggingEnabled" {{if .Config.UsernameLoggingEnabled.Bool}} checked{{end}}>
                                 Enable/disable username logging<br/>
                                 You can check a user's logged usernames with the whois command.<br/>
                                 <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another server with the bot on with this enabled, then their usernames will be logged even if you disable it on your server.<br/></div>
@@ -29,7 +29,7 @@
                         <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
-                                <input type="checkbox" name="NicknameLoggingEnabled" {{if .Config.NicknameLoggingEnabled}} checked{{end}}>
+                                <input type="checkbox" name="NicknameLoggingEnabled" {{if .Config.NicknameLoggingEnabled.Bool}} checked{{end}}>
                                 Enable/disable nickname logging<br/>
                                 You can check a user's logged nicknames with the whois command.<br/>
                               </label>
@@ -39,7 +39,7 @@
                             <div class="form-group">
                                 <label>Blacklist channels from message logs</label><br/>
                                 <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels" multiple="multiple" data-plugin-multiselect>
-                                    {{textChannelOptionsMulti .ActiveGuild.Channels .Config.ParsedBlacklistedchannels}}
+                                    {{textChannelOptionsMulti .ActiveGuild.Channels .ConfBlacklistedChannels}}
                                 </select>
                             </div>
                         </div>
@@ -48,7 +48,7 @@
                         <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
-                                <input type="checkbox" name="ManageMessagesCanViewDeleted" {{if .Config.ManageMessagesCanViewDeleted}} checked{{end}}>
+                                <input type="checkbox" name="ManageMessagesCanViewDeleted" {{if .Config.ManageMessagesCanViewDeleted.Bool}} checked{{end}}>
                                 Allow members with <code>Manage Messages</code> permissions to view deleted messages
                               </label>
                             </div>
@@ -56,7 +56,7 @@
                         <div class="col-lg-4">
                             <div class="checkbox">
                               <label>
-                                <input type="checkbox" name="EveryoneCanViewDeleted" {{if .Config.EveryoneCanViewDeleted}} checked{{end}}>
+                                <input type="checkbox" name="EveryoneCanViewDeleted" {{if .Config.EveryoneCanViewDeleted.Bool}} checked{{end}}>
                                 Allow everyone to view deleted messages
                               </label>
                             </div>
@@ -92,9 +92,9 @@
                         {{range .Logs}}
                         <tr>
                             <td>#{{.ID}}</td>
-                            <td>{{formatTime .CreatedAt}}</td>
-                            <td>{{.Author}} ({{.AuthorID}})</td>
-                            <td>#{{.ChannelName}}</td>
+                            <td>{{formatTime .CreatedAt.Time}}</td>
+                            <td>{{.Author.String}} ({{.AuthorID.String}})</td>
+                            <td>#{{.ChannelName.String}}</td>
                             <td>
                                 <form method="post" data-async-form>
                                     <input class="hidden" type="text" name="id" value="{{.ID}}" />

@@ -460,7 +460,7 @@ func WarnUser(config *Config, guildID, channelID int64, author *discordgo.User, 
 }
 
 func CreateLogs(guildID, channelID int64, user *discordgo.User) string {
-	lgs, err := logs.CreateChannelLog(nil, guildID, channelID, user.Username, user.ID, 100)
+	lgs, err := logs.CreateChannelLog(context.TODO(), nil, guildID, channelID, user.Username, user.ID, 100)
 	if err != nil {
 		if err == logs.ErrChannelBlacklisted {
 			return ""
@@ -468,5 +468,5 @@ func CreateLogs(guildID, channelID int64, user *discordgo.User) string {
 		logrus.WithError(err).Error("Log Creation Failed")
 		return "Log Creation Failed"
 	}
-	return lgs.Link()
+	return logs.CreateLink(guildID, lgs.ID)
 }

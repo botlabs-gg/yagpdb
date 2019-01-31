@@ -5,9 +5,11 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -27,7 +29,7 @@ var AuthorColors = []string{
 }
 
 type DeleteData struct {
-	ID string
+	ID int64
 }
 
 type GeneralFormData struct {
@@ -99,7 +101,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		tmpl["FirstPage"] = false
 	}
 
-	serverLogs, err := GetGuilLogs(g.ID, beforeID, afterID, 20)
+	serverLogs, err := GetGuilLogs(ctx, g.ID, beforeID, afterID, 20)
 	web.CheckErr(tmpl, err, "Failed retrieving logs", web.CtxLogger(ctx).Error)
 	if err == nil {
 		tmpl["Logs"] = serverLogs
@@ -109,11 +111,23 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		}
 	}
 
-	general, err := GetConfig(g.ID)
+	general, err := GetConfig(ctx, g.ID)
 	if err != nil {
 		return nil, err
 	}
 	tmpl["Config"] = general
+
+	// dealing with legacy code is a pain, gah
+	// so way back i didn't know about arrays in postgres, so i made the blacklisted channels field a single TEXT field, with a comma seperator
+	blacklistedChannels := make([]int64, 0, 10)
+	split := strings.Split(general.BlacklistedChannels.String, ",")
+	for _, v := range split {
+		i, err := strconv.ParseInt(v, 10, 64)
+		if i != 0 && err == nil {
+			blacklistedChannels = append(blacklistedChannels, i)
+		}
+	}
+	tmpl["ConfBlacklistedChannels"] = blacklistedChannels
 
 	return tmpl, nil
 }
@@ -124,19 +138,17 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	form := ctx.Value(common.ContextKeyParsedForm).(*GeneralFormData)
 
-	config := &GuildLoggingConfig{
-		GuildConfigModel: configstore.GuildConfigModel{
-			GuildID: g.ID,
-		},
+	config := &models.GuildLoggingConfig{
+		GuildID: g.ID,
 
-		NicknameLoggingEnabled:       form.NicknameLoggingEnabled,
-		UsernameLoggingEnabled:       form.UsernameLoggingEnabled,
-		BlacklistedChannels:          strings.Join(form.BlacklistedChannels, ","),
-		EveryoneCanViewDeleted:       form.EveryoneCanViewDeleted,
-		ManageMessagesCanViewDeleted: form.ManageMessagesCanViewDeleted,
+		NicknameLoggingEnabled:       null.BoolFrom(form.NicknameLoggingEnabled),
+		UsernameLoggingEnabled:       null.BoolFrom(form.UsernameLoggingEnabled),
+		BlacklistedChannels:          null.StringFrom(strings.Join(form.BlacklistedChannels, ",")),
+		EveryoneCanViewDeleted:       null.BoolFrom(form.EveryoneCanViewDeleted),
+		ManageMessagesCanViewDeleted: null.BoolFrom(form.ManageMessagesCanViewDeleted),
 	}
 
-	err := configstore.SQL.SetGuildConfig(ctx, config)
+	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
 	return tmpl, err
 }
 
@@ -145,22 +157,19 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*DeleteData)
-	if data.ID == "" {
+	if data.ID == 0 {
 		return tmpl, errors.New("ID is blank!")
 	}
 
-	result := common.GORM.Where("id = ? AND guild_id = ?", data.ID, g.ID).Delete(MessageLog{})
-	if result.Error != nil {
-		return tmpl, result.Error
+	_, err := models.MessageLogs(models.MessageLogWhere.ID.EQ(int(data.ID)),
+		models.MessageLogWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(g.ID)))).DeleteAll(r.Context(), common.PQ)
+
+	if err != nil {
+		return tmpl, err
 	}
 
-	if result.RowsAffected < 1 {
-		tmpl.AddAlerts(web.ErrorAlert("Ahhhhh did nothing??"))
-		return tmpl, nil
-	}
-	logrus.Println(result.RowsAffected)
-
-	err := common.GORM.Where("message_log_id = ?", data.ID).Delete(Message{}).Error
+	// for legacy setups
+	_, err = models.Messages(models.MessageWhere.MessageLogID.EQ(null.IntFrom(int(data.ID)))).DeleteAll(ctx, common.PQ)
 	return tmpl, err
 }
 
@@ -174,32 +183,32 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
-	config, err := GetConfig(g.ID)
+	config, err := GetConfig(r.Context(), g.ID)
 	if web.CheckErr(tmpl, err, "Error retrieving config for this server", web.CtxLogger(r.Context()).Error) {
 		return tmpl
 	}
 
 	canViewDeleted := web.IsAdminRequest(r.Context(), r)
-	if config.EveryoneCanViewDeleted {
+	if config.EveryoneCanViewDeleted.Bool {
 		canViewDeleted = true
-	} else if config.ManageMessagesCanViewDeleted && !canViewDeleted {
+	} else if config.ManageMessagesCanViewDeleted.Bool && !canViewDeleted {
 		canViewDeleted = web.HasPermissionCTX(r.Context(), discordgo.PermissionManageMessages)
 	}
 	tmpl["CanViewDeleted"] = canViewDeleted
 
-	msgLogs, err := GetChannelLogs(parsed)
+	msgLogs, err := GetChannelLogs(r.Context(), parsed, g.ID)
 	if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {
 		return tmpl
 	}
 
-	if msgLogs.GuildID != discordgo.StrID(g.ID) {
+	if msgLogs.GuildID.String != discordgo.StrID(g.ID) {
 		return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
 	}
 
 	// Fetch the role colors if possible
 	users := make([]int64, 0, 50)
-	for _, v := range msgLogs.Messages {
-		parsedAuthor, _ := strconv.ParseInt(v.AuthorID, 10, 64)
+	for _, v := range msgLogs.R.Messages {
+		parsedAuthor, _ := strconv.ParseInt(v.AuthorID.String, 10, 64)
 		if !common.ContainsInt64Slice(users, parsedAuthor) {
 			users = append(users, parsedAuthor)
 		}
@@ -207,23 +216,26 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 
 	roleColors, _ := botrest.GetMemberColors(g.ID, users...)
 
+	extraColors := make([]string, len(msgLogs.R.Messages))
+
 	const TimeFormat = "2006 Jan 02 15:04"
-	for k, v := range msgLogs.Messages {
-		parsed, err := discordgo.Timestamp(v.Timestamp).Parse()
+	for k, v := range msgLogs.R.Messages {
+		parsed, err := discordgo.Timestamp(v.Timestamp.String).Parse()
 		if err != nil {
 			logrus.WithError(err).Error("Failed parsing logged message timestamp")
 			continue
 		}
 		ts := parsed.UTC().Format(TimeFormat)
-		msgLogs.Messages[k].Timestamp = ts
+		msgLogs.R.Messages[k].Timestamp = null.StringFrom(ts)
 
 		if roleColors != nil {
-			if c, ok := roleColors[v.AuthorID]; ok {
-				msgLogs.Messages[k].Color = strconv.FormatInt(int64(c), 16)
+			if c, ok := roleColors[v.AuthorID.String]; ok {
+				extraColors[k] = strconv.FormatInt(int64(c), 16)
 			}
 		}
 	}
 
+	tmpl["MessageColors"] = extraColors
 	tmpl["Logs"] = msgLogs
 	return tmpl
 }
@@ -238,17 +250,25 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return web.NewPublicError("Empty id")
 	}
 
-	var logContainer MessageLog
-	err := common.GORM.Where("id = ?", logsId).First(&logContainer).Error
+	parsedLogsID, _ := strconv.ParseInt(logsId, 10, 64)
+	_, err := models.MessageLogs(
+		models.MessageLogWhere.ID.EQ(int(parsedLogsID)),
+		models.MessageLogWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(g.ID)))).OneG(r.Context())
+
 	if err != nil {
 		return err
 	}
 
-	if logContainer.GuildID != discordgo.StrID(g.ID) {
+	parsedMsgID, _ := strconv.ParseInt(msgID, 10, 64)
+	_, err = models.Messages(
+		models.MessageWhere.ID.EQ(int(parsedMsgID)),
+		models.MessageWhere.MessageLogID.EQ(null.IntFrom(int(parsedLogsID)))).UpdateAllG(
+		r.Context(), models.M{"deleted": true})
+
+	if err != nil {
 		return err
 	}
 
-	err = common.GORM.Model(&Message{}).Where("message_log_id = ? AND id = ?", logsId, msgID).Update("deleted", true).Error
 	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
 	return err
