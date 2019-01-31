@@ -94,6 +94,14 @@ func LoadTemplates() {
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html", "templates/status.html"))
 }
 
+func BaseURL() string {
+	if https || exthttps {
+		return "https://" + common.Conf.Host
+	}
+
+	return "http://" + common.Conf.Host
+}
+
 func Run() {
 	LoadTemplates()
 
