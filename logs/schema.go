@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS messages (
 
 	created_at TIMESTAMP WITH TIME ZONE,
 	updated_at TIMESTAMP WITH TIME ZONE,
-	deleted_at TIMESTAMP WITH TIME ZONE,
 
 	message_log_id INT REFERENCES message_logs(id) ON DELETE CASCADE,
 	message_id TEXT,
@@ -35,7 +34,6 @@ CREATE TABLE IF NOT EXISTS messages (
 	timestamp TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_messages_deleted_at ON messages(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_messages_message_id ON messages(message_id);
 CREATE INDEX IF NOT EXISTS idx_messages_message_log_id ON messages(message_log_id);
 

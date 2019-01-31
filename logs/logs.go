@@ -203,6 +203,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64) (*models.MessageLog,
 	logs, err := models.MessageLogs(
 		models.MessageLogWhere.ID.EQ(int(id)),
 		models.MessageLogWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(guildID))),
+		models.MessageLogWhere.DeletedAt.IsNull(),
 		qm.Load("Messages", qm.OrderBy("id desc"))).OneG(ctx)
 
 	return logs, err
@@ -213,6 +214,7 @@ func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) (
 	qms := []qm.QueryMod{
 		qm.OrderBy("id desc"),
 		qm.Limit(limit),
+		models.MessageLogWhere.DeletedAt.IsNull(),
 		models.MessageLogWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(guildID))),
 	}
 
