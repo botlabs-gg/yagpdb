@@ -245,6 +245,15 @@ func ContextUser(ctx context.Context) *discordgo.User {
 	return ctx.Value(common.ContextKeyUser).(*discordgo.User)
 }
 
+func ContextMember(ctx context.Context) *discordgo.Member {
+	i := ctx.Value(common.ContextKeyUserMember)
+	if i == nil {
+		return nil
+	}
+
+	return i.(*discordgo.Member)
+}
+
 func ParamOrEmpty(r *http.Request, key string) string {
 	s := r.Context().Value(pattern.Variable(key))
 	if s != nil {

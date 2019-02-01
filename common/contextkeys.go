@@ -19,4 +19,5 @@ const (
 	ContextKeyHighestBotRole
 	ContextKeyLogger
 	ContextKeyIsPartial
+	ContextKeyUserMember
 )

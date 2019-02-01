@@ -238,6 +238,8 @@ func setupRoutes() *goji.Mux {
 	// Guild specific public routes, does not require admin or being logged in at all
 	serverPublicMux := goji.SubMux()
 	serverPublicMux.Use(ActiveServerMW)
+	serverPublicMux.Use(SetGuildMemberMiddleware)
+
 	RootMux.Handle(pat.Get("/public/:server"), serverPublicMux)
 	RootMux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
 	ServerPublicMux = serverPublicMux
@@ -246,6 +248,8 @@ func setupRoutes() *goji.Mux {
 	ServerPubliAPIMux = goji.SubMux()
 	ServerPubliAPIMux.Use(ActiveServerMW)
 	ServerPubliAPIMux.Use(RequireActiveServer)
+	ServerPubliAPIMux.Use(SetGuildMemberMiddleware)
+
 	RootMux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
 	RootMux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
 
@@ -267,6 +271,7 @@ func setupRoutes() *goji.Mux {
 	CPMux.Use(RequireSessionMiddleware)
 	CPMux.Use(ActiveServerMW)
 	CPMux.Use(RequireActiveServer)
+	CPMux.Use(SetGuildMemberMiddleware)
 	CPMux.Use(RequireServerAdminMiddleware)
 
 	RootMux.Handle(pat.New("/manage/:server"), CPMux)
@@ -302,11 +307,11 @@ func setupRootMux() {
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 
 	// General middleware
-	mux.Use(gziphandler.GzipHandler)
-	mux.Use(MiscMiddleware)
-	mux.Use(BaseTemplateDataMiddleware)
-	mux.Use(SessionMiddleware)
-	mux.Use(UserInfoMiddleware)
+	mux.Use(SkipStaticMW(gziphandler.GzipHandler, ".css", ".js", ".map"))
+	mux.Use(SkipStaticMW(MiscMiddleware))
+	mux.Use(SkipStaticMW(BaseTemplateDataMiddleware))
+	mux.Use(SkipStaticMW(SessionMiddleware))
+	mux.Use(SkipStaticMW(UserInfoMiddleware))
 
 	// General handlers
 	mux.Handle(pat.Get("/"), ControllerHandler(HandleLandingPage, "index"))

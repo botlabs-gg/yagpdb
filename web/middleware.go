@@ -63,11 +63,6 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 // Fills the template data in the context with basic data such as clientid and redirects
 func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			inner.ServeHTTP(w, r)
-			return
-		}
-
 		// we store the light theme and sidebar_collapsed stuff in cookies
 		lightTheme := false
 		if cookie, err := r.Cookie("light_theme"); err == nil {
@@ -114,11 +109,6 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		defer func() {
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		}()
-
-		// shitty hack to not run on static files
-		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			return
-		}
 
 		// we actually store the discord oauth2 token for the user in their own browser instead of on the server
 		// this way we avoid storing that sensitive information on the server, and it's tamper proof since its just a token.
@@ -432,7 +422,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 
 		member, err := botrest.GetBotMember(parsedGuildID)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
+			CtxLogger(r.Context()).WithError(err).Warn("Failed contacting bot about bot member information, falling back to discord api for retrieving bot member")
 			member, err = common.BotSession.GuildMember(parsedGuildID, common.Conf.BotID)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
@@ -843,5 +833,73 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		})
+	}
+}
+
+func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		defer inner.ServeHTTP(w, r)
+
+		guild := ContextGuild(r.Context())
+		if guild == nil {
+			return
+		}
+
+		userI := r.Context().Value(common.ContextKeyUser)
+		if userI == nil {
+			return
+		}
+
+		user := userI.(*discordgo.User)
+		results, err := botrest.GetMembers(guild.ID, user.ID)
+
+		var m *discordgo.Member
+		if len(results) > 0 {
+			m = results[0]
+		}
+
+		if err != nil || len(results) < 1 {
+			CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from bot, falling back to discord api")
+
+			// fallback to discord api
+			m, err = common.BotSession.GuildMember(guild.ID, user.ID)
+			if err != nil {
+				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
+				return
+			}
+		}
+
+		r = r.WithContext(context.WithValue(r.Context(), common.ContextKeyUserMember, m))
+	}
+
+	return http.HandlerFunc(mw)
+}
+
+// SkipStaticMW skips the "maybeSkip" handler if this is a static link
+func SkipStaticMW(maybeSkip func(http.Handler) http.Handler, alwaysRunSuffixes ...string) func(http.Handler) http.Handler {
+	return func(alwaysRun http.Handler) http.Handler {
+		mw := func(w http.ResponseWriter, r *http.Request) {
+
+			// reliable enough... *cough cough*
+			if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
+
+				// in some cases (like the gzip handler) we wanna run certain middlewares on certain files
+				for _, v := range alwaysRunSuffixes {
+					if strings.HasSuffix(r.URL.Path, v) {
+						// we got a match
+						maybeSkip(alwaysRun).ServeHTTP(w, r)
+						return
+					}
+				}
+
+				alwaysRun.ServeHTTP(w, r)
+				return
+			}
+
+			// not static, run the maybeskip handler
+			maybeSkip(alwaysRun).ServeHTTP(w, r)
+		}
+
+		return http.HandlerFunc(mw)
 	}
 }
