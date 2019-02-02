@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS messages (
 
 	created_at TIMESTAMP WITH TIME ZONE,
 	updated_at TIMESTAMP WITH TIME ZONE,
+	-- deleted_at TIMESTAMP WITH TIME ZONE, Note: this column exists in setups from below 1.15, but during the upgrade to sqlboiler i deemed it useless and don't include it in the schema anymore
 
 	message_log_id INT REFERENCES message_logs(id) ON DELETE CASCADE,
 	message_id TEXT,
@@ -50,6 +51,8 @@ CREATE TABLE IF NOT EXISTS guild_logging_configs (
 	manage_messages_can_view_deleted BOOLEAN,
 	everyone_can_view_deleted BOOLEAN
 );
+
+ALTER TABLE guild_logging_configs ADD COLUMN IF NOT EXISTS message_logs_allowed_roles BIGINT[];
 
 CREATE TABLE IF NOT EXISTS username_listings (
 	id SERIAL PRIMARY KEY,

@@ -20,18 +20,20 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 // GuildLoggingConfig is an object representing the database table.
 type GuildLoggingConfig struct {
-	GuildID                      int64       `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	CreatedAt                    null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
-	UpdatedAt                    null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
-	UsernameLoggingEnabled       null.Bool   `boil:"username_logging_enabled" json:"username_logging_enabled,omitempty" toml:"username_logging_enabled" yaml:"username_logging_enabled,omitempty"`
-	NicknameLoggingEnabled       null.Bool   `boil:"nickname_logging_enabled" json:"nickname_logging_enabled,omitempty" toml:"nickname_logging_enabled" yaml:"nickname_logging_enabled,omitempty"`
-	BlacklistedChannels          null.String `boil:"blacklisted_channels" json:"blacklisted_channels,omitempty" toml:"blacklisted_channels" yaml:"blacklisted_channels,omitempty"`
-	ManageMessagesCanViewDeleted null.Bool   `boil:"manage_messages_can_view_deleted" json:"manage_messages_can_view_deleted,omitempty" toml:"manage_messages_can_view_deleted" yaml:"manage_messages_can_view_deleted,omitempty"`
-	EveryoneCanViewDeleted       null.Bool   `boil:"everyone_can_view_deleted" json:"everyone_can_view_deleted,omitempty" toml:"everyone_can_view_deleted" yaml:"everyone_can_view_deleted,omitempty"`
+	GuildID                      int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	CreatedAt                    null.Time        `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	UpdatedAt                    null.Time        `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
+	UsernameLoggingEnabled       null.Bool        `boil:"username_logging_enabled" json:"username_logging_enabled,omitempty" toml:"username_logging_enabled" yaml:"username_logging_enabled,omitempty"`
+	NicknameLoggingEnabled       null.Bool        `boil:"nickname_logging_enabled" json:"nickname_logging_enabled,omitempty" toml:"nickname_logging_enabled" yaml:"nickname_logging_enabled,omitempty"`
+	BlacklistedChannels          null.String      `boil:"blacklisted_channels" json:"blacklisted_channels,omitempty" toml:"blacklisted_channels" yaml:"blacklisted_channels,omitempty"`
+	ManageMessagesCanViewDeleted null.Bool        `boil:"manage_messages_can_view_deleted" json:"manage_messages_can_view_deleted,omitempty" toml:"manage_messages_can_view_deleted" yaml:"manage_messages_can_view_deleted,omitempty"`
+	EveryoneCanViewDeleted       null.Bool        `boil:"everyone_can_view_deleted" json:"everyone_can_view_deleted,omitempty" toml:"everyone_can_view_deleted" yaml:"everyone_can_view_deleted,omitempty"`
+	MessageLogsAllowedRoles      types.Int64Array `boil:"message_logs_allowed_roles" json:"message_logs_allowed_roles,omitempty" toml:"message_logs_allowed_roles" yaml:"message_logs_allowed_roles,omitempty"`
 
 	R *guildLoggingConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L guildLoggingConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -46,6 +48,7 @@ var GuildLoggingConfigColumns = struct {
 	BlacklistedChannels          string
 	ManageMessagesCanViewDeleted string
 	EveryoneCanViewDeleted       string
+	MessageLogsAllowedRoles      string
 }{
 	GuildID:                      "guild_id",
 	CreatedAt:                    "created_at",
@@ -55,6 +58,7 @@ var GuildLoggingConfigColumns = struct {
 	BlacklistedChannels:          "blacklisted_channels",
 	ManageMessagesCanViewDeleted: "manage_messages_can_view_deleted",
 	EveryoneCanViewDeleted:       "everyone_can_view_deleted",
+	MessageLogsAllowedRoles:      "message_logs_allowed_roles",
 }
 
 // Generated where
@@ -137,6 +141,29 @@ func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpertypes_Int64Array struct{ field string }
+
+func (w whereHelpertypes_Int64Array) EQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpertypes_Int64Array) NEQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpertypes_Int64Array) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpertypes_Int64Array) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpertypes_Int64Array) LT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_Int64Array) LTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_Int64Array) GT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var GuildLoggingConfigWhere = struct {
 	GuildID                      whereHelperint64
 	CreatedAt                    whereHelpernull_Time
@@ -146,6 +173,7 @@ var GuildLoggingConfigWhere = struct {
 	BlacklistedChannels          whereHelpernull_String
 	ManageMessagesCanViewDeleted whereHelpernull_Bool
 	EveryoneCanViewDeleted       whereHelpernull_Bool
+	MessageLogsAllowedRoles      whereHelpertypes_Int64Array
 }{
 	GuildID:                      whereHelperint64{field: `guild_id`},
 	CreatedAt:                    whereHelpernull_Time{field: `created_at`},
@@ -155,6 +183,7 @@ var GuildLoggingConfigWhere = struct {
 	BlacklistedChannels:          whereHelpernull_String{field: `blacklisted_channels`},
 	ManageMessagesCanViewDeleted: whereHelpernull_Bool{field: `manage_messages_can_view_deleted`},
 	EveryoneCanViewDeleted:       whereHelpernull_Bool{field: `everyone_can_view_deleted`},
+	MessageLogsAllowedRoles:      whereHelpertypes_Int64Array{field: `message_logs_allowed_roles`},
 }
 
 // GuildLoggingConfigRels is where relationship names are stored.
@@ -174,9 +203,9 @@ func (*guildLoggingConfigR) NewStruct() *guildLoggingConfigR {
 type guildLoggingConfigL struct{}
 
 var (
-	guildLoggingConfigColumns               = []string{"guild_id", "created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted"}
-	guildLoggingConfigColumnsWithoutDefault = []string{"guild_id", "created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted"}
-	guildLoggingConfigColumnsWithDefault    = []string{}
+	guildLoggingConfigColumns               = []string{"guild_id", "created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
+	guildLoggingConfigColumnsWithoutDefault = []string{"created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
+	guildLoggingConfigColumnsWithDefault    = []string{"guild_id"}
 	guildLoggingConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
 

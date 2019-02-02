@@ -27,7 +27,6 @@ type Message struct {
 	ID             int         `boil:"id" json:"id" toml:"id" yaml:"id"`
 	CreatedAt      null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
 	UpdatedAt      null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
-	DeletedAt      null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
 	MessageLogID   null.Int    `boil:"message_log_id" json:"message_log_id,omitempty" toml:"message_log_id" yaml:"message_log_id,omitempty"`
 	MessageID      null.String `boil:"message_id" json:"message_id,omitempty" toml:"message_id" yaml:"message_id,omitempty"`
 	AuthorUsername null.String `boil:"author_username" json:"author_username,omitempty" toml:"author_username" yaml:"author_username,omitempty"`
@@ -45,7 +44,6 @@ var MessageColumns = struct {
 	ID             string
 	CreatedAt      string
 	UpdatedAt      string
-	DeletedAt      string
 	MessageLogID   string
 	MessageID      string
 	AuthorUsername string
@@ -58,7 +56,6 @@ var MessageColumns = struct {
 	ID:             "id",
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
-	DeletedAt:      "deleted_at",
 	MessageLogID:   "message_log_id",
 	MessageID:      "message_id",
 	AuthorUsername: "author_username",
@@ -98,7 +95,6 @@ var MessageWhere = struct {
 	ID             whereHelperint
 	CreatedAt      whereHelpernull_Time
 	UpdatedAt      whereHelpernull_Time
-	DeletedAt      whereHelpernull_Time
 	MessageLogID   whereHelpernull_Int
 	MessageID      whereHelpernull_String
 	AuthorUsername whereHelpernull_String
@@ -111,7 +107,6 @@ var MessageWhere = struct {
 	ID:             whereHelperint{field: `id`},
 	CreatedAt:      whereHelpernull_Time{field: `created_at`},
 	UpdatedAt:      whereHelpernull_Time{field: `updated_at`},
-	DeletedAt:      whereHelpernull_Time{field: `deleted_at`},
 	MessageLogID:   whereHelpernull_Int{field: `message_log_id`},
 	MessageID:      whereHelpernull_String{field: `message_id`},
 	AuthorUsername: whereHelpernull_String{field: `author_username`},
@@ -143,8 +138,8 @@ func (*messageR) NewStruct() *messageR {
 type messageL struct{}
 
 var (
-	messageColumns               = []string{"id", "created_at", "updated_at", "deleted_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
-	messageColumnsWithoutDefault = []string{"created_at", "updated_at", "deleted_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
+	messageColumns               = []string{"id", "created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
+	messageColumnsWithoutDefault = []string{"created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
 	messageColumnsWithDefault    = []string{"id"}
 	messagePrimaryKeyColumns     = []string{"id"}
 )

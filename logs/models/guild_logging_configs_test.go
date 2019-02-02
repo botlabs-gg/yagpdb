@@ -427,7 +427,7 @@ func testGuildLoggingConfigsSelect(t *testing.T) {
 }
 
 var (
-	guildLoggingConfigDBTypes = map[string]string{`GuildID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `UsernameLoggingEnabled`: `boolean`, `NicknameLoggingEnabled`: `boolean`, `BlacklistedChannels`: `text`, `ManageMessagesCanViewDeleted`: `boolean`, `EveryoneCanViewDeleted`: `boolean`}
+	guildLoggingConfigDBTypes = map[string]string{`GuildID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `UsernameLoggingEnabled`: `boolean`, `NicknameLoggingEnabled`: `boolean`, `BlacklistedChannels`: `text`, `ManageMessagesCanViewDeleted`: `boolean`, `EveryoneCanViewDeleted`: `boolean`, `MessageLogsAllowedRoles`: `ARRAYbigint`}
 	_                         = bytes.MinRead
 )
 
