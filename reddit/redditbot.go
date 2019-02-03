@@ -48,53 +48,26 @@ func setupClient() *reddit.Client {
 func (p *Plugin) runBot() {
 
 	redditClient := setupClient()
-	fetcher := NewPostFetcher(redditClient)
+	fetcherFast := NewPostFetcher(redditClient, false, p)
+	// fetcherSlow := NewPostFetcher(redditClient, true, p)
 
-	lastLogged := time.Now()
-	num := 0
-	numDeleted := 0
+	go fetcherFast.Run()
+	// go fetcherSlow.Run()
+}
 
-	ticker := time.NewTicker(time.Second * 5)
-	for {
-		select {
-		case wg := <-p.stopFeedChan:
-			wg.Done()
-			return
-		case <-ticker.C:
-		}
-
-		links, err := fetcher.GetNewPosts()
-		if err != nil {
-			logrus.WithError(err).Error("Error fetchind new links")
-			continue
-		}
-		if len(links) < 1 {
+func (p *Plugin) HandleRedditPosts(links []*reddit.Link) {
+	for _, v := range links {
+		if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
 			continue
 		}
 
-		num += len(links)
-		if time.Since(lastLogged) >= time.Minute {
-			logrus.Println("Num posts last minute: ", num, ", deleted: ", numDeleted)
-			lastLogged = time.Now()
-			num = 0
-			numDeleted = 0
+		if !v.IsRobotIndexable {
+			continue
 		}
 
-		for _, v := range links {
-			if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
-				numDeleted++
-				continue
-			}
-
-			if !v.IsRobotIndexable {
-				numDeleted++
-				continue
-			}
-
-			// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-			// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-			p.handlePost(v)
-		}
+		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
+		// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		p.handlePost(v)
 	}
 }
 
