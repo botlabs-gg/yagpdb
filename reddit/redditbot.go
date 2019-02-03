@@ -17,11 +17,10 @@ import (
 )
 
 var (
-	ClientID           = os.Getenv("YAGPDB_REDDIT_CLIENTID")
-	ClientSecret       = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
-	RedirectURI        = os.Getenv("YAGPDB_REDDIT_REDIRECT")
-	RefreshToken       = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
-	UseDiscordSpoilers = os.Getenv("YAGPDB_REDDIT_USE_DISCORD_SPOILERS") != ""
+	ClientID     = os.Getenv("YAGPDB_REDDIT_CLIENTID")
+	ClientSecret = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
+	RedirectURI  = os.Getenv("YAGPDB_REDDIT_REDIRECT")
+	RefreshToken = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
 
 	ratelimiter = NewRatelimiter()
 )
@@ -145,10 +144,9 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	} else {
 		plainBody = post.URL
 	}
-	if post.Spoiler && UseDiscordSpoilers {
-		plainMessage += "||" + plainBody + "||"
-	} else if post.Spoiler && !UseDiscordSpoilers {
-		plainMessage += "Content marked as spoiler"
+
+	if post.Spoiler {
+		plainMessage += "|| " + plainBody + " ||"
 	} else {
 		plainMessage += plainBody
 	}
@@ -169,10 +167,8 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 
 	if post.IsSelf {
 		embed.Title = "New self post in /r/" + post.Subreddit
-		if post.Spoiler && UseDiscordSpoilers {
-			embed.Description += "||" + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + "||"
-		} else if post.Spoiler && !UseDiscordSpoilers {
-			embed.Description += "Content marked as spoiler"
+		if post.Spoiler {
+			embed.Description += "|| " + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + " ||"
 		} else {
 			embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
 		}
