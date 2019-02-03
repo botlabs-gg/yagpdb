@@ -838,7 +838,7 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 
 func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		defer inner.ServeHTTP(w, r)
+		defer func() { inner.ServeHTTP(w, r) }()
 
 		guild := ContextGuild(r.Context())
 		if guild == nil {
