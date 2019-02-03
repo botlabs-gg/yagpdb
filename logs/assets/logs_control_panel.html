@@ -61,6 +61,15 @@
                               </label>
                             </div>
                         </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label>Restrict message log access</label><br>
+                                <select name="MessageLogsAllowedRoles" class="multiselect form-control" multiple="multiple" id="blacklisted-roles-receive" data-plugin-multiselect data-placeholder="Everyone">
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .Config.MessageLogsAllowedRoles}}
+                                </select>
+                                <p class="help-block">If none are set, everyone will be able to access message logs (including users not logged in at all), otherwise access is restricted to only the specified roles. Note: people with access to the control panel will always have access to logs.</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-12">

@@ -48,34 +48,6 @@ func RegisterPlugin() {
 	common.RegisterPlugin(p)
 }
 
-// type GuildLoggingConfig struct {
-// 	configstore.GuildConfigModel
-// 	UsernameLoggingEnabled bool
-// 	NicknameLoggingEnabled bool
-// 	BlacklistedChannels    string
-
-// 	ManageMessagesCanViewDeleted bool
-// 	EveryoneCanViewDeleted       bool
-
-// 	ParsedBlacklistedchannels []int64 `gorm:"-"`
-// }
-
-// func (g *GuildLoggingConfig) PostFetch() {
-// 	split := strings.Split(g.BlacklistedChannels, ",")
-// 	for _, v := range split {
-// 		if v != "" && v != "0" {
-// 			parsed, err := strconv.ParseInt(v, 10, 64)
-// 			if err == nil {
-// 				g.ParsedBlacklistedchannels = append(g.ParsedBlacklistedchannels, parsed)
-// 			}
-// 		}
-// 	}
-// }
-
-// func (g *GuildLoggingConfig) GetName() string {
-// 	return "guild_logging_config"
-// }
-
 // Returns either stored config, err or a default config
 func GetConfig(ctx context.Context, guildID int64) (*models.GuildLoggingConfig, error) {
 

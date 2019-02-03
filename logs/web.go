@@ -32,12 +32,13 @@ type DeleteData struct {
 	ID int64
 }
 
-type GeneralFormData struct {
+type ConfigFormData struct {
 	UsernameLoggingEnabled       bool
 	NicknameLoggingEnabled       bool
 	ManageMessagesCanViewDeleted bool
 	EveryoneCanViewDeleted       bool
 	BlacklistedChannels          []string
+	MessageLogsAllowedRoles      []int64
 }
 
 func (lp *Plugin) InitWeb() {
@@ -58,12 +59,13 @@ func (lp *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/logging/*"), logCPMux)
 
 	logCPMux.Use(web.RequireGuildChannelsMiddleware)
+	logCPMux.Use(web.RequireFullGuildMW)
 
 	cpGetHandler := web.ControllerHandler(HandleLogsCP, "cp_logging")
 	logCPMux.Handle(pat.Get("/"), cpGetHandler)
 	logCPMux.Handle(pat.Get(""), cpGetHandler)
 
-	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, GeneralFormData{}, "Updated logging config")
+	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, ConfigFormData{}, "Updated logging config")
 	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
 	msgDeleteHandler := web.APIHandler(HandleDeleteMessageJson)
 
@@ -136,7 +138,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	ctx := r.Context()
 	g, tmpl := web.GetBaseCPContextData(ctx)
 
-	form := ctx.Value(common.ContextKeyParsedForm).(*GeneralFormData)
+	form := ctx.Value(common.ContextKeyParsedForm).(*ConfigFormData)
 
 	config := &models.GuildLoggingConfig{
 		GuildID: g.ID,
@@ -146,6 +148,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 		BlacklistedChannels:          null.StringFrom(strings.Join(form.BlacklistedChannels, ",")),
 		EveryoneCanViewDeleted:       null.BoolFrom(form.EveryoneCanViewDeleted),
 		ManageMessagesCanViewDeleted: null.BoolFrom(form.ManageMessagesCanViewDeleted),
+		MessageLogsAllowedRoles:      form.MessageLogsAllowedRoles,
 	}
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
@@ -188,14 +191,31 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
-	canViewDeleted := web.IsAdminRequest(r.Context(), r)
+	isAdmin := web.IsAdminRequest(r.Context(), r)
+
+	// check if were allowed access to logs on this server
+	if !isAdmin && len(config.MessageLogsAllowedRoles) > 0 {
+		member := web.ContextMember(r.Context())
+		if member == nil {
+			return tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, aither you're not logged in or not on this server."))
+		}
+
+		if !common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
+			return tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
+		}
+	}
+
+	// check if were allowed to view deleted messages
+	canViewDeleted := isAdmin
 	if config.EveryoneCanViewDeleted.Bool {
 		canViewDeleted = true
 	} else if config.ManageMessagesCanViewDeleted.Bool && !canViewDeleted {
 		canViewDeleted = web.HasPermissionCTX(r.Context(), discordgo.PermissionManageMessages)
 	}
+
 	tmpl["CanViewDeleted"] = canViewDeleted
 
+	// retrieve logs
 	msgLogs, err := GetChannelLogs(r.Context(), parsed, g.ID)
 	if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {
 		return tmpl
