@@ -59,10 +59,6 @@ export YAGPDB_REDDIT_CLIENTID="Reddit application clientid here"
 export YAGPDB_REDDIT_CLIENTSECRET="Reddit application client secret here"
 export YAGPDB_REDDIT_REDIRECT="Reddit redirect uri here"
 export YAGPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (duration=permanent)"
-# Discord spoilers were not yet in at the time of writing, it was in on ptb at some point but was pulled out
-# therefor this feature can be enabled whenever full support of it is implemented in discord
-# set to anything (like yes) to enable
-export YAGPDB_REDDIT_USE_DISCORD_SPOILERS=""
 
 # Youtube and other google apis credentials json file
 export GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"
