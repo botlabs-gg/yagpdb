@@ -23,6 +23,7 @@ var (
 		"toString": ToString, // don't ask why we have 2 of these
 		"toInt":    tmplToInt,
 		"toInt64":  ToInt64,
+		"toFloat":  ToFloat64,
 
 		// string manipulation
 		"joinStr":   joinStrings,
