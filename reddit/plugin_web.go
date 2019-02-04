@@ -25,16 +25,21 @@ const (
 )
 
 type CreateForm struct {
-	Subreddit string `schema:"subreddit" valid:",1,100"`
-	Channel   int64  `schema:"channel" valid:"channel,false`
-	ID        int64  `schema:"id"`
-	UseEmbeds bool   `schema:"use_embeds"`
+	Subreddit  string `schema:"subreddit" valid:",1,100"`
+	Slow       bool   `schema:"slow"`
+	Channel    int64  `schema:"channel" valid:"channel,false`
+	ID         int64  `schema:"id"`
+	UseEmbeds  bool   `schema:"use_embeds"`
+	NSFWMode   int    `schema:"nsfw_filter"`
+	MinUpvotes int    `schema:"min_upvotes"`
 }
 
 type UpdateForm struct {
-	Channel   int64 `schema:"channel" valid:"channel,false`
-	ID        int64 `schema:"id"`
-	UseEmbeds bool  `schema:"use_embeds"`
+	Channel    int64 `schema:"channel" valid:"channel,false`
+	ID         int64 `schema:"id"`
+	UseEmbeds  bool  `schema:"use_embeds"`
+	NSFWMode   int   `schema:"nsfw_filter"`
+	MinUpvotes int   `schema:"min_upvotes"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -122,10 +127,16 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	watchItem := &models.RedditFeed{
-		GuildID:   activeGuild.ID,
-		ChannelID: newElem.Channel,
-		Subreddit: strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
-		UseEmbeds: newElem.UseEmbeds,
+		GuildID:    activeGuild.ID,
+		ChannelID:  newElem.Channel,
+		Subreddit:  strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		UseEmbeds:  newElem.UseEmbeds,
+		FilterNSFW: newElem.NSFWMode,
+	}
+
+	if newElem.Slow {
+		watchItem.Slow = true
+		watchItem.MinUpvotes = newElem.MinUpvotes
 	}
 
 	err := watchItem.InsertG(ctx, boil.Infer())
@@ -167,8 +178,12 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 	item.ChannelID = updated.Channel
 	item.UseEmbeds = updated.UseEmbeds
+	item.FilterNSFW = updated.NSFWMode
+	if item.Slow {
+		item.MinUpvotes = updated.MinUpvotes
+	}
 
-	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds"))
+	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}

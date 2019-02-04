@@ -18,22 +18,53 @@ import (
 	"time"
 )
 
+const (
+	MaxPostsHourFast = 300
+	MaxPostsHourSlow = 200
+)
+
 var (
 	ClientID     = os.Getenv("YAGPDB_REDDIT_CLIENTID")
 	ClientSecret = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
 	RedirectURI  = os.Getenv("YAGPDB_REDDIT_REDIRECT")
 	RefreshToken = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
 
-	ratelimiter = NewRatelimiter()
+	feedLock sync.Mutex
+	fastFeed *PostFetcher
+	slowFeed *PostFetcher
 )
 
 func (p *Plugin) StartFeed() {
 	go p.runBot()
-	go ratelimiter.RunGCLoop()
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
-	p.stopFeedChan <- wg
+	feedLock.Lock()
+
+	if fastFeed == nil {
+		// feed not running, do nothing
+		feedLock.Unlock()
+		wg.Done()
+		return
+	}
+
+	wg.Add(1)
+
+	ff := fastFeed
+	sf := slowFeed
+
+	go func() {
+		ff.StopChan <- wg
+	}()
+	go func() {
+		sf.StopChan <- wg
+	}()
+
+	// make sure we don't send the stop singal twice
+	slowFeed = nil
+	fastFeed = nil
+
+	feedLock.Unlock()
 }
 
 func UserAgent() string {
@@ -47,16 +78,32 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) runBot() {
-
 	redditClient := setupClient()
-	fetcherFast := NewPostFetcher(redditClient, false, p)
-	// fetcherSlow := NewPostFetcher(redditClient, true, p)
+	feedLock.Lock()
+	fastFeed = NewPostFetcher(redditClient, false, NewPostHandler(false))
+	slowFeed = NewPostFetcher(redditClient, true, NewPostHandler(true))
 
-	go fetcherFast.Run()
-	// go fetcherSlow.Run()
+	go fastFeed.Run()
+	go slowFeed.Run()
+	feedLock.Unlock()
 }
 
-func (p *Plugin) HandleRedditPosts(links []*reddit.Link) {
+type PostHandlerImpl struct {
+	Slow        bool
+	ratelimiter *Ratelimiter
+}
+
+func NewPostHandler(slow bool) PostHandler {
+	rl := NewRatelimiter()
+	go rl.RunGCLoop()
+
+	return &PostHandlerImpl{
+		Slow:        slow,
+		ratelimiter: rl,
+	}
+}
+
+func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 	for _, v := range links {
 		if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
 			continue
@@ -72,34 +119,22 @@ func (p *Plugin) HandleRedditPosts(links []*reddit.Link) {
 	}
 }
 
-func (p *Plugin) handlePost(post *reddit.Link) error {
+func (p *PostHandlerImpl) handlePost(post *reddit.Link) error {
 
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
 	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
-	config, err := models.RedditFeeds(models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit))).AllG(context.Background())
+	config, err := models.RedditFeeds(
+		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
+		models.RedditFeedWhere.Slow.EQ(p.Slow)).AllG(context.Background())
+
 	if err != nil {
 		logrus.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
 	}
 
 	// Get the configs that listens to this subreddit, if any
-	filteredItems := make([]*models.RedditFeed, 0, len(config))
-
-OUTER:
-	for _, c := range config {
-		// remove duplicates
-		for _, v := range filteredItems {
-			if v.ChannelID == c.ChannelID {
-				continue OUTER
-			}
-		}
-
-		// apply ratelimiting
-		if ratelimiter.CheckIncrement(time.Now(), c.GuildID, 600) {
-			filteredItems = append(filteredItems, c)
-		}
-	}
+	filteredItems := p.FilterFeeds(config, post)
 
 	// No channels nothing to do...
 	if len(filteredItems) < 1 {
@@ -127,6 +162,49 @@ OUTER:
 	}
 
 	return nil
+}
+
+func (p *PostHandlerImpl) FilterFeeds(feeds []*models.RedditFeed, post *reddit.Link) []*models.RedditFeed {
+	filteredItems := make([]*models.RedditFeed, 0, len(feeds))
+
+OUTER:
+	for _, c := range feeds {
+		// remove duplicates
+		for _, v := range filteredItems {
+			if v.ChannelID == c.ChannelID {
+				continue OUTER
+			}
+		}
+
+		limit := MaxPostsHourFast
+		if p.Slow {
+			limit = MaxPostsHourSlow
+		}
+
+		// apply ratelimiting
+		if !p.ratelimiter.CheckIncrement(time.Now(), c.GuildID, limit) {
+			continue
+		}
+
+		if post.Over18 && c.FilterNSFW == FilterNSFWIgnore {
+			// NSFW and we ignore nsfw posts
+			continue
+		} else if !post.Over18 && c.FilterNSFW == FilterNSFWRequire {
+			// Not NSFW and we only care about nsfw posts
+			continue
+		}
+
+		if p.Slow {
+			if post.Score < c.MinUpvotes {
+				// less than required upvotes
+				continue
+			}
+		}
+
+		filteredItems = append(filteredItems, c)
+	}
+
+	return filteredItems
 }
 
 func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {

@@ -44,7 +44,7 @@ func NewPostFetcher(redditClient *greddit.Client, slow bool, handler PostHandler
 	if slow {
 		name = "slow"
 		idKey = KeyLastScannedPostIDSlow
-		delay = time.Minute * 30
+		delay = time.Minute * 15
 	}
 
 	return &PostFetcher{
@@ -154,7 +154,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 		// logrus.Info(age.String())
 
 		// stay 1 minute behind
-		if age.Seconds() < 60 {
+		if age < p.delay {
 			break
 		}
 
