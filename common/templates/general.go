@@ -162,8 +162,100 @@ func inFold(l interface{}, v string) bool {
 	return false
 }
 
-func add(x, y int) int {
-	return x + y
+func add(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	switch args[0].(type) {
+	case float32, float64:
+		sumF := float64(0)
+		for _, v := range args {
+			sumF += ToFloat64(v)
+		}
+		return sumF
+	default:
+		sumI := int64(0)
+		for _, v := range args {
+			sumI += ToInt64(v)
+		}
+		return sumI
+	}
+}
+
+func tmplMult(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	switch args[0].(type) {
+	case float32, float64:
+		sumF := ToFloat64(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumF *= ToFloat64(v)
+		}
+		return sumF
+	default:
+		sumI := ToInt64(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumI *= ToInt64(v)
+		}
+		return sumI
+	}
+}
+
+func tmplDiv(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	switch args[0].(type) {
+	case float32, float64:
+		sumF := ToFloat64(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumF /= ToFloat64(v)
+		}
+		return sumF
+	default:
+		sumI := ToInt64(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumI /= ToInt64(v)
+		}
+		return sumI
+	}
+}
+
+func tmplFDiv(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	sumF := ToFloat64(args[0])
+	for i, v := range args {
+		if i == 0 {
+			continue
+		}
+
+		sumF /= ToFloat64(v)
+	}
+
+	return sumF
 }
 
 func roleIsAbove(a, b *discordgo.Role) bool {
@@ -333,6 +425,32 @@ func ToString(from interface{}) string {
 		return t
 	default:
 		return ""
+	}
+}
+
+func ToFloat64(from interface{}) float64 {
+	switch t := from.(type) {
+	case int:
+		return float64(t)
+	case int32:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case float32:
+		return float64(t)
+	case float64:
+		return float64(t)
+	case uint:
+		return float64(t)
+	case uint32:
+		return float64(t)
+	case uint64:
+		return float64(t)
+	case string:
+		parsed, _ := strconv.ParseFloat(t, 64)
+		return parsed
+	default:
+		return 0
 	}
 }
 

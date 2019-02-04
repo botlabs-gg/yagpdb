@@ -33,6 +33,12 @@ var (
 		"split":     strings.Split,
 		"title":     strings.Title,
 
+		// math
+		"add":  add,
+		"mult": tmplMult,
+		"div":  tmplDiv,
+		"fdiv": tmplFDiv,
+
 		// misc
 		"dict":   Dictionary,
 		"sdict":  StringKeyDictionary,
@@ -43,7 +49,6 @@ var (
 		"json":        tmplJson,
 		"in":          in,
 		"inFold":      inFold,
-		"add":         add,
 		"roleAbove":   roleIsAbove,
 		"adjective":   common.RandomAdjective,
 		"randInt":     randInt,
