@@ -102,6 +102,8 @@ type Context struct {
 	AddResponseReactionNames []string
 
 	FixedOutput string
+
+	secondsSlept int
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -243,10 +245,13 @@ func baseContextFuncs(c *Context) {
 	// Role functions
 	c.ContextFuncs["hasRoleName"] = c.tmplHasRoleName
 	c.ContextFuncs["hasRoleID"] = c.tmplHasRoleID
+
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
+
 	c.ContextFuncs["giveRoleID"] = c.tmplGiveRoleID
 	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
+
 	c.ContextFuncs["takeRoleID"] = c.tmplTakeRoleID
 	c.ContextFuncs["takeRoleName"] = c.tmplTakeRoleName
 
@@ -264,6 +269,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["currentUserCreated"] = c.tmplCurrentUserCreated
 	c.ContextFuncs["currentUserAgeHuman"] = c.tmplCurrentUserAgeHuman
 	c.ContextFuncs["currentUserAgeMinutes"] = c.tmplCurrentUserAgeMinutes
+	c.ContextFuncs["sleep"] = c.tmplSleep
 }
 
 type limitedWriter struct {

@@ -262,9 +262,8 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 		return false
 	}
 
-	
 	contains := common.ContainsInt64Slice(ts.Roles, role)
-	
+
 	return contains
 
 }
@@ -638,4 +637,15 @@ func (c *Context) tmplCurrentUserAgeMinutes() int {
 func (c *Context) tmplCurrentUserCreated() time.Time {
 	t := bot.SnowflakeToTime(c.MS.ID)
 	return t
+}
+
+func (c *Context) tmplSleep(duration interface{}) (string, error) {
+	seconds := tmplToInt(duration)
+	if c.secondsSlept+seconds > 60 || seconds < 1 {
+		return "", errors.New("can sleep for max 60 seconds combined")
+	}
+
+	c.secondsSlept += seconds
+	time.Sleep(time.Duration(seconds) * time.Second)
+	return "", nil
 }
