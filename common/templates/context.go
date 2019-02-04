@@ -275,6 +275,8 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["currentUserAgeHuman"] = c.tmplCurrentUserAgeHuman
 	c.ContextFuncs["currentUserAgeMinutes"] = c.tmplCurrentUserAgeMinutes
 	c.ContextFuncs["sleep"] = c.tmplSleep
+	c.ContextFuncs["reFind"] = c.reFind
+	c.ContextFuncs["reReplace"] = c.reReplace
 }
 
 type limitedWriter struct {

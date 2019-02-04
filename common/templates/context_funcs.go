@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -648,4 +649,30 @@ func (c *Context) tmplSleep(duration interface{}) (string, error) {
 	c.secondsSlept += seconds
 	time.Sleep(time.Duration(seconds) * time.Second)
 	return "", nil
+}
+
+func (c *Context) reFind(r string, s string) (string, error) {
+	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	compiled, err := regexp.Compile(r)
+	if err != nil {
+		return "", err
+	}
+
+	return compiled.FindString(s), nil
+}
+
+func (c *Context) reReplace(r string, s string, repl string) (string, error) {
+	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	compiled, err := regexp.Compile(r)
+	if err != nil {
+		return "", err
+	}
+
+	return compiled.ReplaceAllString(s, repl), nil
 }
