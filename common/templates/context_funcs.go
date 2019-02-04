@@ -131,6 +131,40 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 	}
 }
 
+func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
+	return func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
+		if c.IncreaseCheckCallCounter("edit_message", 5) {
+			return "", ErrTooManyCalls
+		}
+
+		cid := c.channelArg(channel)
+		if cid == 0 {
+			return "", errors.New("Unknown channel")
+		}
+
+		mID := ToInt64(msgID)
+
+		var err error
+		if embed, ok := msg.(*discordgo.MessageEmbed); ok {
+			_, err = common.BotSession.ChannelMessageEditEmbed(cid, mID, embed)
+		} else {
+			strMsg := fmt.Sprint(msg)
+
+			if filterSpecialMentions {
+				strMsg = common.EscapeSpecialMentions(strMsg)
+			}
+
+			_, err = common.BotSession.ChannelMessageEdit(cid, mID, strMsg)
+		}
+
+		if err != nil {
+			return "", err
+		}
+
+		return "", nil
+	}
+}
+
 func (c *Context) tmplMentionEveryone() string {
 	c.MentionEveryone = true
 	return " @everyone "
