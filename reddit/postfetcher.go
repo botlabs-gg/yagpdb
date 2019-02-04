@@ -175,7 +175,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 
 	if highestID != -1 {
 		p.LastID = highestID
-		common.RedisPool.Do(radix.FlatCmd(nil, "SET", "", highestID))
+		common.RedisPool.Do(radix.FlatCmd(nil, "SET", p.LastScannedPostIDKey, highestID))
 	}
 
 	if !p.hasCaughtUp {

@@ -1,11 +1,13 @@
 package reddit
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"html"
@@ -75,27 +77,26 @@ func (p *Plugin) handlePost(post *reddit.Link) error {
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
 	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
-	config, err := GetConfig("global_subreddit_watch:" + strings.ToLower(post.Subreddit))
+	config, err := models.RedditFeeds(models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit))).AllG(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("Failed getting config from redis")
+		logrus.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
 	}
 
 	// Get the configs that listens to this subreddit, if any
-	filteredItems := make([]*SubredditWatchItem, 0, len(config))
+	filteredItems := make([]*models.RedditFeed, 0, len(config))
 
 OUTER:
 	for _, c := range config {
 		// remove duplicates
 		for _, v := range filteredItems {
-			if v.Channel == c.Channel {
+			if v.ChannelID == c.ChannelID {
 				continue OUTER
 			}
 		}
 
 		// apply ratelimiting
-		parsedGuildID, _ := strconv.ParseInt(c.Guild, 10, 64)
-		if ratelimiter.CheckIncrement(time.Now(), parsedGuildID, 600) {
+		if ratelimiter.CheckIncrement(time.Now(), c.GuildID, 600) {
 			filteredItems = append(filteredItems, c)
 		}
 	}
@@ -113,16 +114,15 @@ OUTER:
 	message, embed := CreatePostMessage(post)
 
 	for _, item := range filteredItems {
-		cParsed, _ := strconv.ParseInt(item.Channel, 10, 64)
-		gParsed, _ := strconv.ParseInt(item.Guild, 10, 64)
+		idStr := strconv.FormatInt(item.ID, 10)
 		if item.UseEmbeds {
-			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), gParsed, cParsed, embed)
+			mqueue.QueueMessageEmbed("reddit", idStr, item.GuildID, item.ChannelID, embed)
 		} else {
-			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), gParsed, cParsed, message)
+			mqueue.QueueMessageString("reddit", idStr, item.GuildID, item.ChannelID, message)
 		}
 
 		if common.Statsd != nil {
-			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + item.Guild}, 1)
+			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + strconv.FormatInt(item.GuildID, 10)}, 1)
 		}
 	}
 

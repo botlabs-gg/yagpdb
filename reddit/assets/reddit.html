@@ -58,11 +58,11 @@
                         {{range .RedditConfig}}
                         <tr>
                             <td>
-                                <input form="feed-item-{{.ID}}" type="text" class="form-control" id="subreddit-{{.ID}}" name="subreddit" placeholder="" value="{{.Sub}}">
+                                <p class="form-control-static">{{.Subreddit}}</p>
                             </td>
                             <td>
                                 <select form="feed-item-{{.ID}}" id="channel" class="form-control" name="channel" data-requireperms-embed>
-                                   {{textChannelOptions $channels .Channel false ""}}
+                                   {{textChannelOptions $channels .ChannelID false ""}}
                                 </select>
                             </td>
                             <td>
