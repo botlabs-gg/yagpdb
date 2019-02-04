@@ -150,12 +150,12 @@ $(function(){
     <div class="row">
         <div class="col-lg-12">
             {{range .Alerts}}
-            {{if and (ne .Style "success") (ne .Style "danger") (ne .Style "warning")}}
+            {{if and (ne .Style "success") (ne .Style "danger")}}
             <div class="alert alert-{{.Style}}">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                 {{.Message}}
             </div>
-            {{end}}{{end}}  
+            {{end}}{{end}}
         </div>
     </div>
     {{end}}

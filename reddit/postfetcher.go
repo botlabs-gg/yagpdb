@@ -1,41 +1,107 @@
 package reddit
 
 import (
-	"github.com/jonas747/go-reddit"
+	greddit "github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strconv"
+	"sync"
 	"time"
 )
 
-var KeyLastScannedPostID = "reddit_last_post_id"
+var KeyLastScannedPostIDFast = "reddit_last_post_id"
+var KeyLastScannedPostIDSlow = "reddit_slow_last_post_id"
 
+// PostFetcher is responsible from fetching posts from reddit at a given interval and delay
+// delay bieng it will make sure not to call the handler on posts newer than the given delay
 type PostFetcher struct {
-	LastID int64
+	Name                 string
+	LastScannedPostIDKey string
+	LastID               int64
+	StopChan             chan *sync.WaitGroup
 
 	started     time.Time
 	hasCaughtUp bool
 
-	redditClient *reddit.Client
+	delay time.Duration
+
+	redditClient *greddit.Client
+	handler      PostHandler
+
+	log *logrus.Entry
 }
 
-func NewPostFetcher(redditClient *reddit.Client) *PostFetcher {
+type PostHandler interface {
+	HandleRedditPosts(links []*greddit.Link)
+}
+
+func NewPostFetcher(redditClient *greddit.Client, slow bool, handler PostHandler) *PostFetcher {
+	idKey := KeyLastScannedPostIDFast
+	name := "fast"
+	delay := time.Minute
+	if slow {
+		name = "slow"
+		idKey = KeyLastScannedPostIDSlow
+		delay = time.Minute * 15
+	}
+
 	return &PostFetcher{
-		redditClient: redditClient,
+		Name:                 name,
+		redditClient:         redditClient,
+		LastScannedPostIDKey: idKey,
+		delay:                delay,
+
+		handler: handler,
+		log:     logrus.WithField("rfeed_type", name),
 	}
 }
 
-func (p *PostFetcher) InitCursor() (int64, error) {
+func (p *PostFetcher) Run() {
+	lastLogged := time.Now()
+	numPosts := 0
+
+	ticker := time.NewTicker(time.Second * 5)
+	for {
+		select {
+		case wg := <-p.StopChan:
+			wg.Done()
+			return
+		case <-ticker.C:
+		}
+
+		links, err := p.GetNewPosts()
+		if err != nil {
+			p.log.WithError(err).Error("error fetchind new links")
+			continue
+		}
+
+		if len(links) < 1 {
+			continue
+		}
+
+		// basic stats
+		numPosts += len(links)
+		if time.Since(lastLogged) >= time.Minute {
+			p.log.Info("Num posts last minute: ", numPosts)
+			lastLogged = time.Now()
+			numPosts = 0
+		}
+
+		p.handler.HandleRedditPosts(links)
+	}
+}
+
+func (p *PostFetcher) initCursor() (int64, error) {
 	var storedID int64
-	common.RedisPool.Do(radix.Cmd(&storedID, "GET", KeyLastScannedPostID))
+	common.RedisPool.Do(radix.Cmd(&storedID, "GET", p.LastScannedPostIDKey))
 	if storedID != 0 {
-		logrus.Info("Reddit continuing from ", storedID)
+		p.log.Info("reddit feed continuing from ", storedID)
 		return storedID, nil
 	}
 
-	logrus.Error("Reddit plugin failed resuming, starting from a new position")
+	p.log.Warn("reddit plugin failed resuming, starting from most recent post")
 
 	// Start from new
 	newPosts, err := p.redditClient.GetNewLinks("all", "", "")
@@ -49,17 +115,18 @@ func (p *PostFetcher) InitCursor() (int64, error) {
 
 	stringID := newPosts[0].ID
 	parsed, err := strconv.ParseInt(stringID, 36, 64)
+
 	return parsed, err
 }
 
-func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
+func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 
 	if p.started.IsZero() {
 		p.started = time.Now()
 	}
 
 	if p.LastID == 0 {
-		lID, err := p.InitCursor()
+		lID, err := p.initCursor()
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed initialising cursor")
 		}
@@ -87,7 +154,7 @@ func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 		// logrus.Info(age.String())
 
 		// stay 1 minute behind
-		if age.Seconds() < 60 {
+		if age < p.delay {
 			break
 		}
 
@@ -108,7 +175,7 @@ func (p *PostFetcher) GetNewPosts() ([]*reddit.Link, error) {
 
 	if highestID != -1 {
 		p.LastID = highestID
-		common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastScannedPostID, highestID))
+		common.RedisPool.Do(radix.FlatCmd(nil, "SET", p.LastScannedPostIDKey, highestID))
 	}
 
 	if !p.hasCaughtUp {

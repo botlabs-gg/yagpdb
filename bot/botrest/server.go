@@ -15,9 +15,9 @@ import (
 	"goji.io/pat"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -47,7 +47,6 @@ func (p *Plugin) Name() string {
 func (p *Plugin) BotInit() {
 
 	muxer := goji.NewMux()
-	muxer.Use(dropNonLocal)
 
 	muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
 	muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
@@ -80,8 +79,15 @@ func (p *Plugin) BotInit() {
 	currentPort := 5010
 
 	go func() {
+		// listen address excluding port
+		listenAddr := os.Getenv("YAGPDB_BOTREST_LISTEN_ADDRESS")
+		if listenAddr == "" {
+			// default to safe loopback interface
+			listenAddr = "127.0.0.1"
+		}
+
 		for {
-			address := ":" + strconv.Itoa(currentPort)
+			address := listenAddr + ":" + strconv.Itoa(currentPort)
 
 			logrus.Println("[botrest] starting botrest on ", address)
 
@@ -187,17 +193,6 @@ func ServerError(w http.ResponseWriter, r *http.Request, err error) bool {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(encodedErr)
 	return true
-}
-
-func dropNonLocal(inner http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Split(r.RemoteAddr, ":")[0] != "127.0.0.1" {
-			logrus.Info("Dropped non local connection", r.RemoteAddr)
-			return
-		}
-
-		inner.ServeHTTP(w, r)
-	})
 }
 
 func HandleGuild(w http.ResponseWriter, r *http.Request) {

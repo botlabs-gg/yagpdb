@@ -38,6 +38,7 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 
 		ctx := r.Context()
 
+		// mark the request as partial
 		if r.FormValue("partial") != "" {
 			var tmplData TemplateData
 			ctx, tmplData = GetCreateTemplateData(ctx)
@@ -62,11 +63,7 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 // Fills the template data in the context with basic data such as clientid and redirects
 func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			inner.ServeHTTP(w, r)
-			return
-		}
-
+		// we store the light theme and sidebar_collapsed stuff in cookies
 		lightTheme := false
 		if cookie, err := r.Cookie("light_theme"); err == nil {
 			if cookie.Value != "false" {
@@ -81,6 +78,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			}
 		}
 
+		// set up the base template data
 		baseData := map[string]interface{}{
 			"BotRunning":       botrest.BotIsRunning(),
 			"RequestURI":       r.RequestURI,
@@ -91,11 +89,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"GAID":             GAID,
 		}
 
-		if https || exthttps {
-			baseData["BaseURL"] = "https://" + common.Conf.Host
-		} else {
-			baseData["BaseURL"] = "http://" + common.Conf.Host
-		}
+		baseData["BaseURL"] = BaseURL()
 
 		for k, v := range globalTemplateData {
 			baseData[k] = v
@@ -107,19 +101,19 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// Will put a session cookie in the response if not available and discord session in the context if available
+// SessionMiddleware retrieves a session from the request using the session cookie
+// which is actually just a B64 encoded version of the oatuh2 token from discord for the user
 func SessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		//log.Println("Session middleware")
 		ctx := r.Context()
 		defer func() {
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		}()
 
-		if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
-			return
-		}
-
+		// we actually store the discord oauth2 token for the user in their own browser instead of on the server
+		// this way we avoid storing that sensitive information on the server, and it's tamper proof since its just a token.
+		// we get all other information from discord itself (using said token)
+		// (e.g you wont be able to say you're admin of any server you're not admin on... if you're a hackerboye reading this and trying to get ideas)
 		cookie, err := r.Cookie(SessionCookieName)
 		if err != nil {
 			// Cookie not present, skip retrieving session
@@ -128,12 +122,12 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 
 		token, err := AuthTokenFromB64(cookie.Value)
 		if err != nil {
-			log.Println("invalid session", err)
-			// No valid session
-			// TODO: Should i check for json error?
+			// this could really only happen if the user messes with the session token, or some other bullshit happens (like bad ram i guess)
+			CtxLogger(r.Context()).WithError(err).Error("invalid session")
 			return
 		}
 
+		// construct the session from the user's (decoded) session cookie
 		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
 		if err != nil {
 			CtxLogger(r.Context()).WithError(err).Error("Failed initializing discord session")
@@ -145,16 +139,19 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// Will not serve pages unless a session is available
-// Also validates the origin header if present
+// RequireSessionMiddleware ensures that a session is available, and otherwise refuse to continue down the chain of handlers
+// Also validates the origin header if present (on POST requests that is)
 func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
+		// Check if a session is present
 		session := DiscordSessionFromContext(r.Context())
 		if session == nil {
 			WriteErrorResponse(w, r, "No session or session expired", http.StatusUnauthorized)
 			return
 		}
 
+		// validate the origin header (if present) for protection against CSRF attacks
+		// i don't think putting in more protection against CSRF attacks is needed, considering literally every browser these days support it
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			split := strings.SplitN(origin, ":", 3)
@@ -172,18 +169,19 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// Fills the context with user and guilds if possible
+// UserInfoMiddleware fills the context with user information and the guilds it's on guilds if possible
 func UserInfoMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		session := DiscordSessionFromContext(ctx)
 
 		if session == nil {
-			// We can't find any info if a session or redis client is not avialable to just skiddadle our way out
+			// we obviously need a session for this...
 			inner.ServeHTTP(w, r)
 			return
 		}
 
+		// retrieve user info
 		var user *discordgo.User
 		err := common.GetCacheDataJson(session.Token+":user", &user)
 		if err != nil {
@@ -199,6 +197,8 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			LogIgnoreErr(common.SetCacheDataJson(session.Token+":user", 3600, user))
 		}
 
+		// retrieve guilds this user is part of
+		// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
 		var guilds []*discordgo.UserGuild
 		err = common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
 		if err != nil {
@@ -212,6 +212,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
 		}
 
+		// wrap the guilds with some more info, such as wether the bot is on the server
 		wrapped, err := common.GetWrapped(guilds)
 		if err != nil {
 			CtxLogger(r.Context()).WithError(err).Error("Failed wrapping guilds")
@@ -219,6 +220,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
+		// the servers the user is on and the user has manage server perms
 		managedGuilds := make([]*common.WrappedGuild, 0)
 		for _, g := range wrapped {
 			if g.Owner || g.Permissions&discordgo.PermissionManageServer != 0 {
@@ -237,6 +239,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			templateData["IsBotOwner"] = true
 		}
 
+		// update the logger with the user and update the context with all the new info
 		entry := CtxLogger(ctx).WithField("u", user.ID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(SetContextTemplateData(ctx, templateData), common.ContextKeyUser, user)
@@ -248,6 +251,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+// setFullGuild is a fallback in case a userguild is not available, could be the case if a bot admin is accesing a server they're not part of
 func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
 	fullGuild, err := common.GetGuild(guildID)
 	if err != nil {
@@ -278,9 +282,9 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		// Userguilds not available, fallback to full guild request
 		guilds, ok := ctx.Value(common.ContextKeyGuilds).([]*discordgo.UserGuild)
 		if !ok {
+			// Userguilds not available, fallback to full guild request
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
 			if err != nil {
@@ -299,11 +303,12 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			}
 		}
 
+		// update context logging entry with guild id
 		entry := CtxLogger(ctx).WithField("g", guildID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 
-		// Fallback to full guild if userguilds if not found
 		if userGuild == nil {
+			// Fallback to full guild if userguild is not found
 			var err error
 			ctx, err = setFullGuild(ctx, guildID)
 			if err != nil {
@@ -330,6 +335,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+// RequireActiveServer ensures that were accessing a guild specific page, and guild information is available (e.g a valid guild)
 func RequireActiveServer(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		if v := r.Context().Value(common.ContextKeyCurrentGuild); v == nil {
@@ -342,6 +348,7 @@ func RequireActiveServer(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+// RequireServerAdminMiddleware restricts access to guild admins only (or bot admins)
 func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		if !IsAdminRequest(r.Context(), r) {
@@ -354,6 +361,7 @@ func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+// RequireGuildChannelsMiddleware ensures that the channels are available for the guild were on during this request, and yes this has to be done seperately cause discord
 func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -366,6 +374,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
+		// SORT THESE MOTHERFUCKERS
 		sort.Sort(dutil.Channels(channels))
 		guild.Channels = channels
 
@@ -376,6 +385,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+// RequireFullGuildMW puts the "gull" guild in the context, and ensures its available during the request, i say "full" because it doesn't include channels
 func RequireFullGuildMW(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -405,13 +415,14 @@ func RequireFullGuildMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+// RequireBotMemberMW ensures that the bot member for the curreng guild is available, mostly used for checking the bot's roles
 func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		parsedGuildID, _ := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 
 		member, err := botrest.GetBotMember(parsedGuildID)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Warn("FALLING BACK TO DISCORD API FOR BOT MEMBER")
+			CtxLogger(r.Context()).WithError(err).Warn("Failed contacting bot about bot member information, falling back to discord api for retrieving bot member")
 			member, err = common.BotSession.GuildMember(parsedGuildID, common.Conf.BotID)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
@@ -822,5 +833,73 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		})
+	}
+}
+
+func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		defer func() { inner.ServeHTTP(w, r) }()
+
+		guild := ContextGuild(r.Context())
+		if guild == nil {
+			return
+		}
+
+		userI := r.Context().Value(common.ContextKeyUser)
+		if userI == nil {
+			return
+		}
+
+		user := userI.(*discordgo.User)
+		results, err := botrest.GetMembers(guild.ID, user.ID)
+
+		var m *discordgo.Member
+		if len(results) > 0 {
+			m = results[0]
+		}
+
+		if err != nil || len(results) < 1 {
+			CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from bot, falling back to discord api")
+
+			// fallback to discord api
+			m, err = common.BotSession.GuildMember(guild.ID, user.ID)
+			if err != nil {
+				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
+				return
+			}
+		}
+
+		r = r.WithContext(context.WithValue(r.Context(), common.ContextKeyUserMember, m))
+	}
+
+	return http.HandlerFunc(mw)
+}
+
+// SkipStaticMW skips the "maybeSkip" handler if this is a static link
+func SkipStaticMW(maybeSkip func(http.Handler) http.Handler, alwaysRunSuffixes ...string) func(http.Handler) http.Handler {
+	return func(alwaysRun http.Handler) http.Handler {
+		mw := func(w http.ResponseWriter, r *http.Request) {
+
+			// reliable enough... *cough cough*
+			if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
+
+				// in some cases (like the gzip handler) we wanna run certain middlewares on certain files
+				for _, v := range alwaysRunSuffixes {
+					if strings.HasSuffix(r.URL.Path, v) {
+						// we got a match
+						maybeSkip(alwaysRun).ServeHTTP(w, r)
+						return
+					}
+				}
+
+				alwaysRun.ServeHTTP(w, r)
+				return
+			}
+
+			// not static, run the maybeskip handler
+			maybeSkip(alwaysRun).ServeHTTP(w, r)
+		}
+
+		return http.HandlerFunc(mw)
 	}
 }

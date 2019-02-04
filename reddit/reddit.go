@@ -1,20 +1,24 @@
 package reddit
 
-//go:generate esc -o assets_gen.go -pkg reddit -ignore ".go" assets/
+//go:generate sqlboiler psql
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/premium"
-	"github.com/mediocregopher/radix"
+	"github.com/jonas747/yagpdb/reddit/models"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"sync"
+)
+
+const (
+	FilterNSFWNone    = 0 // allow both nsfw and non nsfw content
+	FilterNSFWIgnore  = 1 // only allow non-nsfw content
+	FilterNSFWRequire = 2 // only allow nsfw content
 )
 
 type Plugin struct {
@@ -36,122 +40,37 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 		return
 	}
 
+	if strings.Contains(elem.SourceID, ":") {
+		// legacy format leftover, ignore...
+		return
+	}
+
 	log.WithError(err).WithField("channel", elem.Channel).Info("Removing reddit feed to nonexistant discord channel")
 
-	// channelid:feed-id
-	split := strings.Split(elem.SourceID, ":")
-	if len(split) < 2 {
-		log.Error("Invalid queued item: ", elem.ID)
+	feedID, err := strconv.ParseInt(elem.SourceID, 10, 64)
+	if err != nil {
+		log.WithError(err).WithField("source_id", elem.SourceID).Error("failed parsing sourceID!??!")
 		return
 	}
 
-	guildID := split[0]
-	itemID := split[1]
-
-	currentConfig, err := GetConfig("guild_subreddit_watch:" + guildID)
+	_, err = models.RedditFeeds(models.RedditFeedWhere.ID.EQ(feedID)).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		log.WithError(err).Error("Failed fetching config to remove")
-		return
-	}
-
-	parsed, err := strconv.Atoi(itemID)
-	if err != nil {
-		log.WithError(err).WithField("mq_id", elem.ID).Error("Failed parsing item id")
-	}
-
-	parsedGID, _ := strconv.ParseInt(guildID, 10, 64)
-	for _, v := range currentConfig {
-		if v.ID == parsed {
-			v.Remove()
-			common.AddCPLogEntry(common.BotUser, parsedGID, "Removed reddit feed from "+v.Sub+", Channel does not exist or no perms")
-			break
-		}
+		log.WithError(err).WithField("feed_id", feedID).Error("failed removing reddit feed")
 	}
 }
 
 func RegisterPlugin() {
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		log.WithError(err).Error("reddit: failed initalizing database schema, not enabling plugin")
+		return
+	}
+
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
 	common.RegisterPlugin(plugin)
 	mqueue.RegisterSource("reddit", plugin)
-}
-
-type SubredditWatchItem struct {
-	Sub       string `json:"sub"`
-	Guild     string `json:"guild"`
-	Channel   string `json:"channel"`
-	ID        int    `json:"id"`
-	UseEmbeds bool   `json:"use_embeds"`
-}
-
-func FindWatchItem(source []*SubredditWatchItem, id int) *SubredditWatchItem {
-	for _, c := range source {
-		if c.ID == id {
-			return c
-			break
-		}
-	}
-	return nil
-}
-
-func (item *SubredditWatchItem) Set() error {
-	serialized, err := json.Marshal(item)
-	if err != nil {
-		return err
-	}
-	guild := item.Guild
-
-	err = common.RedisPool.Do(radix.Pipeline(
-		radix.FlatCmd(nil, "HSET", "guild_subreddit_watch:"+guild, item.ID, serialized),
-		radix.FlatCmd(nil, "HSET", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID), serialized),
-	))
-
-	return err
-}
-
-func (item *SubredditWatchItem) Remove() error {
-	guild := item.Guild
-
-	err := common.RedisPool.Do(radix.Pipeline(
-		radix.FlatCmd(nil, "HDEL", "guild_subreddit_watch:"+guild, item.ID),
-		radix.FlatCmd(nil, "HDEL", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID)),
-	))
-	return err
-}
-
-func GetConfig(key string) ([]*SubredditWatchItem, error) {
-	var rawItems map[string]string
-	err := common.RedisPool.Do(radix.Cmd(&rawItems, "HGETALL", key))
-	if err != nil {
-		return nil, err
-	}
-
-	out := make([]*SubredditWatchItem, len(rawItems))
-
-	i := 0
-	for k, raw := range rawItems {
-		var decoded *SubredditWatchItem
-		err := json.Unmarshal([]byte(raw), &decoded)
-		if err != nil {
-			return nil, err
-		}
-
-		if err != nil {
-			id, _ := strconv.ParseInt(k, 10, 32)
-			out[i] = &SubredditWatchItem{
-				Sub:     "ERROR",
-				Channel: "ERROR DECODING",
-				ID:      int(id),
-			}
-			log.WithError(err).Error("Failed decoding reddit watch item")
-		} else {
-			out[i] = decoded
-		}
-		i++
-	}
-
-	return out, nil
 }
 
 const (

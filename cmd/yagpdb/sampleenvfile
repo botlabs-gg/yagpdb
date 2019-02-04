@@ -26,6 +26,10 @@ export YAGPDB_TESTING=""
 # Defaults to 25
 # export YAGPDB_MAX_CCR="25"
 
+# specify the listen address for the bot's internal REST api, defaults to 127.0.0.1
+# only needs to be changed if you're running the webserver on a different machine than the bot itself
+# export YAGPDB_BOTREST_LISTEN_ADDRESS="127.0.0.1"
+
 ###################################################################
 # Plugins and various other optional features below, not required #
 ##################################################################

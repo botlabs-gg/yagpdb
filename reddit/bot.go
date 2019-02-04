@@ -1,22 +1,21 @@
 package reddit
 
 import (
-	"github.com/jonas747/discordgo"
+	"context"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/sirupsen/logrus"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/reddit/models"
+	"github.com/pkg/errors"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 
 func (p *Plugin) RemoveGuild(g int64) error {
-	config, err := GetConfig("guild_subreddit_watch:" + discordgo.StrID(g))
+	_, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(g)).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed removing reddit feeds")
 	}
-	for _, v := range config {
-		v.Remove()
-	}
-	logrus.Info("Removed reddit config for deleted guild")
+
 	return nil
 }
 

@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,14 +24,29 @@ const (
 	CurrentConfig CtxKey = iota
 )
 
-type Form struct {
-	Subreddit string `schema:"subreddit" valid:",1,100"`
-	Channel   string `schema:"channel" valid:"channel,false`
-	ID        int    `schema:"id"`
-	UseEmbeds bool   `schema:"use_embeds"`
+type CreateForm struct {
+	Subreddit  string `schema:"subreddit" valid:",1,100"`
+	Slow       bool   `schema:"slow"`
+	Channel    int64  `schema:"channel" valid:"channel,false`
+	ID         int64  `schema:"id"`
+	UseEmbeds  bool   `schema:"use_embeds"`
+	NSFWMode   int    `schema:"nsfw_filter"`
+	MinUpvotes int    `schema:"min_upvotes"`
+}
+
+type UpdateForm struct {
+	Channel    int64 `schema:"channel" valid:"channel,false`
+	ID         int64 `schema:"id"`
+	UseEmbeds  bool  `schema:"use_embeds"`
+	NSFWMode   int   `schema:"nsfw_filter"`
+	MinUpvotes int   `schema:"min_upvotes"`
 }
 
 func (p *Plugin) InitWeb() {
+	if os.Getenv("YAGPDB_REDDIT_DISABLE_REDIS_PQ_MIGRATION") == "" {
+		go migrateLegacyRedisFormatToPostgres()
+	}
+
 	tmplPathSettings := "templates/plugins/reddit.html"
 	if common.Testing {
 		tmplPathSettings = "../../reddit/assets/reddit.html"
@@ -51,10 +69,10 @@ func (p *Plugin) InitWeb() {
 	redditMux.Handle(pat.Get(""), web.RenderHandler(HandleReddit, "cp_reddit"))
 
 	// If only html forms allowed patch and delete.. if only
-	redditMux.Handle(pat.Post(""), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
-	redditMux.Handle(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), Form{}))
-	redditMux.Handle(pat.Post("/:item/update"), web.FormParserMW(web.RenderHandler(HandleModify, "cp_reddit"), Form{}))
-	redditMux.Handle(pat.Post("/:item/delete"), web.FormParserMW(web.RenderHandler(HandleRemove, "cp_reddit"), Form{}))
+	redditMux.Handle(pat.Post(""), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), CreateForm{}))
+	redditMux.Handle(pat.Post("/"), web.FormParserMW(web.RenderHandler(HandleNew, "cp_reddit"), CreateForm{}))
+	redditMux.Handle(pat.Post("/:item/update"), web.FormParserMW(web.RenderHandler(HandleModify, "cp_reddit"), UpdateForm{}))
+	redditMux.Handle(pat.Post("/:item/delete"), web.RenderHandler(HandleRemove, "cp_reddit"))
 }
 
 // Adds the current config to the context
@@ -64,16 +82,16 @@ func baseData(inner http.Handler) http.Handler {
 		activeGuild, templateData := web.GetBaseCPContextData(ctx)
 		templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reddit/"
 
-		currentConfig, err := GetConfig("guild_subreddit_watch:" + discordgo.StrID(activeGuild.ID))
+		feeds, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(activeGuild.ID)).AllG(ctx)
 		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		} else {
-			sort.Slice(currentConfig, func(i, j int) bool {
-				return currentConfig[i].Sub < currentConfig[j].Sub
+			sort.Slice(feeds, func(i, j int) bool {
+				return feeds[i].Subreddit < feeds[j].Subreddit
 			})
 		}
 
-		inner.ServeHTTP(w, r.WithContext(context.WithValue(ctx, CurrentConfig, currentConfig)))
+		inner.ServeHTTP(w, r.WithContext(context.WithValue(ctx, CurrentConfig, feeds)))
 	}
 
 	return http.HandlerFunc(mw)
@@ -83,7 +101,7 @@ func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	_, templateData := web.GetBaseCPContextData(ctx)
 
-	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
+	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
 
 	return templateData
@@ -93,22 +111,14 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
+	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 
 	templateData["RedditConfig"] = currentConfig
 
-	newElem := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	newElem := ctx.Value(common.ContextKeyParsedForm).(*CreateForm)
 	ok := ctx.Value(common.ContextKeyFormOk).(bool)
 	if !ok {
 		return templateData
-	}
-
-	// get an id the ez (and not safe if 2 people create at same time) way
-	highest := 0
-	for _, v := range currentConfig {
-		if v.ID > highest {
-			highest = v.ID
-		}
 	}
 
 	maxFeeds := MaxFeedForCtx(ctx)
@@ -116,26 +126,31 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d feeds allowed (or %d for premium servers)", GuildMaxFeedsNormal, GuildMaxFeedsPremium)))
 	}
 
-	watchItem := &SubredditWatchItem{
-		Sub:       strings.TrimSpace(newElem.Subreddit),
-		Channel:   newElem.Channel,
-		Guild:     discordgo.StrID(activeGuild.ID),
-		ID:        highest + 1,
-		UseEmbeds: newElem.UseEmbeds,
+	watchItem := &models.RedditFeed{
+		GuildID:    activeGuild.ID,
+		ChannelID:  newElem.Channel,
+		Subreddit:  strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		UseEmbeds:  newElem.UseEmbeds,
+		FilterNSFW: newElem.NSFWMode,
 	}
 
-	err := watchItem.Set()
+	if newElem.Slow {
+		watchItem.Slow = true
+		watchItem.MinUpvotes = newElem.MinUpvotes
+	}
+
+	err := watchItem.InsertG(ctx, boil.Infer())
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
 	currentConfig = append(currentConfig, watchItem)
 	sort.Slice(currentConfig, func(i, j int) bool {
-		return currentConfig[i].Sub < currentConfig[j].Sub
+		return currentConfig[i].Subreddit < currentConfig[j].Subreddit
 	})
 
 	templateData["RedditConfig"] = currentConfig
-	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Sub))
+	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
 
 	// Log
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
@@ -147,37 +162,28 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
+	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
 
-	updated := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	updated := ctx.Value(common.ContextKeyParsedForm).(*UpdateForm)
 	ok := ctx.Value(common.ContextKeyFormOk).(bool)
 	if !ok {
 		return templateData
 	}
-	updated.Subreddit = strings.TrimSpace(updated.Subreddit)
 
-	item := FindWatchItem(currentConfig, updated.ID)
+	item := FindFeed(currentConfig, updated.ID)
 	if item == nil {
 		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
 
-	subIsNew := !strings.EqualFold(updated.Subreddit, item.Sub)
-	item.Channel = updated.Channel
+	item.ChannelID = updated.Channel
 	item.UseEmbeds = updated.UseEmbeds
-
-	var err error
-	if !subIsNew {
-		// Pretty simple then
-		err = item.Set()
-	} else {
-		err = item.Remove()
-		if err == nil {
-			item.Sub = strings.ToLower(r.FormValue("subreddit"))
-			err = item.Set()
-		}
+	item.FilterNSFW = updated.NSFWMode
+	if item.Slow {
+		item.MinUpvotes = updated.MinUpvotes
 	}
 
+	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
@@ -185,7 +191,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, activeGuild.ID, "Modified a feed to /r/"+r.FormValue("subreddit"))
+	common.AddCPLogEntry(user, activeGuild.ID, "Modified a feed to /r/"+item.Subreddit)
 	return templateData
 }
 
@@ -193,7 +199,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	currentConfig := ctx.Value(CurrentConfig).([]*SubredditWatchItem)
+	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
 
 	id := pat.Param(r, "item")
@@ -203,22 +209,21 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	// Get tha actual watch item from the config
-	item := FindWatchItem(currentConfig, int(idInt))
-
+	item := FindFeed(currentConfig, idInt)
 	if item == nil {
 		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
 	}
 
-	err = item.Remove()
+	_, err = item.DeleteG(ctx)
 	if web.CheckErr(templateData, err, "Failed removing item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
-	templateData.AddAlerts(web.SucessAlert("Sucessfully removed subreddit feed for /r/" + item.Sub))
+	templateData.AddAlerts(web.SucessAlert("Sucessfully removed subreddit feed for /r/" + item.Subreddit))
 
 	// Remove it form the displayed list
 	for k, c := range currentConfig {
-		if c.ID == int(idInt) {
+		if c.ID == idInt {
 			currentConfig = append(currentConfig[:k], currentConfig[k+1:]...)
 		}
 	}
@@ -226,6 +231,16 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData["RedditConfig"] = currentConfig
 
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+item.Sub)
+	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+item.Subreddit)
 	return templateData
+}
+
+func FindFeed(feeds []*models.RedditFeed, id int64) *models.RedditFeed {
+	for _, v := range feeds {
+		if v.ID == id {
+			return v
+		}
+	}
+
+	return nil
 }

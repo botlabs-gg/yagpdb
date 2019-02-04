@@ -11,39 +11,55 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
+	"net/url"
 	"strings"
 	"time"
 )
 
 var (
 	StandardFuncMap = map[string]interface{}{
-		"dict":                  Dictionary,
-		"sdict":                 StringKeyDictionary,
-		"cembed":                CreateEmbed,
-		"json":                  tmplJson,
-		"in":                    in,
-		"inFold":                inFold,
-		"title":                 strings.Title,
-		"add":                   add,
-		"roleAbove":             roleIsAbove,
-		"adjective":             common.RandomAdjective,
-		"randInt":               randInt,
-		"shuffle":               shuffle,
-		"seq":                   sequence,
-		"joinStr":               joinStrings,
-		"str":                   str,
-		"lower":                 strings.ToLower,
-		"upper":                 strings.ToUpper,
-		"toString":              ToString,
-		"toInt":                 tmplToInt,
-		"toInt64":               ToInt64,
-		"formatTime":            tmplFormatTime,
-		"slice":                 slice,
-		"cslice":                CreateSlice,
-		"currentTime":           tmplCurrentTime,
-		"escapeHere":            tmplEscapeHere,
-		"escapeEveryone":        tmplEscapeEveryone,
-		"escapeEveryoneHere":    tmplEscapeEveryoneHere,
+		// conversion functions
+		"str":      ToString,
+		"toString": ToString, // don't ask why we have 2 of these
+		"toInt":    tmplToInt,
+		"toInt64":  ToInt64,
+
+		// string manipulation
+		"joinStr":   joinStrings,
+		"lower":     strings.ToLower,
+		"upper":     strings.ToUpper,
+		"slice":     slice,
+		"urlescape": url.PathEscape,
+		"split":     strings.Split,
+		"title":     strings.Title,
+
+		// math
+		"add":  add,
+		"mult": tmplMult,
+		"div":  tmplDiv,
+		"fdiv": tmplFDiv,
+
+		// misc
+		"dict":   Dictionary,
+		"sdict":  StringKeyDictionary,
+		"cembed": CreateEmbed,
+		"cslice": CreateSlice,
+
+		"formatTime":  tmplFormatTime,
+		"json":        tmplJson,
+		"in":          in,
+		"inFold":      inFold,
+		"roleAbove":   roleIsAbove,
+		"adjective":   common.RandomAdjective,
+		"randInt":     randInt,
+		"shuffle":     shuffle,
+		"seq":         sequence,
+		"currentTime": tmplCurrentTime,
+
+		"escapeHere":         tmplEscapeHere,
+		"escapeEveryone":     tmplEscapeEveryone,
+		"escapeEveryoneHere": tmplEscapeEveryoneHere,
+
 		"humanizeDurationHours": tmplHumanizeDurationHours,
 		"humanizeTimeSinceDays": tmplHumanizeTimeSinceDays,
 	}
@@ -91,6 +107,8 @@ type Context struct {
 	AddResponseReactionNames []string
 
 	FixedOutput string
+
+	secondsSlept int
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -217,11 +235,14 @@ func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 }
 
 func baseContextFuncs(c *Context) {
+	// message functions
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
 	c.ContextFuncs["sendMessage"] = c.tmplSendMessage(true, false)
 	c.ContextFuncs["sendMessageRetID"] = c.tmplSendMessage(true, true)
 	c.ContextFuncs["sendMessageNoEscape"] = c.tmplSendMessage(false, false)
 	c.ContextFuncs["sendMessageNoEscapeRetID"] = c.tmplSendMessage(false, true)
+	c.ContextFuncs["editMessage"] = c.tmplEditMessage(true)
+	c.ContextFuncs["editMessageNoEscape"] = c.tmplEditMessage(false)
 
 	// Mentions
 	c.ContextFuncs["mentionEveryone"] = c.tmplMentionEveryone
@@ -232,16 +253,18 @@ func baseContextFuncs(c *Context) {
 	// Role functions
 	c.ContextFuncs["hasRoleName"] = c.tmplHasRoleName
 	c.ContextFuncs["hasRoleID"] = c.tmplHasRoleID
+
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
+
 	c.ContextFuncs["giveRoleID"] = c.tmplGiveRoleID
 	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
+
 	c.ContextFuncs["takeRoleID"] = c.tmplTakeRoleID
 	c.ContextFuncs["takeRoleName"] = c.tmplTakeRoleName
-	
+
 	c.ContextFuncs["targetHasRoleID"] = c.tmplTargetHasRoleID
 	c.ContextFuncs["targetHasRoleName"] = c.tmplTargetHasRoleName
-	
 
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
@@ -254,6 +277,9 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["currentUserCreated"] = c.tmplCurrentUserCreated
 	c.ContextFuncs["currentUserAgeHuman"] = c.tmplCurrentUserAgeHuman
 	c.ContextFuncs["currentUserAgeMinutes"] = c.tmplCurrentUserAgeMinutes
+	c.ContextFuncs["sleep"] = c.tmplSleep
+	c.ContextFuncs["reFind"] = c.reFind
+	c.ContextFuncs["reReplace"] = c.reReplace
 }
 
 type limitedWriter struct {

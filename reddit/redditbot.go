@@ -1,11 +1,13 @@
 package reddit
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"html"
@@ -16,22 +18,53 @@ import (
 	"time"
 )
 
+const (
+	MaxPostsHourFast = 300
+	MaxPostsHourSlow = 200
+)
+
 var (
 	ClientID     = os.Getenv("YAGPDB_REDDIT_CLIENTID")
 	ClientSecret = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
 	RedirectURI  = os.Getenv("YAGPDB_REDDIT_REDIRECT")
 	RefreshToken = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
 
-	ratelimiter = NewRatelimiter()
+	feedLock sync.Mutex
+	fastFeed *PostFetcher
+	slowFeed *PostFetcher
 )
 
 func (p *Plugin) StartFeed() {
 	go p.runBot()
-	go ratelimiter.RunGCLoop()
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
-	p.stopFeedChan <- wg
+	feedLock.Lock()
+
+	if fastFeed == nil {
+		// feed not running, do nothing
+		feedLock.Unlock()
+		wg.Done()
+		return
+	}
+
+	wg.Add(1)
+
+	ff := fastFeed
+	sf := slowFeed
+
+	go func() {
+		ff.StopChan <- wg
+	}()
+	go func() {
+		sf.StopChan <- wg
+	}()
+
+	// make sure we don't send the stop singal twice
+	slowFeed = nil
+	fastFeed = nil
+
+	feedLock.Unlock()
 }
 
 func UserAgent() string {
@@ -45,87 +78,63 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) runBot() {
-
 	redditClient := setupClient()
-	fetcher := NewPostFetcher(redditClient)
+	feedLock.Lock()
+	fastFeed = NewPostFetcher(redditClient, false, NewPostHandler(false))
+	slowFeed = NewPostFetcher(redditClient, true, NewPostHandler(true))
 
-	lastLogged := time.Now()
-	num := 0
-	numDeleted := 0
+	go fastFeed.Run()
+	go slowFeed.Run()
+	feedLock.Unlock()
+}
 
-	ticker := time.NewTicker(time.Second * 5)
-	for {
-		select {
-		case wg := <-p.stopFeedChan:
-			wg.Done()
-			return
-		case <-ticker.C:
-		}
+type PostHandlerImpl struct {
+	Slow        bool
+	ratelimiter *Ratelimiter
+}
 
-		links, err := fetcher.GetNewPosts()
-		if err != nil {
-			logrus.WithError(err).Error("Error fetchind new links")
-			continue
-		}
-		if len(links) < 1 {
-			continue
-		}
+func NewPostHandler(slow bool) PostHandler {
+	rl := NewRatelimiter()
+	go rl.RunGCLoop()
 
-		num += len(links)
-		if time.Since(lastLogged) >= time.Minute {
-			logrus.Println("Num posts last minute: ", num, ", deleted: ", numDeleted)
-			lastLogged = time.Now()
-			num = 0
-			numDeleted = 0
-		}
-
-		for _, v := range links {
-			if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
-				numDeleted++
-				continue
-			}
-
-			if !v.IsRobotIndexable {
-				numDeleted++
-				continue
-			}
-
-			// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-			// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-			p.handlePost(v)
-		}
+	return &PostHandlerImpl{
+		Slow:        slow,
+		ratelimiter: rl,
 	}
 }
 
-func (p *Plugin) handlePost(post *reddit.Link) error {
+func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
+	for _, v := range links {
+		if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
+			continue
+		}
+
+		if !v.IsRobotIndexable {
+			continue
+		}
+
+		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
+		// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		p.handlePost(v)
+	}
+}
+
+func (p *PostHandlerImpl) handlePost(post *reddit.Link) error {
 
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
 	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
-	config, err := GetConfig("global_subreddit_watch:" + strings.ToLower(post.Subreddit))
+	config, err := models.RedditFeeds(
+		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
+		models.RedditFeedWhere.Slow.EQ(p.Slow)).AllG(context.Background())
+
 	if err != nil {
-		logrus.WithError(err).Error("Failed getting config from redis")
+		logrus.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
 	}
 
 	// Get the configs that listens to this subreddit, if any
-	filteredItems := make([]*SubredditWatchItem, 0, len(config))
-
-OUTER:
-	for _, c := range config {
-		// remove duplicates
-		for _, v := range filteredItems {
-			if v.Channel == c.Channel {
-				continue OUTER
-			}
-		}
-
-		// apply ratelimiting
-		parsedGuildID, _ := strconv.ParseInt(c.Guild, 10, 64)
-		if ratelimiter.CheckIncrement(time.Now(), parsedGuildID, 600) {
-			filteredItems = append(filteredItems, c)
-		}
-	}
+	filteredItems := p.FilterFeeds(config, post)
 
 	// No channels nothing to do...
 	if len(filteredItems) < 1 {
@@ -140,20 +149,62 @@ OUTER:
 	message, embed := CreatePostMessage(post)
 
 	for _, item := range filteredItems {
-		cParsed, _ := strconv.ParseInt(item.Channel, 10, 64)
-		gParsed, _ := strconv.ParseInt(item.Guild, 10, 64)
+		idStr := strconv.FormatInt(item.ID, 10)
 		if item.UseEmbeds {
-			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), gParsed, cParsed, embed)
+			mqueue.QueueMessageEmbed("reddit", idStr, item.GuildID, item.ChannelID, embed)
 		} else {
-			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), gParsed, cParsed, message)
+			mqueue.QueueMessageString("reddit", idStr, item.GuildID, item.ChannelID, message)
 		}
 
 		if common.Statsd != nil {
-			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + item.Guild}, 1)
+			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + strconv.FormatInt(item.GuildID, 10)}, 1)
 		}
 	}
 
 	return nil
+}
+
+func (p *PostHandlerImpl) FilterFeeds(feeds []*models.RedditFeed, post *reddit.Link) []*models.RedditFeed {
+	filteredItems := make([]*models.RedditFeed, 0, len(feeds))
+
+OUTER:
+	for _, c := range feeds {
+		// remove duplicates
+		for _, v := range filteredItems {
+			if v.ChannelID == c.ChannelID {
+				continue OUTER
+			}
+		}
+
+		limit := MaxPostsHourFast
+		if p.Slow {
+			limit = MaxPostsHourSlow
+		}
+
+		// apply ratelimiting
+		if !p.ratelimiter.CheckIncrement(time.Now(), c.GuildID, limit) {
+			continue
+		}
+
+		if post.Over18 && c.FilterNSFW == FilterNSFWIgnore {
+			// NSFW and we ignore nsfw posts
+			continue
+		} else if !post.Over18 && c.FilterNSFW == FilterNSFWRequire {
+			// Not NSFW and we only care about nsfw posts
+			continue
+		}
+
+		if p.Slow {
+			if post.Score < c.MinUpvotes {
+				// less than required upvotes
+				continue
+			}
+		}
+
+		filteredItems = append(filteredItems, c)
+	}
+
+	return filteredItems
 }
 
 func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
@@ -171,6 +222,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	} else {
 		plainBody = post.URL
 	}
+
 	if post.Spoiler {
 		plainMessage += "|| " + plainBody + " ||"
 	} else {

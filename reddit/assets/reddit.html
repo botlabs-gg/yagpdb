@@ -6,89 +6,141 @@
 </header>
 
 {{template "cp_alerts" .}}
-<!-- /.row -->
+
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Add new feed</h2>
-            </header>
-            <div class="card-body">
-                <p>Reddit feeds will post posts from subreddits in your discord server</p>
-                <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter"
-                <form class="form-inline" method="post" action="/manage/{{.ActiveGuild.ID}}/reddit" data-async-form>
-                    <label for="new-subreddit">Subreddit</label>
-                    <input type="text" class="form-control mx-2" id="new-subreddit" name="subreddit" placeholder="discord_irl">
-
-                    <label for="new-channel">Server Channel</label>
-                    <select id="new-channel" class="form-control mx-2" name="channel" data-requireperms-embed>
-                        {{textChannelOptions .ActiveGuild.Channels 0 false ""}}
-                    </select>
-
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="format-new" name="use_embeds">
-                        <label for="format-new" class="form-check-label">Use embeds<small class="ml-2">(Videos and such wont be attached, but just linked)</small></label>
-                    </div>
-
-                    <button type="submit" class="btn btn-success ml-4">Add</button>
-                </form>
+    <div class="col">
+        <div class="tabs">
+            <ul class="nav nav-tabs">
+                <li class="nav-item active"><a class="nav-link show active" href="#fast-feeds" aria-controls="fast-feeds" role="tab" data-toggle="tab">
+                    Fast / Simple 
+                </a></li>
+                <li class="nav-item"><a class="nav-link" href="#slow-feeds" aria-controls="slow-feeds" role="tab" data-toggle="tab" >
+                    Slow / Advanced
+                </a></li>
+            </ul>
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="fast-feeds">{{mTemplate "reddit_feed_tab_content" "Dot" . "Slow" false}}</div>
+                <div role="tabpanel" class="tab-pane" id="slow-feeds">{{mTemplate "reddit_feed_tab_content" "Dot" . "Slow" true}}</div>
             </div>
-        </section>
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Current subreddits</h2>
-            </header>
-            <div class="card-body">
-                {{$guild := .ActiveGuild.ID}}
-                {{$channels := .ActiveGuild.Channels}}
-                {{range .RedditConfig}}
-                <form id="feed-item-{{.ID}}" data-async-form method="post" action="/manage/{{$guild}}/reddit/{{.ID}}/update"><input type="text" class="hidden" name="id" value="{{.ID}}"></form>
-                {{end}}
-
-                <table class="table table-responsive-md table-sm mb-0">
-                    <thead>
-                        <tr>
-                            <th>Subreddit</th>
-                            <th>Discord channel</th>
-                            <th>Format <small>(videos wont show if using embeds)</small></th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{range .RedditConfig}}
-                        <tr>
-                            <td>
-                                <input form="feed-item-{{.ID}}" type="text" class="form-control" id="subreddit-{{.ID}}" name="subreddit" placeholder="" value="{{.Sub}}">
-                            </td>
-                            <td>
-                                <select form="feed-item-{{.ID}}" id="channel" class="form-control" name="channel" data-requireperms-embed>
-                                   {{textChannelOptions $channels .Channel false ""}}
-                                </select>
-                            </td>
-                            <td>
-                                <div class="form-check">
-                                    <input form="feed-item-{{.ID}}" type="checkbox" class="form-check-input" id="format-{{.ID}}" name="use_embeds" {{if .UseEmbeds}}checked{{end}}>
-                                    <label for="format-{{.ID}}" class="form-check-label">Use embed</label>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="btn-group">
-                                    <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update" data-async-form-alertsonly>Save</button>
-                                    <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                        {{end}}
-
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        <!-- /.panel -->
+        </div>
     </div>
-    <!-- /.col-lg-12 -->
 </div>
-<!-- /.row -->
+
 {{template "cp_footer" .}}
 
+{{end}}
+
+{{define "reddit_feed_tab_content"}}
+<!-- /.row -->
+<div class="row mb-5 pb-2">
+    <div class="col-md-6">
+        <h3>{{if .Slow}}Slow{{else}}Fast{{end}} reddit feeds</h3>
+        <p>Reddit feeds will post posts from subreddits in your discord server, the fast feed is ratelimited at 300 posts per hour and the slow feed is 200.</p>
+        <p>{{if .Slow}}<b>Slow</b> feeds are 15 minutes behind so that you can apply score filters to them to only post popular posts in your discord. Useful for big subs. If you have it set to 10 it means that if the post has a score of above 10 after 15 minutes, it will be posted in your discord
+        {{else}}<b>Fast</b> feeds are 1 minute behind and you can't apply upvote filters to them, use the slow feed for that.{{end}}</p>
+        <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter"</p>
+    </div>
+    <div class="col-md-6">
+        <h3>New feed</h3>
+        <form method="post" action="/manage/{{.Dot.ActiveGuild.ID}}/reddit" data-async-form>
+            {{if .Slow}}<input type="text" class="hidden" name="slow" value="1">{{end}}
+            <div class ="form-row">
+                <div class="form-group col">
+                    <label for="new-subreddit-slow-{{.Slow}}">Subreddit</label>
+                    <input type="text" class="form-control" id="new-subreddit-slow-{{.Slow}}" name="subreddit" placeholder="discord_irl">
+                </div>
+                <div class="form-group col">
+                    <label for="new-channel-slow-{{.Slow}}">Server Channel</label>
+                    <select id="new-channel-slow-{{.Slow}}" class="form-control" name="channel" data-requireperms-embed>
+                        {{textChannelOptions .Dot.ActiveGuild.Channels 0 false ""}}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label>NSFW Filtering</label>
+                    <select name="nsfw_filter" class="form-control">
+                        <option value="0">None</option>
+                        <option value="1">Ignore NSFW Posts</option>
+                        <option value="2">Only post NSFW Posts</option>
+                    </select>
+                </div>
+                {{if .Slow}}<div class="form-group col">
+                    <label>Minimum needed score</label>
+                    <input type="number" name="min_upvotes" value="5" class="form-control">
+                </div>{{end}}
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="format-new-slow-{{.Slow}}" name="use_embeds">
+                    <label for="format-new-slow-{{.Slow}}" class="form-check-label">Use embeds<small class="ml-2">(Videos be attached, but just linked)</small></label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success">Add</button>
+        </form>
+    </div> <!-- col -->
+</div> <!-- row -->
+
+<h3>Current reddit feeds</h3>
+{{$guild := .Dot.ActiveGuild.ID}}
+{{$channels := .Dot.ActiveGuild.Channels}}
+{{$slow := .Slow}}
+{{range .Dot.RedditConfig}}{{if eq .Slow $slow}}
+<form id="feed-item-{{.ID}}" data-async-form method="post" action="/manage/{{$guild}}/reddit/{{.ID}}/update">
+    <div class="row border-bottom border-secondary pb-3">
+        <div class="col-lg">
+            <div class="form-row">
+                <input type="text" class="hidden" name="id" value="{{.ID}}">
+                <div class="form-group col">
+                    <label>Subreddit</label>
+                    <p class="form-control-static">{{.Subreddit}}</p>
+                </div>
+                <div class="form-group col">
+                    <label for="channel-feed-{{.ID}}">Server Channel</label>
+                    <select id="channel-feed-{{.ID}}" class="form-control" name="channel" data-requireperms-embed>
+                        {{textChannelOptions $channels .ChannelID false ""}}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg">
+            <div class="form-row">
+                <div class="form-group col">
+                    <label>NSFW Filtering</label>
+                    <select name="nsfw_filter" class="form-control">
+                        <option value="0" {{if eq .FilterNSFW 0}}selected{{end}}>None</option>
+                        <option value="1" {{if eq .FilterNSFW 1}}selected{{end}}>Ignore NSFW Posts</option>
+                        <option value="2" {{if eq .FilterNSFW 2}}selected{{end}}>Only post NSFW Posts</option>
+                    </select>
+                </div>
+                {{if .Slow}}<div class="form-group col">
+                    <label>Minimum needed score</label>
+                    <input type="number" name="min_upvotes" value="{{.MinUpvotes}}" class="form-control">
+                </div>{{end}}
+            </div>
+        </div>
+        <div class="col-lg">
+            <div class="form-row">
+                <div class="form-group col">
+                    <label>Use embed</label>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="format-{{.ID}}" name="use_embeds" {{if .UseEmbeds}}checked{{end}}>
+                        <!-- <label for="format-{{.ID}}" class="form-check-label">Use embed</label> -->
+                    </div>
+                </div>
+                <div class="form-group col">
+                    <div class="btn-group mt-4">
+                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <!-- /.col-lg-12 -->
+    </div>
+</form>
+<!-- /.row -->
+{{end}}{{end}}
 {{end}}

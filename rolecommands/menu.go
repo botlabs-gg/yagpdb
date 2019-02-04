@@ -401,6 +401,10 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 
 	member, err := bot.GetMember(gs.ID, userID)
 	if err != nil {
+		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
+			return "", nil
+		}
+
 		return "An error occured giving you the role", err
 	}
 

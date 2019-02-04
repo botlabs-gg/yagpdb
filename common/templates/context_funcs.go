@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -127,6 +128,40 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		return ""
+	}
+}
+
+func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
+	return func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
+		if c.IncreaseCheckCallCounter("edit_message", 5) {
+			return "", ErrTooManyCalls
+		}
+
+		cid := c.channelArg(channel)
+		if cid == 0 {
+			return "", errors.New("Unknown channel")
+		}
+
+		mID := ToInt64(msgID)
+
+		var err error
+		if embed, ok := msg.(*discordgo.MessageEmbed); ok {
+			_, err = common.BotSession.ChannelMessageEditEmbed(cid, mID, embed)
+		} else {
+			strMsg := fmt.Sprint(msg)
+
+			if filterSpecialMentions {
+				strMsg = common.EscapeSpecialMentions(strMsg)
+			}
+
+			_, err = common.BotSession.ChannelMessageEdit(cid, mID, strMsg)
+		}
+
+		if err != nil {
+			return "", err
+		}
+
+		return "", nil
 	}
 }
 
@@ -262,9 +297,8 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 		return false
 	}
 
-	
 	contains := common.ContainsInt64Slice(ts.Roles, role)
-	
+
 	return contains
 
 }
@@ -638,4 +672,41 @@ func (c *Context) tmplCurrentUserAgeMinutes() int {
 func (c *Context) tmplCurrentUserCreated() time.Time {
 	t := bot.SnowflakeToTime(c.MS.ID)
 	return t
+}
+
+func (c *Context) tmplSleep(duration interface{}) (string, error) {
+	seconds := tmplToInt(duration)
+	if c.secondsSlept+seconds > 60 || seconds < 1 {
+		return "", errors.New("can sleep for max 60 seconds combined")
+	}
+
+	c.secondsSlept += seconds
+	time.Sleep(time.Duration(seconds) * time.Second)
+	return "", nil
+}
+
+func (c *Context) reFind(r string, s string) (string, error) {
+	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	compiled, err := regexp.Compile(r)
+	if err != nil {
+		return "", err
+	}
+
+	return compiled.FindString(s), nil
+}
+
+func (c *Context) reReplace(r string, s string, repl string) (string, error) {
+	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	compiled, err := regexp.Compile(r)
+	if err != nil {
+		return "", err
+	}
+
+	return compiled.ReplaceAllString(s, repl), nil
 }

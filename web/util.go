@@ -171,6 +171,7 @@ func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
 
 		cast := v.(*discordgo.UserGuild)
+
 		// Require manageserver, ownership of guild or ownership of bot
 		if cast.Owner || cast.Permissions&discordgo.PermissionManageServer != 0 {
 			return true
@@ -178,12 +179,14 @@ func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 	}
 
 	if user := ctx.Value(common.ContextKeyUser); user != nil {
+		// there is a active session, but they're not on the related guild (if any)
 		cast := user.(*discordgo.User)
 		if cast.ID == common.Conf.Owner {
 			return true
 		}
 
 		if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS") {
+			// allow special read only acces for GET and OPTIONS requests, simple and works well
 			if hasAcces, err := bot.HasReadOnlyAccess(cast.ID); hasAcces && err == nil {
 				return true
 			}
@@ -240,6 +243,15 @@ func IsRequestPartial(ctx context.Context) bool {
 
 func ContextUser(ctx context.Context) *discordgo.User {
 	return ctx.Value(common.ContextKeyUser).(*discordgo.User)
+}
+
+func ContextMember(ctx context.Context) *discordgo.Member {
+	i := ctx.Value(common.ContextKeyUserMember)
+	if i == nil {
+		return nil
+	}
+
+	return i.(*discordgo.Member)
 }
 
 func ParamOrEmpty(r *http.Request, key string) string {

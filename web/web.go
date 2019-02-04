@@ -94,6 +94,14 @@ func LoadTemplates() {
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html", "templates/status.html"))
 }
 
+func BaseURL() string {
+	if https || exthttps {
+		return "https://" + common.Conf.Host
+	}
+
+	return "http://" + common.Conf.Host
+}
+
 func Run() {
 	LoadTemplates()
 
@@ -126,7 +134,6 @@ func Run() {
 
 	log.Info("Running webservers")
 	runServers(mux)
-
 }
 
 func LoadAd() {
@@ -225,6 +232,65 @@ func runServers(mainMuxer *goji.Mux) {
 
 func setupRoutes() *goji.Mux {
 
+	// setup the root routes and middlewares
+	setupRootMux()
+
+	// Guild specific public routes, does not require admin or being logged in at all
+	serverPublicMux := goji.SubMux()
+	serverPublicMux.Use(ActiveServerMW)
+	serverPublicMux.Use(SetGuildMemberMiddleware)
+
+	RootMux.Handle(pat.Get("/public/:server"), serverPublicMux)
+	RootMux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
+	ServerPublicMux = serverPublicMux
+
+	// same as above but for API stuff
+	ServerPubliAPIMux = goji.SubMux()
+	ServerPubliAPIMux.Use(ActiveServerMW)
+	ServerPubliAPIMux.Use(RequireActiveServer)
+	ServerPubliAPIMux.Use(SetGuildMemberMiddleware)
+
+	RootMux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
+	RootMux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
+
+	ServerPubliAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChanenlPermissions)))
+
+	// Server selection has its own handler
+	RootMux.Handle(pat.Get("/manage"), RenderHandler(HandleSelectServer, "cp_selectserver"))
+	RootMux.Handle(pat.Get("/manage/"), RenderHandler(HandleSelectServer, "cp_selectserver"))
+	RootMux.Handle(pat.Get("/status"), ControllerHandler(HandleStatus, "cp_status"))
+	RootMux.Handle(pat.Get("/status/"), ControllerHandler(HandleStatus, "cp_status"))
+	RootMux.Handle(pat.Post("/shard/:shard/reconnect"), ControllerHandler(HandleReconnectShard, "cp_status"))
+	RootMux.Handle(pat.Post("/shard/:shard/reconnect/"), ControllerHandler(HandleReconnectShard, "cp_status"))
+
+	RootMux.HandleFunc(pat.Get("/cp"), legacyCPRedirHandler)
+	RootMux.HandleFunc(pat.Get("/cp/*"), legacyCPRedirHandler)
+
+	// Server control panel, requires you to be an admin for the server (owner or have server management role)
+	CPMux = goji.SubMux()
+	CPMux.Use(RequireSessionMiddleware)
+	CPMux.Use(ActiveServerMW)
+	CPMux.Use(RequireActiveServer)
+	CPMux.Use(SetGuildMemberMiddleware)
+	CPMux.Use(RequireServerAdminMiddleware)
+
+	RootMux.Handle(pat.New("/manage/:server"), CPMux)
+	RootMux.Handle(pat.New("/manage/:server/*"), CPMux)
+
+	CPMux.Handle(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
+	CPMux.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
+
+	for _, plugin := range common.Plugins {
+		if webPlugin, ok := plugin.(Plugin); ok {
+			webPlugin.InitWeb()
+			log.Info("Initialized web plugin:", plugin.Name())
+		}
+	}
+
+	return RootMux
+}
+
+func setupRootMux() {
 	mux := goji.NewMux()
 	RootMux = mux
 
@@ -241,66 +307,17 @@ func setupRoutes() *goji.Mux {
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 
 	// General middleware
-	mux.Use(gziphandler.GzipHandler)
-	mux.Use(MiscMiddleware)
-	mux.Use(BaseTemplateDataMiddleware)
-	mux.Use(SessionMiddleware)
-	mux.Use(UserInfoMiddleware)
+	mux.Use(SkipStaticMW(gziphandler.GzipHandler, ".css", ".js", ".map"))
+	mux.Use(SkipStaticMW(MiscMiddleware))
+	mux.Use(SkipStaticMW(BaseTemplateDataMiddleware))
+	mux.Use(SkipStaticMW(SessionMiddleware))
+	mux.Use(SkipStaticMW(UserInfoMiddleware))
 
 	// General handlers
 	mux.Handle(pat.Get("/"), ControllerHandler(HandleLandingPage, "index"))
 	mux.HandleFunc(pat.Get("/login"), HandleLogin)
 	mux.HandleFunc(pat.Get("/confirm_login"), HandleConfirmLogin)
 	mux.HandleFunc(pat.Get("/logout"), HandleLogout)
-
-	// The public muxer, for public server stuff like stats and logs
-	serverPublicMux := goji.SubMux()
-	serverPublicMux.Use(ActiveServerMW)
-	mux.Handle(pat.Get("/public/:server"), serverPublicMux)
-	mux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
-	ServerPublicMux = serverPublicMux
-
-	ServerPubliAPIMux = goji.SubMux()
-	ServerPubliAPIMux.Use(ActiveServerMW)
-	ServerPubliAPIMux.Use(RequireActiveServer)
-	mux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
-	mux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
-
-	ServerPubliAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChanenlPermissions)))
-
-	// Server selection has it's own handler
-	mux.Handle(pat.Get("/manage"), RenderHandler(HandleSelectServer, "cp_selectserver"))
-	mux.Handle(pat.Get("/manage/"), RenderHandler(HandleSelectServer, "cp_selectserver"))
-	mux.Handle(pat.Get("/status"), ControllerHandler(HandleStatus, "cp_status"))
-	mux.Handle(pat.Get("/status/"), ControllerHandler(HandleStatus, "cp_status"))
-	mux.Handle(pat.Post("/shard/:shard/reconnect"), ControllerHandler(HandleReconnectShard, "cp_status"))
-	mux.Handle(pat.Post("/shard/:shard/reconnect/"), ControllerHandler(HandleReconnectShard, "cp_status"))
-
-	mux.HandleFunc(pat.Get("/cp"), legacyCPRedirHandler)
-	mux.HandleFunc(pat.Get("/cp/*"), legacyCPRedirHandler)
-
-	// Server control panel, requires you to be an admin for the server (owner or have server management role)
-	serverCpMuxer := goji.SubMux()
-	serverCpMuxer.Use(RequireSessionMiddleware)
-	serverCpMuxer.Use(ActiveServerMW)
-	serverCpMuxer.Use(RequireActiveServer)
-	serverCpMuxer.Use(RequireServerAdminMiddleware)
-
-	mux.Handle(pat.New("/manage/:server"), serverCpMuxer)
-	mux.Handle(pat.New("/manage/:server/*"), serverCpMuxer)
-
-	serverCpMuxer.Handle(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
-	serverCpMuxer.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
-	CPMux = serverCpMuxer
-
-	for _, plugin := range common.Plugins {
-		if webPlugin, ok := plugin.(Plugin); ok {
-			webPlugin.InitWeb()
-			log.Info("Initialized web plugin:", plugin.Name())
-		}
-	}
-
-	return mux
 }
 
 func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
