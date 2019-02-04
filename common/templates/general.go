@@ -259,19 +259,6 @@ func shuffle(seq interface{}) (interface{}, error) {
 	return shuffled.Interface(), nil
 }
 
-func str(arg interface{}) string {
-	switch v := arg.(type) {
-	case int64:
-		return strconv.FormatInt(v, 10)
-	case int:
-		return strconv.FormatInt(int64(v), 10)
-	case int32:
-		return strconv.FormatInt(int64(v), 10)
-	}
-
-	return ""
-}
-
 func tmplToInt(from interface{}) int {
 	switch t := from.(type) {
 	case int:
@@ -283,6 +270,12 @@ func tmplToInt(from interface{}) int {
 	case float32:
 		return int(t)
 	case float64:
+		return int(t)
+	case uint:
+		return int(t)
+	case uint32:
+		return int(t)
+	case uint64:
 		return int(t)
 	case string:
 		parsed, _ := strconv.ParseInt(t, 10, 64)
@@ -304,6 +297,12 @@ func ToInt64(from interface{}) int64 {
 		return int64(t)
 	case float64:
 		return int64(t)
+	case uint:
+		return int64(t)
+	case uint32:
+		return int64(t)
+	case uint64:
+		return int64(t)
 	case string:
 		parsed, _ := strconv.ParseInt(t, 10, 64)
 		return parsed
@@ -324,6 +323,12 @@ func ToString(from interface{}) string {
 		return strconv.FormatFloat(float64(t), 'E', -1, 32)
 	case float64:
 		return strconv.FormatFloat(t, 'E', -1, 64)
+	case uint:
+		return strconv.FormatUint(uint64(t), 10)
+	case uint32:
+		return strconv.FormatUint(uint64(t), 10)
+	case uint64:
+		return strconv.FormatUint(uint64(t), 10)
 	case string:
 		return t
 	default:

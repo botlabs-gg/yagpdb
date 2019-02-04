@@ -11,40 +11,50 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
+	"net/url"
 	"strings"
 	"time"
 )
 
 var (
 	StandardFuncMap = map[string]interface{}{
-		"dict":                  Dictionary,
-		"sdict":                 StringKeyDictionary,
-		"cembed":                CreateEmbed,
-		"json":                  tmplJson,
-		"in":                    in,
-		"inFold":                inFold,
-		"title":                 strings.Title,
-		"add":                   add,
-		"roleAbove":             roleIsAbove,
-		"adjective":             common.RandomAdjective,
-		"randInt":               randInt,
-		"shuffle":               shuffle,
-		"seq":                   sequence,
-		"joinStr":               joinStrings,
-		"str":                   str,
-		"lower":                 strings.ToLower,
-		"upper":                 strings.ToUpper,
-		"toString":              ToString,
-		"toInt":                 tmplToInt,
-		"toInt64":               ToInt64,
-		"formatTime":            tmplFormatTime,
-		"slice":                 slice,
-		"cslice":                CreateSlice,
-		"currentTime":           tmplCurrentTime,
-		"split":                 strings.Split,
-		"escapeHere":            tmplEscapeHere,
-		"escapeEveryone":        tmplEscapeEveryone,
-		"escapeEveryoneHere":    tmplEscapeEveryoneHere,
+		// conversion functions
+		"str":      ToString,
+		"toString": ToString, // don't ask why we have 2 of these
+		"toInt":    tmplToInt,
+		"toInt64":  ToInt64,
+
+		// string manipulation
+		"joinStr":   joinStrings,
+		"lower":     strings.ToLower,
+		"upper":     strings.ToUpper,
+		"slice":     slice,
+		"urlescape": url.PathEscape,
+		"split":     strings.Split,
+		"title":     strings.Title,
+
+		// misc
+		"dict":   Dictionary,
+		"sdict":  StringKeyDictionary,
+		"cembed": CreateEmbed,
+		"cslice": CreateSlice,
+
+		"formatTime":  tmplFormatTime,
+		"json":        tmplJson,
+		"in":          in,
+		"inFold":      inFold,
+		"add":         add,
+		"roleAbove":   roleIsAbove,
+		"adjective":   common.RandomAdjective,
+		"randInt":     randInt,
+		"shuffle":     shuffle,
+		"seq":         sequence,
+		"currentTime": tmplCurrentTime,
+
+		"escapeHere":         tmplEscapeHere,
+		"escapeEveryone":     tmplEscapeEveryone,
+		"escapeEveryoneHere": tmplEscapeEveryoneHere,
+
 		"humanizeDurationHours": tmplHumanizeDurationHours,
 		"humanizeTimeSinceDays": tmplHumanizeTimeSinceDays,
 	}
