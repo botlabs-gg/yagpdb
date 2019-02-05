@@ -280,6 +280,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["currentUserAgeMinutes"] = c.tmplCurrentUserAgeMinutes
 	c.ContextFuncs["sleep"] = c.tmplSleep
 	c.ContextFuncs["reFind"] = c.reFind
+	c.ContextFuncs["reFindAll"] = c.reFindAll
 	c.ContextFuncs["reReplace"] = c.reReplace
 }
 

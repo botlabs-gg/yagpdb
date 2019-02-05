@@ -698,6 +698,19 @@ func (c *Context) reFind(r string, s string) (string, error) {
 	return compiled.FindString(s), nil
 }
 
+func (c *Context) reFindAll(r string, s string) ([]string, error) {
+	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
+		return nil, ErrTooManyCalls
+	}
+
+	compiled, err := regexp.Compile(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return compiled.FindAllString(s, 1000), nil
+}
+
 func (c *Context) reReplace(r string, s string, repl string) (string, error) {
 	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
 		return "", ErrTooManyCalls
