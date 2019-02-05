@@ -20,6 +20,7 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
+
 	dict := make(map[interface{}]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
 		key := values[i]
@@ -29,7 +30,7 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 	return dict, nil
 }
 
-func StringKeyDictionary(values ...interface{}) (map[string]interface{}, error) {
+func StringKeyDictionary(values ...interface{}) (*SDict, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
@@ -44,7 +45,7 @@ func StringKeyDictionary(values ...interface{}) (map[string]interface{}, error) 
 		dict[s] = values[i+1]
 	}
 
-	return dict, nil
+	return &SDict{dict}, nil
 }
 
 func CreateSlice(values ...interface{}) ([]interface{}, error) {
@@ -57,12 +58,25 @@ func CreateSlice(values ...interface{}) ([]interface{}, error) {
 }
 
 func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
-	dict, err := StringKeyDictionary(values...)
-	if err != nil {
-		return nil, err
+	if len(values) < 1 {
+		return &discordgo.MessageEmbed{}, nil
 	}
 
-	encoded, err := json.Marshal(dict)
+	var m map[string]interface{}
+	switch t := values[0].(type) {
+	case *SDict:
+		m = t.m
+	case map[string]interface{}:
+		m = t
+	default:
+		dict, err := StringKeyDictionary(values...)
+		if err != nil {
+			return nil, err
+		}
+		m = dict.m
+	}
+
+	encoded, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
