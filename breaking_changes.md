@@ -1,5 +1,9 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**4th january 2019 (1.14)**
+
+ - Reddit feeds are now stored in postres instead of redis, a migration will automatically start on the webserver and can be disabled by setting YAGPDB_REDDIT_DISABLE_REDIS_PQ_MIGRATION to anything but empty, automigration will be turned into opt-in instead of opt out in a couple versions, then removed.
+
 **17th january 2019**
 
  - Custom commands are now stored in postgres, a migration from the old system is automtically started on the web server and can be disabled by setting YAGPDB_CC_DISABLE_REDIS_PQ_MIGRATION to anything but empty, this auto-migration will likely be removed in 2 or 3 versions (changing from opt-out to opt-in or complete removal)
