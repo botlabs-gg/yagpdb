@@ -2,6 +2,7 @@ package templates
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/template"
@@ -280,6 +281,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["currentUserAgeMinutes"] = c.tmplCurrentUserAgeMinutes
 	c.ContextFuncs["sleep"] = c.tmplSleep
 	c.ContextFuncs["reFind"] = c.reFind
+	c.ContextFuncs["reFindAll"] = c.reFindAll
 	c.ContextFuncs["reReplace"] = c.reReplace
 }
 
@@ -326,4 +328,21 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 			bot.MessageDeleteQueue.DeleteMessages(channelID, messageID)
 		}()
 	}
+}
+
+type SDict struct {
+	m map[string]interface{}
+}
+
+func (d *SDict) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.m)
+}
+
+func (d *SDict) Set(key string, value interface{}) string {
+	d.m[key] = value
+	return ""
+}
+
+func (d *SDict) Get(key string) interface{} {
+	return d.m[key]
 }
