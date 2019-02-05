@@ -42,18 +42,18 @@ type Config struct {
 
 	// TODO: Remove the legacy single-message variant when ready to migrate the
 	// database.
-	JoinServerMsg  string   `json:"join_server_msg" valid:"template,2000"`
-	JoinServerMsgs []string `json:"join_server_msgs" schema:"join_server_msgs" gorm:"-" valid:"template,2000"`
+	JoinServerMsg  string   `json:"join_server_msg" valid:"template,5000"`
+	JoinServerMsgs []string `json:"join_server_msgs" schema:"join_server_msgs" gorm:"-" valid:"template,5000"`
 	// Do Not Use! For persistence only.
 	JoinServerMsgs_ string `json:"-"`
 
 	JoinDMEnabled bool   `json:"join_dm_enabled" schema:"join_dm_enabled"`
-	JoinDMMsg     string `json:"join_dm_msg" schema:"join_dm_msg" valid:"template,2000"`
+	JoinDMMsg     string `json:"join_dm_msg" schema:"join_dm_msg" valid:"template,5000"`
 
 	LeaveEnabled bool     `json:"leave_enabled" schema:"leave_enabled"`
 	LeaveChannel string   `json:"leave_channel" schema:"leave_channel" valid:"channel,true"`
-	LeaveMsg     string   `json:"leave_msg" schema:"leave_msg" valid:"template,500"`
-	LeaveMsgs    []string `json:"leave_msgs" schema:"leave_msgs" gorm:"-" valid:"template,500"`
+	LeaveMsg     string   `json:"leave_msg" schema:"leave_msg" valid:"template,5000"`
+	LeaveMsgs    []string `json:"leave_msgs" schema:"leave_msgs" gorm:"-" valid:"template,5000"`
 	// Do Not Use! For persistence only.
 	LeaveMsgs_ string `json:"-"`
 
