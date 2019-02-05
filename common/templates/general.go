@@ -175,9 +175,9 @@ func add(args ...interface{}) interface{} {
 		}
 		return sumF
 	default:
-		sumI := int64(0)
+		sumI := 0
 		for _, v := range args {
-			sumI += ToInt64(v)
+			sumI += tmplToInt(v)
 		}
 		return sumI
 	}
@@ -200,13 +200,13 @@ func tmplMult(args ...interface{}) interface{} {
 		}
 		return sumF
 	default:
-		sumI := ToInt64(args[0])
+		sumI := tmplToInt(args[0])
 		for i, v := range args {
 			if i == 0 {
 				continue
 			}
 
-			sumI *= ToInt64(v)
+			sumI *= tmplToInt(v)
 		}
 		return sumI
 	}
@@ -229,13 +229,13 @@ func tmplDiv(args ...interface{}) interface{} {
 		}
 		return sumF
 	default:
-		sumI := ToInt64(args[0])
+		sumI := tmplToInt(args[0])
 		for i, v := range args {
 			if i == 0 {
 				continue
 			}
 
-			sumI /= ToInt64(v)
+			sumI /= tmplToInt(v)
 		}
 		return sumI
 	}
