@@ -305,6 +305,7 @@ func setupRootMux() {
 
 	// Setup fileserver
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
+	mux.Handle(pat.Get("/robots.txt"), http.HandlerFunc(handleRobotsTXT))
 
 	// General middleware
 	mux.Use(SkipStaticMW(gziphandler.GzipHandler, ".css", ".js", ".map"))

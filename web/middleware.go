@@ -879,9 +879,8 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 func SkipStaticMW(maybeSkip func(http.Handler) http.Handler, alwaysRunSuffixes ...string) func(http.Handler) http.Handler {
 	return func(alwaysRun http.Handler) http.Handler {
 		mw := func(w http.ResponseWriter, r *http.Request) {
-
 			// reliable enough... *cough cough*
-			if len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
+			if r.URL.Path == "/robots.txt" || len(r.URL.Path) > 8 && r.URL.Path[:8] == "/static/" {
 
 				// in some cases (like the gzip handler) we wanna run certain middlewares on certain files
 				for _, v := range alwaysRunSuffixes {

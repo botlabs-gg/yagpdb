@@ -149,3 +149,9 @@ func pollCommandsRan() {
 		<-t.C
 	}
 }
+
+func handleRobotsTXT(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte(`User-agent: *
+Disallow: /manage/
+`))
+}
