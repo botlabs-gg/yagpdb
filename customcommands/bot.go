@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/keylock"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
@@ -24,6 +25,13 @@ import (
 	"time"
 	"unicode/utf8"
 )
+
+var CCExecLock = keylock.NewKeyLock()
+
+type CCExecKey struct {
+	GuildID int64
+	CCID    int64
+}
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
@@ -273,12 +281,29 @@ func ExecuteCustomCommandFromMessage(cmd *models.CustomCommand, member *dstate.M
 // func ExecuteCustomCommand(cmd *models.CustomCommand, cmdArgs []string, stripped string, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
 func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context) error {
 	csCop := tmplCtx.CS.Copy(true, false)
-	log.WithFields(log.Fields{
+	f := log.WithFields(log.Fields{
 		"trigger":      cmd.TextTrigger,
 		"trigger_type": CommandTriggerType(cmd.TriggerType).String(),
 		"guild":        csCop.Guild.ID,
 		"channel_name": csCop.Name,
-	}).Info("Custom command triggered")
+	})
+
+	// do not allow concurrect executions of the same custom command, to prevent most common kinds of abuse
+	lockKey := CCExecKey{
+		GuildID: cmd.GuildID,
+		CCID:    cmd.LocalID,
+	}
+	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
+	if lockHandle == -1 {
+		f.Warn("Exceeded max lock attempts for cc")
+		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+		return nil
+	}
+
+	defer CCExecLock.Unlock(lockKey, lockHandle)
+
+	// pick a response and execute it
+	f.Info("Custom command triggered")
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
