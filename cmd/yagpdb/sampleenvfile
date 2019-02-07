@@ -30,6 +30,10 @@ export YAGPDB_TESTING=""
 # only needs to be changed if you're running the webserver on a different machine than the bot itself
 # export YAGPDB_BOTREST_LISTEN_ADDRESS="127.0.0.1"
 
+# Set to enable the memory monitor on the bot, this will attempt to free memory when the system is getting low on memory
+# This is mainly an issue when stuff like large spikes of reconnects with full re-identify flow happening, this will try to mitigate that slightly
+#YAGPDB_ENABLE_MEM_MONITOR="true"
+
 ###################################################################
 # Plugins and various other optional features below, not required #
 ##################################################################

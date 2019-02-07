@@ -240,6 +240,7 @@ func InitPlugins() {
 	}
 
 	go loopCheckAdmins()
+	watchMemusage()
 }
 
 var stopOnce sync.Once
