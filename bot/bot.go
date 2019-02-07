@@ -3,6 +3,7 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"flag"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardmanager"
 	"github.com/jonas747/dshardorchestrator/node"
@@ -34,6 +35,8 @@ var (
 	UsingOrchestrator bool
 
 	MessageDeleteQueue = deletequeue.NewQueue()
+
+	flagNodeID string
 )
 
 var (
@@ -50,6 +53,10 @@ var (
 	processShards     []int
 	processShardsLock sync.RWMutex
 )
+
+func init() {
+	flag.StringVar(&flagNodeID, "nodeid", "", "The id of this node, used when running with a sharding orchestrator")
+}
 
 func setup() {
 	_, err := common.PQ.Exec(DBSchema)
@@ -148,7 +155,7 @@ func Run() {
 
 	if UsingOrchestrator {
 		// TODO
-		NodeConn = node.NewNodeConn(&NodeImpl{}, orcheStratorAddress, common.VERSION, nil)
+		NodeConn = node.NewNodeConn(&NodeImpl{}, orcheStratorAddress, common.VERSION, flagNodeID, nil)
 		NodeConn.Run()
 	} else {
 		go ShardManager.Start()
