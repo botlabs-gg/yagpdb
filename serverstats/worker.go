@@ -52,6 +52,7 @@ func ProcessTempStats(full bool) {
 
 	started := time.Now()
 
+	// first retrieve all the guilds that should be processed
 	var strGuilds []string
 	if full {
 		err := common.RedisPool.Do(radix.Cmd(&strGuilds, "SMEMBERS", "connected_guilds"))
@@ -125,7 +126,7 @@ func UpdateGuildStats(guildID int64) error {
 		return err
 	}
 
-	channelAuthorStats := make(map[string]*models.ServerStatsPeriod)
+	channelStats := make(map[string]*models.ServerStatsPeriod)
 	for _, row := range messageStatsRaw {
 		// 0 = channel, 1 = mid, 2 = author
 		split := strings.Split(row, ":")
@@ -136,20 +137,19 @@ func UpdateGuildStats(guildID int64) error {
 		}
 
 		channel := split[0]
-		author := split[2]
+		// author := split[2]
 
-		if model, ok := channelAuthorStats[channel+"_"+author]; ok {
+		if model, ok := channelStats[channel]; ok {
 			model.Count.Int64++
 		} else {
 			model = &models.ServerStatsPeriod{
 				GuildID:   null.Int64From(guildID),
 				ChannelID: null.Int64From(common.MustParseInt(channel)),
-				UserID:    null.Int64From(common.MustParseInt(author)),
 				Started:   null.TimeFrom(minAgo), // TODO: we should calculate these from the min max snowflake ids
 				Duration:  null.Int64From(int64(time.Minute)),
 				Count:     null.Int64From(1),
 			}
-			channelAuthorStats[channel+"_"+author] = model
+			channelStats[channel] = model
 		}
 	}
 
@@ -158,7 +158,7 @@ func UpdateGuildStats(guildID int64) error {
 		return errors.WithMessage(err, "bginTX")
 	}
 
-	for _, model := range channelAuthorStats {
+	for _, model := range channelStats {
 		err = model.Insert(context.Background(), tx, boil.Infer())
 		if err != nil {
 			tx.Rollback()
