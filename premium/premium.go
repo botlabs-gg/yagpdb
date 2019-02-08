@@ -17,8 +17,9 @@ const (
 	// Hash
 	// Key: guild id's
 	// Value: the user id's providing the premium status
-	RedisKeyPremiumGuilds    = "premium_activated_guilds"
-	RedisKeyPremiumGuildsTmp = "premium_activated_guilds_tmp"
+	RedisKeyPremiumGuilds          = "premium_activated_guilds"
+	RedisKeyPremiumGuildsTmp       = "premium_activated_guilds_tmp"
+	RedisKeyPremiumGuildLastActive = "premium_guild_last_active"
 )
 
 type Plugin struct {
@@ -41,6 +42,26 @@ func IsGuildPremium(guildID int64) (bool, error) {
 	var premium bool
 	err := common.RedisPool.Do(radix.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
 	return premium, errors.WithMessage(err, "IsGuildPremium")
+}
+
+// AllGuildsOncePremium returns all the guilds that have has premium once, and the last time that was active
+func AllGuildsOncePremium() (map[int64]time.Time, error) {
+	var result []int64
+	err := common.RedisPool.Do(radix.Cmd("ZRANGE", RedisKeyPremiumGuildLastActive, "0", "-1", "WITHSCORES"))
+	if err != nil {
+		return nil, errors.Wrap(err, "zrange")
+	}
+
+	parsed := make(map[int64]time.Time)
+	for i := 0; i < len(result); i += 2 {
+		g := result[i]
+		score := result[i+1]
+
+		t := time.Unix(score, 0)
+		parsed[g] = t
+	}
+
+	return parsed, nil
 }
 
 // UserPremiumSlots returns all slots for a user
