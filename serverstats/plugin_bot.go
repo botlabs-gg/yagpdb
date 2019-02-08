@@ -92,6 +92,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		log.WithError(err).Error("Failed Settings member count")
 	}
+
+	SetUpdateMemberStatsPeriod(g.ID, 0, g.MemberCount)
 }
 
 func HandleMemberAdd(evt *eventsystem.EventData) {
@@ -102,10 +104,16 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(nil, "INCR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
+	newMemberCount := 0
+	err = common.RedisPool.Do(radix.Cmd(&newMemberCount, "INCR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
 	if err != nil {
 		log.WithError(err).Error("Failed Increasing members")
 	}
+
+	SetUpdateMemberStatsPeriod(g.GuildID, 1, newMemberCount)
+
+	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
+		"[serverstats] failed marking guildmembers changed", log.Fields{"guild": g.GuildID})
 }
 
 func HandleMemberRemove(evt *eventsystem.EventData) {
@@ -116,10 +124,43 @@ func HandleMemberRemove(evt *eventsystem.EventData) {
 		log.WithError(err).Error("Failed adding member to stats")
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(nil, "DECR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
+	newMemberCount := 0
+	err = common.RedisPool.Do(radix.Cmd(&newMemberCount, "DECR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
 	if err != nil {
 		log.WithError(err).Error("Failed decreasing members")
 	}
+
+	SetUpdateMemberStatsPeriod(g.GuildID, -1, newMemberCount)
+
+	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
+		"[serverstats] failed marking guildmembers changed", log.Fields{"guild": g.GuildID})
+}
+
+func SetUpdateMemberStatsPeriod(guildID int64, memberIncr int, numMembers int) {
+	joins := 0
+	leaves := 0
+	if memberIncr > 0 {
+		joins = memberIncr
+	} else if memberIncr < 0 {
+		leaves = -memberIncr
+	}
+
+	// round to current hour
+	tn := time.Now().UTC()
+	t := time.Date(tn.Year(), tn.Month(), tn.Day(), tn.Hour(), 0, 0, 0, tn.Location())
+
+	_, err := common.PQ.Exec(`INSERT INTO server_stats_member_periods  (guild_id, created_at, num_members, joins, leaves)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (guild_id, created_at)
+DO UPDATE SET 
+joins = server_stats_member_periods.joins + $4, 
+leaves = server_stats_member_periods.leaves + $5, 
+num_members = server_stats_member_periods.num_members + $6;`, guildID, t, numMembers, joins, leaves, memberIncr) // update clause vars
+
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed setting member stats period")
+	}
+
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {

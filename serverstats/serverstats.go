@@ -91,7 +91,6 @@ func RetrieveRedisStats(guildID int64) (*FullStats, error) {
 	now := time.Now()
 	yesterday := now.Add(time.Hour * -24)
 	unixYesterday := discordgo.StrID(yesterday.Unix())
-	strGID := discordgo.StrID(guildID)
 
 	var messageStatsRaw []string
 	var joined int
@@ -100,10 +99,10 @@ func RetrieveRedisStats(guildID int64) (*FullStats, error) {
 	var members int
 
 	pipeCmd := radix.Pipeline(
-		radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, unixYesterday, "+inf"),
-		radix.Cmd(&joined, "ZCOUNT", "guild_stats_members_joined_day:"+strGID, unixYesterday, "+inf"),
-		radix.Cmd(&left, "ZCOUNT", "guild_stats_members_left_day:"+strGID, unixYesterday, "+inf"),
-		radix.Cmd(&members, "GET", "guild_stats_num_members:"+strGID),
+		radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", RedisKeyChannelMessages(guildID), unixYesterday, "+inf"),
+		radix.Cmd(&joined, "ZCOUNT", RedisKeyMembersJoined(guildID), unixYesterday, "+inf"),
+		radix.Cmd(&left, "ZCOUNT", RedisKeyMembersLeft(guildID), unixYesterday, "+inf"),
+		radix.Cmd(&members, "GET", RedisKeyTotalMembers(guildID)),
 	)
 
 	err := common.RedisPool.Do(pipeCmd)
@@ -209,4 +208,21 @@ func GetConfig(ctx context.Context, GuildID int64) (*ServerStatsConfig, error) {
 	}
 
 	return configFromModel(conf), nil
+}
+
+const (
+	RedisKeyGuildMembersChanged = "servers_stats_guild_members_changed"
+)
+
+func RedisKeyChannelMessages(guildID int64) string {
+	return "guild_stats_msg_channel_day:" + strconv.FormatInt(guildID, 10)
+}
+func RedisKeyMembersJoined(guildID int64) string {
+	return "guild_stats_members_joined_day:" + strconv.FormatInt(guildID, 10)
+}
+func RedisKeyMembersLeft(guildID int64) string {
+	return "guild_stats_members_left_day:" + strconv.FormatInt(guildID, 10)
+}
+func RedisKeyTotalMembers(guildID int64) string {
+	return "guild_stats_num_members:" + strconv.FormatInt(guildID, 10)
 }

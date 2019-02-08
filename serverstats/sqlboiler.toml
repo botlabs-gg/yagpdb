@@ -7,4 +7,4 @@ host="localhost"
 user="postgres"
 pass="123"
 sslmode="disable"
-whitelist=["server_stats_periods", "server_stats_configs"]
+whitelist=["server_stats_periods", "server_stats_configs", "server_stats_member_periods"]
