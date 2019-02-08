@@ -20,6 +20,7 @@ func (p *Plugin) RunBackgroundWorker() {
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
+	wg.Done()
 }
 
 func runMonitor() {
