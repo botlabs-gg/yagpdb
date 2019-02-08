@@ -9,12 +9,24 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
+	"sync"
 	"time"
 )
+
+var _ common.BackgroundWorkerPlugin = (*Plugin)(nil)
+
+func (p *Plugin) RunBackgroundWorker() {
+	go runMonitor()
+}
+
+func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
+}
 
 func runMonitor() {
 	ticker := time.NewTicker(time.Second * 30)
 	time.Sleep(time.Second * 3)
+	logrus.Info("started premium server monitor")
+
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
 		logrus.WithError(err).Error("Failed checking for expired premium slots")

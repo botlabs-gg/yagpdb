@@ -12,7 +12,6 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	go runMonitor()
 	bot.State.CustomLimitProvider = p
 }
 
