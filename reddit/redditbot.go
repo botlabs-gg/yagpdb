@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	MaxPostsHourFast = 300
+	MaxPostsHourFast = 200
 	MaxPostsHourSlow = 200
 )
 
