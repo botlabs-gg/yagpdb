@@ -502,6 +502,8 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		}
 
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+
 		var out interface{}
 		if inner != nil {
 			out = inner(w, r)
