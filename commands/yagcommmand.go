@@ -27,7 +27,7 @@ var (
 	CategoryGeneral = &dcmd.Category{
 		Name:        "General",
 		Description: "General & informational commands",
-		HelpEmoji:   "ℹ️",
+		HelpEmoji:   "ℹ",
 		EmbedColor:  0xe53939,
 	}
 	CategoryTool = &dcmd.Category{
