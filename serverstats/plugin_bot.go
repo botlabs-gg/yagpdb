@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -57,19 +58,19 @@ func (p *Plugin) AddCommands() {
 				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.Conf.Host), nil
 			}
 
-			stats, err := RetrieveFullStats(data.GS.ID)
+			stats, err := RetrieveDailyStats(data.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "retrievefullstats")
 			}
 
 			total := int64(0)
-			for _, c := range stats.ChannelsHour {
+			for _, c := range stats.ChannelMessages {
 				total += c.Count
 			}
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](https://%s/public/%d/stats)", common.Conf.Host, data.GS.ID),
+				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
 					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
@@ -88,29 +89,22 @@ func (p *Plugin) AddCommands() {
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	g := evt.GuildCreate()
 
-	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "guild_stats_num_members:"+discordgo.StrID(g.ID), g.MemberCount))
-	if err != nil {
-		log.WithError(err).Error("Failed Settings member count")
-	}
-
 	SetUpdateMemberStatsPeriod(g.ID, 0, g.MemberCount)
 }
 
 func HandleMemberAdd(evt *eventsystem.EventData) {
 	g := evt.GuildMemberAdd()
 
-	err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "guild_stats_members_joined_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID))
-	if err != nil {
-		log.WithError(err).Error("Failed adding member to stats")
+	gs := bot.State.Guild(true, g.GuildID)
+	if gs == nil {
+		return
 	}
 
-	newMemberCount := 0
-	err = common.RedisPool.Do(radix.Cmd(&newMemberCount, "INCR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
-	if err != nil {
-		log.WithError(err).Error("Failed Increasing members")
-	}
+	gs.RLock()
+	mc := gs.Guild.MemberCount
+	gs.RUnlock()
 
-	SetUpdateMemberStatsPeriod(g.GuildID, 1, newMemberCount)
+	SetUpdateMemberStatsPeriod(g.GuildID, 1, mc)
 
 	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
 		"[serverstats] failed marking guildmembers changed", log.Fields{"guild": g.GuildID})
@@ -119,18 +113,16 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 func HandleMemberRemove(evt *eventsystem.EventData) {
 	g := evt.GuildMemberRemove()
 
-	err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "guild_stats_members_left_day:"+discordgo.StrID(g.GuildID), time.Now().Unix(), g.User.ID))
-	if err != nil {
-		log.WithError(err).Error("Failed adding member to stats")
+	gs := bot.State.Guild(true, g.GuildID)
+	if gs == nil {
+		return
 	}
 
-	newMemberCount := 0
-	err = common.RedisPool.Do(radix.Cmd(&newMemberCount, "DECR", "guild_stats_num_members:"+discordgo.StrID(g.GuildID)))
-	if err != nil {
-		log.WithError(err).Error("Failed decreasing members")
-	}
+	gs.RLock()
+	mc := gs.Guild.MemberCount
+	gs.RUnlock()
 
-	SetUpdateMemberStatsPeriod(g.GuildID, -1, newMemberCount)
+	SetUpdateMemberStatsPeriod(g.GuildID, -1, mc)
 
 	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
 		"[serverstats] failed marking guildmembers changed", log.Fields{"guild": g.GuildID})

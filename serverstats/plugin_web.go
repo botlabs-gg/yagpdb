@@ -38,11 +38,11 @@ func (p *Plugin) InitWeb() {
 	statsCPMux.Handle(pat.Get("/"), cpGetHandler)
 
 	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
-	statsCPMux.Handle(pat.Get("/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
+	statsCPMux.Handle(pat.Get("/daily_json"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
 
 	// Public
 	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
-	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
+	web.ServerPublicMux.Handle(pat.Get("/stats/daily_json"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
 }
 
 type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)
@@ -149,7 +149,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return nil
 	}
 
-	stats, err := RetrieveFullStats(activeGuild.ID)
+	stats, err := RetrieveDailyStats(activeGuild.ID)
 	if err != nil {
 		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -157,7 +157,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	}
 
 	// Update the names to human readable ones, leave the ids in the name fields for the ones not available
-	for _, cs := range stats.ChannelsHour {
+	for _, cs := range stats.ChannelMessages {
 		for _, channel := range activeGuild.Channels {
 			if discordgo.StrID(channel.ID) == cs.Name {
 				cs.Name = channel.Name

@@ -45,15 +45,15 @@ type ChannelStats struct {
 	Count int64  `json:"count"`
 }
 
-type FullStats struct {
-	ChannelsHour map[string]*ChannelStats `json:"channels_hour"`
-	JoinedDay    int                      `json:"joined_day"`
-	LeftDay      int                      `json:"left_day"`
-	Online       int                      `json:"online_now"`
-	TotalMembers int                      `json:"total_members_now"`
+type DailyStats struct {
+	ChannelMessages map[string]*ChannelStats `json:"channels_messages"`
+	JoinedDay       int                      `json:"joined_day"`
+	LeftDay         int                      `json:"left_day"`
+	Online          int                      `json:"online_now"`
+	TotalMembers    int                      `json:"total_members_now"`
 }
 
-func RetrieveFullStats(guildID int64) (*FullStats, error) {
+func RetrieveDailyStats(guildID int64) (*DailyStats, error) {
 	// Query the short term stats and the long term stats
 	// TODO: If we start moving them over in between we will get somehwat incorrect stats
 	// not sure how to fix other than locking
@@ -63,77 +63,85 @@ func RetrieveFullStats(guildID int64) (*FullStats, error) {
 		return nil, err
 	}
 
-	rows, err := models.ServerStatsPeriods(qm.Where("guild_id = ?", guildID), qm.Where("started > ?", time.Now().Add(time.Hour*-24))).AllG(context.Background())
 	// rows, err := ServerStatsPeriodStore.FindAll(models.NewStatsPeriodQuery().FindByGuildID(
 	// 	kallax.Eq, guildID).FindByStarted(kallax.Gt))
 
+	messageStatsRows, err := models.ServerStatsPeriods(qm.Where("guild_id = ?", guildID), qm.Where("started > ?", time.Now().Add(time.Hour*-24))).AllG(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
 	// Merge the stats togheter
-	for _, period := range rows {
+	for _, period := range messageStatsRows {
 		stringedChannel := strconv.FormatInt(period.ChannelID.Int64, 10)
-		if st, ok := stats.ChannelsHour[stringedChannel]; ok {
+		if st, ok := stats.ChannelMessages[stringedChannel]; ok {
 			st.Count += period.Count.Int64
 		} else {
-			stats.ChannelsHour[stringedChannel] = &ChannelStats{
+			stats.ChannelMessages[stringedChannel] = &ChannelStats{
 				Name:  stringedChannel,
 				Count: period.Count.Int64,
 			}
 		}
 	}
 
+	t := RoundHour(time.Now())
+	memberStatsRows, err := models.ServerStatsMemberPeriods(
+		models.ServerStatsMemberPeriodWhere.GuildID.EQ(guildID),
+		qm.OrderBy("id desc"), qm.Limit(25)).AllG(context.Background())
+
+	// Sum the stats
+	for i, v := range memberStatsRows {
+		if i == 0 {
+			stats.TotalMembers = int(v.NumMembers)
+			if v.CreatedAt.UTC() == t.UTC() {
+				continue
+			}
+		}
+
+		if t.Sub(v.CreatedAt) > time.Hour*25 {
+			break
+		}
+
+		stats.JoinedDay += int(v.Joins)
+		stats.LeftDay += int(v.Leaves)
+	}
+
 	return stats, nil
 }
 
-func RetrieveRedisStats(guildID int64) (*FullStats, error) {
+func RetrieveRedisStats(guildID int64) (*DailyStats, error) {
 	now := time.Now()
 	yesterday := now.Add(time.Hour * -24)
 	unixYesterday := discordgo.StrID(yesterday.Unix())
 
 	var messageStatsRaw []string
-	var joined int
-	var left int
-	var online int64
-	var members int
 
-	pipeCmd := radix.Pipeline(
-		radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", RedisKeyChannelMessages(guildID), unixYesterday, "+inf"),
-		radix.Cmd(&joined, "ZCOUNT", RedisKeyMembersJoined(guildID), unixYesterday, "+inf"),
-		radix.Cmd(&left, "ZCOUNT", RedisKeyMembersLeft(guildID), unixYesterday, "+inf"),
-		radix.Cmd(&members, "GET", RedisKeyTotalMembers(guildID)),
-	)
-
-	err := common.RedisPool.Do(pipeCmd)
+	err := common.RedisPool.Do(radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", RedisKeyChannelMessages(guildID), unixYesterday, "+inf"))
 	if err != nil {
 		return nil, err
 	}
 
-	online, err = botrest.GetOnlineCount(guildID)
+	online, err := botrest.GetOnlineCount(guildID)
 	if err != nil {
 		if botrest.BotIsRunning() {
 			log.WithError(err).Error("Failed fetching online count")
 		}
 	}
 
-	channelResult, err := GetChannelMessageStats(messageStatsRaw, guildID)
+	channelResult, err := parseMessageStats(messageStatsRaw, guildID)
 	if err != nil {
 		return nil, err
 	}
 
-	stats := &FullStats{
-		ChannelsHour: channelResult,
-		JoinedDay:    joined,
-		LeftDay:      left,
-		Online:       int(online),
-		TotalMembers: members,
+	stats := &DailyStats{
+		ChannelMessages: channelResult,
+		Online:          int(online),
 	}
 
 	return stats, nil
 }
 
-func GetChannelMessageStats(raw []string, guildID int64) (map[string]*ChannelStats, error) {
+func parseMessageStats(raw []string, guildID int64) (map[string]*ChannelStats, error) {
 
 	channelResult := make(map[string]*ChannelStats)
 	for _, result := range raw {
@@ -217,12 +225,8 @@ const (
 func RedisKeyChannelMessages(guildID int64) string {
 	return "guild_stats_msg_channel_day:" + strconv.FormatInt(guildID, 10)
 }
-func RedisKeyMembersJoined(guildID int64) string {
-	return "guild_stats_members_joined_day:" + strconv.FormatInt(guildID, 10)
-}
-func RedisKeyMembersLeft(guildID int64) string {
-	return "guild_stats_members_left_day:" + strconv.FormatInt(guildID, 10)
-}
-func RedisKeyTotalMembers(guildID int64) string {
-	return "guild_stats_num_members:" + strconv.FormatInt(guildID, 10)
+
+// RoundHour rounds a time.Time down to the hour
+func RoundHour(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 }

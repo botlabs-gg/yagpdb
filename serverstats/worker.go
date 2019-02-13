@@ -95,11 +95,8 @@ func ProcessTempStats(full bool) {
 // Updates the stats on a specific guild, removing expired stats
 func UpdateGuildStats(guildID int64) error {
 	now := time.Now()
-	minAgo := now.Add(time.Minute)
+	minAgo := now.Add(-time.Minute)
 	unixminAgo := minAgo.Unix()
-
-	yesterday := now.Add(24 * -time.Hour)
-	unixYesterday := yesterday.Unix()
 
 	cmds := make([]radix.CmdAction, 4)
 
@@ -107,9 +104,6 @@ func UpdateGuildStats(guildID int64) error {
 
 	var messageStatsRaw []string
 	cmds[0] = radix.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo)
-	cmds[1] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo)
-	cmds[2] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_members_joined_day:"+strGID, "-inf", unixYesterday)
-	cmds[3] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_members_left_day:"+strGID, "-inf", unixYesterday)
 
 	err := common.RedisPool.Do(radix.Pipeline(cmds...))
 	if err != nil {
@@ -160,62 +154,6 @@ func UpdateGuildStats(guildID int64) error {
 	err = errors.WithMessage(err, "commit")
 	return err
 }
-
-// func (p *Plugin) RunHourlyTasks(full bool) {
-// 	// guildMembersChangedServers :=
-
-// 	// first retrieve all the guilds that should be processed
-// 	guildMembersChangedServers, err := getActiveServersList(RedisKeyGuildMembersChanged, full)
-// 	if err != nil {
-// 		log.WithError(err).Error("[serverstats] failed retrieving active guilds")
-// 		return
-// 	}
-
-// 	if len(guildMembersChangedServers) < 1 {
-// 		log.Info("[serverstats] skipped updating changed members, no activity")
-// 		return // no guilds to process
-// 	}
-
-// 	lastRunTime := p.getLastTimeRanHourly()
-
-// 	// we do minus 1 second to avoid missing certain events in the current second
-// 	now := time.Now().Add(-time.Second).Unix()
-// 	for _, v := range guildMembersChangedServers {
-// 		p.RunHourlyGuildMemberTasks(v, lastRunTime, now)
-// 	}
-
-// 	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SET", RedisKeyLastHourlyRan, now)), "[serverstats] failed setting last time ran", nil)
-// }
-
-// func (p *Plugin) RunHourlyGuildMemberTasks(guildID int64, lastRunTime time.Time, now int64) {
-// 	var totalMemberCount int64
-// 	var joins int64
-// 	var leaves int64
-
-// 	lastRunUnix := lastRunTime.Unix() + 1
-// 	common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(&totalMemberCount, "GET", RedisKeyTotalMembers(guildID))),
-// 		"[serverstats] get total members", nil)
-
-// 	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(&joins, "ZCOUNT", RedisKeyMembersJoined(guildID), lastRunUnix, now)),
-// 		"[serverstats] get joined", nil)
-
-// 	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(&leaves, "ZCOUNT", RedisKeyMembersLeft(guildID), lastRunUnix, now)),
-// 		"[serverstats] get left", nil)
-
-// 	// radix.Cmd(&members, "GET", "guild_stats_num_members:"+strGID),
-
-// 	model := &models.ServerStatsMemberPeriod{
-// 		GuildID:    guildID,
-// 		Joins:      joins,
-// 		Leaves:     leaves,
-// 		NumMembers: totalMemberCount,
-// 	}
-
-// 	err := model.InsertG(context.Background(), boil.Infer())
-// 	if err != nil {
-// 		log.WithError(err).Error("[serverstats] failed inserting member stats period")
-// 	}
-// }
 
 func (p *Plugin) RunCleanup() {
 	started := time.Now()

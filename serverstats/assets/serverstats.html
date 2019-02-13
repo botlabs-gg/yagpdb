@@ -84,7 +84,7 @@
                 window.location.href = '/';
             }
 
-            var channelMessages = parsedStats.channels_hour
+            var channelMessages = parsedStats.channels_messages
 
             var chartData = [];
             var total = 0;
@@ -118,9 +118,9 @@
         function fetchStats(){
             console.log("Fetching stats...");
             {{if .Public}}
-            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
+            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/daily_json", null, statsCB);
             {{else}}
-            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
+            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/daily_json", null, statsCB);
             {{end}}
         }
         statsInterval = setInterval(fetchStats, 10000);
