@@ -53,8 +53,9 @@ func NewPostFetcher(redditClient *greddit.Client, slow bool, handler PostHandler
 		LastScannedPostIDKey: idKey,
 		delay:                delay,
 
-		handler: handler,
-		log:     logrus.WithField("rfeed_type", name),
+		handler:  handler,
+		log:      logrus.WithField("rfeed_type", name),
+		StopChan: make(chan *sync.WaitGroup),
 	}
 }
 
