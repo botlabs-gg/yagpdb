@@ -290,7 +290,6 @@ OUTER:
 				common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
 				cntSinceLastRedisUpdate = 0
 			}
-			logrus.WithField("guild", gs.ID).WithField("user", userID).Debug("Gave autorole role")
 		}
 	}
 }
