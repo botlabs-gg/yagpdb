@@ -177,6 +177,8 @@ func startPolling() {
 	started = true
 	startedLock.Unlock()
 
+	first := true
+
 	ticker := time.NewTicker(time.Second * 5)
 	for {
 		select {
@@ -184,7 +186,8 @@ func startPolling() {
 			shutdown(wg)
 			return
 		case <-ticker.C:
-			pollRedis()
+			pollRedis(first)
+			first = false
 			if common.Statsd != nil {
 				workmu.Lock()
 				l := len(workSlice)
@@ -210,11 +213,15 @@ func shutdown(wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func pollRedis() {
+func pollRedis(first bool) {
 	var results [][]byte
 
 	// Get all elements that are currently not being processed, we set thhem to processing by setting their score to our run counter, which increases every time the bot starts
-	max := strconv.FormatInt(common.CurrentRunCounter, 10)
+	max := "0"
+	if first {
+		max = strconv.FormatInt(common.CurrentRunCounter, 10)
+	}
+
 	err := common.RedisPool.Do(radix.Cmd(&results, "ZRANGEBYSCORE", "mqueue", "-1", "("+max))
 	if err != nil {
 		logrus.WithError(err).Error("Failed polling redis mqueue")
