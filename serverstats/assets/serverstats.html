@@ -50,7 +50,7 @@
 </div>
 <div class="row">
     <!-- Graph -->
-    <div class="col-lg-12">
+    <div class="col-12">
         <section class="card bg-default">
             <header class="card-header">
                 <h2 class="card-title">Channels over 24 hours</h2>
@@ -62,6 +62,37 @@
         </section>
     </div>
 </div>
+
+<div class="row">
+    <!-- Graph -->
+    <div class="col-12">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Total Members</h2>
+            </header>
+
+            <div class="card-body">
+                <div id="chart-total-members"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Graph -->
+    <div class="col-12">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Joins / Leaves</h2>
+            </header>
+
+            <div class="card-body">
+                <div id="chart-joins-leaves"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
 <!-- /.row -->
 <script type="text/javascript">
     // cause of the async partial loader, we need to manually clear the interval when we navigate
@@ -76,12 +107,12 @@
     }
 
     $(function(){        
-        var chart = null;
-        function statsCB(){
+        var channelMessagesBarChart = null;
+        function dailyStatsCB(){
             try{
                 var parsedStats = JSON.parse(this.responseText);
             }catch(e){
-                window.location.href = '/';
+                return
             }
 
             var channelMessages = parsedStats.channels_messages
@@ -95,10 +126,10 @@
                     y: channelMessages[key].count,
                 })
             }
-            if(chart){
-                chart.setData(chartData);
+            if(channelMessagesBarChart){
+                channelMessagesBarChart.setData(chartData);
             }else{
-                chart  = Morris.Bar({
+                channelMessagesBarChart  = Morris.Bar({
                     element: 'channels-chart-24h',
                     data: chartData,
                     xkey: 'x',
@@ -115,16 +146,65 @@
             $("#online-members").text(parsedStats.online_now)
         }
 
-        function fetchStats(){
+        function fetchDailyStats(){
             console.log("Fetching stats...");
             {{if .Public}}
-            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/daily_json", null, statsCB);
+            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
             {{else}}
-            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/daily_json", null, statsCB);
+            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
             {{end}}
         }
-        statsInterval = setInterval(fetchStats, 10000);
-        fetchStats(); // Fetch the initial stats
+        statsInterval = setInterval(fetchDailyStats, 10000);
+        fetchDailyStats(); // Fetch the initial stats
+
+        var joinsLeavesChart = null;
+        var totalMembersChart = null;
+        function chartStatsCB(){
+            try{
+                var parsedStats = JSON.parse(this.responseText);
+            }catch(e){
+                return
+            }
+
+            var memberStats = parsedStats.member_chart_data
+
+            if(joinsLeavesChart){
+                joinsLeavesChart.setData(memberStats);
+            }else{
+                joinsLeavesChart  = Morris.Line({
+                    element: 'chart-joins-leaves',
+                    data: memberStats,
+                    xkey: 't',
+                    ykeys: ['joins', 'leaves'],
+                    labels: ['Joins', 'Leaves'],
+                    hideHover: 'auto',
+                    resize: true
+                });
+            }
+
+            if(totalMembersChart){
+                totalMembersChart.setData(memberStats);
+            }else{
+                totalMembersChart  = Morris.Line({
+                    element: 'chart-total-members',
+                    data: memberStats,
+                    xkey: 't',
+                    ykeys: ['num_members'],
+                    labels: ['Total member'],
+                    hideHover: 'auto',
+                    resize: true
+                });
+            }
+        }
+
+        function fetchCharts(days){
+            {{if .Public}}
+            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
+            {{else}}
+            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
+            {{end}}
+        }
+        fetchCharts(7)
     })
 </script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>

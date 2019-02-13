@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/mediocregopher/radix"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
@@ -229,4 +230,55 @@ func RedisKeyChannelMessages(guildID int64) string {
 // RoundHour rounds a time.Time down to the hour
 func RoundHour(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
+}
+
+type MemberChartDataPeriod struct {
+	T          time.Time `json:"t"`
+	Joins      int       `json:"joins"`
+	Leaves     int       `json:"leaves"`
+	NumMembers int       `json:"num_members"`
+}
+
+func RetrieveMemberChartStats(guildID int64, duration time.Duration) ([]*MemberChartDataPeriod, error) {
+	days := int((duration.Hours() / 24) + 1)
+
+	rows, err := common.PQ.Query(`select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members)
+FROM server_stats_member_periods
+WHERE guild_id=$1 
+GROUP BY 1 
+ORDER BY 1 DESC 
+LIMIT $2;`, guildID, days)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "pq.query")
+	}
+
+	defer rows.Close()
+
+	results := make([]*MemberChartDataPeriod, 0, 10)
+
+	for rows.Next() {
+		var t time.Time
+		var joins int
+		var leaves int
+		var numMembers int
+
+		err := rows.Scan(&t, &joins, &leaves, &numMembers)
+		if err != nil {
+			return nil, errors.Wrap(err, "rows.scan")
+		}
+
+		if int(time.Since(t).Hours()/24) > days && len(results) > 0 {
+			break
+		}
+
+		results = append(results, &MemberChartDataPeriod{
+			T:          t,
+			Joins:      joins,
+			Leaves:     leaves,
+			NumMembers: numMembers,
+		})
+	}
+
+	return results, nil
 }

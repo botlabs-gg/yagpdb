@@ -39,10 +39,12 @@ func (p *Plugin) InitWeb() {
 
 	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
 	statsCPMux.Handle(pat.Get("/daily_json"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
+	statsCPMux.Handle(pat.Get("/charts"), web.APIHandler(publicHandlerJson(HandleStatsCharts, false)))
 
 	// Public
 	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
 	web.ServerPublicMux.Handle(pat.Get("/stats/daily_json"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
+	web.ServerPublicMux.Handle(pat.Get("/stats/charts"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsCharts, true))))
 }
 
 type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)
@@ -165,6 +167,48 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 			}
 		}
 	}
+
+	return stats
+}
+
+type ChartResponse struct {
+	Days       int                      `json:"days"`
+	MemberData []*MemberChartDataPeriod `json:"member_chart_data"`
+}
+
+func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
+	activeGuild, _ := web.GetBaseCPContextData(r.Context())
+
+	conf, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats config")
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
+	}
+
+	if !conf.Public && isPublicAccess {
+		return nil
+	}
+
+	numDays := 7
+	if r.URL.Query().Get("days") != "" {
+		numDays, _ = strconv.Atoi(r.URL.Query().Get("days"))
+		if numDays > 365 {
+			numDays = 365
+		}
+	}
+
+	stats := &ChartResponse{
+		Days: numDays,
+	}
+
+	memberData, err := RetrieveMemberChartStats(activeGuild.ID, time.Hour*24*time.Duration(numDays))
+	if err != nil {
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving member chart stats")
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
+	}
+	stats.MemberData = memberData
 
 	return stats
 }
