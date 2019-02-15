@@ -272,7 +272,7 @@ LIMIT $2;`, guildID, days)
 			break
 		}
 
-		if daysOld > days {
+		if daysOld >= days {
 			daysOld = days - 1
 		}
 
@@ -283,6 +283,8 @@ LIMIT $2;`, guildID, days)
 			NumMembers: numMembers,
 		}
 	}
+
+	firstNonNullResult := -1
 
 	// fill in the blank days
 	var lastProperResult MemberChartDataPeriod
@@ -297,8 +299,87 @@ LIMIT $2;`, guildID, days)
 			lastProperResult = *results[i]
 			lastProperResult.Joins = 0
 			lastProperResult.Leaves = 0
+			if firstNonNullResult == -1 {
+				firstNonNullResult = i
+			}
 		}
 	}
+
+	// cut out nil results
+	results = results[:firstNonNullResult+1]
+
+	return results, nil
+}
+
+type MessageChartDataPeriod struct {
+	T            time.Time `json:"t"`
+	MessageCount int       `json:"message_count"`
+}
+
+func RetrieveMessageChartData(guildID int64, days int) ([]*MessageChartDataPeriod, error) {
+	rows, err := common.PQ.Query(`select date_trunc('day', started), sum(count)
+FROM server_stats_periods
+WHERE guild_id=$1 
+GROUP BY 1 
+ORDER BY 1 DESC 
+LIMIT $2;`, guildID, days)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "pq.query")
+	}
+
+	defer rows.Close()
+
+	results := make([]*MessageChartDataPeriod, days)
+
+	for rows.Next() {
+		var t time.Time
+		var count int
+
+		err := rows.Scan(&t, &count)
+		if err != nil {
+			return nil, errors.Wrap(err, "rows.scan")
+		}
+
+		daysOld := int(time.Since(t).Hours() / 24)
+
+		if daysOld > days && len(results) > 0 {
+			break
+		}
+
+		if daysOld >= days {
+			daysOld = days - 1
+		}
+
+		results[daysOld] = &MessageChartDataPeriod{
+			T:            t,
+			MessageCount: count,
+		}
+	}
+
+	firstNonNullResult := -1
+
+	// fill in the blank days
+	var lastProperResult MessageChartDataPeriod
+	for i := len(results) - 1; i >= 0; i-- {
+		if results[i] == nil && !lastProperResult.T.IsZero() {
+			cop := lastProperResult
+			t := time.Now().Add(time.Hour * 24 * -time.Duration(i))
+			cop.T = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, lastProperResult.T.Location())
+
+			results[i] = &cop
+		} else if results[i] != nil {
+			lastProperResult = *results[i]
+			lastProperResult.MessageCount = 0
+
+			if firstNonNullResult == -1 {
+				firstNonNullResult = i
+			}
+		}
+	}
+
+	// cut out nil results
+	results = results[:firstNonNullResult+1]
 
 	return results, nil
 }

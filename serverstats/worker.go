@@ -98,14 +98,10 @@ func UpdateGuildStats(guildID int64) error {
 	minAgo := now.Add(-time.Minute)
 	unixminAgo := minAgo.Unix()
 
-	cmds := make([]radix.CmdAction, 4)
-
 	strGID := discordgo.StrID(guildID)
-
 	var messageStatsRaw []string
-	cmds[0] = radix.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo)
 
-	err := common.RedisPool.Do(radix.Pipeline(cmds...))
+	err := common.RedisPool.Do(radix.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
 	if err != nil {
 		return err
 	}
@@ -156,14 +152,14 @@ func UpdateGuildStats(guildID int64) error {
 }
 
 func (p *Plugin) RunCleanup() {
-	started := time.Now()
-	del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '2 days'")
-	if err != nil {
-		log.WithError(err).Error("ServerStats: Failed deleting old stats")
-	} else if del != nil {
-		affected, _ := del.RowsAffected()
-		log.Infof("ServerStats: Deleted %d records in %s", affected, time.Since(started))
-	}
+	// started := time.Now()
+	// del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '2 days'")
+	// if err != nil {
+	// 	log.WithError(err).Error("ServerStats: Failed deleting old stats")
+	// } else if del != nil {
+	// 	affected, _ := del.RowsAffected()
+	// 	log.Infof("ServerStats: Deleted %d records in %s", affected, time.Since(started))
+	// }
 }
 
 func getActiveServersList(key string, full bool) ([]int64, error) {

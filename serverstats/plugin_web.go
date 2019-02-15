@@ -172,8 +172,9 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 }
 
 type ChartResponse struct {
-	Days       int                      `json:"days"`
-	MemberData []*MemberChartDataPeriod `json:"member_chart_data"`
+	Days        int                       `json:"days"`
+	MemberData  []*MemberChartDataPeriod  `json:"member_chart_data"`
+	MessageData []*MessageChartDataPeriod `json:"message_chart_data"`
 }
 
 func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
@@ -208,7 +209,16 @@ func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bo
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}
+
+	messageData, err := RetrieveMessageChartData(activeGuild.ID, numDays)
+	if err != nil {
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving message chart stats")
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
+	}
+
 	stats.MemberData = memberData
+	stats.MessageData = messageData
 
 	return stats
 }

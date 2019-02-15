@@ -93,6 +93,21 @@
     </div>
 </div>
 
+<div class="row">
+    <!-- Graph -->
+    <div class="col-12">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Number of messages (excl. Bots)</h2>
+            </header>
+
+            <div class="card-body">
+                <div id="chart-message-counts"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
 <!-- /.row -->
 <script type="text/javascript">
     // cause of the async partial loader, we need to manually clear the interval when we navigate
@@ -159,6 +174,7 @@
 
         var joinsLeavesChart = null;
         var totalMembersChart = null;
+        var messagesChart = null;
         function chartStatsCB(){
             try{
                 var parsedStats = JSON.parse(this.responseText);
@@ -197,6 +213,22 @@
                     dateFormat: chartDateFormatter,
                 });
             }
+
+            var messageStats = parsedStats.message_chart_data
+            if(messagesChart){
+                messagesChart.setData(messageStats);
+            }else{
+                messagesChart  = Morris.Line({
+                    element: 'chart-message-counts',
+                    data: messageStats,
+                    xkey: 't',
+                    ykeys: ['message_count'],
+                    labels: ['Messages'],
+                    hideHover: 'auto',
+                    resize: true,
+                    dateFormat: chartDateFormatter,
+                });
+            } 
         }
 
         function fetchCharts(days){
