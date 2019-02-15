@@ -178,7 +178,8 @@
                     ykeys: ['joins', 'leaves'],
                     labels: ['Joins', 'Leaves'],
                     hideHover: 'auto',
-                    resize: true
+                    resize: true,
+                    dateFormat: chartDateFormatter,
                 });
             }
 
@@ -192,7 +193,8 @@
                     ykeys: ['num_members'],
                     labels: ['Total member'],
                     hideHover: 'auto',
-                    resize: true
+                    resize: true,
+                    dateFormat: chartDateFormatter,
                 });
             }
         }
@@ -206,6 +208,11 @@
         }
         fetchCharts(7)
     })
+
+    function chartDateFormatter(t){
+        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(t).toLocaleDateString(options);
+    }
 </script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>

@@ -202,7 +202,7 @@ func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bo
 		Days: numDays,
 	}
 
-	memberData, err := RetrieveMemberChartStats(activeGuild.ID, time.Hour*24*time.Duration(numDays))
+	memberData, err := RetrieveMemberChartStats(activeGuild.ID, numDays)
 	if err != nil {
 		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving member chart stats")
 		w.WriteHeader(http.StatusInternalServerError)

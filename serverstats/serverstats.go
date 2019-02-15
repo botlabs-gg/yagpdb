@@ -239,9 +239,7 @@ type MemberChartDataPeriod struct {
 	NumMembers int       `json:"num_members"`
 }
 
-func RetrieveMemberChartStats(guildID int64, duration time.Duration) ([]*MemberChartDataPeriod, error) {
-	days := int((duration.Hours() / 24) + 1)
-
+func RetrieveMemberChartStats(guildID int64, days int) ([]*MemberChartDataPeriod, error) {
 	rows, err := common.PQ.Query(`select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members)
 FROM server_stats_member_periods
 WHERE guild_id=$1 
@@ -255,7 +253,7 @@ LIMIT $2;`, guildID, days)
 
 	defer rows.Close()
 
-	results := make([]*MemberChartDataPeriod, 0, 10)
+	results := make([]*MemberChartDataPeriod, days)
 
 	for rows.Next() {
 		var t time.Time
@@ -268,16 +266,38 @@ LIMIT $2;`, guildID, days)
 			return nil, errors.Wrap(err, "rows.scan")
 		}
 
-		if int(time.Since(t).Hours()/24) > days && len(results) > 0 {
+		daysOld := int(time.Since(t).Hours() / 24)
+
+		if daysOld > days && len(results) > 0 {
 			break
 		}
 
-		results = append(results, &MemberChartDataPeriod{
+		if daysOld > days {
+			daysOld = days - 1
+		}
+
+		results[daysOld] = &MemberChartDataPeriod{
 			T:          t,
 			Joins:      joins,
 			Leaves:     leaves,
 			NumMembers: numMembers,
-		})
+		}
+	}
+
+	// fill in the blank days
+	var lastProperResult MemberChartDataPeriod
+	for i := len(results) - 1; i >= 0; i-- {
+		if results[i] == nil && !lastProperResult.T.IsZero() {
+			cop := lastProperResult
+			t := time.Now().Add(time.Hour * 24 * -time.Duration(i))
+			cop.T = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, lastProperResult.T.Location())
+
+			results[i] = &cop
+		} else if results[i] != nil {
+			lastProperResult = *results[i]
+			lastProperResult.Joins = 0
+			lastProperResult.Leaves = 0
+		}
 	}
 
 	return results, nil
