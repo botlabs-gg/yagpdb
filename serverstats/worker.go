@@ -4,7 +4,9 @@ import (
 	"context"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
+	"github.com/lib/pq"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -82,14 +84,14 @@ func ProcessTempStats(full bool) {
 			log.WithFields(log.Fields{
 				"guild":      g,
 				log.ErrorKey: err,
-			}).Error("Failed updating stats")
+			}).Error("[serverstats] Failed updating stats")
 		}
 	}
 
 	log.WithFields(log.Fields{
 		"duration":    time.Since(started).Seconds(),
 		"num_servers": len(activeGuilds),
-	}).Info("Updated temp stats")
+	}).Info("[serverstats] Updated temp stats")
 }
 
 // Updates the stats on a specific guild, removing expired stats
@@ -147,19 +149,92 @@ func UpdateGuildStats(guildID int64) error {
 	}
 
 	err = tx.Commit()
-	err = errors.WithMessage(err, "commit")
+	if err != nil {
+		return errors.WithMessage(err, "commit")
+	}
+
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
+	if err != nil {
+		return errors.WithMessage(err, "zremrangebyscore")
+	}
+
 	return err
 }
 
 func (p *Plugin) RunCleanup() {
-	// started := time.Now()
-	// del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '2 days'")
-	// if err != nil {
-	// 	log.WithError(err).Error("ServerStats: Failed deleting old stats")
-	// } else if del != nil {
-	// 	affected, _ := del.RowsAffected()
-	// 	log.Infof("ServerStats: Deleted %d records in %s", affected, time.Since(started))
-	// }
+	premiumServers, err := premium.AllGuildsOncePremium()
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed retrieving premium guilds")
+		return
+	}
+
+	// convert it to a slice
+	premiumSlice := make([]int64, 0, len(premiumServers))
+	for k, _ := range premiumServers {
+		premiumSlice = append(premiumSlice, k)
+	}
+
+	numDelete := int64(0)
+
+	started := time.Now()
+	del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '7 days' AND not (guild_id = ANY ($1))", pq.Int64Array(premiumSlice))
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed deleting old message stats")
+	} else if del != nil {
+		affected, _ := del.RowsAffected()
+		numDelete += affected
+	}
+
+	del, err = common.PQ.Exec("DELETE FROM server_stats_member_periods WHERE created_at < NOW() - INTERVAL '7 days' AND not (guild_id = ANY ($1))", pq.Int64Array(premiumSlice))
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed deleting old member stats")
+	} else if del != nil {
+		affected, _ := del.RowsAffected()
+		numDelete += affected
+	}
+
+	log.Infof("[serverstats] Deleted %d records in %s", numDelete, time.Since(started))
+
+	secondRunStarted := time.Now()
+	tx, err := common.PQ.Begin()
+	if err != nil {
+		log.WithError(err).Error("failed starting transaction")
+		return
+	}
+
+	totalDeleted := int64(0)
+	for g, v := range premiumServers {
+		if time.Since(v) < time.Hour*48 {
+			continue
+		}
+		result, err := tx.Exec("DELETE FROM server_stats_periods WHERE guild_id = $1 AND started > $2  AND NOW() - INTERVAL '7 days'  > started", g, v)
+		if err != nil {
+			log.WithError(err).WithField("guild", g).Error("[serverstats] failed running cleanup query on premium guild message stats")
+			tx.Rollback()
+			return
+		}
+
+		affected, _ := result.RowsAffected()
+		totalDeleted += affected
+
+		result, err = tx.Exec("DELETE FROM server_stats_member_periods WHERE guild_id = $1 AND created_at > $2  AND NOW() - INTERVAL '7 days'  > created_at", g, v)
+		if err != nil {
+			log.WithError(err).WithField("guild", g).Error("[serverstats] failed running cleanup query on premium guild member stats")
+			tx.Rollback()
+			return
+		}
+
+		affected, _ = result.RowsAffected()
+		totalDeleted += affected
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.WithError(err).Error("[serverstats] cleanup failed comitting transaction")
+		return
+	}
+
+	log.Infof("[serverstats] slow premium specific cleanup took %s, deleted %d records (num premium %d)", time.Since(secondRunStarted), totalDeleted, len(premiumServers))
 }
 
 func getActiveServersList(key string, full bool) ([]int64, error) {
