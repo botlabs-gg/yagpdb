@@ -53,7 +53,7 @@
     <div class="col-12">
         <section class="card bg-default">
             <header class="card-header">
-                <h2 class="card-title">Channels over 24 hours</h2>
+                <h2 class="card-title">Channels last 24 hours</h2>
             </header>
 
             <div class="card-body">
@@ -64,23 +64,24 @@
 </div>
 
 <div class="row">
-    <!-- Graph -->
-    <div class="col-12">
-        <section class="card bg-default">
-            <header class="card-header">
-                <h2 class="card-title">Total Members</h2>
-            </header>
-
-            <div class="card-body">
-                <div id="chart-total-members"></div>
-            </div>
-        </section>
+    <div class="col">
+        <h2>Charts<small><span id="serverstats-status">  Loading...</span></small></h2>
+    </div>
+    <div class="col">
+        <!-- <div class="form-group"> -->
+            <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
+                <option value="7"> Past 7 days</option>
+                <option value="30" selected> Past 30 days</option>
+                <option value="365"> Past 365 days</option>
+                <option value="-1"> All time</option>
+            </select>
+        <!-- </div> -->
     </div>
 </div>
 
 <div class="row">
     <!-- Graph -->
-    <div class="col-12">
+    <div class="col-lg-6">
         <section class="card bg-default">
             <header class="card-header">
                 <h2 class="card-title">Joins / Leaves</h2>
@@ -88,6 +89,19 @@
 
             <div class="card-body">
                 <div id="chart-joins-leaves"></div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Graph -->
+    <div class="col-lg-6">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Total Members</h2>
+            </header>
+
+            <div class="card-body">
+                <div id="chart-total-members"></div>
             </div>
         </section>
     </div>
@@ -121,6 +135,7 @@
         })
     }
 
+    var fetchCharts = null;
     $(function(){        
         var channelMessagesBarChart = null;
         function dailyStatsCB(){
@@ -187,7 +202,7 @@
             if(joinsLeavesChart){
                 joinsLeavesChart.setData(memberStats);
             }else{
-                joinsLeavesChart  = Morris.Line({
+                joinsLeavesChart  = Morris.Area({
                     element: 'chart-joins-leaves',
                     data: memberStats,
                     xkey: 't',
@@ -196,13 +211,14 @@
                     hideHover: 'auto',
                     resize: true,
                     dateFormat: chartDateFormatter,
+                    behaveLikeLine: true,
                 });
             }
 
             if(totalMembersChart){
                 totalMembersChart.setData(memberStats);
             }else{
-                totalMembersChart  = Morris.Line({
+                totalMembersChart  = Morris.Area({
                     element: 'chart-total-members',
                     data: memberStats,
                     xkey: 't',
@@ -218,7 +234,7 @@
             if(messagesChart){
                 messagesChart.setData(messageStats);
             }else{
-                messagesChart  = Morris.Line({
+                messagesChart  = Morris.Area({
                     element: 'chart-message-counts',
                     data: messageStats,
                     xkey: 't',
@@ -229,22 +245,31 @@
                     dateFormat: chartDateFormatter,
                 });
             } 
+
+            $("#serverstats-status").text("")
         }
 
-        function fetchCharts(days){
+        fetchCharts = function(days){
+            $("#serverstats-status").text("  Loading...")
             {{if .Public}}
             createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
             {{else}}
             createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
             {{end}}
         }
-        fetchCharts(7)
+        fetchCharts(30);
     })
+
 
     function chartDateFormatter(t){
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
         return new Date(t).toLocaleDateString(options);
     }
+
+    function timespanDropdownChanged(){
+        var dropdown = document.getElementById("timespan-dropdown");
+        fetchCharts(dropdown.value)
+   }
 </script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
@@ -264,7 +289,7 @@
 {{end}}
 
 {{define "serverstats_stats_widget"}}
-<div class="col-lg-3 stats-widget">
+<div class="col-3 stats-widget">
     <section class="card">
         <div class="card-body bg-{{.BG}}">
             <div class="widget-summary">
