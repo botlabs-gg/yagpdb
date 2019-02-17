@@ -6,6 +6,8 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/karlseguin/rcache"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
@@ -13,8 +15,11 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
+
+var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
 
 type FormData struct {
 	Public         bool
@@ -199,26 +204,68 @@ func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bo
 		}
 	}
 
-	stats := &ChartResponse{
-		Days: numDays,
-	}
-
-	memberData, err := RetrieveMemberChartStats(activeGuild.ID, numDays)
-	if err != nil {
-		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving member chart stats")
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil
-	}
-
-	messageData, err := RetrieveMessageChartData(activeGuild.ID, numDays)
-	if err != nil {
-		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving message chart stats")
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil
-	}
-
-	stats.MemberData = memberData
-	stats.MessageData = messageData
-
+	stats := CacheGetCharts(activeGuild.ID, numDays)
 	return stats
+}
+
+func CacheGetCharts(guildID int64, days int) *ChartResponse {
+	actualDays := days
+	if days < 7 {
+		actualDays = 7
+	}
+
+	// default to full time stats
+	if days != 30 && days != 365 && days > 7 {
+		actualDays = -1
+		days = -1
+	}
+
+	key := "charts:" + strconv.FormatInt(guildID, 10) + ":" + strconv.FormatInt(int64(days), 10)
+	statsInterface := WebStatsCache.Get(key)
+	if statsInterface == nil {
+		return &ChartResponse{
+			MemberData:  make([]*MemberChartDataPeriod, 0),
+			MessageData: make([]*MessageChartDataPeriod, 0),
+		}
+
+	}
+
+	stats := statsInterface.(*ChartResponse)
+	cop := *stats
+	if actualDays != days && days != -1 {
+		cop.MemberData = cop.MemberData[:actualDays]
+		cop.MessageData = cop.MessageData[:actualDays]
+		cop.Days = actualDays
+	}
+
+	return statsInterface.(*ChartResponse)
+}
+
+func cacheChartFetcher(key string) interface{} {
+	split := strings.Split(key, ":")
+	if len(split) < 3 {
+		logrus.Error("[serverstats] invalid cache key: ", key)
+		return nil
+	}
+
+	guildID, _ := strconv.ParseInt(split[1], 10, 64)
+	days, _ := strconv.Atoi(split[2])
+
+	memberData, err := RetrieveMemberChartStats(guildID, days)
+	if err != nil {
+		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving member chart data")
+		return nil
+	}
+
+	messageData, err := RetrieveMessageChartData(guildID, days)
+	if err != nil {
+		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving message chart data")
+		return nil
+	}
+
+	return &ChartResponse{
+		Days:        days,
+		MemberData:  memberData,
+		MessageData: messageData,
+	}
 }
