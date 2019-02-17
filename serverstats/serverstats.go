@@ -240,12 +240,19 @@ type MemberChartDataPeriod struct {
 }
 
 func RetrieveMemberChartStats(guildID int64, days int) ([]*MemberChartDataPeriod, error) {
-	rows, err := common.PQ.Query(`select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members)
+	query := `select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members)
 FROM server_stats_member_periods
 WHERE guild_id=$1 
 GROUP BY 1 
-ORDER BY 1 DESC 
-LIMIT $2;`, guildID, days)
+ORDER BY 1 DESC`
+
+	args := []interface{}{guildID}
+	if days > 0 {
+		query += " LIMIT $2;"
+		args = append(args, days)
+	}
+
+	rows, err := common.PQ.Query(query, args...)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "pq.query")
@@ -253,7 +260,13 @@ LIMIT $2;`, guildID, days)
 
 	defer rows.Close()
 
-	results := make([]*MemberChartDataPeriod, days)
+	var results []*MemberChartDataPeriod
+	if days > 0 {
+		results = make([]*MemberChartDataPeriod, days)
+	} else {
+		// we don't know the size
+		results = make([]*MemberChartDataPeriod, 100)
+	}
 
 	for rows.Next() {
 		var t time.Time
@@ -268,12 +281,24 @@ LIMIT $2;`, guildID, days)
 
 		daysOld := int(time.Since(t).Hours() / 24)
 
-		if daysOld > days && len(results) > 0 {
+		if daysOld > days && len(results) > 0 && days > 0 {
+			// only grab results within time period specified (but always grab 1 even if outside our range)
 			break
 		}
 
-		if daysOld >= days {
+		if days > 0 && daysOld >= days {
+			// clamp to last if we specified a time
 			daysOld = days - 1
+		}
+
+		if daysOld >= len(results) {
+			if daysOld > 10000 {
+				continue // ignore this then, should never happen, but lets just avoid running out of memory if it does
+			}
+
+			newResults := make([]*MemberChartDataPeriod, daysOld*2)
+			copy(newResults, results)
+			results = newResults
 		}
 
 		results[daysOld] = &MemberChartDataPeriod{
@@ -317,12 +342,20 @@ type MessageChartDataPeriod struct {
 }
 
 func RetrieveMessageChartData(guildID int64, days int) ([]*MessageChartDataPeriod, error) {
-	rows, err := common.PQ.Query(`select date_trunc('day', started), sum(count)
+	queryPre := `select date_trunc('day', started), sum(count)
 FROM server_stats_periods
-WHERE guild_id=$1 
+WHERE guild_id=$1 `
+	queryPost := `
 GROUP BY 1 
-ORDER BY 1 DESC 
-LIMIT $2;`, guildID, days)
+ORDER BY 1 DESC`
+
+	args := []interface{}{guildID}
+	if days > 0 {
+		queryPre += " AND started > $2"
+		args = append(args, time.Now().Add(time.Hour*24*time.Duration(-days)))
+	}
+
+	rows, err := common.PQ.Query(queryPre+queryPost, args...)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "pq.query")
@@ -330,7 +363,13 @@ LIMIT $2;`, guildID, days)
 
 	defer rows.Close()
 
-	results := make([]*MessageChartDataPeriod, days)
+	var results []*MessageChartDataPeriod
+	if days > 0 {
+		results = make([]*MessageChartDataPeriod, days)
+	} else {
+		// we don't know the size
+		results = make([]*MessageChartDataPeriod, 100)
+	}
 
 	for rows.Next() {
 		var t time.Time
@@ -343,12 +382,20 @@ LIMIT $2;`, guildID, days)
 
 		daysOld := int(time.Since(t).Hours() / 24)
 
-		if daysOld > days && len(results) > 0 {
-			break
+		if daysOld >= days && days > 0 {
+			// clamp to last if we specified a time
+			daysOld = days - 1
 		}
 
-		if daysOld >= days {
-			daysOld = days - 1
+		if daysOld >= len(results) {
+			// we don't know the size so we have to dynamically adjust
+			if daysOld > 10000 {
+				continue // ignore this then, should never happen, but lets just avoid running out of memory if it does
+			}
+
+			newResults := make([]*MessageChartDataPeriod, daysOld*2)
+			copy(newResults, results)
+			results = newResults
 		}
 
 		results[daysOld] = &MessageChartDataPeriod{
