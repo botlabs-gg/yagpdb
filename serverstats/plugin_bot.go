@@ -158,7 +158,7 @@ num_members = server_stats_member_periods.num_members + $6;`, guildID, t, numMem
 func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	m := evt.MessageCreate()
-	if m.GuildID == 0 {
+	if m.GuildID == 0 || m.Author == nil || m.Author.Bot {
 		return // private channel
 	}
 
