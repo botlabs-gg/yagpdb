@@ -214,36 +214,39 @@ func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bo
 }
 
 func CacheGetCharts(guildID int64, days int) *ChartResponse {
-	actualDays := days
+	fetchDays := days
 	if days < 7 {
-		actualDays = 7
+		fetchDays = 7
 	}
 
 	// default to full time stats
 	if days != 30 && days != 365 && days > 7 {
-		actualDays = -1
+		fetchDays = -1
 		days = -1
+	} else if days < 1 {
+		days = -1
+		fetchDays = -1
 	}
 
-	key := "charts:" + strconv.FormatInt(guildID, 10) + ":" + strconv.FormatInt(int64(days), 10)
+	key := "charts:" + strconv.FormatInt(guildID, 10) + ":" + strconv.FormatInt(int64(fetchDays), 10)
 	statsInterface := WebStatsCache.Get(key)
 	if statsInterface == nil {
 		return &ChartResponse{
 			MemberData:  make([]*MemberChartDataPeriod, 0),
 			MessageData: make([]*MessageChartDataPeriod, 0),
 		}
-
 	}
 
 	stats := statsInterface.(*ChartResponse)
 	cop := *stats
-	if actualDays != days && days != -1 {
-		cop.MemberData = cop.MemberData[:actualDays]
-		cop.MessageData = cop.MessageData[:actualDays]
-		cop.Days = actualDays
+	if fetchDays != days && days != -1 && len(cop.MemberData) > days {
+
+		cop.MemberData = cop.MemberData[:days]
+		cop.MessageData = cop.MessageData[:days]
+		cop.Days = days
 	}
 
-	return statsInterface.(*ChartResponse)
+	return &cop
 }
 
 func cacheChartFetcher(key string) interface{} {

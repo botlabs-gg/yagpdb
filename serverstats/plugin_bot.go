@@ -2,6 +2,7 @@ package serverstats
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -39,6 +40,8 @@ func (p *Plugin) BotInit() {
 			gs.UserCacheDel(true, CacheKeyConfig)
 		}
 	}, nil)
+
+	go p.runOnlineUpdater()
 }
 
 func (p *Plugin) AddCommands() {
@@ -138,11 +141,10 @@ func SetUpdateMemberStatsPeriod(guildID int64, memberIncr int, numMembers int) {
 	}
 
 	// round to current hour
-	tn := time.Now().UTC()
-	t := time.Date(tn.Year(), tn.Month(), tn.Day(), tn.Hour(), 0, 0, 0, tn.Location())
+	t := RoundHour(time.Now())
 
-	_, err := common.PQ.Exec(`INSERT INTO server_stats_member_periods  (guild_id, created_at, num_members, joins, leaves)
-VALUES ($1, $2, $3, $4, $5)
+	_, err := common.PQ.Exec(`INSERT INTO server_stats_member_periods  (guild_id, created_at, num_members, joins, leaves, max_online)
+VALUES ($1, $2, $3, $4, $5, 0)
 ON CONFLICT (guild_id, created_at)
 DO UPDATE SET 
 joins = server_stats_member_periods.joins + $4, 
@@ -203,4 +205,97 @@ func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*Ser
 	}
 
 	return v.(*ServerStatsConfig), nil
+}
+
+func (p *Plugin) runOnlineUpdater() {
+
+	ticker := time.NewTicker(time.Second)
+	state := bot.State
+
+	var guildsToCheck []*dstate.GuildState
+	var i int
+	var numToCheckPerRun int
+
+OUTER:
+	for {
+		select {
+		case <-ticker.C:
+		}
+
+		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
+			// Copy the list of guilds so that we dont need to keep the entire state locked
+			state.RLock()
+			guildsToCheck = make([]*dstate.GuildState, 0, len(state.Guilds))
+			i = 0
+			for _, v := range state.Guilds {
+				if v == nil || v.ID == 0 {
+					continue
+				}
+
+				guildsToCheck = append(guildsToCheck, v)
+			}
+			state.RUnlock()
+
+			// Hit each guild 2 times per hour more or less
+			numToCheckPerRun = len(guildsToCheck) / 1500
+			if numToCheckPerRun < 1 {
+				numToCheckPerRun = 1
+			}
+		}
+
+		started := time.Now()
+
+		tx, err := common.PQ.Begin()
+		if err != nil {
+			log.WithError(err).Error("[serverstats] failed starting online count transaction")
+			continue
+		}
+
+		checkedThisRound := 0
+		for ; i < len(guildsToCheck) && checkedThisRound < numToCheckPerRun; i++ {
+			g := guildsToCheck[i]
+			err := p.checkGuildOnlineCount(g, tx)
+			if err != nil {
+				log.WithError(err).WithField("guild", g.ID).Error("[serverstats] failed checking guild online count")
+				tx.Rollback()
+				continue OUTER
+			}
+
+			checkedThisRound++
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			log.WithError(err).Error("[serverstats] failed comitting online counts")
+		}
+
+		if time.Since(started) > time.Millisecond*250 {
+			log.Warnf("Tok %s to update online counts of %d guilds", time.Since(started).String(), checkedThisRound)
+		}
+	}
+}
+
+func (p *Plugin) checkGuildOnlineCount(guild *dstate.GuildState, tx *sql.Tx) error {
+	online := 0
+	totalMembers := 0
+
+	guild.RLock()
+	totalMembers = guild.Guild.MemberCount
+	for _, v := range guild.Members {
+		if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
+			online++
+		}
+	}
+	guild.RUnlock()
+
+	t := RoundHour(time.Now())
+
+	_, err := tx.Exec(`INSERT INTO server_stats_member_periods  (guild_id, created_at, num_members, joins, leaves, max_online)
+VALUES ($1, $2, $3, 0, 0, $4)
+ON CONFLICT (guild_id, created_at)
+DO UPDATE SET 
+max_online = GREATEST (server_stats_member_periods.max_online, $4)
+`, guild.ID, t, totalMembers, online) // update clause vars
+
+	return err
 }

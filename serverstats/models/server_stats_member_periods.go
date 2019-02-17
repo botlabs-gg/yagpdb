@@ -29,6 +29,7 @@ type ServerStatsMemberPeriod struct {
 	NumMembers int64     `boil:"num_members" json:"num_members" toml:"num_members" yaml:"num_members"`
 	Joins      int64     `boil:"joins" json:"joins" toml:"joins" yaml:"joins"`
 	Leaves     int64     `boil:"leaves" json:"leaves" toml:"leaves" yaml:"leaves"`
+	MaxOnline  int64     `boil:"max_online" json:"max_online" toml:"max_online" yaml:"max_online"`
 
 	R *serverStatsMemberPeriodR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L serverStatsMemberPeriodL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -41,6 +42,7 @@ var ServerStatsMemberPeriodColumns = struct {
 	NumMembers string
 	Joins      string
 	Leaves     string
+	MaxOnline  string
 }{
 	ID:         "id",
 	GuildID:    "guild_id",
@@ -48,6 +50,7 @@ var ServerStatsMemberPeriodColumns = struct {
 	NumMembers: "num_members",
 	Joins:      "joins",
 	Leaves:     "leaves",
+	MaxOnline:  "max_online",
 }
 
 // Generated where
@@ -80,6 +83,7 @@ var ServerStatsMemberPeriodWhere = struct {
 	NumMembers whereHelperint64
 	Joins      whereHelperint64
 	Leaves     whereHelperint64
+	MaxOnline  whereHelperint64
 }{
 	ID:         whereHelperint64{field: `id`},
 	GuildID:    whereHelperint64{field: `guild_id`},
@@ -87,6 +91,7 @@ var ServerStatsMemberPeriodWhere = struct {
 	NumMembers: whereHelperint64{field: `num_members`},
 	Joins:      whereHelperint64{field: `joins`},
 	Leaves:     whereHelperint64{field: `leaves`},
+	MaxOnline:  whereHelperint64{field: `max_online`},
 }
 
 // ServerStatsMemberPeriodRels is where relationship names are stored.
@@ -106,9 +111,9 @@ func (*serverStatsMemberPeriodR) NewStruct() *serverStatsMemberPeriodR {
 type serverStatsMemberPeriodL struct{}
 
 var (
-	serverStatsMemberPeriodColumns               = []string{"id", "guild_id", "created_at", "num_members", "joins", "leaves"}
+	serverStatsMemberPeriodColumns               = []string{"id", "guild_id", "created_at", "num_members", "joins", "leaves", "max_online"}
 	serverStatsMemberPeriodColumnsWithoutDefault = []string{"guild_id", "created_at", "num_members", "joins", "leaves"}
-	serverStatsMemberPeriodColumnsWithDefault    = []string{"id"}
+	serverStatsMemberPeriodColumnsWithDefault    = []string{"id", "max_online"}
 	serverStatsMemberPeriodPrimaryKeyColumns     = []string{"id"}
 )
 

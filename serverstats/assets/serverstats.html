@@ -70,6 +70,7 @@
     <div class="col">
         <!-- <div class="form-group"> -->
             <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
+                <option value="2"> Past 2 days (testing)</option>
                 <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Past 7 days</option>
                 <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Past 30 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
                 <option value="365" {{if not .IsGuildPremium}} disabled{{end}} > Past 365 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
@@ -222,11 +223,12 @@
                     element: 'chart-total-members',
                     data: memberStats,
                     xkey: 't',
-                    ykeys: ['num_members'],
-                    labels: ['Total member'],
+                    ykeys: ['num_members', 'max_online'],
+                    labels: ['Total members', 'Online members'],
                     hideHover: 'auto',
                     resize: true,
                     dateFormat: chartDateFormatter,
+                    behaveLikeLine: true,
                 });
             }
 

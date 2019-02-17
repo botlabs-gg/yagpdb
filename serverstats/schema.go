@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS server_stats_member_periods (
 	num_members BIGINT NOT NULL,
 	joins BIGINT NOT NULL,
 	leaves BIGINT NOT NULL,
+	max_online BIGINT NOT NULL,
 
 	UNIQUE(guild_id, created_at)
 );

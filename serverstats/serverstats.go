@@ -229,6 +229,7 @@ func RedisKeyChannelMessages(guildID int64) string {
 
 // RoundHour rounds a time.Time down to the hour
 func RoundHour(t time.Time) time.Time {
+	t = t.UTC()
 	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 }
 
@@ -237,10 +238,11 @@ type MemberChartDataPeriod struct {
 	Joins      int       `json:"joins"`
 	Leaves     int       `json:"leaves"`
 	NumMembers int       `json:"num_members"`
+	MaxOnline  int       `json:"max_online"`
 }
 
 func RetrieveMemberChartStats(guildID int64, days int) ([]*MemberChartDataPeriod, error) {
-	query := `select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members)
+	query := `select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members), max(max_online)
 FROM server_stats_member_periods
 WHERE guild_id=$1 
 GROUP BY 1 
@@ -273,8 +275,9 @@ ORDER BY 1 DESC`
 		var joins int
 		var leaves int
 		var numMembers int
+		var maxOnline int
 
-		err := rows.Scan(&t, &joins, &leaves, &numMembers)
+		err := rows.Scan(&t, &joins, &leaves, &numMembers, &maxOnline)
 		if err != nil {
 			return nil, errors.Wrap(err, "rows.scan")
 		}
@@ -306,6 +309,7 @@ ORDER BY 1 DESC`
 			Joins:      joins,
 			Leaves:     leaves,
 			NumMembers: numMembers,
+			MaxOnline:  maxOnline,
 		}
 	}
 
