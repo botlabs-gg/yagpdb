@@ -70,10 +70,10 @@
     <div class="col">
         <!-- <div class="form-group"> -->
             <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
-                <option value="7"> Past 7 days</option>
-                <option value="30" selected> Past 30 days</option>
-                <option value="365"> Past 365 days</option>
-                <option value="-1"> All time</option>
+                <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Past 7 days</option>
+                <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Past 30 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
+                <option value="365" {{if not .IsGuildPremium}} disabled{{end}} > Past 365 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
+                <option value="-1" {{if not .IsGuildPremium}} disabled{{end}} > All time {{if not .IsGuildPremium}}(premium only){{end}}</option>
             </select>
         <!-- </div> -->
     </div>
@@ -246,7 +246,11 @@
                 });
             } 
 
-            $("#serverstats-status").text("")
+            var nDays = parsedStats.days
+            if(nDays <= 0){
+                nDays = "infinite"
+            }
+            $("#serverstats-status").text(" over the last  " + nDays + " days")
         }
 
         fetchCharts = function(days){

@@ -4,6 +4,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/rcache"
@@ -202,6 +203,10 @@ func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bo
 		if numDays > 365 {
 			numDays = 365
 		}
+	}
+
+	if !premium.ContextPremium(r.Context()) && (numDays > 7 || numDays <= 0) {
+		numDays = 7
 	}
 
 	stats := CacheGetCharts(activeGuild.ID, numDays)
