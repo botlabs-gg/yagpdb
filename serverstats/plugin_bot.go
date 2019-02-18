@@ -236,8 +236,8 @@ OUTER:
 			}
 			state.RUnlock()
 
-			// Hit each guild 2 times per hour more or less
-			numToCheckPerRun = len(guildsToCheck) / 1500
+			// Hit each guild once per hour more or less
+			numToCheckPerRun = len(guildsToCheck) / 2500
 			if numToCheckPerRun < 1 {
 				numToCheckPerRun = 1
 			}
