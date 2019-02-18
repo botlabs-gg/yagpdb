@@ -47,7 +47,7 @@ func IsGuildPremium(guildID int64) (bool, error) {
 // AllGuildsOncePremium returns all the guilds that have has premium once, and the last time that was active
 func AllGuildsOncePremium() (map[int64]time.Time, error) {
 	var result []int64
-	err := common.RedisPool.Do(radix.Cmd("ZRANGE", RedisKeyPremiumGuildLastActive, "0", "-1", "WITHSCORES"))
+	err := common.RedisPool.Do(radix.Cmd(&result, "ZRANGE", RedisKeyPremiumGuildLastActive, "0", "-1", "WITHSCORES"))
 	if err != nil {
 		return nil, errors.Wrap(err, "zrange")
 	}
