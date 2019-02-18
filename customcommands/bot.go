@@ -41,7 +41,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
 
 	// add the pubsub handler for cache eviction
 	pubsub.AddHandler("custom_commands_clear_cache", func(event *pubsub.Event) {
@@ -231,12 +231,21 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, member) {
 			continue
 		}
+		if matched != nil && cmd.TriggerType == int(CommandTriggerRegex) {
+			continue
+		}
 
 		if m, s, a := CheckMatch(prefix, cmd, mc.Content); m {
 			matched = cmd
 			stripped = s
 			args = a
-			break
+
+			// regex commands has lower priority
+			if cmd.TriggerType == int(CommandTriggerRegex) {
+				continue
+			} else {
+				break
+			}
 		}
 	}
 
@@ -422,7 +431,7 @@ const (
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(true, CacheKeyCommands, func() (interface{}, error) {
-		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type != 5", gs.Guild.ID), qm.Load("Group")).AllG(ctx)
+		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type != 5", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 	})
 
 	if err != nil {
