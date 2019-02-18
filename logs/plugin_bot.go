@@ -40,12 +40,12 @@ func (p *Plugin) BotInit() {
 	var err error
 	nicknameQueryStatement, err = common.PQ.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
 	if err != nil {
-		panic("Failed preparing statement: " + err.Error())
+		panic("Failed preparing nick statement: " + err.Error())
 	}
 
 	usernameQueryStatement, err = common.PQ.Prepare("select username from username_listings where user_id=$1 order by id desc limit 1;")
 	if err != nil {
-		panic("Failed preparing statement: " + err.Error())
+		panic("Failed preparing username statement: " + err.Error())
 	}
 
 	go EvtProcesser()
@@ -403,7 +403,7 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 		return
 	}
 
-	logrus.Debug("logs: User changed username, old:", lastUsername, " | new:", user.Username)
+	logrus.Debug("[logs] User changed username, old:", lastUsername, " | new:", user.Username)
 
 	listing := &models.UsernameListing{
 		UserID:   null.Int64From(user.ID),
@@ -412,7 +412,7 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logrus.WithError(err).WithField("user", user.ID).Error("logs: failed setting last username")
+		logrus.WithError(err).WithField("user", user.ID).Error("[logs] failed setting last username")
 	}
 }
 
@@ -430,7 +430,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 		return
 	}
 
-	logrus.Debug("User changed nickname, old:", lastNickname, " | new:", nickname)
+	logrus.Debug("[logs] User changed nickname, old:", lastNickname, " | new:", nickname)
 
 	listing := &models.NicknameListing{
 		UserID:   null.Int64From(userID),
@@ -440,7 +440,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("logs: failed setting last nickname")
+		logrus.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("[logs] failed setting last nickname")
 	}
 }
 
