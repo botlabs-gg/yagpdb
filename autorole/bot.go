@@ -135,7 +135,7 @@ func runDurationChecker() {
 			i = 0
 			for _, v := range state.Guilds {
 				if v == nil || v.ID == 0 {
-
+					continue
 				}
 				guildsToCheck = append(guildsToCheck, v)
 			}
