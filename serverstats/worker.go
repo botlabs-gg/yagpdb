@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
@@ -16,7 +17,7 @@ import (
 	"time"
 )
 
-var _ common.BackgroundWorkerPlugin = (*Plugin)(nil)
+var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 func (p *Plugin) RunBackgroundWorker() {
 	p.UpdateStatsLoop()

@@ -3,6 +3,7 @@ package safebrowsing
 import (
 	"encoding/json"
 	"github.com/google/safebrowsing"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -36,7 +37,7 @@ func performRemoteLookup(input string) (*safebrowsing.URLThreat, error) {
 	logrus.Debug("[safebrowsing] performing remote lookup")
 
 	bodyR := strings.NewReader(input)
-	req, err := http.NewRequest("POST", "http://"+serverAddr+"/checkmessage", bodyR)
+	req, err := http.NewRequest("POST", "http://"+backgroundworkers.HTTPAddr+"/safebroswing/checkmessage", bodyR)
 	if err != nil {
 		return nil, errors.WithMessage(err, "NewRequest")
 	}

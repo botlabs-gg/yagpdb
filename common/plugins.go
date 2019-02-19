@@ -2,7 +2,6 @@ package common
 
 import (
 	"github.com/sirupsen/logrus"
-	"sync"
 )
 
 var (
@@ -48,28 +47,4 @@ func (p *BasePlugin) Logger() *logrus.Entry {
 
 func (p *BasePlugin) SetLogger(entry *logrus.Entry) {
 	p.Entry = entry
-}
-
-type BackgroundWorkerPlugin interface {
-	RunBackgroundWorker()
-	StopBackgroundWorker(wg *sync.WaitGroup)
-}
-
-func RunBackgroundWorkers() {
-	for _, p := range Plugins {
-		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logrus.Info("Running background worker: ", p.Name())
-			go bwc.RunBackgroundWorker()
-		}
-	}
-}
-
-func StopBackgroundWorkers(wg *sync.WaitGroup) {
-	for _, p := range Plugins {
-		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logrus.Info("Stopping background worker: ", p.Name())
-			wg.Add(1)
-			go bwc.StopBackgroundWorker(wg)
-		}
-	}
 }

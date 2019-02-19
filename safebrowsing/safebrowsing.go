@@ -1,15 +1,15 @@
 package safebrowsing
 
 import (
-	"context"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/sirupsen/logrus"
+	"goji.io/pat"
+	"net/http"
 	"sync"
 )
 
-const serverAddr = "localhost:5004"
-
-var _ common.BackgroundWorkerPlugin = (*Plugin)(nil)
+var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 type Plugin struct {
 }
@@ -23,16 +23,18 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) RunBackgroundWorker() {
-	err := RunServer()
-	if err != nil {
-		logrus.WithError(err).Error("[safebrowsing] failed starting safebrowsing server")
+	if SafeBrowser == nil {
+		err := runDatabase()
+		if err != nil {
+			logrus.WithError(err).Error("[safebrowsing] failed starting database")
+			return
+		}
 	}
+
+	backgroundworkers.RESTServerMuxer.Handle(pat.Post("/safebroswing/checkmessage"), http.HandlerFunc(handleCheckMessage))
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
-	if restServer != nil {
-		restServer.Shutdown(context.Background())
-	}
 
 	if SafeBrowser != nil {
 		SafeBrowser.Close()
