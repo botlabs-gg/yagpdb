@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/dca"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/soundboard/models"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -29,7 +30,7 @@ func init() {
 }
 
 var _ commands.CommandProvider = (*Plugin)(nil)
-var _ common.BackgroundWorkerPlugin = (*Plugin)(nil)
+var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 func (p *Plugin) RunBackgroundWorker() {
 	transcoderLoop()

@@ -17,6 +17,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -181,7 +182,7 @@ func main() {
 	}
 
 	if flagRunBWC || flagRunEverything {
-		go common.RunBackgroundWorkers()
+		go backgroundworkers.RunWorkers()
 	}
 
 	go pubsub.PollEvents()
@@ -223,7 +224,7 @@ func listenSignal() {
 	}
 
 	if flagRunBWC {
-		common.StopBackgroundWorkers(wg)
+		backgroundworkers.StopWorkers(wg)
 	}
 
 	if shouldWait {

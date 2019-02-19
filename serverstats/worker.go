@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/lib/pq"
@@ -21,7 +22,7 @@ const (
 	RedisKeyLastHourlyRan = "serverstats_last_hourly_worker_ran"
 )
 
-var _ common.BackgroundWorkerPlugin = (*Plugin)(nil)
+var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 func (p *Plugin) RunBackgroundWorker() {
 	p.UpdateStatsLoop()

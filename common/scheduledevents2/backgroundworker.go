@@ -3,6 +3,7 @@ package scheduledevents2
 import (
 	"context"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-var _ common.BackgroundWorkerPlugin = (*ScheduledEvents)(nil)
+var _ backgroundworkers.BackgroundWorkerPlugin = (*ScheduledEvents)(nil)
 
 func (p *ScheduledEvents) RunBackgroundWorker() {
 	t := time.NewTicker(time.Hour)
