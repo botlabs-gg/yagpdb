@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
@@ -597,4 +598,69 @@ func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings inte
 	settingsCast := settings.(*ResetViolationsEffectData)
 	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
 	return err
+}
+
+/////////////////////////////////////////////////////////////
+
+type GiveRoleEffect struct{}
+
+type GiveRoleEffectData struct {
+	Duration int `valid:",0,604800,trimspace"`
+	Role     int64
+}
+
+func (gr *GiveRoleEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (gf *GiveRoleEffect) DataType() interface{} {
+	return &GiveRoleEffectData{}
+}
+
+func (gf *GiveRoleEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Duration in seconds, 0 for permanent",
+			Key:     "Duration",
+			Default: 0,
+			Min:     0,
+			Max:     604800,
+			Kind:    SettingTypeInt,
+		},
+		&SettingDef{
+			Name: "Role",
+			Key:  "Role",
+			Kind: SettingTypeRole,
+		},
+	}
+}
+
+func (gf *GiveRoleEffect) Name() (name string) {
+	return "Give role"
+}
+
+func (gf *GiveRoleEffect) Description() (description string) {
+	return "Gives the specified role to the user, optionally with a duration after which the role is removed from the user."
+}
+
+func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*GiveRoleEffectData)
+
+	err := common.AddRoleDS(ctxData.MS, settingsCast.Role)
+	if err != nil {
+		if code, _ := common.DiscordError(err); code != 0 {
+			return nil // discord responded with a proper error, we know that shit didn't happen
+		}
+
+		// discord was not the cause of the error, in some cases even if the gateway times out the action is performed so just in case, scehdule the role removal
+	}
+
+	if settingsCast.Duration > 0 {
+		err := scheduledevents2.ScheduleRemoveRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

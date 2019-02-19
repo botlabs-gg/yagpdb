@@ -71,6 +71,7 @@ var RulePartMap = map[int]RulePart{
 	306: &SetNicknameEffect{},
 	307: &ResetViolationsEffect{},
 	308: &DeleteMessagesEffect{},
+	309: &GiveRoleEffect{},
 }
 
 var InverseRulePartMap = make(map[RulePart]int)
