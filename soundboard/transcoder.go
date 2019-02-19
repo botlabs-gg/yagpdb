@@ -8,8 +8,10 @@ import (
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/soundboard/models"
 	"github.com/sirupsen/logrus"
+	"goji.io/pat"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -33,8 +35,10 @@ var _ commands.CommandProvider = (*Plugin)(nil)
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 func (p *Plugin) RunBackgroundWorker() {
+	backgroundworkers.RESTServerMuxer.HandleFunc(pat.Get("/soundboard/sounddata/:sound"), p.bgworkerHandleGetSound)
 	transcoderLoop()
 }
+
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 	logrus.Info("Stopping soundboard transcoder...")
 
@@ -149,4 +153,29 @@ func transcodeSound(sound *models.SoundboardSound) error {
 	err = session.Error()
 
 	return err
+}
+
+func (p *Plugin) bgworkerHandleGetSound(w http.ResponseWriter, r *http.Request) {
+	soundIDStr := pat.Param(r, "sound")
+	parsed, _ := strconv.ParseInt(soundIDStr, 10, 64)
+
+	f, err := os.Open(SoundFilePath(int(parsed), TranscodingStatusReady))
+	if err != nil {
+		logrus.WithError(err).WithField("sound", parsed).Error("failed opening sound")
+		return
+	}
+
+	defer f.Close()
+	io.Copy(w, f)
+}
+
+func getSoundFromBGWorker(soundID int) (rc io.ReadCloser, err error) {
+	path := "http://" + backgroundworkers.HTTPAddr + "/soundboard/sounddata/" + strconv.Itoa(soundID)
+
+	resp, err := http.Get(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
-	"os"
 	"sync"
 	"time"
 )
@@ -96,12 +95,13 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 	logrus.Info("Playing sound ", req.Sound)
 
 	// Open the sound and create a new decoder
-	file, err := os.Open(SoundFilePath(req.Sound, TranscodingStatusReady))
+	reader, err := getSoundFromBGWorker(req.Sound)
 	if err != nil {
 		return vc, common.ErrWithCaller(err)
 	}
-	defer file.Close()
-	decoder := dca.NewDecoder(file)
+	defer reader.Close()
+
+	decoder := dca.NewDecoder(reader)
 
 	// Either use the passed voice connection, or create a new one
 	if vc == nil || !vc.Ready {
