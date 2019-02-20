@@ -123,7 +123,12 @@ func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*mod
 func StringCommands(ccs []*models.CustomCommand) string {
 	out := ""
 	for _, cc := range ccs {
-		out += fmt.Sprintf("`#%3d:` `%s`: %s\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String())
+		switch cc.TextTrigger {
+		case "":
+			out += fmt.Sprintf("`#%3d: `%s\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String())
+		default:
+			out += fmt.Sprintf("`#%3d:` `%s`: %s\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String())
+	    }
 	}
 
 	return out
