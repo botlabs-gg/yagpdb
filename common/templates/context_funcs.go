@@ -1,8 +1,10 @@
 package templates
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -410,9 +412,14 @@ func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
 	return ""
 }
 
-func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}) string {
+func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckCallCounter("add_role", 10) {
 		return ""
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	targetID := targetUserID(target)
@@ -434,16 +441,27 @@ func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}) string 
 	}
 	c.GS.RUnlock()
 
-	if hasRole {
+	if !hasRole {
+		return ""
+	}
+
+	if delay > 0 {
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, ms.ID, role, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
 		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
 	}
 
 	return ""
 }
 
-func (c *Context) tmplTakeRoleName(target interface{}, name string) string {
+func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckCallCounter("add_role", 10) {
 		return ""
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	targetID := targetUserID(target)
@@ -478,7 +496,11 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string) string {
 		return ""
 	}
 
-	common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+	if delay > 0 {
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
+		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+	}
 
 	return ""
 }
@@ -501,9 +523,14 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 	return "", nil
 }
 
-func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
+func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}) (string, error) {
 	if c.IncreaseCheckCallCounter("remove_role", 10) {
 		return "", ErrTooManyCalls
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	rid := ToInt64(role)
@@ -511,9 +538,10 @@ func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleRemove(c.GS.ID, c.MS.ID, rid)
-	if err != nil {
-		return "", err
+	if delay > 0 {
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
+		common.BotSession.GuildMemberRoleRemove(c.GS.ID, c.MS.ID, rid)
 	}
 
 	return "", nil
