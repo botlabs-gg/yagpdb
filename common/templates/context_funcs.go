@@ -432,21 +432,23 @@ func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optiona
 		return ""
 	}
 
-	// Check to see if we can save a API request here
-	c.GS.RLock()
-	ms := c.GS.Member(false, targetID)
-	hasRole := true
-	if ms != nil && ms.MemberSet {
-		hasRole = common.ContainsInt64Slice(ms.Roles, role)
-	}
-	c.GS.RUnlock()
+	// Check to see if we can save a API request here, if this isn't delayed
+	if delay <= 0 {
+		c.GS.RLock()
+		ms := c.GS.Member(false, targetID)
+		hasRole := true
+		if ms != nil && ms.MemberSet {
+			hasRole = common.ContainsInt64Slice(ms.Roles, role)
+		}
+		c.GS.RUnlock()
 
-	if !hasRole {
-		return ""
+		if !hasRole {
+			return ""
+		}
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, ms.ID, role, time.Now().Add(time.Second*time.Duration(delay)))
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
 		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
 	}
@@ -475,16 +477,18 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 		if strings.EqualFold(r.Name, name) {
 			role = r.ID
 
-			// Maybe save a api request
-			ms := c.GS.Member(false, targetID)
-			hasRole := true
-			if ms != nil && ms.MemberSet {
-				hasRole = common.ContainsInt64Slice(ms.Roles, role)
-			}
+			// Maybe save a api request, but only if this is not delayed
+			if delay <= 0 {
+				ms := c.GS.Member(false, targetID)
+				hasRole := true
+				if ms != nil && ms.MemberSet {
+					hasRole = common.ContainsInt64Slice(ms.Roles, role)
+				}
 
-			if !hasRole {
-				c.GS.RUnlock()
-				return ""
+				if !hasRole {
+					c.GS.RUnlock()
+					return ""
+				}
 			}
 
 			break
