@@ -59,7 +59,7 @@ type RmoveRoleData struct {
 
 func ScheduleRemoveRole(ctx context.Context, guildID, userID, roleID int64, when time.Time) error {
 	// remove existing role removal events for this role, this may not be the desired outcome in all cases, but for now it is like this
-	_, err := models.ScheduledEvents(qm.Where("event_name='std_remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ?", guildID, userID, roleID)).DeleteAll(ctx, common.PQ)
+	_, err := models.ScheduledEvents(qm.Where("event_name='std_remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ? AND processed = false", guildID, userID, roleID)).DeleteAll(ctx, common.PQ)
 	if err != nil {
 		return err
 	}
