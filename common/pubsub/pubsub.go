@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Event struct {
@@ -74,20 +75,26 @@ func Publish(evt string, target int64, data interface{}) error {
 }
 
 func PollEvents() {
-	// Create a new client for pubsub
-	// radix.PersistentPubSub("tcp", common.Conf.Redis, radix.Dial)
+	for {
+		err := runPollEvents()
+		logrus.WithError(err).Error("[pubsub] subscription for events ended, starting a new one...")
+		time.Sleep(time.Second)
+	}
+}
 
+func runPollEvents() error {
 	client, err := radix.Dial("tcp", common.Conf.Redis)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	defer client.Close()
 
 	pubsubClient := radix.PubSub(client)
 
 	msgChan := make(chan radix.PubSubMessage)
 	if err := pubsubClient.Subscribe(msgChan, "events"); err != nil {
-		logrus.WithError(err).Fatal("Failed subscribing to events")
-		return
+		return err
 	}
 
 	for msg := range msgChan {
@@ -100,6 +107,8 @@ func PollEvents() {
 		handleEvent(string(msg.Message))
 		handlersMU.RUnlock()
 	}
+
+	return nil
 }
 
 func handleEvent(evt string) {
@@ -124,7 +133,7 @@ func handleEvent(evt string) {
 	t, ok := eventTypes[name]
 	if !ok && data != "" {
 		// No handler for this event
-		logrus.WithField("evt", name).Info("No handler for pubsub event")
+		logrus.WithField("evt", name).Debug("No handler for pubsub event")
 		return
 	}
 
