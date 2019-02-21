@@ -164,9 +164,9 @@
             </div>
             <div class="row mb-2">
                 <div class="col-lg-12">
-                    <label for="responses">Response</label>
+                    <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
                     <div class="entry input-group input-group-sm">
-                        <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5"></textarea>
+                        <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)"></textarea>
                         <span class="input-group-append">
                             <button class="btn btn-success btn-add btn-circle" type="button">
                                 <i class="fas fa-plus"></i>
@@ -333,11 +333,11 @@
                     <div class="row mb-2">
                         <div class="col-lg-12">
                             <div class="form-group">
-                                <label for="responses">Response</label>
-                                {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
+                                <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
+                                <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                 {{range .Responses}}
                                 <div class="entry input-group  input-group-sm">
-                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5">{{.}}</textarea>
+                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)">{{.}}</textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -346,7 +346,7 @@
                                 </div>
                                 {{else}}
                                 <div class="entry input-group  input-group-sm">
-                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5"></textarea>
+                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)"></textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -442,6 +442,30 @@
             $("#"+trigID+"-cc-extra-settings").removeClass("hidden");
         }
     }
+
+    function onCCChanged(textArea){
+        var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
+
+        var combinedLength = 0;
+        textAreas.forEach(function(elem){
+            combinedLength += elem.value.length;
+        })
+
+        var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
+        display.textContent = combinedLength
+
+        if(combinedLength > 10000){
+            display.classList.add("text-danger");
+        }else{
+            display.classList.remove("text-danger");
+        }
+    }
+
+    $(function(){
+        document.querySelectorAll("textarea").forEach(function(element) {
+          onCCChanged(element);
+        });
+    })
 </script>
 {{template "cp_footer" .}}
 
