@@ -77,6 +77,8 @@ func PollEvents() {
 	// Create a new client for pubsub
 	// radix.PersistentPubSub("tcp", common.Conf.Redis, radix.Dial)
 
+	logrus.Info("[pubsub] Listening for pubsub events")
+
 	client, err := radix.Dial("tcp", common.Conf.Redis)
 	if err != nil {
 		panic(err)
@@ -100,6 +102,8 @@ func PollEvents() {
 		handleEvent(string(msg.Message))
 		handlersMU.RUnlock()
 	}
+
+	logrus.Info("[pubsub] Stopped listening for pubsub events")
 }
 
 func handleEvent(evt string) {
