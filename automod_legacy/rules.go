@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var forwardSlashReplacer = strings.NewReplacer("\\", "")
+
 type Punishment int
 
 const (
@@ -257,7 +259,7 @@ type LinksRule struct {
 
 func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
 
-	if !common.LinkRegex.MatchString(evt.ContentWithMentionsReplaced()) {
+	if !common.LinkRegex.MatchString(forwardSlashReplacer.Replace(evt.Content)) {
 		return
 	}
 
@@ -355,7 +357,7 @@ func (w *SitesRule) GetCompiled() []string {
 }
 
 func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-	banned, item, threatList := s.checkMessage(evt.Content)
+	banned, item, threatList := s.checkMessage(forwardSlashReplacer.Replace(evt.Content))
 	if !banned {
 		return
 	}
