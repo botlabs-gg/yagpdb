@@ -15,6 +15,8 @@ import (
 	"unicode"
 )
 
+var forwardSlashReplacer = strings.NewReplacer("\\", "")
+
 /////////////////////////////////////////////////////////////
 
 type BaseRegexTriggerData struct {
@@ -122,7 +124,7 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 }
 
 func (alc *AnyLinkTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, stripped string, data interface{}) (bool, error) {
-	if common.LinkRegex.MatchString(m.Content) {
+	if common.LinkRegex.MatchString(forwardSlashReplacer.Replace(m.Content)) {
 		return true, nil
 	}
 
@@ -265,7 +267,7 @@ func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 		return false, err
 	}
 
-	matches := common.LinkRegex.FindAllString(m.Content, -1)
+	matches := common.LinkRegex.FindAllString(forwardSlashReplacer.Replace(m.Content), -1)
 
 	for _, v := range matches {
 		if contains, _ := dt.containsDomain(v, list.Content); contains {
@@ -546,7 +548,7 @@ func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
 }
 
 func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	threat, err := safebrowsing.CheckString(m.Content)
+	threat, err := safebrowsing.CheckString(forwardSlashReplacer.Replace(m.Content))
 	if err != nil {
 		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
 		return false, nil
