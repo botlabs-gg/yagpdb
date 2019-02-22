@@ -161,7 +161,7 @@ func GetNodeStatuses() (st []*NodeStatus, err error) {
 
 	// Special handling if were in clustered mode
 	var clustered bool
-	err = common.RedisPool.Do(radix.Cmd(&clustered, "EXISTS", "dshardorchestrator_nodes"))
+	err = common.RedisPool.Do(radix.Cmd(&clustered, "EXISTS", "dshardorchestrator_nodes_z"))
 	if err != nil {
 		return nil, err
 	}
@@ -183,8 +183,7 @@ func GetNodeStatuses() (st []*NodeStatus, err error) {
 }
 
 func getNodeStatusesClustered() (st []*NodeStatus, err error) {
-	var nodeIDs []string
-	err = common.RedisPool.Do(radix.Cmd(&nodeIDs, "SMEMBERS", "dshardorchestrator_nodes"))
+	nodeIDs, err := common.GetActiveNodes()
 	if err != nil {
 		return nil, err
 	}

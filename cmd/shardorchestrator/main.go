@@ -8,6 +8,9 @@ import (
 	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"log"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/jonas747/yagpdb/bot" // register the custom orchestrator events
@@ -18,20 +21,38 @@ func main() {
 		ForceColors: true,
 	})
 
-	err := common.Init()
+	activeShards := ReadActiveShards()
+	totalShards, err := strconv.Atoi(os.Getenv("YAGPDB_SHARDING_TOTAL_SHARDS"))
+	if err != nil {
+		panic("Invalid YAGPDB_SHARDING_TOTAL_SHARDS: " + err.Error())
+	}
+
+	if totalShards < 1 {
+		panic("YAGPDB_SHARDING_TOTAL_SHARDS needs to be set to a resonable number of total shards")
+	}
+
+	if len(activeShards) < 0 {
+		panic("YAGPDB_SHARDING_ACTIVE_SHARDS is not set, needs to be set to the shards that should be active on this host, ex: '1-49,60-99'")
+	}
+
+	logrus.Info("Running shards (", len(activeShards), "): ", activeShards)
+
+	common.RedisPoolSize = 2
+	err = common.Init()
 	if err != nil {
 		panic("failed initializing: " + err.Error())
 	}
 
 	orch := orchestrator.NewStandardOrchestrator(common.BotSession)
+	orch.FixedTotalShardCount = totalShards
+	orch.ResponsibleForShards = activeShards
 	orch.NodeLauncher = &orchestrator.StdNodeLauncher{
 		CmdName: "./capturepanics",
 		Args:    []string{"./yagpdb", "-bot", "-syslog"},
 	}
 	orch.Logger = &dshardorchestrator.StdLogger{
-		Level: dshardorchestrator.LogDebug,
+		Level: dshardorchestrator.LogWarning,
 	}
-	orch.ShardCountProvider = &RedisShardCountProvider{Key: "dshardorchestrator_totalshards"}
 
 	orch.MaxShardsPerNode = 10
 	orch.MaxNodeDowntimeBeforeRestart = time.Second * 10
@@ -53,18 +74,7 @@ func main() {
 	select {}
 }
 
-// RedisShardCountProvider  is a that queries redis for total shard count
-type RedisShardCountProvider struct {
-	Key string
-}
-
-func (sc *RedisShardCountProvider) GetTotalShardCount() (int, error) {
-	shards := 0
-	err := common.RedisPool.Do(radix.Cmd(&shards, "GET", sc.Key))
-	return shards, err
-}
-
-const RedisNodesKey = "dshardorchestrator_nodes"
+const RedisNodesKey = "dshardorchestrator_nodes_z"
 
 func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 
@@ -73,22 +83,54 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 		<-t.C
 
 		fullStatus := orch.GetFullNodesStatus()
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisNodesKey+"_new"))
 
-		addedAny := false
 		for _, v := range fullStatus {
 			if !v.Connected {
 				continue
 			}
 
-			addedAny = true
-			common.RedisPool.Do(radix.Cmd(nil, "SADD", RedisNodesKey+"_new", v.ID))
-		}
-
-		if addedAny {
-			common.RedisPool.Do(radix.Cmd(nil, "RENAME", RedisNodesKey+"_new", RedisNodesKey))
-		} else {
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisNodesKey))
+			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisNodesKey, time.Now().Unix(), v.ID))
+			if err != nil {
+				logrus.WithError(err).Error("[orchestrator] failed setting active nodes in redis")
+			}
 		}
 	}
+}
+
+func ReadActiveShards() []int {
+	str := os.Getenv("YAGPDB_SHARDING_ACTIVE_SHARDS")
+	split := strings.Split(str, ",")
+
+	shards := make([]int, 0)
+	for _, v := range split {
+		if strings.Contains(v, "-") {
+			minMaxSplit := strings.Split(v, "-")
+			if len(minMaxSplit) < 2 {
+				panic("Invalid min max format in active shards: " + v)
+			}
+
+			min, err := strconv.Atoi(strings.TrimSpace(minMaxSplit[0]))
+			if err != nil {
+				panic("Invalid number min, in active shards: " + v + ", " + err.Error())
+			}
+
+			max, err := strconv.Atoi(strings.TrimSpace(minMaxSplit[1]))
+			if err != nil {
+				panic("Invalid number max, in active shards: " + v + ", " + err.Error())
+			}
+
+			for i := min; i <= max; i++ {
+				shards = append(shards, i)
+			}
+		} else {
+			parsed, err := strconv.Atoi(strings.TrimSpace(v))
+			if err != nil {
+				panic("Invalid shard number in active shards: " + v + ", " + err.Error())
+			}
+
+			shards = append(shards, parsed)
+		}
+	}
+
+	return shards
 }

@@ -34,6 +34,16 @@ export YAGPDB_TESTING=""
 # This is mainly an issue when stuff like large spikes of reconnects with full re-identify flow happening, this will try to mitigate that slightly
 #YAGPDB_ENABLE_MEM_MONITOR="true"
 
+#######################################
+# Clustering / Shard orchestrator mode
+#######################################
+# Uncomment to enable cluster/shard orchestrator mode, dont do this unless you know what that is
+# export YAGPDB_ORCHESTRATOR_ADDRESS="127.0.0.1:7447"
+# export YAGPDB_SHARDING_TOTAL_SHARDS="required for clustered mode"
+#
+# For running in multiple host mode, how that works is you run 1 shard orchestrator per host, then have that orchestrator be responsible for a subset of the shards
+# export YAGPDB_SHARDING_ACTIVE_SHARDS
+
 ###################################################################
 # Plugins and various other optional features below, not required #
 ##################################################################
@@ -94,10 +104,6 @@ export YAGPDB_GA_ID=""
 
 # The feed on /managed
 export YAGPDB_ANNOUNCEMENTS_CHANNEL=""
-
-# Uncomment to enable master, dont do this unless you know what that is
-# export YAGPDB_ORCHESTRATOR_LISTEN_ADDRESS="127.0.0.1:7447"
-# export YAGPDB_ORCHESTRATOR_ADDRESS="127.0.0.1:7447"
  
 # Datadog integration
 export YAGPDB_DOGSTATSDADDRESS="127.0.0.1:8125"
