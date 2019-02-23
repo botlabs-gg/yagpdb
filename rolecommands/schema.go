@@ -74,6 +74,7 @@ END $$;
 ALTER TABLE role_menu_options ADD COLUMN IF NOT EXISTS emoji_animated BOOLEAN NOT NULL DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS role_menu_options_role_command_idx ON role_menu_options(role_command_id);
+CREATE INDEX IF NOT EXISTS role_menu_options_role_menu_id_idx ON role_menu_options(role_menu_id);
 
 ALTER TABLE role_groups ADD COLUMN IF NOT EXISTS temporary_role_duration INT NOT NULL DEFAULT 0;
 
