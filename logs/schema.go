@@ -82,8 +82,6 @@ CREATE TABLE IF NOT EXISTS nickname_listings (
 );
 
 CREATE INDEX IF NOT EXISTS idx_nickname_listings_deleted_at ON nickname_listings(deleted_at);
-CREATE INDEX IF NOT EXISTS idx_nickname_listings_user_id ON nickname_listings(user_id);
-
 
 -- old unused indexes, didn't sort by id, means that postgres has to sort all the dudes nicknames to find the last one, could be slow on a lot of nicknames...
 -- there's also no point in having a seperate user_id index, the combined one below can be used
