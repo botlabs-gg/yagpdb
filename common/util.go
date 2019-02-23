@@ -690,6 +690,6 @@ func BotIsOnGuild(guildID int64) (bool, error) {
 
 func GetActiveNodes() ([]string, error) {
 	var nodes []string
-	err := RedisPool.Do(radix.FlatCmd(&nodes, "ZRANGE", "dshardorchestrator_nodes_z", time.Now().Add(time.Minute).Unix(), "-1"))
+	err := RedisPool.Do(radix.FlatCmd(&nodes, "ZRANGEBYSCORE", "dshardorchestrator_nodes_z", time.Now().Add(-time.Minute).Unix(), "+inf"))
 	return nodes, err
 }
