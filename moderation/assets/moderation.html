@@ -165,6 +165,26 @@ It is highly recommended to couple the moderation actions with the message logs,
                 Only users with kick permission can use this (or with roles specified below).<br/>
             </label>
         </div>
+         <div class="form-group">
+            <label for="MuteRole">Mute role</label>
+            <select class="form-control" name="MuteRole">
+                {{roleOptions .ActiveGuild.Roles .HighestRole .ModConfig.MuteRole "None"}}
+            </select>
+            <p class="help-block">For simple usage you can have the bot manage the role, look below for more info.</p>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="mute-managed" name="MuteManageRole" {{if .ModConfig.MuteManageRole}} checked{{end}} onchange="MuteManagedChanged()">
+            <label class="form-check-label" for="mute-managed">
+                Have the bot manage the mute role. It will automatically add overrides to all channels for the role.<br/>
+                You still need to create and assign a mute role above.
+            </label>
+        </div>
+        <div class="form-group" id="mute-ignore-channels">
+            <label>Have the auto management of the mute role ignore the following channels</label><br>
+            <select class="multiselect" name="MuteIgnoreChannels" data-plugin-multiselect multiple="multiple">
+                {{textChannelOptionsMulti .ActiveGuild.Channels .ModConfig.MuteIgnoreChannels}}
+            </select>
+        </div>
         <div class="form-group">
             <label>Allow users with the following roles to use the mute commands</label><br>
             <select class="multiselect" name="MuteCmdRoles" data-plugin-multiselect multiple="multiple">
@@ -189,27 +209,30 @@ It is highly recommended to couple the moderation actions with the message logs,
                 Unmute Reason optional
             </label>
         </div>
+
     </div>
     <div class="col">
         <div class="form-group">
-            <label for="MuteRole">Mute role</label>
-            <select class="form-control" name="MuteRole">
-                {{roleOptions .ActiveGuild.Roles .HighestRole .ModConfig.MuteRole "None"}}
-            </select>
-            <p class="help-block">For simple usage you can have the bot manage the role, look below for more info.</p>
+            <label>Mute DM (Leave empty for default)</label>
+            <textarea rows="5" class="form-control"  name="MuteMessage" placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.MuteMessage .DefaultDMMessage}}</textarea>
+            <p class="help-block">
+                Available template data:<br/>
+                {{template "template_helper_user"}} - The user being muted<br/>
+                <code>{{"{{.Reason}}"}}</code> - The reason specified in the mute<br/>
+                {{template "template_helper_mod_author"}}<br>
+                <code>{{"{{.Duration}}"}}</code> - The duration<br>
+                <code>{{"{{.HumanDuration}}"}}</code> - The duration in a human friendly format (<code>1 hour and 3 minutes</code> for example)<br>
+            </p>
         </div>
-        <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="mute-managed" name="MuteManageRole" {{if .ModConfig.MuteManageRole}} checked{{end}} onchange="MuteManagedChanged()">
-            <label class="form-check-label" for="mute-managed">
-                Have the bot manage the mute role. It will automatically add overrides to all channels for the role.<br/>
-                You still need to create and assign a mute role above.
-            </label>
-        </div>
-        <div class="form-group" id="mute-ignore-channels">
-            <label>Have the auto management of the mute role ignore the following channels</label><br>
-            <select class="multiselect" name="MuteIgnoreChannels" data-plugin-multiselect multiple="multiple">
-                {{textChannelOptionsMulti .ActiveGuild.Channels .ModConfig.MuteIgnoreChannels}}
-            </select>
+        <div class="form-group">
+            <label>Unmute DM (Leave empty for default)</label>
+            <textarea rows="5" class="form-control"  name="UnmuteMessage" placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.UnmuteMessage .DefaultDMMessage}}</textarea>
+            <p class="help-block">
+                Available template data:<br/>
+                {{template "template_helper_user"}} - The user being unmuted<br/>
+                <code>{{"{{.Reason}}"}}</code> - The reason specified in the unmute<br/>
+                {{template "template_helper_mod_author"}}<br>
+            </p>
         </div>
     </div>
 </div>
@@ -256,7 +279,7 @@ It is highly recommended to couple the moderation actions with the message logs,
     <div class="col">
         <div class="form-group">
             <label>Kick DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control" name="KickMessage" placeholder="{{"You were kicked\nReason: {{.Reason}}"}}">{{.ModConfig.KickMessage}}</textarea>
+            <textarea rows="5" class="form-control" name="KickMessage" placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
             
             <p class="help-block">Available template data:<br/>
             {{template "template_helper_user"}} - The user being banned/kicked<br/>
@@ -303,7 +326,7 @@ It is highly recommended to couple the moderation actions with the message logs,
     <div class="col">
         <div class="form-group">
             <label>Ban DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control"  name="BanMessage" placeholder="{{"You were banned\nReason: {{.Reason}}"}}">{{.ModConfig.BanMessage}}</textarea>
+            <textarea rows="5" class="form-control"  name="BanMessage" placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.BanMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br/>
             {{template "template_helper_user"}} - The user being banned/kicked<br/>
             <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br/>
@@ -331,8 +354,6 @@ It is highly recommended to couple the moderation actions with the message logs,
                 Displays a list of a specified user's warnings<br/>
             </label>
         </div>
-    </div>
-    <div class="col">
         <div class="form-group">
             <label>Allow users with the following roles to use the warning commands</label><br>
             <select class="multiselect" name="WarnCmdRoles" data-plugin-multiselect multiple="multiple">
@@ -350,6 +371,17 @@ It is highly recommended to couple the moderation actions with the message logs,
             <label class="form-check-label" for="warn-add-modlog">
                 Send warnings to the modlog
             </label>
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label>Warning DM (Leave empty for default)</label>
+            <textarea rows="5" class="form-control"  name="WarnMessage" placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.WarnMessage .DefaultDMMessage}}</textarea>
+            <p class="help-block">Available template data:<br/>
+            {{template "template_helper_user"}} - The user being warned<br/>
+            <code>{{"{{.Reason}}"}}</code> - The reason specified in the warning<br/>
+            {{template "template_helper_mod_author"}}<br>
+            </p>
         </div>
     </div>
 </div>

@@ -2,7 +2,6 @@ package moderation
 
 import (
 	"context"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -25,6 +24,11 @@ type Punishment int
 const (
 	PunishmentKick Punishment = iota
 	PunishmentBan
+)
+
+const (
+	DefaultDMMessage = `You have been {{.ModAction}}
+{{if .Reason}}**Reason:** {{.Reason}}{{end}}`
 )
 
 func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) (ms *dstate.MemberState, notFound bool) {
@@ -71,7 +75,11 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 
 	member, memberNotFound := getMemberWithFallback(gs, user)
 	if !memberNotFound {
-		sendPunishDM(config, p == PunishmentKick, action, gs, author, member, duration, reason)
+		msg := config.BanMessage
+		if p == PunishmentKick {
+			msg = config.KickMessage
+		}
+		sendPunishDM(config, msg, action, gs, author, member, duration, reason)
 	}
 
 	logLink := ""
@@ -124,16 +132,9 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 	return err
 }
 
-func sendPunishDM(config *Config, kick bool, action ModlogAction, gs *dstate.GuildState, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string) {
-	dmMsg := ""
-	if kick {
-		dmMsg = config.KickMessage
-	} else {
-		dmMsg = config.BanMessage
-	}
-
+func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildState, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string) {
 	if dmMsg == "" {
-		dmMsg = "You were " + action.String() + "\n**Reason:** {{.Reason}}"
+		dmMsg = DefaultDMMessage
 	}
 
 	// Execute and send the DM message template
@@ -142,6 +143,7 @@ func sendPunishDM(config *Config, kick bool, action ModlogAction, gs *dstate.Gui
 	ctx.Data["Duration"] = duration
 	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	ctx.Data["Author"] = author
+	ctx.Data["ModAction"] = action
 
 	if duration < 1 {
 		ctx.Data["HumanDuration"] = "permanently"
@@ -348,20 +350,18 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 		logLink = CreateLogs(guildID, channelID, author)
 	}
 
-	var action ModlogAction
+	dmMsg := config.UnmuteMessage
+	action := MAUnmute
 	if mute {
 		action = MAMute
 		action.Footer = "Expires after: " + strconv.Itoa(duration) + " minutes"
-	} else {
-		action = MAUnmute
+		dmMsg = config.MuteMessage
 	}
 
-	dmMsg := "You have been " + action.String()
-	if reason != "" {
-		dmMsg += "\n**Reason:** " + reason
+	gs := bot.State.Guild(true, guildID)
+	if gs != nil {
+		sendPunishDM(config, dmMsg, action, gs, author, member, time.Duration(duration)*time.Minute, reason)
 	}
-
-	go bot.SendDM(member.ID, "**"+bot.GuildName(guildID)+"**: "+dmMsg)
 
 	// Create the modlog entry
 	logChannel, _ := strconv.ParseInt(config.ActionChannel, 10, 64)
@@ -446,7 +446,13 @@ func WarnUser(config *Config, guildID, channelID int64, author *discordgo.User, 
 		return common.ErrWithCaller(err)
 	}
 
-	go bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", bot.GuildName(guildID), message))
+	gs := bot.State.Guild(true, guildID)
+	ms, _ := bot.GetMember(guildID, target.ID)
+	if gs != nil && ms != nil {
+		sendPunishDM(config, config.WarnMessage, MAWarned, gs, author, ms, -1, message)
+	}
+
+	// go bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", bot.GuildName(guildID), message))
 
 	if config.WarnSendToModlog && config.ActionChannel != "" {
 		parsedActionChannel, _ := strconv.ParseInt(config.ActionChannel, 10, 64)

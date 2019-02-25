@@ -42,6 +42,8 @@ func (p *Plugin) InitWeb() {
 func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
+	templateData["DefaultDMMessage"] = DefaultDMMessage
+
 	if _, ok := templateData["ModConfig"]; !ok {
 		config, err := GetConfig(activeGuild.ID)
 		if err != nil {
@@ -64,6 +66,8 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 
 	err := newConfig.Save(activeGuild.ID)
 
+	templateData["DefaultDMMessage"] = DefaultDMMessage
+
 	return templateData, err
 }
 
@@ -75,6 +79,7 @@ func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.Temp
 
 	rows := common.GORM.Where("guild_id = ?", activeGuild.ID).Delete(WarningModel{}).RowsAffected
 	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " warnings!"))
+	templateData["DefaultDMMessage"] = DefaultDMMessage
 
 	return templateData, nil
 }
