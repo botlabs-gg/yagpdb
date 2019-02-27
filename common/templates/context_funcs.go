@@ -17,6 +17,7 @@ import (
 )
 
 var ErrTooManyCalls = errors.New("Too many calls to this function")
+var ErrTooManyAPICalls = errors.New("Too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) {
@@ -101,8 +102,7 @@ func (c *Context) channelArg(v interface{}) int64 {
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
 	return func(channel interface{}, msg interface{}) interface{} {
-
-		if c.IncreaseCheckCallCounter("send_message", 4) {
+		if c.IncreaseCheckGenericAPICall() {
 			return ""
 		}
 
@@ -135,8 +135,8 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 
 func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
 	return func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
-		if c.IncreaseCheckCallCounter("edit_message", 5) {
-			return "", ErrTooManyCalls
+		if c.IncreaseCheckGenericAPICall() {
+			return "", ErrTooManyAPICalls
 		}
 
 		cid := c.channelArg(channel)
@@ -178,7 +178,7 @@ func (c *Context) tmplMentionHere() string {
 }
 
 func (c *Context) tmplMentionRoleID(roleID interface{}) string {
-	if c.IncreaseCheckCallCounter("mention_role", 100) {
+	if c.IncreaseCheckStateLock() {
 		return ""
 	}
 
@@ -208,7 +208,7 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 }
 
 func (c *Context) tmplMentionRoleName(role string) string {
-	if c.IncreaseCheckCallCounter("mention_role", 100) {
+	if c.IncreaseCheckStateLock() {
 		return ""
 	}
 
@@ -231,24 +231,18 @@ func (c *Context) tmplMentionRoleName(role string) string {
 }
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
-		return false
-	}
-
 	role := ToInt64(roleID)
 	if role == 0 {
 		return false
 	}
 
-	c.GS.RLock()
 	contains := common.ContainsInt64Slice(c.MS.Roles, role)
-	c.GS.RUnlock()
 	return contains
 }
 
-func (c *Context) tmplHasRoleName(name string) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
-		return false
+func (c *Context) tmplHasRoleName(name string) (bool, error) {
+	if c.IncreaseCheckStateLock() {
+		return false, ErrTooManyCalls
 	}
 
 	c.GS.RLock()
@@ -257,17 +251,17 @@ func (c *Context) tmplHasRoleName(name string) bool {
 		if strings.EqualFold(r.Name, name) {
 			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
 				c.GS.RUnlock()
-				return true
+				return true, nil
 			}
 
 			c.GS.RUnlock()
-			return false
+			return false, nil
 		}
 	}
 
 	// Role not found, default to false
 	c.GS.RUnlock()
-	return false
+	return false, nil
 }
 
 func targetUserID(input interface{}) int64 {
@@ -280,7 +274,7 @@ func targetUserID(input interface{}) int64 {
 }
 
 func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
+	if c.IncreaseCheckStateLock() {
 		return false
 	}
 
@@ -306,7 +300,7 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 }
 
 func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
+	if c.IncreaseCheckStateLock() {
 		return false
 	}
 
@@ -340,7 +334,7 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 }
 
 func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
 
@@ -371,7 +365,7 @@ func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string 
 }
 
 func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
 
@@ -413,7 +407,7 @@ func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
 }
 
 func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
 
@@ -457,7 +451,7 @@ func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optiona
 }
 
 func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs ...interface{}) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
 
@@ -510,8 +504,8 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 }
 
 func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
-		return "", ErrTooManyCalls
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
 	}
 
 	rid := ToInt64(role)
@@ -528,8 +522,8 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 }
 
 func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}) (string, error) {
-	if c.IncreaseCheckCallCounter("remove_role", 10) {
-		return "", ErrTooManyCalls
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
 	}
 
 	delay := 0

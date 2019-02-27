@@ -235,6 +235,14 @@ func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 	return current > limit
 }
 
+func (c *Context) IncreaseCheckGenericAPICall() bool {
+	return c.IncreaseCheckCallCounter("api_call", 100)
+}
+
+func (c *Context) IncreaseCheckStateLock() bool {
+	return c.IncreaseCheckCallCounter("state_lock", 500)
+}
+
 func baseContextFuncs(c *Context) {
 	// message functions
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
