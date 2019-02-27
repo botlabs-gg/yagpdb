@@ -203,8 +203,10 @@ func (c *Context) Execute(source string) (string, error) {
 	var buf bytes.Buffer
 	w := LimitWriter(&buf, 25000)
 
+	started := time.Now()
 	err = parsed.Execute(w, c.Data)
 
+	dur := time.Since(started)
 	if c.FixedOutput != "" {
 		result := common.EscapeSpecialMentionsConditional(c.FixedOutput, c.MentionEveryone, c.MentionHere, c.MentionRoles)
 		return result, nil
@@ -216,7 +218,7 @@ func (c *Context) Execute(source string) (string, error) {
 			err = errors.New("response grew too big (>25k)")
 		}
 
-		return result, errors.WithMessage(err, "Failed executing template")
+		return result, errors.WithMessage(err, "Failed executing template (dur = "+dur.String()+")")
 	}
 
 	return result, nil
