@@ -44,7 +44,7 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 func tmplExpectArgs(ctx *templates.Context) interface{} {
 	return func(numRequired int, failedMessage string, args ...*dcmd.ArgDef) (*ParsedArgs, error) {
 		result := &ParsedArgs{}
-		if len(args) == 0 {
+		if len(args) == 0 || ctx.Msg == nil || ctx.Data["StrippedMsg"] == nil {
 			return result, nil
 		}
 

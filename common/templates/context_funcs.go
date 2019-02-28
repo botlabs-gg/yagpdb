@@ -17,7 +17,7 @@ import (
 var ErrTooManyCalls = errors.New("Too many calls to this function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
-	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) {
+	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.MS == nil {
 		return ""
 	}
 
@@ -229,7 +229,7 @@ func (c *Context) tmplMentionRoleName(role string) string {
 }
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
+	if c.IncreaseCheckCallCounter("has_role", 200) || c.MS == nil {
 		return false
 	}
 
@@ -238,33 +238,29 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 		return false
 	}
 
-	c.GS.RLock()
 	contains := common.ContainsInt64Slice(c.MS.Roles, role)
-	c.GS.RUnlock()
 	return contains
 }
 
 func (c *Context) tmplHasRoleName(name string) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
+	if c.IncreaseCheckCallCounter("has_role", 200) || c.MS == nil {
 		return false
 	}
 
 	c.GS.RLock()
+	defer c.GS.RUnlock()
 
 	for _, r := range c.GS.Guild.Roles {
 		if strings.EqualFold(r.Name, name) {
 			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
-				c.GS.RUnlock()
 				return true
 			}
 
-			c.GS.RUnlock()
 			return false
 		}
 	}
 
 	// Role not found, default to false
-	c.GS.RUnlock()
 	return false
 }
 
@@ -488,6 +484,10 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 		return "", ErrTooManyCalls
 	}
 
+	if c.MS == nil {
+		return "", nil
+	}
+
 	rid := ToInt64(role)
 	if rid == 0 {
 		return "", errors.New("No role id specified")
@@ -504,6 +504,10 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
 	if c.IncreaseCheckCallCounter("remove_role", 10) {
 		return "", ErrTooManyCalls
+	}
+
+	if c.MS == nil {
+		return "", nil
 	}
 
 	rid := ToInt64(role)
@@ -583,6 +587,10 @@ func (c *Context) tmplGetMessage(channel, msgID interface{}) *discordgo.Message 
 
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
+		if c.Msg == nil {
+			return reflect.Value{}, nil
+		}
+
 		for _, reaction := range args {
 			if c.IncreaseCheckCallCounter("add_reaction_trigger", 20) {
 				return reflect.Value{}, ErrTooManyCalls
