@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/pkg/errors"
+	"time"
 )
 
 func init() {
@@ -25,6 +26,12 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 			def.Type = &dcmd.IntArg{Min: templates.ToInt64(opts[0]), Max: templates.ToInt64(opts[1])}
 		} else {
 			def.Type = dcmd.Int
+		}
+	case "duration":
+		if len(opts) >= 2 {
+			def.Type = &commands.DurationArg{Min: time.Duration(templates.ToInt64(opts[0])), Max: time.Duration(templates.ToInt64(opts[1]))}
+		} else {
+			def.Type = &commands.DurationArg{}
 		}
 	case "string":
 		def.Type = dcmd.String
