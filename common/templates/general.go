@@ -306,7 +306,11 @@ func joinStrings(sep string, args ...interface{}) string {
 
 func sequence(start, stop int) ([]int, error) {
 
-	if stop-start > 1000 {
+	if stop < start {
+		return nil, errors.New("stop is less than start?")
+	}
+
+	if stop-start > 10000 {
 		return nil, errors.New("Sequence max length is 1000")
 	}
 
