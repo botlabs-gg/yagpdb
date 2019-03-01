@@ -47,7 +47,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-func (c *Context) channelArg(v interface{}) int64 {
+func (c *Context) ChannelArg(v interface{}) int64 {
 
 	c.GS.RLock()
 	defer c.GS.RUnlock()
@@ -106,7 +106,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			return ""
 		}
 
-		cid := c.channelArg(channel)
+		cid := c.ChannelArg(channel)
 		if cid == 0 {
 			return ""
 		}
@@ -139,7 +139,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			return "", ErrTooManyAPICalls
 		}
 
-		cid := c.channelArg(channel)
+		cid := c.ChannelArg(channel)
 		if cid == 0 {
 			return "", errors.New("Unknown channel")
 		}
@@ -574,7 +574,7 @@ func (c *Context) tmplDelTrigger(args ...interface{}) string {
 }
 
 func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}) string {
-	cID := c.channelArg(channel)
+	cID := c.ChannelArg(channel)
 	if cID == 0 {
 		return ""
 	}
@@ -596,7 +596,7 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 }
 
 func (c *Context) tmplGetMessage(channel, msgID interface{}) *discordgo.Message {
-	cID := c.channelArg(channel)
+	cID := c.ChannelArg(channel)
 	if cID == 0 {
 		return nil
 	}
@@ -651,7 +651,7 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 			cArg = args[0].Interface()
 		}
 
-		cID := c.channelArg(cArg)
+		cID := c.ChannelArg(cArg)
 		mID := ToInt64(args[1].Interface())
 
 		if cID == 0 {

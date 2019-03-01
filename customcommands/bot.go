@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/keylock"
+	"github.com/jonas747/yagpdb/common/multiratelimit"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
@@ -21,12 +22,21 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"math/rand"
 	"regexp"
+	"runtime/debug"
 	"strings"
 	"time"
 	"unicode/utf8"
 )
 
-var CCExecLock = keylock.NewKeyLock()
+var (
+	CCExecLock        = keylock.NewKeyLock()
+	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter(0.1, 10)
+)
+
+type DelayedRunLimitKey struct {
+	GuildID   int64
+	ChannelID int64
+}
 
 type CCExecKey struct {
 	GuildID int64
@@ -54,6 +64,16 @@ func (p *Plugin) BotInit() {
 	}, nil)
 
 	scheduledevents2.RegisterHandler("cc_next_run", NextRunScheduledEvent{}, handleNextRunScheduledEVent)
+	scheduledevents2.RegisterHandler("cc_delayed_run", DelayedRunCCData{}, handleDelayedRunCC)
+}
+
+type DelayedRunCCData struct {
+	ChannelID int64       `json:"channel_id"`
+	CmdID     int64       `json:"cmd_id"`
+	UserData  interface{} `json:"data"`
+
+	Message *discordgo.Message
+	Member  *dstate.MemberState
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -128,10 +148,57 @@ func StringCommands(ccs []*models.CustomCommand) string {
 			out += fmt.Sprintf("`#%3d: `%s\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String())
 		default:
 			out += fmt.Sprintf("`#%3d:` `%s`: %s\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String())
-	    }
+		}
 	}
 
 	return out
+}
+
+func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	dataCast := data.(*DelayedRunCCData)
+	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, dataCast.CmdID)).OneG(context.Background())
+	if err != nil {
+		return false, errors.Wrap(err, "find_command")
+	}
+
+	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
+		log.WithField("guild", cmd.GuildID).Warn("[cc] went above delayed cc run ratelimit")
+		return false, nil
+	}
+
+	gs := bot.State.Guild(true, evt.GuildID)
+	if gs == nil {
+		// in case the bot left in the meantime
+		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
+			return false, nil
+		} else if err != nil {
+			log.WithError(err).Error("failed checking if bot is on guild")
+		}
+
+		return true, nil
+	}
+
+	cs := gs.Channel(true, dataCast.ChannelID)
+	if cs == nil {
+		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
+		gs.RLock()
+		if gs.Guild.Unavailable {
+			gs.RUnlock()
+			return true, nil
+		}
+		gs.RUnlock()
+		return false, nil
+	}
+
+	tmplCtx := templates.NewContext(gs, cs, dataCast.Member)
+	if dataCast.Message != nil {
+		tmplCtx.Msg = dataCast.Message
+		tmplCtx.Data["Message"] = dataCast.Message
+		tmplCtx.Data["ExecData"] = dataCast.UserData
+	}
+
+	err = ExecuteCustomCommand(cmd, tmplCtx)
+	return false, err
 }
 
 func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
@@ -294,6 +361,19 @@ func ExecuteCustomCommandFromMessage(cmd *models.CustomCommand, member *dstate.M
 
 // func ExecuteCustomCommand(cmd *models.CustomCommand, cmdArgs []string, stripped string, s *discordgo.Session, m *discordgo.MessageCreate) (resp string, tmplCtx *templates.Context, err error) {
 func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context) error {
+	defer func() {
+		if err := recover(); err != nil {
+			actualErr := ""
+			switch t := err.(type) {
+			case error:
+				actualErr = t.Error()
+			case string:
+				actualErr = t
+			}
+			onExecError(errors.New(actualErr), tmplCtx, true)
+		}
+	}()
+
 	csCop := tmplCtx.CS.Copy(true, false)
 	f := log.WithFields(log.Fields{
 		"trigger":      cmd.TextTrigger,
@@ -309,7 +389,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	}
 	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 	if lockHandle == -1 {
-		f.Warn("Exceeded max lock attempts for cc")
+		f.Warn("[cc] Exceeded max lock attempts for cc")
 		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
 		return nil
 	}
@@ -317,7 +397,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	defer CCExecLock.Unlock(lockKey, lockHandle)
 
 	// pick a response and execute it
-	f.Info("Custom command triggered")
+	f.Info("[cc] Custom command triggered")
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
@@ -361,6 +441,20 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	}
 
 	return nil
+}
+
+func onExecError(err error, tmplCtx *templates.Context, logStack bool) {
+	l := log.WithField("guild", tmplCtx.GS.ID).WithError(err)
+	if logStack {
+		stack := string(debug.Stack())
+		l = l.WithField("stack", stack)
+	}
+
+	l.Error("[cc] Error executing custom command")
+	out := "\nAn error caused the execution of the custom command template to stop:\n"
+	out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+
+	common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
 }
 
 // CheckMatch returns true if the given cmd matches, as well as the arguments
