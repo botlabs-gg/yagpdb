@@ -39,30 +39,29 @@ func (p *Plugin) StartFeed() {
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
-	feedLock.Lock()
-
-	if fastFeed == nil {
-		// feed not running, do nothing
-		feedLock.Unlock()
-		wg.Done()
-		return
-	}
-
 	wg.Add(1)
 
-	ff := fastFeed
-	sf := slowFeed
+	feedLock.Lock()
 
-	go func() {
-		ff.StopChan <- wg
-	}()
-	go func() {
-		sf.StopChan <- wg
-	}()
+	if fastFeed != nil {
+		ff := fastFeed
+		go func() {
+			ff.StopChan <- wg
+		}()
+		fastFeed = nil
+	} else {
+		wg.Done()
+	}
 
-	// make sure we don't send the stop singal twice
-	slowFeed = nil
-	fastFeed = nil
+	if slowFeed != nil {
+		sf := slowFeed
+		go func() {
+			sf.StopChan <- wg
+		}()
+		slowFeed = nil
+	} else {
+		wg.Done()
+	}
 
 	feedLock.Unlock()
 }
@@ -80,11 +79,15 @@ func setupClient() *reddit.Client {
 func (p *Plugin) runBot() {
 	redditClient := setupClient()
 	feedLock.Lock()
-	fastFeed = NewPostFetcher(redditClient, false, NewPostHandler(false))
-	slowFeed = NewPostFetcher(redditClient, true, NewPostHandler(true))
 
-	go fastFeed.Run()
+	if os.Getenv("YAGPDB_REDDIT_FAST_FEED_DISABLED") == "" {
+		fastFeed = NewPostFetcher(redditClient, false, NewPostHandler(false))
+		go fastFeed.Run()
+	}
+
+	slowFeed = NewPostFetcher(redditClient, true, NewPostHandler(true))
 	go slowFeed.Run()
+
 	feedLock.Unlock()
 }
 
