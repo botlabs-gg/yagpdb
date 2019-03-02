@@ -52,6 +52,10 @@ type Config struct {
 	ReportChannel string `valid:"channel,true"`
 	LogUnbans     bool
 	LogBans       bool
+
+	GiveRoleCmdEnabled bool
+	GiveRoleCmdModlog  bool
+	GiveRoleCmdRoles   pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 }
 
 func (c *Config) IntMuteRole() (r int64) {

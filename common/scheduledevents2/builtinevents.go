@@ -78,6 +78,13 @@ func ScheduleRemoveRole(ctx context.Context, guildID, userID, roleID int64, when
 	return nil
 }
 
+func CancelRemoveRole(ctx context.Context, guildID, userID, roleID int64) error {
+	_, err := models.ScheduledEvents(qm.Where("event_name='std_remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ? AND processed = false",
+		guildID, userID, roleID)).DeleteAll(ctx, common.PQ)
+
+	return err
+}
+
 func handleRemoveMemberRole(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
 	dataCast := data.(*RmoveRoleData)
 	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
