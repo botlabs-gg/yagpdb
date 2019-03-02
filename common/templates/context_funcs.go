@@ -560,16 +560,10 @@ func (c *Context) tmplDelResponse(args ...interface{}) string {
 }
 
 func (c *Context) tmplDelTrigger(args ...interface{}) string {
-	dur := 10
-	if len(args) > 0 {
-		dur = int(ToInt64(args[0]))
-	}
-	if dur > 86400 {
-		dur = 86400
+	if c.Msg != nil {
+		return c.tmplDelMessage(c.Msg.ChannelID, c.Msg.ID, args...)
 	}
 
-	c.DelTriggerDelay = dur
-	c.DelTrigger = true
 	return ""
 }
 

@@ -417,10 +417,6 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		common.BotSession.ChannelMessageSendEmbed(tmplCtx.CS.ID, v)
 	}
 
-	if tmplCtx.DelTrigger && tmplCtx.Msg != nil {
-		templates.MaybeScheduledDeleteMessage(tmplCtx.GS.ID, tmplCtx.CS.ID, tmplCtx.Msg.ID, tmplCtx.DelTriggerDelay)
-	}
-
 	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
 		m, err := common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
 		if err != nil {

@@ -96,9 +96,7 @@ type Context struct {
 	MentionRoleNames []string
 
 	DelResponse bool
-	DelTrigger  bool
 
-	DelTriggerDelay  int
 	DelResponseDelay int
 
 	Counters map[string]int
