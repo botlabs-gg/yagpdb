@@ -30,7 +30,7 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 	return dict, nil
 }
 
-func StringKeyDictionary(values ...interface{}) (*SDict, error) {
+func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
@@ -45,7 +45,7 @@ func StringKeyDictionary(values ...interface{}) (*SDict, error) {
 		dict[s] = values[i+1]
 	}
 
-	return &SDict{dict}, nil
+	return SDict(dict), nil
 }
 
 func CreateSlice(values ...interface{}) ([]interface{}, error) {
@@ -64,8 +64,8 @@ func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 
 	var m map[string]interface{}
 	switch t := values[0].(type) {
-	case *SDict:
-		m = t.m
+	case SDict:
+		m = t
 	case map[string]interface{}:
 		m = t
 	default:
@@ -73,7 +73,7 @@ func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 		if err != nil {
 			return nil, err
 		}
-		m = dict.m
+		m = dict
 	}
 
 	encoded, err := json.Marshal(m)

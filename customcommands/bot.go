@@ -24,6 +24,7 @@ import (
 	"math/rand"
 	"regexp"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -392,6 +393,8 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 			onExecError(errors.New(actualErr), tmplCtx, true)
 		}
 	}()
+
+	tmplCtx.Name = "CC #" + strconv.Itoa(int(cmd.LocalID))
 
 	csCop := tmplCtx.CS.Copy(true, false)
 	f := log.WithFields(log.Fields{

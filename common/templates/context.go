@@ -82,8 +82,9 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 }
 
 type Context struct {
-	GS *dstate.GuildState
-	CS *dstate.ChannelState
+	Name string
+	GS   *dstate.GuildState
+	CS   *dstate.ChannelState
 
 	MS  *dstate.MemberState
 	Msg *discordgo.Message
@@ -164,7 +165,7 @@ func (c *Context) setupBaseData() {
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
-	tmpl := template.New("")
+	tmpl := template.New(c.Name)
 	tmpl.Funcs(StandardFuncMap)
 	tmpl.Funcs(c.ContextFuncs)
 
@@ -344,19 +345,17 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	}
 }
 
-type SDict struct {
-	m map[string]interface{}
+type SDict map[string]interface{}
+
+func (d SDict) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d)
 }
 
-func (d *SDict) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.m)
-}
-
-func (d *SDict) Set(key string, value interface{}) string {
-	d.m[key] = value
+func (d SDict) Set(key string, value interface{}) string {
+	d[key] = value
 	return ""
 }
 
-func (d *SDict) Get(key string) interface{} {
-	return d.m[key]
+func (d SDict) Get(key string) interface{} {
+	return d[key]
 }
