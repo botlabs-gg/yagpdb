@@ -61,8 +61,10 @@ var (
 		"escapeEveryone":     tmplEscapeEveryone,
 		"escapeEveryoneHere": tmplEscapeEveryoneHere,
 
-		"humanizeDurationHours": tmplHumanizeDurationHours,
-		"humanizeTimeSinceDays": tmplHumanizeTimeSinceDays,
+		"humanizeDurationHours":   tmplHumanizeDurationHours,
+		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
+		"humanizeDurationSeconds": tmplHumanizeDurationSeconds,
+		"humanizeTimeSinceDays":   tmplHumanizeTimeSinceDays,
 	}
 
 	contextSetupFuncs = []ContextSetupFunc{
@@ -154,6 +156,10 @@ func (c *Context) setupBaseData() {
 		c.Data["User"] = c.MS.DGoUser()
 		c.Data["user"] = c.Data["User"]
 	}
+
+	c.Data["TimeSecond"] = time.Second
+	c.Data["TimeMinute"] = time.Minute
+	c.Data["TimeHour"] = time.Hour
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {

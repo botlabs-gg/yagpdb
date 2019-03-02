@@ -376,6 +376,8 @@ func tmplToInt(from interface{}) int {
 	case string:
 		parsed, _ := strconv.ParseInt(t, 10, 64)
 		return int(parsed)
+	case time.Duration:
+		return int(t)
 	default:
 		return 0
 	}
@@ -402,6 +404,8 @@ func ToInt64(from interface{}) int64 {
 	case string:
 		parsed, _ := strconv.ParseInt(t, 10, 64)
 		return parsed
+	case time.Duration:
+		return int64(t)
 	default:
 		return 0
 	}
@@ -453,6 +457,8 @@ func ToFloat64(from interface{}) float64 {
 	case string:
 		parsed, _ := strconv.ParseFloat(t, 64)
 		return parsed
+	case time.Duration:
+		return float64(t)
 	default:
 		return 0
 	}
@@ -580,6 +586,14 @@ func tmplEscapeEveryoneHere(in string) string {
 
 func tmplHumanizeDurationHours(in time.Duration) string {
 	return common.HumanizeDuration(common.DurationPrecisionHours, in)
+}
+
+func tmplHumanizeDurationMinutes(in time.Duration) string {
+	return common.HumanizeDuration(common.DurationPrecisionMinutes, in)
+}
+
+func tmplHumanizeDurationSeconds(in time.Duration) string {
+	return common.HumanizeDuration(common.DurationPrecisionSeconds, in)
 }
 
 func tmplHumanizeTimeSinceDays(in time.Time) string {
