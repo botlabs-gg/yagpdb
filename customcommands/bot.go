@@ -191,6 +191,14 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		return false, nil
 	}
 
+	// attempt to get up to date member information
+	if dataCast.Member != nil {
+		updatedMS, _ := bot.GetMember(gs.ID, dataCast.Member.ID)
+		if updatedMS != nil {
+			dataCast.Member = updatedMS
+		}
+	}
+
 	tmplCtx := templates.NewContext(gs, cs, dataCast.Member)
 	if dataCast.Message != nil {
 		tmplCtx.Msg = dataCast.Message
