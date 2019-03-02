@@ -13,57 +13,69 @@ import "testing"
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigs)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriods)
 	t.Run("ServerStatsPeriods", testServerStatsPeriods)
 }
 
 func TestDelete(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsDelete)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsDelete)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsDelete)
 }
 
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsQueryDeleteAll)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsQueryDeleteAll)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsQueryDeleteAll)
 }
 
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsSliceDeleteAll)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsSliceDeleteAll)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsSliceDeleteAll)
 }
 
 func TestExists(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsExists)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsExists)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsExists)
 }
 
 func TestFind(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsFind)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsFind)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsFind)
 }
 
 func TestBind(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsBind)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsBind)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsBind)
 }
 
 func TestOne(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsOne)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsOne)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsOne)
 }
 
 func TestAll(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsAll)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsAll)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsAll)
 }
 
 func TestCount(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsCount)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsCount)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsCount)
 }
 
 func TestInsert(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsInsert)
 	t.Run("ServerStatsConfigs", testServerStatsConfigsInsertWhitelist)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsInsert)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsInsertWhitelist)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsInsert)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsInsertWhitelist)
 }
@@ -110,25 +122,30 @@ func TestToManyRemove(t *testing.T) {}
 
 func TestReload(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsReload)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsReload)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsReload)
 }
 
 func TestReloadAll(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsReloadAll)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsReloadAll)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsReloadAll)
 }
 
 func TestSelect(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsSelect)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsSelect)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsSelect)
 }
 
 func TestUpdate(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsUpdate)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsUpdate)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsUpdate)
 }
 
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsSliceUpdateAll)
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsSliceUpdateAll)
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsSliceUpdateAll)
 }

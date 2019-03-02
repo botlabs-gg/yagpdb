@@ -4,9 +4,11 @@
 package models
 
 var TableNames = struct {
-	ServerStatsConfigs string
-	ServerStatsPeriods string
+	ServerStatsConfigs       string
+	ServerStatsMemberPeriods string
+	ServerStatsPeriods       string
 }{
-	ServerStatsConfigs: "server_stats_configs",
-	ServerStatsPeriods: "server_stats_periods",
+	ServerStatsConfigs:       "server_stats_configs",
+	ServerStatsMemberPeriods: "server_stats_member_periods",
+	ServerStatsPeriods:       "server_stats_periods",
 }

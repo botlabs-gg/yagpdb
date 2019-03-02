@@ -11,6 +11,7 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -268,7 +269,16 @@ func InvalidateCache(guildID, userID int64) {
 
 func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {
 	return func(evt *eventsystem.EventData) {
-		go inner(evt)
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					stack := string(debug.Stack())
+					log.WithField(log.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+				}
+			}()
+
+			inner(evt)
+		}()
 	}
 }
 

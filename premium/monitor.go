@@ -87,12 +87,15 @@ func updatePremiumServers(ctx context.Context) error {
 	}
 
 	rCmd := []string{RedisKeyPremiumGuildsTmp}
+	rCmdLastTimesPremium := []string{RedisKeyPremiumGuildLastActive}
+	now := strconv.FormatInt(time.Now().Unix(), 10)
 
 	for _, slot := range slots {
 		strGID := strconv.FormatInt(slot.GuildID.Int64, 10)
 		strUserID := strconv.FormatInt(slot.UserID, 10)
 
 		rCmd = append(rCmd, strGID, strUserID)
+		rCmdLastTimesPremium = append(rCmdLastTimesPremium, now, strGID)
 	}
 
 	err = common.RedisPool.Do(radix.Pipeline(
@@ -100,6 +103,10 @@ func updatePremiumServers(ctx context.Context) error {
 		radix.Cmd(nil, "HMSET", rCmd...),
 		radix.Cmd(nil, "RENAME", RedisKeyPremiumGuildsTmp, RedisKeyPremiumGuilds),
 	))
+	if err != nil {
+		return errors.WithMessage(err, "radix.Pipeline")
+	}
 
-	return errors.WithMessage(err, "radix.Pipeline")
+	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", rCmdLastTimesPremium...))
+	return errors.WithMessage(err, "last_premium_times")
 }

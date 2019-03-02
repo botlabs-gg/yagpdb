@@ -18,13 +18,13 @@ type Config struct {
 	KickCmdRoles         pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	DeleteMessagesOnKick bool
 	KickReasonOptional   bool
-	KickMessage          string `valid:"template,1900"`
+	KickMessage          string `valid:"template,5000"`
 
 	// Ban
 	BanEnabled        bool
 	BanCmdRoles       pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	BanReasonOptional bool
-	BanMessage        string `valid:"template,1900"`
+	BanMessage        string `valid:"template,5000"`
 
 	// Mute/unmute
 	MuteEnabled          bool
@@ -35,12 +35,15 @@ type Config struct {
 	MuteManageRole       bool
 	MuteRemoveRoles      pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	MuteIgnoreChannels   pq.Int64Array `gorm:"type:bigint[]" valid:"channel,true"`
+	MuteMessage          string        `valid:"template,5000"`
+	UnmuteMessage        string        `valid:"template,5000"`
 
 	// Warn
 	WarnCommandsEnabled    bool
 	WarnCmdRoles           pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	WarnIncludeChannelLogs bool
 	WarnSendToModlog       bool
+	WarnMessage            string `valid:"template,5000"`
 
 	// Misc
 	CleanEnabled  bool
@@ -49,6 +52,10 @@ type Config struct {
 	ReportChannel string `valid:"channel,true"`
 	LogUnbans     bool
 	LogBans       bool
+
+	GiveRoleCmdEnabled bool
+	GiveRoleCmdModlog  bool
+	GiveRoleCmdRoles   pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 }
 
 func (c *Config) IntMuteRole() (r int64) {

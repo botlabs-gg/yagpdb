@@ -362,6 +362,22 @@ func IsMemberAbove(gs *dstate.GuildState, ms1 *dstate.MemberState, ms2 *dstate.M
 	return dutil.IsRoleAbove(highestMS1, highestMS2)
 }
 
+// IsMemberAboveRole returns wether ms is above role
+// assumes gs is locked, otherwise race conditions will occur
+func IsMemberAboveRole(gs *dstate.GuildState, ms1 *dstate.MemberState, role *discordgo.Role) bool {
+	if ms1.ID == gs.Guild.OwnerID {
+		return true
+	}
+
+	highestMSRole := MemberHighestRole(gs, ms1)
+	if highestMSRole == nil {
+		// can't be above the target role when we have no roles
+		return false
+	}
+
+	return dutil.IsRoleAbove(highestMSRole, role)
+}
+
 // MemberHighestRole returns the highest role for ms, assumes gs is rlocked, otherwise race conditions will occur
 func MemberHighestRole(gs *dstate.GuildState, ms *dstate.MemberState) *discordgo.Role {
 	var highest *discordgo.Role

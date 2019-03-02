@@ -11,15 +11,15 @@ type InviteSource struct {
 
 var DiscordInviteSource = &InviteSource{
 	Name:  "Discord",
-	Regex: regexp.MustCompile(`(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`),
+	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`),
 }
 
 var ThirdpartyDiscordSites = []*InviteSource{
-	&InviteSource{Name: "discord.me", Regex: regexp.MustCompile(`discord\.me\/.+`)},
-	&InviteSource{Name: "invite.gg", Regex: regexp.MustCompile(`invite\.gg\/.+`)},
-	&InviteSource{Name: "discord.io", Regex: regexp.MustCompile(`discord\.io\/.+`)},
-	&InviteSource{Name: "disboard.org", Regex: regexp.MustCompile(`disboard\.org\/server\/join\/.+`)},
-	&InviteSource{Name: "discordy.com", Regex: regexp.MustCompile(`discordy\.com\/server\.php`)},
+	&InviteSource{Name: "discord.me", Regex: regexp.MustCompile(`(?i)discord\.me\/.+`)},
+	&InviteSource{Name: "invite.gg", Regex: regexp.MustCompile(`(?i)invite\.gg\/.+`)},
+	&InviteSource{Name: "discord.io", Regex: regexp.MustCompile(`(?i)discord\.io\/.+`)},
+	&InviteSource{Name: "disboard.org", Regex: regexp.MustCompile(`(?i)disboard\.org\/server\/join\/.+`)},
+	&InviteSource{Name: "discordy.com", Regex: regexp.MustCompile(`(?i)discordy\.com\/server\.php`)},
 
 	// regexp.MustCompile(`disco\.gg\/.+`), Youc can't actually link to specific servers here can you, so not needed for now?
 }

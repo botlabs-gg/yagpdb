@@ -8,5 +8,7 @@ import "testing"
 func TestUpsert(t *testing.T) {
 	t.Run("ServerStatsConfigs", testServerStatsConfigsUpsert)
 
+	t.Run("ServerStatsMemberPeriods", testServerStatsMemberPeriodsUpsert)
+
 	t.Run("ServerStatsPeriods", testServerStatsPeriodsUpsert)
 }

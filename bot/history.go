@@ -23,6 +23,7 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, e
 	// check state
 	msgBuf := make([]*WrappedMessage, limit)
 
+
 	cs := State.Channel(true, channelID)
 	if cs == nil {
 		return []*WrappedMessage{}, nil
@@ -30,13 +31,14 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, e
 	cs.Owner.RLock()
 
 	n := len(msgBuf) - 1
-	for i := len(cs.Messages) - 1; i >= 0; i-- {
+	for i := len(cs.Messages) - 1; i >= 0; i-- {		
 		if !deleted {
 			if cs.Messages[i].Deleted {
 				continue
 			}
 		}
 		m := cs.Messages[i].Copy(true)
+
 		msgBuf[n] = &WrappedMessage{Message: m}
 		if cs.Messages[i].Deleted {
 			msgBuf[n].Deleted = true

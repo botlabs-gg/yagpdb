@@ -62,8 +62,10 @@ var (
 		"escapeEveryone":     tmplEscapeEveryone,
 		"escapeEveryoneHere": tmplEscapeEveryoneHere,
 
-		"humanizeDurationHours": tmplHumanizeDurationHours,
-		"humanizeTimeSinceDays": tmplHumanizeTimeSinceDays,
+		"humanizeDurationHours":   tmplHumanizeDurationHours,
+		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
+		"humanizeDurationSeconds": tmplHumanizeDurationSeconds,
+		"humanizeTimeSinceDays":   tmplHumanizeTimeSinceDays,
 	}
 
 	contextSetupFuncs = []ContextSetupFunc{
@@ -97,9 +99,7 @@ type Context struct {
 	MentionRoleNames []string
 
 	DelResponse bool
-	DelTrigger  bool
 
-	DelTriggerDelay  int
 	DelResponseDelay int
 
 	Counters map[string]int
@@ -157,6 +157,10 @@ func (c *Context) setupBaseData() {
 		c.Data["User"] = c.MS.DGoUser()
 		c.Data["user"] = c.Data["User"]
 	}
+
+	c.Data["TimeSecond"] = time.Second
+	c.Data["TimeMinute"] = time.Minute
+	c.Data["TimeHour"] = time.Hour
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
@@ -204,8 +208,10 @@ func (c *Context) Execute(source string) (string, error) {
 	var buf bytes.Buffer
 	w := LimitWriter(&buf, 25000)
 
+	started := time.Now()
 	err = parsed.Execute(w, c.Data)
 
+	dur := time.Since(started)
 	if c.FixedOutput != "" {
 		result := common.EscapeSpecialMentionsConditional(c.FixedOutput, c.MentionEveryone, c.MentionHere, c.MentionRoles)
 		return result, nil
@@ -217,7 +223,7 @@ func (c *Context) Execute(source string) (string, error) {
 			err = errors.New("response grew too big (>25k)")
 		}
 
-		return result, errors.WithMessage(err, "Failed executing template")
+		return result, errors.WithMessage(err, "Failed executing template (dur = "+dur.String()+")")
 	}
 
 	return result, nil
@@ -234,6 +240,14 @@ func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 	c.Counters[key] = current
 
 	return current > limit
+}
+
+func (c *Context) IncreaseCheckGenericAPICall() bool {
+	return c.IncreaseCheckCallCounter("api_call", 100)
+}
+
+func (c *Context) IncreaseCheckStateLock() bool {
+	return c.IncreaseCheckCallCounter("state_lock", 500)
 }
 
 func baseContextFuncs(c *Context) {

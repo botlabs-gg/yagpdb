@@ -1,8 +1,10 @@
 package templates
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -15,6 +17,7 @@ import (
 )
 
 var ErrTooManyCalls = errors.New("Too many calls to this function")
+var ErrTooManyAPICalls = errors.New("Too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.MS == nil {
@@ -44,7 +47,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-func (c *Context) channelArg(v interface{}) int64 {
+func (c *Context) ChannelArg(v interface{}) int64 {
 
 	c.GS.RLock()
 	defer c.GS.RUnlock()
@@ -99,12 +102,11 @@ func (c *Context) channelArg(v interface{}) int64 {
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
 	return func(channel interface{}, msg interface{}) interface{} {
-
-		if c.IncreaseCheckCallCounter("send_message", 4) {
+		if c.IncreaseCheckGenericAPICall() {
 			return ""
 		}
 
-		cid := c.channelArg(channel)
+		cid := c.ChannelArg(channel)
 		if cid == 0 {
 			return ""
 		}
@@ -133,11 +135,11 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 
 func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
 	return func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
-		if c.IncreaseCheckCallCounter("edit_message", 5) {
-			return "", ErrTooManyCalls
+		if c.IncreaseCheckGenericAPICall() {
+			return "", ErrTooManyAPICalls
 		}
 
-		cid := c.channelArg(channel)
+		cid := c.ChannelArg(channel)
 		if cid == 0 {
 			return "", errors.New("Unknown channel")
 		}
@@ -176,7 +178,7 @@ func (c *Context) tmplMentionHere() string {
 }
 
 func (c *Context) tmplMentionRoleID(roleID interface{}) string {
-	if c.IncreaseCheckCallCounter("mention_role", 100) {
+	if c.IncreaseCheckStateLock() {
 		return ""
 	}
 
@@ -206,7 +208,7 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 }
 
 func (c *Context) tmplMentionRoleName(role string) string {
-	if c.IncreaseCheckCallCounter("mention_role", 100) {
+	if c.IncreaseCheckStateLock() {
 		return ""
 	}
 
@@ -229,10 +231,6 @@ func (c *Context) tmplMentionRoleName(role string) string {
 }
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) || c.MS == nil {
-		return false
-	}
-
 	role := ToInt64(roleID)
 	if role == 0 {
 		return false
@@ -242,9 +240,9 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	return contains
 }
 
-func (c *Context) tmplHasRoleName(name string) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) || c.MS == nil {
-		return false
+func (c *Context) tmplHasRoleName(name string) (bool, error) {
+	if c.IncreaseCheckStateLock() {
+		return false, ErrTooManyCalls
 	}
 
 	c.GS.RLock()
@@ -253,15 +251,19 @@ func (c *Context) tmplHasRoleName(name string) bool {
 	for _, r := range c.GS.Guild.Roles {
 		if strings.EqualFold(r.Name, name) {
 			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
-				return true
+				c.GS.RUnlock()
+				return true, nil
 			}
 
-			return false
+			c.GS.RUnlock()
+			return false, nil
+
 		}
 	}
 
 	// Role not found, default to false
-	return false
+	c.GS.RUnlock()
+	return false, nil
 }
 
 func targetUserID(input interface{}) int64 {
@@ -274,7 +276,7 @@ func targetUserID(input interface{}) int64 {
 }
 
 func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
+	if c.IncreaseCheckStateLock() {
 		return false
 	}
 
@@ -300,7 +302,7 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 }
 
 func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
-	if c.IncreaseCheckCallCounter("has_role", 200) {
+	if c.IncreaseCheckStateLock() {
 		return false
 	}
 
@@ -334,7 +336,7 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 }
 
 func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
 
@@ -365,7 +367,7 @@ func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string 
 }
 
 func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
 
@@ -406,9 +408,14 @@ func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
 	return ""
 }
 
-func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	targetID := targetUserID(target)
@@ -421,25 +428,38 @@ func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}) string 
 		return ""
 	}
 
-	// Check to see if we can save a API request here
-	c.GS.RLock()
-	ms := c.GS.Member(false, targetID)
-	hasRole := true
-	if ms != nil && ms.MemberSet {
-		hasRole = common.ContainsInt64Slice(ms.Roles, role)
-	}
-	c.GS.RUnlock()
+	// Check to see if we can save a API request here, if this isn't delayed
+	if delay <= 0 {
+		c.GS.RLock()
+		ms := c.GS.Member(false, targetID)
+		hasRole := true
+		if ms != nil && ms.MemberSet {
+			hasRole = common.ContainsInt64Slice(ms.Roles, role)
+		}
+		c.GS.RUnlock()
 
-	if hasRole {
+		if !hasRole {
+			return ""
+		}
+	}
+
+	if delay > 0 {
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
 		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
 	}
 
 	return ""
 }
 
-func (c *Context) tmplTakeRoleName(target interface{}, name string) string {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
+func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs ...interface{}) string {
+	if c.IncreaseCheckGenericAPICall() {
 		return ""
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	targetID := targetUserID(target)
@@ -453,16 +473,18 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string) string {
 		if strings.EqualFold(r.Name, name) {
 			role = r.ID
 
-			// Maybe save a api request
-			ms := c.GS.Member(false, targetID)
-			hasRole := true
-			if ms != nil && ms.MemberSet {
-				hasRole = common.ContainsInt64Slice(ms.Roles, role)
-			}
+			// Maybe save a api request, but only if this is not delayed
+			if delay <= 0 {
+				ms := c.GS.Member(false, targetID)
+				hasRole := true
+				if ms != nil && ms.MemberSet {
+					hasRole = common.ContainsInt64Slice(ms.Roles, role)
+				}
 
-			if !hasRole {
-				c.GS.RUnlock()
-				return ""
+				if !hasRole {
+					c.GS.RUnlock()
+					return ""
+				}
 			}
 
 			break
@@ -474,14 +496,18 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string) string {
 		return ""
 	}
 
-	common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+	if delay > 0 {
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
+		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+	}
 
 	return ""
 }
 
 func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
-	if c.IncreaseCheckCallCounter("add_role", 10) {
-		return "", ErrTooManyCalls
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
 	}
 
 	if c.MS == nil {
@@ -501,9 +527,14 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 	return "", nil
 }
 
-func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
-	if c.IncreaseCheckCallCounter("remove_role", 10) {
-		return "", ErrTooManyCalls
+func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	if c.MS == nil {
@@ -515,9 +546,10 @@ func (c *Context) tmplRemoveRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleRemove(c.GS.ID, c.MS.ID, rid)
-	if err != nil {
-		return "", err
+	if delay > 0 {
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
+		common.BotSession.GuildMemberRoleRemove(c.GS.ID, c.MS.ID, rid)
 	}
 
 	return "", nil
@@ -538,21 +570,15 @@ func (c *Context) tmplDelResponse(args ...interface{}) string {
 }
 
 func (c *Context) tmplDelTrigger(args ...interface{}) string {
-	dur := 10
-	if len(args) > 0 {
-		dur = int(ToInt64(args[0]))
-	}
-	if dur > 86400 {
-		dur = 86400
+	if c.Msg != nil {
+		return c.tmplDelMessage(c.Msg.ChannelID, c.Msg.ID, args...)
 	}
 
-	c.DelTriggerDelay = dur
-	c.DelTrigger = true
 	return ""
 }
 
 func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}) string {
-	cID := c.channelArg(channel)
+	cID := c.ChannelArg(channel)
 	if cID == 0 {
 		return ""
 	}
@@ -574,7 +600,7 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 }
 
 func (c *Context) tmplGetMessage(channel, msgID interface{}) *discordgo.Message {
-	cID := c.channelArg(channel)
+	cID := c.ChannelArg(channel)
 	if cID == 0 {
 		return nil
 	}
@@ -633,7 +659,7 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 			cArg = args[0].Interface()
 		}
 
-		cID := c.channelArg(cArg)
+		cID := c.ChannelArg(cArg)
 		mID := ToInt64(args[1].Interface())
 
 		if cID == 0 {

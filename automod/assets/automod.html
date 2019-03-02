@@ -319,6 +319,9 @@ table{
     <select id="automod-roledropdown-multi-template" data-plugin-multiselect class="multiselect form-control" multiple="multiple">
         {{roleOptionsMulti .ActiveGuild.Roles nil nil}}
     </select>
+    <select id="automod-roledropdown-single-template" class="form-control">
+        {{roleOptions .ActiveGuild.Roles nil}}
+    </select>
     <select id="automod-channel-multi-template" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
         {{textChannelOptionsMulti .ActiveGuild.Channels nil}}
     </select>
@@ -523,6 +526,9 @@ $(function(){
         case "multi_role":
             cloneDropdown(column, "#automod-roledropdown-multi-template", key, true);
             break;
+        case "role":
+            cloneDropdown(column, "#automod-roledropdown-single-template", key, true);
+            break;
         case "multi_channel":
             cloneDropdown(column, "#automod-channel-multi-template", key, true);
             break;
@@ -592,6 +598,10 @@ $(function(){
                     {{else if eq .Kind "multi_role"}}
                     <select name="{{$name}}" data-plugin-multiselect class="multiselect form-control" multiple="multiple">
                         {{roleOptionsMulti $dot.dot.ActiveGuild.Roles nil (index $dot.settings .Key)}}
+                    </select>
+                    {{else if eq .Kind "role"}}
+                    <select name="{{$name}}" class="form-control" >
+                        {{roleOptions $dot.dot.ActiveGuild.Roles nil (index $dot.settings .Key)}}
                     </select>
                     {{else if eq .Kind "multi_channel"}}
                     <select name="{{$name}}" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>

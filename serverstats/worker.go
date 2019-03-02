@@ -5,16 +5,21 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
+	"github.com/lib/pq"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
+)
+
+const (
+	RedisKeyLastHourlyRan = "serverstats_last_hourly_worker_ran"
 )
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
@@ -30,17 +35,17 @@ func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 func (p *Plugin) UpdateStatsLoop() {
 
 	ProcessTempStats(true)
-	UpdateOldStats()
+	p.RunCleanup()
 
 	tempTicker := time.NewTicker(time.Minute)
-	longTicker := time.NewTicker(time.Hour)
+	cleanupTicker := time.NewTicker(time.Hour)
 
 	for {
 		select {
 		case <-tempTicker.C:
 			ProcessTempStats(false)
-		case <-longTicker.C:
-			go UpdateOldStats()
+		case <-cleanupTicker.C:
+			go p.RunCleanup()
 		case wg := <-p.stopStatsLoop:
 			wg.Done()
 			return
@@ -48,85 +53,63 @@ func (p *Plugin) UpdateStatsLoop() {
 	}
 }
 
+func (p *Plugin) getLastTimeRanHourly() time.Time {
+	var last int64
+	err := common.RedisPool.Do(radix.Cmd(&last, "GET", RedisKeyLastHourlyRan))
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed getting last hourly worker run time")
+	}
+	return time.Unix(last, 0)
+}
+
 // ProcessTempStats moves stats from redis to postgres batched up
 func ProcessTempStats(full bool) {
 
 	started := time.Now()
 
-	var strGuilds []string
-	if full {
-		err := common.RedisPool.Do(radix.Cmd(&strGuilds, "SMEMBERS", "connected_guilds"))
-		if err != nil {
-			log.WithError(err).Error("Failed retrieving connected guilds")
-		}
-	} else {
-		var exists bool
-		if common.RedisPool.Do(radix.Cmd(&exists, "EXISTS", "serverstats_active_guilds")); !exists {
-			return // no guilds to process
-		}
-
-		err := common.RedisPool.Do(radix.Cmd(nil, "RENAME", "serverstats_active_guilds", "serverstats_active_guilds_processing"))
-		if err != nil {
-			log.WithError(err).Error("Failed renaming temp stats")
-			return
-		}
-
-		err = common.RedisPool.Do(radix.Cmd(&strGuilds, "SMEMBERS", "serverstats_active_guilds_processing"))
-		if err != nil {
-			log.WithError(err).Error("Failed retrieving active guilds")
-		}
-
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", "serverstats_active_guilds_processing"))
-	}
-
-	if len(strGuilds) < 1 {
-		log.Info("Skipped updating stats, no activity")
+	// first retrieve all the guilds that should be processed
+	activeGuilds, err := getActiveServersList("serverstats_active_guilds", full)
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed retrieving active guilds")
 		return
 	}
 
-	for _, strGID := range strGuilds {
-		g, _ := strconv.ParseInt(strGID, 10, 64)
+	if len(activeGuilds) < 1 {
+		log.Info("[serverstats] skipped moving temp message stats to postgres, no activity")
+		return // no guilds to process
+	}
 
+	for _, g := range activeGuilds {
 		err := UpdateGuildStats(g)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"guild":      g,
 				log.ErrorKey: err,
-			}).Error("Failed updating stats")
+			}).Error("[serverstats] Failed updating stats")
 		}
 	}
 
 	log.WithFields(log.Fields{
 		"duration":    time.Since(started).Seconds(),
-		"num_servers": len(strGuilds),
-	}).Info("Updated temp stats")
+		"num_servers": len(activeGuilds),
+	}).Info("[serverstats] Updated temp stats")
 }
 
 // Updates the stats on a specific guild, removing expired stats
 func UpdateGuildStats(guildID int64) error {
 	now := time.Now()
-	minAgo := now.Add(time.Minute)
+	minAgo := now.Add(-time.Minute)
 	unixminAgo := minAgo.Unix()
 
-	yesterday := now.Add(24 * -time.Hour)
-	unixYesterday := yesterday.Unix()
-
-	cmds := make([]radix.CmdAction, 4)
-
 	strGID := discordgo.StrID(guildID)
-
 	var messageStatsRaw []string
-	cmds[0] = radix.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo)
-	cmds[1] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo)
-	cmds[2] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_members_joined_day:"+strGID, "-inf", unixYesterday)
-	cmds[3] = radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_members_left_day:"+strGID, "-inf", unixYesterday)
 
-	err := common.RedisPool.Do(radix.Pipeline(cmds...))
+	err := common.RedisPool.Do(radix.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
 	if err != nil {
 		return err
 	}
 
-	channelAuthorStats := make(map[string]*models.ServerStatsPeriod)
+	channelStats := make(map[string]*models.ServerStatsPeriod)
 	for _, row := range messageStatsRaw {
 		// 0 = channel, 1 = mid, 2 = author
 		split := strings.Split(row, ":")
@@ -137,20 +120,19 @@ func UpdateGuildStats(guildID int64) error {
 		}
 
 		channel := split[0]
-		author := split[2]
+		// author := split[2]
 
-		if model, ok := channelAuthorStats[channel+"_"+author]; ok {
+		if model, ok := channelStats[channel]; ok {
 			model.Count.Int64++
 		} else {
 			model = &models.ServerStatsPeriod{
 				GuildID:   null.Int64From(guildID),
 				ChannelID: null.Int64From(common.MustParseInt(channel)),
-				UserID:    null.Int64From(common.MustParseInt(author)),
 				Started:   null.TimeFrom(minAgo), // TODO: we should calculate these from the min max snowflake ids
 				Duration:  null.Int64From(int64(time.Minute)),
 				Count:     null.Int64From(1),
 			}
-			channelAuthorStats[channel+"_"+author] = model
+			channelStats[channel] = model
 		}
 	}
 
@@ -159,7 +141,7 @@ func UpdateGuildStats(guildID int64) error {
 		return errors.WithMessage(err, "bginTX")
 	}
 
-	for _, model := range channelAuthorStats {
+	for _, model := range channelStats {
 		err = model.Insert(context.Background(), tx, boil.Infer())
 		if err != nil {
 			tx.Rollback()
@@ -168,17 +150,116 @@ func UpdateGuildStats(guildID int64) error {
 	}
 
 	err = tx.Commit()
-	err = errors.WithMessage(err, "commit")
+	if err != nil {
+		return errors.WithMessage(err, "commit")
+	}
+
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
+	if err != nil {
+		return errors.WithMessage(err, "zremrangebyscore")
+	}
+
 	return err
 }
 
-func UpdateOldStats() {
-	started := time.Now()
-	del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '2 days'")
+func (p *Plugin) RunCleanup() {
+	premiumServers, err := premium.AllGuildsOncePremium()
 	if err != nil {
-		log.WithError(err).Error("ServerStats: Failed deleting old stats")
+		log.WithError(err).Error("[serverstats] failed retrieving premium guilds")
+		return
+	}
+
+	// convert it to a slice
+	premiumSlice := make([]int64, 0, len(premiumServers))
+	for k, _ := range premiumServers {
+		premiumSlice = append(premiumSlice, k)
+	}
+
+	numDelete := int64(0)
+
+	started := time.Now()
+	del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '7 days' AND not (guild_id = ANY ($1))", pq.Int64Array(premiumSlice))
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed deleting old message stats")
 	} else if del != nil {
 		affected, _ := del.RowsAffected()
-		log.Infof("ServerStats: Deleted %d records in %s", affected, time.Since(started))
+		numDelete += affected
 	}
+
+	del, err = common.PQ.Exec("DELETE FROM server_stats_member_periods WHERE created_at < NOW() - INTERVAL '7 days' AND not (guild_id = ANY ($1))", pq.Int64Array(premiumSlice))
+	if err != nil {
+		log.WithError(err).Error("[serverstats] failed deleting old member stats")
+	} else if del != nil {
+		affected, _ := del.RowsAffected()
+		numDelete += affected
+	}
+
+	log.Infof("[serverstats] Deleted %d records in %s", numDelete, time.Since(started))
+
+	secondRunStarted := time.Now()
+	tx, err := common.PQ.Begin()
+	if err != nil {
+		log.WithError(err).Error("failed starting transaction")
+		return
+	}
+
+	totalDeleted := int64(0)
+	for g, v := range premiumServers {
+		if time.Since(v) < time.Hour*48 {
+			continue
+		}
+		result, err := tx.Exec("DELETE FROM server_stats_periods WHERE guild_id = $1 AND started > $2  AND NOW() - INTERVAL '7 days'  > started", g, v)
+		if err != nil {
+			log.WithError(err).WithField("guild", g).Error("[serverstats] failed running cleanup query on premium guild message stats")
+			tx.Rollback()
+			return
+		}
+
+		affected, _ := result.RowsAffected()
+		totalDeleted += affected
+
+		result, err = tx.Exec("DELETE FROM server_stats_member_periods WHERE guild_id = $1 AND created_at > $2  AND NOW() - INTERVAL '7 days'  > created_at", g, v)
+		if err != nil {
+			log.WithError(err).WithField("guild", g).Error("[serverstats] failed running cleanup query on premium guild member stats")
+			tx.Rollback()
+			return
+		}
+
+		affected, _ = result.RowsAffected()
+		totalDeleted += affected
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.WithError(err).Error("[serverstats] cleanup failed comitting transaction")
+		return
+	}
+
+	log.Infof("[serverstats] slow premium specific cleanup took %s, deleted %d records (num premium %d)", time.Since(secondRunStarted), totalDeleted, len(premiumServers))
+}
+
+func getActiveServersList(key string, full bool) ([]int64, error) {
+	var guilds []int64
+	if full {
+		err := common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", "connected_guilds"))
+		return guilds, errors.Wrap(err, "smembers conn_guilds")
+	}
+
+	var exists bool
+	if common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(&exists, "EXISTS", key)), "[serverstats] "+key, nil); !exists {
+		return guilds, nil // no guilds to process
+	}
+
+	err := common.RedisPool.Do(radix.Cmd(nil, "RENAME", key, key+"_processing"))
+	if err != nil {
+		return guilds, errors.Wrap(err, "rename")
+	}
+
+	err = common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", key+"_processing"))
+	if err != nil {
+		return guilds, errors.Wrap(err, "smembers")
+	}
+
+	common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(nil, "DEL", "serverstats_active_guilds_processing")), "[serverstats] del "+key, nil)
+	return guilds, err
 }

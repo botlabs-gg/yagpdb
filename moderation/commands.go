@@ -2,6 +2,8 @@ package moderation
 
 import (
 	"fmt"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -599,6 +601,140 @@ var ModerationCommands = []*commands.YAGCommand{
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil
 		},
 	},
+	&commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "GiveRole",
+		Aliases:       []string{"grole", "arole", "addrole"},
+		Description:   "Gives a role to the specified member, with optional expiry",
+
+		RequiredArgs: 2,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageRoles, config.GiveRoleCmdRoles, config.GiveRoleCmdEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+			member, err := bot.GetMember(parsed.GS.ID, target.ID)
+			if err != nil || member == nil {
+				return "Member not found", err
+			}
+
+			role := FindRole(parsed.GS, parsed.Args[1].Str())
+			if role == nil {
+				return "Couldn't find the specified role", nil
+			}
+
+			authorMember := commands.ContextMS(parsed.Context())
+			parsed.GS.RLock()
+			if !bot.IsMemberAboveRole(parsed.GS, authorMember, role) {
+				parsed.GS.RUnlock()
+				return "Can't give roles above you", nil
+			}
+			parsed.GS.RUnlock()
+
+			dur := parsed.Switches["d"].Value.(time.Duration)
+
+			// no point if the user has the role and is not updating the expiracy
+			if common.ContainsInt64Slice(member.Roles, role.ID) && dur <= 0 {
+				return "That user already has that role", nil
+			}
+
+			err = common.AddRoleDS(member, role.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			// schedule the expirey
+			if dur > 0 {
+				err := scheduledevents2.ScheduleRemoveRole(parsed.Context(), parsed.GS.ID, target.ID, role.ID, time.Now().Add(dur))
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			action := MAGiveRole
+			action.Prefix = "Gave the role " + role.Name + " to "
+			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
+				if dur > 0 {
+					action.Footer = "Duration: " + common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
+				}
+				CreateModlogEmbed(config.IntActionChannel(), parsed.Msg.Author, action, target, "", "")
+			}
+
+			return GenericCmdResp(action, target, dur, true, dur <= 0), nil
+		},
+	},
+	&commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "RemoveRole",
+		Aliases:       []string{"rrole", "takerole", "trole"},
+		Description:   "Removes the specified role from the target",
+
+		RequiredArgs: 2,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageRoles, config.GiveRoleCmdRoles, config.GiveRoleCmdEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+			member, err := bot.GetMember(parsed.GS.ID, target.ID)
+			if err != nil || member == nil {
+				return "Member not found", err
+			}
+
+			role := FindRole(parsed.GS, parsed.Args[1].Str())
+			if role == nil {
+				return "Couldn't find the specified role", nil
+			}
+
+			authorMember := commands.ContextMS(parsed.Context())
+			parsed.GS.RLock()
+			if !bot.IsMemberAboveRole(parsed.GS, authorMember, role) {
+				parsed.GS.RUnlock()
+				return "Can't remove roles above you", nil
+			}
+			parsed.GS.RUnlock()
+
+			err = common.RemoveRoleDS(member, role.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			// cancel the event to remove the role
+			scheduledevents2.CancelRemoveRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
+
+			action := MARemoveRole
+			action.Prefix = "Removed the role " + role.Name + " from "
+			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
+				CreateModlogEmbed(config.IntActionChannel(), parsed.Msg.Author, action, target, "", "")
+			}
+
+			return GenericCmdResp(action, target, 0, true, true), nil
+		},
+	},
 }
 
 func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, maxAge time.Duration, deleteNum, fetchNum int) (int, error) {
@@ -662,4 +798,31 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 	}
 
 	return len(toDelete), err
+}
+
+func FindRole(gs *dstate.GuildState, roleS string) *discordgo.Role {
+	parsedNumber, parseErr := strconv.ParseInt(roleS, 10, 64)
+
+	gs.RLock()
+	defer gs.RUnlock()
+	if parseErr == nil {
+
+		// was a number, try looking by id
+		r := gs.Role(false, parsedNumber)
+		if r != nil {
+			return r
+		}
+	}
+
+	// otherwise search by name
+	for _, v := range gs.Guild.Roles {
+		trimmed := strings.TrimSpace(v.Name)
+
+		if strings.EqualFold(trimmed, roleS) {
+			return v
+		}
+	}
+
+	// couldn't find the role :(
+	return nil
 }
