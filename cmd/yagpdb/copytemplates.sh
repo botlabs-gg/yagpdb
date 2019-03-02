@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p templates/plugins
+
 cp ../../automod/assets/* templates/plugins/
 cp ../../automod_legacy/assets/* templates/plugins/
 cp ../../autorole/assets/* templates/plugins/
