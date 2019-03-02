@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/vmihailenco/msgpack"
 	// evtsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
@@ -167,10 +168,19 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 		m := &DelayedRunCCData{
 			ChannelID: channelID,
 			CmdID:     cmd.LocalID,
-			UserData:  data,
 
 			Member:  ctx.MS,
 			Message: ctx.Msg,
+		}
+
+		// embed data using msgpack to include type information
+		if data != nil {
+			encoded, err := msgpack.Marshal(data)
+			if err != nil {
+				return "", err
+			}
+
+			m.UserData = encoded
 		}
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)

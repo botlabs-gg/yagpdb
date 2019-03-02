@@ -19,6 +19,7 @@ import (
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"math/rand"
 	"regexp"
@@ -68,9 +69,9 @@ func (p *Plugin) BotInit() {
 }
 
 type DelayedRunCCData struct {
-	ChannelID int64       `json:"channel_id"`
-	CmdID     int64       `json:"cmd_id"`
-	UserData  interface{} `json:"data"`
+	ChannelID int64  `json:"channel_id"`
+	CmdID     int64  `json:"cmd_id"`
+	UserData  []byte `json:"data"`
 
 	Message *discordgo.Message
 	Member  *dstate.MemberState
@@ -194,7 +195,17 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	if dataCast.Message != nil {
 		tmplCtx.Msg = dataCast.Message
 		tmplCtx.Data["Message"] = dataCast.Message
-		tmplCtx.Data["ExecData"] = dataCast.UserData
+	}
+
+	// decode userdata
+	if len(dataCast.UserData) > 0 {
+		var i interface{}
+		err := msgpack.Unmarshal(dataCast.UserData, &i)
+		if err != nil {
+			return false, err
+		}
+
+		tmplCtx.Data["ExecData"] = i
 	}
 
 	err = ExecuteCustomCommand(cmd, tmplCtx)
