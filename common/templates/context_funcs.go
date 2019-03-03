@@ -251,18 +251,15 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 	for _, r := range c.GS.Guild.Roles {
 		if strings.EqualFold(r.Name, name) {
 			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
-				c.GS.RUnlock()
 				return true, nil
 			}
 
-			c.GS.RUnlock()
 			return false, nil
 
 		}
 	}
 
 	// Role not found, default to false
-	c.GS.RUnlock()
 	return false, nil
 }
 

@@ -2,7 +2,6 @@ package templates
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/template"
@@ -346,10 +345,6 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 }
 
 type SDict map[string]interface{}
-
-func (d SDict) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d)
-}
 
 func (d SDict) Set(key string, value interface{}) string {
 	d[key] = value
