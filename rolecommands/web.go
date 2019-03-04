@@ -215,27 +215,38 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 	cmd.IgnoreRoles = formCmd.IgnoreRoles
 	cmd.RequireRoles = formCmd.RequireRoles
 
-	if formCmd.Group != -1 {
-		group, err := models.FindRoleGroupG(r.Context(), formCmd.Group)
+	groupChanged := cmd.RoleGroupID.Int64 != formCmd.Group
+	if !cmd.RoleGroupID.Valid && formCmd.Group <= 0 {
+		groupChanged = false // special case
+	}
+
+	if groupChanged {
+
+		// validate group change
+		if formCmd.Group != -1 {
+			group, err := models.FindRoleGroupG(r.Context(), formCmd.Group)
+			if err != nil {
+				return tmpl, err
+			}
+			if group.GuildID != g.ID {
+				return tmpl.AddAlerts(web.ErrorAlert("That's not your group")), nil
+			}
+
+			cmd.RoleGroupID = null.Int64From(group.ID)
+		} else {
+			cmd.RoleGroupID.Valid = false
+		}
+
+		// delete all related options since this is now pointing to a different group
+		_, err := models.RoleMenuOptions(qm.Where("role_command_id = ?", cmd.ID)).DeleteAll(r.Context(), common.PQ)
 		if err != nil {
-			return tmpl, err
-		}
-		if group.GuildID != g.ID {
-			return tmpl.AddAlerts(web.ErrorAlert("That's not your group")), nil
-		}
-		err = cmd.SetRoleGroupG(r.Context(), false, group)
-		if err != nil {
-			return tmpl, err
-		}
-	} else {
-		cmd.RoleGroupID.Valid = false
-		if _, err = cmd.UpdateG(r.Context(), boil.Whitelist(models.RoleCommandColumns.RoleGroupID)); err != nil {
-			cmd.RoleGroupID.Valid = true
-			return tmpl, err
+			web.CtxLogger(r.Context()).WithError(err).Error("[rolecommands] failed clearing menu options on group change")
 		}
 	}
 
-	_, err = cmd.UpdateG(r.Context(), boil.Whitelist(models.RoleCommandColumns.Name, models.RoleCommandColumns.Role, models.RoleCommandColumns.IgnoreRoles, models.RoleCommandColumns.RequireRoles))
+	_, err = cmd.UpdateG(r.Context(),
+		boil.Whitelist(models.RoleCommandColumns.Name, models.RoleCommandColumns.Role, models.RoleCommandColumns.IgnoreRoles,
+			models.RoleCommandColumns.RequireRoles, models.RoleCommandColumns.RoleGroupID))
 	return
 }
 
