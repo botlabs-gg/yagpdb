@@ -14,10 +14,10 @@ import (
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
+	"time"
 )
 
 func KeyCooldown(guildID, userID int64) string {
@@ -198,21 +198,14 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 
 func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int64) (err error) {
 
-	user := &models.ReputationUser{
-		GuildID: guildID,
-		UserID:  userID,
-		Points:  amount,
-	}
-
-	// First try inserting a new user
-	err = user.InsertG(ctx, boil.Infer())
-	if err == nil {
-		logrus.Debug("Inserted")
-		return nil
-	}
-
-	// Update
-	_, err = common.PQ.ExecContext(ctx, "UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
+	// upsert query which is too advanced for orms
+	const query = `
+INSERT INTO reputation_users (created_at, guild_id, user_id, points)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (guild_id, user_id)
+DO UPDATE SET points = reputation_users.points + $4;
+`
+	_, err = common.PQ.ExecContext(ctx, query, time.Now(), guildID, userID, amount)
 	return
 }
 
