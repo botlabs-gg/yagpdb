@@ -18,4 +18,6 @@ CREATE TABLE IF NOT EXISTS reddit_feeds (
 CREATE INDEX IF NOT EXISTS redidt_feeds_guild_idx ON reddit_feeds(guild_id);
 CREATE INDEX IF NOT EXISTS redidt_feeds_subreddit_idx ON reddit_feeds(subreddit);
 
+ALTER TABLE reddit_feeds ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT FALSE;
+
 `

@@ -31,6 +31,7 @@ type RedditFeed struct {
 	MinUpvotes int    `boil:"min_upvotes" json:"min_upvotes" toml:"min_upvotes" yaml:"min_upvotes"`
 	UseEmbeds  bool   `boil:"use_embeds" json:"use_embeds" toml:"use_embeds" yaml:"use_embeds"`
 	Slow       bool   `boil:"slow" json:"slow" toml:"slow" yaml:"slow"`
+	Disabled   bool   `boil:"disabled" json:"disabled" toml:"disabled" yaml:"disabled"`
 
 	R *redditFeedR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L redditFeedL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -45,6 +46,7 @@ var RedditFeedColumns = struct {
 	MinUpvotes string
 	UseEmbeds  string
 	Slow       string
+	Disabled   string
 }{
 	ID:         "id",
 	GuildID:    "guild_id",
@@ -54,6 +56,7 @@ var RedditFeedColumns = struct {
 	MinUpvotes: "min_upvotes",
 	UseEmbeds:  "use_embeds",
 	Slow:       "slow",
+	Disabled:   "disabled",
 }
 
 // Generated where
@@ -103,6 +106,7 @@ var RedditFeedWhere = struct {
 	MinUpvotes whereHelperint
 	UseEmbeds  whereHelperbool
 	Slow       whereHelperbool
+	Disabled   whereHelperbool
 }{
 	ID:         whereHelperint64{field: `id`},
 	GuildID:    whereHelperint64{field: `guild_id`},
@@ -112,6 +116,7 @@ var RedditFeedWhere = struct {
 	MinUpvotes: whereHelperint{field: `min_upvotes`},
 	UseEmbeds:  whereHelperbool{field: `use_embeds`},
 	Slow:       whereHelperbool{field: `slow`},
+	Disabled:   whereHelperbool{field: `disabled`},
 }
 
 // RedditFeedRels is where relationship names are stored.
@@ -131,9 +136,9 @@ func (*redditFeedR) NewStruct() *redditFeedR {
 type redditFeedL struct{}
 
 var (
-	redditFeedColumns               = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow"}
+	redditFeedColumns               = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow", "disabled"}
 	redditFeedColumnsWithoutDefault = []string{"guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow"}
-	redditFeedColumnsWithDefault    = []string{"id"}
+	redditFeedColumnsWithDefault    = []string{"id", "disabled"}
 	redditFeedPrimaryKeyColumns     = []string{"id"}
 )
 

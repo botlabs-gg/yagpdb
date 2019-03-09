@@ -427,7 +427,7 @@ func testRedditFeedsSelect(t *testing.T) {
 }
 
 var (
-	redditFeedDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `ChannelID`: `bigint`, `Subreddit`: `text`, `FilterNSFW`: `integer`, `MinUpvotes`: `integer`, `UseEmbeds`: `boolean`, `Slow`: `boolean`}
+	redditFeedDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `ChannelID`: `bigint`, `Subreddit`: `text`, `FilterNSFW`: `integer`, `MinUpvotes`: `integer`, `UseEmbeds`: `boolean`, `Slow`: `boolean`, `Disabled`: `boolean`}
 	_                 = bytes.MinRead
 )
 
