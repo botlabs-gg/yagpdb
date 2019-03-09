@@ -469,9 +469,14 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			}
 
 			combinedPerms |= role.Permissions
+			if combinedPerms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
+				combinedPerms |= discordgo.PermissionAll
+			}
+
 			if highest == nil || dutil.IsRoleAbove(role, highest) {
 				highest = role
 			}
+
 		}
 
 		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, highest)
