@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"strconv"
 	"sync"
@@ -31,6 +32,10 @@ type PluginWithErrorHandler interface {
 	HandleMQueueError(elem *QueuedElement, err error)
 }
 
+type PluginWithWebhookAvatar interface {
+	WebhookAvatar() string
+}
+
 var (
 	_ bot.LateBotInitHandler = (*Plugin)(nil)
 	_ bot.BotStopperHandler  = (*Plugin)(nil)
@@ -44,6 +49,12 @@ func (p *Plugin) Name() string {
 }
 
 func RegisterPlugin() {
+
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		logrus.WithError(err).Error("[mqueue] failed initiializing db schema")
+	}
+
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 }
@@ -71,19 +82,25 @@ func QueueMessageEmbed(source, sourceID string, guildID, channel int64, embed *d
 }
 
 func QueueMessage(source, sourceID string, guildID, channel int64, msgStr string, embed *discordgo.MessageEmbed) {
+	QueueMessageWebhook(source, sourceID, guildID, channel, msgStr, embed, false, "")
+}
+
+func QueueMessageWebhook(source, sourceID string, guildID, channel int64, msgStr string, embed *discordgo.MessageEmbed, webhook bool, webhookUsername string) {
 	nextID := IncrIDCounter()
 	if nextID == -1 {
 		return
 	}
 
 	elem := &QueuedElement{
-		ID:           nextID,
-		Source:       source,
-		SourceID:     sourceID,
-		Channel:      channel,
-		MessageStr:   msgStr,
-		MessageEmbed: embed,
-		Guild:        guildID,
+		ID:              nextID,
+		Source:          source,
+		SourceID:        sourceID,
+		Channel:         channel,
+		MessageStr:      msgStr,
+		MessageEmbed:    embed,
+		Guild:           guildID,
+		UseWebhook:      webhook,
+		WebhookUsername: webhookUsername,
 	}
 
 	serialized, err := json.Marshal(elem)
@@ -358,19 +375,13 @@ func process(elem *QueuedElement, raw []byte) {
 		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(raw)))
 	}()
 
-	parsedChannel := elem.Channel
-
 	for {
 		var err error
-		if elem.MessageStr != "" {
-			_, err = common.BotSession.ChannelMessageSend(parsedChannel, elem.MessageStr)
-		} else if elem.MessageEmbed != nil {
-			_, err = common.BotSession.ChannelMessageSendEmbed(parsedChannel, elem.MessageEmbed)
+		if elem.UseWebhook {
+			err = trySendWebhook(queueLogger, elem)
 		} else {
-			queueLogger.Error("MQueue: Both MessageEmbed and MessageStr empty")
-			break
+			err = trySendNormal(queueLogger, elem)
 		}
-
 		if err == nil {
 			break
 		}
@@ -387,4 +398,59 @@ func process(elem *QueuedElement, raw []byte) {
 		queueLogger.Warn("MQueue: Non-discord related error when sending message, retrying. ", err)
 		time.Sleep(time.Second)
 	}
+}
+
+func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
+	if elem.MessageStr != "" {
+		_, err = common.BotSession.ChannelMessageSend(elem.Channel, elem.MessageStr)
+	} else if elem.MessageEmbed != nil {
+		_, err = common.BotSession.ChannelMessageSendEmbed(elem.Channel, elem.MessageEmbed)
+	} else {
+		l.Error("MQueue: Both MessageEmbed and MessageStr empty")
+	}
+
+	return
+}
+
+func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
+	if elem.MessageStr == "" && elem.MessageEmbed == nil {
+		l.Error("MQueue: Both MessageEmbed and MessageStr empty")
+		return
+	}
+
+	// find the avatar, this is slightly expensive, do i need to rethink this?
+	avatar := ""
+	if source, ok := sources[elem.Source]; ok {
+		if avatarProvider, ok := source.(PluginWithWebhookAvatar); ok {
+			avatar = avatarProvider.WebhookAvatar()
+		}
+	}
+
+	webhook, err := FindCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
+	if err != nil {
+		return err
+	}
+
+	webhookParams := &discordgo.WebhookParams{
+		Username: elem.WebhookUsername,
+		Content:  elem.MessageStr,
+	}
+
+	if elem.MessageEmbed != nil {
+		webhookParams.Embeds = []*discordgo.MessageEmbed{elem.MessageEmbed}
+	}
+
+	err = common.BotSession.WebhookExecute(webhook.ID, webhook.Token, true, webhookParams)
+	if code, _ := common.DiscordError(err); code == discordgo.ErrCodeUnknownWebhook {
+		// if the webhook was deleted, then delete the bad boi from the databse and retry
+		const query = `DELETE FROM mqueue_webhooks WHERE id=$1`
+		_, err := common.PQ.Exec(query, webhook.ID)
+		if err != nil {
+			return errors.Wrap(err, "sql.delete")
+		}
+
+		return errors.New("deleted webhook")
+	}
+
+	return
 }
