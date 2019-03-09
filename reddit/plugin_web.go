@@ -62,7 +62,7 @@ func (p *Plugin) InitWeb() {
 	redditMux.Use(web.RequireGuildChannelsMiddleware)
 	redditMux.Use(web.RequireFullGuildMW)
 	redditMux.Use(web.RequireBotMemberMW)
-	redditMux.Use(web.RequirePermMW(discordgo.PermissionEmbedLinks))
+	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)
 
 	redditMux.Handle(pat.Get("/"), web.RenderHandler(HandleReddit, "cp_reddit"))

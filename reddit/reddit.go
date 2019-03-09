@@ -5,6 +5,7 @@ package reddit
 import (
 	"context"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/premium"
@@ -23,6 +24,7 @@ const (
 
 type Plugin struct {
 	stopFeedChan chan *sync.WaitGroup
+	redditClient *reddit.Client
 }
 
 func (p *Plugin) Name() string {
@@ -59,6 +61,12 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	}
 }
 
+var _ mqueue.PluginWithWebhookAvatar = (*Plugin)(nil)
+
+func (p *Plugin) WebhookAvatar() string {
+	return RedditLogoPNGB64
+}
+
 func RegisterPlugin() {
 	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {
@@ -69,6 +77,9 @@ func RegisterPlugin() {
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
+
+	plugin.redditClient = setupClient()
+
 	common.RegisterPlugin(plugin)
 	mqueue.RegisterSource("reddit", plugin)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/oauth2"
 	"html"
 	"os"
@@ -77,15 +78,14 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) runBot() {
-	redditClient := setupClient()
 	feedLock.Lock()
 
 	if os.Getenv("YAGPDB_REDDIT_FAST_FEED_DISABLED") == "" {
-		fastFeed = NewPostFetcher(redditClient, false, NewPostHandler(false))
+		fastFeed = NewPostFetcher(p.redditClient, false, NewPostHandler(false))
 		go fastFeed.Run()
 	}
 
-	slowFeed = NewPostFetcher(redditClient, true, NewPostHandler(true))
+	slowFeed = NewPostFetcher(p.redditClient, true, NewPostHandler(true))
 	go slowFeed.Run()
 
 	feedLock.Unlock()
@@ -118,19 +118,25 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 
 		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
 		// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-		p.handlePost(v)
+		p.handlePost(v, 0)
 	}
 }
 
-func (p *PostHandlerImpl) handlePost(post *reddit.Link) error {
+func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
 
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
 	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
-	config, err := models.RedditFeeds(
+	qms := []qm.QueryMod{
 		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
-		models.RedditFeedWhere.Slow.EQ(p.Slow)).AllG(context.Background())
+		models.RedditFeedWhere.Slow.EQ(p.Slow),
+	}
 
+	if filterGuild > 0 {
+		qms = append(qms, models.RedditFeedWhere.GuildID.EQ(filterGuild))
+	}
+
+	config, err := models.RedditFeeds(qms...).AllG(context.Background())
 	if err != nil {
 		logrus.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
@@ -153,17 +159,18 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link) error {
 
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
+
+		webhookUsername := "YAGPDB • r/" + post.Subreddit
 		if item.UseEmbeds {
-			mqueue.QueueMessageEmbed("reddit", idStr, item.GuildID, item.ChannelID, embed)
+			mqueue.QueueMessageWebhook("reddit", idStr, item.GuildID, item.ChannelID, "", embed, true, webhookUsername)
 		} else {
-			mqueue.QueueMessageString("reddit", idStr, item.GuildID, item.ChannelID, message)
+			mqueue.QueueMessageWebhook("reddit", idStr, item.GuildID, item.ChannelID, message, nil, true, webhookUsername)
 		}
 
 		if common.Statsd != nil {
 			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + strconv.FormatInt(item.GuildID, 10)}, 1)
 		}
 	}
-
 	return nil
 }
 
@@ -211,13 +218,8 @@ OUTER:
 }
 
 func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
-	typeStr := "link"
-	if post.IsSelf {
-		typeStr = "self post"
-	}
-
-	plainMessage := fmt.Sprintf("<:reddit:462994034428870656> **/u/%s** posted a new %s in **/r/%s**\n**%s** - <%s>\n",
-		post.Author, typeStr, post.Subreddit, html.UnescapeString(post.Title), "https://redd.it/"+post.ID)
+	plainMessage := fmt.Sprintf("**%s**\n*by %s (<%s>)*\n",
+		html.UnescapeString(post.Title), post.Author, "https://redd.it/"+post.ID)
 
 	plainBody := ""
 	if post.IsSelf {
@@ -234,9 +236,8 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			URL:     "https://reddit.com/u/" + post.Author,
-			Name:    post.Author,
-			IconURL: "https://" + common.Conf.Host + "/static/img/reddit_icon.png",
+			URL:  "https://reddit.com/u/" + post.Author,
+			Name: post.Author,
 		},
 		Provider: &discordgo.MessageEmbedProvider{
 			Name: "Reddit",
@@ -247,7 +248,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	embed.URL = "https://redd.it/" + post.ID
 
 	if post.IsSelf {
-		embed.Title = "New self post in /r/" + post.Subreddit
+		embed.Title = "New self post"
 		if post.Spoiler {
 			embed.Description += "|| " + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + " ||"
 		} else {
@@ -257,7 +258,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		embed.Color = 0xc3fc7e
 	} else {
 		embed.Color = 0x718aed
-		embed.Title = "New link post in /r/" + post.Subreddit
+		embed.Title = "New link post"
 		embed.Description += post.URL
 
 		if post.Media.Type == "" && !post.Spoiler {
