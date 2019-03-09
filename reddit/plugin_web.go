@@ -179,11 +179,12 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	item.ChannelID = updated.Channel
 	item.UseEmbeds = updated.UseEmbeds
 	item.FilterNSFW = updated.NSFWMode
+	item.Disabled = false
 	if item.Slow {
 		item.MinUpvotes = updated.MinUpvotes
 	}
 
-	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes"))
+	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}

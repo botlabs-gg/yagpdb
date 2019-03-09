@@ -130,6 +130,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 	qms := []qm.QueryMod{
 		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
 		models.RedditFeedWhere.Slow.EQ(p.Slow),
+		models.RedditFeedWhere.Disabled.EQ(false),
 	}
 
 	if filterGuild > 0 {

@@ -7,6 +7,12 @@
 
 {{template "cp_alerts" .}}
 
+<style>
+.reddit-item-disabled {
+    background-color: #f003;
+}
+</style>
+
 <div class="row">
     <div class="col">
         <div class="tabs">
@@ -74,7 +80,7 @@
             <div class="form-group">
                 <div class="form-check">
                     <input type="checkbox" class="form-check-input" id="format-new-slow-{{.Slow}}" name="use_embeds">
-                    <label for="format-new-slow-{{.Slow}}" class="form-check-label">Use embeds<small class="ml-2">(Videos be attached, but just linked)</small></label>
+                    <label for="format-new-slow-{{.Slow}}" class="form-check-label">Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small></label>
                 </div>
             </div>
 
@@ -89,7 +95,7 @@
 {{$slow := .Slow}}
 {{range .Dot.RedditConfig}}{{if eq .Slow $slow}}
 <form id="feed-item-{{.ID}}" data-async-form method="post" action="/manage/{{$guild}}/reddit/{{.ID}}/update">
-    <div class="row border-bottom border-secondary pb-3">
+    <div class="row border-bottom border-secondary pb-3 {{if .Disabled}}reddit-item-disabled{{end}}">
         <div class="col-lg">
             <div class="form-row">
                 <input type="text" class="hidden" name="id" value="{{.ID}}">
@@ -132,7 +138,7 @@
                 </div>
                 <div class="form-group col">
                     <div class="btn-group mt-4">
-                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update">Save</button>
                         <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
                     </div>
                 </div>
