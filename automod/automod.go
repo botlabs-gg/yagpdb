@@ -83,7 +83,7 @@ const (
 	MaxViolationTriggers        = 20
 	MaxViolationTriggersPremium = 100
 
-	MaxTotalRules        = 15
+	MaxTotalRules        = 25
 	MaxTotalRulesPremium = 100
 
 	MaxLists        = 5
