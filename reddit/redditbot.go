@@ -161,7 +161,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
 
-		webhookUsername := "r/" + post.Subreddit + "• YAGPDB"
+		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
 		if item.UseEmbeds {
 			mqueue.QueueMessageWebhook("reddit", idStr, item.GuildID, item.ChannelID, "", embed, true, webhookUsername)
 		} else {
