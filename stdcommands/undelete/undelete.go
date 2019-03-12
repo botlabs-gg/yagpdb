@@ -45,7 +45,7 @@ var Command = &commands.YAGCommand{
 				continue
 			}
 
-			if !allUsers && msg.Message.Author.ID != data.Msg.Author.ID {
+			if !allUsers && msg.Author.ID != data.Msg.Author.ID {
 				continue
 			}
 
@@ -60,7 +60,7 @@ var Command = &commands.YAGCommand{
 			// Match found!
 			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreated))
 
-			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s: %s\n\n", timeSince, msg.ParsedCreated.UTC().Format(time.ANSIC), msg.Message.Author.Username, msg.Message.Author.Discriminator, msg.Message.ContentWithMentionsReplaced())
+			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s: %s\n\n", timeSince, msg.ParsedCreated.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.ContentWithMentionsReplaced())
 			numFound++
 		}
 

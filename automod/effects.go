@@ -135,7 +135,7 @@ func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings inte
 					break
 				}
 
-				if cMsg.Message.Author.ID == ctxData.MS.ID {
+				if cMsg.Author.ID == ctxData.MS.ID {
 					channel = c
 					lastMessage = cMsg
 					break
@@ -157,11 +157,11 @@ func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings inte
 			break
 		}
 
-		if cMsg.Message.Author.ID != ctxData.MS.ID {
+		if cMsg.Author.ID != ctxData.MS.ID {
 			continue
 		}
 
-		messages = append(messages, cMsg.Message.ID)
+		messages = append(messages, cMsg.ID)
 		if len(messages) >= 100 || len(messages) >= settingsCast.NumMessages {
 			break
 		}

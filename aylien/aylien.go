@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/AYLIEN/aylien_textapi_go"
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -84,13 +84,13 @@ func (p *Plugin) AddCommands() {
 				}
 
 				// filter out our own and longer than 3 words
-				toAnalyze := make([]*discordgo.Message, 0)
+				toAnalyze := make([]*dstate.MessageState, 0)
 				for i := len(msgs) - 1; i >= 0; i-- {
 					msg := msgs[i]
 					// log.Println(msg.ID, msg.ContentWithMentionsReplaced())
 					if msg.Author.ID == cmd.Msg.Author.ID {
 						if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
-							toAnalyze = append(toAnalyze, msg.Message)
+							toAnalyze = append(toAnalyze, msg)
 							if len(toAnalyze) >= 5 {
 								break
 							}

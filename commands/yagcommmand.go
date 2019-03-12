@@ -305,7 +305,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			return
 		}
 
-		cop := cState.Copy(true, false)
+		cop := cState.Copy(true)
 
 		settings, err = yc.GetSettings(data.ContainerChain, cState.ID, cop.ParentID, guild.ID)
 		if err != nil {

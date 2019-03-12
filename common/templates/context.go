@@ -140,14 +140,14 @@ func (c *Context) setupContextFuncs() {
 func (c *Context) setupBaseData() {
 
 	if c.GS != nil {
-		guild := c.GS.LightCopy(false)
+		guild := c.GS.DeepCopy(false, true, true, false)
 		c.Data["Guild"] = guild
 		c.Data["Server"] = guild
 		c.Data["server"] = guild
 	}
 
 	if c.CS != nil {
-		channel := c.CS.Copy(false, false)
+		channel := c.CS.Copy(false)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
 	}

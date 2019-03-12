@@ -275,7 +275,7 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 
 	botID := common.BotUser.ID
 
-	if evt.Author == nil || botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate() || evt.WebhookID != 0 {
+	if evt.Author == nil || botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate || evt.WebhookID != 0 {
 		return true
 	}
 
@@ -396,7 +396,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 
 	tmplCtx.Name = "CC #" + strconv.Itoa(int(cmd.LocalID))
 
-	csCop := tmplCtx.CS.Copy(true, false)
+	csCop := tmplCtx.CS.Copy(true)
 	f := log.WithFields(log.Fields{
 		"trigger":      cmd.TextTrigger,
 		"trigger_type": CommandTriggerType(cmd.TriggerType).String(),

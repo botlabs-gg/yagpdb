@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -94,7 +95,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	}
 
 	// Make a light copy of the channel
-	channel := cs.Copy(true, false)
+	channel := cs.Copy(true)
 
 	msgs, err := bot.GetMessages(channel.ID, count, true)
 	if err != nil {
@@ -123,10 +124,6 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	}
 
 	for _, v := range msgs {
-		if v.Author == nil || v.Timestamp == "" {
-			continue
-		}
-
 		body := v.Content
 		for _, attachment := range v.Attachments {
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
@@ -143,7 +140,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			MessageID:      null.StringFrom(discordgo.StrID(v.ID)),
 			MessageLogID:   null.IntFrom(log.ID),
 			Content:        null.StringFrom(body),
-			Timestamp:      null.StringFrom(string(v.Timestamp)),
+			Timestamp:      null.StringFrom(v.ParsedCreated.Format(time.RFC3339)),
 			AuthorUsername: null.StringFrom(v.Author.Username),
 			AuthorDiscrim:  null.StringFrom(v.Author.Discriminator),
 			AuthorID:       null.StringFrom(discordgo.StrID(v.Author.ID)),

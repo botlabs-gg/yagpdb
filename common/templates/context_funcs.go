@@ -194,7 +194,7 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 		return ""
 	}
 
-	r := c.GS.Role(true, role)
+	r := c.GS.RoleCopy(true, role)
 	if r == nil {
 		return "(role not found)"
 	}
