@@ -75,10 +75,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 
-	fullScanActive, err := WorkingOnFullScan(activeGuild.ID)
-	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("failed checking full scan")
-	}
+	fullScanActive := WorkingOnFullScan(activeGuild.ID)
 	tmpl["FullScanActive"] = fullScanActive
 
 	return tmpl

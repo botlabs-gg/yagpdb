@@ -89,13 +89,11 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		count = 300
 	}
 
-	cs := bot.State.Channel(true, channelID)
-	if cs == nil {
+	// Make a light copy of the channel
+	channel := bot.State.ChannelCopy(true, channelID)
+	if channel == nil {
 		return nil, errors.New("Unknown channel")
 	}
-
-	// Make a light copy of the channel
-	channel := cs.Copy(true)
 
 	msgs, err := bot.GetMessages(channel.ID, count, true)
 	if err != nil {

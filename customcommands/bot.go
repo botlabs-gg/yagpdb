@@ -183,12 +183,10 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	cs := gs.Channel(true, dataCast.ChannelID)
 	if cs == nil {
 		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
-		gs.RLock()
-		if gs.Guild.Unavailable {
-			gs.RUnlock()
+		if !gs.IsAvailable(true) {
 			return true, nil
 		}
-		gs.RUnlock()
+
 		return false, nil
 	}
 
@@ -241,12 +239,10 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	cs := gs.Channel(true, cmd.ContextChannel)
 	if cs == nil {
 		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
-		gs.RLock()
-		if gs.Guild.Unavailable {
-			gs.RUnlock()
+		if !gs.IsAvailable(true) {
 			return true, nil
 		}
-		gs.RUnlock()
+
 		return false, nil
 	}
 

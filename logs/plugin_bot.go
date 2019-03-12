@@ -341,29 +341,25 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 
 	gs.RLock()
+	defer gs.RUnlock()
+
 	ms := gs.Member(false, pu.User.ID)
 	if ms == nil || !ms.PresenceSet || !ms.MemberSet {
-		gs.RUnlock()
-
 		go func() { evtChan <- pu }()
 		return
 	}
 
 	if pu.User.Username != "" {
 		if pu.User.Username != ms.Username {
-			gs.RUnlock()
 			go func() { evtChan <- pu }()
 			return
 		}
 	}
 
 	if pu.Nick != ms.Nick {
-		gs.RUnlock()
 		go func() { evtChan <- pu }()
 		return
 	}
-
-	gs.RUnlock()
 }
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER

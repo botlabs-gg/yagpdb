@@ -224,17 +224,9 @@ OUTER:
 
 		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
 			// Copy the list of guilds so that we dont need to keep the entire state locked
-			state.RLock()
-			guildsToCheck = make([]*dstate.GuildState, 0, len(state.Guilds))
-			i = 0
-			for _, v := range state.Guilds {
-				if v == nil || v.ID == 0 {
-					continue
-				}
 
-				guildsToCheck = append(guildsToCheck, v)
-			}
-			state.RUnlock()
+			i = 0
+			guildsToCheck = state.GuildsSlice(true)
 
 			// Hit each guild once per hour more or less
 			numToCheckPerRun = len(guildsToCheck) / 2500
