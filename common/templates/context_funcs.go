@@ -596,16 +596,35 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	return ""
 }
 
-func (c *Context) tmplGetMessage(channel, msgID interface{}) *discordgo.Message {
+func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil
+		return nil, nil
 	}
 
 	mID := ToInt64(msgID)
 
 	message, _ := common.BotSession.ChannelMessage(cID, mID)
-	return message
+	return message, nil
+}
+
+func (c *Context) tmplGetMember(id interface{}) (*discordgo.Member, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	mID := ToInt64(id)
+
+	member, _ := bot.GetMember(c.GS.ID, mID)
+	if member == nil {
+		return nil, nil
+	}
+
+	return member.DGoCopy(), nil
 }
 
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {

@@ -76,6 +76,8 @@ type DelayedRunCCData struct {
 
 	Message *discordgo.Message
 	Member  *dstate.MemberState
+
+	UserKey interface{} `json:"user_key"`
 }
 
 var cmdListCommands = &commands.YAGCommand{
