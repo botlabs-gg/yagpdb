@@ -441,57 +441,6 @@ func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
 	return err
 }
 
-func ContainsStringSlice(strs []string, search string) bool {
-	for _, v := range strs {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsStringSliceFold(strs []string, search string) bool {
-	for _, v := range strs {
-		if strings.EqualFold(v, search) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsInt64Slice(slice []int64, search int64) bool {
-	for _, v := range slice {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
-}
-
-// ContainsInt64SliceOneOf returns true if slice contains one of search
-func ContainsInt64SliceOneOf(slice []int64, search []int64) bool {
-	for _, v := range search {
-		if ContainsInt64Slice(slice, v) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsIntSlice(slice []int, search int) bool {
-	for _, v := range slice {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
-}
-
 // ValidateSQLSchema does some simple security checks on a sql schema file
 // At the moment it only checks for drop table/index statements accidentally left in the schema file
 func ValidateSQLSchema(input string) {

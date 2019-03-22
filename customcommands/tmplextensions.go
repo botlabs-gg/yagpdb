@@ -1,7 +1,9 @@
 package customcommands
 
 import (
+	"bytes"
 	"context"
+	"database/sql"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/commands"
@@ -9,7 +11,9 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	scheduledmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/vmihailenco/msgpack"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+
 	// evtsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
@@ -25,6 +29,12 @@ func init() {
 		ctx.ContextFuncs["execCC"] = tmplRunCC(ctx)
 		ctx.ContextFuncs["scheduleUniqueCC"] = tmplScheduleUniqueCC(ctx)
 		ctx.ContextFuncs["cancelScheduledUniqueCC"] = tmplCancelUniqueCC(ctx)
+
+		ctx.ContextFuncs["dbSet"] = tmplDBSet(ctx)
+		ctx.ContextFuncs["dbSetExpire"] = tmplDBSetExpire(ctx)
+		ctx.ContextFuncs["dbGet"] = tmplDBGet(ctx)
+		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
+		ctx.ContextFuncs["dbTopUsers"] = tmplDBTopUsers(ctx)
 	})
 }
 
@@ -301,4 +311,140 @@ func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 
 		return "", nil
 	}
+}
+
+func tmplDBSet(ctx *templates.Context) interface{} {
+	return func(userID int64, key interface{}, value interface{}) (string, error) {
+		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		valueSerialized, err := serializeValue(value)
+		if err != nil {
+			return "", err
+		}
+
+		vNum := templates.ToFloat64(value)
+		keyStr := templates.ToString(key)
+
+		m := &models.TemplatesUserDatabase{
+			GuildID: ctx.GS.ID,
+			UserID:  userID,
+
+			Key:      keyStr,
+			ValueRaw: valueSerialized,
+			ValueNum: vNum,
+		}
+
+		err = m.Upsert(context.Background(), common.PQ, true, []string{"guild_id", "user_id", "key"}, boil.Whitelist("value_raw", "value_num"), boil.Infer())
+		return "", err
+	}
+}
+
+func tmplDBSetExpire(ctx *templates.Context) interface{} {
+	return func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
+		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		return "", nil
+	}
+}
+
+func tmplDBIncr(ctx *templates.Context) interface{} {
+	return func(userID int64, key interface{}, incrBy interface{}) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		vNum := templates.ToFloat64(incrBy)
+		valueSerialized, err := serializeValue(vNum)
+		if err != nil {
+			return "", err
+		}
+
+		keyStr := templates.ToString(key)
+
+		const q = `INSERT INTO templates_user_database (guild_id, user_id, key, value_raw, value_num) 
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (guil_id, user_id, key) 
+ON UPDATE SET value_num = templates_user_database.value_num + $5`
+
+		_, err = common.PQ.Exec(q, ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
+
+		return "", err
+	}
+}
+
+func tmplDBGet(ctx *templates.Context) interface{} {
+	return func(userID int64, key interface{}) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		keyStr := templates.ToString(key)
+		m, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, userID, keyStr)).OneG(context.Background())
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return nil, err
+			}
+
+			return nil, nil
+		}
+
+		var dst interface{}
+		err = msgpack.Unmarshal(m.ValueRaw, &dst)
+		if err != nil {
+			return nil, err
+		}
+
+		if common.IsNumber(dst) {
+			return m.ValueNum, nil
+		}
+
+		return dst, nil
+	}
+}
+
+func tmplDBDel(ctx *templates.Context) interface{} {
+	return func(userID int64, key interface{}) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+			return "", templates.ErrTooManyCalls
+		}
+		keyStr := templates.ToString(key)
+		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ?", ctx.GS.ID, userID, keyStr)).DeleteAll(context.Background(), common.PQ)
+
+		return "", err
+	}
+}
+
+func tmplDBTopUsers(ctx *templates.Context) interface{} {
+	return func(userID int64, key interface{}) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		return "", nil
+	}
+}
+
+func serializeValue(v interface{}) ([]byte, error) {
+	var b bytes.Buffer
+	enc := msgpack.NewEncoder(templates.LimitWriter(&b, 100000))
+	err := enc.Encode(v)
+	return b.Bytes(), err
+}
+
+// returns true if were above db limit for the specified guild
+func isAboveDBLimit(gs *dstate.GuildState) (bool, error) {
+	gs.RLock()
+	limit := gs.Guild.MemberCount * 10
+	gs.RUnlock()
+
+	count, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND (expires_at > now() OR expires_at IS NULL)", gs.ID)).CountG(context.Background())
+	if err != nil {
+		return false, err
+	}
+
+	return limit <= int(count), nil
 }

@@ -9,4 +9,6 @@ func TestUpsert(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsUpsert)
 
 	t.Run("CustomCommands", testCustomCommandsUpsert)
+
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesUpsert)
 }
