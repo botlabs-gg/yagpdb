@@ -250,6 +250,23 @@ func (c *Context) IncreaseCheckStateLock() bool {
 	return c.IncreaseCheckCallCounter("state_lock", 500)
 }
 
+func (c *Context) LogEntry() *logrus.Entry {
+	f := logrus.WithFields(logrus.Fields{
+		"guild": c.GS.ID,
+		"name":  c.Name,
+	})
+
+	if c.MS != nil {
+		f = f.WithField("user", c.MS.ID)
+	}
+
+	if c.CS != nil {
+		f = f.WithField("channel", c.CS.ID)
+	}
+
+	return f
+}
+
 func baseContextFuncs(c *Context) {
 	// message functions
 	c.ContextFuncs["sendDM"] = c.tmplSendDM

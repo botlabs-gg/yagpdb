@@ -427,7 +427,7 @@ func testTemplatesUserDatabasesSelect(t *testing.T) {
 }
 
 var (
-	templatesUserDatabaseDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `UserID`: `bigint`, `Key`: `text`, `ValueNum`: `double precision`, `ValueRaw`: `bytea`, `ExpiresAt`: `timestamp with time zone`}
+	templatesUserDatabaseDBTypes = map[string]string{`ID`: `bigint`, `GuildID`: `bigint`, `UserID`: `bigint`, `Key`: `text`, `ValueNum`: `double precision`, `ValueRaw`: `bytea`, `ExpiresAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`}
 	_                            = bytes.MinRead
 )
 

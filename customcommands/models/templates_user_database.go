@@ -31,6 +31,8 @@ type TemplatesUserDatabase struct {
 	ValueNum  float64   `boil:"value_num" json:"value_num" toml:"value_num" yaml:"value_num"`
 	ValueRaw  []byte    `boil:"value_raw" json:"value_raw" toml:"value_raw" yaml:"value_raw"`
 	ExpiresAt null.Time `boil:"expires_at" json:"expires_at,omitempty" toml:"expires_at" yaml:"expires_at,omitempty"`
+	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *templatesUserDatabaseR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L templatesUserDatabaseL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,6 +46,8 @@ var TemplatesUserDatabaseColumns = struct {
 	ValueNum  string
 	ValueRaw  string
 	ExpiresAt string
+	CreatedAt string
+	UpdatedAt string
 }{
 	ID:        "id",
 	GuildID:   "guild_id",
@@ -52,6 +56,8 @@ var TemplatesUserDatabaseColumns = struct {
 	ValueNum:  "value_num",
 	ValueRaw:  "value_raw",
 	ExpiresAt: "expires_at",
+	CreatedAt: "created_at",
+	UpdatedAt: "updated_at",
 }
 
 // Generated where
@@ -80,6 +86,27 @@ func (w whereHelper__byte) LTE(x []byte) qm.QueryMod { return qmhelper.Where(w.f
 func (w whereHelper__byte) GT(x []byte) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelper__byte) GTE(x []byte) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
+type whereHelpertime_Time struct{ field string }
+
+func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var TemplatesUserDatabaseWhere = struct {
 	ID        whereHelperint64
 	GuildID   whereHelperint64
@@ -88,6 +115,8 @@ var TemplatesUserDatabaseWhere = struct {
 	ValueNum  whereHelperfloat64
 	ValueRaw  whereHelper__byte
 	ExpiresAt whereHelpernull_Time
+	CreatedAt whereHelpertime_Time
+	UpdatedAt whereHelpertime_Time
 }{
 	ID:        whereHelperint64{field: `id`},
 	GuildID:   whereHelperint64{field: `guild_id`},
@@ -96,6 +125,8 @@ var TemplatesUserDatabaseWhere = struct {
 	ValueNum:  whereHelperfloat64{field: `value_num`},
 	ValueRaw:  whereHelper__byte{field: `value_raw`},
 	ExpiresAt: whereHelpernull_Time{field: `expires_at`},
+	CreatedAt: whereHelpertime_Time{field: `created_at`},
+	UpdatedAt: whereHelpertime_Time{field: `updated_at`},
 }
 
 // TemplatesUserDatabaseRels is where relationship names are stored.
@@ -115,9 +146,9 @@ func (*templatesUserDatabaseR) NewStruct() *templatesUserDatabaseR {
 type templatesUserDatabaseL struct{}
 
 var (
-	templatesUserDatabaseColumns               = []string{"id", "guild_id", "user_id", "key", "value_num", "value_raw", "expires_at"}
+	templatesUserDatabaseColumns               = []string{"id", "guild_id", "user_id", "key", "value_num", "value_raw", "expires_at", "created_at", "updated_at"}
 	templatesUserDatabaseColumnsWithoutDefault = []string{"guild_id", "user_id", "key", "value_num", "value_raw", "expires_at"}
-	templatesUserDatabaseColumnsWithDefault    = []string{"id"}
+	templatesUserDatabaseColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	templatesUserDatabasePrimaryKeyColumns     = []string{"id"}
 )
 
@@ -282,6 +313,16 @@ func (o *TemplatesUserDatabase) Insert(ctx context.Context, exec boil.ContextExe
 	}
 
 	var err error
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
+		}
+	}
 
 	nzDefaults := queries.NonZeroDefaultSet(templatesUserDatabaseColumnsWithDefault, o)
 
@@ -358,6 +399,12 @@ func (o *TemplatesUserDatabase) UpdateG(ctx context.Context, columns boil.Column
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *TemplatesUserDatabase) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		o.UpdatedAt = currTime
+	}
+
 	var err error
 	key := makeCacheKey(columns, nil)
 	templatesUserDatabaseUpdateCacheMut.RLock()
@@ -499,6 +546,14 @@ func (o *TemplatesUserDatabase) UpsertG(ctx context.Context, updateOnConflict bo
 func (o *TemplatesUserDatabase) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no templates_user_database provided for upsert")
+	}
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
+		}
+		o.UpdatedAt = currTime
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(templatesUserDatabaseColumnsWithDefault, o)

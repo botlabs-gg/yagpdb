@@ -49,14 +49,16 @@ ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS context_channel BIGINT NOT 
 CREATE TABLE IF NOT EXISTS templates_user_database (
 	id BIGSERIAL PRIMARY KEY,
 
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	expires_at TIMESTAMP WITH TIME ZONE,
+
 	guild_id BIGINT NOT NULL,
 	user_id BIGINT NOT NULL,
 
 	key TEXT NOT NULL,
 	value_num DOUBLE PRECISION NOT NULL,
 	value_raw BYTEA NOT NULL,
-
-	expires_at TIMESTAMP WITH TIME ZONE,
 
 	UNIQUE(guild_id, user_id, key)
 );

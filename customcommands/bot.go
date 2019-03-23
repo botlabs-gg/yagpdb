@@ -542,6 +542,7 @@ type CacheKey int
 
 const (
 	CacheKeyCommands CacheKey = iota
+	CacheKeyDBLimits
 )
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {

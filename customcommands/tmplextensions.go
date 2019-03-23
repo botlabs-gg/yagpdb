@@ -10,15 +10,12 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	scheduledmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/vmihailenco/msgpack"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-
-	// evtsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/pkg/errors"
-	// "github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/vmihailenco/msgpack"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"time"
 )
 
@@ -32,7 +29,9 @@ func init() {
 
 		ctx.ContextFuncs["dbSet"] = tmplDBSet(ctx)
 		ctx.ContextFuncs["dbSetExpire"] = tmplDBSetExpire(ctx)
+		ctx.ContextFuncs["dbIncr"] = tmplDBIncr(ctx)
 		ctx.ContextFuncs["dbGet"] = tmplDBGet(ctx)
+		ctx.ContextFuncs["dbGetPattern"] = tmplDBGetPattern(ctx)
 		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
 		ctx.ContextFuncs["dbTopUsers"] = tmplDBTopUsers(ctx)
 	})
@@ -319,6 +318,14 @@ func tmplDBSet(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
+		if aboveLimit, err := CheckGuildDBLimit(ctx.GS); err != nil || aboveLimit {
+			if err != nil {
+				return "", err
+			}
+
+			return "", errors.New("Above DB Limit")
+		}
+
 		valueSerialized, err := serializeValue(value)
 		if err != nil {
 			return "", err
@@ -328,15 +335,16 @@ func tmplDBSet(ctx *templates.Context) interface{} {
 		keyStr := templates.ToString(key)
 
 		m := &models.TemplatesUserDatabase{
-			GuildID: ctx.GS.ID,
-			UserID:  userID,
+			GuildID:   ctx.GS.ID,
+			UserID:    userID,
+			UpdatedAt: time.Now(),
 
 			Key:      keyStr,
 			ValueRaw: valueSerialized,
 			ValueNum: vNum,
 		}
 
-		err = m.Upsert(context.Background(), common.PQ, true, []string{"guild_id", "user_id", "key"}, boil.Whitelist("value_raw", "value_num"), boil.Infer())
+		err = m.Upsert(context.Background(), common.PQ, true, []string{"guild_id", "user_id", "key"}, boil.Whitelist("value_raw", "value_num", "updated_at"), boil.Infer())
 		return "", err
 	}
 }
@@ -345,6 +353,14 @@ func tmplDBSetExpire(ctx *templates.Context) interface{} {
 	return func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
 		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
 			return "", templates.ErrTooManyCalls
+		}
+
+		if aboveLimit, err := CheckGuildDBLimit(ctx.GS); err != nil || aboveLimit {
+			if err != nil {
+				return "", err
+			}
+
+			return "", errors.New("Above DB Limit")
 		}
 
 		return "", nil
@@ -357,22 +373,33 @@ func tmplDBIncr(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
+		if aboveLimit, err := CheckGuildDBLimit(ctx.GS); err != nil || aboveLimit {
+			if err != nil {
+				return "", err
+			}
+
+			return "", errors.New("Above DB Limit")
+		}
+
 		vNum := templates.ToFloat64(incrBy)
 		valueSerialized, err := serializeValue(vNum)
 		if err != nil {
 			return "", err
 		}
 
-		keyStr := templates.ToString(key)
+		keyStr := limitString(templates.ToString(key), 256)
 
-		const q = `INSERT INTO templates_user_database (guild_id, user_id, key, value_raw, value_num) 
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (guil_id, user_id, key) 
-ON UPDATE SET value_num = templates_user_database.value_num + $5`
+		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num) 
+VALUES ($1, $1, $2, $3, $4, $5, $6)
+ON CONFLICT (guild_id, user_id, key) 
+DO UPDATE SET value_num = templates_user_database.value_num + $6, updated_at = $1
+RETURNING value_num`
 
-		_, err = common.PQ.Exec(q, ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
+		result := common.PQ.QueryRow(q, time.Now(), ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
 
-		return "", err
+		var newVal float64
+		err = result.Scan(&newVal)
+		return newVal, err
 	}
 }
 
@@ -382,7 +409,7 @@ func tmplDBGet(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		keyStr := templates.ToString(key)
+		keyStr := limitString(templates.ToString(key), 256)
 		m, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, userID, keyStr)).OneG(context.Background())
 		if err != nil {
 			if err != sql.ErrNoRows {
@@ -392,17 +419,37 @@ func tmplDBGet(ctx *templates.Context) interface{} {
 			return nil, nil
 		}
 
-		var dst interface{}
-		err = msgpack.Unmarshal(m.ValueRaw, &dst)
+		return ToLightDBEntry(m)
+	}
+}
+
+func tmplDBGetPattern(ctx *templates.Context) interface{} {
+	return func(userID int64, pattern interface{}) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		keyStr := limitString(templates.ToString(pattern), 256)
+		results, err := models.TemplatesUserDatabases(
+			qm.Where("guild_id = ? AND user_id = ? AND key LIKE ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, userID, keyStr),
+			qm.OrderBy("ID ASC"), qm.Limit(10000)).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
 
-		if common.IsNumber(dst) {
-			return m.ValueNum, nil
+		// convert them into lightdb entries and decode their values
+		entries := make([]*LightDBEntry, 0, len(results))
+		for _, v := range results {
+			converted, err := ToLightDBEntry(v)
+			if err != nil {
+				ctx.LogEntry().WithError(err).Error("[cc] failed decoding user db entry")
+				continue
+			}
+
+			entries = append(entries, converted)
 		}
 
-		return dst, nil
+		return entries, nil
 	}
 }
 
@@ -411,7 +458,10 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
 			return "", templates.ErrTooManyCalls
 		}
-		keyStr := templates.ToString(key)
+
+		ctx.GS.UserCacheDel(true, CacheKeyDBLimits)
+
+		keyStr := limitString(templates.ToString(key), 256)
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ?", ctx.GS.ID, userID, keyStr)).DeleteAll(context.Background(), common.PQ)
 
 		return "", err
@@ -436,15 +486,89 @@ func serializeValue(v interface{}) ([]byte, error) {
 }
 
 // returns true if were above db limit for the specified guild
-func isAboveDBLimit(gs *dstate.GuildState) (bool, error) {
+func CheckGuildDBLimit(gs *dstate.GuildState) (bool, error) {
 	gs.RLock()
 	limit := gs.Guild.MemberCount * 10
 	gs.RUnlock()
 
-	count, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND (expires_at > now() OR expires_at IS NULL)", gs.ID)).CountG(context.Background())
+	curValues, err := cacheCheckDBLimit(gs)
 	if err != nil {
 		return false, err
 	}
 
-	return limit <= int(count), nil
+	return curValues >= int64(limit), nil
+}
+
+func getGuildCCDBNumValues(guildID int64) (int64, error) {
+	count, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND (expires_at > now() OR expires_at IS NULL)", guildID)).CountG(context.Background())
+	return count, err
+}
+
+func cacheCheckDBLimit(gs *dstate.GuildState) (int64, error) {
+	v, err := gs.UserCacheFetch(true, CacheKeyDBLimits, func() (interface{}, error) {
+		n, err := getGuildCCDBNumValues(gs.ID)
+		return n, err
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return v.(int64), nil
+}
+
+// limitstring cuts off a string at max l length, supports multi byte characters
+func limitString(s string, l int) string {
+	if len(s) <= l {
+		return s
+	}
+
+	lastValidLoc := 0
+	for i, _ := range s {
+		if i > l {
+			break
+		}
+		lastValidLoc = i
+	}
+
+	return s[:lastValidLoc]
+}
+
+type LightDBEntry struct {
+	ID      int64
+	GuildID int64
+	UserID  int64
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	Key   string
+	Value interface{}
+}
+
+func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
+	var dst interface{}
+	err := msgpack.Unmarshal(m.ValueRaw, &dst)
+	if err != nil {
+		return nil, err
+	}
+
+	decodedValue := dst
+	if common.IsNumber(dst) {
+		decodedValue = m.ValueNum
+	}
+
+	entry := &LightDBEntry{
+		ID:      m.ID,
+		GuildID: m.GuildID,
+		UserID:  m.UserID,
+
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+
+		Key:   m.Key,
+		Value: decodedValue,
+	}
+
+	return entry, nil
 }
