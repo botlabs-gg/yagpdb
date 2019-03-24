@@ -122,8 +122,11 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 
 		token, err := AuthTokenFromB64(cookie.Value)
 		if err != nil {
-			// this could really only happen if the user messes with the session token, or some other bullshit happens (like bad ram i guess)
-			CtxLogger(r.Context()).WithError(err).Error("invalid session")
+			if err != ErrNotLoggedIn {
+				// this could really only happen if the user messes with the session token, or some other bullshit happens (like bad ram i guess)
+				CtxLogger(r.Context()).WithError(err).Error("invalid session")
+			}
+
 			return
 		}
 
