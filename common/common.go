@@ -18,7 +18,7 @@ import (
 const (
 	VERSIONMAJOR = 1
 	VERSIONMINOR = 16
-	VERSIONPATCH = 3
+	VERSIONPATCH = 4
 )
 
 var (
