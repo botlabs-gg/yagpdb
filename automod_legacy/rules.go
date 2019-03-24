@@ -213,7 +213,7 @@ OUTER:
 		invite, err := common.BotSession.Invite(id)
 		if err != nil {
 			logrus.WithError(err).WithField("guild", guildID).Error("Failed checking invite ", invite)
-			continue
+			return true // assume bad since discord...
 		}
 
 		if invite == nil || invite.Guild == nil {
