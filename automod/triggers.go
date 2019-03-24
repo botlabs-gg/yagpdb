@@ -185,7 +185,7 @@ func (wl *WordListTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Chann
 
 	list, err := FindFetchGuildList(cs.Guild, dataCast.ListID)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 
 	messageFields := strings.Fields(mdStripped)
@@ -264,7 +264,7 @@ func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 
 	list, err := FindFetchGuildList(cs.Guild, dataCast.ListID)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 
 	matches := common.LinkRegex.FindAllString(forwardSlashReplacer.Replace(m.Content), -1)
@@ -1060,7 +1060,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(ms *dstate.MemberState, data i
 
 	list, err := FindFetchGuildList(ms.Guild, dataCast.ListID)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(ms.Nick))
@@ -1193,7 +1193,7 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(ms *dstate.MemberState, data i
 
 	list, err := FindFetchGuildList(ms.Guild, dataCast.ListID)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(ms.Username))
