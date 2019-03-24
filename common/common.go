@@ -41,6 +41,8 @@ var (
 	Testing = os.Getenv("YAGPDB_TESTING") != ""
 
 	CurrentRunCounter int64
+
+	NodeID string
 )
 
 // Initalizes all database connections, config loading and so on
@@ -120,6 +122,10 @@ func ConnectDatadog() {
 	if err != nil {
 		logrus.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
 		return
+	}
+
+	if NodeID != "" {
+		client.Tags = append(client.Tags, "node:"+NodeID)
 	}
 
 	Statsd = client

@@ -83,6 +83,7 @@ func init() {
 func main() {
 	flag.Parse()
 	bot.FlagNodeID = flagNodeID
+	common.NodeID = flagNodeID
 
 	log.AddHook(common.ContextHook{})
 

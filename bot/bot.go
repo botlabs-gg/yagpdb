@@ -307,6 +307,6 @@ func goroutineLogger() {
 		<-t.C
 
 		num := runtime.NumGoroutine()
-		common.Statsd.Gauge("yagpdb.numgoroutine", float64(num), []string{"node:" + NodeID()}, 1)
+		common.Statsd.Gauge("yagpdb.numgoroutine", float64(num), nil, 1)
 	}
 }

@@ -218,8 +218,8 @@ func startPolling() {
 				l := len(workSlice)
 				workmu.Unlock()
 
-				common.Statsd.Gauge("yagpdb.mqueue.size", float64(l), []string{"node:" + bot.NodeID()}, 1)
-				common.Statsd.Gauge("yagpdb.mqueue.numworkers", float64(atomic.LoadInt32(numWorkers)), []string{"node:" + bot.NodeID()}, 1)
+				common.Statsd.Gauge("yagpdb.mqueue.size", float64(l), nil, 1)
+				common.Statsd.Gauge("yagpdb.mqueue.numworkers", float64(atomic.LoadInt32(numWorkers)), nil, 1)
 			}
 		}
 	}
