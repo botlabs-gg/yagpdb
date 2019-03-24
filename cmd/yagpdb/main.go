@@ -88,7 +88,7 @@ func main() {
 
 	log.SetFormatter(&log.TextFormatter{
 		DisableTimestamp: !common.Testing,
-		ForceColors:      true,
+		ForceColors:      common.Testing,
 	})
 
 	if flagSysLog {
