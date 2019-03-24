@@ -26,6 +26,8 @@ var (
 	started     bool
 
 	numWorkers = new(int32)
+
+	webhookSession *discordgo.Session
 )
 
 type PluginWithErrorHandler interface {
@@ -50,7 +52,13 @@ func (p *Plugin) Name() string {
 
 func RegisterPlugin() {
 
-	_, err := common.PQ.Exec(DBSchema)
+	var err error
+	webhookSession, err = discordgo.New()
+	if err != nil {
+		logrus.WithError(err).Error("[mqueue] failed initiializing webhook session")
+	}
+
+	_, err = common.PQ.Exec(DBSchema)
 	if err != nil {
 		logrus.WithError(err).Error("[mqueue] failed initiializing db schema")
 	}
@@ -440,7 +448,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		webhookParams.Embeds = []*discordgo.MessageEmbed{elem.MessageEmbed}
 	}
 
-	err = common.BotSession.WebhookExecute(webhook.ID, webhook.Token, true, webhookParams)
+	err = webhookSession.WebhookExecute(webhook.ID, webhook.Token, true, webhookParams)
 	if code, _ := common.DiscordError(err); code == discordgo.ErrCodeUnknownWebhook {
 		// if the webhook was deleted, then delete the bad boi from the databse and retry
 		const query = `DELETE FROM mqueue_webhooks WHERE id=$1`
