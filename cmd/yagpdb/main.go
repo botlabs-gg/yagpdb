@@ -61,6 +61,8 @@ var (
 
 	flagSysLog     bool
 	flagGenCmdDocs bool
+
+	flagNodeID string
 )
 
 func init() {
@@ -74,10 +76,13 @@ func init() {
 	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
+
+	flag.StringVar(&flagNodeID, "nodeid", "", "The id of this node, used when running with a sharding orchestrator")
 }
 
 func main() {
 	flag.Parse()
+	bot.FlagNodeID = flagNodeID
 
 	log.AddHook(common.ContextHook{})
 
