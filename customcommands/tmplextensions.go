@@ -5,7 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -14,6 +16,7 @@ import (
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"time"
@@ -33,7 +36,7 @@ func init() {
 		ctx.ContextFuncs["dbGet"] = tmplDBGet(ctx)
 		ctx.ContextFuncs["dbGetPattern"] = tmplDBGetPattern(ctx)
 		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
-		ctx.ContextFuncs["dbTopUsers"] = tmplDBTopUsers(ctx)
+		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx)
 	})
 }
 
@@ -314,6 +317,12 @@ func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 
 func tmplDBSet(ctx *templates.Context) interface{} {
 	return func(userID int64, key interface{}, value interface{}) (string, error) {
+		return (tmplDBSetExpire(ctx))(userID, key, value, -1)
+	}
+}
+
+func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
+	return func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
 		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -334,36 +343,25 @@ func tmplDBSet(ctx *templates.Context) interface{} {
 		vNum := templates.ToFloat64(value)
 		keyStr := templates.ToString(key)
 
+		var expires null.Time
+		if ttl > 0 {
+			expires.Time = time.Now().Add(time.Second * time.Duration(ttl))
+			expires.Valid = true
+		}
+
 		m := &models.TemplatesUserDatabase{
 			GuildID:   ctx.GS.ID,
 			UserID:    userID,
 			UpdatedAt: time.Now(),
+			ExpiresAt: expires,
 
 			Key:      keyStr,
 			ValueRaw: valueSerialized,
 			ValueNum: vNum,
 		}
 
-		err = m.Upsert(context.Background(), common.PQ, true, []string{"guild_id", "user_id", "key"}, boil.Whitelist("value_raw", "value_num", "updated_at"), boil.Infer())
+		err = m.Upsert(context.Background(), common.PQ, true, []string{"guild_id", "user_id", "key"}, boil.Whitelist("value_raw", "value_num", "updated_at", "expires_at"), boil.Infer())
 		return "", err
-	}
-}
-
-func tmplDBSetExpire(ctx *templates.Context) interface{} {
-	return func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
-		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
-			return "", templates.ErrTooManyCalls
-		}
-
-		if aboveLimit, err := CheckGuildDBLimit(ctx.GS); err != nil || aboveLimit {
-			if err != nil {
-				return "", err
-			}
-
-			return "", errors.New("Above DB Limit")
-		}
-
-		return "", nil
 	}
 }
 
@@ -424,32 +422,30 @@ func tmplDBGet(ctx *templates.Context) interface{} {
 }
 
 func tmplDBGetPattern(ctx *templates.Context) interface{} {
-	return func(userID int64, pattern interface{}) (interface{}, error) {
+	return func(userID int64, pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
 			return "", templates.ErrTooManyCalls
+		}
+
+		if ctx.IncreaseCheckCallCounter("db_multiple", 1) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		amount := int(templates.ToInt64(iAmount))
+		skip := int(templates.ToInt64(iSkip))
+		if amount > 100 {
+			amount = 100
 		}
 
 		keyStr := limitString(templates.ToString(pattern), 256)
 		results, err := models.TemplatesUserDatabases(
 			qm.Where("guild_id = ? AND user_id = ? AND key LIKE ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, userID, keyStr),
-			qm.OrderBy("ID ASC"), qm.Limit(10000)).AllG(context.Background())
+			qm.OrderBy("ID ASC"), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
 
-		// convert them into lightdb entries and decode their values
-		entries := make([]*LightDBEntry, 0, len(results))
-		for _, v := range results {
-			converted, err := ToLightDBEntry(v)
-			if err != nil {
-				ctx.LogEntry().WithError(err).Error("[cc] failed decoding user db entry")
-				continue
-			}
-
-			entries = append(entries, converted)
-		}
-
-		return entries, nil
+		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
 	}
 }
 
@@ -468,13 +464,31 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBTopUsers(ctx *templates.Context) interface{} {
-	return func(userID int64, key interface{}) (interface{}, error) {
+func tmplDBTopEntries(ctx *templates.Context) interface{} {
+	return func(pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
-		return "", nil
+		if ctx.IncreaseCheckCallCounter("db_multiple", 1) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		amount := int(templates.ToInt64(iAmount))
+		skip := int(templates.ToInt64(iSkip))
+		if amount > 100 {
+			amount = 100
+		}
+
+		keyStr := limitString(templates.ToString(pattern), 256)
+		results, err := models.TemplatesUserDatabases(
+			qm.Where("guild_id = ? AND key LIKE ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, keyStr),
+			qm.OrderBy("value_num DESC"), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
 	}
 }
 
@@ -544,6 +558,8 @@ type LightDBEntry struct {
 
 	Key   string
 	Value interface{}
+
+	User discordgo.User
 }
 
 func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
@@ -569,6 +585,64 @@ func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 		Key:   m.Key,
 		Value: decodedValue,
 	}
+	entry.User.ID = entry.UserID
 
 	return entry, nil
+}
+
+func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildState, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
+	// convert them into lightdb entries and decode their values
+	entries := make([]*LightDBEntry, 0, len(rs))
+	for _, v := range rs {
+		converted, err := ToLightDBEntry(v)
+		if err != nil {
+			ctx.LogEntry().WithError(err).Error("[cc] failed decoding user db entry")
+			continue
+		}
+
+		entries = append(entries, converted)
+	}
+
+	// fill in user fields
+	membersToFetch := make([]int64, 0, len(entries))
+	for _, v := range entries {
+		if common.ContainsInt64Slice(membersToFetch, v.UserID) {
+			continue
+		}
+
+		membersToFetch = append(membersToFetch, v.UserID)
+	}
+
+	// fast path in case of single member
+	if len(membersToFetch) == 1 {
+		member, err := bot.GetMember(gs.ID, membersToFetch[0])
+		if err != nil {
+			ctx.LogEntry().WithError(err).Error("[cc] failed retrieving member")
+			return entries
+		}
+
+		cop := member.DGoUser()
+		for _, v := range entries {
+			v.User = *cop
+		}
+
+		return entries
+	}
+
+	// multiple members
+	members, err := bot.GetMembers(gs.ID, membersToFetch...)
+	if err != nil {
+		ctx.LogEntry().WithError(err).Error("[cc] failed bot.GetMembers call")
+	}
+
+	for _, v := range entries {
+		for _, m := range members {
+			if m.ID == v.UserID {
+				v.User = *(m.DGoUser())
+				break
+			}
+		}
+	}
+
+	return entries
 }
