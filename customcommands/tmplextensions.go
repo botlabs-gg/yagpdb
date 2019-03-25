@@ -14,6 +14,7 @@ import (
 	scheduledmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/null"
@@ -501,8 +502,13 @@ func serializeValue(v interface{}) ([]byte, error) {
 
 // returns true if were above db limit for the specified guild
 func CheckGuildDBLimit(gs *dstate.GuildState) (bool, error) {
+	limitMuliplier := 1
+	if isPremium, _ := premium.IsGuildPremium(gs.ID); isPremium {
+		limitMuliplier = 10
+	}
+
 	gs.RLock()
-	limit := gs.Guild.MemberCount * 10
+	limit := gs.Guild.MemberCount * 50 * limitMuliplier
 	gs.RUnlock()
 
 	curValues, err := cacheCheckDBLimit(gs)
