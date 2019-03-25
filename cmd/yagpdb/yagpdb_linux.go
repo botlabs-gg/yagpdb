@@ -14,6 +14,6 @@ func AddSyslogHooks() {
 	if err == nil {
 		logrus.AddHook(hook)
 	} else {
-		logrus.Println("failed initializing syslog hook")
+		logrus.WithError(err).Println("failed initializing syslog hook")
 	}
 }
