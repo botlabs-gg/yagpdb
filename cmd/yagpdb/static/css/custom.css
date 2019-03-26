@@ -235,3 +235,7 @@ html.sidebar-left-collapsed #nav-footer {
 .content-editable-form::before {
   content: "✎ ";
 }
+
+html.dark select optgroup {
+	background-color: rgb(45, 45, 50) !important;
+}
