@@ -9,14 +9,15 @@ var (
 )
 
 type PluginCategory struct {
-	Name string
+	Name  string
+	Order int
 }
 
 var (
-	PluginCategoryCore       = &PluginCategory{Name: "Core"}
-	PluginCategoryModeration = &PluginCategory{Name: "Moderation"}
-	PluginCategoryFeeds      = &PluginCategory{Name: "Feeds"}
-	PluginCategoryMisc       = &PluginCategory{Name: "Misc"}
+	PluginCategoryCore       = &PluginCategory{Name: "Core", Order: 0}
+	PluginCategoryModeration = &PluginCategory{Name: "Moderation", Order: 10}
+	PluginCategoryMisc       = &PluginCategory{Name: "Misc", Order: 20}
+	PluginCategoryFeeds      = &PluginCategory{Name: "Feeds", Order: 30}
 )
 
 type PluginInfo struct {
