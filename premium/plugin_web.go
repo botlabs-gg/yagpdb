@@ -153,6 +153,7 @@ func ContextPremium(ctx context.Context) bool {
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+var _ web.ServerHomeWidgetWithOrder = (*Plugin)(nil)
 
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ag, templateData := web.GetBaseCPContextData(r.Context())
@@ -186,4 +187,8 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	return templateData, nil
+}
+
+func (p *Plugin) ServerHomeWidgetOrder() int {
+	return 10
 }

@@ -31,3 +31,7 @@ type PluginWithServerHomeWidgetMiddlewares interface {
 	PluginWithServerHomeWidget
 	ServerHomeWidgetApplyMiddlewares(inner http.Handler) http.Handler
 }
+
+type ServerHomeWidgetWithOrder interface {
+	ServerHomeWidgetOrder() int
+}

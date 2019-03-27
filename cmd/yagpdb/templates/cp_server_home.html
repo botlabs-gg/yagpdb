@@ -3,13 +3,15 @@
 {{template "cp_head" .}}
 
 <header class="page-header">
-	<h2>{{.ActiveGuild.Name}}</h2>
+	<h2>Combined Overview</h2>
 </header>
 
 {{template "cp_alerts" .}}
 	
+{{range .PluginContainers}}
+<h2>{{.Category.Name}}</h2>
 <div class="row">
-	{{range .PluginWidgets}}
+	{{range .Widgets}}
     <div class="col-12 col-sm-6 col-md-4" id="home-widget-{{.PluginName}}">
     	<section class="card">
 		    <header class="card-header">
@@ -20,15 +22,16 @@
 		    </div>
 		</section>
 	</div>
-    {{end}}
+	{{end}}
 </div>
+{{end}}
 
 <script type="text/javascript">
 $(function(){
 	{{$ag := .ActiveGuild}}
-	{{range .PluginWidgets}}
+	{{range .PluginContainers}}{{range .Widgets}}
 	loadWidget("home-widget-{{.PluginName}}", "/manage/{{$ag.ID}}/homewidgets/{{.PluginName}}")
-    {{end}}
+    {{end}}{{end}}
 })
 </script>
 

@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"net/http"
+	"sort"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -19,23 +20,70 @@ import (
 type serverHomeWidget struct {
 	HumanName  string
 	PluginName string
+	Plugin     common.Plugin
+}
+
+type serverHomeWidgetCategory struct {
+	Category *common.PluginCategory
+	Widgets  []*serverHomeWidget
 }
 
 func HandleServerHome(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	_, templateData := GetBaseCPContextData(r.Context())
 
-	pluginWidgets := make([]*serverHomeWidget, 0)
+	containers := make([]*serverHomeWidgetCategory, 0)
 
 	for _, v := range common.Plugins {
 		if _, ok := v.(PluginWithServerHomeWidget); ok {
-			pluginWidgets = append(pluginWidgets, &serverHomeWidget{
+
+			// find the category
+			var cat *serverHomeWidgetCategory
+			for _, c := range containers {
+				if c.Category == v.PluginInfo().Category {
+					cat = c
+					break
+				}
+			}
+
+			if cat == nil {
+				// meow
+				cat = &serverHomeWidgetCategory{
+					Category: v.PluginInfo().Category,
+				}
+				containers = append(containers, cat)
+			}
+
+			cat.Widgets = append(cat.Widgets, &serverHomeWidget{
 				HumanName:  v.PluginInfo().Name,
 				PluginName: v.PluginInfo().SysName,
+				Plugin:     v,
 			})
 		}
 	}
 
-	templateData["PluginWidgets"] = pluginWidgets
+	sort.Slice(containers, func(i, j int) bool {
+		return containers[i].Category.Order < containers[j].Category.Order
+	})
+
+	// order the widgets within the containers
+	for _, c := range containers {
+		sort.Slice(c.Widgets, func(i, j int) bool {
+			iOrder := 1000000
+			jOrder := 1000000
+
+			if cast, ok := c.Widgets[i].Plugin.(ServerHomeWidgetWithOrder); ok {
+				iOrder = cast.ServerHomeWidgetOrder()
+			}
+
+			if cast, ok := c.Widgets[j].Plugin.(ServerHomeWidgetWithOrder); ok {
+				jOrder = cast.ServerHomeWidgetOrder()
+			}
+
+			return iOrder < jOrder
+		})
+	}
+
+	templateData["PluginContainers"] = containers
 
 	return templateData, nil
 }
