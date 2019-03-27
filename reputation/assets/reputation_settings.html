@@ -2,7 +2,7 @@
 {{template "cp_head" .}}
 
 <div class="page-header">
-    <h2>Reputation settings - <a href="/public/{{.ActiveGuild.ID}}/reputation/leaderboard">Leaderboards</a></h2>
+    <h2>Reputation settings - <a href="/public/{{.ActiveGuild.ID}}/reputation/leaderboard">Leaderboard</a></h2>
 </div>
 
 {{template "cp_alerts" .}}
@@ -80,7 +80,7 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>   
+                            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
                         </div>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
-<!-- /.row -->            
+<!-- /.row -->
 
 <div class="row">
     <div class="col-lg-12">
@@ -139,7 +139,7 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
-<!-- /.row -->   
+<!-- /.row -->
 
 <div class="row">
     <div class="col-lg-12">
@@ -159,7 +159,7 @@
     </div>
     <!-- /.col-lg-12 -->
 </div>
-<!-- /.row -->  
+<!-- /.row -->
 
 <script type="text/javascript">
 var repOldestID = 0;
@@ -182,7 +182,7 @@ function yagRepSearch(older, newer){
         repOldestID = 0
         repNewestID = 0
     }else{
-        repIsFirstPage = false 
+        repIsFirstPage = false
     }
 
     var url = "/manage/{{.ActiveGuild.ID}}/reputation/logs?user_id="+userIDReq
@@ -209,12 +209,12 @@ function yagRepSearch(older, newer){
         for(var i = 0; i < parsed.length; i++){
             var elem = parsed[i]
             var row = $("<tr>")
-            
+
             var createdAt = new Date(elem.created_at)
 
-            row.append($('<td>').text(createdAt.toLocaleString()))            
+            row.append($('<td>').text(createdAt.toLocaleString()))
             row.append(userCell(elem.sender_username, elem.sender_id))
-            
+
             if(elem.set_fixed_amount){
                 row.append($("<td>").text("fixed set"))
             }else{
@@ -223,21 +223,21 @@ function yagRepSearch(older, newer){
 
             row.append(userCell(elem.receiver_username, elem.receiver_id))
             row.append($("<td>").text(elem.amount))
-            
+
             $("#rep-search-results-body").append(row);
         }
 
         if(!repIsFirstPage){
             $("#rep-newer-button").removeClass("hidden")
         }
-        $("#rep-older-button").removeClass("hidden")   
+        $("#rep-older-button").removeClass("hidden")
 
         repOldestID = parsed[parsed.length-1].id
         repNewestID = parsed[0].id
     });
 
 }
-</script> 
+</script>
 
 {{template "cp_footer" .}}
 
