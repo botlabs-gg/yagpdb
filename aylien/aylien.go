@@ -26,6 +26,14 @@ type Plugin struct {
 	aylien *textapi.Client
 }
 
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "AYLIEN",
+		SysName:  "aylien",
+		Category: common.PluginCategoryMisc,
+	}
+}
+
 func RegisterPlugin() {
 	if appID == "" || appKey == "" {
 		log.Warn("Missing AYLIEN appid and/or key, not loading plugin")
@@ -43,10 +51,6 @@ func RegisterPlugin() {
 	}
 
 	common.RegisterPlugin(p)
-}
-
-func (p *Plugin) Name() string {
-	return "ALYIEN"
 }
 
 var _ commands.CommandProvider = (*Plugin)(nil)

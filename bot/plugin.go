@@ -49,7 +49,7 @@ func EmitGuildRemoved(guildID int64) {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(guildID)
 			if err != nil {
-				logrus.WithError(err).Error("Error Running RemoveGuild on ", v.Name())
+				logrus.WithError(err).Error("Error Running RemoveGuild on ", v.PluginInfo().Name)
 			}
 		}
 	}

@@ -23,14 +23,14 @@ import (
 	"time"
 )
 
-type Plugin struct {
-}
+type Plugin struct{}
 
-func (p *Plugin) Name() string {
-	return "RoleCommands"
-}
-func (p *Plugin) SysName() string {
-	return "role_commands"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "RoleCommands",
+		SysName:  "role_commands",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 const (

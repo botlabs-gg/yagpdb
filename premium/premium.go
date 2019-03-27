@@ -25,12 +25,12 @@ const (
 type Plugin struct {
 }
 
-func (p *Plugin) Name() string {
-	return "Premium"
-}
-
-func (p *Plugin) SysName() string {
-	return "premium"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Premium",
+		SysName:  "premium",
+		Category: common.PluginCategoryCore,
+	}
 }
 
 func RegisterPlugin() {

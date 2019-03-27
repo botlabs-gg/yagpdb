@@ -27,10 +27,10 @@ func HandleServerHome(w http.ResponseWriter, r *http.Request) (TemplateData, err
 	pluginWidgets := make([]*serverHomeWidget, 0)
 
 	for _, v := range common.Plugins {
-		if cast, ok := v.(PluginWithServerHomeWidget); ok {
+		if _, ok := v.(PluginWithServerHomeWidget); ok {
 			pluginWidgets = append(pluginWidgets, &serverHomeWidget{
-				HumanName:  v.Name(),
-				PluginName: cast.SysName(),
+				HumanName:  v.PluginInfo().Name,
+				PluginName: v.PluginInfo().SysName,
 			})
 		}
 	}

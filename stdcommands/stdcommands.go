@@ -53,6 +53,14 @@ var (
 
 type Plugin struct{}
 
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Standard Commands",
+		SysName:  "standard_commands",
+		Category: common.PluginCategoryCore,
+	}
+}
+
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(
 		// Info
@@ -106,10 +114,6 @@ func (p *Plugin) AddCommands() {
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(ping.HandleMessageCreate, eventsystem.EventMessageCreate)
 	mentionrole.AddScheduledEventListener()
-}
-
-func (p *Plugin) Name() string {
-	return "stdcommands"
 }
 
 func RegisterPlugin() {

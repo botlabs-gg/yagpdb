@@ -40,8 +40,12 @@ type Plugin struct {
 	srvMU sync.Mutex
 }
 
-func (p *Plugin) Name() string {
-	return "botrest"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "BotREST",
+		SysName:  "botrest",
+		Category: common.PluginCategoryCore,
+	}
 }
 
 func (p *Plugin) BotInit() {

@@ -31,17 +31,16 @@ func KeyLastVidTime(channel string) string { return "youtube_last_video_time:" +
 func KeyLastVidID(channel string) string   { return "youtube_last_video_id:" + channel }
 
 type Plugin struct {
-	common.BasePlugin
 	YTService *youtube.Service
 	Stop      chan *sync.WaitGroup
 }
 
-func (p *Plugin) Name() string {
-	return "Youtube"
-}
-
-func (p *Plugin) SysName() string {
-	return "youtube"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Youtube",
+		SysName:  "youtube",
+		Category: common.PluginCategoryFeeds,
+	}
 }
 
 func RegisterPlugin() {
@@ -54,7 +53,7 @@ func RegisterPlugin() {
 
 	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
 
-	common.RegisterPluginL(p)
+	common.RegisterPlugin(p)
 	mqueue.RegisterSource("youtube", p)
 }
 
@@ -88,7 +87,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	// Remove it
 	err = common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
 	if err != nil {
-		p.Entry.WithError(err).Error("failed removing nonexistant channel")
+		logrus.WithError(err).Error("failed removing nonexistant channel")
 	} else {
 		logrus.WithField("channel", elem.Channel).Info("Removed youtube feed to nonexistant channel")
 	}
@@ -121,7 +120,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
-	p.Logger().Info("Websub: Subscribed to channel ", ytChannelID)
+	logrus.Info("Websub: Subscribed to channel ", ytChannelID)
 
 	return nil
 }
@@ -152,7 +151,7 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
-	p.Logger().Info("Websub: UnSubscribed to channel ", ytChannelID)
+	logrus.Info("Websub: UnSubscribed to channel ", ytChannelID)
 
 	return nil
 }

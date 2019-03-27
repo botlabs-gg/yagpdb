@@ -21,17 +21,20 @@ func init() {
 func RegisterPlugin() {
 	p := &Plugin{}
 	p.Manager = cardsagainstdiscord.NewGameManager(p)
-	common.RegisterPluginL(p)
+	common.RegisterPlugin(p)
 
 }
 
 type Plugin struct {
-	common.BasePlugin
 	Manager *cardsagainstdiscord.GameManager
 }
 
-func (p *Plugin) Name() string {
-	return "CAH"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "CAH",
+		SysName:  "cah",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func (p *Plugin) SessionForGuild(guildID int64) *discordgo.Session {

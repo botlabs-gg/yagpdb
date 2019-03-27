@@ -25,7 +25,6 @@ type RenderedServerHomeWidget struct {
 
 type PluginWithServerHomeWidget interface {
 	LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (TemplateData, error)
-	SysName() string
 }
 
 type PluginWithServerHomeWidgetMiddlewares interface {

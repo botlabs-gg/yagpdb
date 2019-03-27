@@ -44,8 +44,12 @@ var (
 type Plugin struct {
 }
 
-func (p *Plugin) Name() string {
-	return "mqueue"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "mqueue",
+		SysName:  "mqueue",
+		Category: common.PluginCategoryCore,
+	}
 }
 
 func RegisterPlugin() {

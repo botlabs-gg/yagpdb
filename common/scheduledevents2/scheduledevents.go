@@ -34,6 +34,14 @@ func newScheduledEventsPlugin() *ScheduledEvents {
 	}
 }
 
+func (p *ScheduledEvents) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Scheduled Events",
+		SysName:  "scheduled_events",
+		Category: common.PluginCategoryCore,
+	}
+}
+
 func RegisterPlugin() {
 	err := InitSchema()
 	if err != nil {
@@ -46,10 +54,6 @@ func RegisterPlugin() {
 func InitSchema() error {
 	_, err := common.PQ.Exec(DBSchema)
 	return err
-}
-
-func (se *ScheduledEvents) Name() string {
-	return "scheduled_events"
 }
 
 type HandlerFunc func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error)

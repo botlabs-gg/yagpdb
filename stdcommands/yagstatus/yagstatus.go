@@ -81,9 +81,9 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 			if name == "" || val == "" {
 				continue
 			}
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: v.Name() + ": " + name, Value: val, Inline: true})
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: v.PluginInfo().Name + ": " + name, Value: val, Inline: true})
 			elapsed := time.Since(started)
-			logrus.Println("Took ", elapsed.Seconds(), " to gather stats from ", v.Name())
+			logrus.Println("Took ", elapsed.Seconds(), " to gather stats from ", v.PluginInfo().Name)
 		}
 	}
 

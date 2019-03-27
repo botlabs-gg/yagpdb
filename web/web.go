@@ -293,14 +293,14 @@ func setupRoutes() *goji.Mux {
 				handler = mwares.ServerHomeWidgetApplyMiddlewares(handler)
 			}
 
-			CPMux.Handle(pat.Get("/homewidgets/"+cast.SysName()), handler)
+			CPMux.Handle(pat.Get("/homewidgets/"+p.PluginInfo().SysName), handler)
 		}
 	}
 
 	for _, plugin := range common.Plugins {
 		if webPlugin, ok := plugin.(Plugin); ok {
 			webPlugin.InitWeb()
-			log.Info("Initialized web plugin:", plugin.Name())
+			log.Info("Initialized web plugin:", plugin.PluginInfo().Name)
 		}
 	}
 

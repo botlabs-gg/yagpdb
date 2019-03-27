@@ -32,8 +32,12 @@ func (ps *PremiumSource) Names() (human string, idname string) {
 // in the future this should be cleaned up (maybe keep patrons in redis)
 type Plugin struct{}
 
-func (p *Plugin) Name() string {
-	return "Patreon Premium Source"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Patreon premium source",
+		SysName:  "patreon_premium_source",
+		Category: common.PluginCategoryCore,
+	}
 }
 
 var _ web.Plugin = (*Plugin)(nil)

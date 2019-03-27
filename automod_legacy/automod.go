@@ -23,6 +23,14 @@ func RegisterPlugin() {
 	common.RegisterPlugin(p)
 }
 
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Legacy Automod",
+		SysName:  "legacy_automod",
+		Category: common.PluginCategoryModeration,
+	}
+}
+
 func (p *Plugin) Name() string    { return "Legacy Automod" }
 func (p *Plugin) SysName() string { return "legacy_automod" }
 

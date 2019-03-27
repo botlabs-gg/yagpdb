@@ -9,12 +9,12 @@ import (
 
 type Plugin struct{}
 
-func (p *Plugin) Name() string {
-	return "Streaming"
-}
-
-func (p *Plugin) SysName() string {
-	return "streaming"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Streaming",
+		SysName:  "streaming",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func RegisterPlugin() {

@@ -27,11 +27,12 @@ var (
 
 type Plugin struct{}
 
-func (p *Plugin) Name() string {
-	return "Logs"
-}
-func (p *Plugin) SysName() string {
-	return "logs"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Logging",
+		SysName:  "logging",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func RegisterPlugin() {
