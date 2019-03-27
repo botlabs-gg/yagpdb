@@ -79,7 +79,7 @@
                     
                     {{range $index, $element := .ManagedGuilds -}}{{if $element.Connected -}}
                     <li>
-                        <a role="menuitem" tabindex="-1" href="/manage/{{$element.ID}}/stats"><i class="fas fa-wrench"></i> {{$element.Name}}</a>
+                        <a role="menuitem" tabindex="-1" href="/manage/{{$element.ID}}/home"><i class="fas fa-wrench"></i> {{$element.Name}}</a>
                     </li>
                     {{end}}{{end}}
 
@@ -161,6 +161,12 @@
             <nav id="menu" class="nav-main" role="navigation">
                 <ul class="nav nav-main">
                     {{if and .ActiveGuild .IsAdmin}}
+                    <li>
+                        <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/home">
+                            <i class="fas fa-home" aria-hidden="true"></i>
+                            <span>Home</span>
+                        </a>                        
+                    </li>
                     <li>
                         <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/stats">
                             <i class="fas fa-home" aria-hidden="true"></i>

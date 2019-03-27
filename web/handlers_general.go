@@ -16,6 +16,30 @@ import (
 	"time"
 )
 
+type serverHomeWidget struct {
+	HumanName  string
+	PluginName string
+}
+
+func HandleServerHome(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	_, templateData := GetBaseCPContextData(r.Context())
+
+	pluginWidgets := make([]*serverHomeWidget, 0)
+
+	for _, v := range common.Plugins {
+		if cast, ok := v.(PluginWithServerHomeWidget); ok {
+			pluginWidgets = append(pluginWidgets, &serverHomeWidget{
+				HumanName:  v.Name(),
+				PluginName: cast.SysName(),
+			})
+		}
+	}
+
+	templateData["PluginWidgets"] = pluginWidgets
+
+	return templateData, nil
+}
+
 func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
 	activeGuild, templateData := GetBaseCPContextData(r.Context())
 

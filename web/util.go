@@ -262,3 +262,27 @@ func ParamOrEmpty(r *http.Request, key string) string {
 
 	return ""
 }
+
+func Indicator(enabled bool) string {
+	const IndEnabled = `<span class="indicator indicator-success"></span>`
+	const IndDisabled = `<span class="indicator indicator-danger"></span>`
+
+	if enabled {
+		return IndEnabled
+	}
+
+	return IndDisabled
+}
+
+func EnabledDisabledSpanStatus(enabled bool) (str string) {
+	indicator := Indicator(enabled)
+
+	enabledStr := "disabled"
+	enabledClass := "danger"
+	if enabled {
+		enabledStr = "enabled"
+		enabledClass = "success"
+	}
+
+	return fmt.Sprintf("<span class=\"text-%s\">%s</span>%s", enabledClass, enabledStr, indicator)
+}
