@@ -24,6 +24,7 @@ var (
 		"toInt":    tmplToInt,
 		"toInt64":  ToInt64,
 		"toFloat":  ToFloat64,
+		"toDuration": ToDuration,
 
 		// string manipulation
 		"joinStr":   joinStrings,
