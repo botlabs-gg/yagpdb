@@ -478,6 +478,34 @@ func ToFloat64(from interface{}) float64 {
 	}
 }
 
+func ToDuration(from interface{}) time.Duration {
+	switch t := from.(type) {
+	case int:
+		return time.Duration(int64(t))
+	case int32:
+		return time.Duration(int64(t))
+	case int64:
+		return time.Duration(int64(t))
+	case float32:
+		return time.Duration(int64(t))
+	case float64:
+		return time.Duration(int64(t))
+	case uint:
+		return time.Duration(int64(t))
+	case uint32:
+		return time.Duration(int64(t))
+	case uint64:
+		return time.Duration(int64(t))
+	case string:
+		parsed, _ := strconv.ParseInt(t, 10, 64)
+		return time.Duration(parsed)
+	case time.Duration:
+		return time.Duration(t)
+	default:
+		return 0
+	}
+}
+
 func tmplJson(v interface{}) (string, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
