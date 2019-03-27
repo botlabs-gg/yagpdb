@@ -94,9 +94,9 @@ $(function(){
 
 {{define "moderation_general"}}
 <p>A set of moderation tools and commands to help you run a server.</p>
-<p>Commands for performing moderation actions such as kick and ban, as well as mutes, timed bans, warning, mass deleting messages and so on.<br>
-It is highly recommended to couple the moderation actions with the message logs, this was whenever your mods decide to perform actions on someone, a message log of the channel they ran the command in will be recorded and added to the mod log.</p>
-<p>The moderation actions coupled with the message logs has been one of the most useful tools for me personally when running servers with thousands of members.</p>
+<p>Commands for performing moderation actions such as kicks and bans, as well as mutes, timed bans, warnings, mass deleting messages and so on.<br>
+It is highly recommended to couple the moderation actions with the message logs, this means that whenever your mods decide to perform an action on someone, a message log of the channel they ran the command in will be recorded and added to the mod log.</p>
+<p>The moderation actions coupled with the message logs have been one of the most useful tools for me personally when running servers with thousands of members.</p>
 <p><a href="https://docs.yagpdb.xyz/moderation" target="_blank">More documentation</a></p>
 <div class="row">
     <div class="col">
@@ -121,7 +121,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <input class="form-check-input" id="log-unbans" type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
             <label for="log-unbans">
                 Log unban events in the modlog channel<br/>
-                For the author to show up when this is used you need to give the bot "audit log" permissions<br/>
+                For the author to show up when this is used you need to give the bot "audit log" permissions.<br/>
             </label>
         </div>
         <hr />
@@ -168,7 +168,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <input class="form-check-input" id="log-bans" type="checkbox" name="LogBans" {{if .ModConfig.LogBans}} checked{{end}}>
             <label for="log-bans">
                 Log ban events not made through the bot<br/>
-                For the author and reason to show up when this is used you need to give the bot "audit log" permissions
+                For the author and reason to show up when this is used you need to give the bot "audit log" permissions.
             </label>
         </div>
     </div>
