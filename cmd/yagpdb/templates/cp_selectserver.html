@@ -4,7 +4,7 @@
 <header class="page-header"><h2>News and updates</h2></header>
 <div class="row">
     <div class="col-lg-7">
-        
+
         {{if .JoinedGuild}}
         <section class="card card-featured card-featured-success mb-4">
             <header class="card-header">
@@ -23,7 +23,7 @@
             </div>
         </section>
         {{end}}
-        
+
         {{if .Posts}}
         {{range .Posts}}
         <secton class="card">
@@ -67,9 +67,9 @@
             <div class="card-body">
                 {{range .activePatrons}}
                 <img class="avatar" src="{{.Avatar}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{.Name}}"></img>
-                {{end}}                
+                {{end}}
                 <br>
-                <p>Patreon tiers above 3$ will grant you premium slots you can assign to servers, see <a href="/premium">the premium page</a> for more info</p>
+                <p>Patreon tiers above 3$ will grant you premium slots you can assign to servers, see <a href="/premium">the premium page</a> for more info.</p>
             </div>
         </section>
         {{end}}
@@ -78,9 +78,9 @@
                 <h2 class="card-title">Check out...</h2>
             </header>
             <div class="card-body">
-                <p>YAGPDB is open source! The project is hosted on github here: <a href="https://github.com/jonas747/yagpdb">jonas747/yagpdb</a></p>
+                <p>YAGPDB is open source! The project is hosted on github here: <a href="https://github.com/jonas747/yagpdb">jonas747/yagpdb</a>.</p>
                 <p><a href="https://docs.yagpdb.xyz/donating" target="_blank">Donate using patreon, bitcoin and other cryptos!</a> Donating $3 or more will grant you premium slots you can assign to servers!</p>
-                <p>Looking to buy the ad space? <a href="https://docs.yagpdb.xyz/donating#advertisement" target="_blank">Click here for more info</a></p>
+                <p>Looking to buy the ad space? <a href="https://docs.yagpdb.xyz/donating#advertisement" target="_blank">Click here for more info</a>.</p>
                 <p>Looking for the YAGPDB Discord server? the link is located at the top of the page!</p>
             </div>
         </section>
@@ -91,4 +91,3 @@
 {{template "cp_footer" .}}
 
 {{end}}
-
