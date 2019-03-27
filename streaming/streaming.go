@@ -13,6 +13,10 @@ func (p *Plugin) Name() string {
 	return "Streaming"
 }
 
+func (p *Plugin) SysName() string {
+	return "streaming"
+}
+
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)

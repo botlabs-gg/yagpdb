@@ -76,6 +76,10 @@ func (p *Plugin) Name() string {
 	return "Commands"
 }
 
+func (p *Plugin) SysName() string {
+	return "commands"
+}
+
 func GetCommandPrefix(guild int64) (string, error) {
 	var prefix string
 	err := common.RedisPool.Do(radix.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))

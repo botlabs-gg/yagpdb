@@ -259,3 +259,25 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 		common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id")))
 	}
 }
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Youtube feeds"
+	templateData["SettingsPath"] = "/youtube"
+
+	var numFeeds int64
+	result := common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", ag.ID).Count(&numFeeds)
+	if numFeeds > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	const format = `<p>Active Youtube feeds: <code>%d</code></p>`
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, numFeeds))
+
+	return templateData, result.Error
+}

@@ -29,6 +29,9 @@ type Plugin struct {
 func (p *Plugin) Name() string {
 	return "RoleCommands"
 }
+func (p *Plugin) SysName() string {
+	return "role_commands"
+}
 
 const (
 	GroupModeNone = iota

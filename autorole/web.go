@@ -1,6 +1,7 @@
 package autorole
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
+	"html"
 	"html/template"
 	"net/http"
 )
@@ -96,4 +98,44 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	}
 
 	return tmpl, nil
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+var _ web.PluginWithServerHomeWidgetMiddlewares = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Autorole"
+	templateData["SettingsPath"] = "/autorole"
+
+	general, err := GetGeneralConfig(ag.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	enabledDisabled := ""
+	autoroleRole := "none"
+
+	if role := ag.Role(general.Role); role != nil {
+		templateData["WidgetEnabled"] = true
+		enabledDisabled = web.EnabledDisabledSpanStatus(true)
+		autoroleRole = html.EscapeString(role.Name)
+	} else {
+		templateData["WidgetDisabled"] = true
+		enabledDisabled = web.EnabledDisabledSpanStatus(false)
+	}
+
+	format := `<ul>
+	<li>Autorole status: %s</li>
+	<li>Autorole role: <code>%s</code></li>
+</ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, enabledDisabled, autoroleRole))
+
+	return templateData, nil
+}
+
+func (p *Plugin) ServerHomeWidgetApplyMiddlewares(inner http.Handler) http.Handler {
+	return web.RequireFullGuildMW(inner)
 }

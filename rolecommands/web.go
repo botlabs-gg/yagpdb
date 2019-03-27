@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
@@ -45,12 +46,7 @@ type FormGroup struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPathSettings := "templates/plugins/rolecommands.html"
-	if common.Testing {
-		tmplPathSettings = "../../rolecommands/assets/rolecommands.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
+	web.LoadHTMLTemplate("../../rolecommands/assets/rolecommands.html", "templates/plugins/rolecommands.html")
 
 	// Setup SubMuxer
 	subMux := goji.SubMux()
@@ -415,4 +411,24 @@ func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
 	_, err := models.RoleGroups(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll(r.Context(), common.PQ)
 	return nil, err
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, templateData := web.GetBaseCPContextData(r.Context())
+	templateData["WidgetTitle"] = "Role commands"
+	templateData["SettingsPath"] = "/rolecommands/"
+
+	numCommands, err := models.RoleCommands(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
+
+	if numCommands > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf("Active RoleCommands: <code>%d</code>", numCommands))
+
+	return templateData, err
 }

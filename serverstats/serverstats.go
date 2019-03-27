@@ -27,6 +27,10 @@ func (p *Plugin) Name() string {
 	return "Server Stats"
 }
 
+func (p *Plugin) SysName() string {
+	return "server_stats"
+}
+
 func RegisterPlugin() {
 	common.ValidateSQLSchema(DBSchema)
 	_, err := common.PQ.Exec(DBSchema)

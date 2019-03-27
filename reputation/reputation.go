@@ -41,6 +41,10 @@ func (p *Plugin) Name() string {
 	return "Reputation"
 }
 
+func (p *Plugin) SysName() string {
+	return "reputation"
+}
+
 func DefaultConfig(guildID int64) *models.ReputationConfig {
 	return &models.ReputationConfig{
 		GuildID:       guildID,

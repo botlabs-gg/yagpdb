@@ -40,6 +40,10 @@ func (p *Plugin) Name() string {
 	return "Youtube"
 }
 
+func (p *Plugin) SysName() string {
+	return "youtube"
+}
+
 func RegisterPlugin() {
 	p := &Plugin{}
 	err := p.SetupClient()

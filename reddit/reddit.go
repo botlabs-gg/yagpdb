@@ -31,6 +31,10 @@ func (p *Plugin) Name() string {
 	return "Reddit"
 }
 
+func (p *Plugin) SysName() string {
+	return "reddit"
+}
+
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	code, _ := common.DiscordError(err)

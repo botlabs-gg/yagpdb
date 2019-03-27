@@ -17,6 +17,10 @@ func (p *Plugin) Name() string {
 	return "Autorole"
 }
 
+func (p *Plugin) SysName() string {
+	return "autorole"
+}
+
 func RegisterPlugin() {
 	p := &Plugin{}
 	common.RegisterPlugin(p)

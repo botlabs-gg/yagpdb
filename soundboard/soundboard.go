@@ -19,6 +19,10 @@ func (p *Plugin) Name() string {
 	return "Soundboard"
 }
 
+func (p *Plugin) SysName() string {
+	return "Soundboard"
+}
+
 func RegisterPlugin() {
 	_, err := common.PQ.Exec(DBSchema)
 	if err != nil {

@@ -21,6 +21,9 @@ type Plugin struct{}
 func (p *Plugin) Name() string {
 	return "Moderation"
 }
+func (p *Plugin) SysName() string {
+	return "moderation"
+}
 
 func RedisKeyMutedUser(guildID, userID int64) string {
 	return "moderation_muted_user:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)

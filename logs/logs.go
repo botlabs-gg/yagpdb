@@ -30,6 +30,9 @@ type Plugin struct{}
 func (p *Plugin) Name() string {
 	return "Logs"
 }
+func (p *Plugin) SysName() string {
+	return "logs"
+}
 
 func RegisterPlugin() {
 	_, err := common.PQ.Exec(DBSchema)

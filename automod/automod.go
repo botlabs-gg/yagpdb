@@ -25,6 +25,10 @@ func (p *Plugin) Name() string {
 	return "Automod v2"
 }
 
+func (p *Plugin) SysName() string {
+	return "automod_v2"
+}
+
 func RegisterPlugin() {
 	RegexCache = ccache.New(ccache.Configure())
 

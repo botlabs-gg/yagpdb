@@ -2,6 +2,7 @@ package logs
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
@@ -292,4 +293,38 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
 	return err
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Logging"
+	templateData["SettingsPath"] = "/logging/"
+
+	config, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	nBlacklistedChannels := 0
+
+	if len(config.BlacklistedChannels.String) > 0 {
+		split := strings.Split(config.BlacklistedChannels.String, ",")
+		nBlacklistedChannels = len(split)
+	}
+
+	format := `<ul>
+	<li>Username logging: %s</li>
+	<li>Nickname loggin: %s</li>
+	<li>Blacklisted channels from creating message logs: <code>%d</code></li>
+</ul>`
+
+	templateData["WidgetEnabled"] = true
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
+		web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool), nBlacklistedChannels))
+
+	return templateData, nil
 }

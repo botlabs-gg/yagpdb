@@ -29,6 +29,10 @@ func (p *Plugin) Name() string {
 	return "Notifications"
 }
 
+func (p *Plugin) SysName() string {
+	return "Notifications"
+}
+
 type Config struct {
 	configstore.GuildConfigModel
 	JoinServerEnabled bool   `json:"join_server_enabled" schema:"join_server_enabled"`

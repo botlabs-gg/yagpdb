@@ -277,3 +277,28 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	_, err = storedSound.DeleteG(ctx)
 	return tmpl, err
 }
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Soundboard"
+	templateData["SettingsPath"] = "/soundboard/"
+
+	sounds, err := GetSoundboardSounds(ag.ID, r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	if len(sounds) > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	const format = `<p>Soundboard sounds: <code>%d</code></p>`
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(sounds)))
+
+	return templateData, nil
+}

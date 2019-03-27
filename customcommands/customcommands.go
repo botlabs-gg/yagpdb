@@ -43,6 +43,10 @@ func (p *Plugin) Name() string {
 	return "Custom commands"
 }
 
+func (p *Plugin) SysName() string {
+	return "custom_commands"
+}
+
 type CommandTriggerType int
 
 const (
