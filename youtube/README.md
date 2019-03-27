@@ -15,7 +15,7 @@ Then a video was published (but uploaded a long time ago):
 
 vid3 was published after the latest vidoe but still appears at the bottom. this causes issues as we have no idea when to stop looking now. Currently YAGPDB handles this fine as long as it's not uploaded longer than 50 videos ago, in which case it may or may not catch it.
 
-In the future I'll do a hybrid mode with search. Those super late published videos however will show up in discord super late. I cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind. 
+In the future I'll do a hybrid mode with search. Those super late published videos however will show up in Discord super late. I cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind.
 
 The feed plugin is complicated because we use the user's `uploads` playlist, and that is sorted by actual upload date instead of publish date
 
@@ -32,11 +32,11 @@ Then a video was published (but uploaded a long time ago)
 
 vid3 was published after the latest vidoe but still appears at the bottom. this causes issues as we have no idea when to stop looking now. Currently YAGPDB handles this fine as long as its not uploaded longer than 50 videos ago, in which case it may or may not catch it.
 
-In the future i'll do a hybrid mode with search, those super late published videos however will show up in discord super late, i cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind. 
+In the future i'll do a hybrid mode with search, those super late published videos however will show up in Discord super late, i cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind.
 
 ### Storage layout:
 
-Postgres tables: 
+Postgres tables:
 youtube_guild_subs - postgres
     - guild_id
     - channel_id
@@ -46,7 +46,7 @@ youtube_playlist_ids
     - channel_name PRIMARY
     - playlist_id
 
-Redis keys: 
+Redis keys:
 
 `youtube_subbed_channels` - sorted set
 

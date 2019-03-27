@@ -15,7 +15,7 @@
             <div class="tabs">
                 <ul class="nav nav-tabs">
                     <li class="nav-item active"><a class="nav-link show active" href="#general" aria-controls="general" role="tab" data-toggle="tab">
-                        General 
+                        General
                     </a></li>
                     <li class="nav-item"><a class="nav-link" href="#mute" aria-controls="mute/unmute" role="tab" data-toggle="tab" >
                         Mute <span class="indicator indicator-{{if .ModConfig.MuteEnabled}}success{{else}}danger{{end}}"></span>
@@ -45,7 +45,7 @@
             <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
         </div>
     </div>
-    <!-- /.row -->            
+    <!-- /.row -->
 </form>
 <div id="clear-server-warnings-modal" class="modal-block modal-full-color modal-block-danger mfp-hide">
     <section class="card">
@@ -87,7 +87,7 @@ function MuteManagedChanged(){
 $(function(){
     MuteManagedChanged();
 })
-</script>  
+</script>
 {{template "cp_footer" .}}
 
 {{end}}
@@ -269,7 +269,7 @@ It is highly recommended to couple the moderation actions with the message logs,
 {{end}}
 
 {{define "moderation_kick"}}
-<p>Allows you to kick members through a command, there's several benefits using this over just kicking them in discord:</p>
+<p>Allows you to kick members through a command, there's several benefits using this over just kicking them in Discord:</p>
 <ul>
     <li>They get sent a DM that they were kicked</li>
     <li>If you have the modlog enabled, a log containing the last 100 messages from the channel will be included in the modlog entry</li>
@@ -313,7 +313,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         <div class="form-group">
             <label>Kick DM (Leave empty for default)</label>
             <textarea rows="5" class="form-control" name="KickMessage" placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
-            
+
             <p class="help-block">Available template data:<br/>
             {{template "template_helper_user"}} - The user being banned/kicked<br/>
             <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br/>

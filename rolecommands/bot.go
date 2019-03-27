@@ -18,7 +18,7 @@ import (
 )
 
 func (p *Plugin) AddCommands() {
-	const msgIDDocs = "To get the id of a message you have to turn on developer mode in discord's appearances settings then right click the message and copy id."
+	const msgIDDocs = "To get the id of a message you have to turn on developer mode in Discord's appearances settings then right click the message and copy id."
 
 	categoryRoleMenu := &dcmd.Category{
 		Name:        "Rolemenu",
