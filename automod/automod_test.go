@@ -10,9 +10,10 @@ func TestPrepareMessageForWordCheck(t *testing.T) {
 		input  string
 		output string
 	}{
+		{input: "!play", output: " play play !play"},
 		{input: "wew", output: "wew"},
-		{input: "we*w", output: "we w wew"},
-		{input: "we**w", output: "we  w wew"},
+		{input: "we*w", output: "we w wew we*w"},
+		{input: "we**w", output: "we  w wew we**w"},
 	}
 
 	for i, c := range cases {
