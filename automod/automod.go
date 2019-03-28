@@ -152,8 +152,12 @@ func PrepareMessageForWordCheck(input string) string {
 		}
 
 		out.WriteString(w1)
-		if w1 != w2 {
+		if w1 != w2 && w1 != w {
+			out.WriteString(" " + w2 + " " + w)
+		} else if w1 != w2 {
 			out.WriteString(" " + w2)
+		} else if w1 != w {
+			out.WriteString(" " + w)
 		}
 	}
 
