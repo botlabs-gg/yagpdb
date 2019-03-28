@@ -138,10 +138,12 @@ func PrepareMessageForWordCheck(input string) string {
 		// this i imagine will solve a low of cases
 		w1 := ""
 		w2 := ""
+		w3 := ""
 
 		for _, r := range w {
 			// we replace them with spaces instead to make for a more accurate version
 			// e.g "word1*word2" will become "word1 word2" instead of "word1word2"
+			w3 += string(r)
 			if unicode.IsPunct(r) || unicode.IsSymbol(r) {
 				// replace with spaces for w1, and just remove for w2
 				w1 += " "
@@ -152,8 +154,12 @@ func PrepareMessageForWordCheck(input string) string {
 		}
 
 		out.WriteString(w1)
-		if w1 != w2 {
+		if w1 != w2 && w1 != w3 {
+			out.WriteString(" " + w2 + " " + w3)
+		} else if w1 != w2 {
 			out.WriteString(" " + w2)
+		} else if w1 != w3 {
+			out.WriteString(" " + w3)
 		}
 	}
 
