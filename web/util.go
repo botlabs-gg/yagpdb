@@ -178,13 +178,6 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 // Checks the context if there is a logged in user and if so if he's and admin or not
 func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 
-	// if HasAccesstoGuildSettings(userID, g, config, roleProvider, write)
-
-	// // check if we allow absolutely everyone read only acccess, and this is a read only request
-	// if isReadOnlyReq && coreConf != nil && coreConf.AllowNonMembersReadOnly {
-	// 	return true
-	// }
-
 	isReadOnlyReq := strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS")
 
 	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {

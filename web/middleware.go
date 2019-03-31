@@ -197,37 +197,6 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			LogIgnoreErr(common.SetCacheDataJson(session.Token+":user", 3600, user))
 		}
 
-		// retrieve guilds this user is part of
-		// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
-		// var guilds []*discordgo.UserGuild
-		// err = common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
-		// if err != nil {
-		// 	guilds, err = session.UserGuilds(100, 0, 0)
-		// 	if err != nil {
-		// 		CtxLogger(r.Context()).WithError(err).Error("Failed getting user guilds")
-		// 		HandleLogout(w, r)
-		// 		return
-		// 	}
-
-		// 	LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
-		// }
-
-		// // wrap the guilds with some more info, such as wether the bot is on the server
-		// wrapped, err := common.GetWrapped(guilds)
-		// if err != nil {
-		// 	CtxLogger(r.Context()).WithError(err).Error("Failed wrapping guilds")
-		// 	http.Redirect(w, r, "/?err=rediserr", http.StatusTemporaryRedirect)
-		// 	return
-		// }
-
-		// // the servers the user is on and the user has manage server perms
-		// managedGuilds := make([]*common.WrappedGuild, 0)
-		// for _, g := range wrapped {
-		// 	if g.Owner || g.Permissions&discordgo.PermissionManageServer != 0 {
-		// 		managedGuilds = append(managedGuilds, g)
-		// 	}
-		// }
-
 		templateData := map[string]interface{}{
 			"User":       user,
 			"IsBotOwner": user.ID == common.Conf.Owner,
@@ -302,54 +271,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": guild})
 
 		r = r.WithContext(ctx)
-
-		// guilds, ok := ctx.Value(common.ContextKeyGuilds).([]*discordgo.UserGuild)
-		// if !ok {
-		// 	// Userguilds not available, fallback to full guild request
-		// 	var err error
-		// 	ctx, err = setFullGuild(ctx, guildID)
-		// 	if err != nil {
-		// 		CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
-		// 	}
-		// 	r = r.WithContext(ctx)
-		// 	return
-		// }
-
-		// Look for current guild in userguilds
-		// var userGuild *discordgo.UserGuild
-		// for _, g := range guilds {
-		// 	if g.ID == guildID {
-		// 		userGuild = g
-		// 		break
-		// 	}
-		// }
-
-		// update context logging entry with guild id
-		// entry := CtxLogger(ctx).WithField("g", guildID)
-		// ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
-
-		// if userGuild == nil {
-		// 	// Fallback to full guild if userguild is not found
-		// 	var err error
-		// 	ctx, err = setFullGuild(ctx, guildID)
-		// 	if err != nil {
-		// 		CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
-		// 	}
-
-		// 	ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": IsAdminRequest(ctx, r)})
-		// 	r = r.WithContext(ctx)
-		// 	return
-		// }
-
-		// fullGuild := &discordgo.Guild{
-		// 	ID:   userGuild.ID,
-		// 	Name: userGuild.Name,
-		// 	Icon: userGuild.Icon,
-		// }
-
-		// isAdmin := IsAdminRequest(ctx, r)
-		// ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild, "IsAdmin": isAdmin})
-		// r = r.WithContext(ctx)
 	}
 	return http.HandlerFunc(mw)
 }
