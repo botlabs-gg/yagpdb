@@ -255,8 +255,15 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 
 	templateData["WidgetEnabled"] = true
 
-	const format = `TODO`
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format))
+	config := r.Context().Value(common.ContextKeyCoreConfig).(*models.CoreConfig)
+
+	const format = `<ul>
+	<li>Read Only roles: %d</li>
+	<li>Write Roles: %d</li>
+	<li>All members read only: %s</li>
+	<li>Allow absolutely everyone read only access: %s</li>
+</ul>`
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles), EnabledDisabledSpanStatus(config.AllowAllMembersReadOnly), EnabledDisabledSpanStatus(config.AllowNonMembersReadOnly)))
 
 	return templateData, nil
 }
