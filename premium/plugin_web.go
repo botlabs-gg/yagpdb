@@ -74,6 +74,9 @@ func HandleGetPremiumMainPage(w http.ResponseWriter, r *http.Request) (tmpl web.
 		return tmpl, err
 	}
 
+	guilds, _ := web.GetUserGuilds(r.Context())
+
+	tmpl["UserGuilds"] = guilds
 	tmpl["PremiumSlotDurationRemaining"] = SlotDurationLeft
 	tmpl["PremiumSlots"] = slots
 	return tmpl, nil

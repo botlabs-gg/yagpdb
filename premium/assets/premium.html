@@ -121,7 +121,7 @@
 
 
                             {{$selected := .GuildID.Int64}}
-                            {{range  $dot.ManagedGuilds}}
+                            {{range  $dot.UserGuilds}}
                                 <option value="{{.ID}}" {{if eq .ID $selected}}{{$found = true}} selected {{end}}>{{.Name}}</option>
                             {{end}}
 
