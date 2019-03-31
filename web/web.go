@@ -299,7 +299,7 @@ func setupRoutes() *goji.Mux {
 	// Set up the routes for the per server home widgets
 	for _, p := range common.Plugins {
 		if cast, ok := p.(PluginWithServerHomeWidget); ok {
-			handler := ControllerHandler(cast.LoadServerHomeWidget, "cp_server_home_widget")
+			handler := GuildScopeCacheMW(p, ControllerHandler(cast.LoadServerHomeWidget, "cp_server_home_widget"))
 
 			if mwares, ok2 := p.(PluginWithServerHomeWidgetMiddlewares); ok2 {
 				handler = mwares.ServerHomeWidgetApplyMiddlewares(handler)

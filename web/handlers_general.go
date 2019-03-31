@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
@@ -10,10 +11,12 @@ import (
 	"github.com/jonas747/yagpdb/common/patreon"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/mediocregopher/radix"
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"html/template"
+	"io"
 	"net/http"
 	"sort"
 	"strconv"
@@ -363,4 +366,71 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	}
 
 	return wrapped, nil
+}
+
+var WidgetCache = cache.New(time.Second*10, time.Second*10)
+
+type WidgetCacheItem struct {
+	RawResponse []byte
+	Header      http.Header
+}
+
+// Writes the request log into logger, returns a new middleware
+func GuildScopeCacheMW(plugin common.Plugin, inner http.Handler) http.Handler {
+
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		g, _ := GetBaseCPContextData(r.Context())
+
+		cacheKey := discordgo.StrID(g.ID) + "_" + plugin.PluginInfo().SysName
+
+		if v, ok := WidgetCache.Get(cacheKey); ok {
+			// already in the cache
+			cast := v.(*WidgetCacheItem)
+			for headerKey, headerValue := range cast.Header {
+				w.Header()[headerKey] = headerValue
+			}
+			w.WriteHeader(200)
+			w.Write(cast.RawResponse)
+			// CtxLogger(r.Context()).Info("cache hit")
+			return
+		}
+
+		// CtxLogger(r.Context()).Info("cache miss")
+
+		// create the multiwrite and put it in the cache
+		var b bytes.Buffer
+		newW := io.MultiWriter(w, &b)
+
+		newRW := &CustomResponseWriter{
+			inner: w,
+			newW:  newW,
+		}
+
+		inner.ServeHTTP(newRW, r)
+
+		item := &WidgetCacheItem{
+			RawResponse: b.Bytes(),
+			Header:      w.Header(),
+		}
+		WidgetCache.Set(cacheKey, item, time.Second*10)
+	}
+
+	return http.HandlerFunc(mw)
+}
+
+type CustomResponseWriter struct {
+	inner http.ResponseWriter
+	newW  io.Writer
+}
+
+func (c *CustomResponseWriter) Header() http.Header {
+	return c.inner.Header()
+}
+
+func (c *CustomResponseWriter) Write(b []byte) (int, error) {
+	return c.newW.Write(b)
+}
+
+func (c *CustomResponseWriter) WriteHeader(statusCode int) {
+	c.inner.WriteHeader(statusCode)
 }
