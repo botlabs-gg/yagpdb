@@ -7,9 +7,7 @@ const (
 	ContextKeyDiscordSession
 	ContextKeyTemplateData
 	ContextKeyUser
-	ContextKeyGuilds
 	ContextKeyCurrentGuild
-	ContextKeyCurrentUserGuild
 	ContextKeyGuildChannels
 	ContextKeyGuildRoles
 	ContextKeyParsedForm
@@ -20,4 +18,7 @@ const (
 	ContextKeyLogger
 	ContextKeyIsPartial
 	ContextKeyUserMember
+	ContextKeyCoreConfig
+	ContextKeyMemberPermissions
+	ContextKeyIsAdmin
 )

@@ -1,15 +1,18 @@
 package web
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/models"
 	"github.com/jonas747/yagpdb/common/patreon"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"goji.io/pat"
+	"html/template"
 	"net/http"
 	"sort"
 	"strconv"
@@ -226,4 +229,117 @@ func handleRobotsTXT(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`User-agent: *
 Disallow: /manage/
 `))
+}
+
+type ControlPanelPlugin struct{}
+
+func (p *ControlPanelPlugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Control Panel",
+		SysName:  "control_panel",
+		Category: common.PluginCategoryCore,
+	}
+}
+
+var _ PluginWithServerHomeWidget = (*ControlPanelPlugin)(nil)
+
+func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	_, templateData := GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Control Panel"
+	// templateData["SettingsPath"] = "/soundboard/"
+
+	templateData["WidgetEnabled"] = true
+
+	const format = `TODO`
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format))
+
+	return templateData, nil
+}
+
+func (p *ControlPanelPlugin) ServerHomeWidgetOrder() int {
+	return 5
+}
+
+type CoreConfigPostForm struct {
+	AllowedReadOnlyRoles    []int64 `valid:"role,true"`
+	AllowedWriteRoles       []int64 `valid:"role,true"`
+	AllowAllMembersReadOnly bool
+	AllowNonMembersReadOnly bool
+}
+
+func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	g, templateData := GetBaseCPContextData(r.Context())
+
+	form := r.Context().Value(common.ContextKeyParsedForm).(*CoreConfigPostForm)
+
+	m := &models.CoreConfig{
+		GuildID:              g.ID,
+		AllowedReadOnlyRoles: form.AllowedReadOnlyRoles,
+		AllowedWriteRoles:    form.AllowedWriteRoles,
+
+		AllowAllMembersReadOnly: form.AllowAllMembersReadOnly,
+		AllowNonMembersReadOnly: form.AllowNonMembersReadOnly,
+	}
+
+	err := common.CoreConfigSave(r.Context(), m)
+	if err != nil {
+		return templateData, err
+	}
+
+	templateData["CoreConfig"] = m
+
+	return templateData, nil
+}
+
+func HandleGetManagedGuilds(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+	ctx := r.Context()
+	_, templateData := GetBaseCPContextData(ctx)
+
+	session := DiscordSessionFromContext(ctx)
+	user := ContextUser(ctx)
+
+	// retrieve guilds this user is part of
+	// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
+	var guilds []*discordgo.UserGuild
+	err := common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
+	if err != nil {
+		guilds, err = session.UserGuilds(100, 0, 0)
+		if err != nil {
+			CtxLogger(r.Context()).WithError(err).Error("Failed getting user guilds")
+			return templateData, err
+		}
+
+		LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
+	}
+
+	// wrap the guilds with some more info, such as wether the bot is on the server
+	wrapped, err := common.GetGuildsWithConnected(guilds)
+	if err != nil {
+		CtxLogger(r.Context()).WithError(err).Error("Failed wrapping guilds")
+		return templateData, err
+	}
+
+	accessibleGuilds := make([]*common.GuildWithConnected, 0, len(wrapped))
+
+	// the servers the user is on and the user has manage server perms
+	for _, g := range wrapped {
+		conf := common.GetCoreServerConfCached(g.ID)
+		if HasAccesstoGuildSettings(user.ID, g, conf, basicRoleProvider, false) {
+			accessibleGuilds = append(accessibleGuilds, g)
+		}
+	}
+
+	templateData["ManagedGuilds"] = accessibleGuilds
+
+	return templateData, nil
+}
+
+func basicRoleProvider(guildID, userID int64) []int64 {
+	members, err := botrest.GetMembers(guildID, userID)
+	if err != nil || len(members) < 1 || members[0] == nil {
+		return nil
+	}
+
+	return members[0].Roles
 }

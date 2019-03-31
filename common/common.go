@@ -1,5 +1,7 @@
 package common
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"database/sql"
 	"fmt"
@@ -41,6 +43,8 @@ var (
 	Testing = os.Getenv("YAGPDB_TESTING") != ""
 
 	CurrentRunCounter int64
+
+	_ interface{} = ensure64bit
 )
 
 // Initalizes all database connections, config loading and so on
@@ -86,6 +90,10 @@ func Init() error {
 	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
 		panic(err)
+	}
+
+	if !InitSchema(CoreServerConfDBSchema, "core configs") {
+		logrus.Fatal("error initializing schema")
 	}
 
 	return err
@@ -164,4 +172,14 @@ func connectDB(host, user, pass, dbName string) error {
 	GORM.SetLogger(&GORMLogger{})
 
 	return err
+}
+
+func InitSchema(schema string, name string) bool {
+	_, err := PQ.Exec(schema)
+	if err != nil {
+		logrus.WithError(err).Error("failed initializing postgres db schema for ", name)
+		return false
+	}
+
+	return true
 }

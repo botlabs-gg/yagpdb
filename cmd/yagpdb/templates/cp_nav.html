@@ -55,15 +55,14 @@
                 <figure class="profile-picture">
                     {{if and .ActiveGuild .ActiveGuild.Icon}}
                     <img src="https://cdn.discordapp.com/icons/{{.ActiveGuild.ID}}/{{.ActiveGuild.Icon}}?size=64" alt="Server Icon" class="rounded-circle"/>
-                    {{else}}
+                    {{else}}                    
                     <img src="/static/img/questionmark.png" alt="Server Icon" class="rounded-circle"/>
                     {{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="Server Name">
-                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i class="fas fa-crown text-info ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
-                    <span class="role">Change server</span>
+                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i class="fas fa-crown text-info ml-1"></i>{{end}}{{else}}Loading...{{end}}</span>
+                    <span class="role">loading....</span>
                 </div>
-
                 <i class="fa custom-caret"></i>
             </a>
 
@@ -71,30 +70,21 @@
                 <ul class="list-unstyled mb-2" style="max-height: 500px; overflow-y: auto;">
                     <li class="divider"></li>
                     
-                    {{if .ManagedGuilds}}
-
-                    {{$clientid := .ClientID}}
-                    {{$host := .Host}}
-                    {{$baseURL := .BaseURL}}
-                    
-                    {{range $index, $element := .ManagedGuilds -}}{{if $element.Connected -}}
                     <li>
-                        <a role="menuitem" tabindex="-1" href="/manage/{{$element.ID}}/home"><i class="fas fa-wrench"></i> {{$element.Name}}</a>
+                        <a role="menuitem" tabindex="-1" href="#"><i class="fas fa-wrench"></i>Loading your servers</a>
                     </li>
-                    {{end}}{{end}}
-
-                    <li class="divider"></li>
-                    
-                    {{range $index, $element := .ManagedGuilds -}}{{if not $element.Connected -}}
                     <li>
-                        <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=2146827775&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i class="fas fa-plus"></i>{{$element.Name}}</a>
+                        <a role="menuitem" tabindex="-1" href="#"><i class="fas fa-wrench"></i>Please wait, or refresh the page if broken.</a>
                     </li>
-                    {{end}}{{end}}
-
-                    {{end}}
                 </ul>
             </div>
         </div>
+
+        <script>
+        $(function(){
+            loadWidget("server-selection", {{if .ActiveGuild}}"/manage/{{.ActiveGuild.ID}}/guild_selection"{{else}}"/guild_selection"{{end}});
+        });
+        </script>
 
         <span class="separator"></span>
 
@@ -173,18 +163,17 @@
                             <span>Stats</span>
                         </a>                        
                     </li>
-                    <li>
-                        <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/cplogs">
-                            <i class="fas fa-tree" aria-hidden="true"></i>
-                            <span>Control Panel Logs</span>
-                        </a>                        
-                    </li>
                     <li class="nav-parent">
                         <a class="nav-link" href="#">
                             <i class="fas fa-terminal" aria-hidden="true"></i>
-                            <span>Commands</span>
+                            <span>Core</span>
                         </a>
                         <ul class="nav nav-children">
+                            <li>
+                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/core">
+                                    Core settings
+                                </a>
+                            </li>
                             <li>
                                 <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/commands/settings">
                                     Command settings
@@ -194,6 +183,11 @@
                                 <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/customcommands">
                                     Custom commands
                                 </a>
+                            </li>
+                            <li>
+                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/cplogs">
+                                    Control Panel Logs
+                                </a>                        
                             </li>
                         </ul>
                     </li>
@@ -312,4 +306,51 @@
     </a>
 </div>
 {{end}}
+{{end}}
+
+
+{{define "cp_guild_selection"}}
+<a href="#" data-toggle="dropdown">
+    <figure class="profile-picture">
+        {{if and .ActiveGuild .ActiveGuild.Icon}}
+        <img src="https://cdn.discordapp.com/icons/{{.ActiveGuild.ID}}/{{.ActiveGuild.Icon}}?size=64" alt="Server Icon" class="rounded-circle"/>
+        {{else}}
+        <img src="/static/img/questionmark.png" alt="Server Icon" class="rounded-circle"/>
+        {{end}}
+    </figure>
+    <div class="profile-info" data-lock-name="Server Name">
+        <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i class="fas fa-crown text-info ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
+        <span class="role">Change server</span>
+    </div>
+
+    <i class="fa custom-caret"></i>
+</a>
+
+<div class="dropdown-menu">
+    <ul class="list-unstyled mb-2" style="max-height: 500px; overflow-y: auto;">
+        <li class="divider"></li>
+        
+        {{if .ManagedGuilds}}
+
+        {{$clientid := .ClientID}}
+        {{$host := .Host}}
+        {{$baseURL := .BaseURL}}
+        
+        {{range $index, $element := .ManagedGuilds -}}{{if $element.Connected -}}
+        <li>
+            <a role="menuitem" tabindex="-1" href="/manage/{{$element.ID}}/home"><i class="fas fa-wrench"></i> {{$element.Name}}</a>
+        </li>
+        {{end}}{{end}}
+
+        <li class="divider"></li>
+        
+        {{range $index, $element := .ManagedGuilds -}}{{if not $element.Connected -}}
+        <li>
+            <a href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=2146827775&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i class="fas fa-plus"></i>{{$element.Name}}</a>
+        </li>
+        {{end}}{{end}}
+
+        {{end}}
+    </ul>
+</div>
 {{end}}

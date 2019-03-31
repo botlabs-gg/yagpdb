@@ -146,6 +146,20 @@ func GetMemberColors(guildID int64, members ...int64) (m map[string]int, err err
 	return
 }
 
+func GetMemberMultiGuild(userID int64, guilds ...int64) (members []*discordgo.Member, err error) {
+
+	members = make([]*discordgo.Member, 0, len(guilds))
+
+	for _, v := range guilds {
+		m, err := GetMembers(v, userID)
+		if err == nil && len(m) > 0 {
+			members = append(members, m[0])
+		}
+	}
+
+	return
+}
+
 func GetChannelPermissions(guildID, channelID int64) (perms int64, err error) {
 	err = Get(bot.GuildShardID(guildID), discordgo.StrID(guildID)+"/channelperms/"+discordgo.StrID(channelID), &perms)
 	return

@@ -7,7 +7,7 @@
 </header>
 
 {{template "cp_alerts" .}}
-	
+
 {{range .PluginContainers}}
 <h2>{{.Category.Name}}</h2>
 <div class="row">
@@ -25,7 +25,6 @@
 	{{end}}
 </div>
 {{end}}
-
 <script type="text/javascript">
 $(function(){
 	{{$ag := .ActiveGuild}}

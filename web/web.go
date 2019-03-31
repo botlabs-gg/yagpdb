@@ -93,7 +93,7 @@ func init() {
 func loadTemplates() {
 	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html",
 		"templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html",
-		"templates/status.html", "templates/cp_server_home.html"))
+		"templates/status.html", "templates/cp_server_home.html", "templates/cp_core_settings.html"))
 }
 
 func BaseURL() string {
@@ -105,6 +105,8 @@ func BaseURL() string {
 }
 
 func Run() {
+	common.RegisterPlugin(&ControlPanelPlugin{})
+
 	loadTemplates()
 
 	AddGlobalTemplateData("ClientID", common.Conf.ClientID)
@@ -273,6 +275,7 @@ func setupRoutes() *goji.Mux {
 	CPMux.Use(RequireSessionMiddleware)
 	CPMux.Use(ActiveServerMW)
 	CPMux.Use(RequireActiveServer)
+	CPMux.Use(LoadCoreConfigMiddleware)
 	CPMux.Use(SetGuildMemberMiddleware)
 	CPMux.Use(RequireServerAdminMiddleware)
 
@@ -283,6 +286,15 @@ func setupRoutes() *goji.Mux {
 	CPMux.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	CPMux.Handle(pat.Get("/home"), ControllerHandler(HandleServerHome, "cp_server_home"))
 	CPMux.Handle(pat.Get("/home/"), ControllerHandler(HandleServerHome, "cp_server_home"))
+
+	coreSettingsHandler := RequireFullGuildMW(RenderHandler(nil, "cp_core_settings"))
+
+	CPMux.Handle(pat.Get("/core/"), coreSettingsHandler)
+	CPMux.Handle(pat.Get("/core"), coreSettingsHandler)
+	CPMux.Handle(pat.Post("/core"), ControllerPostHandler(HandlePostCoreSettings, coreSettingsHandler, CoreConfigPostForm{}, "Updated core settings"))
+
+	RootMux.Handle(pat.Get("/guild_selection"), RequireSessionMiddleware(ControllerHandler(HandleGetManagedGuilds, "cp_guild_selection")))
+	CPMux.Handle(pat.Get("/guild_selection"), RequireSessionMiddleware(ControllerHandler(HandleGetManagedGuilds, "cp_guild_selection")))
 
 	// Set up the routes for the per server home widgets
 	for _, p := range common.Plugins {
