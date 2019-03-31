@@ -61,7 +61,6 @@ func (p *Plugin) InitWeb() {
 
 	// Alll handlers here require guild channels present
 	redditMux.Use(web.RequireGuildChannelsMiddleware)
-	redditMux.Use(web.RequireFullGuildMW)
 	redditMux.Use(web.RequireBotMemberMW)
 	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)

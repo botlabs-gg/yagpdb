@@ -50,7 +50,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/soundboard/*"), cpMux)
 	web.CPMux.Handle(pat.New("/soundboard"), cpMux)
 
-	cpMux.Use(web.RequireFullGuildMW)
 	cpMux.Use(web.RequireBotMemberMW)
 
 	getHandler := web.ControllerHandler(HandleGetCP, "cp_soundboard")

@@ -50,7 +50,6 @@ func (p *Plugin) InitWeb() {
 
 	// Alll handlers here require guild channels present
 	ytMux.Use(web.RequireGuildChannelsMiddleware)
-	ytMux.Use(web.RequireFullGuildMW)
 	ytMux.Use(web.RequireBotMemberMW)
 	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
 

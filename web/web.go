@@ -287,7 +287,7 @@ func setupRoutes() *goji.Mux {
 	CPMux.Handle(pat.Get("/home"), ControllerHandler(HandleServerHome, "cp_server_home"))
 	CPMux.Handle(pat.Get("/home/"), ControllerHandler(HandleServerHome, "cp_server_home"))
 
-	coreSettingsHandler := RequireFullGuildMW(RenderHandler(nil, "cp_core_settings"))
+	coreSettingsHandler := RenderHandler(nil, "cp_core_settings")
 
 	CPMux.Handle(pat.Get("/core/"), coreSettingsHandler)
 	CPMux.Handle(pat.Get("/core"), coreSettingsHandler)

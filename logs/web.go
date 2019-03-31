@@ -60,7 +60,6 @@ func (lp *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/logging/*"), logCPMux)
 
 	logCPMux.Use(web.RequireGuildChannelsMiddleware)
-	logCPMux.Use(web.RequireFullGuildMW)
 
 	cpGetHandler := web.ControllerHandler(HandleLogsCP, "cp_logging")
 	logCPMux.Handle(pat.Get("/"), cpGetHandler)

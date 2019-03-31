@@ -54,7 +54,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/commands/settings/*"), subMux)
 
 	subMux.Use(web.RequireGuildChannelsMiddleware)
-	subMux.Use(web.RequireFullGuildMW)
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_commands")
 	subMux.Handle(pat.Get(""), getHandler)

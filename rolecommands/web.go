@@ -53,7 +53,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/rolecommands/*"), subMux)
 	web.CPMux.Handle(pat.New("/rolecommands"), subMux)
 
-	subMux.Use(web.RequireFullGuildMW)
 	subMux.Use(web.RequireBotMemberMW)
 	subMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 

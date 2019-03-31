@@ -57,7 +57,6 @@ func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathLeaderboard))
 
 	subMux := goji.SubMux()
-	subMux.Use(web.RequireFullGuildMW)
 
 	web.CPMux.Handle(pat.New("/reputation"), subMux)
 	web.CPMux.Handle(pat.New("/reputation/*"), subMux)

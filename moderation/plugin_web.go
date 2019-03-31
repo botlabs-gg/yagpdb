@@ -23,7 +23,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/moderation/*"), subMux)
 
 	subMux.Use(web.RequireGuildChannelsMiddleware)
-	subMux.Use(web.RequireFullGuildMW)
 
 	subMux.Use(web.RequireBotMemberMW) // need the bot's role
 	subMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionEmbedLinks))

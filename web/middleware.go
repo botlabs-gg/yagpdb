@@ -426,14 +426,6 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// RequireFullGuildMW puts the "gull" guild in the context, and ensures its available during the request, i say "full" because it doesn't include channels
-func RequireFullGuildMW(inner http.Handler) http.Handler {
-	mw := func(w http.ResponseWriter, r *http.Request) {
-		inner.ServeHTTP(w, r)
-	}
-	return http.HandlerFunc(mw)
-}
-
 // RequireBotMemberMW ensures that the bot member for the curreng guild is available, mostly used for checking the bot's roles
 func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

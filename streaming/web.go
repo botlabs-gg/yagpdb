@@ -34,7 +34,6 @@ func (p *Plugin) InitWeb() {
 
 	// Alll handlers here require guild channels present
 	streamingMux.Use(web.RequireGuildChannelsMiddleware)
-	streamingMux.Use(web.RequireFullGuildMW)
 	streamingMux.Use(web.RequireBotMemberMW)
 	streamingMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 	streamingMux.Use(baseData)
@@ -146,5 +145,5 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 }
 
 func (p *Plugin) ServerHomeWidgetApplyMiddlewares(inner http.Handler) http.Handler {
-	return web.RequireGuildChannelsMiddleware(web.RequireFullGuildMW(inner))
+	return web.RequireGuildChannelsMiddleware(inner)
 }

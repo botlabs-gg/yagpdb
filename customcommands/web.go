@@ -50,7 +50,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
 
 	subMux.Use(web.RequireGuildChannelsMiddleware)
-	subMux.Use(web.RequireFullGuildMW)
 
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
