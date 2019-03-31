@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
@@ -296,27 +297,12 @@ func HandleGetManagedGuilds(w http.ResponseWriter, r *http.Request) (TemplateDat
 	ctx := r.Context()
 	_, templateData := GetBaseCPContextData(ctx)
 
-	session := DiscordSessionFromContext(ctx)
 	user := ContextUser(ctx)
 
 	// retrieve guilds this user is part of
 	// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
-	var guilds []*discordgo.UserGuild
-	err := common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
+	wrapped, err := GetUserGuilds(ctx)
 	if err != nil {
-		guilds, err = session.UserGuilds(100, 0, 0)
-		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed getting user guilds")
-			return templateData, err
-		}
-
-		LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
-	}
-
-	// wrap the guilds with some more info, such as wether the bot is on the server
-	wrapped, err := common.GetGuildsWithConnected(guilds)
-	if err != nil {
-		CtxLogger(r.Context()).WithError(err).Error("Failed wrapping guilds")
 		return templateData, err
 	}
 
@@ -342,4 +328,32 @@ func basicRoleProvider(guildID, userID int64) []int64 {
 	}
 
 	return members[0].Roles
+}
+
+func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
+	session := DiscordSessionFromContext(ctx)
+	user := ContextUser(ctx)
+
+	// retrieve guilds this user is part of
+	// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
+	var guilds []*discordgo.UserGuild
+	err := common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
+	if err != nil {
+		guilds, err = session.UserGuilds(100, 0, 0)
+		if err != nil {
+			CtxLogger(ctx).WithError(err).Error("Failed getting user guilds")
+			return nil, err
+		}
+
+		LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
+	}
+
+	// wrap the guilds with some more info, such as wether the bot is on the server
+	wrapped, err := common.GetGuildsWithConnected(guilds)
+	if err != nil {
+		CtxLogger(ctx).WithError(err).Error("Failed wrapping guilds")
+		return nil, err
+	}
+
+	return wrapped, nil
 }
