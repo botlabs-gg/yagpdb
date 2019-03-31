@@ -8,7 +8,6 @@ const (
 	ContextKeyTemplateData
 	ContextKeyUser
 	ContextKeyCurrentGuild
-	ContextKeyGuildChannels
 	ContextKeyGuildRoles
 	ContextKeyParsedForm
 	ContextKeyFormOk

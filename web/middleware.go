@@ -408,6 +408,13 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
+		if len(guild.Channels) > 0 {
+			// channels already available
+			sort.Sort(dutil.Channels(guild.Channels))
+			inner.ServeHTTP(w, r)
+			return
+		}
+
 		channels, err := common.GetGuildChannels(guild.ID)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed retrieving channels")
@@ -419,9 +426,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 		sort.Sort(dutil.Channels(channels))
 		guild.Channels = channels
 
-		newCtx := context.WithValue(ctx, common.ContextKeyGuildChannels, channels)
-
-		inner.ServeHTTP(w, r.WithContext(newCtx))
+		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)
 }
