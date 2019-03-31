@@ -324,7 +324,14 @@ func HandleGetManagedGuilds(w http.ResponseWriter, r *http.Request) (TemplateDat
 func basicRoleProvider(guildID, userID int64) []int64 {
 	members, err := botrest.GetMembers(guildID, userID)
 	if err != nil || len(members) < 1 || members[0] == nil {
-		return nil
+
+		// fallback to discord api
+		m, err := common.BotSession.GuildMember(guildID, userID)
+		if err != nil {
+			return nil
+		}
+
+		return m.Roles
 	}
 
 	return members[0].Roles
