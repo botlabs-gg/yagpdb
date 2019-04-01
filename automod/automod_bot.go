@@ -47,7 +47,8 @@ func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
 }
 
 func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
-	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 {
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 || msg.Author.Discriminator == "0000" {
+		// check against a discrim of 0000 to avoid some cases on webhook messages where webhook_id is 0 but its a webhook, might be edits be discrim is also 0000 which is a invalid user discrim.
 		return false // Pls no panicerinos or banerinos self, also ignore webhooks
 	}
 
