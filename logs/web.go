@@ -197,7 +197,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	if !isAdmin && len(config.MessageLogsAllowedRoles) > 0 {
 		member := web.ContextMember(r.Context())
 		if member == nil {
-			return tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, aither you're not logged in or not on this server."))
+			return tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, either you're not logged in or not on this server."))
 		}
 
 		if !common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
