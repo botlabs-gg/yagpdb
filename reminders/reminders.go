@@ -24,8 +24,12 @@ func RegisterPlugin() {
 	common.RegisterPlugin(p)
 }
 
-func (p *Plugin) Name() string {
-	return "Reminders"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Reminders",
+		SysName:  "reminders",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 type Reminder struct {

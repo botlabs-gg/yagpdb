@@ -3,6 +3,8 @@ package commands
 import (
 	"fmt"
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -226,4 +228,70 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 
 		return nil, nil
 	}
+}
+
+// MemberArg matches a id or mention and returns a MemberState object for the user
+type MemberArg struct{}
+
+func (ma *MemberArg) Matches(def *dcmd.ArgDef, part string) bool {
+	// Check for mention
+	if strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">") {
+		return true
+	}
+
+	// Check for ID
+	_, err := strconv.ParseInt(part, 10, 64)
+	if err == nil {
+		return true
+	}
+
+	return false
+}
+
+func (ma *MemberArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
+	id := ma.ExtractID(part, data)
+
+	if id < 1 {
+		return nil, dcmd.NewSimpleUserError("Invalid mention or id")
+	}
+
+	member, err := bot.GetMember(data.GS.ID, id)
+	if err != nil {
+		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember, discordgo.ErrCodeUnknownUser) {
+			return nil, dcmd.NewSimpleUserError("User not a member of the server")
+		}
+
+		return nil, err
+	}
+
+	return member, nil
+}
+
+func (ma *MemberArg) ExtractID(part string, data *dcmd.Data) int64 {
+	if strings.HasPrefix(part, "<@") && len(part) > 3 {
+		// Direct mention
+		id := part[2 : len(part)-1]
+		if id[0] == '!' {
+			// Nickname mention
+			id = id[1:]
+		}
+
+		parsed, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return -1
+		}
+
+		return parsed
+	}
+
+	id, err := strconv.ParseInt(part, 10, 64)
+	if err == nil {
+		return id
+	}
+
+	return -1
+}
+
+func (ma *MemberArg) HelpName() string {
+	return "Member"
 }

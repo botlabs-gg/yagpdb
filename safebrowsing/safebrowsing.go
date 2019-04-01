@@ -18,8 +18,12 @@ func RegisterPlugin() {
 	common.RegisterPlugin(&Plugin{})
 }
 
-func (p *Plugin) Name() string {
-	return "safebrowsing"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "SafeBrowsing",
+		SysName:  "safe_browsing",
+		Category: common.PluginCategoryModeration,
+	}
 }
 
 func (p *Plugin) RunBackgroundWorker() {

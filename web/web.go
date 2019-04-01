@@ -90,8 +90,10 @@ func init() {
 	flag.BoolVar(&exthttps, "exthttps", false, "Set if the website uses external https (through reverse proxy) but should only listen on http.")
 }
 
-func LoadTemplates() {
-	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html", "templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html", "templates/status.html"))
+func loadTemplates() {
+	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html",
+		"templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html",
+		"templates/status.html", "templates/cp_server_home.html", "templates/cp_core_settings.html"))
 }
 
 func BaseURL() string {
@@ -103,7 +105,9 @@ func BaseURL() string {
 }
 
 func Run() {
-	LoadTemplates()
+	common.RegisterPlugin(&ControlPanelPlugin{})
+
+	loadTemplates()
 
 	AddGlobalTemplateData("ClientID", common.Conf.ClientID)
 	AddGlobalTemplateData("Host", common.Conf.Host)
@@ -271,6 +275,7 @@ func setupRoutes() *goji.Mux {
 	CPMux.Use(RequireSessionMiddleware)
 	CPMux.Use(ActiveServerMW)
 	CPMux.Use(RequireActiveServer)
+	CPMux.Use(LoadCoreConfigMiddleware)
 	CPMux.Use(SetGuildMemberMiddleware)
 	CPMux.Use(RequireServerAdminMiddleware)
 
@@ -279,11 +284,35 @@ func setupRoutes() *goji.Mux {
 
 	CPMux.Handle(pat.Get("/cplogs"), RenderHandler(HandleCPLogs, "cp_action_logs"))
 	CPMux.Handle(pat.Get("/cplogs/"), RenderHandler(HandleCPLogs, "cp_action_logs"))
+	CPMux.Handle(pat.Get("/home"), ControllerHandler(HandleServerHome, "cp_server_home"))
+	CPMux.Handle(pat.Get("/home/"), ControllerHandler(HandleServerHome, "cp_server_home"))
+
+	coreSettingsHandler := RenderHandler(nil, "cp_core_settings")
+
+	CPMux.Handle(pat.Get("/core/"), coreSettingsHandler)
+	CPMux.Handle(pat.Get("/core"), coreSettingsHandler)
+	CPMux.Handle(pat.Post("/core"), ControllerPostHandler(HandlePostCoreSettings, coreSettingsHandler, CoreConfigPostForm{}, "Updated core settings"))
+
+	RootMux.Handle(pat.Get("/guild_selection"), RequireSessionMiddleware(ControllerHandler(HandleGetManagedGuilds, "cp_guild_selection")))
+	CPMux.Handle(pat.Get("/guild_selection"), RequireSessionMiddleware(ControllerHandler(HandleGetManagedGuilds, "cp_guild_selection")))
+
+	// Set up the routes for the per server home widgets
+	for _, p := range common.Plugins {
+		if cast, ok := p.(PluginWithServerHomeWidget); ok {
+			handler := GuildScopeCacheMW(p, ControllerHandler(cast.LoadServerHomeWidget, "cp_server_home_widget"))
+
+			if mwares, ok2 := p.(PluginWithServerHomeWidgetMiddlewares); ok2 {
+				handler = mwares.ServerHomeWidgetApplyMiddlewares(handler)
+			}
+
+			CPMux.Handle(pat.Get("/homewidgets/"+p.PluginInfo().SysName), handler)
+		}
+	}
 
 	for _, plugin := range common.Plugins {
 		if webPlugin, ok := plugin.(Plugin); ok {
 			webPlugin.InitWeb()
-			log.Info("Initialized web plugin:", plugin.Name())
+			log.Info("Initialized web plugin:", plugin.PluginInfo().Name)
 		}
 	}
 
@@ -333,4 +362,13 @@ func legacyCPRedirHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit cp path: ", r.RequestURI)
 	trimmed := strings.TrimPrefix(r.RequestURI, "/cp")
 	http.Redirect(w, r, "/manage"+trimmed, http.StatusMovedPermanently)
+}
+
+func LoadHTMLTemplate(pathTesting, pathProd string) {
+	path := pathProd
+	if common.Testing {
+		path = pathTesting
+	}
+
+	Templates = template.Must(Templates.ParseFiles(path))
 }

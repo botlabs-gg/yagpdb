@@ -4,9 +4,11 @@
 package models
 
 var TableNames = struct {
-	CustomCommandGroups string
-	CustomCommands      string
+	CustomCommandGroups   string
+	CustomCommands        string
+	TemplatesUserDatabase string
 }{
-	CustomCommandGroups: "custom_command_groups",
-	CustomCommands:      "custom_commands",
+	CustomCommandGroups:   "custom_command_groups",
+	CustomCommands:        "custom_commands",
+	TemplatesUserDatabase: "templates_user_database",
 }

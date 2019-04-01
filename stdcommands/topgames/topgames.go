@@ -83,6 +83,10 @@ func checkGuild(dst map[string]int, gs *dstate.GuildState) {
 			continue
 		}
 
+		if ms.Bot {
+			continue
+		}
+
 		name := ms.PresenceGame.Name
 		dst[name]++
 	}

@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -57,4 +58,42 @@ func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.Templa
 	}
 
 	return templateData, nil
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "General notifications"
+	templateData["SettingsPath"] = "/notifications/general"
+
+	config := GetConfig(ag.ID)
+
+	format := `<ul>
+	<li>Join Server message: %s</li>
+	<li>Join DM message: %s</li>
+	<li>Leave message: %s</li>
+	<li>Topic change message: %s</li>
+</ul>`
+
+	if config.JoinServerEnabled || config.JoinDMEnabled || config.LeaveEnabled || config.TopicEnabled {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format,
+		web.EnabledDisabledSpanStatus(config.JoinServerEnabled), web.EnabledDisabledSpanStatus(config.JoinDMEnabled),
+		web.EnabledDisabledSpanStatus(config.LeaveEnabled), web.EnabledDisabledSpanStatus(config.TopicEnabled)))
+
+	return templateData, nil
+}
+
+func enabledDisabled(b bool) string {
+	if b {
+		return "enabled"
+	}
+
+	return "disabled"
 }

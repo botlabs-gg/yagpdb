@@ -18,8 +18,12 @@ const (
 
 type Plugin struct{}
 
-func (p *Plugin) Name() string {
-	return "Moderation"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Moderation",
+		SysName:  "moderation",
+		Category: common.PluginCategoryModeration,
+	}
 }
 
 func RedisKeyMutedUser(guildID, userID int64) string {

@@ -1,6 +1,7 @@
 package serverstats
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -276,4 +277,28 @@ func cacheChartFetcher(key string) interface{} {
 		MemberData:  memberData,
 		MessageData: messageData,
 	}
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Server Stats"
+	templateData["SettingsPath"] = "/stats"
+	templateData["WidgetEnabled"] = true
+
+	config, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
+		return templateData, common.ErrWithCaller(err)
+	}
+
+	const format = `<ul>
+	<li>Public stats: %s</li>
+	<li>Blacklisted channnels: <code>%d</code></li>
+</ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.Public), len(config.ParsedChannels)))
+
+	return templateData, nil
 }

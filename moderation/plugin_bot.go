@@ -100,7 +100,7 @@ func RefreshMuteOverrides(guildID int64) {
 		return // Still starting up and haven't received the guild yet
 	}
 
-	if guild.Role(true, config.IntMuteRole()) == nil {
+	if guild.RoleCopy(true, config.IntMuteRole()) == nil {
 		return
 	}
 
@@ -376,7 +376,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	if guild == nil {
 		return
 	}
-	role := guild.Role(true, config.IntMuteRole())
+	role := guild.RoleCopy(true, config.IntMuteRole())
 	if role == nil {
 		return // Probably deleted the mute role, do nothing then
 	}

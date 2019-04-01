@@ -27,8 +27,12 @@ type Plugin struct {
 	redditClient *reddit.Client
 }
 
-func (p *Plugin) Name() string {
-	return "Reddit"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Reddit",
+		SysName:  "reddit",
+		Category: common.PluginCategoryFeeds,
+	}
 }
 
 // Remove feeds if they don't point to a proper channel

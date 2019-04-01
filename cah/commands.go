@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -28,7 +29,7 @@ func (p *Plugin) AddCommands() {
 
 			_, err := p.Manager.CreateGame(data.GS.ID, data.CS.ID, data.Msg.Author.ID, data.Msg.Author.Username, voteMode, packs...)
 			if err == nil {
-				p.Logger().Info("Created a new game in ", data.CS.ID, ":", data.GS.ID)
+				logrus.Info("[cah] Created a new game in ", data.CS.ID, ":", data.GS.ID)
 				return "", nil
 			}
 

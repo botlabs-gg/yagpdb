@@ -24,22 +24,22 @@ func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.Str
 
 var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
 
-type WrappedGuild struct {
+type GuildWithConnected struct {
 	*discordgo.UserGuild
 	Connected bool
 }
 
-// GetWrapped Returns a wrapped guild with connected set
-func GetWrapped(in []*discordgo.UserGuild) ([]*WrappedGuild, error) {
+// GetGuildsWithConnected Returns a wrapped guild with connected set
+func GetGuildsWithConnected(in []*discordgo.UserGuild) ([]*GuildWithConnected, error) {
 	if len(in) < 1 {
-		return []*WrappedGuild{}, nil
+		return []*GuildWithConnected{}, nil
 	}
 
-	out := make([]*WrappedGuild, len(in))
+	out := make([]*GuildWithConnected, len(in))
 
 	actions := make([]radix.CmdAction, len(in))
 	for i, g := range in {
-		out[i] = &WrappedGuild{
+		out[i] = &GuildWithConnected{
 			UserGuild: g,
 			Connected: false,
 		}
@@ -439,57 +439,6 @@ func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
 	}
 
 	return err
-}
-
-func ContainsStringSlice(strs []string, search string) bool {
-	for _, v := range strs {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsStringSliceFold(strs []string, search string) bool {
-	for _, v := range strs {
-		if strings.EqualFold(v, search) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsInt64Slice(slice []int64, search int64) bool {
-	for _, v := range slice {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
-}
-
-// ContainsInt64SliceOneOf returns true if slice contains one of search
-func ContainsInt64SliceOneOf(slice []int64, search []int64) bool {
-	for _, v := range search {
-		if ContainsInt64Slice(slice, v) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsIntSlice(slice []int, search int) bool {
-	for _, v := range slice {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
 }
 
 // ValidateSQLSchema does some simple security checks on a sql schema file

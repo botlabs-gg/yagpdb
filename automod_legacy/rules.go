@@ -137,7 +137,7 @@ func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del b
 			break
 		}
 
-		if cMsg.Message.Author.ID == evt.Author.ID && evt.ID != cMsg.Message.ID {
+		if cMsg.Author.ID == evt.Author.ID && evt.ID != cMsg.ID {
 			amount++
 		}
 	}

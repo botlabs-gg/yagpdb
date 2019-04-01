@@ -43,15 +43,7 @@ func handleResetMentionableRole(evt *seventsmodels.ScheduledEvent, dataInterface
 		return false, nil
 	}
 
-	var role *discordgo.Role
-	gs.RLock()
-	defer gs.RUnlock()
-	for _, r := range gs.Guild.Roles {
-		if r.ID == data.RoleID {
-			role = r
-			break
-		}
-	}
+	role := gs.RoleCopy(true, data.RoleID)
 
 	if role == nil {
 		return false, nil // Assume role was deleted or something in the meantime

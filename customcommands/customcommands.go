@@ -39,8 +39,12 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 }
 
-func (p *Plugin) Name() string {
-	return "Custom commands"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Custom Commands",
+		SysName:  "custom_commands",
+		Category: common.PluginCategoryCore,
+	}
 }
 
 type CommandTriggerType int

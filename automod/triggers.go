@@ -667,15 +667,15 @@ func (s *SlowmodeTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channe
 			break
 		}
 
-		if m.ID == cMsg.Message.ID {
+		if m.ID == cMsg.ID {
 			continue
 		}
 
-		if !s.ChannelBased && cMsg.Message.Author.ID != ms.ID {
+		if !s.ChannelBased && cMsg.Author.ID != ms.ID {
 			continue
 		}
 
-		if s.Attachments && len(cMsg.Message.Attachments) < 1 {
+		if s.Attachments && len(cMsg.Attachments) < 1 {
 			continue // were only checking messages with attachments
 		}
 
@@ -776,9 +776,9 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstat
 			break
 		}
 
-		if mt.ChannelBased || cMsg.Message.Author.ID == ms.ID {
+		if mt.ChannelBased || cMsg.Author.ID == ms.ID {
 			// we only care about unique mentions, e.g mentioning the same user a ton wont do anythin
-			for _, msgMention := range cMsg.Message.Mentions {
+			for _, msgMention := range cMsg.Mentions {
 				if msgMention == nil {
 					continue
 				}
@@ -922,11 +922,11 @@ func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 	for i := len(cs.Messages) - 1; i >= 0; i-- {
 		cMsg := cs.Messages[i]
 
-		if cMsg.Message.ID == m.ID {
+		if cMsg.ID == m.ID {
 			continue
 		}
 
-		if cMsg.Message.Author.ID != m.Author.ID {
+		if cMsg.Author.ID != m.Author.ID {
 			continue
 		}
 
@@ -935,11 +935,11 @@ func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 			break
 		}
 
-		if len(cMsg.Message.Attachments) > 0 {
+		if len(cMsg.Attachments) > 0 {
 			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
 
-		if strings.ToLower(strings.TrimSpace(cMsg.Message.Content)) == mToCheckAgainst {
+		if strings.ToLower(strings.TrimSpace(cMsg.Content)) == mToCheckAgainst {
 			count++
 		} else {
 			break

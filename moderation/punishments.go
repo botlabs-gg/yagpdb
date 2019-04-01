@@ -190,9 +190,8 @@ func DeleteMessages(channelID int64, filterUser int64, deleteNum, fetchNum int) 
 	for i := len(msgs) - 1; i >= 0; i-- {
 		if filterUser == 0 || msgs[i].Author.ID == filterUser {
 
-			parsedCreatedAt, _ := msgs[i].Timestamp.Parse()
 			// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)
-			if now.Sub(parsedCreatedAt) > (time.Hour*24*14)-time.Minute {
+			if now.Sub(msgs[i].ParsedCreated) > (time.Hour*24*14)-time.Minute {
 				continue
 			}
 

@@ -200,53 +200,15 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			LogIgnoreErr(common.SetCacheDataJson(session.Token+":user", 3600, user))
 		}
 
-		// retrieve guilds this user is part of
-		// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
-		var guilds []*discordgo.UserGuild
-		err = common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
-		if err != nil {
-			guilds, err = session.UserGuilds(100, 0, 0)
-			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Error("Failed getting user guilds")
-				HandleLogout(w, r)
-				return
-			}
-
-			LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
-		}
-
-		// wrap the guilds with some more info, such as wether the bot is on the server
-		wrapped, err := common.GetWrapped(guilds)
-		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed wrapping guilds")
-			http.Redirect(w, r, "/?err=rediserr", http.StatusTemporaryRedirect)
-			return
-		}
-
-		// the servers the user is on and the user has manage server perms
-		managedGuilds := make([]*common.WrappedGuild, 0)
-		for _, g := range wrapped {
-			if g.Owner || g.Permissions&discordgo.PermissionManageServer != 0 {
-				managedGuilds = append(managedGuilds, g)
-			}
-		}
-
 		templateData := map[string]interface{}{
-			"User":          user,
-			"Guilds":        wrapped,
-			"ManagedGuilds": managedGuilds,
-			"IsBotOwner":    false,
-		}
-
-		if user.ID == common.Conf.Owner {
-			templateData["IsBotOwner"] = true
+			"User":       user,
+			"IsBotOwner": user.ID == common.Conf.Owner,
 		}
 
 		// update the logger with the user and update the context with all the new info
 		entry := CtxLogger(ctx).WithField("u", user.ID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(SetContextTemplateData(ctx, templateData), common.ContextKeyUser, user)
-		ctx = context.WithValue(ctx, common.ContextKeyGuilds, guilds)
 
 		inner.ServeHTTP(w, r.WithContext(ctx))
 
@@ -268,6 +230,21 @@ func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
 	return context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild), nil
 }
 
+func getGuild(guildID int64, ctx context.Context) (*discordgo.Guild, error) {
+	guild, err := botrest.GetGuild(guildID)
+	if err != nil {
+		CtxLogger(ctx).WithError(err).Error("[web] failed getting guild from bot, querying discord api")
+
+		guild, err = common.BotSession.Guild(guildID)
+		if err != nil {
+			CtxLogger(ctx).WithError(err).Error("[web] failed getting guild from discord fallback, nothing more we can do...")
+			return nil, err
+		}
+	}
+
+	return guild, nil
+}
+
 // Sets the active guild context and template data
 // It will only attempt to fetch full guild if not logged in
 func ActiveServerMW(inner http.Handler) http.Handler {
@@ -278,62 +255,47 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		}()
 		ctx := r.Context()
 		guildID, err := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
-
-		// Validate the id
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("GuilID is not a number")
 			return
 		}
 
-		guilds, ok := ctx.Value(common.ContextKeyGuilds).([]*discordgo.UserGuild)
-		if !ok {
-			// Userguilds not available, fallback to full guild request
-			var err error
-			ctx, err = setFullGuild(ctx, guildID)
-			if err != nil {
-				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
-			}
-			r = r.WithContext(ctx)
+		guild, err := getGuild(guildID, ctx)
+		if err != nil {
 			return
 		}
 
-		// Look for current guild in userguilds
-		var userGuild *discordgo.UserGuild
-		for _, g := range guilds {
-			if g.ID == guildID {
-				userGuild = g
-				break
-			}
-		}
+		sort.Sort(dutil.Roles(guild.Roles))
 
-		// update context logging entry with guild id
 		entry := CtxLogger(ctx).WithField("g", guildID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
+		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, guild)
 
-		if userGuild == nil {
-			// Fallback to full guild if userguild is not found
-			var err error
-			ctx, err = setFullGuild(ctx, guildID)
-			if err != nil {
-				CtxLogger(ctx).WithError(err).Error("Failed setting full guild")
-			}
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": guild})
 
-			ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": IsAdminRequest(ctx, r)})
-			r = r.WithContext(ctx)
+		r = r.WithContext(ctx)
+	}
+	return http.HandlerFunc(mw)
+}
+
+// LoadCoreConfigMiddleware ensures that the core config is available
+func LoadCoreConfigMiddleware(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		v := r.Context().Value(common.ContextKeyCurrentGuild)
+		if v == nil {
+			http.Redirect(w, r, "/?err=no_active_guild", http.StatusTemporaryRedirect)
 			return
 		}
 
-		fullGuild := &discordgo.Guild{
-			ID:   userGuild.ID,
-			Name: userGuild.Name,
-			Icon: userGuild.Icon,
-		}
+		g := v.(*discordgo.Guild)
 
-		ctx = context.WithValue(ctx, common.ContextKeyCurrentUserGuild, userGuild)
-		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild)
-		isAdmin := IsAdminRequest(ctx, r)
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild, "IsAdmin": isAdmin})
-		r = r.WithContext(ctx)
+		coreConf := common.GetCoreServerConfCached(g.ID)
+
+		SetContextTemplateData(r.Context(), map[string]interface{}{"CoreConfig": coreConf})
+
+		r = r.WithContext(context.WithValue(r.Context(), common.ContextKeyCoreConfig, coreConf))
+
+		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)
 }
@@ -354,7 +316,7 @@ func RequireActiveServer(inner http.Handler) http.Handler {
 // RequireServerAdminMiddleware restricts access to guild admins only (or bot admins)
 func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		if !IsAdminRequest(r.Context(), r) {
+		if !ContextIsAdmin(r.Context()) {
 			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
 			return
 		}
@@ -370,6 +332,13 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 
+		if len(guild.Channels) > 0 {
+			// channels already available
+			sort.Sort(dutil.Channels(guild.Channels))
+			inner.ServeHTTP(w, r)
+			return
+		}
+
 		channels, err := common.GetGuildChannels(guild.ID)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed retrieving channels")
@@ -380,38 +349,6 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 		// SORT THESE MOTHERFUCKERS
 		sort.Sort(dutil.Channels(channels))
 		guild.Channels = channels
-
-		newCtx := context.WithValue(ctx, common.ContextKeyGuildChannels, channels)
-
-		inner.ServeHTTP(w, r.WithContext(newCtx))
-	}
-	return http.HandlerFunc(mw)
-}
-
-// RequireFullGuildMW puts the "gull" guild in the context, and ensures its available during the request, i say "full" because it doesn't include channels
-func RequireFullGuildMW(inner http.Handler) http.Handler {
-	mw := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
-
-		if guild.OwnerID != 0 {
-			// Was already full. so this is not needed
-			inner.ServeHTTP(w, r)
-			return
-		}
-
-		fullGuild, err := common.GetGuild(guild.ID)
-		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
-			http.Redirect(w, r, "/?err=errretrievingguild", http.StatusTemporaryRedirect)
-			return
-		}
-
-		sort.Sort(dutil.Roles(fullGuild.Roles))
-
-		guild.Region = fullGuild.Region
-		guild.OwnerID = fullGuild.OwnerID
-		guild.Roles = fullGuild.Roles
 
 		inner.ServeHTTP(w, r)
 	}
@@ -868,18 +805,31 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 			m = results[0]
 		}
 
-		if err != nil || len(results) < 1 {
+		if err != nil || m == nil {
 			CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from bot, falling back to discord api")
 
 			// fallback to discord api
 			m, err = common.BotSession.GuildMember(guild.ID, user.ID)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
-				return
 			}
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), common.ContextKeyUserMember, m))
+		ctx := r.Context()
+
+		if m != nil {
+			// calculate permissions
+			perms := discordgo.MemberPermissions(guild, nil, m)
+
+			ctx = context.WithValue(r.Context(), common.ContextKeyUserMember, m)
+			ctx = context.WithValue(ctx, common.ContextKeyMemberPermissions, perms)
+		}
+
+		isAdmin := IsAdminRequest(ctx, r)
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": isAdmin})
+		ctx = context.WithValue(ctx, common.ContextKeyIsAdmin, isAdmin)
+
+		r = r.WithContext(ctx)
 	}
 
 	return http.HandlerFunc(mw)

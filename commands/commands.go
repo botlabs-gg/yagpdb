@@ -26,6 +26,14 @@ var MessageFilterFuncs []MessageFilterFunc
 
 type Plugin struct{}
 
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Commands",
+		SysName:  "commands",
+		Category: common.PluginCategoryCore,
+	}
+}
+
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
@@ -70,10 +78,6 @@ func InitCommands() {
 			adder.AddCommands()
 		}
 	}
-}
-
-func (p *Plugin) Name() string {
-	return "Commands"
 }
 
 func GetCommandPrefix(guild int64) (string, error) {

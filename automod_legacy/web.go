@@ -1,6 +1,7 @@
 package automod_legacy
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -34,7 +35,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/automod_legacy"), autmodMux)
 
 	// Alll handlers here require guild channels present
-	autmodMux.Use(web.RequireFullGuildMW)
 	autmodMux.Use(web.RequireGuildChannelsMiddleware)
 	autmodMux.Use(web.RequireBotMemberMW)
 	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages))
@@ -69,4 +69,45 @@ func ExtraPostMW(inner http.Handler) http.Handler {
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Legacy Automod"
+	templateData["SettingsPath"] = "/automod_legacy"
+
+	config, err := GetConfig(g.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	if config.Enabled {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	const format = `<ul>
+	<li>Slowmode: %s</li>
+	<li>Mass Mention: %s</li>
+	<li>Server Invites: %s</li>
+	<li>Any Links: %s</li>
+	<li>Banned words: %s</li>
+	<li>Baned websites: %s</li>
+</ul>`
+
+	slowmode := web.EnabledDisabledSpanStatus(config.Spam.Enabled)
+	massMention := web.EnabledDisabledSpanStatus(config.Mention.Enabled)
+	invites := web.EnabledDisabledSpanStatus(config.Invite.Enabled)
+	links := web.EnabledDisabledSpanStatus(config.Links.Enabled)
+	words := web.EnabledDisabledSpanStatus(config.Words.Enabled)
+	sites := web.EnabledDisabledSpanStatus(config.Sites.Enabled)
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, slowmode,
+		massMention, invites, links, words, sites))
+
+	return templateData, nil
 }

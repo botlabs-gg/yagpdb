@@ -400,7 +400,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Add/Edit a modlog reason",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -760,9 +760,8 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			continue
 		}
 
-		parsedCreatedAt, _ := msgs[i].Timestamp.Parse()
 		// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)
-		if now.Sub(parsedCreatedAt) > (time.Hour*24*14)-time.Minute {
+		if now.Sub(msgs[i].ParsedCreated) > (time.Hour*24*14)-time.Minute {
 			continue
 		}
 
@@ -774,7 +773,7 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 		}
 
 		// Check max age
-		if maxAge != 0 && now.Sub(parsedCreatedAt) > maxAge {
+		if maxAge != 0 && now.Sub(msgs[i].ParsedCreated) > maxAge {
 			continue
 		}
 
@@ -808,7 +807,7 @@ func FindRole(gs *dstate.GuildState, roleS string) *discordgo.Role {
 	if parseErr == nil {
 
 		// was a number, try looking by id
-		r := gs.Role(false, parsedNumber)
+		r := gs.RoleCopy(false, parsedNumber)
 		if r != nil {
 			return r
 		}

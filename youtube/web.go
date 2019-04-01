@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix"
+	"github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -49,7 +50,6 @@ func (p *Plugin) InitWeb() {
 
 	// Alll handlers here require guild channels present
 	ytMux.Use(web.RequireGuildChannelsMiddleware)
-	ytMux.Use(web.RequireFullGuildMW)
 	ytMux.Use(web.RequireBotMemberMW)
 	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
 
@@ -182,7 +182,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 			return // We don't want no intruders here
 		}
 
-		p.Logger().Info("Responding to challenge: ", query.Get("hub.challenge"))
+		logrus.Info("Responding to challenge: ", query.Get("hub.challenge"))
 		p.ValidateSubscription(w, r, query)
 		return
 	case "unsubscribe":
@@ -194,7 +194,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
 		if err != nil {
-			p.Logger().WithError(err).Error("Failed parsing websub topic URI")
+			logrus.WithError(err).Error("Failed parsing websub topic URI")
 			return
 		}
 
@@ -208,7 +208,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 	result, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
-		p.Logger().WithError(err).Error("Failed reading body")
+		logrus.WithError(err).Error("Failed reading body")
 		return
 	}
 
@@ -216,13 +216,13 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = xml.Unmarshal(result, &parsed)
 	if err != nil {
-		p.Logger().WithError(err).Error("Failed parsing feed body: ", string(result))
+		logrus.WithError(err).Error("Failed parsing feed body: ", string(result))
 		return
 	}
 
 	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
 	if err != nil {
-		p.Logger().WithError(err).Error("Failed locking channels lock")
+		logrus.WithError(err).Error("Failed locking channels lock")
 		return
 	}
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
@@ -244,7 +244,7 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 	if lease != "" {
 		parsed, err := strconv.ParseInt(lease, 10, 64)
 		if err != nil {
-			p.Logger().WithError(err).Error("Failed parsing websub lease time")
+			logrus.WithError(err).Error("Failed parsing websub lease time")
 			return
 		}
 
@@ -252,10 +252,32 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
 		if err != nil {
-			p.Logger().WithError(err).Error("Failed parsing websub topic URI")
+			logrus.WithError(err).Error("Failed parsing websub topic URI")
 			return
 		}
 
 		common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id")))
 	}
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Youtube feeds"
+	templateData["SettingsPath"] = "/youtube"
+
+	var numFeeds int64
+	result := common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", ag.ID).Count(&numFeeds)
+	if numFeeds > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	const format = `<p>Active Youtube feeds: <code>%d</code></p>`
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, numFeeds))
+
+	return templateData, result.Error
 }

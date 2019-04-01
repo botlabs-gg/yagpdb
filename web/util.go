@@ -134,6 +134,15 @@ func ContextGuild(ctx context.Context) *discordgo.Guild {
 	return ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 }
 
+func ContextIsAdmin(ctx context.Context) bool {
+	i := ctx.Value(common.ContextKeyIsAdmin)
+	if i == nil {
+		return false
+	}
+
+	return i.(bool)
+}
+
 // Returns base context data for control panel plugins
 func GetBaseCPContextData(ctx context.Context) (*discordgo.Guild, TemplateData) {
 	var guild *discordgo.Guild
@@ -168,41 +177,71 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 
 // Checks the context if there is a logged in user and if so if he's and admin or not
 func IsAdminRequest(ctx context.Context, r *http.Request) bool {
-	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
 
-		cast := v.(*discordgo.UserGuild)
+	isReadOnlyReq := strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS")
 
-		// Require manageserver, ownership of guild or ownership of bot
-		if cast.Owner || cast.Permissions&discordgo.PermissionManageServer != 0 {
+	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
+		// accessing a server page
+
+		g := v.(*discordgo.Guild)
+
+		gWithConnected := &common.GuildWithConnected{
+			UserGuild: &discordgo.UserGuild{
+				ID: g.ID,
+			},
+			Connected: true,
+		}
+
+		coreConf := common.ContextCoreConf(ctx)
+		member := ContextMember(ctx)
+
+		userID := int64(0)
+		var roles []int64
+
+		if member != nil {
+			userID = member.User.ID
+			roles = member.Roles
+
+			gWithConnected.Permissions = ContextMemberPerms(ctx)
+			gWithConnected.Owner = userID == g.OwnerID
+		}
+
+		if HasAccesstoGuildSettings(userID, gWithConnected, coreConf, StaticRoleProvider(roles), !isReadOnlyReq) {
 			return true
 		}
 	}
 
 	if user := ctx.Value(common.ContextKeyUser); user != nil {
 		// there is a active session, but they're not on the related guild (if any)
+
 		cast := user.(*discordgo.User)
 		if cast.ID == common.Conf.Owner {
 			return true
 		}
 
-		if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS") {
+		if isReadOnlyReq {
 			// allow special read only acces for GET and OPTIONS requests, simple and works well
 			if hasAcces, err := bot.HasReadOnlyAccess(cast.ID); hasAcces && err == nil {
 				return true
 			}
 		}
 	}
+
 	return false
 }
 
-func HasPermissionCTX(ctx context.Context, perms int) bool {
-	if v := ctx.Value(common.ContextKeyCurrentUserGuild); v != nil {
+func StaticRoleProvider(roles []int64) func(guildID, userID int64) []int64 {
+	return func(guildID, userID int64) []int64 {
+		return roles
+	}
+}
 
-		cast := v.(*discordgo.UserGuild)
-		// Require manageserver, ownership of guild or ownership of bot
-		if cast.Owner || cast.Permissions&discordgo.PermissionAdministrator != 0 || cast.Permissions&discordgo.PermissionManageServer != 0 || cast.Permissions&perms != 0 {
-			return true
-		}
+func HasPermissionCTX(ctx context.Context, aperms int) bool {
+	perms := ContextMemberPerms(ctx)
+	// Require manageserver, ownership of guild or ownership of bot
+	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator ||
+		perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer || perms&aperms == aperms {
+		return true
 	}
 
 	return false
@@ -254,6 +293,15 @@ func ContextMember(ctx context.Context) *discordgo.Member {
 	return i.(*discordgo.Member)
 }
 
+func ContextMemberPerms(ctx context.Context) int {
+	i := ctx.Value(common.ContextKeyMemberPermissions)
+	if i == nil {
+		return 0
+	}
+
+	return i.(int)
+}
+
 func ParamOrEmpty(r *http.Request, key string) string {
 	s := r.Context().Value(pattern.Variable(key))
 	if s != nil {
@@ -261,4 +309,28 @@ func ParamOrEmpty(r *http.Request, key string) string {
 	}
 
 	return ""
+}
+
+func Indicator(enabled bool) string {
+	const IndEnabled = `<span class="indicator indicator-success"></span>`
+	const IndDisabled = `<span class="indicator indicator-danger"></span>`
+
+	if enabled {
+		return IndEnabled
+	}
+
+	return IndDisabled
+}
+
+func EnabledDisabledSpanStatus(enabled bool) (str string) {
+	indicator := Indicator(enabled)
+
+	enabledStr := "disabled"
+	enabledClass := "danger"
+	if enabled {
+		enabledStr = "enabled"
+		enabledClass = "success"
+	}
+
+	return fmt.Sprintf("<span class=\"text-%s\">%s</span>%s", enabledClass, enabledStr, indicator)
 }

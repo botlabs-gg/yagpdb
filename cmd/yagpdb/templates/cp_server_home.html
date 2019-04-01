@@ -1,0 +1,53 @@
+{{define "cp_server_home"}}
+
+{{template "cp_head" .}}
+
+<header class="page-header">
+	<h2>Combined Overview</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+{{range .PluginContainers}}
+<h2>{{.Category.Name}}</h2>
+<div class="row">
+	{{range .Widgets}}
+    <div class="col-12 col-sm-6 col-md-4" id="home-widget-{{.PluginName}}">
+    	<section class="card">
+		    <header class="card-header">
+		        <h2 class="card-title">{{.HumanName}}</h2>
+		    </header>
+		    <div class="card-body">
+		    	Loading...
+		    </div>
+		</section>
+	</div>
+	{{end}}
+</div>
+{{end}}
+<script type="text/javascript">
+$(function(){
+	{{$ag := .ActiveGuild}}
+	{{range .PluginContainers}}{{range .Widgets}}
+	loadWidget("home-widget-{{.PluginName}}", "/manage/{{$ag.ID}}/homewidgets/{{.PluginName}}")
+    {{end}}{{end}}
+})
+</script>
+
+{{template "cp_footer" .}}
+{{end}}
+
+
+{{define "cp_server_home_widget"}}
+<section class="card {{if .WidgetEnabled}}card-featured card-featured-success{{else if .WidgetDisabled}}card-featured card-featured-danger{{end}}">
+    <header class="card-header">
+        <h2 class="card-title">{{.WidgetTitle}}</h2>
+    </header>
+    <div class="card-body">
+    	{{.WidgetBody}}
+    </div>
+    {{if .SettingsPath}}<div class="card-footer">
+    	<a href="/manage/{{.ActiveGuild.ID}}{{.SettingsPath}}" data-partial-load>Change settings here</a>
+    </div>{{end}}
+</section>
+{{end}}

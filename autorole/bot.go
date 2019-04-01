@@ -130,16 +130,8 @@ func runDurationChecker() {
 
 		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
 			// Copy the list of guilds so that we dont need to keep the entire state locked
-			state.RLock()
-			guildsToCheck = make([]*dstate.GuildState, 0, len(state.Guilds))
+			guildsToCheck = state.GuildsSlice(true)
 			i = 0
-			for _, v := range state.Guilds {
-				if v == nil || v.ID == 0 {
-					continue
-				}
-				guildsToCheck = append(guildsToCheck, v)
-			}
-			state.RUnlock()
 
 			// Hit each guild once per minute
 			numToCheckPerRun = len(guildsToCheck) / 60
@@ -157,39 +149,32 @@ func runDurationChecker() {
 	}
 }
 
-func checkGuild(gs *dstate.GuildState) {
+// returns true if we should skip the guild
+func stateLockedSkipGuild(gs *dstate.GuildState, conf *GeneralConfig) bool {
 	gs.RLock()
 	defer gs.RUnlock()
+
 	if gs.Guild.Unavailable {
-		return
+		return true
 	}
 
-	logger := logrus.WithField("guild", gs.ID)
-	working, err := WorkingOnFullScan(gs.ID)
-	if err != nil {
-		logger.WithError(err).Error("failed checking working on full scan")
+	if !bot.BotProbablyHasPermissionGS(false, gs, 0, discordgo.PermissionManageRoles) {
+		return true
 	}
 
-	if working {
-		return // Working on a full scan, do nothing
+	if gs.Role(false, conf.Role) == nil {
+		conf.Role = 0
+		saveGeneral(gs.ID, conf)
+		return true
 	}
 
-	perms, err := gs.MemberPermissions(false, 0, common.BotUser.ID)
-	if err != nil && err != dstate.ErrChannelNotFound {
-		logger.WithError(err).Error("Error checking perms")
-		return
-	}
+	return false
+}
 
-	if perms&discordgo.PermissionManageRoles == 0 {
-		// Not enough permissions to assign roles, skip this guild
-		return
-	}
-
-	gs.RUnlock()
+func checkGuild(gs *dstate.GuildState) {
 	conf, err := GuildCacheGetGeneralConfig(gs)
-	gs.RLock()
 	if err != nil {
-		logger.WithError(err).Error("Failed retrieivng general config")
+		logrus.WithField("guild", gs.ID).WithError(err).Error("Failed retrieivng general config")
 		return
 	}
 
@@ -197,18 +182,15 @@ func checkGuild(gs *dstate.GuildState) {
 		return
 	}
 
-	// Make sure the role exists
-	for _, role := range gs.Guild.Roles {
-		if role.ID == conf.Role {
-			go processGuild(gs, conf)
-			return
-		}
+	if stateLockedSkipGuild(gs, conf) {
+		return
 	}
 
-	// If not remove it
-	logger.Info("Autorole role dosen't exist, removing config...")
-	conf.Role = 0
-	saveGeneral(gs.ID, conf)
+	if WorkingOnFullScan(gs.ID) {
+		return // Working on a full scan, do nothing
+	}
+
+	go processGuild(gs, conf)
 }
 
 func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
@@ -440,14 +422,15 @@ OUTER:
 	}
 }
 
-func WorkingOnFullScan(guildID int64) (bool, error) {
+func WorkingOnFullScan(guildID int64) bool {
 	var b bool
 	err := common.RedisPool.Do(radix.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
 	if err != nil {
-		return false, err
+		logrus.WithError(err).WithField("guild", guildID).Error("[autorole] failed checking WorkingOnFullScan")
+		return false
 	}
 
-	return b, nil
+	return b
 }
 
 type CacheKey int

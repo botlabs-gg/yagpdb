@@ -14,51 +14,61 @@ import "testing"
 func TestParent(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroups)
 	t.Run("CustomCommands", testCustomCommands)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabases)
 }
 
 func TestDelete(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsDelete)
 	t.Run("CustomCommands", testCustomCommandsDelete)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesDelete)
 }
 
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsQueryDeleteAll)
 	t.Run("CustomCommands", testCustomCommandsQueryDeleteAll)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesQueryDeleteAll)
 }
 
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsSliceDeleteAll)
 	t.Run("CustomCommands", testCustomCommandsSliceDeleteAll)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesSliceDeleteAll)
 }
 
 func TestExists(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsExists)
 	t.Run("CustomCommands", testCustomCommandsExists)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesExists)
 }
 
 func TestFind(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsFind)
 	t.Run("CustomCommands", testCustomCommandsFind)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesFind)
 }
 
 func TestBind(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsBind)
 	t.Run("CustomCommands", testCustomCommandsBind)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesBind)
 }
 
 func TestOne(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsOne)
 	t.Run("CustomCommands", testCustomCommandsOne)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesOne)
 }
 
 func TestAll(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsAll)
 	t.Run("CustomCommands", testCustomCommandsAll)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesAll)
 }
 
 func TestCount(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsCount)
 	t.Run("CustomCommands", testCustomCommandsCount)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesCount)
 }
 
 func TestInsert(t *testing.T) {
@@ -66,6 +76,8 @@ func TestInsert(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsInsertWhitelist)
 	t.Run("CustomCommands", testCustomCommandsInsert)
 	t.Run("CustomCommands", testCustomCommandsInsertWhitelist)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesInsert)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesInsertWhitelist)
 }
 
 // TestToOne tests cannot be run in parallel
@@ -125,24 +137,29 @@ func TestToManyRemove(t *testing.T) {
 func TestReload(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsReload)
 	t.Run("CustomCommands", testCustomCommandsReload)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesReload)
 }
 
 func TestReloadAll(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsReloadAll)
 	t.Run("CustomCommands", testCustomCommandsReloadAll)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesReloadAll)
 }
 
 func TestSelect(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsSelect)
 	t.Run("CustomCommands", testCustomCommandsSelect)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesSelect)
 }
 
 func TestUpdate(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsUpdate)
 	t.Run("CustomCommands", testCustomCommandsUpdate)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesUpdate)
 }
 
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("CustomCommandGroups", testCustomCommandGroupsSliceUpdateAll)
 	t.Run("CustomCommands", testCustomCommandsSliceUpdateAll)
+	t.Run("TemplatesUserDatabases", testTemplatesUserDatabasesSliceUpdateAll)
 }

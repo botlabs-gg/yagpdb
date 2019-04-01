@@ -248,7 +248,7 @@ function addListeners(){
 
 	formSubmissionEvents();
 
-	$(document).on("click", '[data-partial-load="true"]', function( event ) {
+	$(document).on("click", '[data-partial-load]', function( event ) {
 		console.log("Clicked the link");
 		event.preventDefault();
 		
@@ -636,4 +636,10 @@ function toggleTheme(){
 		elem.classList.remove("sidebar-light")
 		document.cookie = "light_theme=false; max-age=3153600000; path=/"
 	}
+}
+
+function loadWidget(destinationParentID, path){
+	createRequest("GET", path+"?partial=1", null, function(){
+		$("#"+destinationParentID).html(this.responseText);
+	})
 }

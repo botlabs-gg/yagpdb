@@ -15,8 +15,12 @@ import (
 
 type Plugin struct{}
 
-func (p *Plugin) Name() string {
-	return "Soundboard"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Soundboard",
+		SysName:  "soundboard",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func RegisterPlugin() {

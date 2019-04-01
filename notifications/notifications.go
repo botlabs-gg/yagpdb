@@ -25,8 +25,12 @@ func RegisterPlugin() {
 
 }
 
-func (p *Plugin) Name() string {
-	return "Notifications"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "General Notifications",
+		SysName:  "notifications",
+		Category: common.PluginCategoryFeeds,
+	}
 }
 
 type Config struct {

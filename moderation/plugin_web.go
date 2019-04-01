@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
@@ -22,7 +23,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/moderation/*"), subMux)
 
 	subMux.Use(web.RequireGuildChannelsMiddleware)
-	subMux.Use(web.RequireFullGuildMW)
 
 	subMux.Use(web.RequireBotMemberMW) // need the bot's role
 	subMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionEmbedLinks))
@@ -80,6 +80,44 @@ func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.Temp
 	rows := common.GORM.Where("guild_id = ?", activeGuild.ID).Delete(WarningModel{}).RowsAffected
 	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " warnings!"))
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+
+	return templateData, nil
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Moderation"
+	templateData["SettingsPath"] = "/moderation"
+
+	config, err := GetConfig(activeGuild.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	format := `<ul>
+	<li>Report command: %s</li>
+	<li>Clean command: %s</li>
+	<li>Giverole/Takerole commands: %s</li>
+	<li>Kick command: %s</li>
+	<li>Ban command: %s</li>
+	<li>Mute/Unmute commands: %s</li>
+	<li>Warning commands: %s</li>
+</ul>`
+
+	if config.ReportEnabled || config.CleanEnabled || config.GiveRoleCmdEnabled || config.ActionChannel != "" ||
+		config.MuteEnabled || config.KickEnabled || config.BanEnabled || config.WarnCommandsEnabled {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.ReportEnabled),
+		web.EnabledDisabledSpanStatus(config.CleanEnabled), web.EnabledDisabledSpanStatus(config.GiveRoleCmdEnabled),
+		web.EnabledDisabledSpanStatus(config.KickEnabled), web.EnabledDisabledSpanStatus(config.BanEnabled),
+		web.EnabledDisabledSpanStatus(config.MuteEnabled), web.EnabledDisabledSpanStatus(config.WarnCommandsEnabled)))
 
 	return templateData, nil
 }

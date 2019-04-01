@@ -2,6 +2,7 @@ package commands
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
@@ -15,6 +16,7 @@ import (
 	"github.com/volatiletech/sqlboiler/types"
 	"goji.io"
 	"goji.io/pat"
+	"html"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -45,19 +47,13 @@ type CommandOverrideForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/commands.html"
-	if common.Testing {
-		tmplPath = "../../commands/assets/commands.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+	web.LoadHTMLTemplate("../../commands/assets/commands.html", "templates/plugins/commands.html")
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/commands/settings"), subMux)
 	web.CPMux.Handle(pat.New("/commands/settings/*"), subMux)
 
 	subMux.Use(web.RequireGuildChannelsMiddleware)
-	subMux.Use(web.RequireFullGuildMW)
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_commands")
 	subMux.Handle(pat.Get(""), getHandler)
@@ -389,4 +385,33 @@ func HandleDeleteCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	_, err = override.DeleteG(r.Context())
 
 	return templateData, errors.WithMessage(err, "DeleteG")
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Commands"
+	templateData["SettingsPath"] = "/commands/settings"
+	templateData["WidgetEnabled"] = true
+
+	prefix, err := GetCommandPrefix(ag.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	count, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", ag.ID), qm.Where("global=false")).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	const format = `<ul>
+	<li>Command prefix: <code>%s</code></li>
+	<li>Active channel overrides: <code>%d</code></li>
+</ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, html.EscapeString(prefix), count))
+
+	return templateData, nil
 }

@@ -23,8 +23,12 @@ type Plugin struct {
 	stopStatsLoop chan *sync.WaitGroup
 }
 
-func (p *Plugin) Name() string {
-	return "Server Stats"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Server Stats",
+		SysName:  "server_stats",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func RegisterPlugin() {

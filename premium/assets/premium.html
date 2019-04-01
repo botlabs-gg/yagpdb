@@ -49,7 +49,7 @@
                         <div class="card-body">
                             <b>General goodies</b>
                             <ul>
-                                <li>Coming soon...</li>
+                                <li>Infinite server stats retention</li>
                             </ul>
 
                             <b>Extended limits:</b>
@@ -121,9 +121,9 @@
 
 
                             {{$selected := .GuildID.Int64}}
-                            {{range  $dot.ManagedGuilds}}
+                            {{range  $dot.UserGuilds}}{{if .Connected}}
                                 <option value="{{.ID}}" {{if eq .ID $selected}}{{$found = true}} selected {{end}}>{{.Name}}</option>
-                            {{end}}
+                            {{end}}{{end}}
 
                             {{if not $found}}
                             <option value="{{.GuildID.Int64}}" selected>Unknown server ({{.GuildID.Int64}})</option>

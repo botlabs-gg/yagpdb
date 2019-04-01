@@ -134,14 +134,12 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 func HandleChannelUpdate(evt *eventsystem.EventData) {
 	cu := evt.ChannelUpdate()
 
-	curChannel := bot.State.Channel(true, cu.ID)
+	curChannel := bot.State.ChannelCopy(true, cu.ID)
 	if curChannel == nil {
 		return
 	}
 
-	curChannel.Owner.RLock()
 	oldTopic := curChannel.Topic
-	curChannel.Owner.RUnlock()
 
 	if oldTopic == cu.Topic {
 		return

@@ -1,6 +1,7 @@
 package reputation
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
@@ -9,6 +10,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
+	"html"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -55,7 +57,6 @@ func (p *Plugin) InitWeb() {
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathLeaderboard))
 
 	subMux := goji.SubMux()
-	subMux.Use(web.RequireFullGuildMW)
 
 	web.CPMux.Handle(pat.New("/reputation"), subMux)
 	web.CPMux.Handle(pat.New("/reputation/*"), subMux)
@@ -204,4 +205,34 @@ func HandleLogsJson(W http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	return result
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Reputation"
+	templateData["SettingsPath"] = "/reputation"
+
+	settings, err := GetConfig(r.Context(), ag.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	const format = `<ul>
+	<li>Repuatation is: %s</li>
+	<li>Repuatation name: <code>%s</code></li>
+</ul>`
+
+	name := html.EscapeString(settings.PointsName)
+	if settings.Enabled {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(settings.Enabled), name))
+
+	return templateData, nil
 }

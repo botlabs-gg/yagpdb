@@ -40,8 +40,12 @@ type Plugin struct {
 	srvMU sync.Mutex
 }
 
-func (p *Plugin) Name() string {
-	return "botrest"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "BotREST",
+		SysName:  "botrest",
+		Category: common.PluginCategoryCore,
+	}
 }
 
 func (p *Plugin) BotInit() {
@@ -204,15 +208,7 @@ func HandleGuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	guild.RLock()
-	defer guild.RUnlock()
-
-	gCopy := new(discordgo.Guild)
-	*gCopy = *guild.Guild
-
-	gCopy.Members = nil
-	gCopy.Presences = nil
-	gCopy.VoiceStates = nil
+	gCopy := guild.DeepCopy(true, true, false, true)
 
 	ServeJson(w, r, gCopy)
 }
@@ -226,16 +222,11 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	guild.RLock()
-	ms := guild.Member(false, common.BotUser.ID)
-	if ms == nil {
-		guild.RUnlock()
+	member := guild.MemberDGoCopy(true, common.BotUser.ID)
+	if member == nil {
 		ServerError(w, r, errors.New("Bot Member not found"))
 		return
 	}
-
-	member := ms.DGoCopy()
-	guild.RUnlock()
 
 	ServeJson(w, r, member)
 }
@@ -303,8 +294,8 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 
 	memberStates, _ := bot.GetMembers(gId, uIDsParsed...)
 
-	guild.RLock()
-	defer guild.RUnlock()
+	guild.Lock()
+	defer guild.Unlock()
 
 	// Make sure the roles are in the proper order
 	sort.Sort(dutil.Roles(guild.Guild.Roles))

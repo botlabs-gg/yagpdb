@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -60,7 +61,6 @@ func (p *Plugin) InitWeb() {
 
 	// Alll handlers here require guild channels present
 	redditMux.Use(web.RequireGuildChannelsMiddleware)
-	redditMux.Use(web.RequireFullGuildMW)
 	redditMux.Use(web.RequireBotMemberMW)
 	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)
@@ -244,4 +244,51 @@ func FindFeed(feeds []*models.RedditFeed, id int64) *models.RedditFeed {
 	}
 
 	return nil
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Reddit feeds"
+	templateData["SettingsPath"] = "/reddit"
+
+	rows, err := models.RedditFeeds(qm.Where("guild_id = ?", ag.ID), qm.GroupBy("slow"), qm.OrderBy("slow asc"), qm.Select("count(*)")).QueryContext(r.Context(), common.PQ)
+	if err != nil {
+		return templateData, err
+	}
+	defer rows.Close()
+
+	var slow int
+	var fast int
+
+	i := 0
+	for rows.Next() {
+		var err error
+		if i == 0 {
+			err = rows.Scan(&fast)
+		} else {
+			err = rows.Scan(&slow)
+		}
+		i++
+		if err != nil {
+			return templateData, err
+		}
+	}
+
+	if slow > 0 || fast > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	format := `<ul>
+	<li>Fast feeds: <code>%d</code></li>
+	<li>Slow feeds: <code>%d</code></li>
+</ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, fast, slow))
+
+	return templateData, nil
 }

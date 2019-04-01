@@ -20,12 +20,6 @@ import (
 	"time"
 )
 
-func KeyCooldown(guildID, userID int64) string {
-	return "reputation_cooldown:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
-}
-
-type Plugin struct{}
-
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.ValidateSQLSchema(DBSchema)
@@ -37,8 +31,14 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 }
 
-func (p *Plugin) Name() string {
-	return "Reputation"
+type Plugin struct{}
+
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Reputation",
+		SysName:  "reputation",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func DefaultConfig(guildID int64) *models.ReputationConfig {
@@ -49,6 +49,10 @@ func DefaultConfig(guildID int64) *models.ReputationConfig {
 		Cooldown:      120,
 		MaxGiveAmount: 1,
 	}
+}
+
+func KeyCooldown(guildID, userID int64) string {
+	return "reputation_cooldown:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
 }
 
 var (

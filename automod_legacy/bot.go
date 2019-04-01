@@ -80,7 +80,7 @@ func CheckMessage(m *discordgo.Message) bool {
 		return false
 	}
 
-	if cs.IsPrivate() {
+	if cs.IsPrivate {
 		return false
 	}
 

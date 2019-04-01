@@ -50,7 +50,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
 
 	subMux.Use(web.RequireGuildChannelsMiddleware)
-	subMux.Use(web.RequireFullGuildMW)
 
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
@@ -412,4 +411,27 @@ func tmplGetCCInterval(cc *models.CustomCommand) int {
 	}
 
 	return cc.TimeTriggerInterval
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Custom Commands"
+	templateData["SettingsPath"] = "/customcommands"
+
+	numCustomCommands, err := models.CustomCommands(qm.Where("guild_id = ?", ag.ID)).CountG(r.Context())
+
+	format := `<p>Number of custom commands: <code>%d</code></p>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, numCustomCommands))
+
+	if numCustomCommands > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	return templateData, err
 }

@@ -2,12 +2,14 @@ package streaming
 
 import (
 	"context"
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
+	"html"
 	"html/template"
 	"net/http"
 )
@@ -32,7 +34,6 @@ func (p *Plugin) InitWeb() {
 
 	// Alll handlers here require guild channels present
 	streamingMux.Use(web.RequireGuildChannelsMiddleware)
-	streamingMux.Use(web.RequireFullGuildMW)
 	streamingMux.Use(web.RequireBotMemberMW)
 	streamingMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 	streamingMux.Use(baseData)
@@ -89,4 +90,60 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 	common.AddCPLogEntry(user, guild.ID, "Updated streaming config.")
 
 	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+var _ web.PluginWithServerHomeWidgetMiddlewares = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Streaming"
+	templateData["SettingsPath"] = "/streaming"
+
+	config, err := GetConfig(ag.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	format := `<ul>
+	<li>Streaming status: %s</li>
+	<li>Streaming role: <code>%s</code>%s</li>
+	<li>Streaming message: <code>#%s</code>%s</li>
+</ul>`
+
+	status := web.EnabledDisabledSpanStatus(config.Enabled)
+
+	if config.Enabled {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	roleStr := "none / unknown"
+	indicatorRole := ""
+	if role := ag.Role(config.GiveRole); role != nil {
+		roleStr = html.EscapeString(role.Name)
+		indicatorRole = web.Indicator(true)
+	} else {
+		indicatorRole = web.Indicator(false)
+	}
+
+	indicatorMessage := ""
+	channelStr := "none / unknown"
+
+	if channel := ag.Channel(config.AnnounceChannel); channel != nil {
+		indicatorMessage = web.Indicator(true)
+		channelStr = html.EscapeString(channel.Name)
+	} else {
+		indicatorMessage = web.Indicator(false)
+	}
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, status, roleStr, indicatorRole, channelStr, indicatorMessage))
+
+	return templateData, nil
+}
+
+func (p *Plugin) ServerHomeWidgetApplyMiddlewares(inner http.Handler) http.Handler {
+	return web.RequireGuildChannelsMiddleware(inner)
 }

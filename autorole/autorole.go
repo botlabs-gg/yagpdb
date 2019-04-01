@@ -13,8 +13,12 @@ func KeyProcessing(guildID int64) string {
 
 type Plugin struct{}
 
-func (p *Plugin) Name() string {
-	return "Autorole"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Autorole",
+		SysName:  "autorole",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func RegisterPlugin() {

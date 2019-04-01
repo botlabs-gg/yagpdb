@@ -32,12 +32,7 @@ const (
 var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/automod.html"
-	if common.Testing {
-		tmplPath = "../../automod/assets/automod.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+	web.LoadHTMLTemplate("../../automod/assets/automod.html", "templates/plugins/automod.html")
 
 	muxer := goji.SubMux()
 
@@ -45,7 +40,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/automod/*"), muxer)
 
 	muxer.Use(web.RequireGuildChannelsMiddleware)
-	muxer.Use(web.RequireFullGuildMW)
 
 	getIndexHandler := web.ControllerHandler(p.handleGetAutomodIndex, "automod_index")
 
@@ -753,4 +747,35 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 
 	tmpl["RulePartData"] = parsedData
 	tmpl["RSPartData"] = parsedRSData
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, templateData := web.GetBaseCPContextData(r.Context())
+	templateData["WidgetTitle"] = "Automod v2"
+	templateData["SettingsPath"] = "/automod"
+
+	rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", g.ID), qm.Where("enabled = true")).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	rules, err := models.AutomodRules(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
+    <li>Active and enabled Rulesets: <code>%d</code></li>
+    <li>Total rules: <code>%d</code></li>
+</ul>`, rulesets, rules))
+
+	if rulesets > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	return templateData, nil
 }

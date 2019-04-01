@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -85,7 +86,7 @@ var cmdWhois = &commands.YAGCommand{
 	Aliases:     []string{"whoami"},
 	RunInDM:     false,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "User", Type: dcmd.User},
+		{Name: "User", Type: &commands.MemberArg{}},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(parsed.Context(), parsed.GS.ID)
@@ -93,14 +94,9 @@ var cmdWhois = &commands.YAGCommand{
 			return nil, err
 		}
 
-		target := parsed.Msg.Author
+		member := commands.ContextMS(parsed.Context())
 		if parsed.Args[0].Value != nil {
-			target = parsed.Args[0].Value.(*discordgo.User)
-		}
-
-		member, err := bot.GetMember(parsed.GS.ID, target.ID)
-		if err != nil {
-			return nil, err
+			member = parsed.Args[0].Value.(*dstate.MemberState)
 		}
 
 		nick := ""
@@ -123,22 +119,22 @@ var cmdWhois = &commands.YAGCommand{
 			joinedAtDurStr = "Lesss than an hour ago"
 		}
 
-		t := bot.SnowflakeToTime(target.ID)
+		t := bot.SnowflakeToTime(member.ID)
 		createdDurStr := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
 		if createdDurStr == "" {
 			createdDurStr = "Less than an hour ago"
 		}
 		embed := &discordgo.MessageEmbed{
-			Title: fmt.Sprintf("%s#%s%s", target.Username, target.Discriminator, nick),
+			Title: fmt.Sprintf("%s#%s%s", member.Username, member.Discriminator, nick),
 			Fields: []*discordgo.MessageEmbedField{
 				&discordgo.MessageEmbedField{
 					Name:   "ID",
-					Value:  discordgo.StrID(target.ID),
+					Value:  discordgo.StrID(member.ID),
 					Inline: true,
 				},
 				&discordgo.MessageEmbedField{
 					Name:   "Avatar",
-					Value:  "[Link](" + discordgo.EndpointUserAvatar(target.ID, target.Avatar) + ")",
+					Value:  "[Link](" + discordgo.EndpointUserAvatar(member.ID, member.StrAvatar()) + ")",
 					Inline: true,
 				},
 				&discordgo.MessageEmbedField{
@@ -162,12 +158,12 @@ var cmdWhois = &commands.YAGCommand{
 				},
 			},
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
+				URL: discordgo.EndpointUserAvatar(member.ID, member.StrAvatar()),
 			},
 		}
 
 		if config.UsernameLoggingEnabled.Bool {
-			usernames, err := GetUsernames(parsed.Context(), target.ID, 5)
+			usernames, err := GetUsernames(parsed.Context(), member.ID, 5)
 			if err != nil {
 				return err, err
 			}
@@ -191,7 +187,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled.Bool {
 
-			nicknames, err := GetNicknames(parsed.Context(), target.ID, parsed.GS.ID, 5)
+			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GS.ID, 5)
 			if err != nil {
 				return err, err
 			}
@@ -341,29 +337,25 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 
 	gs.RLock()
+	defer gs.RUnlock()
+
 	ms := gs.Member(false, pu.User.ID)
 	if ms == nil || !ms.PresenceSet || !ms.MemberSet {
-		gs.RUnlock()
-
 		go func() { evtChan <- pu }()
 		return
 	}
 
 	if pu.User.Username != "" {
 		if pu.User.Username != ms.Username {
-			gs.RUnlock()
 			go func() { evtChan <- pu }()
 			return
 		}
 	}
 
 	if pu.Nick != ms.Nick {
-		gs.RUnlock()
 		go func() { evtChan <- pu }()
 		return
 	}
-
-	gs.RUnlock()
 }
 
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER

@@ -1,6 +1,7 @@
 package autorole
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
+	"html"
 	"html/template"
 	"net/http"
 )
@@ -47,7 +49,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/autorole"), muxer)
 	web.CPMux.Handle(pat.New("/autorole/*"), muxer)
 
-	muxer.Use(web.RequireFullGuildMW) // need roles
 	muxer.Use(web.RequireBotMemberMW) // need the bot's role
 	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 
@@ -75,10 +76,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 
-	fullScanActive, err := WorkingOnFullScan(activeGuild.ID)
-	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("failed checking full scan")
-	}
+	fullScanActive := WorkingOnFullScan(activeGuild.ID)
 	tmpl["FullScanActive"] = fullScanActive
 
 	return tmpl
@@ -99,4 +97,39 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	}
 
 	return tmpl, nil
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Autorole"
+	templateData["SettingsPath"] = "/autorole"
+
+	general, err := GetGeneralConfig(ag.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	enabledDisabled := ""
+	autoroleRole := "none"
+
+	if role := ag.Role(general.Role); role != nil {
+		templateData["WidgetEnabled"] = true
+		enabledDisabled = web.EnabledDisabledSpanStatus(true)
+		autoroleRole = html.EscapeString(role.Name)
+	} else {
+		templateData["WidgetDisabled"] = true
+		enabledDisabled = web.EnabledDisabledSpanStatus(false)
+	}
+
+	format := `<ul>
+	<li>Autorole status: %s</li>
+	<li>Autorole role: <code>%s</code></li>
+</ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, enabledDisabled, autoroleRole))
+
+	return templateData, nil
 }

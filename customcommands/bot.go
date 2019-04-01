@@ -76,6 +76,8 @@ type DelayedRunCCData struct {
 
 	Message *discordgo.Message
 	Member  *dstate.MemberState
+
+	UserKey interface{} `json:"user_key"`
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -183,12 +185,10 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	cs := gs.Channel(true, dataCast.ChannelID)
 	if cs == nil {
 		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
-		gs.RLock()
-		if gs.Guild.Unavailable {
-			gs.RUnlock()
+		if !gs.IsAvailable(true) {
 			return true, nil
 		}
-		gs.RUnlock()
+
 		return false, nil
 	}
 
@@ -241,12 +241,10 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	cs := gs.Channel(true, cmd.ContextChannel)
 	if cs == nil {
 		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
-		gs.RLock()
-		if gs.Guild.Unavailable {
-			gs.RUnlock()
+		if !gs.IsAvailable(true) {
 			return true, nil
 		}
-		gs.RUnlock()
+
 		return false, nil
 	}
 
@@ -275,7 +273,7 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 
 	botID := common.BotUser.ID
 
-	if evt.Author == nil || botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate() || evt.WebhookID != 0 {
+	if evt.Author == nil || botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate || evt.WebhookID != 0 {
 		return true
 	}
 
@@ -396,7 +394,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 
 	tmplCtx.Name = "CC #" + strconv.Itoa(int(cmd.LocalID))
 
-	csCop := tmplCtx.CS.Copy(true, false)
+	csCop := tmplCtx.CS.Copy(true)
 	f := log.WithFields(log.Fields{
 		"trigger":      cmd.TextTrigger,
 		"trigger_type": CommandTriggerType(cmd.TriggerType).String(),
@@ -544,6 +542,7 @@ type CacheKey int
 
 const (
 	CacheKeyCommands CacheKey = iota
+	CacheKeyDBLimits
 )
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {

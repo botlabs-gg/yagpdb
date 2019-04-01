@@ -25,7 +25,7 @@ func RunWorkers() {
 
 	for _, p := range common.Plugins {
 		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logrus.Info("[bgworkers] Running background worker: ", p.Name())
+			logrus.Info("[bgworkers] Running background worker: ", p.PluginInfo().Name)
 			go bwc.RunBackgroundWorker()
 		}
 	}
@@ -41,7 +41,7 @@ func StopWorkers(wg *sync.WaitGroup) {
 
 	for _, p := range common.Plugins {
 		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logrus.Info("[bgworkers] Stopping background worker: ", p.Name())
+			logrus.Info("[bgworkers] Stopping background worker: ", p.PluginInfo().Name)
 			wg.Add(1)
 			go bwc.StopBackgroundWorker(wg)
 		}

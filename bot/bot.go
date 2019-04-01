@@ -248,7 +248,7 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 				continue
 			}
 			wg.Add(1)
-			log.Debug("Calling bot stopper for: ", v.Name())
+			log.Debug("Calling bot stopper for: ", v.PluginInfo().Name)
 			go stopper.StopBot(wg)
 		}
 

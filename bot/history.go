@@ -1,48 +1,38 @@
 package bot
 
 import (
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	log "github.com/sirupsen/logrus"
 	"sort"
 )
 
-type WrappedMessage struct {
-	*discordgo.Message
-	Deleted bool
-}
-
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api
 // Puts the messages in the state aswell
-func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, error) {
+func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageState, error) {
 	if limit < 1 {
-		return []*WrappedMessage{}, nil
+		return []*dstate.MessageState{}, nil
 	}
 
 	// check state
-	msgBuf := make([]*WrappedMessage, limit)
-
+	msgBuf := make([]*dstate.MessageState, limit)
 
 	cs := State.Channel(true, channelID)
 	if cs == nil {
-		return []*WrappedMessage{}, nil
+		return []*dstate.MessageState{}, nil
 	}
 	cs.Owner.RLock()
 
 	n := len(msgBuf) - 1
-	for i := len(cs.Messages) - 1; i >= 0; i-- {		
+	for i := len(cs.Messages) - 1; i >= 0; i-- {
 		if !deleted {
 			if cs.Messages[i].Deleted {
 				continue
 			}
 		}
-		m := cs.Messages[i].Copy(true)
+		m := cs.Messages[i].Copy()
+		msgBuf[n] = m
 
-		msgBuf[n] = &WrappedMessage{Message: m}
-		if cs.Messages[i].Deleted {
-			msgBuf[n].Deleted = true
-		}
 		n--
 		if n < 0 {
 			break
@@ -84,7 +74,8 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, e
 
 		// Copy over to buffer
 		for k, m := range msgs {
-			msgBuf[n-k] = &WrappedMessage{Message: m}
+			ms := dstate.MessageStateFromMessage(m)
+			msgBuf[n-k] = ms
 		}
 
 		// Oldest message is last
@@ -106,7 +97,12 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*WrappedMessage, e
 	defer cs.Owner.Unlock()
 
 	for _, m := range msgBuf {
-		cs.MessageAddUpdate(false, m.Message, -1, 0, false, false)
+		if cs.Message(false, m.ID) != nil {
+			continue
+		}
+
+		cs.Messages = append(cs.Messages, m.Copy())
+		// cs.MessageAddUpdate(false, m.Message, -1, 0, false, false)
 	}
 
 	sort.Sort(DiscordMessages(cs.Messages))

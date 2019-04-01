@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -19,11 +20,12 @@ import (
 var (
 	StandardFuncMap = map[string]interface{}{
 		// conversion functions
-		"str":      ToString,
-		"toString": ToString, // don't ask why we have 2 of these
-		"toInt":    tmplToInt,
-		"toInt64":  ToInt64,
-		"toFloat":  ToFloat64,
+		"str":        ToString,
+		"toString":   ToString, // don't ask why we have 2 of these
+		"toInt":      tmplToInt,
+		"toInt64":    ToInt64,
+		"toFloat":    ToFloat64,
+		"toDuration": ToDuration,
 
 		// string manipulation
 		"joinStr":   joinStrings,
@@ -111,6 +113,8 @@ type Context struct {
 	FixedOutput string
 
 	secondsSlept int
+
+	RegexCache map[string]*regexp.Regexp
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -140,14 +144,14 @@ func (c *Context) setupContextFuncs() {
 func (c *Context) setupBaseData() {
 
 	if c.GS != nil {
-		guild := c.GS.LightCopy(false)
+		guild := c.GS.DeepCopy(false, true, true, false)
 		c.Data["Guild"] = guild
 		c.Data["Server"] = guild
 		c.Data["server"] = guild
 	}
 
 	if c.CS != nil {
-		channel := c.CS.Copy(false, false)
+		channel := c.CS.Copy(false)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
 	}
@@ -250,6 +254,23 @@ func (c *Context) IncreaseCheckStateLock() bool {
 	return c.IncreaseCheckCallCounter("state_lock", 500)
 }
 
+func (c *Context) LogEntry() *logrus.Entry {
+	f := logrus.WithFields(logrus.Fields{
+		"guild": c.GS.ID,
+		"name":  c.Name,
+	})
+
+	if c.MS != nil {
+		f = f.WithField("user", c.MS.ID)
+	}
+
+	if c.CS != nil {
+		f = f.WithField("channel", c.CS.ID)
+	}
+
+	return f
+}
+
 func baseContextFuncs(c *Context) {
 	// message functions
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
@@ -286,6 +307,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
 	c.ContextFuncs["deleteMessage"] = c.tmplDelMessage
 	c.ContextFuncs["getMessage"] = c.tmplGetMessage
+	c.ContextFuncs["getMember"] = c.tmplGetMember
 	c.ContextFuncs["addReactions"] = c.tmplAddReactions
 	c.ContextFuncs["addResponseReactions"] = c.tmplAddResponseReactions
 	c.ContextFuncs["addMessageReactions"] = c.tmplAddMessageReactions
@@ -296,6 +318,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["sleep"] = c.tmplSleep
 	c.ContextFuncs["reFind"] = c.reFind
 	c.ContextFuncs["reFindAll"] = c.reFindAll
+	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
 	c.ContextFuncs["reReplace"] = c.reReplace
 }
 

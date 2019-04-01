@@ -25,8 +25,12 @@ const (
 type Plugin struct {
 }
 
-func (p *Plugin) Name() string {
-	return "premium"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Premium",
+		SysName:  "premium",
+		Category: common.PluginCategoryCore,
+	}
 }
 
 func RegisterPlugin() {
@@ -42,6 +46,12 @@ func IsGuildPremium(guildID int64) (bool, error) {
 	var premium bool
 	err := common.RedisPool.Do(radix.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
 	return premium, errors.WithMessage(err, "IsGuildPremium")
+}
+
+func PremiumProvidedBy(guildID int64) (int64, error) {
+	var userID int64
+	err := common.RedisPool.Do(radix.FlatCmd(&userID, "HGET", RedisKeyPremiumGuilds, guildID))
+	return userID, errors.WithMessage(err, "PremiumProvidedBy")
 }
 
 // AllGuildsOncePremium returns all the guilds that have has premium once, and the last time that was active

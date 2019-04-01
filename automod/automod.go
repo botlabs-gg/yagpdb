@@ -21,8 +21,12 @@ var (
 type Plugin struct {
 }
 
-func (p *Plugin) Name() string {
-	return "Automod v2"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Automod v2",
+		SysName:  "automod_v2",
+		Category: common.PluginCategoryModeration,
+	}
 }
 
 func RegisterPlugin() {
