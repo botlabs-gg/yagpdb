@@ -1,8 +1,8 @@
 ## Streaming
 
-Extends the built-in streaming status in discord with some extra utility features.
+Extends the built-in streaming status in Discord with some extra utility features.
 
-### Redis layout: 
+### Redis layout:
 
 | Key  | Type | Value |
 | ------------- | ---------- | ------------- |

@@ -2,7 +2,7 @@ This file will be updated with breaking changes, before you update you should ch
 
 **4th january 2019 (1.14)**
 
- - Reddit feeds are now stored in postres instead of redis, a migration will automatically start on the webserver and can be disabled by setting YAGPDB_REDDIT_DISABLE_REDIS_PQ_MIGRATION to anything but empty, automigration will be turned into opt-in instead of opt out in a couple versions, then removed.
+ - Reddit feeds are now stored in postgres instead of redis, a migration will automatically start on the webserver and can be disabled by setting YAGPDB_REDDIT_DISABLE_REDIS_PQ_MIGRATION to anything but empty, automigration will be turned into opt-in instead of opt out in a couple versions, then removed.
 
 **17th january 2019**
 
@@ -17,7 +17,7 @@ This file will be updated with breaking changes, before you update you should ch
  - The old master slave system has now been removed in favor of a proper sharding orchestrator (github.com/jonas747/dshardorchestrator) that allows scaling shards across processes and in the future will do so over multiple machines (the latter is not fully implemented yet)
 
 **7th november 2018 (1.10-dev)**
- - scheduled events cleanup, serverstats processing, soundboard transcoding and safebrowsing now needs a process running with the `-backgroundworkers` flag 
+ - scheduled events cleanup, serverstats processing, soundboard transcoding and safebrowsing now needs a process running with the `-backgroundworkers` flag
      + Can still run it on the same process as the bot or webserver or whatever...
      + This is to support having multiple bot processes in the near future
 

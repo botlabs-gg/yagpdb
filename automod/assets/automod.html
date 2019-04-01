@@ -303,7 +303,7 @@ table{
                 <div class="card-body">
                     <div class="form-group">
                         <p class="help-block">Separate entries by spaces or lines.</p>
-                        <p class="help-block">If this is a website list, then only specify domains, example: <code>google.com</code> instead of <code>https://google.com/something there</code>, note that all subdomains will also be included</p>
+                        <p class="help-block">If this is a website list, then only specify domains, example: <code>google.com</code> instead of <code>https://google.com/something there</code>, note that all subdomains will also be included.</p>
                         <textarea class="form-control" name="Content" rows="5">{{range $k, $v :=  .Content}}{{if ne $k 0}}
 {{end}}{{.}}{{end}}</textarea>
                     </div>

@@ -15,7 +15,7 @@
             <div class="tabs">
                 <ul class="nav nav-tabs">
                     <li class="nav-item active"><a class="nav-link show active" href="#general" aria-controls="general" role="tab" data-toggle="tab">
-                        General 
+                        General
                     </a></li>
                     <li class="nav-item"><a class="nav-link" href="#mute" aria-controls="mute/unmute" role="tab" data-toggle="tab" >
                         Mute <span class="indicator indicator-{{if .ModConfig.MuteEnabled}}success{{else}}danger{{end}}"></span>
@@ -45,7 +45,7 @@
             <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
         </div>
     </div>
-    <!-- /.row -->            
+    <!-- /.row -->
 </form>
 <div id="clear-server-warnings-modal" class="modal-block modal-full-color modal-block-danger mfp-hide">
     <section class="card">
@@ -87,16 +87,16 @@ function MuteManagedChanged(){
 $(function(){
     MuteManagedChanged();
 })
-</script>  
+</script>
 {{template "cp_footer" .}}
 
 {{end}}
 
 {{define "moderation_general"}}
 <p>A set of moderation tools and commands to help you run a server.</p>
-<p>Commands for performing moderation actions such as kick and ban, as well as mutes, timed bans, warning, mass deleting messages and so on.<br>
-It is highly recommended to couple the moderation actions with the message logs, this was whenever your mods decide to perform actions on someone, a message log of the channel they ran the command in will be recorded and added to the mod log.</p>
-<p>The moderation actions coupled with the message logs has been one of the most useful tools for me personally when running servers with thousands of members.</p>
+<p>Commands for performing moderation actions such as kicks and bans, as well as mutes, timed bans, warnings, mass deleting messages and so on.<br>
+It is highly recommended to couple the moderation actions with the message logs, this means that whenever your mods decide to perform an action on someone, a message log of the channel they ran the command in will be recorded and added to the mod log.</p>
+<p>The moderation actions coupled with the message logs have been one of the most useful tools for me personally when running servers with thousands of members.</p>
 <p><a href="https://docs.yagpdb.xyz/moderation" target="_blank">More documentation</a></p>
 <div class="row">
     <div class="col">
@@ -121,7 +121,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <input class="form-check-input" id="log-unbans" type="checkbox" name="LogUnbans" {{if .ModConfig.LogUnbans}} checked{{end}}>
             <label for="log-unbans">
                 Log unban events in the modlog channel<br/>
-                For the author to show up when this is used you need to give the bot "audit log" permissions<br/>
+                For the author to show up when this is used you need to give the bot "audit log" permissions.<br/>
             </label>
         </div>
         <hr />
@@ -168,7 +168,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             <input class="form-check-input" id="log-bans" type="checkbox" name="LogBans" {{if .ModConfig.LogBans}} checked{{end}}>
             <label for="log-bans">
                 Log ban events not made through the bot<br/>
-                For the author and reason to show up when this is used you need to give the bot "audit log" permissions
+                For the author and reason to show up when this is used you need to give the bot "audit log" permissions.
             </label>
         </div>
     </div>
@@ -269,7 +269,7 @@ It is highly recommended to couple the moderation actions with the message logs,
 {{end}}
 
 {{define "moderation_kick"}}
-<p>Allows you to kick members through a command, there's several benefits using this over just kicking them in discord:</p>
+<p>Allows you to kick members through a command, there's several benefits using this over just kicking them in Discord:</p>
 <ul>
     <li>They get sent a DM that they were kicked</li>
     <li>If you have the modlog enabled, a log containing the last 100 messages from the channel will be included in the modlog entry</li>
@@ -313,7 +313,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         <div class="form-group">
             <label>Kick DM (Leave empty for default)</label>
             <textarea rows="5" class="form-control" name="KickMessage" placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
-            
+
             <p class="help-block">Available template data:<br/>
             {{template "template_helper_user"}} - The user being banned/kicked<br/>
             <code>{{"{{.Reason}}"}}</code> - The reason specified in the ban/kick<br/>
