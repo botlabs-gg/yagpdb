@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -19,11 +20,11 @@ import (
 var (
 	StandardFuncMap = map[string]interface{}{
 		// conversion functions
-		"str":      ToString,
-		"toString": ToString, // don't ask why we have 2 of these
-		"toInt":    tmplToInt,
-		"toInt64":  ToInt64,
-		"toFloat":  ToFloat64,
+		"str":        ToString,
+		"toString":   ToString, // don't ask why we have 2 of these
+		"toInt":      tmplToInt,
+		"toInt64":    ToInt64,
+		"toFloat":    ToFloat64,
 		"toDuration": ToDuration,
 
 		// string manipulation
@@ -112,6 +113,8 @@ type Context struct {
 	FixedOutput string
 
 	secondsSlept int
+
+	RegexCache map[string]*regexp.Regexp
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -315,6 +318,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["sleep"] = c.tmplSleep
 	c.ContextFuncs["reFind"] = c.reFind
 	c.ContextFuncs["reFindAll"] = c.reFindAll
+	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
 	c.ContextFuncs["reReplace"] = c.reReplace
 }
 

@@ -735,12 +735,32 @@ func (c *Context) tmplSleep(duration interface{}) (string, error) {
 	return "", nil
 }
 
-func (c *Context) reFind(r string, s string) (string, error) {
-	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
-		return "", ErrTooManyCalls
+func (c *Context) compileRegex(r string) (*regexp.Regexp, error) {
+	if c.RegexCache == nil {
+		c.RegexCache = make(map[string]*regexp.Regexp)
+	}
+
+	cached, ok := c.RegexCache[r]
+	if ok {
+		return cached, nil
+	}
+
+	if len(c.RegexCache) >= 10 {
+		return nil, ErrTooManyAPICalls
 	}
 
 	compiled, err := regexp.Compile(r)
+	if err != nil {
+		return nil, err
+	}
+
+	c.RegexCache[r] = compiled
+
+	return compiled, nil
+}
+
+func (c *Context) reFind(r string, s string) (string, error) {
+	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
 	}
@@ -749,11 +769,7 @@ func (c *Context) reFind(r string, s string) (string, error) {
 }
 
 func (c *Context) reFindAll(r string, s string) ([]string, error) {
-	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
-		return nil, ErrTooManyCalls
-	}
-
-	compiled, err := regexp.Compile(r)
+	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
@@ -761,12 +777,17 @@ func (c *Context) reFindAll(r string, s string) ([]string, error) {
 	return compiled.FindAllString(s, 1000), nil
 }
 
-func (c *Context) reReplace(r string, s string, repl string) (string, error) {
-	if c.IncreaseCheckCallCounter("regex_compiled", 10) {
-		return "", ErrTooManyCalls
+func (c *Context) reFindAllSubmatches(r string, s string) ([][]string, error) {
+	compiled, err := c.compileRegex(r)
+	if err != nil {
+		return nil, err
 	}
 
-	compiled, err := regexp.Compile(r)
+	return compiled.FindAllStringSubmatch(r, 100), nil
+}
+
+func (c *Context) reReplace(r string, s string, repl string) (string, error) {
+	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
 	}
