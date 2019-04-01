@@ -23,7 +23,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-lg-12">
-                            <p>This feature uses the streaming status of users in discord to send announcements and assign a role to them.</p>
+                            <p>This feature uses the streaming status of users in Discord to send announcements and assign a role to them.</p>
                             <p><b>Warning:</b> The stream announcements are the most unreliable feature on this bot, but the streaming role is fairly reliable.</p>
                             <p>
                                 Note: The bot needs to have a role higher than the one you are trying to assign to streamers!<br>
@@ -46,9 +46,9 @@
                                 <p class="help-block">Available template data is {{template "template_helper_user"}}, <code>{{"{{.URL}}"}}</code> (The stream link), <code>{{"{{.Game}}"}}</code> and <code>{{"{{.StreamTitle}}"}}</code>.</p>
                             </div>
                             <div class="form-group">
-                                <label>Game regex</label>
+                                <label>Game Regex</label>
                                 <input type="text" class="form-control" name="game_regex" value="{{.StreamingConfig.GameRegex}}"></input>
-                                <p class="help-block">Filter out the people streaming by their game name (prepend with <code>(?i)</code> for case insensitivity)</p>
+                                <p class="help-block">Filter out the people streaming by their game name (prepend with <code>(?i)</code> for case insensitivity).</p>
                             </div>
                         </div>
                         <div class="col-lg-6">
@@ -57,26 +57,26 @@
                                 <select class="form-control" name="give_role">
                                     {{roleOptions .ActiveGuild.Roles .HighestRole .StreamingConfig.GiveRole "None (disable give role)"}}
                                 </select>
-                                <p class="help-block">Assign a role to people currently streaming, so you can for example hoist it up where people can see</p>
+                                <p class="help-block">Assign a role to people currently streaming, so you can, for example, hoist it up to where people can see.</p>
                             </div>
                             <div class="form-group">
-                                <label>Whitelist role</label>
+                                <label>Whitelist Role</label>
                                 <select class="form-control" name="require_role">
                                     {{roleOptions .ActiveGuild.Roles nil .StreamingConfig.RequireRole "None"}}
                                 </select>
-                                <p class="help-block">Only care about the people with this role</p>
+                                <p class="help-block">Only care about the people with this role.</p>
                             </div>
                             <div class="form-group">
-                                <label>Ignore role</label>
+                                <label>Ignore Role</label>
                                 <select class="form-control" name="ignore_role">
                                     {{roleOptions .ActiveGuild.Roles nil .StreamingConfig.IgnoreRole "None"}}
                                 </select>
-                                <p class="help-block">Ignore people with this role</p>
+                                <p class="help-block">Ignore people with this role.</p>
                             </div>
                             <div class="form-group">
                                 <label>Stream title regex</label>
                                 <input type="text" class="form-control" name="title_regex" value="{{.StreamingConfig.TitleRegex}}"></input>
-                                <p class="help-block">Filter out the people streaming by the stream title (prepend with <code>(?i)</code> for case insensitivity)</p>
+                                <p class="help-block">Filter out the people streaming by the stream title (prepend with <code>(?i)</code> for case insensitivity).</p>
                             </div>
                         </div>
                     </div>

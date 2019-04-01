@@ -8,7 +8,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <!-- Mobile Metas -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
+
     <!-- Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png?v=6">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png?v=6">
@@ -19,13 +19,13 @@
     <meta name="msapplication-TileColor" content="#2b5797">
     <meta name="msapplication-config" content="/static/icons/browserconfig.xml?v=6">
     <meta name="theme-color" content="#ffffff">
-    
+
     <!-- More meta stuff -->
     <meta name="apple-mobile-web-app-title" content="YAGPDB">
     <meta name="application-name" content="YAGPDB">
     <meta name="msapplication-config" content="/static/icons/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
-    
+
     <meta property="og:title" content="YAGPDB" />
     <meta property="og:description" content="Yet Another General Purpose Discord Bot" />
 
@@ -33,7 +33,7 @@
     <meta name="keywords" content="YAGPDB Discord bot control panel" />
     <meta name="description" content="YAGPDB - Yet Another General Purpose Discord Bot">
     <meta name="author" content="jonas747">
- 
+
     <!-- Web Fonts  -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
 
@@ -99,7 +99,7 @@
             </section>
         </div>
     </section>
-    
+
     <script>
     var visibleURL;
     {{if .VisibleURL }}visibleURL = {{.VisibleURL}};{{end}}
@@ -123,10 +123,10 @@
 
     <!-- Theme Base, Components and Settings -->
     <script src="/static/js/theme.js"></script>
-    
+
     <!-- Theme Custom -->
     <script src="/static/js/custom.js"></script>
-    
+
     <!-- Theme Initialization Files -->
     <script src="/static/js/theme.init.js"></script>
 
@@ -164,9 +164,9 @@ $(function(){
 
 {{/*Help block for templating*/}}
 {{define "template_help"}}
-<p class="mb-0">To include the user or server in the message you can use the template data included<br/>
-Some quick examples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - Will be replaced by server name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - The users id and so on..<br/>
-To mention the user for example you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code><br/>
+<p class="mb-0">To include the user or server in the message you can use the template data included.<br/>
+Some quick examples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - will be replaced by server name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - the user's id and so on...<br/>
+For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code>.<br/>
 <a href="https://docs.yagpdb.xyz" target="_blank">See the documentation for more details</a>
 </p>
 {{end}}

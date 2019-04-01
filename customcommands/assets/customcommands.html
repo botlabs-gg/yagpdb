@@ -30,7 +30,7 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-                    {{if not .CurrentCommandGroup}}<p>Create a new group to put white-list/blacklist roles/channels on multiple commands at the same time, as well as keeping things organized</p>{{else}}
+                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whitelist/blacklist roles/channels on multiple commands at the same time, as well as keeping things organized.</p>{{else}}
                     <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update" data-async-form>
                         <div class="row">
                             <div class="col-6">
@@ -39,7 +39,7 @@
                                     <input type="text" class="form-control" value="{{.CurrentCommandGroup.Name}}" name="Name" />
                                 </div>
                                 <div class="form-group">
-                                    <label>White-list roles for who can use these commands</label><br>
+                                    <label>Whitelist roles for who can use these commands</label><br>
                                     <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple" id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
                                         {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
                                     </select>
@@ -66,7 +66,7 @@
                                     <select multiple="multiple" class="form-control" data-plugin-multiselect name="BlacklistChannels">
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}
                                     </select>
-                                </div>  
+                                </div>
                                 <div class="form-group">
                                     <button type="submit" title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}}" class="btn btn-danger" formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete group (commands become ungrouped)</button>
                                 </div>
@@ -226,7 +226,7 @@
     {{range .CustomCommands}}
     <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
         <button type="submit" class="hidden" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form-alertsonly></button>
-        
+
         <div class="card">
             <div class="card-header clearfix">
                 <div class="pull-right">
