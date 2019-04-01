@@ -809,15 +809,18 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 			m, err = common.BotSession.GuildMember(guild.ID, user.ID)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
-				return
 			}
 		}
 
-		// calculate permissions
-		perms := discordgo.MemberPermissions(guild, nil, m)
+		ctx := r.Context()
 
-		ctx := context.WithValue(r.Context(), common.ContextKeyUserMember, m)
-		ctx = context.WithValue(ctx, common.ContextKeyMemberPermissions, perms)
+		if m != nil {
+			// calculate permissions
+			perms := discordgo.MemberPermissions(guild, nil, m)
+
+			ctx = context.WithValue(r.Context(), common.ContextKeyUserMember, m)
+			ctx = context.WithValue(ctx, common.ContextKeyMemberPermissions, perms)
+		}
 
 		isAdmin := IsAdminRequest(ctx, r)
 		ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": isAdmin})
