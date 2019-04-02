@@ -125,7 +125,7 @@ var cmdWhois = &commands.YAGCommand{
 			createdDurStr = "Less than an hour ago"
 		}
 		embed := &discordgo.MessageEmbed{
-			Title: fmt.Sprintf("%s#%s%s", member.Username, member.Discriminator, nick),
+			Title: fmt.Sprintf("%s#%04d%s", member.Username, member.Discriminator, nick),
 			Fields: []*discordgo.MessageEmbedField{
 				&discordgo.MessageEmbedField{
 					Name:   "ID",
