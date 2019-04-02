@@ -242,6 +242,8 @@ func setupRoutes() *goji.Mux {
 	// Guild specific public routes, does not require admin or being logged in at all
 	serverPublicMux := goji.SubMux()
 	serverPublicMux.Use(ActiveServerMW)
+	serverPublicMux.Use(RequireActiveServer)
+	serverPublicMux.Use(LoadCoreConfigMiddleware)
 	serverPublicMux.Use(SetGuildMemberMiddleware)
 
 	RootMux.Handle(pat.Get("/public/:server"), serverPublicMux)
@@ -252,6 +254,7 @@ func setupRoutes() *goji.Mux {
 	ServerPubliAPIMux = goji.SubMux()
 	ServerPubliAPIMux.Use(ActiveServerMW)
 	ServerPubliAPIMux.Use(RequireActiveServer)
+	ServerPubliAPIMux.Use(LoadCoreConfigMiddleware)
 	ServerPubliAPIMux.Use(SetGuildMemberMiddleware)
 
 	RootMux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)

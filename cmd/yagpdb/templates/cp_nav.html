@@ -82,7 +82,7 @@
 
         <script>
         $(function(){
-            loadWidget("server-selection", {{if .ActiveGuild}}"/manage/{{.ActiveGuild.ID}}/guild_selection"{{else}}"/guild_selection"{{end}});
+            loadWidget("server-selection", {{if and .ActiveGuild .IsAdmin}}"/manage/{{.ActiveGuild.ID}}/guild_selection"{{else}}"/guild_selection"{{end}});
         });
         </script>
 
