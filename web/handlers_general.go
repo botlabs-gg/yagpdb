@@ -251,7 +251,7 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 	_, templateData := GetBaseCPContextData(r.Context())
 
 	templateData["WidgetTitle"] = "Control Panel"
-	// templateData["SettingsPath"] = "/soundboard/"
+	templateData["SettingsPath"] = "/core"
 
 	templateData["WidgetEnabled"] = true
 
