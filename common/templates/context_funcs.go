@@ -783,7 +783,7 @@ func (c *Context) reFindAllSubmatches(r string, s string) ([][]string, error) {
 		return nil, err
 	}
 
-	return compiled.FindAllStringSubmatch(r, 100), nil
+	return compiled.FindAllStringSubmatch(s, 100), nil
 }
 
 func (c *Context) reReplace(r string, s string, repl string) (string, error) {
