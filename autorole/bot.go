@@ -359,7 +359,7 @@ func HandleGuildChunk(evt *eventsystem.EventData) {
 
 OUTER:
 	for _, m := range chunk.Members {
-		joinedAt, err := time.Parse(time.RFC3339, m.JoinedAt)
+		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
 			logrus.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed parsing join timestamp")
 			if config.RequiredDuration > 0 {
