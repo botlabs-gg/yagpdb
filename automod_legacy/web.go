@@ -96,7 +96,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	<li>Server Invites: %s</li>
 	<li>Any Links: %s</li>
 	<li>Banned words: %s</li>
-	<li>Baned websites: %s</li>
+	<li>Banned websites: %s</li>
 </ul>`
 
 	slowmode := web.EnabledDisabledSpanStatus(config.Spam.Enabled)
