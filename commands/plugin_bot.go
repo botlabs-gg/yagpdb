@@ -12,6 +12,8 @@ import (
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -20,12 +22,38 @@ var (
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
 	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
 
 	CommandSystem.State = bot.State
+}
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	atomic.StoreInt32(shuttingDown, 1)
+
+	startedWaiting := time.Now()
+	for {
+		runningcommandsLock.Lock()
+		n := len(runningCommands)
+		runningcommandsLock.Unlock()
+
+		if n < 1 {
+			wg.Done()
+			return
+		}
+
+		if time.Since(startedWaiting) > time.Second*60 {
+			// timeout
+			log.Infof("[commands] timeout waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+			wg.Done()
+			return
+		}
+
+		log.Infof("[commands] waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+		time.Sleep(time.Millisecond * 500)
+	}
 }
 
 func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
@@ -74,11 +102,15 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		data = data.WithContext(context.WithValue(data.Context(), CtxKeyCmdSettings, settings))
 
 		// Lock the command for execution
-		err = common.BlockingLockRedisKey(RKeyCommandLock(data.Msg.Author.ID, yc.Name), CommandExecTimeout*2, int((CommandExecTimeout + time.Second).Seconds()))
-		if err != nil {
-			return nil, errors.WithMessage(err, "Failed locking command")
+		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
+			if atomic.LoadInt32(shuttingDown) == 1 {
+				return yc.Name + ": Bot is shutting down or restarting, please try again in a couple seconds...", nil
+			}
+
+			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
 		}
-		defer common.UnlockRedisKey(RKeyCommandLock(data.Msg.Author.ID, yc.Name))
+
+		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
 
 		innerResp, err := inner(data)
 

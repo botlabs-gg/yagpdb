@@ -14,6 +14,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -61,7 +63,19 @@ var (
 	RKeyCommandLock     = func(uID int64, cmd string) string { return "cmd_lock:" + discordgo.StrID(uID) + ":" + cmd }
 
 	CommandExecTimeout = time.Minute
+
+	runningCommands     = make([]*RunningCommand, 0)
+	runningcommandsLock sync.Mutex
+	shuttingDown        = new(int32)
 )
+
+type RunningCommand struct {
+	GuildID   int64
+	ChannelID int64
+	AuthorID  int64
+
+	Command *YAGCommand
+}
 
 // Slight extension to the simplecommand, it will check if the command is enabled in the HandleCommand func
 // And invoke a custom handlerfunc with provided redis client
@@ -637,4 +651,64 @@ func CensorError(err error) string {
 	}
 
 	return out
+}
+
+func BlockingAddRunningCommand(guildID int64, channelID int64, authorID int64, cmd *YAGCommand, timeout time.Duration) bool {
+	started := time.Now()
+	for {
+		if tryAddRunningCommand(guildID, channelID, authorID, cmd) {
+			return true
+		}
+
+		if time.Since(started) > timeout {
+			return false
+		}
+
+		if atomic.LoadInt32(shuttingDown) == 1 {
+			return false
+		}
+
+		time.Sleep(time.Second)
+
+		if atomic.LoadInt32(shuttingDown) == 1 {
+			return false
+		}
+	}
+}
+
+func tryAddRunningCommand(guildID int64, channelID int64, authorID int64, cmd *YAGCommand) bool {
+	runningcommandsLock.Lock()
+	for _, v := range runningCommands {
+		if v.GuildID == guildID && v.ChannelID == channelID && v.AuthorID == authorID && v.Command == cmd {
+			runningcommandsLock.Unlock()
+			return false
+		}
+	}
+
+	runningCommands = append(runningCommands, &RunningCommand{
+		GuildID:   guildID,
+		ChannelID: channelID,
+		AuthorID:  authorID,
+
+		Command: cmd,
+	})
+
+	runningcommandsLock.Unlock()
+
+	return true
+}
+
+func removeRunningCommand(guildID, channelID, authorID int64, cmd *YAGCommand) {
+	runningcommandsLock.Lock()
+	for i, v := range runningCommands {
+		if v.GuildID == guildID && v.ChannelID == channelID && v.AuthorID == authorID && v.Command == cmd {
+			runningCommands = append(runningCommands[:i], runningCommands[i+1:]...)
+			runningcommandsLock.Unlock()
+			return
+		}
+	}
+
+	runningcommandsLock.Unlock()
+
+	return
 }
