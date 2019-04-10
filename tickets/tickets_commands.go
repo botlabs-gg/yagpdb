@@ -19,6 +19,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -281,6 +282,9 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
+	closingTickets := make(map[int64]bool)
+	var closingTicketsLock sync.Mutex
+
 	cmdCloseTicket := &commands.YAGCommand{
 		CmdCategory: categoryTickets,
 		Name:        "Close",
@@ -292,11 +296,27 @@ func (p *Plugin) AddCommands() {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
 
+			// protect again'st calling close multiple times at the sime time
+			closingTicketsLock.Lock()
+			if _, ok := closingTickets[currentTicket.Ticket.ChannelID]; ok {
+				closingTicketsLock.Unlock()
+				return "Already working on closing this ticket, please wait...", nil
+			}
+			closingTickets[currentTicket.Ticket.ChannelID] = true
+			closingTicketsLock.Unlock()
+			defer func() {
+				closingTicketsLock.Lock()
+				delete(closingTickets, currentTicket.Ticket.ChannelID)
+				closingTicketsLock.Unlock()
+			}()
+
+			// send a heads up that this can take a while
 			common.BotSession.ChannelMessageSend(parsed.CS.ID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
 
 			currentTicket.Ticket.ClosedAt.Time = time.Now()
 			currentTicket.Ticket.ClosedAt.Valid = true
 
+			// create the logs, download the attachments
 			err := createLogs(conf, currentTicket.Ticket)
 			if err != nil {
 				return nil, err
@@ -308,6 +328,7 @@ func (p *Plugin) AddCommands() {
 				Color:       0xf23c3c,
 			})
 
+			// if everything went well, delete the channel
 			_, err = common.BotSession.ChannelDelete(currentTicket.Ticket.ChannelID)
 			if err != nil {
 				return nil, err
