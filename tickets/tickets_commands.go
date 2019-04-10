@@ -32,14 +32,14 @@ func (p *Plugin) AddCommands() {
 	categoryTickets := &dcmd.Category{
 		Name:        "Tickets",
 		Description: "Ticket commands",
-		HelpEmoji:   "🔘",
+		HelpEmoji:   "🎫",
 		EmbedColor:  0x42b9f4,
 	}
 
 	cmdOpenTicket := &commands.YAGCommand{
 		CmdCategory:  categoryTickets,
 		Name:         "Open",
-		Aliases:      []string{"create", "new"},
+		Aliases:      []string{"create", "new", "make"},
 		Description:  "Opens a new ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
@@ -288,6 +288,7 @@ func (p *Plugin) AddCommands() {
 	cmdCloseTicket := &commands.YAGCommand{
 		CmdCategory: categoryTickets,
 		Name:        "Close",
+		Aliases:     []string{"end", "delete"},
 		Description: "Closes the ticket",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "reason", Type: dcmd.String, Default: "none"},
@@ -346,7 +347,7 @@ func (p *Plugin) AddCommands() {
 	cmdAdminsOnly := &commands.YAGCommand{
 		CmdCategory: categoryTickets,
 		Name:        "AdminsOnly",
-		Aliases:     []string{"adminonly"},
+		Aliases:     []string{"adminonly", "ao"},
 		Description: "Toggle admins only mode for this ticket",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
