@@ -324,7 +324,7 @@ func tmplDBSet(ctx *templates.Context) interface{} {
 
 func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
 	return func(userID int64, key interface{}, value interface{}, ttl int) (string, error) {
-		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -368,7 +368,7 @@ func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key interface{},
 
 func tmplDBIncr(ctx *templates.Context) interface{} {
 	return func(userID int64, key interface{}, incrBy interface{}) (interface{}, error) {
-		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -404,7 +404,7 @@ RETURNING value_num`
 
 func tmplDBGet(ctx *templates.Context) interface{} {
 	return func(userID int64, key interface{}) (interface{}, error) {
-		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -424,11 +424,11 @@ func tmplDBGet(ctx *templates.Context) interface{} {
 
 func tmplDBGetPattern(ctx *templates.Context) interface{} {
 	return func(userID int64, pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
-		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
 
-		if ctx.IncreaseCheckCallCounter("db_multiple", 1) {
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -452,7 +452,7 @@ func tmplDBGetPattern(ctx *templates.Context) interface{} {
 
 func tmplDBDel(ctx *templates.Context) interface{} {
 	return func(userID int64, key interface{}) (interface{}, error) {
-		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -467,11 +467,11 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 
 func tmplDBTopEntries(ctx *templates.Context) interface{} {
 	return func(pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
-		if ctx.IncreaseCheckCallCounter("db_interactions", 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
 
-		if ctx.IncreaseCheckCallCounter("db_multiple", 1) {
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 

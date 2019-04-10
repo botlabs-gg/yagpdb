@@ -31,6 +31,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/roll"
 	"github.com/jonas747/yagpdb/stdcommands/setstatus"
 	"github.com/jonas747/yagpdb/stdcommands/simpleembed"
+	"github.com/jonas747/yagpdb/stdcommands/sleep"
 	"github.com/jonas747/yagpdb/stdcommands/stateinfo"
 	"github.com/jonas747/yagpdb/stdcommands/throw"
 	"github.com/jonas747/yagpdb/stdcommands/topcommands"
@@ -107,6 +108,7 @@ func (p *Plugin) AddCommands() {
 		findserver.Command,
 		dcallvoice.Command,
 		ccreqs.Command,
+		sleep.Command,
 	)
 
 }

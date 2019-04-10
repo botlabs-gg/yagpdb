@@ -83,6 +83,9 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 	contextSetupFuncs = append(contextSetupFuncs, f)
 }
 
+// set by the premium package to return wether this guild is premium or not
+var GuildPremiumFunc func(guildID int64) (bool, error)
+
 type Context struct {
 	Name string
 	GS   *dstate.GuildState
@@ -115,6 +118,8 @@ type Context struct {
 
 	secondsSlept int
 
+	IsPremium bool
+
 	RegexCache map[string]*regexp.Regexp
 }
 
@@ -129,6 +134,10 @@ func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.Membe
 		ContextFuncs: make(map[string]interface{}),
 		Data:         make(map[string]interface{}),
 		Counters:     make(map[string]int),
+	}
+
+	if gs != nil && GuildPremiumFunc != nil {
+		ctx.IsPremium, _ = GuildPremiumFunc(gs.ID)
 	}
 
 	ctx.setupContextFuncs()
@@ -166,6 +175,7 @@ func (c *Context) setupBaseData() {
 	c.Data["TimeSecond"] = time.Second
 	c.Data["TimeMinute"] = time.Minute
 	c.Data["TimeHour"] = time.Hour
+	c.Data["IsPremium"] = c.IsPremium
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
@@ -267,6 +277,23 @@ func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 	c.Counters[key] = current
 
 	return current > limit
+}
+
+// IncreaseCheckCallCounter Returns true if key is above the limit
+func (c *Context) IncreaseCheckCallCounterPremium(key string, normalLimit, premiumLimit int) bool {
+	current, ok := c.Counters[key]
+	if !ok {
+		current = 0
+	}
+	current++
+
+	c.Counters[key] = current
+
+	if c.IsPremium {
+		return current > premiumLimit
+	}
+
+	return current > normalLimit
 }
 
 func (c *Context) IncreaseCheckGenericAPICall() bool {
