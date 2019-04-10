@@ -427,7 +427,7 @@ func testTicketsSelect(t *testing.T) {
 }
 
 var (
-	ticketDBTypes = map[string]string{`GuildID`: `bigint`, `LocalID`: `bigint`, `ChannelID`: `bigint`, `Title`: `text`, `CreatedAt`: `timestamp with time zone`, `ClosedAt`: `timestamp with time zone`, `LogsID`: `bigint`}
+	ticketDBTypes = map[string]string{`GuildID`: `bigint`, `LocalID`: `bigint`, `ChannelID`: `bigint`, `Title`: `text`, `CreatedAt`: `timestamp with time zone`, `ClosedAt`: `timestamp with time zone`, `LogsID`: `bigint`, `AuthorID`: `bigint`, `AuthorUsernameDiscrim`: `text`}
 	_             = bytes.MinRead
 )
 

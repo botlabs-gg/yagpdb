@@ -29,11 +29,13 @@ CREATE TABLE IF NOT EXISTS tickets (
 
 	logs_id BIGINT NOT NULL,
 
+	author_id BIGINT NOT NULL,
+	author_username_discrim TEXT NOT NULL,
+
 	PRIMARY KEY(guild_id, local_id)
 );
 
-CREATE INDEX IF NOT EXISTS tickets_channel_id_idx ON tickets(channel_id);
-CREATE INDEX IF NOT EXISTS tickets_guild_id_idx ON tickets(guild_id);
+CREATE INDEX IF NOT EXISTS tickets_guild_id_channel_id_idx ON tickets(guild_id, channel_id);
 
 CREATE TABLE IF NOT EXISTS ticket_participants (
 	ticket_guild_id BIGINT NOT NULL,

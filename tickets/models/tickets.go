@@ -24,34 +24,40 @@ import (
 
 // Ticket is an object representing the database table.
 type Ticket struct {
-	GuildID   int64     `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	LocalID   int64     `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
-	ChannelID int64     `boil:"channel_id" json:"channel_id" toml:"channel_id" yaml:"channel_id"`
-	Title     string    `boil:"title" json:"title" toml:"title" yaml:"title"`
-	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ClosedAt  null.Time `boil:"closed_at" json:"closed_at,omitempty" toml:"closed_at" yaml:"closed_at,omitempty"`
-	LogsID    int64     `boil:"logs_id" json:"logs_id" toml:"logs_id" yaml:"logs_id"`
+	GuildID               int64     `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	LocalID               int64     `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
+	ChannelID             int64     `boil:"channel_id" json:"channel_id" toml:"channel_id" yaml:"channel_id"`
+	Title                 string    `boil:"title" json:"title" toml:"title" yaml:"title"`
+	CreatedAt             time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ClosedAt              null.Time `boil:"closed_at" json:"closed_at,omitempty" toml:"closed_at" yaml:"closed_at,omitempty"`
+	LogsID                int64     `boil:"logs_id" json:"logs_id" toml:"logs_id" yaml:"logs_id"`
+	AuthorID              int64     `boil:"author_id" json:"author_id" toml:"author_id" yaml:"author_id"`
+	AuthorUsernameDiscrim string    `boil:"author_username_discrim" json:"author_username_discrim" toml:"author_username_discrim" yaml:"author_username_discrim"`
 
 	R *ticketR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var TicketColumns = struct {
-	GuildID   string
-	LocalID   string
-	ChannelID string
-	Title     string
-	CreatedAt string
-	ClosedAt  string
-	LogsID    string
+	GuildID               string
+	LocalID               string
+	ChannelID             string
+	Title                 string
+	CreatedAt             string
+	ClosedAt              string
+	LogsID                string
+	AuthorID              string
+	AuthorUsernameDiscrim string
 }{
-	GuildID:   "guild_id",
-	LocalID:   "local_id",
-	ChannelID: "channel_id",
-	Title:     "title",
-	CreatedAt: "created_at",
-	ClosedAt:  "closed_at",
-	LogsID:    "logs_id",
+	GuildID:               "guild_id",
+	LocalID:               "local_id",
+	ChannelID:             "channel_id",
+	Title:                 "title",
+	CreatedAt:             "created_at",
+	ClosedAt:              "closed_at",
+	LogsID:                "logs_id",
+	AuthorID:              "author_id",
+	AuthorUsernameDiscrim: "author_username_discrim",
 }
 
 // Generated where
@@ -101,21 +107,25 @@ func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
 }
 
 var TicketWhere = struct {
-	GuildID   whereHelperint64
-	LocalID   whereHelperint64
-	ChannelID whereHelperint64
-	Title     whereHelperstring
-	CreatedAt whereHelpertime_Time
-	ClosedAt  whereHelpernull_Time
-	LogsID    whereHelperint64
+	GuildID               whereHelperint64
+	LocalID               whereHelperint64
+	ChannelID             whereHelperint64
+	Title                 whereHelperstring
+	CreatedAt             whereHelpertime_Time
+	ClosedAt              whereHelpernull_Time
+	LogsID                whereHelperint64
+	AuthorID              whereHelperint64
+	AuthorUsernameDiscrim whereHelperstring
 }{
-	GuildID:   whereHelperint64{field: `guild_id`},
-	LocalID:   whereHelperint64{field: `local_id`},
-	ChannelID: whereHelperint64{field: `channel_id`},
-	Title:     whereHelperstring{field: `title`},
-	CreatedAt: whereHelpertime_Time{field: `created_at`},
-	ClosedAt:  whereHelpernull_Time{field: `closed_at`},
-	LogsID:    whereHelperint64{field: `logs_id`},
+	GuildID:               whereHelperint64{field: `guild_id`},
+	LocalID:               whereHelperint64{field: `local_id`},
+	ChannelID:             whereHelperint64{field: `channel_id`},
+	Title:                 whereHelperstring{field: `title`},
+	CreatedAt:             whereHelpertime_Time{field: `created_at`},
+	ClosedAt:              whereHelpernull_Time{field: `closed_at`},
+	LogsID:                whereHelperint64{field: `logs_id`},
+	AuthorID:              whereHelperint64{field: `author_id`},
+	AuthorUsernameDiscrim: whereHelperstring{field: `author_username_discrim`},
 }
 
 // TicketRels is where relationship names are stored.
@@ -135,8 +145,8 @@ func (*ticketR) NewStruct() *ticketR {
 type ticketL struct{}
 
 var (
-	ticketColumns               = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id"}
-	ticketColumnsWithoutDefault = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id"}
+	ticketColumns               = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id", "author_id", "author_username_discrim"}
+	ticketColumnsWithoutDefault = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id", "author_id", "author_username_discrim"}
 	ticketColumnsWithDefault    = []string{}
 	ticketPrimaryKeyColumns     = []string{"guild_id", "local_id"}
 )

@@ -50,8 +50,7 @@ func (p *Plugin) AddCommands() {
 				return "Ticket system is disabled in this server, the server admins can enable it in the control panel.", nil
 			}
 
-			inCurrentTickets, err := models.Tickets(qm.Where("closed_at IS NULL"), qm.Where("guild_id = ?", parsed.GS.ID),
-				qm.InnerJoin("ticket_participants p on p.ticket_guild_id = tickets.guild_id AND p.ticket_local_id = tickets.local_id AND p.user_id = ?", parsed.Msg.Author.ID)).CountG(parsed.Context())
+			inCurrentTickets, err := models.Tickets(qm.Where("closed_at IS NULL"), qm.Where("guild_id = ?", parsed.GS.ID), qm.Where("author_id = ?", parsed.Msg.Author.ID)).CountG(parsed.Context())
 
 			if inCurrentTickets > 10 {
 				return "You're currently in over 10 open tickets on this server, please close some of the ones you're in.", nil
@@ -126,11 +125,13 @@ func (p *Plugin) AddCommands() {
 
 			// create the db model for it
 			dbModel := &models.Ticket{
-				GuildID:   parsed.GS.ID,
-				LocalID:   id,
-				ChannelID: channel.ID,
-				Title:     subject,
-				CreatedAt: time.Now(),
+				GuildID:               parsed.GS.ID,
+				LocalID:               id,
+				ChannelID:             channel.ID,
+				Title:                 subject,
+				CreatedAt:             time.Now(),
+				AuthorID:              parsed.Msg.Author.ID,
+				AuthorUsernameDiscrim: parsed.Msg.Author.Username + "#" + parsed.Msg.Author.Discriminator,
 			}
 
 			err = dbModel.InsertG(parsed.Context(), boil.Infer())
