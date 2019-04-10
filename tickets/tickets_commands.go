@@ -155,12 +155,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			// send the log message
-			TicketLog(conf, parsed.GS.ID, &discordgo.MessageEmbed{
-				Author: &discordgo.MessageEmbedAuthor{
-					Name:    fmt.Sprintf("%s#%s (%d)", parsed.Msg.Author.Username, parsed.Msg.Author.Discriminator, parsed.Msg.Author.ID),
-					IconURL: parsed.Msg.Author.AvatarURL("128"),
-				},
-
+			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
 				Title:       fmt.Sprintf("Ticket #%d opened", id),
 				Description: fmt.Sprintf("Subject: %s", subject),
 				Color:       0x5df948,
@@ -263,6 +258,7 @@ func (p *Plugin) AddCommands() {
 
 			newName := parsed.Args[0].Str()
 
+			oldName := currentTicket.Ticket.Title
 			currentTicket.Ticket.Title = newName
 			_, err := currentTicket.Ticket.UpdateG(parsed.Context(), boil.Whitelist("title"))
 			if err != nil {
@@ -273,6 +269,13 @@ func (p *Plugin) AddCommands() {
 			if err != nil {
 				return nil, err
 			}
+
+			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
+			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
+				Title:       fmt.Sprintf("Ticket #%d renamed", currentTicket.Ticket.LocalID),
+				Description: fmt.Sprintf("From %q to %q", oldName, newName),
+				Color:       0x5394fc,
+			})
 
 			return "Renamed ticket to " + newName, nil
 		},
@@ -299,12 +302,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			TicketLog(conf, parsed.GS.ID, &discordgo.MessageEmbed{
-				Author: &discordgo.MessageEmbedAuthor{
-					Name:    fmt.Sprintf("%s#%s (%d)", parsed.Msg.Author.Username, parsed.Msg.Author.Discriminator, parsed.Msg.Author.ID),
-					IconURL: parsed.Msg.Author.AvatarURL("128"),
-				},
-
+			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
 				Title:       fmt.Sprintf("Ticket #%d closed", currentTicket.Ticket.LocalID),
 				Description: fmt.Sprintf("Reason: %s", parsed.Args[0].Str()),
 				Color:       0xf23c3c,
