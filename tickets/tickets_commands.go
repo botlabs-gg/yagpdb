@@ -144,7 +144,7 @@ func (p *Plugin) AddCommands() {
 
 			tmplCTX := templates.NewContext(parsed.GS, dstate.NewChannelState(parsed.GS, parsed.GS, channel), commands.ContextMS(parsed.Context()))
 			tmplCTX.Name = "ticket open message"
-
+			tmplCTX.Data["Reason"] = parsed.Args[0].Str()
 			ticketOpenMsg := conf.TicketOpenMSG
 			if ticketOpenMsg == "" {
 				ticketOpenMsg = DefaultTicketMsg
@@ -346,6 +346,7 @@ func (p *Plugin) AddCommands() {
 	cmdAdminsOnly := &commands.YAGCommand{
 		CmdCategory: categoryTickets,
 		Name:        "AdminsOnly",
+		Aliases:     []string{"adminonly"},
 		Description: "Toggle admins only mode for this ticket",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
@@ -628,10 +629,13 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 	}
 }
 
+const TicketTXTDateFormat = "2006 Jan 02 15:04:05"
+
 func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *bytes.Buffer {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("Transcript of ticket #%d - %s, opened at %s, closed at %s.\n\n", ticket.LocalID, ticket.Title, ticket.CreatedAt.Format(time.RFC3339), ticket.ClosedAt.Time.Format(time.RFC3339)))
+	buf.WriteString(fmt.Sprintf("Transcript of ticket #%d - %s, opened by %s at %s, closed at %s.\n\n",
+		ticket.LocalID, ticket.Title, ticket.AuthorUsernameDiscrim, ticket.CreatedAt.UTC().Format(TicketTXTDateFormat), ticket.ClosedAt.Time.UTC().Format(TicketTXTDateFormat)))
 
 	// traverse reverse for correct order (they come in with new-old order, we want old-new)
 	for i := len(msgs) - 1; i >= 0; i-- {
@@ -639,7 +643,7 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 
 		// serialize mesasge content
 		ts, _ := m.Timestamp.Parse()
-		buf.WriteString(fmt.Sprintf("[%s] %s#%s (%d): ", ts.UTC().Format(time.RFC3339), m.Author.Username, m.Author.Discriminator, m.Author.ID))
+		buf.WriteString(fmt.Sprintf("[%s] %s#%s (%d): ", ts.UTC().Format(TicketTXTDateFormat), m.Author.Username, m.Author.Discriminator, m.Author.ID))
 		if m.Content != "" {
 			buf.WriteString(m.Content)
 			if len(m.Embeds) > 0 {
