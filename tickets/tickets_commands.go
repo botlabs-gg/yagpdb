@@ -294,7 +294,7 @@ func (p *Plugin) AddCommands() {
 			currentTicket.Ticket.ClosedAt.Time = time.Now()
 			currentTicket.Ticket.ClosedAt.Valid = true
 
-			err := createLogs(conf, currentTicket.Ticket, currentTicket.Ticket.ChannelID)
+			err := createLogs(conf, currentTicket.Ticket)
 			if err != nil {
 				return nil, err
 			}
@@ -402,7 +402,13 @@ type Ticket struct {
 	Participants []*models.TicketParticipant
 }
 
-func createLogs(conf *models.TicketConfig, ticket *models.Ticket, channelID int64) error {
+func createLogs(conf *models.TicketConfig, ticket *models.Ticket) error {
+
+	if !conf.TicketsUseTXTTranscripts && !conf.DownloadAttachments {
+		return nil // nothing to do here
+	}
+
+	channelID := ticket.ChannelID
 
 	attachments := make([][]*discordgo.MessageAttachment, 0)
 
@@ -450,7 +456,10 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket, channelID int6
 		}
 
 		// either continue fetching more or append to messages slice
-		msgs = append(msgs, m...)
+		if conf.TicketsUseTXTTranscripts {
+			msgs = append(msgs, m...)
+		}
+
 		if len(m) == 100 {
 			// More...
 			before = m[len(m)-1].ID
@@ -459,16 +468,26 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket, channelID int6
 		}
 	}
 
-	formattedTranscript := createTXTTranscript(ticket, msgs)
+	if conf.TicketsUseTXTTranscripts {
+		formattedTranscript := createTXTTranscript(ticket, msgs)
 
-	_, err := common.BotSession.ChannelFileSendWithMessage(conf.TicketsTranscriptsChannel, fmt.Sprintf("transcript-%d.txt", ticket.LocalID), fmt.Sprintf("transcript-%d.txt", ticket.LocalID), formattedTranscript)
-	if err != nil {
-		return err
+		_, err := common.BotSession.ChannelFileSendWithMessage(conf.TicketsTranscriptsChannel, fmt.Sprintf("transcript-%d.txt", ticket.LocalID), fmt.Sprintf("transcript-%d.txt", ticket.LocalID), formattedTranscript)
+		if err != nil {
+			return err
+		}
 	}
 
 	// compress and send the attachments
+	if conf.DownloadAttachments {
+		archiveAttachments(conf, ticket, attachments)
+	}
+
+	return nil
+}
+
+func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups [][]*discordgo.MessageAttachment) {
 	var buf bytes.Buffer
-	for _, ag := range attachments {
+	for _, ag := range groups {
 		if len(ag) == 1 {
 			resp, err := http.Get(ag[0].URL)
 			if err != nil {
@@ -513,11 +532,13 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket, channelID int6
 
 		zw.Close()
 		fname := fmt.Sprintf("attachments-%d.zip", ticket.LocalID)
-		_, err = common.BotSession.ChannelFileSendWithMessage(conf.TicketsTranscriptsChannel, fname, fname, &buf)
+		_, err := common.BotSession.ChannelFileSendWithMessage(conf.TicketsTranscriptsChannel, fname, fname, &buf)
 		buf.Reset()
-	}
 
-	return nil
+		if err != nil {
+			logrus.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] failed archiving batch of attachments")
+		}
+	}
 }
 
 func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *bytes.Buffer {

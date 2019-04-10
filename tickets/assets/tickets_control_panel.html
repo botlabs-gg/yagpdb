@@ -44,14 +44,24 @@
 								</select>
                             </div>
                             <div class="form-group">
-                            	<label>Channel to send ticket events and transcripts in</label>
+                            	<label>Channel to send closed ticket transcripts and attachments in</label>
                             	<select class="form-control" name="TicketsTranscriptsChannel">
 									{{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannel true "None"}}
 								</select>
                             </div>
+                            <div class="form-group">
+                                <label>Channel to send ticket status updates in</label>
+                                <select class="form-control" name="StatusChannel">
+                                    {{textChannelOptions .ActiveGuild.Channels .PluginSettings.StatusChannel true "None"}}
+                                </select>
+                            </div>
                             <div class="form-check mb-2">
                                 <input type="checkbox" class="form-check-input" id="tickets-create-transcripts-checkbox" {{if .PluginSettings.TicketsUseTXTTranscripts}}checked{{end}} name="TicketsUseTXTTranscripts"></input>
                                 <label class="form-check-label" for="tickets-create-transcripts-checkbox">Create .txt transcripts when tickets close</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="tickets-download-att-checkbox" {{if .PluginSettings.DownloadAttachments}}checked{{end}} name="DownloadAttachments"></input>
+                                <label class="form-check-label" for="tickets-download-att-checkbox">Download and archive attachments when closing the ticket</label>
                             </div>
                             <div class="form-group">
                                 <label>Opening message in new tickets</label>

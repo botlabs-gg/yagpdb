@@ -427,7 +427,7 @@ func testTicketConfigsSelect(t *testing.T) {
 }
 
 var (
-	ticketConfigDBTypes = map[string]string{`GuildID`: `bigint`, `Enabled`: `boolean`, `TicketOpenMSG`: `text`, `TicketsChannelCategory`: `bigint`, `TicketsTranscriptsChannel`: `bigint`, `TicketsUseTXTTranscripts`: `boolean`, `ModRoles`: `ARRAYbigint`, `AdminRoles`: `ARRAYbigint`}
+	ticketConfigDBTypes = map[string]string{`GuildID`: `bigint`, `Enabled`: `boolean`, `TicketOpenMSG`: `text`, `TicketsChannelCategory`: `bigint`, `StatusChannel`: `bigint`, `TicketsTranscriptsChannel`: `bigint`, `DownloadAttachments`: `boolean`, `TicketsUseTXTTranscripts`: `boolean`, `ModRoles`: `ARRAYbigint`, `AdminRoles`: `ARRAYbigint`}
 	_                   = bytes.MinRead
 )
 

@@ -15,7 +15,9 @@ type FormData struct {
 	Enabled                   bool
 	TicketsChannelCategory    int64
 	TicketsTranscriptsChannel int64
+	StatusChannel             int64
 	TicketsUseTXTTranscripts  bool
+	DownloadAttachments       bool
 	ModRoles                  []int64 `valid:"role"`
 	AdminRoles                []int64 `valid:"role"`
 	TicketOpenMSG             string  `valid:"template,10000"`
@@ -64,7 +66,9 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 		Enabled:                   formConfig.Enabled,
 		TicketsChannelCategory:    formConfig.TicketsChannelCategory,
 		TicketsTranscriptsChannel: formConfig.TicketsTranscriptsChannel,
+		StatusChannel:             formConfig.StatusChannel,
 		TicketsUseTXTTranscripts:  formConfig.TicketsUseTXTTranscripts,
+		DownloadAttachments:       formConfig.DownloadAttachments,
 		ModRoles:                  formConfig.ModRoles,
 		AdminRoles:                formConfig.AdminRoles,
 		TicketOpenMSG:             formConfig.TicketOpenMSG,

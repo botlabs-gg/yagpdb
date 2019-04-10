@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS ticket_configs  (
 	ticket_open_msg TEXT NOT NULL,
 
 	tickets_channel_category BIGINT NOT NULL,
+	status_channel BIGINT NOT NULL,
 	tickets_transcripts_channel BIGINT NOT NULL,
+	download_attachments BOOLEAN NOT NULL,
 	tickets_use_txt_transcripts BOOLEAN NOT NULL,
 
 	mod_roles BIGINT[],

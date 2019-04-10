@@ -35,11 +35,11 @@ const (
 )
 
 func TicketLog(conf *models.TicketConfig, guildID int64, embed *discordgo.MessageEmbed) {
-	if conf.TicketsTranscriptsChannel == 0 {
+	if conf.StatusChannel == 0 {
 		return
 	}
 
-	_, err := common.BotSession.ChannelMessageSendEmbed(conf.TicketsTranscriptsChannel, embed)
+	_, err := common.BotSession.ChannelMessageSendEmbed(conf.StatusChannel, embed)
 	if err != nil {
 		logrus.WithError(err).WithField("guild", guildID).Error("[tickets] failed sending log message to guild")
 	}
