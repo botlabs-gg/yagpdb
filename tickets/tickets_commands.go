@@ -322,12 +322,80 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	cmdStatus := &commands.YAGCommand{
+	cmdAdminsOnly := &commands.YAGCommand{
 		CmdCategory: categoryTickets,
-		Name:        "Status",
-		Description: "Views the status of the ticket",
+		Name:        "AdminsOnly",
+		Description: "Toggle admins only mode for this ticket",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			return "TODO", nil
+
+			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
+
+			isAdminsOnlyCurrently := true
+
+			modOverwrites := make([]*discordgo.PermissionOverwrite, 0)
+
+			parsed.GS.RLock()
+			for _, ow := range parsed.CS.PermissionOverwrites {
+				if ow.Type == "role" && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+					if (ow.Allow & InTicketPerms) == InTicketPerms {
+						// one of the mod roles has ticket perms, this is not a admin ticket currently
+						isAdminsOnlyCurrently = false
+					}
+
+					modOverwrites = append(modOverwrites, ow)
+				}
+			}
+			parsed.GS.RUnlock()
+
+			// update existing overwrites
+			for _, v := range modOverwrites {
+				var err error
+				if isAdminsOnlyCurrently {
+					// add back the mods to this ticket
+					if (v.Allow & InTicketPerms) != InTicketPerms {
+						// add it back to allows, remove from denies
+						newAllows := v.Allow | InTicketPerms
+						newDenies := v.Deny & (InTicketPerms ^ InTicketPerms)
+						err = common.BotSession.ChannelPermissionSet(parsed.CS.ID, v.ID, "role", newAllows, newDenies)
+					}
+				} else {
+					// remove the mods from this ticket
+					if (v.Allow & InTicketPerms) == InTicketPerms {
+						// remove it from allows
+						newAllows := v.Allow & (InTicketPerms ^ InTicketPerms)
+						err = common.BotSession.ChannelPermissionSet(parsed.CS.ID, v.ID, "role", newAllows, v.Deny)
+					}
+				}
+
+				if err != nil {
+					logrus.WithError(err).WithField("guild", parsed.GS.ID).Error("[tickets] failed to update channel overwrite")
+				}
+			}
+
+			if isAdminsOnlyCurrently {
+				// add the missing overwrites for the missing roles
+			OUTER:
+				for _, v := range conf.ModRoles {
+					for _, ow := range modOverwrites {
+						if ow.ID == v {
+							// already handled above
+							continue OUTER
+						}
+					}
+
+					// need to create a new overwrite
+					err := common.BotSession.ChannelPermissionSet(parsed.CS.ID, v, "role", InTicketPerms, 0)
+					if err != nil {
+						logrus.WithError(err).WithField("guild", parsed.GS.ID).Error("[tickets] failed to create channel overwrite")
+					}
+				}
+			}
+
+			if isAdminsOnlyCurrently {
+				return "Added back mods to the ticket", nil
+			}
+
+			return "Removed mods from this ticket", nil
 		},
 	}
 
@@ -375,7 +443,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdRemoveParticipant, cmdRemoveParticipant.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdRenameTicket, cmdRenameTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
-	container.AddCommand(cmdStatus, cmdStatus.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
+	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 }
 
 func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
