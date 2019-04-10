@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
@@ -39,6 +40,8 @@ func RegisterPlugin() {
 	for _, v := range PremiumSources {
 		v.Init()
 	}
+
+	templates.GuildPremiumFunc = IsGuildPremium
 }
 
 // IsGuildPremium return true if the provided guild has the premium status provided to it by a user
