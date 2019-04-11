@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"reflect"
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 type Event struct {
@@ -30,12 +32,19 @@ type eventHandler struct {
 
 var (
 	eventHandlers = make([]*eventHandler, 0)
+	handlersMU    sync.RWMutex
 	eventTypes    = make(map[string]reflect.Type)
+
+	// if set, return true to handle the event, false to ignore it
+	FilterFunc func(guildID int64) (handle bool)
 )
 
 // AddEventHandler adds a event handler
 // For the specified event, should only be done during startup
 func AddHandler(evt string, cb func(*Event), t interface{}) {
+	handlersMU.Lock()
+	defer handlersMU.Unlock()
+
 	handler := &eventHandler{
 		evt:     evt,
 		handler: cb,
@@ -50,6 +59,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 }
 
 // PublishEvent publishes the specified event
+// set target to -1 to handle on all nodes
 func Publish(evt string, target int64, data interface{}) error {
 	dataStr := ""
 	if data != nil {
@@ -65,31 +75,43 @@ func Publish(evt string, target int64, data interface{}) error {
 }
 
 func PollEvents() {
-	// Create a new client for pubsub
-	// radix.PersistentPubSub("tcp", common.Conf.Redis, radix.Dial)
+	for {
+		err := runPollEvents()
+		logrus.WithError(err).Error("[pubsub] subscription for events ended, starting a new one...")
+		time.Sleep(time.Second)
+	}
+}
+
+func runPollEvents() error {
+	logrus.Info("[pubsub] Listening for pubsub events")
 
 	client, err := radix.Dial("tcp", common.Conf.Redis)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	defer client.Close()
 
 	pubsubClient := radix.PubSub(client)
 
 	msgChan := make(chan radix.PubSubMessage)
 	if err := pubsubClient.Subscribe(msgChan, "events"); err != nil {
-		logrus.WithError(err).Fatal("Failed subscribing to events")
-		return
+		return err
 	}
 
 	for msg := range msgChan {
-		if len(msg.Message) > 0 {
-			logrus.WithField("evt", string(msg.Message)).Info("Handling PubSub event")
-			handleEvent(string(msg.Message))
+		if len(msg.Message) < 1 {
+			continue
 		}
+
+		handlersMU.RLock()
+		logrus.WithField("evt", string(msg.Message)).Debug("Handling PubSub event")
+		handleEvent(string(msg.Message))
+		handlersMU.RUnlock()
 	}
 
-	for {
-	}
+	logrus.Info("[pubsub] Stopped listening for pubsub events")
+	return nil
 }
 
 func handleEvent(evt string) {
@@ -104,10 +126,17 @@ func handleEvent(evt string) {
 	name := split[1]
 	data := split[2]
 
+	parsedTarget, _ := strconv.ParseInt(target, 10, 64)
+	if FilterFunc != nil {
+		if !FilterFunc(parsedTarget) {
+			return
+		}
+	}
+
 	t, ok := eventTypes[name]
 	if !ok && data != "" {
 		// No handler for this event
-		logrus.WithField("evt", name).Info("No handler for pubsub event")
+		logrus.WithField("evt", name).Debug("No handler for pubsub event")
 		return
 	}
 
@@ -130,7 +159,6 @@ func handleEvent(evt string) {
 		Data:        decoded,
 	}
 
-	parsedTarget, _ := strconv.ParseInt(target, 10, 64)
 	event.TargetGuildInt = parsedTarget
 
 	defer func() {

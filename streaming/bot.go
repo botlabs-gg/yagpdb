@@ -1,14 +1,16 @@
 package streaming
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dshardorchestrator"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
@@ -18,7 +20,7 @@ import (
 func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
-var _ bot.ShardMigrationHandler = (*Plugin)(nil)
+var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
@@ -27,10 +29,12 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 
-func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
-	if !toThisSlave {
+func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
+	if evt != bot.EvtGuildState {
 		return
 	}
+
+	gs := data.(*dstate.GuildState)
 
 	go CheckGuildFull(gs, false)
 }
@@ -43,6 +47,8 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 	if gs == nil {
 		return
 	}
+
+	gs.UserCacheDel(true, CacheKeyConfig)
 
 	CheckGuildFull(gs, true)
 }
@@ -129,19 +135,18 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	m := evt.GuildMemberUpdate()
 
-	config, err := GetConfig(m.GuildID)
+	gs := bot.State.Guild(true, m.GuildID)
+	if gs == nil {
+		return
+	}
+
+	config, err := BotCachedGetConfig(gs)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
 
 	if !config.Enabled {
-		return
-	}
-
-	gs := bot.State.Guild(true, m.GuildID)
-	if gs == nil {
-		log.WithField("guild", m.GuildID).Error("Guild not found in state")
 		return
 	}
 
@@ -178,7 +183,6 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if !config.Enabled {
 		return
 	}
-
 	gs := bot.State.Guild(true, g.ID)
 	if gs == nil {
 		log.WithField("guild", g.ID).Error("Guild not found in state")
@@ -210,7 +214,12 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	p := evt.PresenceUpdate()
 
-	config, err := GetConfig(p.GuildID)
+	gs := bot.State.Guild(true, p.GuildID)
+	if gs == nil {
+		return
+	}
+
+	config, err := BotCachedGetConfig(gs)
 	if err != nil {
 		log.WithError(err).Error("Failed retrieving streaming config")
 		return
@@ -220,15 +229,9 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	gs := bot.State.Guild(true, p.GuildID)
-	if gs == nil {
-		log.WithField("guild", p.GuildID).Error("Failed retrieving guild from state")
-		return
-	}
-
 	ms, err := bot.GetMember(p.GuildID, p.User.ID)
 	if ms == nil || err != nil {
-		log.WithError(err).WithField("guild", p.GuildID).WithField("user", p.User.ID).Error("Failed retrieving member")
+		log.WithError(err).WithField("guild", p.GuildID).WithField("user", p.User.ID).Debug("Failed retrieving member")
 		return
 	}
 
@@ -258,11 +261,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 		}
 
 		if config.GiveRole != 0 {
-			err := GiveStreamingRole(ms, config.GiveRole, gs.Guild)
-			if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole) {
-				log.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
-				client.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(gs.ID), ms.ID))
-			}
+			go GiveStreamingRole(ms, config.GiveRole, gs.Guild)
 		}
 
 		// if true, then we were marked now, and not before
@@ -343,6 +342,21 @@ func RemoveStreaming(client radix.Client, config *Config, guildID int64, ms *dst
 }
 
 func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dstate.MemberState) {
+	// Only send one announcment every 1 hour
+	var resp string
+	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
+	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
+	if err != nil {
+		log.WithError(err).Error("failed setting streaming announcment cooldown")
+		return
+	}
+
+	if resp != "OK" {
+		log.Info("streaming announcment cooldown: ", ms.ID)
+		return
+	}
+
+	// make sure the channel exists
 	foundChannel := false
 	for _, v := range guild.Channels {
 		if v.ID == config.AnnounceChannel {
@@ -350,7 +364,11 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 		}
 	}
 
+	// unknown channel, disable announcements
 	if !foundChannel {
+		config.AnnounceChannel = 0
+		config.Save(guild.ID)
+
 		log.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not found in state, not sending streaming announcement")
 		return
 	}
@@ -369,24 +387,27 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 		return
 	}
 
-	common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
+	m, err := common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
+	if err == nil && ctx.DelResponse {
+		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.DelResponseDelay)
+	}
 }
 
-func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guild) error {
-	// Ensure the role exists
-	found := false
-	for _, v := range guild.Roles {
-		if v.ID == role {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil
+func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guild) {
+	if role == 0 {
+		return
 	}
 
-	go common.AddRoleDS(ms, role)
-	return nil
+	err := common.AddRoleDS(ms, role)
+
+	if err != nil {
+		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
+			DisableStreamingRole(guild.ID)
+		}
+
+		log.WithError(err).WithField("guild", guild.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
+		common.RedisPool.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guild.ID), ms.ID))
+	}
 }
 
 func RemoveStreamingRole(ms *dstate.MemberState, role int64, guildID int64) {
@@ -395,7 +416,41 @@ func RemoveStreamingRole(ms *dstate.MemberState, role int64, guildID int64) {
 	}
 
 	err := common.RemoveRoleDS(ms, role)
-	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
+	if err != nil {
 		log.WithError(err).WithField("guild", guildID).WithField("user", ms.ID).WithField("role", role).Error("Failed removing streaming role")
+		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
+			DisableStreamingRole(guildID)
+		}
 	}
+}
+
+func DisableStreamingRole(guildID int64) {
+	log.WithField("guild", guildID).Warn("Disabling streaming role for server because of misssing permissions or unknown role")
+
+	conf, err := GetConfig(guildID)
+	if err != nil {
+		log.WithField("guild", guildID).WithError(err).Error("Failed retrieving streaming config, when there should be one?")
+		return
+	}
+
+	conf.GiveRole = 0
+	conf.Save(guildID)
+}
+
+type CacheKey int
+
+const (
+	CacheKeyConfig CacheKey = iota
+)
+
+func BotCachedGetConfig(gs *dstate.GuildState) (*Config, error) {
+	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+		return GetConfig(gs.ID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(*Config), nil
 }

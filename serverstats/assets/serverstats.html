@@ -50,10 +50,10 @@
 </div>
 <div class="row">
     <!-- Graph -->
-    <div class="col-lg-12">
+    <div class="col-12">
         <section class="card bg-default">
             <header class="card-header">
-                <h2 class="card-title">Channels over 24 hours</h2>
+                <h2 class="card-title">Channels last 24 hours</h2>
             </header>
 
             <div class="card-body">
@@ -62,6 +62,67 @@
         </section>
     </div>
 </div>
+
+<div class="row">
+    <div class="col">
+        <h2>Charts<small><span id="serverstats-status">  Loading...</span></small></h2>
+    </div>
+    <div class="col">
+        <!-- <div class="form-group"> -->
+            <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
+                <option value="2"> Past 2 days (testing)</option>
+                <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Past 7 days</option>
+                <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Past 30 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
+                <option value="365" {{if not .IsGuildPremium}} disabled{{end}} > Past 365 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
+                <option value="-1" {{if not .IsGuildPremium}} disabled{{end}} > All time {{if not .IsGuildPremium}}(premium only){{end}}</option>
+            </select>
+        <!-- </div> -->
+    </div>
+</div>
+
+<div class="row">
+    <!-- Graph -->
+    <div class="col-lg-6">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Joins / Leaves</h2>
+            </header>
+
+            <div class="card-body">
+                <div id="chart-joins-leaves"></div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Graph -->
+    <div class="col-lg-6">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Total Members</h2>
+            </header>
+
+            <div class="card-body">
+                <div id="chart-total-members"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Graph -->
+    <div class="col-12">
+        <section class="card bg-default">
+            <header class="card-header">
+                <h2 class="card-title">Number of messages (excl. Bots)</h2>
+            </header>
+
+            <div class="card-body">
+                <div id="chart-message-counts"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
 <!-- /.row -->
 <script type="text/javascript">
     // cause of the async partial loader, we need to manually clear the interval when we navigate
@@ -75,16 +136,17 @@
         })
     }
 
+    var fetchCharts = null;
     $(function(){        
-        var chart = null;
-        function statsCB(){
+        var channelMessagesBarChart = null;
+        function dailyStatsCB(){
             try{
                 var parsedStats = JSON.parse(this.responseText);
             }catch(e){
-                window.location.href = '/';
+                return
             }
 
-            var channelMessages = parsedStats.channels_hour
+            var channelMessages = parsedStats.channels_messages
 
             var chartData = [];
             var total = 0;
@@ -95,10 +157,10 @@
                     y: channelMessages[key].count,
                 })
             }
-            if(chart){
-                chart.setData(chartData);
+            if(channelMessagesBarChart){
+                channelMessagesBarChart.setData(chartData);
             }else{
-                chart  = Morris.Bar({
+                channelMessagesBarChart  = Morris.Bar({
                     element: 'channels-chart-24h',
                     data: chartData,
                     xkey: 'x',
@@ -115,17 +177,105 @@
             $("#online-members").text(parsedStats.online_now)
         }
 
-        function fetchStats(){
+        function fetchDailyStats(){
             console.log("Fetching stats...");
             {{if .Public}}
-            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
+            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
             {{else}}
-            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/full", null, statsCB);
+            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
             {{end}}
         }
-        statsInterval = setInterval(fetchStats, 10000);
-        fetchStats(); // Fetch the initial stats
+        statsInterval = setInterval(fetchDailyStats, 10000);
+        fetchDailyStats(); // Fetch the initial stats
+
+        var joinsLeavesChart = null;
+        var totalMembersChart = null;
+        var messagesChart = null;
+        function chartStatsCB(){
+            try{
+                var parsedStats = JSON.parse(this.responseText);
+            }catch(e){
+                return
+            }
+
+            var memberStats = parsedStats.member_chart_data
+
+            if(joinsLeavesChart){
+                joinsLeavesChart.setData(memberStats);
+            }else{
+                joinsLeavesChart  = Morris.Area({
+                    element: 'chart-joins-leaves',
+                    data: memberStats,
+                    xkey: 't',
+                    ykeys: ['joins', 'leaves'],
+                    labels: ['Joins', 'Leaves'],
+                    hideHover: 'auto',
+                    resize: true,
+                    dateFormat: chartDateFormatter,
+                    behaveLikeLine: true,
+                });
+            }
+
+            if(totalMembersChart){
+                totalMembersChart.setData(memberStats);
+            }else{
+                totalMembersChart  = Morris.Area({
+                    element: 'chart-total-members',
+                    data: memberStats,
+                    xkey: 't',
+                    ykeys: ['num_members', 'max_online'],
+                    labels: ['Total members', 'Online members'],
+                    hideHover: 'auto',
+                    resize: true,
+                    dateFormat: chartDateFormatter,
+                    behaveLikeLine: true,
+                });
+            }
+
+            var messageStats = parsedStats.message_chart_data
+            if(messagesChart){
+                messagesChart.setData(messageStats);
+            }else{
+                messagesChart  = Morris.Area({
+                    element: 'chart-message-counts',
+                    data: messageStats,
+                    xkey: 't',
+                    ykeys: ['message_count'],
+                    labels: ['Messages'],
+                    hideHover: 'auto',
+                    resize: true,
+                    dateFormat: chartDateFormatter,
+                });
+            } 
+
+            var nDays = parsedStats.days
+            if(nDays <= 0){
+                nDays = "infinite"
+            }
+            $("#serverstats-status").text(" over the last  " + nDays + " days")
+        }
+
+        fetchCharts = function(days){
+            $("#serverstats-status").text("  Loading...")
+            {{if .Public}}
+            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
+            {{else}}
+            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
+            {{end}}
+        }
+        fetchCharts(30);
     })
+
+
+    function chartDateFormatter(t){
+        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(t).toLocaleDateString(options);
+    }
+
+    function timespanDropdownChanged(){
+        var dropdown = document.getElementById("timespan-dropdown");
+        fetchCharts(dropdown.value)
+   }
 </script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
@@ -145,7 +295,7 @@
 {{end}}
 
 {{define "serverstats_stats_widget"}}
-<div class="col-lg-3 stats-widget">
+<div class="col-3 stats-widget">
     <section class="card">
         <div class="card-body bg-{{.BG}}">
             <div class="widget-summary">

@@ -5,44 +5,56 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/randomize"
 	"github.com/volatiletech/sqlboiler/strmangle"
+)
+
+var (
+	// Relationships sometimes use the reflection helper queries.Equal/queries.Assign
+	// so force a package dependency in case they don't.
+	_ = queries.Equal
 )
 
 func testReputationLogs(t *testing.T) {
 	t.Parallel()
 
-	query := ReputationLogs(nil)
+	query := ReputationLogs()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
+
 func testReputationLogsDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = reputationLog.Delete(tx); err != nil {
+	if rowsAff, err := o.Delete(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -57,22 +69,25 @@ func testReputationLogsQueryDeleteAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = ReputationLogs(tx).DeleteAll(); err != nil {
+	if rowsAff, err := ReputationLogs().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -87,24 +102,27 @@ func testReputationLogsSliceDeleteAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice := ReputationLogSlice{reputationLog}
+	slice := ReputationLogSlice{o}
 
-	if err = slice.DeleteAll(tx); err != nil {
+	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -113,47 +131,51 @@ func testReputationLogsSliceDeleteAll(t *testing.T) {
 		t.Error("want zero records, got:", count)
 	}
 }
+
 func testReputationLogsExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	e, err := ReputationLogExists(tx, reputationLog.ID)
+	e, err := ReputationLogExists(ctx, tx, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if ReputationLog exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected ReputationLogExistsG to return true, but got false.")
+		t.Errorf("Expected ReputationLogExists to return true, but got false.")
 	}
 }
+
 func testReputationLogsFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	reputationLogFound, err := FindReputationLog(tx, reputationLog.ID)
+	reputationLogFound, err := FindReputationLog(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -162,23 +184,25 @@ func testReputationLogsFind(t *testing.T) {
 		t.Error("want a record, got nil")
 	}
 }
+
 func testReputationLogsBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = ReputationLogs(tx).Bind(reputationLog); err != nil {
+	if err = ReputationLogs().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
@@ -188,18 +212,19 @@ func testReputationLogsOne(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if x, err := ReputationLogs(tx).One(); err != nil {
+	if x, err := ReputationLogs().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
@@ -220,16 +245,17 @@ func testReputationLogsAll(t *testing.T) {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLogOne.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = reputationLogOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = reputationLogTwo.Insert(tx); err != nil {
+	if err = reputationLogTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := ReputationLogs(tx).All()
+	slice, err := ReputationLogs().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -253,16 +279,17 @@ func testReputationLogsCount(t *testing.T) {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLogOne.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = reputationLogOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = reputationLogTwo.Insert(tx); err != nil {
+	if err = reputationLogTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -277,18 +304,19 @@ func testReputationLogsInsert(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -303,18 +331,19 @@ func testReputationLogsInsertWhitelist(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx, reputationLogColumnsWithoutDefault...); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Whitelist(reputationLogColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -329,18 +358,19 @@ func testReputationLogsReload(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = reputationLog.Reload(tx); err != nil {
+	if err = o.Reload(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -350,40 +380,43 @@ func testReputationLogsReloadAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice := ReputationLogSlice{reputationLog}
+	slice := ReputationLogSlice{o}
 
-	if err = slice.ReloadAll(tx); err != nil {
+	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
+
 func testReputationLogsSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := ReputationLogs(tx).All()
+	slice, err := ReputationLogs().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -394,31 +427,35 @@ func testReputationLogsSelect(t *testing.T) {
 }
 
 var (
-	reputationLogDBTypes = map[string]string{`Amount`: `bigint`, `CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `ID`: `bigint`, `ReceiverID`: `bigint`, `SenderID`: `bigint`, `SetFixedAmount`: `boolean`}
+	reputationLogDBTypes = map[string]string{`ID`: `bigint`, `CreatedAt`: `timestamp with time zone`, `GuildID`: `bigint`, `SenderID`: `bigint`, `ReceiverID`: `bigint`, `SetFixedAmount`: `boolean`, `Amount`: `bigint`, `ReceiverUsername`: `text`, `SenderUsername`: `text`}
 	_                    = bytes.MinRead
 )
 
 func testReputationLogsUpdate(t *testing.T) {
 	t.Parallel()
 
+	if 0 == len(reputationLogPrimaryKeyColumns) {
+		t.Skip("Skipping table with no primary key columns")
+	}
 	if len(reputationLogColumns) == len(reputationLogPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -427,12 +464,14 @@ func testReputationLogsUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogPrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	if err = reputationLog.Update(tx); err != nil {
+	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only affect one row but affected", rowsAff)
 	}
 }
 
@@ -445,18 +484,19 @@ func testReputationLogsSliceUpdateAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	reputationLog := &ReputationLog{}
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
+	o := &ReputationLog{}
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -465,7 +505,7 @@ func testReputationLogsSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, reputationLog, reputationLogDBTypes, true, reputationLogPrimaryKeyColumns...); err != nil {
+	if err = randomize.Struct(seed, o, reputationLogDBTypes, true, reputationLogPrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
@@ -480,17 +520,28 @@ func testReputationLogsSliceUpdateAll(t *testing.T) {
 		)
 	}
 
-	value := reflect.Indirect(reflect.ValueOf(reputationLog))
+	value := reflect.Indirect(reflect.ValueOf(o))
+	typ := reflect.TypeOf(o).Elem()
+	n := typ.NumField()
+
 	updateMap := M{}
 	for _, col := range fields {
-		updateMap[col] = value.FieldByName(strmangle.TitleCase(col)).Interface()
+		for i := 0; i < n; i++ {
+			f := typ.Field(i)
+			if f.Tag.Get("boil") == col {
+				updateMap[col] = value.Field(i).Interface()
+			}
+		}
 	}
 
-	slice := ReputationLogSlice{reputationLog}
-	if err = slice.UpdateAll(tx, updateMap); err != nil {
+	slice := ReputationLogSlice{o}
+	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("wanted one record updated but got", rowsAff)
 	}
 }
+
 func testReputationLogsUpsert(t *testing.T) {
 	t.Parallel()
 
@@ -501,18 +552,19 @@ func testReputationLogsUpsert(t *testing.T) {
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	reputationLog := ReputationLog{}
-	if err = randomize.Struct(seed, &reputationLog, reputationLogDBTypes, true); err != nil {
+	o := ReputationLog{}
+	if err = randomize.Struct(seed, &o, reputationLogDBTypes, true); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = reputationLog.Upsert(tx, false, nil, nil); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert ReputationLog: %s", err)
 	}
 
-	count, err := ReputationLogs(tx).Count()
+	count, err := ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -521,15 +573,15 @@ func testReputationLogsUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &reputationLog, reputationLogDBTypes, false, reputationLogPrimaryKeyColumns...); err != nil {
+	if err = randomize.Struct(seed, &o, reputationLogDBTypes, false, reputationLogPrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize ReputationLog struct: %s", err)
 	}
 
-	if err = reputationLog.Upsert(tx, true, nil, nil); err != nil {
+	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert ReputationLog: %s", err)
 	}
 
-	count, err = ReputationLogs(tx).Count()
+	count, err = ReputationLogs().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

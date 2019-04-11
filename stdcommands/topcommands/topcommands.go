@@ -9,12 +9,11 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	Cooldown:             2,
-	CmdCategory:          commands.CategoryDebug,
-	HideFromCommandsPage: true,
-	Name:                 "topcommands",
-	Description:          "Shows command usage stats",
-	HideFromHelp:         true,
+	Cooldown:     2,
+	CmdCategory:  commands.CategoryDebug,
+	Name:         "topcommands",
+	Description:  "Shows command usage stats",
+	HideFromHelp: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "hours", Type: dcmd.Int, Default: 1},
 	},
@@ -28,7 +27,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	var results []*TopCommandsResult
 	err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("command, COUNT(id)").Where("created_at > ?", within).Group("command").Order("count(id) desc").Scan(&results).Error
 	if err != nil {
-		return "Uh oh... Something bad happened :'(", err
+		return nil, err
 	}
 
 	out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours)

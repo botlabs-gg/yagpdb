@@ -12,10 +12,10 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "ListRoles",
-	Description: "List roles and their id's, and some other stuff on the server",
+	Description: "List roles, their id's, color hex code, and 'mention everyone' perms (useful if you wanna double check to make sure you didn't give anyone mention everyone perms that shouldn't have it)",
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		out := ""
+		out := "(ME = mention everyone perms)\n"
 
 		data.GS.Lock()
 		defer data.GS.Unlock()

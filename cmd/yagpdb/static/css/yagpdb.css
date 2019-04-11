@@ -256,3 +256,7 @@ form table td{
 .panel-body > .form-horizontal {
   margin: 0px 10px 0px 10px;
 }
+
+html.dark select optgroup {
+  background:#000;
+}

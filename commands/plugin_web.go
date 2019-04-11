@@ -2,18 +2,21 @@ package commands
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
 	"goji.io"
 	"goji.io/pat"
+	"html"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -44,19 +47,13 @@ type CommandOverrideForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/commands.html"
-	if common.Testing {
-		tmplPath = "../../commands/assets/commands.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+	web.LoadHTMLTemplate("../../commands/assets/commands.html", "templates/plugins/commands.html")
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/commands/settings"), subMux)
 	web.CPMux.Handle(pat.New("/commands/settings/*"), subMux)
 
 	subMux.Use(web.RequireGuildChannelsMiddleware)
-	subMux.Use(web.RequireFullGuildMW)
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_commands")
 	subMux.Handle(pat.Get(""), getHandler)
@@ -114,7 +111,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	for _, cmd := range CommandSystem.Root.Commands {
 		switch t := cmd.Command.(type) {
 		case *YAGCommand:
-			if t.HideFromHelp {
+			if t.HideFromCommandsPage {
 				continue
 			}
 			addCommand(t, cmd.Trigger.Names[0])
@@ -122,7 +119,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 			for _, containerCmd := range t.Commands {
 				cast := containerCmd.Command.(*YAGCommand)
 
-				if cast.HideFromHelp {
+				if cast.HideFromCommandsPage {
 					continue
 				}
 
@@ -133,7 +130,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	templateData["SortedCommands"] = commands
 
-	channelOverrides, err := models.CommandsChannelsOverridesG(qm.Where("guild_id=?", activeGuild.ID), qm.Load("CommandsCommandOverrides")).All()
+	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", activeGuild.ID), qm.Load("CommandsCommandOverrides")).AllG(r.Context())
 	if err != nil {
 		return templateData, err
 	}
@@ -190,7 +187,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 
 		id := pat.Param(r, "channelOverride")
 		if id == "global" {
-			override, err = models.CommandsChannelsOverridesG(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).One()
+			override, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).OneG(r.Context())
 			if err == sql.ErrNoRows {
 				override = &models.CommandsChannelsOverride{
 					Global:          true,
@@ -202,16 +199,16 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 				}
 
 				// Insert it
-				err = override.InsertG()
+				err = override.InsertG(r.Context(), boil.Infer())
 				if err != nil {
 					logrus.WithError(err).Error("Failed inserting global commands row")
 					// Was inserted somewhere else in the meantime
-					override, err = models.CommandsChannelsOverridesG(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).One()
+					override, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).OneG(r.Context())
 				}
 			}
 		} else {
 			idParsed, _ := strconv.ParseInt(id, 10, 64)
-			override, err = models.CommandsChannelsOverridesG(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, idParsed)).One()
+			override, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, idParsed)).OneG(r.Context())
 		}
 
 		if err != nil {
@@ -226,7 +223,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*ChannelOverrideForm)
 
-	count, err := models.CommandsChannelsOverridesG(qm.Where("guild_id = ?", activeGuild.ID), qm.Where("channels && ?", types.Int64Array(formData.Channels))).Count()
+	count, err := models.CommandsChannelsOverrides(qm.Where("guild_id = ?", activeGuild.ID), qm.Where("channels && ?", types.Int64Array(formData.Channels))).CountG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "count")
 	}
@@ -235,7 +232,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 		return templateData.AddAlerts(web.ErrorAlert("One of the selected channels is already used in another override")), nil
 	}
 
-	count, err = models.CommandsChannelsOverridesG(qm.Where("guild_id = ?", activeGuild.ID)).Count()
+	count, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ?", activeGuild.ID)).CountG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "count2")
 	}
@@ -256,7 +253,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 		IgnoreRoles:             formData.IgnoreRoles,
 	}
 
-	err = model.InsertG()
+	err = model.InsertG(r.Context(), boil.Infer())
 	return templateData, errors.WithMessage(err, "InsertG")
 }
 
@@ -265,8 +262,8 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*ChannelOverrideForm)
 
-	count, err := models.CommandsChannelsOverridesG(
-		qm.Where("guild_id = ?", activeGuild.ID), qm.Where("channels && ?", types.Int64Array(formData.Channels)), qm.Where("id != ?", currentOverride.ID)).Count()
+	count, err := models.CommandsChannelsOverrides(
+		qm.Where("guild_id = ?", activeGuild.ID), qm.Where("channels && ?", types.Int64Array(formData.Channels)), qm.Where("id != ?", currentOverride.ID)).CountG(r.Context())
 
 	if err != nil {
 		return templateData, errors.WithMessage(err, "count")
@@ -286,14 +283,14 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	currentOverride.RequireRoles = formData.RequireRoles
 	currentOverride.IgnoreRoles = formData.IgnoreRoles
 
-	err = currentOverride.UpdateG()
+	_, err = currentOverride.UpdateG(r.Context(), boil.Infer())
 	return templateData, errors.WithMessage(err, "UpdateG")
 }
 
 func HandleDeleteChannelsOverride(w http.ResponseWriter, r *http.Request, currentOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
 	_, templateData := web.GetBaseCPContextData(r.Context())
 
-	err := currentOverride.DeleteG()
+	_, err := currentOverride.DeleteG(r.Context())
 	return templateData, errors.WithMessage(err, "DeleteG")
 }
 
@@ -303,7 +300,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*CommandOverrideForm)
 
-	count, err := models.CommandsCommandOverridesG(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID), qm.Where("commands && ?", types.StringArray(formData.Commands))).Count()
+	count, err := models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID), qm.Where("commands && ?", types.StringArray(formData.Commands))).CountG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "count")
 	}
@@ -312,7 +309,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 		return templateData, web.NewPublicError("One of the selected commands is already used in another command override for this channel override")
 	}
 
-	count, err = models.CommandsCommandOverridesG(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).Count()
+	count, err = models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).CountG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "count2")
 	}
@@ -335,7 +332,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 		IgnoreRoles:             formData.IgnoreRoles,
 	}
 
-	err = model.InsertG()
+	err = model.InsertG(r.Context(), boil.Infer())
 
 	return templateData, errors.WithMessage(err, "InsertG")
 }
@@ -345,13 +342,13 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 	id := pat.Param(r, "commandsOverride")
 	idParsed, _ := strconv.ParseInt(id, 10, 64)
 
-	override, err := models.CommandsCommandOverridesG(qm.Where("id = ?", idParsed), qm.Where("guild_id = ?", activeGuild.ID)).One()
+	override, err := models.CommandsCommandOverrides(qm.Where("id = ?", idParsed), qm.Where("guild_id = ?", activeGuild.ID)).OneG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "query override")
 	}
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*CommandOverrideForm)
-	count, err := models.CommandsCommandOverridesG(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID), qm.Where("commands && ?", types.StringArray(formData.Commands)), qm.Where("id != ?", override.ID)).Count()
+	count, err := models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID), qm.Where("commands && ?", types.StringArray(formData.Commands)), qm.Where("id != ?", override.ID)).CountG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "count")
 	}
@@ -369,7 +366,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 	override.RequireRoles = formData.RequireRoles
 	override.IgnoreRoles = formData.IgnoreRoles
 
-	err = override.UpdateG()
+	_, err = override.UpdateG(r.Context(), boil.Infer())
 
 	return templateData, errors.WithMessage(err, "UpdateG")
 }
@@ -380,12 +377,41 @@ func HandleDeleteCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	id := pat.Param(r, "commandsOverride")
 	idParsed, _ := strconv.ParseInt(id, 10, 64)
 
-	override, err := models.CommandsCommandOverridesG(qm.Where("id = ?", idParsed), qm.Where("guild_id = ?", activeGuild.ID)).One()
+	override, err := models.CommandsCommandOverrides(qm.Where("id = ?", idParsed), qm.Where("guild_id = ?", activeGuild.ID)).OneG(r.Context())
 	if err != nil {
 		return templateData, errors.WithMessage(err, "query override")
 	}
 
-	err = override.DeleteG()
+	_, err = override.DeleteG(r.Context())
 
 	return templateData, errors.WithMessage(err, "DeleteG")
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Commands"
+	templateData["SettingsPath"] = "/commands/settings"
+	templateData["WidgetEnabled"] = true
+
+	prefix, err := GetCommandPrefix(ag.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	count, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", ag.ID), qm.Where("global=false")).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	const format = `<ul>
+	<li>Command prefix: <code>%s</code></li>
+	<li>Active channel overrides: <code>%d</code></li>
+</ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, html.EscapeString(prefix), count))
+
+	return templateData, nil
 }

@@ -34,7 +34,7 @@ func RunPoller(session *discordgo.Session, channel int64, interval time.Duration
 	}
 }
 
-var channelMentionRegex = regexp.MustCompile("<#[0-9]*>")
+var mentionStrippingRegex = regexp.MustCompile("<@(#|&)[0-9]*>")
 
 func updatePosts(session *discordgo.Session, channel int64) error {
 	messages, err := session.ChannelMessages(channel, 25, 0, 0, 0)
@@ -47,7 +47,7 @@ func updatePosts(session *discordgo.Session, channel int64) error {
 
 	for i, v := range messages {
 		body := v.ContentWithMentionsReplaced()
-		body = channelMentionRegex.ReplaceAllString(body, "[Channel Mention]")
+		body = mentionStrippingRegex.ReplaceAllString(body, "")
 		rendered := github_flavored_markdown.Markdown([]byte(body))
 
 		ts, _ := v.Timestamp.Parse()

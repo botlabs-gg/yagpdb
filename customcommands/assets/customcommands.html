@@ -6,42 +6,167 @@
 
 {{template "cp_alerts" .}}
 
+<div class="row">
+    <div class="col">
+        <!-- Nav tabs -->
+        <div class="tabs">
+            <ul class="nav nav-tabs">
+                <li class="nav-item {{if and (not .CurrentCommandGroup)}}active{{end}}">
+                    <a data-partial-load="true" class="nav-link show {{if not .CurrentCommandGroup}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/customcommands/">Ungrouped</a>
+                </li>
+                {{$dot := .}}
+                {{range .CommandGroups}}
+                <li class="nav-item {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}">
+                    <a data-partial-load="true" class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}" href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}</a>
+                </li>
+                {{end}}
+                <li class="nav-item">
+                    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/creategroup" data-async-form>
+                        <input type="text" class="hidden" name="Name" value="Unnamed group">
+                        <input clasS="nav-link show" type="submit" value="+"></input>
+                    </form>
+                </li>
+            </ul>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div class="tab-pane active">
+                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whitelist/blacklist roles/channels on multiple commands at the same time, as well as keeping things organized.</p>{{else}}
+                    <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update" data-async-form>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Name </label>
+                                    <input type="text" class="form-control" value="{{.CurrentCommandGroup.Name}}" name="Name" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Whitelist roles for who can use these commands</label><br>
+                                    <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple" id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
+                                        {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Blacklisted roles</label><br>
+                                    <select name="BlacklistRoles" class="multiselect form-control" multiple="multiple" id="blacklisted-roles-give" data-plugin-multiselect>
+                                        {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.IgnoreRoles}}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-success">Save group settings</button>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Channels these commands can be used in (empty for all)</label><br>
+                                    <select multiple="multiple" class="form-control" data-plugin-multiselect name="WhitelistChannels" data-placeholder="Everywhere" >
+                                        {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.WhitelistChannels }}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Channels blacklisted</label><br>
+                                    <select multiple="multiple" class="form-control" data-plugin-multiselect name="BlacklistChannels">
+                                        {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}}" class="btn btn-danger" formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete group (commands become ungrouped)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <section class="card">
     <header class="card-header">
-        Create new custom command
+        Create new custom command{{if.CurrentCommandGroup}} in {{.CurrentCommandGroup.Name}}{{end}}
     </header>
     <div class="card-body">
-        <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands" data-async-form>
+        <form class="form-horizontal" method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/createcommand" data-async-form>
+            {{if .CurrentCommandGroup}}<input type="text" class="hidden" value="{{.CurrentCommandGroup.ID}}" name="GroupID">{{end}}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="form-group">
-                        <label for="trigger_type">Trigger type</label>
-                        <select id="trigger_type" class="form-control" name="type">
+                        <label>Trigger type</label>
+                        <select class="form-control" name="type" onchange="triggerTypeChanged('new', this)">
                             <option value="cmd">Command (mention/cmd prefix)</option>
                             <option value="prefix">Starts with</option>
                             <option value="contains">Contains</option>
                             <option value="regex">Regex</option>
                             <option value="exact">Exact match</option>
+                            <option value="interval_hours">Hourly interval</option>
+                            <option value="interval_minutes">Minute interval</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-sm-8">
-                    <div class="form-group">
-                        <label for="trigger">Trigger</label>
-                        <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun">
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="case_sensitive"> Case sensitive
-                            </label>
+                <div id="new-cc-text-trigger-details" class="col-sm-8">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label>Trigger</label>
+                                <input type="text" class="form-control" name="trigger" placeholder="!fun">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="case_sensitive"> Case sensitive
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="new-cc-time-trigger-details" class="hidden col-sm-8">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label>Interval</label>
+                                <input type="number" class="form-control" name="time_trigger_interval" placeholder="">
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="form-group">
+                                <label>Channel</label>
+                                <select name="context_channel" class="form-control">
+                                    {{textChannelOptions .ActiveGuild.Channels nil true "None"}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="trigger">Excluding hours (UTC)</label><br>
+                                <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    {{range seq 0 24}}<option value="{{.}}">{{.}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="trigger">Excluding weekdays (UTC)</label><br>
+                                <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    <option value="1">Monday</option>
+                                    <option value="2">Tuesday</option>
+                                    <option value="3">Wednesday</option>
+                                    <option value="4">Thursday</option>
+                                    <option value="5">Friday</option>
+                                    <option value="6">Saturday</option>
+                                    <option value="0">Sunday</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col-lg-12">
-                    <label for="responses">Response</label>
+                    <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
                     <div class="entry input-group input-group-sm">
-                        <textarea class="form-control" name="responses" placeholder="^ Smells!" data-plugin-textarea-autosize></textarea>
+                        <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)"></textarea>
                         <span class="input-group-append">
                             <button class="btn btn-success btn-add btn-circle" type="button">
                                 <i class="fas fa-plus"></i>
@@ -51,7 +176,7 @@
                     <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#cc-help-modal">Info</a>
                 </div>
             </div>
-            <div class="row mb-4">
+            <div class="row mb-4" id="new-cc-extra-settings">
                 <div class="col-sm-6">
                     <div class="radio">
                       <label>
@@ -93,59 +218,135 @@
         </form>
     </div>
 </section>
+
 <div class="accordion accordion-primary" id="accordion" role="tablist">
     {{$guild := .ActiveGuild.ID}}
     {{$g := .ActiveGuild}}
+    {{$dot := .}}
     {{range .CustomCommands}}
-    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form>
+    <form class="form-horizontal" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
+        <button type="submit" class="hidden" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form-alertsonly></button>
+
         <div class="card">
             <div class="card-header clearfix">
                 <div class="pull-right">
-                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/delete">Delete</button>
+                    <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete">Delete</button>
                 </div>
                 <h2 class="card-title">
 
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.ID}}" aria-expanded="false" aria-controls="collapse_cmd{{.ID}}">
-                        #{{.ID}} - {{.Trigger}}
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}">
+                        #{{.LocalID}} - {{if ne .TriggerType 5}}{{.TextTrigger}}{{else}}Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}{{end}}
                     </a>
                 </h2>
             </div>
-            <div id="collapse_cmd{{.ID}}" class="collapse">
-                <input type="text" class="hidden form-control" name="id" value="{{.ID}}">
+            <div id="collapse_cmd{{.LocalID}}" class="collapse">
+                <input type="text" class="hidden form-control" name="id" value="{{.LocalID}}">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="form-group">
-                                <label for="trigger_type">Trigger type</label>
-                                <select id="trigger_type" class="form-control" name="type">
+                                <label>Trigger type</label>
+                                <select class="form-control" name="type" onchange="triggerTypeChanged('{{.LocalID}}', this)">
                                     <option value="cmd" {{if eq .TriggerType 0}} selected{{end}}>Command (mention/cmd prefix)</option>
                                     <option value="prefix" {{if eq .TriggerType 1}} selected{{end}}>Starts with</option>
                                     <option value="contains" {{if eq .TriggerType 2}} selected{{end}}>Contains</option>
                                     <option value="regex" {{if eq .TriggerType 3}} selected{{end}}>Regex</option>
                                     <option value="exact"{{if eq .TriggerType 4}} selected{{end}}>Exact match</option>
+                                    <option value="interval_hours" {{if eq (call $dot.GetCCIntervalType .) 1}}selected{{end}}>Hourly interval</option>
+                                    <option value="interval_minutes" {{if eq (call $dot.GetCCIntervalType .) 0}}selected{{end}}>Minute interval</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-sm-8">
-                            <div class="form-group">
-                                <label for="trigger">Trigger</label>
-                                <input type="text" class="form-control" id="trigger" name="trigger" placeholder="!fun" value="{{.Trigger}}">
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="case_sensitive" {{if .CaseSensitive}} checked{{end}}> Case sensitive
-                                    </label>
+                        <div id="{{.LocalID}}-cc-text-trigger-details" class="{{if eq .TriggerType 5}}hidden{{end}} col-sm-8">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label>Trigger</label>
+                                        <input type="text" class="form-control" name="trigger" placeholder="!fun" value="{{.TextTrigger}}">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input type="checkbox" name="case_sensitive"> Case sensitive
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+                        <div id="{{.LocalID}}-cc-time-trigger-details" class="{{if ne .TriggerType 5}}hidden{{end}} col-sm-8">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <div class="form-group">
+                                        <label>Interval</label>
+                                        <input type="number" class="form-control" name="time_trigger_interval" placeholder="" value="{{call $dot.GetCCInterval .}}">
+                                    </div>
+                                </div>
+                                <div class="col-sm-8">
+                                    <div class="form-group">
+                                        <label>Channel</label>
+                                        <select name="context_channel" class="form-control">
+                                            {{textChannelOptions $g.Channels .ContextChannel true "None"}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="trigger">Excluding hours (UTC)</label><br>
+                                        <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                            {{$selectedExclHours := .TimeTriggerExcludingHours}}
+                                            {{range seq 0 24}}<option value="{{.}}" {{if in $selectedExclHours .}}selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="trigger">Excluding weekdays (UTC)</label><br>
+                                            <select name="time_trigger_excluding_days" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                            <option value="1" {{if in .TimeTriggerExcludingDays 1}}selected{{end}}>Monday</option>
+                                            <option value="2" {{if in .TimeTriggerExcludingDays 2}}selected{{end}}>Tuesday</option>
+                                            <option value="3" {{if in .TimeTriggerExcludingDays 3}}selected{{end}}>Wednesday</option>
+                                            <option value="4" {{if in .TimeTriggerExcludingDays 4}}selected{{end}}>Thursday</option>
+                                            <option value="5" {{if in .TimeTriggerExcludingDays 5}}selected{{end}}>Friday</option>
+                                            <option value="6" {{if in .TimeTriggerExcludingDays 6}}selected{{end}}>Saturday</option>
+                                            <option value="0" {{if in .TimeTriggerExcludingDays 0}}selected{{end}}>Sunday</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Custom command group</label>
+                                {{$selectedGroup := .GroupID.Int64}}
+                                <select Name="GroupID" class="form-control">
+                                    <option {{if eq $selectedGroup 0}}selected{{end}} value="0">None</option>
+                                    {{range $dot.CommandGroups}}<option value="{{.ID}}" {{if eq $selectedGroup .ID}}selected{{end}}>{{.Name}}</option>
+                                    {{end}}
+                                </select>
                             </div>
                         </div>
                     </div>
                     <div class="row mb-2">
                         <div class="col-lg-12">
                             <div class="form-group">
-                                <label for="responses">Response</label>
-                                {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
+                                <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
+                                <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                 {{range .Responses}}
                                 <div class="entry input-group  input-group-sm">
-                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" data-plugin-textarea-autosize>{{.}}</textarea>
+                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)">{{.}}</textarea>
+                                    <span class="input-group-append">
+                                        <button class="btn btn-success btn-add btn-circle" type="button">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                {{else}}
+                                <div class="entry input-group  input-group-sm">
+                                    <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)"></textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -157,45 +358,45 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row {{if eq .TriggerType 5}}hidden{{end}}" id="{{.LocalID}}-cc-extra-settings">
                         <div class="col-sm-6">
                             <div class="radio">
                               <label>
-                                <input type="radio" name="require_roles" value="on" {{if .RequireRoles}}checked{{end}}>
+                                <input type="radio" name="require_roles" value="on" {{if .RolesWhitelistMode}}checked{{end}}>
                                 Require at least one of the roles in the following lists
                               </label>
                             </div>
                             <div class="radio">
                               <label>
-                                <input type="radio" name="require_roles" value="" {{if not .RequireRoles}}checked{{end}}>
+                                <input type="radio" name="require_roles" value="" {{if not .RolesWhitelistMode}}checked{{end}}>
                                 Ignore the roles in the following list
                               </label>
                             </div>
-                            <label for="new-command-roles">Roles</label><br>
-                            <select name="roles" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                            <label for="command-roles-{{.LocalID}}">Roles</label><br>
+                            <select name="roles" class="multiselect form-control" multiple="multiple" id="command-roles-{{.LocalID}}" data-plugin-multiselect>
                                 {{roleOptionsMulti $g.Roles nil .Roles}}
                             </select>
                         </div>
                         <div class="col-sm-6">
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="require_channels" value="on" {{if .RequireChannels}}checked{{end}}>
+                                    <input type="radio" name="require_channels" value="on" {{if .ChannelsWhitelistMode}}checked{{end}}>
                                     Only run in the following channels
                                     </label>
                                 </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="require_channels" value="" {{if not .RequireChannels}}checked{{end}}>
+                                    <input type="radio" name="require_channels" value="" {{if not .ChannelsWhitelistMode}}checked{{end}}>
                                     Ignore the channels in the following list
                                 </label>
                             </div>
-                            <label for="new-command-roles">Channels</label><br>
-                            <select name="channels" class="multiselect form-control" multiple="multiple" id="new-command-roles" data-plugin-multiselect>
+                            <label for="command-channels-{{.LocalID}}">Channels</label><br>
+                            <select name="channels" class="multiselect form-control" multiple="multiple" id="command-channels-{{.LocalID}}" data-plugin-multiselect>
                                 {{textChannelOptionsMulti $g.Channels .Channels}}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/{{.ID}}/update" data-async-form-alertsonly>Save</button>
                     </div>
+                    <button type="submit" class="btn btn-success btn-block mt-2" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form-alertsonly>Save</button>
                 </div>
             </div>
         </div>
@@ -211,12 +412,12 @@
 		<div class="card-body">
 			<div class="modal-wrapper">
 				<div class="modal-text">
-					<p class="help-block">Available template data is {{template "template_helper_user"}}</p>
+					<p class="help-block">Available template data is {{template "template_helper_user"}} (and much more)</p>
 					<p class="help-block">Execute bot commands using <code>{{"{{exec \"command\" \"arg1\" \"arg2\"}}"}}</code>, Example: <code>{{"{{exec \"role\" \"yagpdb\""}}"}}</code> will be the same as the user typing <code>(mention or prefix) role yagpdb</code></p>
 					<p class="help-block">Arguments are available in a string array: <code>.CmdArgs</code><br> Access single arguments by index using <code>{{"{{index .CmdArgs 0}}"}}</code><br>Get the number of arguments using <code>{{"{{len .CmdArgs}}"}}</code><br>Loop over them with <br><code>{{"{{range .CmdArgs}}{{.}}"}} <- that dot will be replaced by the current argument we're looping over{{"{{end}}"}}</code><br>"end" marks the end of the for loop.</p>
-					<!-- {{.IgnoreMe}} -->
-					<p><a href="https://docs.yagpdb.xyz/templates" target="_blank">See the templating docs for more info</a> and join the support server if you have questions. It's rather complicated so I will make more guides in the future.<p>
-					<p class="help-block">YAGPDB will pick one message at random from all configured.</p>
+					<!-- {{/* .IgnoreMe */}} -->
+					<p>See the <a href="https://docs.yagpdb.xyz/templates" target="_blank">templating</a> and <a href="https://docs.yagpdb.xyz/commands/custom-commands" target="_blank">custom command</a> docs for more info and join the support server if you have further questions. Custom commands for yagpdb are rather complicated for the time being.<p>
+					<p class="help-block">YAGPDB will pick one message at random from all configured responses.</p>
 				</div>
 			</div>
 		</div>
@@ -229,6 +430,43 @@
 		</footer>
 	</section>
 </div>
+<script type="text/javascript">
+    function triggerTypeChanged(trigID, dropdown){
+        if(dropdown.value === "interval_hours" || dropdown.value === "interval_minutes"){
+            $("#"+trigID+"-cc-time-trigger-details").removeClass("hidden");
+            $("#"+trigID+"-cc-text-trigger-details").addClass("hidden");
+            $("#"+trigID+"-cc-extra-settings").addClass("hidden");
+        }else{
+            $("#"+trigID+"-cc-time-trigger-details").addClass("hidden");
+            $("#"+trigID+"-cc-text-trigger-details").removeClass("hidden");
+            $("#"+trigID+"-cc-extra-settings").removeClass("hidden");
+        }
+    }
+
+    function onCCChanged(textArea){
+        var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
+
+        var combinedLength = 0;
+        textAreas.forEach(function(elem){
+            combinedLength += elem.value.length;
+        })
+
+        var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
+        display.textContent = combinedLength
+
+        if(combinedLength > 10000){
+            display.classList.add("text-danger");
+        }else{
+            display.classList.remove("text-danger");
+        }
+    }
+
+    $(function(){
+        document.querySelectorAll("textarea").forEach(function(element) {
+          onCCChanged(element);
+        });
+    })
+</script>
 {{template "cp_footer" .}}
 
 {{end}}

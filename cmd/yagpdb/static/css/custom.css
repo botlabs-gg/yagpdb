@@ -6,10 +6,10 @@
 }
 
 .avatar {
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  padding: 5px;
+	border-radius: 50%;
+	width: 50px;
+	height: 50px;
+	padding: 5px;
 }
 
 html.dark .tab-content {
@@ -17,7 +17,7 @@ html.dark .tab-content {
 	border-color: #2e353e;
 }
 
-html.dark .tabs .nav-tabs{
+html.dark .tabs .nav-tabs {
 	border: none;
 }
 
@@ -41,17 +41,19 @@ html.dark .tabs .nav-link:focus {
 }
 
 .indicator::before {
-	content: "●"; 
+	content: "●";
 }
 
 .indicator-success::before {
 	color: green;
 }
+
 .indicator-danger::before {
 	color: red;
 }
 
 @media only screen and (max-width: 400px) {
+
 	.userbox .name,
 	.userbox .role {
 		max-width: 50px;
@@ -59,30 +61,31 @@ html.dark .tabs .nav-link:focus {
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	
+
 }
 
 @media only screen and (max-width: 500px) {
-	.userbox .profile-info{
+	.userbox .profile-info {
 		margin-right: 2px !important;
 	}
-	
+
 }
 
 code {
-    font-size: 90% !important;
-    color: #ff5858 !important;
-    background-color: #00000012;
-    border-radius: 4px !important;
-    padding-left: 2px !important;
-    padding-right: 2px !important;
+	font-size: 90% !important;
+	color: #ff5858 !important;
+	background-color: #00000012;
+	border-radius: 4px !important;
+	padding-left: 2px !important;
+	padding-right: 2px !important;
 }
 
-.btn-primary.disabled, .btn-primary:disabled {
-    color: #fff !important;
+.btn-primary.disabled,
+.btn-primary:disabled {
+	color: #fff !important;
 }
 
-#loading-overlay{
+#loading-overlay {
 	position: fixed;
 	/*top: 25%;
 	bottom: 25%;
@@ -99,111 +102,140 @@ code {
 
 	z-index: 100;
 
-  opacity: 0.75;
+	opacity: 0.75;
 }
 
-#loading-overlay .card{
+#loading-overlay .card {
 	height: 100%;
 }
 
 .loader,
 .loader:after {
-  border-radius: 50%;
-  width: 10em;
-  height: 10em;
+	border-radius: 50%;
+	width: 10em;
+	height: 10em;
 }
+
 .loader {
-  margin: 60px auto;
-  font-size: 10px;
-  position: relative;
-  text-indent: -9999em;
-  border-top: 1.1em solid rgba(0,0,0, 0.2);
-  border-right: 1.1em solid rgba(0,0,0, 0.2);
-  border-bottom: 1.1em solid rgba(0,0,0, 0.2);
-  border-left: 1.1em solid #000000;
-  -webkit-transform: translateZ(0);
-  -ms-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-animation: load8 1.1s infinite linear;
-  animation: load8 1.1s infinite linear;
+	margin: 60px auto;
+	font-size: 10px;
+	position: relative;
+	text-indent: -9999em;
+	border-top: 1.1em solid rgba(0, 0, 0, 0.2);
+	border-right: 1.1em solid rgba(0, 0, 0, 0.2);
+	border-bottom: 1.1em solid rgba(0, 0, 0, 0.2);
+	border-left: 1.1em solid #000000;
+	-webkit-transform: translateZ(0);
+	-ms-transform: translateZ(0);
+	transform: translateZ(0);
+	-webkit-animation: load8 1.1s infinite linear;
+	animation: load8 1.1s infinite linear;
 }
+
 @-webkit-keyframes load8 {
-  0% {
-    -webkit-transform: rotate(0deg);
-    transform: rotate(0deg);
-  }
-  100% {
-    -webkit-transform: rotate(360deg);
-    transform: rotate(360deg);
-  }
+	0% {
+		-webkit-transform: rotate(0deg);
+		transform: rotate(0deg);
+	}
+
+	100% {
+		-webkit-transform: rotate(360deg);
+		transform: rotate(360deg);
+	}
 }
+
 @keyframes load8 {
-  0% {
-    -webkit-transform: rotate(0deg);
-    transform: rotate(0deg);
-  }
-  100% {
-    -webkit-transform: rotate(360deg);
-    transform: rotate(360deg);
-  }
+	0% {
+		-webkit-transform: rotate(0deg);
+		transform: rotate(0deg);
+	}
+
+	100% {
+		-webkit-transform: rotate(360deg);
+		transform: rotate(360deg);
+	}
 }
 
 .entry {
-  margin-bottom: 5px;
+	margin-bottom: 5px;
 }
 
-html.dark p  {
-  color: #abb4be;
+html.dark p {
+	color: #abb4be;
 }
 
 .content-body {
-  padding: 15px !important;
+	padding: 15px !important;
 }
 
 #nav-footer {
-  position: fixed;
-  bottom: 0;
-  width: 300px;
-  text-align: center;
-  /*border: 2px solid black;*/
+	position: fixed;
+	bottom: 0;
+	width: 300px;
+	text-align: center;
+	/*border: 2px solid black;*/
 }
 
 #nav-footer p {
-  margin-bottom: 1px;
+	margin-bottom: 1px;
 }
 
-#nav-footer-img{
-  max-width: 100%;
-  max-height: 100%;
+#nav-footer-img {
+	max-width: 100%;
+	max-height: 100%;
 }
 
-#nav-footer-overlay{
-  position: fixed;
-  bottom: 200px;
-  left: 5px;
+#nav-footer-overlay {
+	position: fixed;
+	bottom: 200px;
+	left: 5px;
 }
 
 @media(max-width: 767px) {
-  #nav-footer {
-    display: none;
-  }
+	#nav-footer {
+		display: none;
+	}
 }
 
 html.sidebar-left-collapsed #nav-footer {
-  display: none;
+	display: none;
 }
 
 /*FUCK YOU SHITTY HTML STANDARDS YOU PIECE OF FUCKING SHIT*/
 .multiselect-popout-hack .dropdown-menu {
-  position: fixed !important;
-  left: 10% !important;
-  right: 10% !important;
-  top: 0px !important;
-  bottom: 0px !important;
+	position: fixed !important;
+	left: 10% !important;
+	right: 10% !important;
+	top: 0px !important;
+	bottom: 0px !important;
 
-  transform: translate3d(0px, 0px, 0px) !important;
+	transform: translate3d(0px, 0px, 0px) !important;
 }
 
 .multiselect-container {
-  top: 125px !important;
+	top: 125px !important;
+}
+
+/*Proper Design, f**king bootztrap*/
+
+.card {
+	margin: 4px 0 !important;
+}
+
+.nav-tabs {
+	flex-wrap: wrap-reverse;
+}
+
+@media only screen and (max-width: 768px) {
+  .card-body {
+    padding: 0.25rem !important;
+  }  
+}
+
+.content-editable-form::before {
+  content: "✎ ";
+}
+
+html.dark select optgroup {
+	background-color: rgb(45, 45, 50) !important;
 }

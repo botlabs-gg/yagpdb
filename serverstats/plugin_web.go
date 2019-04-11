@@ -1,20 +1,31 @@
 package serverstats
 
 import (
+	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/premium"
+	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/karlseguin/rcache"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
+
+var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
 
 type FormData struct {
 	Public         bool
-	IgnoreChannels []string `valid:"channel,false"`
+	IgnoreChannels []int64 `valid:"channel,false"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -34,11 +45,13 @@ func (p *Plugin) InitWeb() {
 	statsCPMux.Handle(pat.Get("/"), cpGetHandler)
 
 	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
-	statsCPMux.Handle(pat.Get("/full"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
+	statsCPMux.Handle(pat.Get("/daily_json"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
+	statsCPMux.Handle(pat.Get("/charts"), web.APIHandler(publicHandlerJson(HandleStatsCharts, false)))
 
 	// Public
 	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
-	web.ServerPublicMux.Handle(pat.Get("/stats/full"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
+	web.ServerPublicMux.Handle(pat.Get("/stats/daily_json"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
+	web.ServerPublicMux.Handle(pat.Get("/stats/charts"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsCharts, true))))
 }
 
 type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)
@@ -55,9 +68,8 @@ func publicHandler(inner publicHandlerFunc, public bool) web.ControllerHandlerFu
 func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
-	var config ServerStatsConfig
-	err := configstore.Cached.GetGuildConfig(r.Context(), activeGuild.ID, &config)
-	if err != nil && err != configstore.ErrNotFound {
+	config, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
 		return templateData, common.ErrWithCaller(err)
 	}
 
@@ -75,15 +87,50 @@ func HandleSaveStatsSettings(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*FormData)
 
-	newConf := &ServerStatsConfig{
-		GuildConfigModel: configstore.GuildConfigModel{
-			GuildID: ag.ID,
-		},
-		Public:         formData.Public,
-		IgnoreChannels: strings.Join(formData.IgnoreChannels, ","),
+	stringedChannels := ""
+	alreadyAdded := make([]int64, 0, len(formData.IgnoreChannels))
+OUTER:
+	for i, v := range formData.IgnoreChannels {
+		// only add each once
+		for _, ad := range alreadyAdded {
+			if ad == v {
+				continue OUTER
+			}
+		}
+
+		// make sure the channel exists
+		channelExists := false
+		for _, ec := range ag.Channels {
+			if ec.ID == v {
+				channelExists = true
+				break
+			}
+		}
+
+		if !channelExists {
+			continue
+		}
+
+		if i != 0 {
+			stringedChannels += ","
+		}
+
+		alreadyAdded = append(alreadyAdded, v)
+		stringedChannels += strconv.FormatInt(v, 10)
 	}
 
-	err := configstore.SQL.SetGuildConfig(r.Context(), newConf)
+	model := &models.ServerStatsConfig{
+		GuildID:        ag.ID,
+		Public:         null.BoolFrom(formData.Public),
+		IgnoreChannels: null.StringFrom(stringedChannels),
+		CreatedAt:      null.TimeFrom(time.Now()),
+	}
+
+	err := model.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist("public", "ignore_channels"), boil.Infer())
+	if err == nil {
+		go pubsub.Publish("server_stats_invalidate_cache", ag.ID, nil)
+	}
+
 	return templateData, err
 }
 
@@ -111,7 +158,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return nil
 	}
 
-	stats, err := RetrieveFullStats(activeGuild.ID)
+	stats, err := RetrieveDailyStats(activeGuild.ID)
 	if err != nil {
 		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -119,7 +166,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	}
 
 	// Update the names to human readable ones, leave the ids in the name fields for the ones not available
-	for _, cs := range stats.ChannelsHour {
+	for _, cs := range stats.ChannelMessages {
 		for _, channel := range activeGuild.Channels {
 			if discordgo.StrID(channel.ID) == cs.Name {
 				cs.Name = channel.Name
@@ -129,4 +176,129 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	}
 
 	return stats
+}
+
+type ChartResponse struct {
+	Days        int                       `json:"days"`
+	MemberData  []*MemberChartDataPeriod  `json:"member_chart_data"`
+	MessageData []*MessageChartDataPeriod `json:"message_chart_data"`
+}
+
+func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
+	activeGuild, _ := web.GetBaseCPContextData(r.Context())
+
+	conf, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats config")
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
+	}
+
+	if !conf.Public && isPublicAccess {
+		return nil
+	}
+
+	numDays := 7
+	if r.URL.Query().Get("days") != "" {
+		numDays, _ = strconv.Atoi(r.URL.Query().Get("days"))
+		if numDays > 365 {
+			numDays = 365
+		}
+	}
+
+	if !premium.ContextPremium(r.Context()) && (numDays > 7 || numDays <= 0) {
+		numDays = 7
+	}
+
+	stats := CacheGetCharts(activeGuild.ID, numDays)
+	return stats
+}
+
+func CacheGetCharts(guildID int64, days int) *ChartResponse {
+	fetchDays := days
+	if days < 7 {
+		fetchDays = 7
+	}
+
+	// default to full time stats
+	if days != 30 && days != 365 && days > 7 {
+		fetchDays = -1
+		days = -1
+	} else if days < 1 {
+		days = -1
+		fetchDays = -1
+	}
+
+	key := "charts:" + strconv.FormatInt(guildID, 10) + ":" + strconv.FormatInt(int64(fetchDays), 10)
+	statsInterface := WebStatsCache.Get(key)
+	if statsInterface == nil {
+		return &ChartResponse{
+			MemberData:  make([]*MemberChartDataPeriod, 0),
+			MessageData: make([]*MessageChartDataPeriod, 0),
+		}
+	}
+
+	stats := statsInterface.(*ChartResponse)
+	cop := *stats
+	if fetchDays != days && days != -1 && len(cop.MemberData) > days {
+
+		cop.MemberData = cop.MemberData[:days]
+		cop.MessageData = cop.MessageData[:days]
+		cop.Days = days
+	}
+
+	return &cop
+}
+
+func cacheChartFetcher(key string) interface{} {
+	split := strings.Split(key, ":")
+	if len(split) < 3 {
+		logrus.Error("[serverstats] invalid cache key: ", key)
+		return nil
+	}
+
+	guildID, _ := strconv.ParseInt(split[1], 10, 64)
+	days, _ := strconv.Atoi(split[2])
+
+	memberData, err := RetrieveMemberChartStats(guildID, days)
+	if err != nil {
+		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving member chart data")
+		return nil
+	}
+
+	messageData, err := RetrieveMessageChartData(guildID, days)
+	if err != nil {
+		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving message chart data")
+		return nil
+	}
+
+	return &ChartResponse{
+		Days:        days,
+		MemberData:  memberData,
+		MessageData: messageData,
+	}
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "Server Stats"
+	templateData["SettingsPath"] = "/stats"
+	templateData["WidgetEnabled"] = true
+
+	config, err := GetConfig(r.Context(), activeGuild.ID)
+	if err != nil {
+		return templateData, common.ErrWithCaller(err)
+	}
+
+	const format = `<ul>
+	<li>Public stats: %s</li>
+	<li>Blacklisted channnels: <code>%d</code></li>
+</ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.Public), len(config.ParsedChannels)))
+
+	return templateData, nil
 }

@@ -19,23 +19,22 @@ var Command = &commands.YAGCommand{
 
 		q1, q2, err := wouldYouRather()
 		if err != nil {
-			return "Failed fetching the questions :(\n" + err.Error(), err
+			return nil, err
 		}
 
 		content := fmt.Sprintf("**Would you rather** (*<http://either.io>*)\n🇦 %s\n **OR**\n🇧 %s", q1, q2)
 		msg, err := common.BotSession.ChannelMessageSend(data.Msg.ChannelID, content)
 		if err != nil {
-			return "Seomthing went wrong", err
+			return nil, err
 		}
 
 		common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇦")
 		err = common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇧")
 		if err != nil {
-			_, dError := common.DiscordError(err)
-			return "Failed adding reaction\n" + dError, err
+			return nil, err
 		}
 
-		return "", nil
+		return nil, nil
 	},
 }
 

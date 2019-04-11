@@ -1,15 +1,20 @@
 package bot
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardmanager"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dshardorchestrator/node"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/jonas747/yagpdb/master/slave"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -18,31 +23,54 @@ import (
 var (
 	// When the bot was started
 	Started      = time.Now()
-	Running      bool
+	Enabled      bool // wether the bot is set to run at some point in this process
+	Running      bool // wether the bot is currently running
 	State        *dstate.State
 	ShardManager *dshardmanager.Manager
 
 	StateHandlerPtr *eventsystem.Handler
 
-	SlaveClient *slave.Conn
+	NodeConn          *node.Conn
+	UsingOrchestrator bool
 
-	state     int
-	stateLock sync.Mutex
+	MessageDeleteQueue = deletequeue.NewQueue()
+
+	FlagNodeID string
 )
 
-const (
-	StateRunningNoMaster   int = iota
-	StateRunningWithMaster     // Fully started
+var (
+	// the variables below specify shard clustering information, for splitting shards across multiple processes and machines
+	// this is very work in process and does not work at all atm
+	//
+	// plugins that needs to perform shard specific tasks, not directly related to incoming gateway events should check here
+	// to make sure the action they're doing is relevant to the current cluster (example: scheduled events should only run events for guilds on this cluster)
 
-	StateWaitingHelloMaster
-	StateSoftStarting
-	StateShardMigrationTo
-	StateShardMigrationFrom
+	// the total amount of shards this bot is set to use across all processes
+	totalShardCount int
+
+	// The shards running on this process, protected by the processShardsLock muted
+	processShards     []int
+	processShardsLock sync.RWMutex
 )
 
 func setup() {
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		log.WithError(err).Fatal("failed initializing db schema")
+	}
+
+	discordgo.IdentifyRatelimiter = &identifyRatelimiter{}
+
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
+	State.MaxChannelMessages = 1000
+	State.MaxMessageAge = time.Hour
+	// State.Debug = true
+	State.ThrowAwayDMMessages = true
+	State.TrackPrivateChannels = false
+	State.CacheExpirey = time.Minute * 10
+	go State.RunGCWorker()
+
 	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
 	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
 	eventsystem.ConcurrentAfter = StateHandlerPtr
@@ -60,6 +88,12 @@ func setup() {
 	eventsystem.AddHandler(HandleChannelUpdate, eventsystem.EventChannelUpdate)
 	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
 	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandler(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandler(HandleResumed, eventsystem.EventResumed)
 }
 
 func Run() {
@@ -100,51 +134,52 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
-	shardCount, err := ShardManager.GetRecommendedCount()
-	if err != nil {
-		panic("Failed getting shard count: " + err.Error())
+	orcheStratorAddress := os.Getenv("YAGPDB_ORCHESTRATOR_ADDRESS")
+	if orcheStratorAddress != "" {
+		UsingOrchestrator = true
+		log.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)
+	} else {
+		log.Info("Running standalone without any orchestrator")
+		SetupStandalone()
 	}
 
-	EventLogger.init(shardCount)
-	go EventLogger.run()
-
-	for i := 0; i < shardCount; i++ {
-		waitingReadies = append(waitingReadies, i)
-	}
-
-	State.MaxChannelMessages = 1000
-	State.MaxMessageAge = time.Hour
-	// State.Debug = true
-
-	Running = true
-
-	// go ShardManager.Start()
 	go MemberFetcher.Run()
 	go mergedMessageSender()
 
-	masterAddr := os.Getenv("YAGPDB_MASTER_CONNECT_ADDR")
-	if masterAddr != "" {
-		stateLock.Lock()
-		state = StateWaitingHelloMaster
-		stateLock.Unlock()
+	Running = true
 
-		log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
-		SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
-		if err != nil {
-			log.WithError(err).Error("Failed connecting to master")
-			os.Exit(1)
-		}
+	if UsingOrchestrator {
+		// TODO
+		NodeConn = node.NewNodeConn(&NodeImpl{}, orcheStratorAddress, common.VERSION, FlagNodeID, nil)
+		NodeConn.Run()
 	} else {
-		stateLock.Lock()
-		state = StateRunningNoMaster
-		stateLock.Unlock()
-
-		InitPlugins()
-
-		log.Println("Running normally without a master")
 		go ShardManager.Start()
-		go MonitorLoading()
+		InitPlugins()
 	}
+
+	// if masterAddr != "" {
+	// 	stateLock.Lock()
+	// 	state = StateWaitingHelloMaster
+	// 	stateLock.Unlock()
+
+	// 	log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
+	// 	var err error
+	// 	SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
+	// 	if err != nil {
+	// 		log.WithError(err).Error("Failed connecting to master")
+	// 		os.Exit(1)
+	// 	}
+	// } else {
+	// 	stateLock.Lock()
+	// 	state = StateRunningNoMaster
+	// 	stateLock.Unlock()
+
+	// 	InitPlugins()
+
+	// 	log.Println("Running normally without a master")
+	// 	go ShardManager.Start()
+	// 	go MonitorLoading()
+	// }
 
 	// for _, p := range common.Plugins {
 	// 	starter, ok := p.(BotStarterHandler)
@@ -155,45 +190,52 @@ func Run() {
 	// }
 }
 
-func MonitorLoading() {
-	t := time.NewTicker(time.Second)
-	defer t.Stop()
+func SetupStandalone() {
+	shardCount, err := ShardManager.GetRecommendedCount()
+	if err != nil {
+		panic("Failed getting shard count: " + err.Error())
+	}
+	totalShardCount = shardCount
 
-	for {
-		<-t.C
+	EventLogger.init(shardCount)
+	go EventLogger.run()
 
-		waitingGuildsMU.Lock()
-		numWaitingGuilds := len(waitingGuilds)
-		numWaitingShards := len(waitingReadies)
-		waitingGuildsMU.Unlock()
+	processShards = make([]int, totalShardCount)
+	for i := 0; i < totalShardCount; i++ {
+		processShards[i] = i
+	}
 
-		log.Infof("Starting up... GC's Remaining: %d, Shards remaining: %d", numWaitingGuilds, numWaitingShards)
-
-		if numWaitingShards == 0 {
-			return
-		}
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
+	if err != nil {
+		log.WithError(err).Error("failed setting shard count")
 	}
 }
 
 func InitPlugins() {
+	pubsub.AddHandler("bot_status_changed", func(evt *pubsub.Event) {
+		updateAllShardStatuses()
+	}, nil)
+
 	// Initialize all plugins
 	for _, plugin := range common.Plugins {
 		if initBot, ok := plugin.(BotInitHandler); ok {
 			initBot.BotInit()
 		}
 	}
-}
 
-func BotStarted() {
-	for _, p := range common.Plugins {
-		starter, ok := p.(BotStartedHandler)
-		if ok {
-			starter.BotStarted()
-			log.Debug("Ran BotStarted for ", p.Name())
+	// Initialize all plugins late
+	for _, plugin := range common.Plugins {
+		if initBot, ok := plugin.(LateBotInitHandler); ok {
+			initBot.LateBotInit()
 		}
 	}
 
-	go scheduledevents.Run()
+	if common.Statsd != nil {
+		go goroutineLogger()
+	}
+
+	go loopCheckAdmins()
+	watchMemusage()
 }
 
 var stopOnce sync.Once
@@ -206,12 +248,11 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 				continue
 			}
 			wg.Add(1)
-			log.Debug("Calling bot stopper for: ", v.Name())
+			log.Debug("Calling bot stopper for: ", v.PluginInfo().Name)
 			go stopper.StopBot(wg)
 		}
 
-		wg.Add(1)
-		go scheduledevents.Stop(wg)
+		close(stopRunCheckAdmins)
 	})
 }
 
@@ -232,4 +273,40 @@ func GuildCountsFunc() []int {
 	State.RUnlock()
 
 	return result
+}
+
+// Standard implementation of the GatewayIdentifyRatelimiter
+type identifyRatelimiter struct {
+	ch   chan bool
+	once sync.Once
+}
+
+func (rl *identifyRatelimiter) RatelimitIdentify() {
+	const key = "yagpdb.gateway.identify.limit"
+	for {
+		var resp string
+		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "5", "NX"))
+		if err != nil {
+			log.WithError(err).Error("failed ratelimiting gateway")
+			time.Sleep(time.Second)
+			continue
+		}
+
+		if resp == "OK" {
+			return // success
+		}
+
+		// otherwise a identify was sent by someone else last 5 seconds
+		time.Sleep(time.Second)
+	}
+}
+
+func goroutineLogger() {
+	t := time.NewTicker(time.Second * 10)
+	for {
+		<-t.C
+
+		num := runtime.NumGoroutine()
+		common.Statsd.Gauge("yagpdb.numgoroutine", float64(num), nil, 1)
+	}
 }

@@ -1,154 +1,103 @@
 package reddit
 
-//go:generate esc -o assets_gen.go -pkg reddit -ignore ".go" assets/
+//go:generate sqlboiler psql
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/jonas747/yagpdb/premium"
+	"github.com/jonas747/yagpdb/reddit/models"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"sync"
 )
 
+const (
+	FilterNSFWNone    = 0 // allow both nsfw and non nsfw content
+	FilterNSFWIgnore  = 1 // only allow non-nsfw content
+	FilterNSFWRequire = 2 // only allow nsfw content
+)
+
 type Plugin struct {
 	stopFeedChan chan *sync.WaitGroup
+	redditClient *reddit.Client
 }
 
-func (p *Plugin) Name() string {
-	return "Reddit"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Reddit",
+		SysName:  "reddit",
+		Category: common.PluginCategoryFeeds,
+	}
 }
 
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	code, _ := common.DiscordError(err)
-	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess {
+	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess && code != discordgo.ErrCodeMissingPermissions {
 		l := log.WithError(err).WithField("channel", elem.Channel)
-		if code != discordgo.ErrCodeMissingPermissions && code != discordgo.ErrCodeMissingAccess {
-			l = l.WithField("s_msg", elem.MessageEmbed)
-		}
-		l.Warn("Error posting reddit message")
+		l = l.WithField("s_msg", elem.MessageEmbed)
+
+		l.Warn("[reddit] Error posting reddit message")
 		return
 	}
 
-	log.WithError(err).WithField("channel", elem.Channel).Info("Removing reddit feed to nonexistant discord channel")
-
-	// channelid:feed-id
-	split := strings.Split(elem.SourceID, ":")
-	if len(split) < 2 {
-		log.Error("Invalid queued item: ", elem.ID)
+	if strings.Contains(elem.SourceID, ":") {
+		// legacy format leftover, ignore...
 		return
 	}
 
-	guildID := split[0]
-	itemID := split[1]
+	log.WithError(err).WithField("channel", elem.Channel).WithField("id", elem.SourceID).Info("[reddit] Disabling reddit feed to nonexistant discord channel")
 
-	currentConfig, err := GetConfig("guild_subreddit_watch:" + guildID)
+	feedID, err := strconv.ParseInt(elem.SourceID, 10, 64)
 	if err != nil {
-		log.WithError(err).Error("Failed fetching config to remove")
+		log.WithError(err).WithField("source_id", elem.SourceID).Error("[reddit] failed parsing sourceID!??!")
 		return
 	}
 
-	parsed, err := strconv.Atoi(itemID)
+	_, err = models.RedditFeeds(models.RedditFeedWhere.ID.EQ(feedID)).UpdateAllG(context.Background(), models.M{"disabled": true})
 	if err != nil {
-		log.WithError(err).WithField("mq_id", elem.ID).Error("Failed parsing item id")
-	}
-
-	parsedGID, _ := strconv.ParseInt(guildID, 10, 64)
-	for _, v := range currentConfig {
-		if v.ID == parsed {
-			v.Remove()
-			common.AddCPLogEntry(common.BotUser, parsedGID, "Removed reddit feed from "+v.Sub+", Channel does not exist or no perms")
-			break
-		}
+		log.WithError(err).WithField("feed_id", feedID).Error("[reddit] failed removing reddit feed")
 	}
 }
 
+var _ mqueue.PluginWithWebhookAvatar = (*Plugin)(nil)
+
+func (p *Plugin) WebhookAvatar() string {
+	return RedditLogoPNGB64
+}
+
 func RegisterPlugin() {
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		log.WithError(err).Error("reddit: failed initalizing database schema, not enabling plugin")
+		return
+	}
+
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
+
+	plugin.redditClient = setupClient()
+
 	common.RegisterPlugin(plugin)
 	mqueue.RegisterSource("reddit", plugin)
 }
 
-type SubredditWatchItem struct {
-	Sub       string `json:"sub"`
-	Guild     string `json:"guild"`
-	Channel   string `json:"channel"`
-	ID        int    `json:"id"`
-	UseEmbeds bool   `json:"use_embeds"`
-}
+const (
+	// Max feeds per guild
+	GuildMaxFeedsNormal  = 100
+	GuildMaxFeedsPremium = 1000
+)
 
-func FindWatchItem(source []*SubredditWatchItem, id int) *SubredditWatchItem {
-	for _, c := range source {
-		if c.ID == id {
-			return c
-			break
-		}
-	}
-	return nil
-}
-
-func (item *SubredditWatchItem) Set() error {
-	serialized, err := json.Marshal(item)
-	if err != nil {
-		return err
-	}
-	guild := item.Guild
-
-	err = common.RedisPool.Do(radix.Pipeline(
-		radix.FlatCmd(nil, "HSET", "guild_subreddit_watch:"+guild, item.ID, serialized),
-		radix.FlatCmd(nil, "HSET", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID), serialized),
-	))
-
-	return err
-}
-
-func (item *SubredditWatchItem) Remove() error {
-	guild := item.Guild
-
-	err := common.RedisPool.Do(radix.Pipeline(
-		radix.FlatCmd(nil, "HDEL", "guild_subreddit_watch:"+guild, item.ID),
-		radix.FlatCmd(nil, "HDEL", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID)),
-	))
-	return err
-}
-
-func GetConfig(key string) ([]*SubredditWatchItem, error) {
-	var rawItems map[string]string
-	err := common.RedisPool.Do(radix.Cmd(&rawItems, "HGETALL", key))
-	if err != nil {
-		return nil, err
+func MaxFeedForCtx(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return GuildMaxFeedsPremium
 	}
 
-	out := make([]*SubredditWatchItem, len(rawItems))
-
-	i := 0
-	for k, raw := range rawItems {
-		var decoded *SubredditWatchItem
-		err := json.Unmarshal([]byte(raw), &decoded)
-		if err != nil {
-			return nil, err
-		}
-
-		if err != nil {
-			id, _ := strconv.ParseInt(k, 10, 32)
-			out[i] = &SubredditWatchItem{
-				Sub:     "ERROR",
-				Channel: "ERROR DECODING",
-				ID:      int(id),
-			}
-			log.WithError(err).Error("Failed decoding reddit watch item")
-		} else {
-			out[i] = decoded
-		}
-		i++
-	}
-
-	return out, nil
+	return GuildMaxFeedsNormal
 }

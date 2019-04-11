@@ -1,13 +1,17 @@
 package reddit
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/oauth2"
+	"html"
 	"os"
 	"strconv"
 	"strings"
@@ -15,11 +19,20 @@ import (
 	"time"
 )
 
+const (
+	MaxPostsHourFast = 200
+	MaxPostsHourSlow = 200
+)
+
 var (
 	ClientID     = os.Getenv("YAGPDB_REDDIT_CLIENTID")
 	ClientSecret = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
 	RedirectURI  = os.Getenv("YAGPDB_REDDIT_REDIRECT")
 	RefreshToken = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
+
+	feedLock sync.Mutex
+	fastFeed *PostFetcher
+	slowFeed *PostFetcher
 )
 
 func (p *Plugin) StartFeed() {
@@ -27,7 +40,31 @@ func (p *Plugin) StartFeed() {
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
-	p.stopFeedChan <- wg
+	wg.Add(1)
+
+	feedLock.Lock()
+
+	if fastFeed != nil {
+		ff := fastFeed
+		go func() {
+			ff.StopChan <- wg
+		}()
+		fastFeed = nil
+	} else {
+		wg.Done()
+	}
+
+	if slowFeed != nil {
+		sf := slowFeed
+		go func() {
+			sf.StopChan <- wg
+		}()
+		slowFeed = nil
+	} else {
+		wg.Done()
+	}
+
+	feedLock.Unlock()
 }
 
 func UserAgent() string {
@@ -41,61 +78,73 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) runBot() {
+	feedLock.Lock()
 
-	redditClient := setupClient()
-	fetcher := NewPostFetcher(redditClient)
+	if os.Getenv("YAGPDB_REDDIT_FAST_FEED_DISABLED") == "" {
+		fastFeed = NewPostFetcher(p.redditClient, false, NewPostHandler(false))
+		go fastFeed.Run()
+	}
 
-	ticker := time.NewTicker(time.Second * 5)
-	for {
-		select {
-		case wg := <-p.stopFeedChan:
-			wg.Done()
-			return
-		case <-ticker.C:
-		}
+	slowFeed = NewPostFetcher(p.redditClient, true, NewPostHandler(true))
+	go slowFeed.Run()
 
-		links, err := fetcher.GetNewPosts()
-		if err != nil {
-			logrus.WithError(err).Error("Error fetchind new links")
-			continue
-		}
-		if len(links) < 1 {
-			continue
-		}
+	feedLock.Unlock()
+}
 
-		for _, v := range links {
-			// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-			// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-			p.handlePost(v)
-		}
+type PostHandlerImpl struct {
+	Slow        bool
+	ratelimiter *Ratelimiter
+}
+
+func NewPostHandler(slow bool) PostHandler {
+	rl := NewRatelimiter()
+	go rl.RunGCLoop()
+
+	return &PostHandlerImpl{
+		Slow:        slow,
+		ratelimiter: rl,
 	}
 }
 
-func (p *Plugin) handlePost(post *reddit.Link) error {
+func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
+	for _, v := range links {
+		if strings.EqualFold(v.Selftext, "[removed]") || strings.EqualFold(v.Selftext, "[deleted]") {
+			continue
+		}
+
+		if !v.IsRobotIndexable {
+			continue
+		}
+
+		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
+		// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		p.handlePost(v, 0)
+	}
+}
+
+func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
 
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
 	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
-	config, err := GetConfig("global_subreddit_watch:" + strings.ToLower(post.Subreddit))
+	qms := []qm.QueryMod{
+		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
+		models.RedditFeedWhere.Slow.EQ(p.Slow),
+		models.RedditFeedWhere.Disabled.EQ(false),
+	}
+
+	if filterGuild > 0 {
+		qms = append(qms, models.RedditFeedWhere.GuildID.EQ(filterGuild))
+	}
+
+	config, err := models.RedditFeeds(qms...).AllG(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("Failed getting config from redis")
+		logrus.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
 	}
 
-	// Get the channels that listens to this subreddit, if any
-
-	filteredItems := make([]*SubredditWatchItem, 0, len(config))
-
-OUTER:
-	for _, c := range config {
-		for _, v := range filteredItems {
-			if v.Channel == c.Channel {
-				continue OUTER
-			}
-		}
-
-		filteredItems = append(filteredItems, c)
-	}
+	// Get the configs that listens to this subreddit, if any
+	filteredItems := p.FilterFeeds(config, post)
 
 	// No channels nothing to do...
 	if len(filteredItems) < 1 {
@@ -105,68 +154,123 @@ OUTER:
 	logrus.WithFields(logrus.Fields{
 		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
-	}).Info("Found matched reddit post")
+	}).Debug("Found matched reddit post")
 
 	message, embed := CreatePostMessage(post)
 
 	for _, item := range filteredItems {
+		idStr := strconv.FormatInt(item.ID, 10)
+
+		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
 		if item.UseEmbeds {
-			mqueue.QueueMessageEmbed("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, embed)
+			mqueue.QueueMessageWebhook("reddit", idStr, item.GuildID, item.ChannelID, "", embed, true, webhookUsername)
 		} else {
-			mqueue.QueueMessageString("reddit", item.Guild+":"+strconv.Itoa(item.ID), item.Channel, message)
+			mqueue.QueueMessageWebhook("reddit", idStr, item.GuildID, item.ChannelID, message, nil, true, webhookUsername)
+		}
+
+		if common.Statsd != nil {
+			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + strconv.FormatInt(item.GuildID, 10)}, 1)
 		}
 	}
-
-	if common.Statsd != nil {
-		go common.Statsd.Count("yagpdb.reddit.matches", int64(len(filteredItems)), nil, 1)
-	}
-
 	return nil
 }
 
-func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
-	typeStr := "link"
-	if post.IsSelf {
-		typeStr = "self post"
+func (p *PostHandlerImpl) FilterFeeds(feeds []*models.RedditFeed, post *reddit.Link) []*models.RedditFeed {
+	filteredItems := make([]*models.RedditFeed, 0, len(feeds))
+
+OUTER:
+	for _, c := range feeds {
+		// remove duplicates
+		for _, v := range filteredItems {
+			if v.ChannelID == c.ChannelID {
+				continue OUTER
+			}
+		}
+
+		limit := MaxPostsHourFast
+		if p.Slow {
+			limit = MaxPostsHourSlow
+		}
+
+		// apply ratelimiting
+		if !p.ratelimiter.CheckIncrement(time.Now(), c.GuildID, limit) {
+			continue
+		}
+
+		if post.Over18 && c.FilterNSFW == FilterNSFWIgnore {
+			// NSFW and we ignore nsfw posts
+			continue
+		} else if !post.Over18 && c.FilterNSFW == FilterNSFWRequire {
+			// Not NSFW and we only care about nsfw posts
+			continue
+		}
+
+		if p.Slow {
+			if post.Score < c.MinUpvotes {
+				// less than required upvotes
+				continue
+			}
+		}
+
+		filteredItems = append(filteredItems, c)
 	}
 
-	plainMessage := fmt.Sprintf("<:reddit:462994034428870656> **/u/%s** posted a new %s in **/r/%s**\n**%s** - <%s>\n",
-		post.Author, typeStr, post.Subreddit, post.Title, "https://redd.it/"+post.ID)
+	return filteredItems
+}
 
+func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
+	plainMessage := fmt.Sprintf("**%s**\n*by %s (<%s>)*\n",
+		html.UnescapeString(post.Title), post.Author, "https://redd.it/"+post.ID)
+
+	plainBody := ""
 	if post.IsSelf {
-		plainMessage += common.CutStringShort(post.Selftext, 250)
+		plainBody = common.CutStringShort(html.UnescapeString(post.Selftext), 250)
 	} else {
-		plainMessage += post.URL
+		plainBody = post.URL
+	}
+
+	if post.Spoiler {
+		plainMessage += "|| " + plainBody + " ||"
+	} else {
+		plainMessage += plainBody
 	}
 
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			URL:     "https://reddit.com/u/" + post.Author,
-			Name:    post.Author,
-			IconURL: "https://" + common.Conf.Host + "/static/img/reddit_icon.png",
+			URL:  "https://reddit.com/u/" + post.Author,
+			Name: post.Author,
 		},
 		Provider: &discordgo.MessageEmbedProvider{
 			Name: "Reddit",
 			URL:  "https://reddit.com",
 		},
-		Description: "**" + post.Title + "**\n",
+		Description: "**" + html.UnescapeString(post.Title) + "**\n",
 	}
 	embed.URL = "https://redd.it/" + post.ID
 
 	if post.IsSelf {
-		embed.Title = "New self post in /r/" + post.Subreddit
-		embed.Description += common.CutStringShort(post.Selftext, 250)
+		embed.Title = "New self post"
+		if post.Spoiler {
+			embed.Description += "|| " + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + " ||"
+		} else {
+			embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
+		}
+
 		embed.Color = 0xc3fc7e
 	} else {
 		embed.Color = 0x718aed
-		embed.Title = "New link post in /r/" + post.Subreddit
+		embed.Title = "New link post"
 		embed.Description += post.URL
 
-		if post.Media.Type == "" {
+		if post.Media.Type == "" && !post.Spoiler {
 			embed.Image = &discordgo.MessageEmbedImage{
 				URL: post.URL,
 			}
 		}
+	}
+
+	if post.Spoiler {
+		embed.Title += " [spoiler]"
 	}
 
 	plainMessage = common.EscapeSpecialMentions(plainMessage)

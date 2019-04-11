@@ -30,19 +30,19 @@ func Run(which []string) {
 			found := false
 
 			for _, feed := range which {
-				if strings.EqualFold(feed, plugin.Name()) {
+				if strings.EqualFold(feed, plugin.PluginInfo().Name) {
 					found = true
 					break
 				}
 			}
 
 			if !found {
-				logrus.Info("Ignoring feed", plugin.Name())
+				logrus.Info("Ignoring feed", plugin.PluginInfo().Name)
 				continue
 			}
 		}
 
-		logrus.Info("Starting feed ", plugin.Name())
+		logrus.Info("Starting feed ", plugin.PluginInfo().Name)
 		go fp.StartFeed()
 		runningPlugins = append(runningPlugins, fp)
 	}
@@ -50,7 +50,7 @@ func Run(which []string) {
 
 func Stop(wg *sync.WaitGroup) {
 	for _, plugin := range runningPlugins {
-		logrus.Info("Stopping feed ", plugin.Name())
+		logrus.Info("Stopping feed ", plugin.PluginInfo().Name)
 		wg.Add(1)
 		go plugin.StopFeed(wg)
 	}

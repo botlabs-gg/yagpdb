@@ -9,7 +9,6 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryGeneral,
 	Name:        "Invite",
-	Aliases:     []string{"inv", "i"},
 	Description: "Responds with bot invite link",
 	RunInDM:     true,
 

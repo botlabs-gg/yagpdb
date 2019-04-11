@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
 	"math/rand"
 	"reflect"
@@ -19,6 +20,7 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
+
 	dict := make(map[interface{}]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
 		key := values[i]
@@ -28,7 +30,7 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 	return dict, nil
 }
 
-func StringKeyDictionary(values ...interface{}) (map[string]interface{}, error) {
+func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
@@ -43,7 +45,7 @@ func StringKeyDictionary(values ...interface{}) (map[string]interface{}, error) 
 		dict[s] = values[i+1]
 	}
 
-	return dict, nil
+	return SDict(dict), nil
 }
 
 func CreateSlice(values ...interface{}) ([]interface{}, error) {
@@ -56,12 +58,25 @@ func CreateSlice(values ...interface{}) ([]interface{}, error) {
 }
 
 func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
-	dict, err := StringKeyDictionary(values...)
-	if err != nil {
-		return nil, err
+	if len(values) < 1 {
+		return &discordgo.MessageEmbed{}, nil
 	}
 
-	encoded, err := json.Marshal(dict)
+	var m map[string]interface{}
+	switch t := values[0].(type) {
+	case SDict:
+		m = t
+	case map[string]interface{}:
+		m = t
+	default:
+		dict, err := StringKeyDictionary(values...)
+		if err != nil {
+			return nil, err
+		}
+		m = dict
+	}
+
+	encoded, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +146,130 @@ func in(l interface{}, v interface{}) bool {
 	return false
 }
 
-func add(x, y int) int {
-	return x + y
+// in returns whether v is in the set l. l may only be a slice of strings, or a string, v may only be a string
+// it differs from "in" because its case insensitive
+func inFold(l interface{}, v string) bool {
+	lv := reflect.ValueOf(l)
+	vv := reflect.ValueOf(v)
+
+	switch lv.Kind() {
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < lv.Len(); i++ {
+			lvv := lv.Index(i)
+			lvv, isNil := indirect(lvv)
+			if isNil {
+				continue
+			}
+			switch lvv.Kind() {
+			case reflect.String:
+				if vv.Type() == lvv.Type() && strings.EqualFold(vv.String(), lvv.String()) {
+					return true
+				}
+			}
+		}
+	case reflect.String:
+		if vv.Type() == lv.Type() && strings.Contains(strings.ToLower(lv.String()), strings.ToLower(vv.String())) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func add(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	switch args[0].(type) {
+	case float32, float64:
+		sumF := float64(0)
+		for _, v := range args {
+			sumF += ToFloat64(v)
+		}
+		return sumF
+	default:
+		sumI := 0
+		for _, v := range args {
+			sumI += tmplToInt(v)
+		}
+		return sumI
+	}
+}
+
+func tmplMult(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	switch args[0].(type) {
+	case float32, float64:
+		sumF := ToFloat64(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumF *= ToFloat64(v)
+		}
+		return sumF
+	default:
+		sumI := tmplToInt(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumI *= tmplToInt(v)
+		}
+		return sumI
+	}
+}
+
+func tmplDiv(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	switch args[0].(type) {
+	case float32, float64:
+		sumF := ToFloat64(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumF /= ToFloat64(v)
+		}
+		return sumF
+	default:
+		sumI := tmplToInt(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumI /= tmplToInt(v)
+		}
+		return sumI
+	}
+}
+
+func tmplFDiv(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	sumF := ToFloat64(args[0])
+	for i, v := range args {
+		if i == 0 {
+			continue
+		}
+
+		sumF /= ToFloat64(v)
+	}
+
+	return sumF
 }
 
 func roleIsAbove(a, b *discordgo.Role) bool {
@@ -182,11 +319,16 @@ func joinStrings(sep string, args ...interface{}) string {
 }
 
 func sequence(start, stop int) ([]int, error) {
-	out := make([]int, stop-start)
+
+	if stop < start {
+		return nil, errors.New("stop is less than start?")
+	}
 
 	if stop-start > 10000 {
-		return nil, errors.New("Sequence max length is 10000")
+		return nil, errors.New("Sequence max length is 1000")
 	}
+
+	out := make([]int, stop-start)
 
 	ri := 0
 	for i := start; i < stop; i++ {
@@ -227,19 +369,6 @@ func shuffle(seq interface{}) (interface{}, error) {
 	return shuffled.Interface(), nil
 }
 
-func str(arg interface{}) string {
-	switch v := arg.(type) {
-	case int64:
-		return strconv.FormatInt(v, 10)
-	case int:
-		return strconv.FormatInt(int64(v), 10)
-	case int32:
-		return strconv.FormatInt(int64(v), 10)
-	}
-
-	return ""
-}
-
 func tmplToInt(from interface{}) int {
 	switch t := from.(type) {
 	case int:
@@ -252,9 +381,17 @@ func tmplToInt(from interface{}) int {
 		return int(t)
 	case float64:
 		return int(t)
+	case uint:
+		return int(t)
+	case uint32:
+		return int(t)
+	case uint64:
+		return int(t)
 	case string:
 		parsed, _ := strconv.ParseInt(t, 10, 64)
 		return int(parsed)
+	case time.Duration:
+		return int(t)
 	default:
 		return 0
 	}
@@ -272,9 +409,17 @@ func ToInt64(from interface{}) int64 {
 		return int64(t)
 	case float64:
 		return int64(t)
+	case uint:
+		return int64(t)
+	case uint32:
+		return int64(t)
+	case uint64:
+		return int64(t)
 	case string:
 		parsed, _ := strconv.ParseInt(t, 10, 64)
 		return parsed
+	case time.Duration:
+		return int64(t)
 	default:
 		return 0
 	}
@@ -292,10 +437,72 @@ func ToString(from interface{}) string {
 		return strconv.FormatFloat(float64(t), 'E', -1, 32)
 	case float64:
 		return strconv.FormatFloat(t, 'E', -1, 64)
+	case uint:
+		return strconv.FormatUint(uint64(t), 10)
+	case uint32:
+		return strconv.FormatUint(uint64(t), 10)
+	case uint64:
+		return strconv.FormatUint(uint64(t), 10)
 	case string:
 		return t
 	default:
 		return ""
+	}
+}
+
+func ToFloat64(from interface{}) float64 {
+	switch t := from.(type) {
+	case int:
+		return float64(t)
+	case int32:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case float32:
+		return float64(t)
+	case float64:
+		return float64(t)
+	case uint:
+		return float64(t)
+	case uint32:
+		return float64(t)
+	case uint64:
+		return float64(t)
+	case string:
+		parsed, _ := strconv.ParseFloat(t, 64)
+		return parsed
+	case time.Duration:
+		return float64(t)
+	default:
+		return 0
+	}
+}
+
+func ToDuration(from interface{}) time.Duration {
+	switch t := from.(type) {
+	case int:
+		return time.Duration(int64(t))
+	case int32:
+		return time.Duration(int64(t))
+	case int64:
+		return time.Duration(int64(t))
+	case float32:
+		return time.Duration(int64(t))
+	case float64:
+		return time.Duration(int64(t))
+	case uint:
+		return time.Duration(int64(t))
+	case uint32:
+		return time.Duration(int64(t))
+	case uint64:
+		return time.Duration(int64(t))
+	case string:
+		parsed, _ := strconv.ParseInt(t, 10, 64)
+		return time.Duration(parsed)
+	case time.Duration:
+		return time.Duration(t)
+	default:
+		return 0
 	}
 }
 
@@ -323,13 +530,17 @@ type variadicFunc func([]reflect.Value) (reflect.Value, error)
 // sequence of arguments (i.e., fixed in the template definition) or a slice
 // (i.e., from a pipeline or context variable). In effect, a limited `flatten`
 // operation.
-func callVariadic(f variadicFunc, values ...reflect.Value) (reflect.Value, error) {
+func callVariadic(f variadicFunc, skipNil bool, values ...reflect.Value) (reflect.Value, error) {
 	var vs []reflect.Value
 	for _, val := range values {
 		v, _ := indirect(val)
 		switch {
 		case !v.IsValid():
-			continue
+			if !skipNil {
+				vs = append(vs, v)
+			} else {
+				continue
+			}
 		case v.Kind() == reflect.Array || v.Kind() == reflect.Slice:
 			for i := 0; i < v.Len(); i++ {
 				vs = append(vs, v.Index(i))
@@ -399,4 +610,34 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 	default:
 		return reflect.Value{}, errors.Errorf("can't index item of type %s", v.Type())
 	}
+}
+
+func tmplCurrentTime() time.Time {
+	return time.Now()
+}
+
+func tmplEscapeHere(in string) string {
+	return common.EscapeEveryoneHere(in, false, true)
+}
+func tmplEscapeEveryone(in string) string {
+	return common.EscapeEveryoneHere(in, true, false)
+}
+func tmplEscapeEveryoneHere(in string) string {
+	return common.EscapeEveryoneHere(in, true, true)
+}
+
+func tmplHumanizeDurationHours(in time.Duration) string {
+	return common.HumanizeDuration(common.DurationPrecisionHours, in)
+}
+
+func tmplHumanizeDurationMinutes(in time.Duration) string {
+	return common.HumanizeDuration(common.DurationPrecisionMinutes, in)
+}
+
+func tmplHumanizeDurationSeconds(in time.Duration) string {
+	return common.HumanizeDuration(common.DurationPrecisionSeconds, in)
+}
+
+func tmplHumanizeTimeSinceDays(in time.Time) string {
+	return common.HumanizeDuration(common.DurationPrecisionDays, time.Since(in))
 }

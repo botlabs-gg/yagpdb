@@ -103,9 +103,6 @@ var Catfacts = []string{
 	`A town called Talkeetna in Alaska had a cat as mayor for 15 years.`,
 	`The record for the world's longest cat was 48.5 inches.`,
 	`Cats do recognise their owners' voices, but often act like they don't care.`,
-
-	// new
-
 	`Unlike dogs, cats do not have a sweet tooth. Scientists believe this is due to a mutation in a key taste receptor.`,
 	`When a cat chases its prey, it keeps its head level. Dogs and humans bob their heads up and down.`,
 	`The technical term for a cat’s hairball is a “bezoar.”`,
@@ -213,9 +210,6 @@ var Catfacts = []string{
 	`The cat who holds the record for the longest non-fatal fall is Andy. He fell from the 16th floor of an apartment building (about 200 ft/.06 km) and survived.`,
 	`The richest cat is Blackie who was left £15 million by his owner, Ben Rea.`,
 	`The claws on the cat’s back paws aren’t as sharp as the claws on the front paws because the claws in the back don’t retract and, consequently, become worn.`,
-
-	// MORE FACTS
-
 	`Cats are the most popular pet in the United States: There are 88 million pet cats and 74 million dogs.`,
 	`There are cats who have survived falls from over 32 stories (320 meters) onto concrete.`,
 	`Cats have over 20 muscles that control their ears.`,
@@ -246,4 +240,18 @@ var Catfacts = []string{
 	`Cat gut, used in tennis rackets and strings for musical instruments does not come from cats, but from sheep.`,
 	`Cat urine glows under a black light.`,
 	`A cat rubs against people to mark them as their territory.`,
+	`Unlike humans, cats have kidneys that can filter out salt and use the water content to hydrate their bodies.`,
+	`The furry tufts on the inside of cats’ ears are called "ear furnishings".`,
+	`Cats can hear the ultrasonic noises that rodents (and dolphins) make to communicate.`,
+	`The ridged pattern on a cat’s nose is as unique as a human fingerprint.`,
+	`Cats can’t see directly below their noses. That’s why they miss food that’s right in front of them.`,
+	`Isaac Newton invented the cat flap after his own cat, Spithead, kept opening the door and spoiling his light experiments.`,
+	`Kittens start to dream when they’re about a week old.`,
+	`Kittens sleep a lot because their bodies release a growth hormone only when they’re asleep.`,
+	`Adult cats don’t release any particular key hormones during sleep. They just snooze all day because they *can*.`,
+	`Cats sleep so much that by the time a cat is 9 years old, it will only have been awake for three years of its life.`,
+	`Most female cats are right-pawed, and most male cats favour their left paws.`,
+	`Cats sweat through the pads of their paws.`,
+	`Cats have a third eyelid called a "haw". It’s generally only visible when they’re unwell.`,
+	`Cats can run 3 mph faster than Usain Bolt.`,
 }

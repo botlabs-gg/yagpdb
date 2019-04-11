@@ -19,7 +19,6 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf Guild
 
 	currentRetries := 0
 	for {
-
 		err := common.GORM.Where("guild_id = ?", guildID).First(conf).Error
 		if err == nil {
 			if currentRetries > 1 {

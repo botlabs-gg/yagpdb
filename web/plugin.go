@@ -2,6 +2,8 @@ package web
 
 import (
 	"github.com/jonas747/yagpdb/common"
+	"html/template"
+	"net/http"
 )
 
 // Plugin represents a web plugin
@@ -13,4 +15,23 @@ type Plugin interface {
 	// the cpmuxer requires a session and to be a admin of the server
 	// being managed, otherwise it will redirect to the homepage
 	InitWeb()
+}
+
+type RenderedServerHomeWidget struct {
+	Body    template.HTML
+	Title   template.HTML
+	Enabled bool
+}
+
+type PluginWithServerHomeWidget interface {
+	LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (TemplateData, error)
+}
+
+type PluginWithServerHomeWidgetMiddlewares interface {
+	PluginWithServerHomeWidget
+	ServerHomeWidgetApplyMiddlewares(inner http.Handler) http.Handler
+}
+
+type ServerHomeWidgetWithOrder interface {
+	ServerHomeWidgetOrder() int
 }

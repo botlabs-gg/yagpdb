@@ -5,7 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/stdcommands/util"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 )
 
 var Command = &commands.YAGCommand{
@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 		var unbanned bool
 		err := common.RedisPool.Do(radix.Cmd(&unbanned, "SREM", "banned_servers", data.Args[0].Str()))
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		if !unbanned {

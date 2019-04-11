@@ -1,1 +1,1 @@
-# Logs errors and bot leaves/joins to a chanel
+# Logs errors and bot leaves/joins to a channel

@@ -9,11 +9,11 @@ import (
 func AddSyslogHooks() {
 	logrus.Println("Adding syslog hook")
 
-	hook, err := lsyslog.NewSyslogHook("", "", syslog.LOG_INFO, "")
+	hook, err := lsyslog.NewSyslogHook("", "", syslog.LOG_INFO|syslog.LOG_DAEMON, flagNodeID)
 
 	if err == nil {
 		logrus.AddHook(hook)
 	} else {
-		logrus.Println("failed initializing syslog hook")
+		logrus.WithError(err).Println("failed initializing syslog hook")
 	}
 }

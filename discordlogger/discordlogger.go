@@ -30,14 +30,23 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 
 type Plugin struct{}
 
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Discord Logger",
+		SysName:  "discord_logger",
+		Category: common.PluginCategoryCore,
+	}
+}
+
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
 }
 
 func EventHandler(evt *eventsystem.EventData) {
-	bot.State.RLock()
-	count := len(bot.State.Guilds)
-	bot.State.RUnlock()
+	count, err := common.GetJoinedServerCount()
+	if err != nil {
+		logrus.WithError(err).Error("failed checking server count")
+	}
 
 	msg := ""
 	switch evt.Type {
@@ -53,8 +62,4 @@ func EventHandler(evt *eventsystem.EventData) {
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
 	common.BotSession.ChannelMessageSend(BotLeavesJoins, common.EscapeSpecialMentions(msg))
-}
-
-func (p *Plugin) Name() string {
-	return "DiscordLogger"
 }

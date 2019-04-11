@@ -1,67 +1,70 @@
 package customcommands
 
 import (
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/customcommands/models"
 	"testing"
 )
 
 func TestCheckMatch(t *testing.T) {
 	tests := []struct {
 		// Have
-		cmd CustomCommand
+		cmd *models.CustomCommand
 		msg string
 		// Want
 		match bool
 		args  []string
 	}{
 		{
-			CustomCommand{
-				TriggerType: CommandTriggerCommand,
-				Trigger:     "freezeit",
+			&models.CustomCommand{
+				TriggerType: int(CommandTriggerCommand),
+				TextTrigger: "freezeit",
 			},
 			"!!!freezeit then cut\\ it",
 			true,
 			[]string{"!!!freezeit", "then", "cut it"},
 		},
 		{
-			CustomCommand{
-				TriggerType: CommandTriggerCommand,
-				Trigger:     "freezeit",
+			&models.CustomCommand{
+				TriggerType: int(CommandTriggerCommand),
+				TextTrigger: "freezeit",
 			},
 			"freezeit then cut\\ it",
 			false,
 			nil,
 		},
 		{
-			CustomCommand{
-				TriggerType: CommandTriggerStartsWith,
-				Trigger:     "freezeit",
+			&models.CustomCommand{
+				TriggerType: int(CommandTriggerStartsWith),
+				TextTrigger: "freezeit",
 			},
 			"freezeit then cut\\ it",
 			true,
 			[]string{"freezeit", "then", "cut it"},
 		},
 		{
-			CustomCommand{
-				TriggerType: CommandTriggerContains,
-				Trigger:     "freezeit",
+			&models.CustomCommand{
+				TriggerType: int(CommandTriggerContains),
+				TextTrigger: "freezeit",
 			},
 			"I want you to freezeit then cut\\ it",
 			true,
 			[]string{"I want you to freezeit", "then", "cut it"},
 		},
 		{
-			CustomCommand{
-				TriggerType: CommandTriggerRegex,
-				Trigger:     "f.*?it",
+			&models.CustomCommand{
+				TriggerType: int(CommandTriggerRegex),
+				TextTrigger: "f.*?it",
 			},
 			"I want you to freezeit then cut\\ it",
 			true,
 			[]string{"I want you to freezeit", "then", "cut it"},
 		},
 		{
-			CustomCommand{
-				TriggerType: CommandTriggerRegex,
-				Trigger:     "freezeit then cut it",
+			&models.CustomCommand{
+				TriggerType: int(CommandTriggerRegex),
+				TextTrigger: "freezeit then cut it",
 			},
 			"freezeit then cut it",
 			true,
@@ -69,10 +72,12 @@ func TestCheckMatch(t *testing.T) {
 		},
 	}
 
+	common.BotUser = &discordgo.User{}
+
 	for i, test := range tests {
-		m, a := CheckMatch("!!!", &test.cmd, test.msg)
+		m, _, a := CheckMatch("!!!", test.cmd, test.msg)
 		if m != test.match {
-			t.Errorf("%d: got match '%b', want match '%b'", i, m, test.match)
+			t.Errorf("%d: got match '%t', want match '%t'", i, m, test.match)
 		}
 		if a == nil && test.args != nil {
 			t.Errorf("%d: got no args, wanted args", i)
@@ -81,9 +86,9 @@ func TestCheckMatch(t *testing.T) {
 		} else if len(a) != len(test.args) {
 			t.Errorf("%d: got args '%q', wanted args '%q'", i, a, test.args)
 		} else {
-			for i, v := range test.args {
-				if len(a) < i || a[i] != v {
-					t.Errorf("%d: got arg %d '%q', wanted arg '%q'", i, a[i], v)
+			for j, v := range test.args {
+				if len(a) < j || a[j] != v {
+					t.Errorf("%d: got arg %d %q, wanted arg %q", i, j, a[j], v)
 				}
 			}
 		}

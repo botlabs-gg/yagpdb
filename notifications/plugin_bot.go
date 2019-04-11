@@ -3,7 +3,7 @@ package notifications
 import (
 	"fmt"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -35,7 +35,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 
 	gs := bot.State.Guild(true, evt.GuildID)
 
-	ms := gs.MemberCopy(true, evt.User.ID)
+	ms := dstate.MSFromDGoMember(gs, evt.Member)
 
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled && !evt.User.Bot {
@@ -53,7 +53,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 			Type:  discordgo.ChannelTypeDM,
 		}
 
-		sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm")
+		sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm", false)
 	}
 
 	if config.JoinServerEnabled && len(config.JoinServerMsgs) > 0 {
@@ -63,7 +63,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 		}
 
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		sendTemplate(channel, chanMsg, ms, "join server msg")
+		sendTemplate(channel, chanMsg, ms, "join server msg", config.CensorInvites)
 	}
 }
 
@@ -89,11 +89,22 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	chanMsg := config.LeaveMsgs[rand.Intn(len(config.LeaveMsgs))]
 
-	sendTemplate(channel, chanMsg, ms, "leave")
+	sendTemplate(channel, chanMsg, ms, "leave", config.CensorInvites)
 }
 
-func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string) {
-	msg, err := templates.NewContext(cs.Guild, cs, ms).Execute(tmpl)
+func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool) {
+	ctx := templates.NewContext(cs.Guild, cs, ms)
+
+	ctx.Data["RealUsername"] = ms.Username
+	if censorInvites {
+		newUsername := common.ReplaceServerInvites(ms.Username, ms.Guild.ID, "[removed-server-invite]")
+		if newUsername != ms.Username {
+			ms.Username = newUsername + fmt.Sprintf("(user ID: %d)", ms.ID)
+			ctx.Data["UsernameHasInvite"] = true
+		}
+	}
+
+	msg, err := ctx.Execute(tmpl)
 
 	if err != nil {
 		log.WithError(err).WithField("guild", cs.Guild.ID).Warnf("Failed parsing/executing %s template", name)
@@ -110,23 +121,25 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 		if err != nil {
 			log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
 		}
-	} else {
+	} else if !ctx.DelResponse {
 		bot.QueueMergedMessage(cs.ID, msg)
+	} else {
+		m, err := common.BotSession.ChannelMessageSend(cs.ID, msg)
+		if err == nil && ctx.DelResponse {
+			templates.MaybeScheduledDeleteMessage(cs.Guild.ID, cs.ID, m.ID, ctx.DelResponseDelay)
+		}
 	}
-
 }
 
 func HandleChannelUpdate(evt *eventsystem.EventData) {
 	cu := evt.ChannelUpdate()
 
-	curChannel := bot.State.Channel(true, cu.ID)
+	curChannel := bot.State.ChannelCopy(true, cu.ID)
 	if curChannel == nil {
 		return
 	}
 
-	curChannel.Owner.RLock()
 	oldTopic := curChannel.Topic
-	curChannel.Owner.RUnlock()
 
 	if oldTopic == cu.Topic {
 		return
@@ -145,8 +158,10 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 		}
 	}
 
-	_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic)))
-	if err != nil {
-		log.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
-	}
+	go func() {
+		_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic)))
+		if err != nil {
+			log.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
+		}
+	}()
 }

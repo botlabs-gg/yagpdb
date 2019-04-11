@@ -148,7 +148,7 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 
 		if role.Color != 0 {
 			hexColor := strconv.FormatInt(int64(role.Color), 16)
-			output += " style=\"color: #" + hexColor + "\""
+			output += " data-color=\"#" + hexColor + "\""
 		}
 
 		optName := template.HTMLEscapeString(role.Name)
@@ -233,7 +233,7 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 					continue
 				}
 
-				builder.WriteString("<optgroup label=" + template.HTMLEscapeString(cat.Name) + ">")
+				builder.WriteString("<optgroup label=\"" + template.HTMLEscapeString(cat.Name) + "\">")
 				for _, c := range channels {
 					if c.Type != channelType || c.ParentID != cat.ID {
 						continue

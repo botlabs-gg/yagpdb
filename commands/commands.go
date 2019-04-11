@@ -1,13 +1,13 @@
 package commands
 
-//go:generate sqlboiler --no-hooks -w "commands_channels_overrides,commands_command_overrides" postgres
+//go:generate sqlboiler --no-hooks psql
 //REMOVED: generate easyjson  commands.go
 
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,9 +16,23 @@ type CtxKey int
 const (
 	CtxKeyCmdSettings CtxKey = iota
 	CtxKeyChannelOverride
+	CtxKeyMS
 )
 
+type MessageFilterFunc func(msg *discordgo.Message) bool
+
+// These functions are called on every message, and should return true if the message should be checked for commands, false otherwise
+var MessageFilterFuncs []MessageFilterFunc
+
 type Plugin struct{}
+
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Commands",
+		SysName:  "commands",
+		Category: common.PluginCategoryCore,
+	}
+}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
@@ -57,16 +71,13 @@ func InitCommands() {
 	// We have our own middleware before the argument parsing, this is to check for things such as wether the command is enabled at all
 	CommandSystem.Root.AddMidlewares(YAGCommandMiddleware, dcmd.ArgParserMW)
 	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
+	CommandSystem.Root.AddCommand(cmdPrefix, cmdPrefix.GetTrigger())
 
 	for _, v := range common.Plugins {
 		if adder, ok := v.(CommandProvider); ok {
 			adder.AddCommands()
 		}
 	}
-}
-
-func (p *Plugin) Name() string {
-	return "Commands"
 }
 
 func GetCommandPrefix(guild int64) (string, error) {

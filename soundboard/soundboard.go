@@ -1,79 +1,46 @@
 package soundboard
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/premium"
+	"github.com/jonas747/yagpdb/soundboard/models"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/net/context"
 	"os"
 )
 
 type Plugin struct{}
 
-// GetGuildConfig returns a GuildConfig item from db
-func (p *Plugin) GetGuildConfig(ctx context.Context, guildID int64, dest configstore.GuildConfig) (err error) {
-	cast := dest.(*SoundboardConfig)
-
-	err = common.GORM.Where(guildID).First(cast).Error
-	if err != nil {
-		// Return default config if not found
-		if err == gorm.ErrRecordNotFound {
-			*cast = SoundboardConfig{
-				GuildConfigModel: configstore.GuildConfigModel{
-					GuildID: guildID,
-				},
-			}
-		} else {
-			return err
-		}
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Soundboard",
+		SysName:  "soundboard",
+		Category: common.PluginCategoryMisc,
 	}
-
-	err = common.GORM.Where("guild_id = ?", guildID).Find(&cast.Sounds).Error
-	return err
-}
-
-// SetGuildConfig saves the GuildConfig struct
-func (p *Plugin) SetGuildConfig(ctx context.Context, conf configstore.GuildConfig) error {
-	return common.GORM.Save(conf).Error
-}
-
-// SetIfLatest saves it only if the passedLatest time is the latest version
-func (p *Plugin) SetIfLatest(ctx context.Context, conf configstore.GuildConfig) (updated bool, err error) {
-	err = p.SetGuildConfig(ctx, conf)
-	return true, err
-}
-
-func (p *Plugin) Name() string {
-	return "Soundboard"
 }
 
 func RegisterPlugin() {
+	_, err := common.PQ.Exec(DBSchema)
+	if err != nil {
+		logrus.WithError(err).Error("failed initializing soundbaord database schema, not running...")
+		return
+	}
+
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
-	configstore.RegisterConfig(p, &SoundboardConfig{})
-	common.GORM.AutoMigrate(SoundboardConfig{}, SoundboardSound{})
-
 	// Setup directories
-	err := os.MkdirAll("soundboard/queue", 0755)
+	err = os.MkdirAll("soundboard/queue", 0755)
 	if err != nil {
 		if !os.IsExist(err) {
 			panic(err)
 		}
 	}
 	os.MkdirAll("soundboard/ready", 0755)
-}
-
-type SoundboardConfig struct {
-	configstore.GuildConfigModel
-
-	Sounds []*SoundboardSound `gorm:"ForeignKey:GuildID;AssociationForeignKey:GuildID"`
-}
-
-func (sc *SoundboardConfig) GetName() string {
-	return "soundboard"
 }
 
 type TranscodingStatus int
@@ -105,37 +72,44 @@ func (s TranscodingStatus) String() string {
 	return "Unknown"
 }
 
-type SoundboardSound struct {
-	common.SmallModel
-
-	GuildID      int64  `gorm:"index"`
-	RequiredRole string `valid:"role,true"`
-	Name         string `valid:",1,100"`
-	Status       TranscodingStatus
-}
-
-func (s *SoundboardSound) CanPlay(roles []int64) bool {
-	if s.RequiredRole == "" {
-		return true
+func CanPlaySound(s *models.SoundboardSound, roles []int64) bool {
+	if len(s.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(roles, s.RequiredRoles) {
+		return false
 	}
 
-	for _, v := range roles {
-		if discordgo.StrID(v) == s.RequiredRole {
-			return true
-		}
+	if common.ContainsInt64SliceOneOf(roles, s.BlacklistedRoles) {
+		return false
 	}
 
-	return false
+	return true
 }
 
-func KeySoundLock(id uint) string {
+func KeySoundLock(id int) string {
 	return fmt.Sprintf("soundboard_soundlock:%d", id)
 }
 
-func SoundFilePath(id uint, status TranscodingStatus) string {
+func SoundFilePath(id int, status TranscodingStatus) string {
 	if status == TranscodingStatusReady {
 		return fmt.Sprintf("soundboard/ready/%d.dca", id)
 	}
 
 	return fmt.Sprintf("soundboard/queue/%d", id)
+}
+
+const (
+	MaxGuildSounds        = 50
+	MaxGuildSoundsPremium = 250
+)
+
+func MaxSoundsForContext(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return MaxGuildSoundsPremium
+	}
+
+	return MaxGuildSounds
+}
+
+func GetSoundboardSounds(guildID int64, ctx context.Context) ([]*models.SoundboardSound, error) {
+	result, err := models.SoundboardSounds(qm.Where("guild_id=?", guildID)).AllG(ctx)
+	return result, err
 }

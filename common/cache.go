@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"strconv"
 )
 

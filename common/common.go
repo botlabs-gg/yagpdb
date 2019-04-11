@@ -1,5 +1,7 @@
 package common
 
+//go:generate sqlboiler --no-hooks psql
+
 import (
 	"database/sql"
 	"fmt"
@@ -7,23 +9,23 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
 	"os"
+	"strconv"
 )
 
 const (
 	VERSIONMAJOR = 1
-	VERSIONMINOR = 4
+	VERSIONMINOR = 17
 	VERSIONPATCH = 2
-	Testing      = false // Disables stuff like command cooldowns
 )
 
 var (
 	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER + " Xenophobic"
+	VERSION       = VERSIONNUMBER
 
 	GORM *gorm.DB
 	PQ   *sql.DB
@@ -37,11 +39,17 @@ var (
 	RedisPoolSize = 25
 
 	Statsd *statsd.Client
+
+	Testing = os.Getenv("YAGPDB_TESTING") != ""
+
+	CurrentRunCounter int64
+
+	NodeID string
+	_      interface{} = ensure64bit
 )
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
-
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
 
@@ -55,11 +63,10 @@ func Init() error {
 	}
 	Conf = config
 
-	BotSession, err = discordgo.New(config.BotToken)
+	err = setupGlobalDGoSession()
 	if err != nil {
 		return err
 	}
-	BotSession.MaxRestRetries = 3
 
 	ConnectDatadog()
 
@@ -77,8 +84,39 @@ func Init() error {
 	if err != nil {
 		panic(err)
 	}
+	BotSession.State.User = &discordgo.SelfUser{
+		User: BotUser,
+	}
+
+	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
+	if err != nil {
+		panic(err)
+	}
+
+	if !InitSchema(CoreServerConfDBSchema, "core configs") {
+		logrus.Fatal("error initializing schema")
+	}
 
 	return err
+}
+
+func setupGlobalDGoSession() (err error) {
+	BotSession, err = discordgo.New(Conf.BotToken)
+	if err != nil {
+		return err
+	}
+
+	maxCCReqs, _ := strconv.Atoi(os.Getenv("YAGPDB_MAX_CCR"))
+	if maxCCReqs < 1 {
+		maxCCReqs = 25
+	}
+
+	logrus.Info("max ccr set to: ", maxCCReqs)
+
+	BotSession.MaxRestRetries = 5
+	BotSession.Ratelimiter.MaxConcurrentRequests = maxCCReqs
+
+	return nil
 }
 
 func ConnectDatadog() {
@@ -91,6 +129,10 @@ func ConnectDatadog() {
 	if err != nil {
 		logrus.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
 		return
+	}
+
+	if NodeID != "" {
+		client.Tags = append(client.Tags, "node:"+NodeID)
 	}
 
 	Statsd = client
@@ -112,15 +154,6 @@ func InitTest() {
 }
 
 func connectRedis(addr string) (err error) {
-	// RedisPool, err = pool.NewCustom("tcp", addr, 25, redis.)
-	// if os.Getenv("YAGPDB_LEGACY_REDIS_POOL") != "" {
-	// 	logrus.Info("Using legacy redis pool")
-	// 	RedisPool, err = pool.NewCustom("tcp", addr, RedisPoolSize, RedisDialFunc)
-	// } else {
-	// 	logrus.Info("Using new redis pool, set YAGPDB_LEGACY_REDIS_POOL=yes if it's broken")
-	// 	RedisPool, err = fixedpool.NewCustom("tcp", addr, RedisPoolSize, redis.Dial)
-	// }
-
 	RedisPool, err = radix.NewPool("tcp", addr, RedisPoolSize, radix.PoolOnEmptyWait())
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed intitializing redis pool")
@@ -141,6 +174,17 @@ func connectDB(host, user, pass, dbName string) error {
 	if err == nil {
 		PQ.SetMaxOpenConns(5)
 	}
+	GORM.SetLogger(&GORMLogger{})
 
 	return err
+}
+
+func InitSchema(schema string, name string) bool {
+	_, err := PQ.Exec(schema)
+	if err != nil {
+		logrus.WithError(err).Error("failed initializing postgres db schema for ", name)
+		return false
+	}
+
+	return true
 }

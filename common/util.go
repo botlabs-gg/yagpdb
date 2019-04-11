@@ -5,8 +5,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/jonas747/dstate"
+	"github.com/lib/pq"
+	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
@@ -21,22 +22,24 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-type WrappedGuild struct {
+var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
+
+type GuildWithConnected struct {
 	*discordgo.UserGuild
 	Connected bool
 }
 
-// GetWrapped Returns a wrapped guild with connected set
-func GetWrapped(in []*discordgo.UserGuild) ([]*WrappedGuild, error) {
+// GetGuildsWithConnected Returns a wrapped guild with connected set
+func GetGuildsWithConnected(in []*discordgo.UserGuild) ([]*GuildWithConnected, error) {
 	if len(in) < 1 {
-		return []*WrappedGuild{}, nil
+		return []*GuildWithConnected{}, nil
 	}
 
-	out := make([]*WrappedGuild, len(in))
+	out := make([]*GuildWithConnected, len(in))
 
 	actions := make([]radix.CmdAction, len(in))
 	for i, g := range in {
-		out[i] = &WrappedGuild{
+		out[i] = &GuildWithConnected{
 			UserGuild: g,
 			Connected: false,
 		}
@@ -342,6 +345,7 @@ var StringPerms = map[int]string{
 	discordgo.PermissionManageRoles:         "Manage Roles",
 	discordgo.PermissionManageChannels:      "Manage Channels",
 	discordgo.PermissionManageServer:        "Manage Server",
+	discordgo.PermissionManageWebhooks:      "Manage Webhooks",
 }
 
 func ErrWithCaller(err error) error {
@@ -365,6 +369,19 @@ var (
 // EscapeSpecialMentions Escapes an everyone mention, adding a zero width space between the '@' and rest
 func EscapeSpecialMentions(in string) string {
 	return EscapeSpecialMentionsConditional(in, false, false, nil)
+}
+
+// EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
+func EscapeEveryoneHere(s string, escapeEveryone, escapeHere bool) string {
+	if escapeEveryone {
+		s = everyoneReplacer.Replace(s)
+	}
+
+	if escapeHere {
+		s = hereReplacer.Replace(s)
+	}
+
+	return s
 }
 
 // EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
@@ -422,36 +439,6 @@ func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
 	}
 
 	return err
-}
-
-func ContainsStringSlice(strs []string, search string) bool {
-	for _, v := range strs {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsStringSliceFold(strs []string, search string) bool {
-	for _, v := range strs {
-		if strings.EqualFold(v, search) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func ContainsInt64Slice(slice []int64, search int64) bool {
-	for _, v := range slice {
-		if v == search {
-			return true
-		}
-	}
-
-	return false
 }
 
 // ValidateSQLSchema does some simple security checks on a sql schema file
@@ -515,4 +502,144 @@ type LoggedExecutedCommand struct {
 
 func (l LoggedExecutedCommand) TableName() string {
 	return "executed_commands"
+}
+
+func HumanizePermissions(perms int64) (res []string) {
+	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
+		res = append(res, "Administrator")
+	}
+	if perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
+		res = append(res, "ManageServer")
+	}
+
+	if perms&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
+		res = append(res, "ReadMessages")
+	}
+	if perms&discordgo.PermissionSendMessages == discordgo.PermissionSendMessages {
+		res = append(res, "SendMessages")
+	}
+	if perms&discordgo.PermissionSendTTSMessages == discordgo.PermissionSendTTSMessages {
+		res = append(res, "SendTTSMessages")
+	}
+	if perms&discordgo.PermissionManageMessages == discordgo.PermissionManageMessages {
+		res = append(res, "ManageMessages")
+	}
+	if perms&discordgo.PermissionEmbedLinks == discordgo.PermissionEmbedLinks {
+		res = append(res, "EmbedLinks")
+	}
+	if perms&discordgo.PermissionAttachFiles == discordgo.PermissionAttachFiles {
+		res = append(res, "AttachFiles")
+	}
+	if perms&discordgo.PermissionReadMessageHistory == discordgo.PermissionReadMessageHistory {
+		res = append(res, "ReadMessageHistory")
+	}
+	if perms&discordgo.PermissionMentionEveryone == discordgo.PermissionMentionEveryone {
+		res = append(res, "MentionEveryone")
+	}
+	if perms&discordgo.PermissionUseExternalEmojis == discordgo.PermissionUseExternalEmojis {
+		res = append(res, "UseExternalEmojis")
+	}
+
+	// Constants for the different bit offsets of voice permissions
+	if perms&discordgo.PermissionVoiceConnect == discordgo.PermissionVoiceConnect {
+		res = append(res, "VoiceConnect")
+	}
+	if perms&discordgo.PermissionVoiceSpeak == discordgo.PermissionVoiceSpeak {
+		res = append(res, "VoiceSpeak")
+	}
+	if perms&discordgo.PermissionVoiceMuteMembers == discordgo.PermissionVoiceMuteMembers {
+		res = append(res, "VoiceMuteMembers")
+	}
+	if perms&discordgo.PermissionVoiceDeafenMembers == discordgo.PermissionVoiceDeafenMembers {
+		res = append(res, "VoiceDeafenMembers")
+	}
+	if perms&discordgo.PermissionVoiceMoveMembers == discordgo.PermissionVoiceMoveMembers {
+		res = append(res, "VoiceMoveMembers")
+	}
+	if perms&discordgo.PermissionVoiceUseVAD == discordgo.PermissionVoiceUseVAD {
+		res = append(res, "VoiceUseVAD")
+	}
+
+	// Constants for general management.
+	if perms&discordgo.PermissionChangeNickname == discordgo.PermissionChangeNickname {
+		res = append(res, "ChangeNickname")
+	}
+	if perms&discordgo.PermissionManageNicknames == discordgo.PermissionManageNicknames {
+		res = append(res, "ManageNicknames")
+	}
+	if perms&discordgo.PermissionManageRoles == discordgo.PermissionManageRoles {
+		res = append(res, "ManageRoles")
+	}
+	if perms&discordgo.PermissionManageWebhooks == discordgo.PermissionManageWebhooks {
+		res = append(res, "ManageWebhooks")
+	}
+	if perms&discordgo.PermissionManageEmojis == discordgo.PermissionManageEmojis {
+		res = append(res, "ManageEmojis")
+	}
+
+	if perms&discordgo.PermissionCreateInstantInvite == discordgo.PermissionCreateInstantInvite {
+		res = append(res, "CreateInstantInvite")
+	}
+	if perms&discordgo.PermissionKickMembers == discordgo.PermissionKickMembers {
+		res = append(res, "KickMembers")
+	}
+	if perms&discordgo.PermissionBanMembers == discordgo.PermissionBanMembers {
+		res = append(res, "BanMembers")
+	}
+	if perms&discordgo.PermissionManageChannels == discordgo.PermissionManageChannels {
+		res = append(res, "ManageChannels")
+	}
+	if perms&discordgo.PermissionAddReactions == discordgo.PermissionAddReactions {
+		res = append(res, "AddReactions")
+	}
+	if perms&discordgo.PermissionViewAuditLogs == discordgo.PermissionViewAuditLogs {
+		res = append(res, "ViewAuditLogs")
+	}
+
+	return
+}
+
+func LogIgnoreError(err error, msg string, data log.Fields) {
+	if err == nil {
+		return
+	}
+
+	l := log.WithError(err)
+	if data != nil {
+		l = l.WithFields(data)
+	}
+
+	l.Error(msg)
+}
+
+func ErrPQIsUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if cast, ok := errors.Cause(err).(*pq.Error); ok {
+		if cast.Code == "23505" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func GetJoinedServerCount() (int64, error) {
+	var count int64
+	err := RedisPool.Do(radix.Cmd(&count, "SCARD", "connected_guilds"))
+	return count, err
+}
+
+func BotIsOnGuild(guildID int64) (bool, error) {
+	isOnGuild := false
+	err := RedisPool.Do(radix.FlatCmd(&isOnGuild, "SISMEMBER", "connected_guilds", guildID))
+	return isOnGuild, err
+}
+
+func GetActiveNodes() ([]string, error) {
+	var nodes []string
+	err := RedisPool.Do(radix.FlatCmd(&nodes, "ZRANGEBYSCORE", "dshardorchestrator_nodes_z", time.Now().Add(-time.Minute).Unix(), "+inf"))
+	return nodes, err
 }

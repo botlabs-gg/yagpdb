@@ -1,27 +1,24 @@
 package reputation
 
-//go:generate sqlboiler --no-hooks -w "reputation_configs,reputation_users,reputation_log" postgres
+//go:generate sqlboiler --no-hooks psql
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
+	"time"
 )
-
-func KeyCooldown(guildID, userID int64) string {
-	return "reputation_cooldown:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
-}
-
-type Plugin struct{}
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
@@ -34,8 +31,14 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 }
 
-func (p *Plugin) Name() string {
-	return "Reputation"
+type Plugin struct{}
+
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Reputation",
+		SysName:  "reputation",
+		Category: common.PluginCategoryMisc,
+	}
 }
 
 func DefaultConfig(guildID int64) *models.ReputationConfig {
@@ -46,6 +49,10 @@ func DefaultConfig(guildID int64) *models.ReputationConfig {
 		Cooldown:      120,
 		MaxGiveAmount: 1,
 	}
+}
+
+func KeyCooldown(guildID, userID int64) string {
+	return "reputation_cooldown:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
 }
 
 var (
@@ -124,17 +131,17 @@ func (b UserError) Error() string {
 }
 
 var (
-	ErrMissingRequiredGiveRole    = UserError("Missing the required role to give points")
-	ErrMissingRequiredReceiveRole = UserError("Missing the required role to receive points")
+	ErrMissingRequiredGiveRole    = UserError("You don't have any of the required roles to give points")
+	ErrMissingRequiredReceiveRole = UserError("Target don't have any of the required roles to receive points")
 
-	ErrBlacklistedGive    = UserError("Blaclisted from giving points")
+	ErrBlacklistedGive    = UserError("Blacklisted from giving points")
 	ErrBlacklistedReceive = UserError("Blacklisted from receiving points")
 	ErrCooldown           = UserError("You're still on cooldown")
 )
 
-func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *dstate.MemberState, amount int64) (err error) {
+func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64, sender, receiver *dstate.MemberState, amount int64) (err error) {
 	if conf == nil {
-		conf, err = GetConfig(guildID)
+		conf, err = GetConfig(ctx, guildID)
 		if err != nil {
 			return
 		}
@@ -144,12 +151,14 @@ func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *d
 		return
 	}
 
-	if amount > conf.MaxGiveAmount {
-		err = UserError(fmt.Sprintf("Too big amount (max %d)", conf.MaxGiveAmount))
+	if amount > 0 && amount > conf.MaxGiveAmount {
+		err = UserError(fmt.Sprintf("Can't give that much (max %d)", conf.MaxGiveAmount))
 		return
-	} else if amount < -conf.MaxGiveAmount {
-		err = UserError(fmt.Sprintf("Too small amount (min -%d)", conf.MaxGiveAmount))
+	} else if amount < 0 && -amount > conf.MaxRemoveAmount {
+		err = UserError(fmt.Sprintf("Can't remove that much (max %d)", conf.MaxRemoveAmount))
 		return
+	} else if amount == 0 {
+		return nil
 	}
 
 	ok, err := CheckSetCooldown(conf, sender.ID)
@@ -160,23 +169,30 @@ func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *d
 		return
 	}
 
-	err = insertUpdateUserRep(guildID, receiver.ID, amount)
+	err = insertUpdateUserRep(ctx, guildID, receiver.ID, amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
 		ClearCooldown(guildID, sender.ID)
 		return
 	}
 
+	receiver.Guild.RLock()
+	defer receiver.Guild.RUnlock()
+	receiverUsername := receiver.Username + "#" + receiver.StrDiscriminator()
+	senderUsername := sender.Username + "#" + sender.StrDiscriminator()
+
 	// Add the log element
 	entry := &models.ReputationLog{
-		GuildID:        guildID,
-		SenderID:       sender.ID,
-		ReceiverID:     receiver.ID,
-		SetFixedAmount: false,
-		Amount:         amount,
+		GuildID:          guildID,
+		SenderID:         sender.ID,
+		SenderUsername:   senderUsername,
+		ReceiverID:       receiver.ID,
+		ReceiverUsername: receiverUsername,
+		SetFixedAmount:   false,
+		Amount:           amount,
 	}
 
-	err = entry.InsertG()
+	err = entry.InsertG(ctx, boil.Infer())
 	if err != nil {
 		err = errors.WithMessage(err, "ModifyRep log entry.Insert")
 	}
@@ -184,53 +200,39 @@ func ModifyRep(conf *models.ReputationConfig, guildID int64, sender, receiver *d
 	return
 }
 
-func insertUpdateUserRep(guildID, userID int64, amount int64) (err error) {
+func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int64) (err error) {
 
-	user := &models.ReputationUser{
-		GuildID: guildID,
-		UserID:  userID,
-		Points:  amount,
-	}
-
-	// First try inserting a new user
-	err = user.InsertG()
-	if err == nil {
-		logrus.Debug("Inserted")
-		return nil
-	}
-
-	// Update
-	r, err := common.PQ.Exec("UPDATE reputation_users SET points = points + $1 WHERE user_id = $2 AND guild_id = $3", amount, userID, guildID)
-	rows, _ := r.RowsAffected()
-	logrus.Println("Rows: ", rows, userID, guildID)
+	// upsert query which is too advanced for orms
+	const query = `
+INSERT INTO reputation_users (created_at, guild_id, user_id, points)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (guild_id, user_id)
+DO UPDATE SET points = reputation_users.points + $4;
+`
+	_, err = common.PQ.ExecContext(ctx, query, time.Now(), guildID, userID, amount)
 	return
 }
 
 // Returns a user error if the sender can not modify the rep of receiver
 // Admins are always able to modify the rep of everyone
 func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.MemberState) error {
-	parsedAdminRole, _ := strconv.ParseInt(conf.AdminRole.String, 10, 64)
-	if conf.AdminRole.String != "" && common.ContainsInt64Slice(sender.Roles, parsedAdminRole) {
+	if common.ContainsInt64SliceOneOf(sender.Roles, conf.AdminRoles) {
 		return nil
 	}
 
-	parsedRequiredGiveRole, _ := strconv.ParseInt(conf.RequiredGiveRole.String, 10, 64)
-	if conf.RequiredGiveRole.String != "" && !common.ContainsInt64Slice(sender.Roles, parsedRequiredGiveRole) {
+	if len(conf.RequiredGiveRoles) > 0 && !common.ContainsInt64SliceOneOf(sender.Roles, conf.RequiredGiveRoles) {
 		return ErrMissingRequiredGiveRole
 	}
 
-	parsedRequiredReceiveRole, _ := strconv.ParseInt(conf.RequiredReceiveRole.String, 10, 64)
-	if conf.RequiredReceiveRole.String != "" && !common.ContainsInt64Slice(receiver.Roles, parsedRequiredReceiveRole) {
+	if len(conf.RequiredReceiveRoles) > 0 && !common.ContainsInt64SliceOneOf(receiver.Roles, conf.RequiredReceiveRoles) {
 		return ErrMissingRequiredReceiveRole
 	}
 
-	parsedBlacklistedGiveRole, _ := strconv.ParseInt(conf.BlacklistedGiveRole.String, 10, 64)
-	if conf.BlacklistedGiveRole.String != "" && common.ContainsInt64Slice(sender.Roles, parsedBlacklistedGiveRole) {
+	if common.ContainsInt64SliceOneOf(sender.Roles, conf.BlacklistedGiveRoles) {
 		return ErrBlacklistedGive
 	}
 
-	parsedBlacklistedReceiveRole, _ := strconv.ParseInt(conf.BlacklistedReceiveRole.String, 10, 64)
-	if conf.BlacklistedReceiveRole.String != "" && common.ContainsInt64Slice(sender.Roles, parsedBlacklistedReceiveRole) {
+	if common.ContainsInt64SliceOneOf(receiver.Roles, conf.BlacklistedReceiveRoles) {
 		return ErrBlacklistedReceive
 	}
 
@@ -245,24 +247,21 @@ func IsAdmin(gs *dstate.GuildState, member *dstate.MemberState, config *models.R
 		return true
 	}
 
-	if config.AdminRole.String != "" {
-		parsedAdminRole, _ := strconv.ParseInt(config.AdminRole.String, 10, 64)
-		if common.ContainsInt64Slice(member.Roles, parsedAdminRole) {
-			return true
-		}
+	if common.ContainsInt64SliceOneOf(member.Roles, config.AdminRoles) {
+		return true
 	}
 
 	return false
 }
 
-func SetRep(gid int64, senderID, userID int64, points int64) error {
+func SetRep(ctx context.Context, gid int64, senderID, userID int64, points int64) error {
 	user := &models.ReputationUser{
 		GuildID: gid,
 		UserID:  userID,
 		Points:  points,
 	}
 
-	err := user.UpsertG(true, []string{"guild_id", "user_id"}, []string{"points"})
+	err := user.UpsertG(ctx, true, []string{"guild_id", "user_id"}, boil.Whitelist("points"), boil.Infer())
 	if err != nil {
 		return err
 	}
@@ -276,8 +275,13 @@ func SetRep(gid int64, senderID, userID int64, points int64) error {
 		Amount:         points,
 	}
 
-	err = entry.InsertG()
+	err = entry.InsertG(ctx, boil.Infer())
 	return errors.WithMessage(err, "SetRep log entry.Insert")
+}
+
+func DelRep(ctx context.Context, gid int64, userID int64) error {
+	_, err := models.ReputationUsers(qm.Where("guild_id = ? AND user_id = ?", gid, userID)).DeleteAll(ctx, common.PQ)
+	return err
 }
 
 // CheckSetCooldown checks and updates the reputation cooldown of a user,
@@ -300,8 +304,8 @@ func ClearCooldown(guildID, senderID int64) error {
 	return common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyCooldown(guildID, senderID)))
 }
 
-func GetConfig(guildID int64) (*models.ReputationConfig, error) {
-	conf, err := models.FindReputationConfigG(guildID)
+func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, error) {
+	conf, err := models.FindReputationConfigG(ctx, guildID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return DefaultConfig(guildID), nil
@@ -365,58 +369,3 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 
 	return resultEntries, nil
 }
-
-// func DetailedLeaderboardEntries(ranks []*RankEntry) ([]*LeaderboardEntry, error) {
-// 	if len(ranks) < 1 {
-// 		return []*LeaderboardEntry{}, nil
-// 	}
-
-// 	query := "SELECT id,username,bot,avatar FROM d_users WHERE id in ("
-// 	args := make([]interface{}, len(ranks))
-
-// 	for i, v := range ranks {
-// 		if i != 0 {
-// 			query += ","
-// 		}
-
-// 		args[i] = v.UserID
-// 		query += "$" + strconv.Itoa(i+1)
-// 	}
-// 	query += ")"
-
-// 	result := make([]*LeaderboardEntry, len(ranks))
-// 	for i, v := range ranks {
-// 		result[i] = &LeaderboardEntry{
-// 			RankEntry: v,
-// 		}
-// 	}
-
-// 	rows, err := common.DSQLStateDB.Query(query, args...)
-// 	if err != nil {
-// 		return nil, errors.WithMessage(err, "ToLeaderboardEntries")
-// 	}
-// 	defer rows.Close()
-// 	for rows.Next() {
-// 		var id int64
-// 		var entry LeaderboardEntry
-// 		err = rows.Scan(&id, &entry.Username, &entry.Bot, &entry.Avatar)
-// 		if err != nil {
-// 			logrus.WithError(err).Error("Failed scanning row")
-// 			continue
-// 		}
-
-// 		for i, v := range result {
-// 			if v.UserID == id {
-// 				entry.RankEntry = v.RankEntry
-// 				result[i] = &entry
-// 				if entry.Avatar != "" {
-// 					result[i].Avatar = discordgo.EndpointUserAvatar(strconv.FormatInt(id, 10), entry.Avatar)
-// 				} else {
-// 					result[i].Avatar = "/static/dist/img/unknown-user.png"
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return result, nil
-// }

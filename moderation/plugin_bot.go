@@ -1,18 +1,22 @@
 package moderation
 
 import (
-	"errors"
+	"github.com/jonas747/dshardorchestrator"
+	"github.com/pkg/errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,18 +34,22 @@ const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.Perm
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
-var _ bot.ShardMigrationHandler = (*Plugin)(nil)
+var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(ModerationCommands...)
 }
 
 func (p *Plugin) BotInit() {
-	scheduledevents.RegisterEventHandler("unmute", handleUnMute)
-	scheduledevents.RegisterEventHandler("mod_unban", handleUnban)
+	// scheduledevents.RegisterEventHandler("unmute", handleUnMuteLegacy)
+	// scheduledevents.RegisterEventHandler("mod_unban", handleUnbanLegacy)
+	scheduledevents2.RegisterHandler("moderation_unmute", ScheduledUnmuteData{}, handleScheduledUnmute)
+	scheduledevents2.RegisterHandler("moderation_unban", ScheduledUnbanData{}, handleScheduledUnban)
+	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
+	scheduledevents2.RegisterLegacyMigrater("mod_unban", handleMigrateScheduledUnban)
 
-	eventsystem.AddHandler(HandleGuildBanAddRemove, eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandler(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandler(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
@@ -51,12 +59,19 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 }
 
-func (p *Plugin) GuildMigrated(gs *dstate.GuildState, toThisSlave bool) {
-	if !toThisSlave {
-		return
-	}
+type ScheduledUnmuteData struct {
+	UserID int64 `json:"user_id"`
+}
 
-	go RefreshMuteOverrides(gs.ID)
+type ScheduledUnbanData struct {
+	UserID int64 `json:"user_id"`
+}
+
+func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
+	if evt == bot.EvtGuildState {
+		gs := data.(*dstate.GuildState)
+		go RefreshMuteOverrides(gs.ID)
+	}
 }
 
 func HandleRefreshMuteOverrides(evt *pubsub.Event) {
@@ -85,10 +100,19 @@ func RefreshMuteOverrides(guildID int64) {
 		return // Still starting up and haven't received the guild yet
 	}
 
+	if guild.RoleCopy(true, config.IntMuteRole()) == nil {
+		return
+	}
+
 	guild.RLock()
-	defer guild.RUnlock()
+	channelsCopy := make([]*discordgo.Channel, 0, len(guild.Channels))
 	for _, v := range guild.Channels {
-		RefreshMuteOverrideForChannel(config, v.DGoCopy())
+		channelsCopy = append(channelsCopy, v.DGoCopy())
+	}
+	guild.RUnlock()
+
+	for _, v := range channelsCopy {
+		RefreshMuteOverrideForChannel(config, v)
 	}
 }
 
@@ -119,6 +143,10 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) {
 func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 	// Ignore the channel
 	if common.ContainsInt64Slice(config.MuteIgnoreChannels, channel.ID) {
+		return
+	}
+
+	if !bot.BotProbablyHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles) {
 		return
 	}
 
@@ -155,7 +183,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 	}
 
 	if changed {
-		go common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
+		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
 	}
 }
 
@@ -212,6 +240,9 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	reason := ""
 
 	if !botPerformed {
+		// If we poll it too fast then there sometimes wont be a audit log entry
+		time.Sleep(time.Second * 3)
+
 		auditlogAction := discordgo.AuditLogActionMemberBanAdd
 		if evt.Type == eventsystem.EventGuildBanRemove {
 			auditlogAction = discordgo.AuditLogActionMemberBanRemove
@@ -222,11 +253,6 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		if entry != nil {
 			reason = entry.Reason
 		}
-	}
-
-	if config.ActionChannel == "" {
-		// No modlog channel set up
-		return
 	}
 
 	if (action == MAUnbanned && !config.LogUnbans && !botPerformed) ||
@@ -258,6 +284,9 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 	if config.IntActionChannel() == 0 {
 		return
 	}
+
+	// If we poll the audit log too fast then there sometimes wont be a audit log entry
+	time.Sleep(time.Second * 3)
 
 	author, entry := FindAuditLogEntry(data.GuildID, discordgo.AuditLogActionMemberKick, data.User.ID, time.Second*5)
 	if entry == nil || author == nil {
@@ -343,6 +372,15 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
+	guild := bot.State.Guild(true, c.GuildID)
+	if guild == nil {
+		return
+	}
+	role := guild.RoleCopy(true, config.IntMuteRole())
+	if role == nil {
+		return // Probably deleted the mute role, do nothing then
+	}
+
 	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
 
 	removedRoles, err := AddMemberMuteRole(config, c.Member.User.ID, c.Member.Roles)
@@ -404,4 +442,73 @@ func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Dur
 	}
 
 	return nil, nil
+}
+
+func handleMigrateScheduledUnmute(t time.Time, data string) error {
+	split := strings.Split(data, ":")
+	if len(split) < 2 {
+		logrus.Error("invalid unmute event", data)
+		return nil
+	}
+
+	guildID, _ := strconv.ParseInt(split[0], 10, 64)
+	userID, _ := strconv.ParseInt(split[1], 10, 64)
+
+	return scheduledevents2.ScheduleEvent("moderation_unmute", guildID, t, &ScheduledUnmuteData{
+		UserID: userID,
+	})
+}
+
+func handleMigrateScheduledUnban(t time.Time, data string) error {
+	split := strings.Split(data, ":")
+	if len(split) < 2 {
+		logrus.Error("Invalid unban event", data)
+		return nil // Can't re-schedule an invalid event..
+	}
+
+	guildID, _ := strconv.ParseInt(split[0], 10, 64)
+	userID, _ := strconv.ParseInt(split[1], 10, 64)
+
+	return scheduledevents2.ScheduleEvent("moderation_unban", guildID, t, &ScheduledUnbanData{
+		UserID: userID,
+	})
+}
+
+func handleScheduledUnmute(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	unmuteData := data.(*ScheduledUnmuteData)
+
+	member, err := bot.GetMember(evt.GuildID, unmuteData.UserID)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	err = MuteUnmuteUser(nil, false, evt.GuildID, 0, common.BotUser, "Mute Duration Expired", member, 0)
+	if errors.Cause(err) != ErrNoMuteRole {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
+}
+
+func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	unbanData := data.(*ScheduledUnbanData)
+
+	guildID := evt.GuildID
+	userID := unbanData.UserID
+
+	g := bot.State.Guild(true, guildID)
+	if g == nil {
+		logrus.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
+		return false, nil
+	}
+
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
+
+	err = common.BotSession.GuildBanDelete(guildID, userID)
+	if err != nil {
+		logrus.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
 }

@@ -8,9 +8,27 @@ var (
 	Plugins []Plugin
 )
 
+type PluginCategory struct {
+	Name  string
+	Order int
+}
+
+var (
+	PluginCategoryCore       = &PluginCategory{Name: "Core", Order: 0}
+	PluginCategoryModeration = &PluginCategory{Name: "Moderation", Order: 10}
+	PluginCategoryMisc       = &PluginCategory{Name: "Misc", Order: 20}
+	PluginCategoryFeeds      = &PluginCategory{Name: "Feeds", Order: 30}
+)
+
+type PluginInfo struct {
+	Name     string // Human readable name of the plugin
+	SysName  string // snake_case version of the name in lower case
+	Category *PluginCategory
+}
+
 // Plugin represents a plugin, all plugins needs to implement this at a bare minimum
 type Plugin interface {
-	Name() string
+	PluginInfo() *PluginInfo
 }
 
 type PluginWithLogging interface {
@@ -21,30 +39,5 @@ type PluginWithLogging interface {
 // RegisterPlugin registers a plugin, should be called when the bot is starting up
 func RegisterPlugin(plugin Plugin) {
 	Plugins = append(Plugins, plugin)
-	if cast, ok := plugin.(PluginWithLogging); ok {
-		cast.SetLogger(logrus.WithField("P", plugin.Name()))
-	}
-}
-
-// RegisterPluginL registers a plugin, should be called when the bot is starting up
-func RegisterPluginL(pl Plugin) {
-	if _, ok := pl.(PluginWithLogging); !ok {
-		logrus.Fatal("Not a PluginWithLogging: ", pl.Name())
-	}
-
-	RegisterPlugin(pl)
-}
-
-type BasePlugin struct {
-	Entry *logrus.Entry
-}
-
-var _ PluginWithLogging = (*BasePlugin)(nil)
-
-func (p *BasePlugin) Logger() *logrus.Entry {
-	return p.Entry
-}
-
-func (p *BasePlugin) SetLogger(entry *logrus.Entry) {
-	p.Entry = entry
+	logrus.Info("Registered plugin: " + plugin.PluginInfo().Name)
 }

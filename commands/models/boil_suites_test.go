@@ -87,7 +87,7 @@ func TestToMany(t *testing.T) {
 // TestToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
-	t.Run("CommandsCommandOverrideToCommandsChannelsOverrideUsingCommandsChannelsOverride", testCommandsCommandOverrideToOneSetOpCommandsChannelsOverrideUsingCommandsChannelsOverride)
+	t.Run("CommandsCommandOverrideToCommandsChannelsOverrideUsingCommandsCommandOverrides", testCommandsCommandOverrideToOneSetOpCommandsChannelsOverrideUsingCommandsChannelsOverride)
 }
 
 // TestToOneRemove tests cannot be run in parallel
@@ -139,9 +139,4 @@ func TestUpdate(t *testing.T) {
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("CommandsChannelsOverrides", testCommandsChannelsOverridesSliceUpdateAll)
 	t.Run("CommandsCommandOverrides", testCommandsCommandOverridesSliceUpdateAll)
-}
-
-func TestUpsert(t *testing.T) {
-	t.Run("CommandsChannelsOverrides", testCommandsChannelsOverridesUpsert)
-	t.Run("CommandsCommandOverrides", testCommandsCommandOverridesUpsert)
 }

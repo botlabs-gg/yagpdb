@@ -1,10 +1,12 @@
 package youtube
 
 import (
+	"context"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
@@ -16,7 +18,6 @@ import (
 
 const (
 	RedisChannelsLockKey = "youtube_subbed_channel_lock"
-	GuildMaxFeeds        = 50
 
 	RedisKeyWebSubChannels = "youtube_registered_websub_channels"
 	GoogleWebsubHub        = "https://pubsubhubbub.appspot.com/subscribe"
@@ -30,13 +31,16 @@ func KeyLastVidTime(channel string) string { return "youtube_last_video_time:" +
 func KeyLastVidID(channel string) string   { return "youtube_last_video_id:" + channel }
 
 type Plugin struct {
-	common.BasePlugin
 	YTService *youtube.Service
 	Stop      chan *sync.WaitGroup
 }
 
-func (p *Plugin) Name() string {
-	return "Youtube"
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Youtube",
+		SysName:  "youtube",
+		Category: common.PluginCategoryFeeds,
+	}
 }
 
 func RegisterPlugin() {
@@ -49,7 +53,7 @@ func RegisterPlugin() {
 
 	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
 
-	common.RegisterPluginL(p)
+	common.RegisterPlugin(p)
 	mqueue.RegisterSource("youtube", p)
 }
 
@@ -75,7 +79,7 @@ type YoutubePlaylistID struct {
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	code, _ := common.DiscordError(err)
-	if code != discordgo.ErrCodeUnknownChannel {
+	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess && code != discordgo.ErrCodeMissingPermissions {
 		logrus.WithError(err).WithField("channel", elem.Channel).Warn("Error posting youtube message")
 		return
 	}
@@ -83,7 +87,7 @@ func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
 	// Remove it
 	err = common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
 	if err != nil {
-		p.Entry.WithError(err).Error("failed removing nonexistant channel")
+		logrus.WithError(err).Error("failed removing nonexistant channel")
 	} else {
 		logrus.WithField("channel", elem.Channel).Info("Removed youtube feed to nonexistant channel")
 	}
@@ -116,7 +120,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
-	p.Logger().Info("Websub: Subscribed to channel ", ytChannelID)
+	logrus.Info("Websub: Subscribed to channel ", ytChannelID)
 
 	return nil
 }
@@ -147,7 +151,7 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
-	p.Logger().Info("Websub: UnSubscribed to channel ", ytChannelID)
+	logrus.Info("Websub: UnSubscribed to channel ", ytChannelID)
 
 	return nil
 }
@@ -176,4 +180,17 @@ type Link struct {
 type LinkEntry struct {
 	Href string `xml:"href,attr"`
 	Rel  string `xml:"rel,attr"`
+}
+
+const (
+	GuildMaxFeeds        = 50
+	GuildMaxFeedsPremium = 250
+)
+
+func MaxFeedsForContext(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return GuildMaxFeedsPremium
+	}
+
+	return GuildMaxFeeds
 }

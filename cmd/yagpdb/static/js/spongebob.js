@@ -37,6 +37,7 @@ $(function(){
 
    	updateSelectedMenuItem(window.location.pathname);
 
+
    	// Update all dropdowns
 	// $(".btn-group .dropdown-menu").dropdownUpdate();
 })
@@ -80,9 +81,11 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, 
 	var req = new XMLHttpRequest();
     req.addEventListener("load", function(){
     	currentlyLoading = false;
-		if (this.status != 200) {
+		if (this.status !== 200 && this.status !== 400) {
 	    	window.location.href = '/';
 	    	return;
+		}else if(this.status === 400){
+			alertsOnly = true;
 		}
 
 		if (updateHistory) {	
@@ -122,6 +125,7 @@ function navigate(url, method, data, updateHistory, maintainScroll, alertsOnly, 
     });
 
     req.open(method, url);
+	req.setRequestHeader('Cache-Control', 'no-cache');
     
     if (data) {
         req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
@@ -200,19 +204,28 @@ function updateSelectedMenuItem(pathname){
 
 	// Then update the nav links
 	var navLinks = document.querySelectorAll("#menu .nav-link")
+	
+	var bestMatch = -1;
+	var bestMatchLength = 0;
 	for(var i = 0; i < navLinks.length; i++){
 		var href = navLinks[i].attributes.getNamedItem("href").value;
 		if(pathname.indexOf(href) !== -1){
-	
-			var collapseParent = navLinks[i].parentElement.parentElement.parentElement;
-			if(collapseParent.classList.contains("nav-parent")){
-				collapseParent.classList.add("nav-expanded", "nav-active");
+			if(href.length > bestMatchLength){
+				bestMatch = i;
+				bestMatchLength = href.length
 			}
-
-			navLinks[i].parentElement.classList.add("nav-active");
-		}else{
-			navLinks[i].parentElement.classList.remove("nav-active");
 		}
+		
+		navLinks[i].parentElement.classList.remove("nav-active");
+	}
+
+	if (bestMatch !== -1) {
+		var collapseParent = navLinks[bestMatch].parentElement.parentElement.parentElement;
+		if(collapseParent.classList.contains("nav-parent")){
+			collapseParent.classList.add("nav-expanded", "nav-active");
+		}
+
+		navLinks[bestMatch].parentElement.classList.add("nav-active");
 	}
 }
 
@@ -235,7 +248,7 @@ function addListeners(){
 
 	formSubmissionEvents();
 
-	$(document).on("click", '[data-partial-load="true"]', function( event ) {
+	$(document).on("click", '[data-partial-load]', function( event ) {
 		console.log("Clicked the link");
 		event.preventDefault();
 		
@@ -287,7 +300,10 @@ function addListeners(){
 		$.magnificPopup.close();
 	});
 
-
+	$(window).on("sidebar-left-toggle", function(evt, data){
+		window.localStorage.setItem("sidebar_collapsed", !data.removed);
+		document.cookie = "sidebar_collapsed="+data.added+"; max-age=3153600000; path=/"	
+	})
 }
 
 // Initializes plugins such as multiselect, we have to do this on the new elements each time we load a partial page
@@ -298,6 +314,7 @@ function initPlugins(partial){
 	}
 
 	$(selectorPrefix + '[data-toggle="popover"]').popover()
+	$(selectorPrefix + '[data-toggle="tooltip"]').tooltip();
 
 	$('.entry:not(:last-of-type) .btn-add')
           .removeClass('btn-add').addClass('btn-remove')
@@ -310,7 +327,6 @@ function initPlugins(partial){
 	yagInitMultiSelect(selectorPrefix)
 	yagInitAutosize(selectorPrefix);
 	// initializeMultiselect(selectorPrefix);
-
 
 	$(selectorPrefix + '.modal-basic').magnificPopup({
 		type: 'inline',
@@ -437,10 +453,7 @@ function initializeMultiselect(selectorPrefix){
 	// $(selectorPrefix+".multiselect").multiselect();
 }
 
-function formSubmissionEvents(){
-	// Form submission fuckery
-	$(document).on("submit", "form", submitform);
-	
+function formSubmissionEvents(){	
 	// forms.each(function(i, elem){
 	// 	elem.onsubmit = submitform;
 	// })
@@ -470,19 +483,6 @@ function formSubmissionEvents(){
 
 	$(document).on("click", ".btn-danger", dangerButtonClick);
 	$(document).on("click", ".delete-button", dangerButtonClick);
-
-	
-
-	function submitform(evt){
-		for(var i = 0; i < evt.target.elements.length; i++){
-			var control = evt.target.elements[i];
-			if (control.type === "submit") {
-				$(control).addClass("disabled").attr("disabled");
-				// var endless = getRandomInt(0, possibilities.length-1)
-				// $(control).text(possibilities[endless]);
-			}						
-		}
-	}
 
 	function getRandomInt(min, max) {
 		min = Math.ceil(min);
@@ -522,11 +522,20 @@ function formSubmissionEvents(){
 
 
 		if(target.hasClass("btn-danger") || target.attr("data-open-confirm") || target.hasClass("delete-button")){
-			if(!confirm("Are you sure you want to do this?")){
+			var title = target.attr("title");
+            		if(title !== undefined){
+            			if(!confirm("Deleting " + title + ". Are you sure you want to do this?" )){
 				event.preventDefault(true);
 				event.stopPropagation();
 				return;
-			}
+				}
+            		}else{
+            			if(!confirm("Are you sure you want to do this?" )){
+				event.preventDefault(true);
+				event.stopPropagation();
+				return;
+			    	}		
+            		}
 		}
 
 		// Find the parent form using the parents or the form attribute
@@ -555,6 +564,12 @@ function formSubmissionEvents(){
 	function submitForm(form, url, alertsOnly){
 		var serialized = form.serialize();
 		
+		form.find("[data-content-editable-form]").each(function(i, v){
+			var name = $(v).attr("data-content-editable-form")
+			var value = encodeURIComponent($(v).text())
+			serialized += "&"+name+"="+value;
+		})
+
 		if(!alertsOnly){
 			alertsOnly = form.attr("data-async-form-alertsonly") !== undefined;
 		}
@@ -574,7 +589,6 @@ function formSubmissionEvents(){
 
 		$.magnificPopup.close();
 	}
-
 }
 
 function navigateToAnchor(name){
@@ -622,4 +636,10 @@ function toggleTheme(){
 		elem.classList.remove("sidebar-light")
 		document.cookie = "light_theme=false; max-age=3153600000; path=/"
 	}
+}
+
+function loadWidget(destinationParentID, path){
+	createRequest("GET", path+"?partial=1", null, function(){
+		$("#"+destinationParentID).html(this.responseText);
+	})
 }

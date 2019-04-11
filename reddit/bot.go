@@ -1,28 +1,71 @@
 package reddit
 
 import (
-	"github.com/jonas747/discordgo"
+	"context"
+	"fmt"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/sirupsen/logrus"
-)
-
-const (
-	// Max feeds per guild
-	GuildMaxFeeds = 100
+	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/reddit/models"
+	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/pkg/errors"
+	"strings"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 
 func (p *Plugin) RemoveGuild(g int64) error {
-	config, err := GetConfig("guild_subreddit_watch:" + discordgo.StrID(g))
+	_, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(g)).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed removing reddit feeds")
 	}
-	for _, v := range config {
-		v.Remove()
-	}
-	logrus.Info("Removed reddit config for deleted guild")
+
 	return nil
+}
+
+func (p *Plugin) AddCommands() {
+	commands.AddRootCommands(&commands.YAGCommand{
+		CmdCategory:          commands.CategoryDebug,
+		HideFromCommandsPage: true,
+		Name:                 "testreddit",
+		Description:          "Tests the reddit feeds in this server by checking the specified post",
+		HideFromHelp:         true,
+		RequiredArgs:         1,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "post-id", Type: dcmd.String},
+		},
+		RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+			pID := data.Args[0].Str()
+			if !strings.HasPrefix(pID, "t3_") {
+				pID = "t3_" + pID
+			}
+
+			resp, err := p.redditClient.LinksInfo([]string{pID})
+			if err != nil {
+				return nil, err
+			}
+
+			if len(resp) < 1 {
+				return "Unknown post", nil
+			}
+
+			handlerSlow := &PostHandlerImpl{
+				Slow:        true,
+				ratelimiter: NewRatelimiter(),
+			}
+
+			handlerFast := &PostHandlerImpl{
+				Slow:        false,
+				ratelimiter: NewRatelimiter(),
+			}
+
+			err1 := handlerSlow.handlePost(resp[0], data.GS.ID)
+			err2 := handlerFast.handlePost(resp[0], data.GS.ID)
+
+			return fmt.Sprintf("SlowErr: `%v`, fastErr: `%v`", err1, err2), nil
+		}),
+	})
 }
 
 // func (p *Plugin) Status() (string, string) {

@@ -12,12 +12,13 @@ var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "Advice",
-	Description: "Get advice",
+	Description: "Don't be afraid to ask for advice!",
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "What", Type: dcmd.String},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		//return "The API this command used has been shut down :(", nil
 		random := true
 		addr := "http://api.adviceslip.com/advice"
 		if data.Args[0].Str() != "" {
@@ -27,7 +28,7 @@ var Command = &commands.YAGCommand{
 
 		resp, err := http.Get(addr)
 		if err != nil {
-			return err, err
+			return nil, err
 		}
 
 		var decoded interface{}

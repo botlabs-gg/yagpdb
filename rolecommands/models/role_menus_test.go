@@ -5,44 +5,56 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/randomize"
 	"github.com/volatiletech/sqlboiler/strmangle"
+)
+
+var (
+	// Relationships sometimes use the reflection helper queries.Equal/queries.Assign
+	// so force a package dependency in case they don't.
+	_ = queries.Equal
 )
 
 func testRoleMenus(t *testing.T) {
 	t.Parallel()
 
-	query := RoleMenus(nil)
+	query := RoleMenus()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
+
 func testRoleMenusDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = roleMenu.Delete(tx); err != nil {
+	if rowsAff, err := o.Delete(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -57,22 +69,25 @@ func testRoleMenusQueryDeleteAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = RoleMenus(tx).DeleteAll(); err != nil {
+	if rowsAff, err := RoleMenus().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -87,24 +102,27 @@ func testRoleMenusSliceDeleteAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice := RoleMenuSlice{roleMenu}
+	slice := RoleMenuSlice{o}
 
-	if err = slice.DeleteAll(tx); err != nil {
+	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -113,47 +131,51 @@ func testRoleMenusSliceDeleteAll(t *testing.T) {
 		t.Error("want zero records, got:", count)
 	}
 }
+
 func testRoleMenusExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	e, err := RoleMenuExists(tx, roleMenu.MessageID)
+	e, err := RoleMenuExists(ctx, tx, o.MessageID)
 	if err != nil {
 		t.Errorf("Unable to check if RoleMenu exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected RoleMenuExistsG to return true, but got false.")
+		t.Errorf("Expected RoleMenuExists to return true, but got false.")
 	}
 }
+
 func testRoleMenusFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	roleMenuFound, err := FindRoleMenu(tx, roleMenu.MessageID)
+	roleMenuFound, err := FindRoleMenu(ctx, tx, o.MessageID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -162,23 +184,25 @@ func testRoleMenusFind(t *testing.T) {
 		t.Error("want a record, got nil")
 	}
 }
+
 func testRoleMenusBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = RoleMenus(tx).Bind(roleMenu); err != nil {
+	if err = RoleMenus().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
@@ -188,18 +212,19 @@ func testRoleMenusOne(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if x, err := RoleMenus(tx).One(); err != nil {
+	if x, err := RoleMenus().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
@@ -220,16 +245,17 @@ func testRoleMenusAll(t *testing.T) {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenuOne.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = roleMenuOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = roleMenuTwo.Insert(tx); err != nil {
+	if err = roleMenuTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := RoleMenus(tx).All()
+	slice, err := RoleMenus().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -253,16 +279,17 @@ func testRoleMenusCount(t *testing.T) {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenuOne.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = roleMenuOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = roleMenuTwo.Insert(tx); err != nil {
+	if err = roleMenuTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -277,18 +304,19 @@ func testRoleMenusInsert(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -303,18 +331,19 @@ func testRoleMenusInsertWhitelist(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx, roleMenuColumnsWithoutDefault...); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Whitelist(roleMenuColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -326,8 +355,9 @@ func testRoleMenusInsertWhitelist(t *testing.T) {
 
 func testRoleMenuToManyRoleMenuOptions(t *testing.T) {
 	var err error
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var a RoleMenu
 	var b, c RoleMenuOption
@@ -337,29 +367,34 @@ func testRoleMenuToManyRoleMenuOptions(t *testing.T) {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	if err := a.Insert(tx); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	randomize.Struct(seed, &b, roleMenuOptionDBTypes, false, roleMenuOptionColumnsWithDefault...)
-	randomize.Struct(seed, &c, roleMenuOptionDBTypes, false, roleMenuOptionColumnsWithDefault...)
+	if err = randomize.Struct(seed, &b, roleMenuOptionDBTypes, false, roleMenuOptionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, roleMenuOptionDBTypes, false, roleMenuOptionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
 
 	b.RoleMenuID = a.MessageID
 	c.RoleMenuID = a.MessageID
-	if err = b.Insert(tx); err != nil {
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = c.Insert(tx); err != nil {
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	roleMenuOption, err := a.RoleMenuOptions(tx).All()
+	check, err := a.RoleMenuOptions().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range roleMenuOption {
+	for _, v := range check {
 		if v.RoleMenuID == b.RoleMenuID {
 			bFound = true
 		}
@@ -376,7 +411,7 @@ func testRoleMenuToManyRoleMenuOptions(t *testing.T) {
 	}
 
 	slice := RoleMenuSlice{&a}
-	if err = a.L.LoadRoleMenuOptions(tx, false, (*[]*RoleMenu)(&slice)); err != nil {
+	if err = a.L.LoadRoleMenuOptions(ctx, tx, false, (*[]*RoleMenu)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(a.R.RoleMenuOptions); got != 2 {
@@ -384,7 +419,7 @@ func testRoleMenuToManyRoleMenuOptions(t *testing.T) {
 	}
 
 	a.R.RoleMenuOptions = nil
-	if err = a.L.LoadRoleMenuOptions(tx, true, &a); err != nil {
+	if err = a.L.LoadRoleMenuOptions(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(a.R.RoleMenuOptions); got != 2 {
@@ -392,15 +427,16 @@ func testRoleMenuToManyRoleMenuOptions(t *testing.T) {
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", roleMenuOption)
+		t.Logf("%#v", check)
 	}
 }
 
 func testRoleMenuToManyAddOpRoleMenuOptions(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var a RoleMenu
 	var b, c, d, e RoleMenuOption
@@ -416,13 +452,13 @@ func testRoleMenuToManyAddOpRoleMenuOptions(t *testing.T) {
 		}
 	}
 
-	if err := a.Insert(tx); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = b.Insert(tx); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = c.Insert(tx); err != nil {
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -432,7 +468,7 @@ func testRoleMenuToManyAddOpRoleMenuOptions(t *testing.T) {
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddRoleMenuOptions(tx, i != 0, x...)
+		err = a.AddRoleMenuOptions(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -461,7 +497,7 @@ func testRoleMenuToManyAddOpRoleMenuOptions(t *testing.T) {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.RoleMenuOptions(tx).Count()
+		count, err := a.RoleMenuOptions().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -471,8 +507,9 @@ func testRoleMenuToManyAddOpRoleMenuOptions(t *testing.T) {
 	}
 }
 func testRoleMenuToOneRoleCommandUsingNextRoleCommand(t *testing.T) {
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var local RoleMenu
 	var foreign RoleCommand
@@ -485,28 +522,26 @@ func testRoleMenuToOneRoleCommandUsingNextRoleCommand(t *testing.T) {
 		t.Errorf("Unable to randomize RoleCommand struct: %s", err)
 	}
 
-	local.NextRoleCommandID.Valid = true
-
-	if err := foreign.Insert(tx); err != nil {
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	local.NextRoleCommandID.Int64 = foreign.ID
-	if err := local.Insert(tx); err != nil {
+	queries.Assign(&local.NextRoleCommandID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.NextRoleCommand(tx).One()
+	check, err := local.NextRoleCommand().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if check.ID != foreign.ID {
+	if !queries.Equal(check.ID, foreign.ID) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
 	slice := RoleMenuSlice{&local}
-	if err = local.L.LoadNextRoleCommand(tx, false, (*[]*RoleMenu)(&slice)); err != nil {
+	if err = local.L.LoadNextRoleCommand(ctx, tx, false, (*[]*RoleMenu)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.NextRoleCommand == nil {
@@ -514,7 +549,7 @@ func testRoleMenuToOneRoleCommandUsingNextRoleCommand(t *testing.T) {
 	}
 
 	local.R.NextRoleCommand = nil
-	if err = local.L.LoadNextRoleCommand(tx, true, &local); err != nil {
+	if err = local.L.LoadNextRoleCommand(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.NextRoleCommand == nil {
@@ -523,8 +558,9 @@ func testRoleMenuToOneRoleCommandUsingNextRoleCommand(t *testing.T) {
 }
 
 func testRoleMenuToOneRoleGroupUsingRoleGroup(t *testing.T) {
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var local RoleMenu
 	var foreign RoleGroup
@@ -537,28 +573,26 @@ func testRoleMenuToOneRoleGroupUsingRoleGroup(t *testing.T) {
 		t.Errorf("Unable to randomize RoleGroup struct: %s", err)
 	}
 
-	local.RoleGroupID.Valid = true
-
-	if err := foreign.Insert(tx); err != nil {
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	local.RoleGroupID.Int64 = foreign.ID
-	if err := local.Insert(tx); err != nil {
+	queries.Assign(&local.RoleGroupID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.RoleGroup(tx).One()
+	check, err := local.RoleGroup().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if check.ID != foreign.ID {
+	if !queries.Equal(check.ID, foreign.ID) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
 	slice := RoleMenuSlice{&local}
-	if err = local.L.LoadRoleGroup(tx, false, (*[]*RoleMenu)(&slice)); err != nil {
+	if err = local.L.LoadRoleGroup(ctx, tx, false, (*[]*RoleMenu)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.RoleGroup == nil {
@@ -566,7 +600,7 @@ func testRoleMenuToOneRoleGroupUsingRoleGroup(t *testing.T) {
 	}
 
 	local.R.RoleGroup = nil
-	if err = local.L.LoadRoleGroup(tx, true, &local); err != nil {
+	if err = local.L.LoadRoleGroup(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.RoleGroup == nil {
@@ -574,11 +608,63 @@ func testRoleMenuToOneRoleGroupUsingRoleGroup(t *testing.T) {
 	}
 }
 
+func testRoleMenuToOneRoleMenuOptionUsingEditingOption(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local RoleMenu
+	var foreign RoleMenuOption
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, roleMenuOptionDBTypes, false, roleMenuOptionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoleMenuOption struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.EditingOptionID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.EditingOption().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := RoleMenuSlice{&local}
+	if err = local.L.LoadEditingOption(ctx, tx, false, (*[]*RoleMenu)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.EditingOption == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.EditingOption = nil
+	if err = local.L.LoadEditingOption(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.EditingOption == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testRoleMenuToOneSetOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var a RoleMenu
 	var b, c RoleCommand
@@ -594,15 +680,15 @@ func testRoleMenuToOneSetOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := a.Insert(tx); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = b.Insert(tx); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
 	for i, x := range []*RoleCommand{&b, &c} {
-		err = a.SetNextRoleCommand(tx, i != 0, x)
+		err = a.SetNextRoleCommand(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -614,19 +700,19 @@ func testRoleMenuToOneSetOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 		if x.R.NextRoleCommandRoleMenus[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.NextRoleCommandID.Int64 != x.ID {
-			t.Error("foreign key was wrong value", a.NextRoleCommandID.Int64)
+		if !queries.Equal(a.NextRoleCommandID, x.ID) {
+			t.Error("foreign key was wrong value", a.NextRoleCommandID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.NextRoleCommandID.Int64))
-		reflect.Indirect(reflect.ValueOf(&a.NextRoleCommandID.Int64)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.NextRoleCommandID))
+		reflect.Indirect(reflect.ValueOf(&a.NextRoleCommandID)).Set(zero)
 
-		if err = a.Reload(tx); err != nil {
+		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.NextRoleCommandID.Int64 != x.ID {
-			t.Error("foreign key was wrong value", a.NextRoleCommandID.Int64, x.ID)
+		if !queries.Equal(a.NextRoleCommandID, x.ID) {
+			t.Error("foreign key was wrong value", a.NextRoleCommandID, x.ID)
 		}
 	}
 }
@@ -634,8 +720,9 @@ func testRoleMenuToOneSetOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 func testRoleMenuToOneRemoveOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var a RoleMenu
 	var b RoleCommand
@@ -648,19 +735,19 @@ func testRoleMenuToOneRemoveOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = a.Insert(tx); err != nil {
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.SetNextRoleCommand(tx, true, &b); err != nil {
+	if err = a.SetNextRoleCommand(ctx, tx, true, &b); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.RemoveNextRoleCommand(tx, &b); err != nil {
+	if err = a.RemoveNextRoleCommand(ctx, tx, &b); err != nil {
 		t.Error("failed to remove relationship")
 	}
 
-	count, err := a.NextRoleCommand(tx).Count()
+	count, err := a.NextRoleCommand().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -672,7 +759,7 @@ func testRoleMenuToOneRemoveOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 		t.Error("R struct entry should be nil")
 	}
 
-	if a.NextRoleCommandID.Valid {
+	if !queries.IsValuerNil(a.NextRoleCommandID) {
 		t.Error("foreign key value should be nil")
 	}
 
@@ -684,8 +771,9 @@ func testRoleMenuToOneRemoveOpRoleCommandUsingNextRoleCommand(t *testing.T) {
 func testRoleMenuToOneSetOpRoleGroupUsingRoleGroup(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var a RoleMenu
 	var b, c RoleGroup
@@ -701,15 +789,15 @@ func testRoleMenuToOneSetOpRoleGroupUsingRoleGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := a.Insert(tx); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = b.Insert(tx); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
 	for i, x := range []*RoleGroup{&b, &c} {
-		err = a.SetRoleGroup(tx, i != 0, x)
+		err = a.SetRoleGroup(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -721,19 +809,19 @@ func testRoleMenuToOneSetOpRoleGroupUsingRoleGroup(t *testing.T) {
 		if x.R.RoleMenus[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.RoleGroupID.Int64 != x.ID {
-			t.Error("foreign key was wrong value", a.RoleGroupID.Int64)
+		if !queries.Equal(a.RoleGroupID, x.ID) {
+			t.Error("foreign key was wrong value", a.RoleGroupID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.RoleGroupID.Int64))
-		reflect.Indirect(reflect.ValueOf(&a.RoleGroupID.Int64)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.RoleGroupID))
+		reflect.Indirect(reflect.ValueOf(&a.RoleGroupID)).Set(zero)
 
-		if err = a.Reload(tx); err != nil {
+		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.RoleGroupID.Int64 != x.ID {
-			t.Error("foreign key was wrong value", a.RoleGroupID.Int64, x.ID)
+		if !queries.Equal(a.RoleGroupID, x.ID) {
+			t.Error("foreign key was wrong value", a.RoleGroupID, x.ID)
 		}
 	}
 }
@@ -741,8 +829,9 @@ func testRoleMenuToOneSetOpRoleGroupUsingRoleGroup(t *testing.T) {
 func testRoleMenuToOneRemoveOpRoleGroupUsingRoleGroup(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
 
 	var a RoleMenu
 	var b RoleGroup
@@ -755,19 +844,19 @@ func testRoleMenuToOneRemoveOpRoleGroupUsingRoleGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = a.Insert(tx); err != nil {
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.SetRoleGroup(tx, true, &b); err != nil {
+	if err = a.SetRoleGroup(ctx, tx, true, &b); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = a.RemoveRoleGroup(tx, &b); err != nil {
+	if err = a.RemoveRoleGroup(ctx, tx, &b); err != nil {
 		t.Error("failed to remove relationship")
 	}
 
-	count, err := a.RoleGroup(tx).Count()
+	count, err := a.RoleGroup().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -779,11 +868,120 @@ func testRoleMenuToOneRemoveOpRoleGroupUsingRoleGroup(t *testing.T) {
 		t.Error("R struct entry should be nil")
 	}
 
-	if a.RoleGroupID.Valid {
+	if !queries.IsValuerNil(a.RoleGroupID) {
 		t.Error("foreign key value should be nil")
 	}
 
 	if len(b.R.RoleMenus) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
+func testRoleMenuToOneSetOpRoleMenuOptionUsingEditingOption(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoleMenu
+	var b, c RoleMenuOption
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, roleMenuDBTypes, false, strmangle.SetComplement(roleMenuPrimaryKeyColumns, roleMenuColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, roleMenuOptionDBTypes, false, strmangle.SetComplement(roleMenuOptionPrimaryKeyColumns, roleMenuOptionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, roleMenuOptionDBTypes, false, strmangle.SetComplement(roleMenuOptionPrimaryKeyColumns, roleMenuOptionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*RoleMenuOption{&b, &c} {
+		err = a.SetEditingOption(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.EditingOption != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.EditingOptionRoleMenus[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.EditingOptionID, x.ID) {
+			t.Error("foreign key was wrong value", a.EditingOptionID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.EditingOptionID))
+		reflect.Indirect(reflect.ValueOf(&a.EditingOptionID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.EditingOptionID, x.ID) {
+			t.Error("foreign key was wrong value", a.EditingOptionID, x.ID)
+		}
+	}
+}
+
+func testRoleMenuToOneRemoveOpRoleMenuOptionUsingEditingOption(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoleMenu
+	var b RoleMenuOption
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, roleMenuDBTypes, false, strmangle.SetComplement(roleMenuPrimaryKeyColumns, roleMenuColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, roleMenuOptionDBTypes, false, strmangle.SetComplement(roleMenuOptionPrimaryKeyColumns, roleMenuOptionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetEditingOption(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveEditingOption(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.EditingOption().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.EditingOption != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.EditingOptionID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.EditingOptionRoleMenus) != 0 {
 		t.Error("failed to remove a from b's relationships")
 	}
 }
@@ -793,18 +991,19 @@ func testRoleMenusReload(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = roleMenu.Reload(tx); err != nil {
+	if err = o.Reload(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -814,40 +1013,43 @@ func testRoleMenusReloadAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice := RoleMenuSlice{roleMenu}
+	slice := RoleMenuSlice{o}
 
-	if err = slice.ReloadAll(tx); err != nil {
+	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
+
 func testRoleMenusSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := RoleMenus(tx).All()
+	slice, err := RoleMenus().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -858,31 +1060,35 @@ func testRoleMenusSelect(t *testing.T) {
 }
 
 var (
-	roleMenuDBTypes = map[string]string{`ChannelID`: `bigint`, `DisableSendDM`: `boolean`, `GuildID`: `bigint`, `MessageID`: `bigint`, `NextRoleCommandID`: `bigint`, `OwnMessage`: `boolean`, `OwnerID`: `bigint`, `RemoveRoleOnReactionRemove`: `boolean`, `RoleGroupID`: `bigint`, `State`: `bigint`}
+	roleMenuDBTypes = map[string]string{`MessageID`: `bigint`, `GuildID`: `bigint`, `ChannelID`: `bigint`, `OwnerID`: `bigint`, `OwnMessage`: `boolean`, `State`: `bigint`, `NextRoleCommandID`: `bigint`, `RoleGroupID`: `bigint`, `DisableSendDM`: `boolean`, `RemoveRoleOnReactionRemove`: `boolean`, `FixedAmount`: `boolean`, `SkipAmount`: `integer`, `EditingOptionID`: `bigint`, `SetupMSGID`: `bigint`}
 	_               = bytes.MinRead
 )
 
 func testRoleMenusUpdate(t *testing.T) {
 	t.Parallel()
 
+	if 0 == len(roleMenuPrimaryKeyColumns) {
+		t.Skip("Skipping table with no primary key columns")
+	}
 	if len(roleMenuColumns) == len(roleMenuPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -891,12 +1097,14 @@ func testRoleMenusUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuPrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	if err = roleMenu.Update(tx); err != nil {
+	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("should only affect one row but affected", rowsAff)
 	}
 }
 
@@ -909,18 +1117,19 @@ func testRoleMenusSliceUpdateAll(t *testing.T) {
 
 	seed := randomize.NewSeed()
 	var err error
-	roleMenu := &RoleMenu{}
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
+	o := &RoleMenu{}
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Insert(tx); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -929,7 +1138,7 @@ func testRoleMenusSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, roleMenu, roleMenuDBTypes, true, roleMenuPrimaryKeyColumns...); err != nil {
+	if err = randomize.Struct(seed, o, roleMenuDBTypes, true, roleMenuPrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
@@ -944,17 +1153,28 @@ func testRoleMenusSliceUpdateAll(t *testing.T) {
 		)
 	}
 
-	value := reflect.Indirect(reflect.ValueOf(roleMenu))
+	value := reflect.Indirect(reflect.ValueOf(o))
+	typ := reflect.TypeOf(o).Elem()
+	n := typ.NumField()
+
 	updateMap := M{}
 	for _, col := range fields {
-		updateMap[col] = value.FieldByName(strmangle.TitleCase(col)).Interface()
+		for i := 0; i < n; i++ {
+			f := typ.Field(i)
+			if f.Tag.Get("boil") == col {
+				updateMap[col] = value.Field(i).Interface()
+			}
+		}
 	}
 
-	slice := RoleMenuSlice{roleMenu}
-	if err = slice.UpdateAll(tx, updateMap); err != nil {
+	slice := RoleMenuSlice{o}
+	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
+	} else if rowsAff != 1 {
+		t.Error("wanted one record updated but got", rowsAff)
 	}
 }
+
 func testRoleMenusUpsert(t *testing.T) {
 	t.Parallel()
 
@@ -965,18 +1185,19 @@ func testRoleMenusUpsert(t *testing.T) {
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	roleMenu := RoleMenu{}
-	if err = randomize.Struct(seed, &roleMenu, roleMenuDBTypes, true); err != nil {
+	o := RoleMenu{}
+	if err = randomize.Struct(seed, &o, roleMenuDBTypes, true); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
-	defer tx.Rollback()
-	if err = roleMenu.Upsert(tx, false, nil, nil); err != nil {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert RoleMenu: %s", err)
 	}
 
-	count, err := RoleMenus(tx).Count()
+	count, err := RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -985,15 +1206,15 @@ func testRoleMenusUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &roleMenu, roleMenuDBTypes, false, roleMenuPrimaryKeyColumns...); err != nil {
+	if err = randomize.Struct(seed, &o, roleMenuDBTypes, false, roleMenuPrimaryKeyColumns...); err != nil {
 		t.Errorf("Unable to randomize RoleMenu struct: %s", err)
 	}
 
-	if err = roleMenu.Upsert(tx, true, nil, nil); err != nil {
+	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert RoleMenu: %s", err)
 	}
 
-	count, err = RoleMenus(tx).Count()
+	count, err = RoleMenus().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

@@ -4,10 +4,11 @@
 package models
 
 import (
-	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -64,9 +66,70 @@ var CommandsCommandOverrideColumns = struct {
 	IgnoreRoles:                 "ignore_roles",
 }
 
+// Generated where
+
+type whereHelpertypes_StringArray struct{ field string }
+
+func (w whereHelpertypes_StringArray) EQ(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertypes_StringArray) NEQ(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertypes_StringArray) LT(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_StringArray) LTE(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_StringArray) GT(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_StringArray) GTE(x types.StringArray) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+var CommandsCommandOverrideWhere = struct {
+	ID                          whereHelperint64
+	GuildID                     whereHelperint64
+	CommandsChannelsOverridesID whereHelperint64
+	Commands                    whereHelpertypes_StringArray
+	CommandsEnabled             whereHelperbool
+	AutodeleteResponse          whereHelperbool
+	AutodeleteTrigger           whereHelperbool
+	AutodeleteResponseDelay     whereHelperint
+	AutodeleteTriggerDelay      whereHelperint
+	RequireRoles                whereHelpertypes_Int64Array
+	IgnoreRoles                 whereHelpertypes_Int64Array
+}{
+	ID:                          whereHelperint64{field: `id`},
+	GuildID:                     whereHelperint64{field: `guild_id`},
+	CommandsChannelsOverridesID: whereHelperint64{field: `commands_channels_overrides_id`},
+	Commands:                    whereHelpertypes_StringArray{field: `commands`},
+	CommandsEnabled:             whereHelperbool{field: `commands_enabled`},
+	AutodeleteResponse:          whereHelperbool{field: `autodelete_response`},
+	AutodeleteTrigger:           whereHelperbool{field: `autodelete_trigger`},
+	AutodeleteResponseDelay:     whereHelperint{field: `autodelete_response_delay`},
+	AutodeleteTriggerDelay:      whereHelperint{field: `autodelete_trigger_delay`},
+	RequireRoles:                whereHelpertypes_Int64Array{field: `require_roles`},
+	IgnoreRoles:                 whereHelpertypes_Int64Array{field: `ignore_roles`},
+}
+
+// CommandsCommandOverrideRels is where relationship names are stored.
+var CommandsCommandOverrideRels = struct {
+	CommandsChannelsOverride string
+}{
+	CommandsChannelsOverride: "CommandsChannelsOverride",
+}
+
 // commandsCommandOverrideR is where relationships are stored.
 type commandsCommandOverrideR struct {
 	CommandsChannelsOverride *CommandsChannelsOverride
+}
+
+// NewStruct creates a new relationship struct
+func (*commandsCommandOverrideR) NewStruct() *commandsCommandOverrideR {
+	return &commandsCommandOverrideR{}
 }
 
 // commandsCommandOverrideL is where Load methods for each relationship are stored.
@@ -105,27 +168,23 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
-// OneP returns a single commandsCommandOverride record from the query, and panics on error.
-func (q commandsCommandOverrideQuery) OneP() *CommandsCommandOverride {
-	o, err := q.One()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// OneG returns a single commandsCommandOverride record from the query using the global executor.
+func (q commandsCommandOverrideQuery) OneG(ctx context.Context) (*CommandsCommandOverride, error) {
+	return q.One(ctx, boil.GetContextDB())
 }
 
 // One returns a single commandsCommandOverride record from the query.
-func (q commandsCommandOverrideQuery) One() (*CommandsCommandOverride, error) {
+func (q commandsCommandOverrideQuery) One(ctx context.Context, exec boil.ContextExecutor) (*CommandsCommandOverride, error) {
 	o := &CommandsCommandOverride{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(ctx, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -136,21 +195,16 @@ func (q commandsCommandOverrideQuery) One() (*CommandsCommandOverride, error) {
 	return o, nil
 }
 
-// AllP returns all CommandsCommandOverride records from the query, and panics on error.
-func (q commandsCommandOverrideQuery) AllP() CommandsCommandOverrideSlice {
-	o, err := q.All()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// AllG returns all CommandsCommandOverride records from the query using the global executor.
+func (q commandsCommandOverrideQuery) AllG(ctx context.Context) (CommandsCommandOverrideSlice, error) {
+	return q.All(ctx, boil.GetContextDB())
 }
 
 // All returns all CommandsCommandOverride records from the query.
-func (q commandsCommandOverrideQuery) All() (CommandsCommandOverrideSlice, error) {
+func (q commandsCommandOverrideQuery) All(ctx context.Context, exec boil.ContextExecutor) (CommandsCommandOverrideSlice, error) {
 	var o []*CommandsCommandOverride
 
-	err := q.Bind(&o)
+	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to CommandsCommandOverride slice")
 	}
@@ -158,24 +212,19 @@ func (q commandsCommandOverrideQuery) All() (CommandsCommandOverrideSlice, error
 	return o, nil
 }
 
-// CountP returns the count of all CommandsCommandOverride records in the query, and panics on error.
-func (q commandsCommandOverrideQuery) CountP() int64 {
-	c, err := q.Count()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return c
+// CountG returns the count of all CommandsCommandOverride records in the query, and panics on error.
+func (q commandsCommandOverrideQuery) CountG(ctx context.Context) (int64, error) {
+	return q.Count(ctx, boil.GetContextDB())
 }
 
 // Count returns the count of all CommandsCommandOverride records in the query.
-func (q commandsCommandOverrideQuery) Count() (int64, error) {
+func (q commandsCommandOverrideQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to count commands_command_overrides rows")
 	}
@@ -183,24 +232,20 @@ func (q commandsCommandOverrideQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q commandsCommandOverrideQuery) ExistsP() bool {
-	e, err := q.Exists()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q commandsCommandOverrideQuery) ExistsG(ctx context.Context) (bool, error) {
+	return q.Exists(ctx, boil.GetContextDB())
 }
 
 // Exists checks if the row exists in the table.
-func (q commandsCommandOverrideQuery) Exists() (bool, error) {
+func (q commandsCommandOverrideQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "models: failed to check if commands_command_overrides exists")
 	}
@@ -208,70 +253,81 @@ func (q commandsCommandOverrideQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// CommandsChannelsOverrideG pointed to by the foreign key.
-func (o *CommandsCommandOverride) CommandsChannelsOverrideG(mods ...qm.QueryMod) commandsChannelsOverrideQuery {
-	return o.CommandsChannelsOverride(boil.GetDB(), mods...)
-}
-
 // CommandsChannelsOverride pointed to by the foreign key.
-func (o *CommandsCommandOverride) CommandsChannelsOverride(exec boil.Executor, mods ...qm.QueryMod) commandsChannelsOverrideQuery {
+func (o *CommandsCommandOverride) CommandsChannelsOverride(mods ...qm.QueryMod) commandsChannelsOverrideQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("id=?", o.CommandsChannelsOverridesID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := CommandsChannelsOverrides(exec, queryMods...)
+	query := CommandsChannelsOverrides(queryMods...)
 	queries.SetFrom(query.Query, "\"commands_channels_overrides\"")
 
 	return query
-} // LoadCommandsChannelsOverride allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (commandsCommandOverrideL) LoadCommandsChannelsOverride(e boil.Executor, singular bool, maybeCommandsCommandOverride interface{}) error {
+}
+
+// LoadCommandsChannelsOverride allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (commandsCommandOverrideL) LoadCommandsChannelsOverride(ctx context.Context, e boil.ContextExecutor, singular bool, maybeCommandsCommandOverride interface{}, mods queries.Applicator) error {
 	var slice []*CommandsCommandOverride
 	var object *CommandsCommandOverride
 
-	count := 1
 	if singular {
 		object = maybeCommandsCommandOverride.(*CommandsCommandOverride)
 	} else {
 		slice = *maybeCommandsCommandOverride.(*[]*CommandsCommandOverride)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &commandsCommandOverrideR{}
 		}
-		args[0] = object.CommandsChannelsOverridesID
+		args = append(args, object.CommandsChannelsOverridesID)
+
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &commandsCommandOverrideR{}
 			}
-			args[i] = obj.CommandsChannelsOverridesID
+
+			for _, a := range args {
+				if a == obj.CommandsChannelsOverridesID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.CommandsChannelsOverridesID)
+
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from \"commands_channels_overrides\" where \"id\" in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	if len(args) == 0 {
+		return nil
 	}
 
-	results, err := e.Query(query, args...)
+	query := NewQuery(qm.From(`commands_channels_overrides`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load CommandsChannelsOverride")
 	}
-	defer results.Close()
 
 	var resultSlice []*CommandsChannelsOverride
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice CommandsChannelsOverride")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for commands_channels_overrides")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for commands_channels_overrides")
 	}
 
 	if len(resultSlice) == 0 {
@@ -279,7 +335,12 @@ func (commandsCommandOverrideL) LoadCommandsChannelsOverride(e boil.Executor, si
 	}
 
 	if singular {
-		object.R.CommandsChannelsOverride = resultSlice[0]
+		foreign := resultSlice[0]
+		object.R.CommandsChannelsOverride = foreign
+		if foreign.R == nil {
+			foreign.R = &commandsChannelsOverrideR{}
+		}
+		foreign.R.CommandsCommandOverrides = append(foreign.R.CommandsCommandOverrides, object)
 		return nil
 	}
 
@@ -287,6 +348,10 @@ func (commandsCommandOverrideL) LoadCommandsChannelsOverride(e boil.Executor, si
 		for _, foreign := range resultSlice {
 			if local.CommandsChannelsOverridesID == foreign.ID {
 				local.R.CommandsChannelsOverride = foreign
+				if foreign.R == nil {
+					foreign.R = &commandsChannelsOverrideR{}
+				}
+				foreign.R.CommandsCommandOverrides = append(foreign.R.CommandsCommandOverrides, local)
 				break
 			}
 		}
@@ -295,41 +360,21 @@ func (commandsCommandOverrideL) LoadCommandsChannelsOverride(e boil.Executor, si
 	return nil
 }
 
-// SetCommandsChannelsOverrideG of the commands_command_override to the related item.
+// SetCommandsChannelsOverrideG of the commandsCommandOverride to the related item.
 // Sets o.R.CommandsChannelsOverride to related.
 // Adds o to related.R.CommandsCommandOverrides.
 // Uses the global database handle.
-func (o *CommandsCommandOverride) SetCommandsChannelsOverrideG(insert bool, related *CommandsChannelsOverride) error {
-	return o.SetCommandsChannelsOverride(boil.GetDB(), insert, related)
+func (o *CommandsCommandOverride) SetCommandsChannelsOverrideG(ctx context.Context, insert bool, related *CommandsChannelsOverride) error {
+	return o.SetCommandsChannelsOverride(ctx, boil.GetContextDB(), insert, related)
 }
 
-// SetCommandsChannelsOverrideP of the commands_command_override to the related item.
+// SetCommandsChannelsOverride of the commandsCommandOverride to the related item.
 // Sets o.R.CommandsChannelsOverride to related.
 // Adds o to related.R.CommandsCommandOverrides.
-// Panics on error.
-func (o *CommandsCommandOverride) SetCommandsChannelsOverrideP(exec boil.Executor, insert bool, related *CommandsChannelsOverride) {
-	if err := o.SetCommandsChannelsOverride(exec, insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetCommandsChannelsOverrideGP of the commands_command_override to the related item.
-// Sets o.R.CommandsChannelsOverride to related.
-// Adds o to related.R.CommandsCommandOverrides.
-// Uses the global database handle and panics on error.
-func (o *CommandsCommandOverride) SetCommandsChannelsOverrideGP(insert bool, related *CommandsChannelsOverride) {
-	if err := o.SetCommandsChannelsOverride(boil.GetDB(), insert, related); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// SetCommandsChannelsOverride of the commands_command_override to the related item.
-// Sets o.R.CommandsChannelsOverride to related.
-// Adds o to related.R.CommandsCommandOverrides.
-func (o *CommandsCommandOverride) SetCommandsChannelsOverride(exec boil.Executor, insert bool, related *CommandsChannelsOverride) error {
+func (o *CommandsCommandOverride) SetCommandsChannelsOverride(ctx context.Context, exec boil.ContextExecutor, insert bool, related *CommandsChannelsOverride) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec); err != nil {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -346,12 +391,11 @@ func (o *CommandsCommandOverride) SetCommandsChannelsOverride(exec boil.Executor
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 		return errors.Wrap(err, "failed to update local table")
 	}
 
 	o.CommandsChannelsOverridesID = related.ID
-
 	if o.R == nil {
 		o.R = &commandsCommandOverrideR{
 			CommandsChannelsOverride: related,
@@ -371,35 +415,20 @@ func (o *CommandsCommandOverride) SetCommandsChannelsOverride(exec boil.Executor
 	return nil
 }
 
-// CommandsCommandOverridesG retrieves all records.
-func CommandsCommandOverridesG(mods ...qm.QueryMod) commandsCommandOverrideQuery {
-	return CommandsCommandOverrides(boil.GetDB(), mods...)
-}
-
 // CommandsCommandOverrides retrieves all the records using an executor.
-func CommandsCommandOverrides(exec boil.Executor, mods ...qm.QueryMod) commandsCommandOverrideQuery {
+func CommandsCommandOverrides(mods ...qm.QueryMod) commandsCommandOverrideQuery {
 	mods = append(mods, qm.From("\"commands_command_overrides\""))
-	return commandsCommandOverrideQuery{NewQuery(exec, mods...)}
+	return commandsCommandOverrideQuery{NewQuery(mods...)}
 }
 
 // FindCommandsCommandOverrideG retrieves a single record by ID.
-func FindCommandsCommandOverrideG(id int64, selectCols ...string) (*CommandsCommandOverride, error) {
-	return FindCommandsCommandOverride(boil.GetDB(), id, selectCols...)
-}
-
-// FindCommandsCommandOverrideGP retrieves a single record by ID, and panics on error.
-func FindCommandsCommandOverrideGP(id int64, selectCols ...string) *CommandsCommandOverride {
-	retobj, err := FindCommandsCommandOverride(boil.GetDB(), id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
+func FindCommandsCommandOverrideG(ctx context.Context, iD int64, selectCols ...string) (*CommandsCommandOverride, error) {
+	return FindCommandsCommandOverride(ctx, boil.GetContextDB(), iD, selectCols...)
 }
 
 // FindCommandsCommandOverride retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindCommandsCommandOverride(exec boil.Executor, id int64, selectCols ...string) (*CommandsCommandOverride, error) {
+func FindCommandsCommandOverride(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*CommandsCommandOverride, error) {
 	commandsCommandOverrideObj := &CommandsCommandOverride{}
 
 	sel := "*"
@@ -410,9 +439,9 @@ func FindCommandsCommandOverride(exec boil.Executor, id int64, selectCols ...str
 		"select %s from \"commands_command_overrides\" where \"id\"=$1", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(commandsCommandOverrideObj)
+	err := q.Bind(ctx, exec, commandsCommandOverrideObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -423,43 +452,14 @@ func FindCommandsCommandOverride(exec boil.Executor, id int64, selectCols ...str
 	return commandsCommandOverrideObj, nil
 }
 
-// FindCommandsCommandOverrideP retrieves a single record by ID with an executor, and panics on error.
-func FindCommandsCommandOverrideP(exec boil.Executor, id int64, selectCols ...string) *CommandsCommandOverride {
-	retobj, err := FindCommandsCommandOverride(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *CommandsCommandOverride) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *CommandsCommandOverride) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// InsertP a single record using an executor, and panics on error. See Insert
-// for whitelist behavior description.
-func (o *CommandsCommandOverride) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *CommandsCommandOverride) InsertG(ctx context.Context, columns boil.Columns) error {
+	return o.Insert(ctx, boil.GetContextDB(), columns)
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *CommandsCommandOverride) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *CommandsCommandOverride) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no commands_command_overrides provided for insertion")
 	}
@@ -468,18 +468,17 @@ func (o *CommandsCommandOverride) Insert(exec boil.Executor, whitelist ...string
 
 	nzDefaults := queries.NonZeroDefaultSet(commandsCommandOverrideColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	commandsCommandOverrideInsertCacheMut.RLock()
 	cache, cached := commandsCommandOverrideInsertCache[key]
 	commandsCommandOverrideInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			commandsCommandOverrideColumns,
 			commandsCommandOverrideColumnsWithDefault,
 			commandsCommandOverrideColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(commandsCommandOverrideType, commandsCommandOverrideMapping, wl)
@@ -491,9 +490,9 @@ func (o *CommandsCommandOverride) Insert(exec boil.Executor, whitelist ...string
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"commands_command_overrides\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"commands_command_overrides\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"commands_command_overrides\" DEFAULT VALUES"
+			cache.query = "INSERT INTO \"commands_command_overrides\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -502,9 +501,7 @@ func (o *CommandsCommandOverride) Insert(exec boil.Executor, whitelist ...string
 			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -516,9 +513,9 @@ func (o *CommandsCommandOverride) Insert(exec boil.Executor, whitelist ...string
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 
 	if err != nil {
@@ -534,56 +531,33 @@ func (o *CommandsCommandOverride) Insert(exec boil.Executor, whitelist ...string
 	return nil
 }
 
-// UpdateG a single CommandsCommandOverride record. See Update for
-// whitelist behavior description.
-func (o *CommandsCommandOverride) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
-}
-
-// UpdateGP a single CommandsCommandOverride record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *CommandsCommandOverride) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateP uses an executor to update the CommandsCommandOverride, and panics on error.
-// See Update for whitelist behavior description.
-func (o *CommandsCommandOverride) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
+// UpdateG a single CommandsCommandOverride record using the global executor.
+// See Update for more documentation.
+func (o *CommandsCommandOverride) UpdateG(ctx context.Context, columns boil.Columns) (int64, error) {
+	return o.Update(ctx, boil.GetContextDB(), columns)
 }
 
 // Update uses an executor to update the CommandsCommandOverride.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *CommandsCommandOverride) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *CommandsCommandOverride) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	commandsCommandOverrideUpdateCacheMut.RLock()
 	cache, cached := commandsCommandOverrideUpdateCache[key]
 	commandsCommandOverrideUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			commandsCommandOverrideColumns,
 			commandsCommandOverridePrimaryKeyColumns,
-			whitelist,
 		)
 
-		if len(whitelist) == 0 {
+		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return errors.New("models: unable to update commands_command_overrides, could not build whitelist")
+			return 0, errors.New("models: unable to update commands_command_overrides, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"commands_command_overrides\" SET %s WHERE %s",
@@ -592,7 +566,7 @@ func (o *CommandsCommandOverride) Update(exec boil.Executor, whitelist ...string
 		)
 		cache.valueMapping, err = queries.BindMapping(commandsCommandOverrideType, commandsCommandOverrideMapping, append(wl, commandsCommandOverridePrimaryKeyColumns...))
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
@@ -603,9 +577,15 @@ func (o *CommandsCommandOverride) Update(exec boil.Executor, whitelist ...string
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	_, err = exec.Exec(cache.query, values...)
+	var result sql.Result
+	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update commands_command_overrides row")
+		return 0, errors.Wrap(err, "models: unable to update commands_command_overrides row")
+	}
+
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by update for commands_command_overrides")
 	}
 
 	if !cached {
@@ -614,56 +594,45 @@ func (o *CommandsCommandOverride) Update(exec boil.Executor, whitelist ...string
 		commandsCommandOverrideUpdateCacheMut.Unlock()
 	}
 
-	return nil
-}
-
-// UpdateAllP updates all rows with matching column names, and panics on error.
-func (q commandsCommandOverrideQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateAll updates all rows with the specified column values.
-func (q commandsCommandOverrideQuery) UpdateAll(cols M) error {
-	queries.SetUpdate(q.Query, cols)
-
-	_, err := q.Query.Exec()
-	if err != nil {
-		return errors.Wrap(err, "models: unable to update all for commands_command_overrides")
-	}
-
-	return nil
+	return rowsAff, nil
 }
 
 // UpdateAllG updates all rows with the specified column values.
-func (o CommandsCommandOverrideSlice) UpdateAllG(cols M) error {
-	return o.UpdateAll(boil.GetDB(), cols)
+func (q commandsCommandOverrideQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
-// UpdateAllGP updates all rows with the specified column values, and panics on error.
-func (o CommandsCommandOverrideSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
-		panic(boil.WrapErr(err))
+// UpdateAll updates all rows with the specified column values.
+func (q commandsCommandOverrideQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
+	queries.SetUpdate(q.Query, cols)
+
+	result, err := q.Query.ExecContext(ctx, exec)
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to update all for commands_command_overrides")
 	}
+
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for commands_command_overrides")
+	}
+
+	return rowsAff, nil
 }
 
-// UpdateAllP updates all rows with the specified column values, and panics on error.
-func (o CommandsCommandOverrideSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
+// UpdateAllG updates all rows with the specified column values.
+func (o CommandsCommandOverrideSlice) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return o.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o CommandsCommandOverrideSlice) UpdateAll(exec boil.Executor, cols M) error {
+func (o CommandsCommandOverrideSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
-		return nil
+		return 0, nil
 	}
 
 	if len(cols) == 0 {
-		return errors.New("models: update all requires at least one column argument")
+		return 0, errors.New("models: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -691,45 +660,34 @@ func (o CommandsCommandOverrideSlice) UpdateAll(exec boil.Executor, cols M) erro
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all in commandsCommandOverride slice")
+		return 0, errors.Wrap(err, "models: unable to update all in commandsCommandOverride slice")
 	}
 
-	return nil
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all commandsCommandOverride")
+	}
+	return rowsAff, nil
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *CommandsCommandOverride) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...)
-}
-
-// UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *CommandsCommandOverride) UpsertGP(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
-// UpsertP panics on error.
-func (o *CommandsCommandOverride) UpsertP(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *CommandsCommandOverride) UpsertG(ctx context.Context, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(ctx, boil.GetContextDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *CommandsCommandOverride) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *CommandsCommandOverride) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no commands_command_overrides provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(commandsCommandOverrideColumnsWithDefault, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-
 	if updateOnConflict {
 		buf.WriteByte('t')
 	} else {
@@ -740,11 +698,13 @@ func (o *CommandsCommandOverride) Upsert(exec boil.Executor, updateOnConflict bo
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
@@ -761,20 +721,18 @@ func (o *CommandsCommandOverride) Upsert(exec boil.Executor, updateOnConflict bo
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			commandsCommandOverrideColumns,
 			commandsCommandOverrideColumnsWithDefault,
 			commandsCommandOverrideColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			commandsCommandOverrideColumns,
 			commandsCommandOverridePrimaryKeyColumns,
-			updateColumns,
 		)
-		if len(update) == 0 {
+
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert commands_command_overrides, could not build update column list")
 		}
 
@@ -783,7 +741,7 @@ func (o *CommandsCommandOverride) Upsert(exec boil.Executor, updateOnConflict bo
 			conflict = make([]string, len(commandsCommandOverridePrimaryKeyColumns))
 			copy(conflict, commandsCommandOverridePrimaryKeyColumns)
 		}
-		cache.query = queries.BuildUpsertQueryPostgres(dialect, "\"commands_command_overrides\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"commands_command_overrides\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(commandsCommandOverrideType, commandsCommandOverrideMapping, insert)
 		if err != nil {
@@ -810,12 +768,12 @@ func (o *CommandsCommandOverride) Upsert(exec boil.Executor, updateOnConflict bo
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(returns...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
 			err = nil // Postgres doesn't return anything when there's no update
 		}
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert commands_command_overrides")
@@ -830,39 +788,17 @@ func (o *CommandsCommandOverride) Upsert(exec boil.Executor, updateOnConflict bo
 	return nil
 }
 
-// DeleteP deletes a single CommandsCommandOverride record with an executor.
-// DeleteP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *CommandsCommandOverride) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteG deletes a single CommandsCommandOverride record.
 // DeleteG will match against the primary key column to find the record to delete.
-func (o *CommandsCommandOverride) DeleteG() error {
-	if o == nil {
-		return errors.New("models: no CommandsCommandOverride provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
-}
-
-// DeleteGP deletes a single CommandsCommandOverride record.
-// DeleteGP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *CommandsCommandOverride) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *CommandsCommandOverride) DeleteG(ctx context.Context) (int64, error) {
+	return o.Delete(ctx, boil.GetContextDB())
 }
 
 // Delete deletes a single CommandsCommandOverride record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *CommandsCommandOverride) Delete(exec boil.Executor) error {
+func (o *CommandsCommandOverride) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no CommandsCommandOverride provided for delete")
+		return 0, errors.New("models: no CommandsCommandOverride provided for delete")
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), commandsCommandOverridePrimaryKeyMapping)
@@ -873,67 +809,53 @@ func (o *CommandsCommandOverride) Delete(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete from commands_command_overrides")
+		return 0, errors.Wrap(err, "models: unable to delete from commands_command_overrides")
 	}
 
-	return nil
-}
-
-// DeleteAllP deletes all rows, and panics on error.
-func (q commandsCommandOverrideQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for commands_command_overrides")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAll deletes all matching rows.
-func (q commandsCommandOverrideQuery) DeleteAll() error {
+func (q commandsCommandOverrideQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return errors.New("models: no commandsCommandOverrideQuery provided for delete all")
+		return 0, errors.New("models: no commandsCommandOverrideQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from commands_command_overrides")
+		return 0, errors.Wrap(err, "models: unable to delete all from commands_command_overrides")
 	}
 
-	return nil
-}
-
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o CommandsCommandOverrideSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for commands_command_overrides")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAllG deletes all rows in the slice.
-func (o CommandsCommandOverrideSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("models: no CommandsCommandOverride slice provided for delete all")
-	}
-	return o.DeleteAll(boil.GetDB())
-}
-
-// DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
-func (o CommandsCommandOverrideSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o CommandsCommandOverrideSlice) DeleteAllG(ctx context.Context) (int64, error) {
+	return o.DeleteAll(ctx, boil.GetContextDB())
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o CommandsCommandOverrideSlice) DeleteAll(exec boil.Executor) error {
+func (o CommandsCommandOverrideSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no CommandsCommandOverride slice provided for delete all")
+		return 0, errors.New("models: no CommandsCommandOverride slice provided for delete all")
 	}
 
 	if len(o) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	var args []interface{}
@@ -950,41 +872,32 @@ func (o CommandsCommandOverrideSlice) DeleteAll(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from commandsCommandOverride slice")
+		return 0, errors.Wrap(err, "models: unable to delete all from commandsCommandOverride slice")
 	}
 
-	return nil
-}
-
-// ReloadGP refetches the object from the database and panics on error.
-func (o *CommandsCommandOverride) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for commands_command_overrides")
 	}
-}
 
-// ReloadP refetches the object from the database with an executor. Panics on error.
-func (o *CommandsCommandOverride) ReloadP(exec boil.Executor) {
-	if err := o.Reload(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+	return rowsAff, nil
 }
 
 // ReloadG refetches the object from the database using the primary keys.
-func (o *CommandsCommandOverride) ReloadG() error {
+func (o *CommandsCommandOverride) ReloadG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: no CommandsCommandOverride provided for reload")
 	}
 
-	return o.Reload(boil.GetDB())
+	return o.Reload(ctx, boil.GetContextDB())
 }
 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *CommandsCommandOverride) Reload(exec boil.Executor) error {
-	ret, err := FindCommandsCommandOverride(exec, o.ID)
+func (o *CommandsCommandOverride) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindCommandsCommandOverride(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -993,42 +906,24 @@ func (o *CommandsCommandOverride) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *CommandsCommandOverrideSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// ReloadAllP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *CommandsCommandOverrideSlice) ReloadAllP(exec boil.Executor) {
-	if err := o.ReloadAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *CommandsCommandOverrideSlice) ReloadAllG() error {
+func (o *CommandsCommandOverrideSlice) ReloadAllG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: empty CommandsCommandOverrideSlice provided for reload all")
 	}
 
-	return o.ReloadAll(boil.GetDB())
+	return o.ReloadAll(ctx, boil.GetContextDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *CommandsCommandOverrideSlice) ReloadAll(exec boil.Executor) error {
+func (o *CommandsCommandOverrideSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
 
-	commandsCommandOverrides := CommandsCommandOverrideSlice{}
+	slice := CommandsCommandOverrideSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), commandsCommandOverridePrimaryKeyMapping)
@@ -1038,29 +933,34 @@ func (o *CommandsCommandOverrideSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT \"commands_command_overrides\".* FROM \"commands_command_overrides\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, commandsCommandOverridePrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&commandsCommandOverrides)
+	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to reload all in CommandsCommandOverrideSlice")
 	}
 
-	*o = commandsCommandOverrides
+	*o = slice
 
 	return nil
 }
 
+// CommandsCommandOverrideExistsG checks if the CommandsCommandOverride row exists.
+func CommandsCommandOverrideExistsG(ctx context.Context, iD int64) (bool, error) {
+	return CommandsCommandOverrideExists(ctx, boil.GetContextDB(), iD)
+}
+
 // CommandsCommandOverrideExists checks if the CommandsCommandOverride row exists.
-func CommandsCommandOverrideExists(exec boil.Executor, id int64) (bool, error) {
+func CommandsCommandOverrideExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"commands_command_overrides\" where \"id\"=$1 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1068,29 +968,4 @@ func CommandsCommandOverrideExists(exec boil.Executor, id int64) (bool, error) {
 	}
 
 	return exists, nil
-}
-
-// CommandsCommandOverrideExistsG checks if the CommandsCommandOverride row exists.
-func CommandsCommandOverrideExistsG(id int64) (bool, error) {
-	return CommandsCommandOverrideExists(boil.GetDB(), id)
-}
-
-// CommandsCommandOverrideExistsGP checks if the CommandsCommandOverride row exists. Panics on error.
-func CommandsCommandOverrideExistsGP(id int64) bool {
-	e, err := CommandsCommandOverrideExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// CommandsCommandOverrideExistsP checks if the CommandsCommandOverride row exists. Panics on error.
-func CommandsCommandOverrideExistsP(exec boil.Executor, id int64) bool {
-	e, err := CommandsCommandOverrideExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

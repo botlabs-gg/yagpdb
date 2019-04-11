@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -19,6 +22,7 @@ var (
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
+var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
@@ -26,12 +30,56 @@ func (p *Plugin) BotInit() {
 
 	CommandSystem.State = bot.State
 }
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	atomic.StoreInt32(shuttingDown, 1)
+
+	startedWaiting := time.Now()
+	for {
+		runningcommandsLock.Lock()
+		n := len(runningCommands)
+		runningcommandsLock.Unlock()
+
+		if n < 1 {
+			wg.Done()
+			return
+		}
+
+		if time.Since(startedWaiting) > time.Second*60 {
+			// timeout
+			log.Infof("[commands] timeout waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+			wg.Done()
+			return
+		}
+
+		log.Infof("[commands] waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+		time.Sleep(time.Millisecond * 500)
+	}
+}
 
 func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 		yc, ok := data.Cmd.Command.(*YAGCommand)
 		if !ok {
-			return inner(data)
+			resp, err := inner(data)
+			// Filter the response
+			if data.GS != nil {
+				if resp == nil && err != nil {
+					err = errors.New(FilterResp(err.Error(), data.GS.ID).(string))
+				} else if resp != nil {
+					resp = FilterResp(resp, data.GS.ID)
+				}
+			}
+
+			return resp, err
+		}
+
+		if data.GS != nil {
+			ms, err := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
+			if err != nil {
+				return nil, errors.WithMessage(err, "failed fetching member")
+			}
+
+			data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ms))
 		}
 
 		// Check if the user can execute the command
@@ -54,11 +102,15 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		data = data.WithContext(context.WithValue(data.Context(), CtxKeyCmdSettings, settings))
 
 		// Lock the command for execution
-		err = common.BlockingLockRedisKey(RKeyCommandLock(data.Msg.Author.ID, yc.Name), CommandExecTimeout*2, int((CommandExecTimeout + time.Second).Seconds()))
-		if err != nil {
-			return nil, errors.WithMessage(err, "Failed locking command")
+		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
+			if atomic.LoadInt32(shuttingDown) == 1 {
+				return yc.Name + ": Bot is shutting down or restarting, please try again in a couple seconds...", nil
+			}
+
+			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
 		}
-		defer common.UnlockRedisKey(RKeyCommandLock(data.Msg.Author.ID, yc.Name))
+
+		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
 
 		innerResp, err := inner(data)
 
@@ -69,6 +121,17 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 	}
 }
 
+func FilterResp(in interface{}, guildID int64) interface{} {
+	switch t := in.(type) {
+	case string:
+		return FilterBadInvites(t, guildID, "[removed-invite]")
+	case error:
+		return FilterBadInvites(t.Error(), guildID, "[removed-invite]")
+	}
+
+	return in
+}
+
 func AddRootCommands(cmds ...*YAGCommand) {
 	for _, v := range cmds {
 		CommandSystem.Root.AddCommand(v, v.GetTrigger())
@@ -76,6 +139,23 @@ func AddRootCommands(cmds ...*YAGCommand) {
 }
 
 func handleMsgCreate(evt *eventsystem.EventData) {
+	m := evt.MessageCreate()
+	if m.Author == nil || m.Author.ID == common.BotUser.ID || m.WebhookID != 0 {
+		// Pls no panicerinos or banerinos self, also ignore webhooks
+		return
+	}
+
+	abort := false
+	for _, filterFunc := range MessageFilterFuncs {
+		if !filterFunc(m.Message) {
+			abort = true
+		}
+	}
+
+	if abort {
+		return
+	}
+
 	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
 }
 
@@ -125,14 +205,17 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	// Send full help in DM
 	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
 	if err != nil {
-		return "Something went wrong", err
+		return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
 	}
 
 	for _, v := range resp {
-		common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
+		_, err := common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
+		if err != nil {
+			return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
+		}
 	}
 
-	return nil, nil
+	return "You've got mail!", nil
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
@@ -154,4 +237,36 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
 		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
+}
+
+var cmdPrefix = &YAGCommand{
+	Name:        "Prefix",
+	Description: "Shows command prefix of the current server, or the specified server",
+	CmdCategory: CategoryTool,
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "Server ID", Type: dcmd.Int, Default: 0},
+	},
+
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		targetGuildID := data.Args[0].Int64()
+		if targetGuildID == 0 {
+			targetGuildID = data.GS.ID
+		}
+
+		prefix, err := GetCommandPrefix(targetGuildID)
+		if err != nil {
+			return nil, err
+		}
+
+		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
+	},
+}
+
+func ContextMS(ctx context.Context) *dstate.MemberState {
+	v := ctx.Value(CtxKeyMS)
+	if v == nil {
+		return nil
+	}
+
+	return v.(*dstate.MemberState)
 }

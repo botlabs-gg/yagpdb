@@ -5,7 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/stdcommands/util"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/mediocregopher/radix"
 )
 
 var Command = &commands.YAGCommand{
@@ -23,10 +23,10 @@ var Command = &commands.YAGCommand{
 		err := common.BotSession.GuildLeave(data.Args[0].Int64())
 		if err == nil {
 
-			common.RedisPool.Do(radix.Cmd(nil, "SADD", "banned_servers", data.Args[0].Str()))
+			common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "banned_servers", data.Args[0].Int64()))
 
 			return "Banned " + data.Args[0].Str(), nil
 		}
-		return err, err
+		return nil, err
 	}),
 }

@@ -10,12 +10,11 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	Cooldown:             2,
-	CmdCategory:          commands.CategoryDebug,
-	HideFromCommandsPage: true,
-	Name:                 "topevents",
-	Description:          "Shows gateway event processing stats for all or one shard",
-	HideFromHelp:         true,
+	Cooldown:     2,
+	CmdCategory:  commands.CategoryDebug,
+	Name:         "topevents",
+	Description:  "Shows gateway event processing stats for all or one shard",
+	HideFromHelp: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "shard", Type: dcmd.Int},
 	},

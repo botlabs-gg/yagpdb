@@ -7,7 +7,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta http-equiv="cache-control" content="max-age=2592000000">
-  
 <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png?v=6">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png?v=6">
 <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png?v=6">
@@ -16,7 +15,7 @@
 <link rel="shortcut icon" href="/static/icons/favicon.ico?v=6">
 <meta name="msapplication-TileColor" content="#2b5797">
 <meta name="msapplication-config" content="/static/icons/browserconfig.xml?v=6">
-<meta name="theme-color" content="#ffffff"> 
+<meta name="theme-color" content="#ffffff">
 
   <meta property="og:title" content="YAGPDB" />
   <meta property="og:description" content="Yet Another General Purpose Discord Bot" />
@@ -52,7 +51,7 @@
           <a class="nav-link js-anchor-link" href="#features">Features</a>
         </li>
         <li class="nav-item active">
-          <a class="nav-link" href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=bot&permissions=535948311&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
+          <a class="nav-link" href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=bot&permissions=2146827775&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
         </li>
       </ul>
       <form class="form-inline my-2 my-lg-0 mr-2">
@@ -107,13 +106,13 @@
       <div class="row justify-content-md-center">
         <div class="col col-lg-8 abouttext" style="padding-bottom: 3%;">
           <h2 class="about poppins semibold">About YAGPDB</h2>
-          <p class="about">YAGPDB is a multi-purpose discord bot that I've worked on for quite some time now. What does it do? Well it does
+          <p class="about">YAGPDB is a multi-purpose Discord bot that I've worked on for quite some time now. What does it do? Well, it does
             a bunch of stuff right now, the best way to figure out what it does is to try it out by adding it onto a testing
             server and see what it provides for yourself.</p>
           <p class="about">
-            <b>Who am I?</b> I go by the name Jonas747 online and (unsuprisingly) my real name is also Jonas, although not 747,
-            I'm not a plane. YAGPDB is a project that I have been developing in my spare time for roughly a year now, it
-            started out because Mee6 (which I was currently using for my server) was lacking a lot of stuff that I wanted,
+            <b>Who am I?</b> I go by the name Jonas747 online and (unsurprisingly) my real name is also Jonas, although not 747,
+            I'm not a plane. YAGPDB is a project that I have been developing in my spare time for roughly 2 years now, it
+            started out because MEE6 (which I was currently using for my server) was lacking a lot of stuff that I wanted,
             so I decided to make my own bot, and here I am.</p>
         </div>
       </div>
@@ -134,7 +133,7 @@
         <div class="text-left redbox first">
           <h3>Feeds</h3>
           <ul>
-            <li>Super fast Reddit feeds (within 10 seconds)</li>
+            <li>Fast Reddit feeds (within one minute)</li>
             <li>Fast YouTube feeds (within a few minutes)</li>
             <li>Join / Leave messages in a specific channel (configurable)</li>
             <li>Direct messages on join (configurable)</li>
@@ -146,7 +145,7 @@
       <div id="rolemenu" class="feature_element_r">
         <img src="/static/img/rolemenu1.png" class="img-fluid f_image_l second" alt="Role Menu with reactions">
         <div class="redbox text_right first">
-          <h3>Self assignable roles</h3>
+          <h3>Self-assignable Roles</h3>
           <p>This feature is very advanced. You can either give yourself a role with a command or with a role menu:</p>
           <ul>
             <li>Group in several groups for multiple menus</li>
@@ -161,14 +160,12 @@
         <div class="text-left redbox first">
           <h3>Automatic Moderator</h3>
           <p>YAGPDB has a very configurable automoderator, for each rule you can set automoderator to mute, kick or ban after
-            a certain number of violations within a certain timeframe</p>
-          <p>The current rules for the automod are
-            <b>Spam / Slowmode</b>,
-            <b>Mass mention</b>,
-            <b>Invites to other servers</b>,
-            <b>Links</b>,
-            <b>Banned words</b> and
-            <b>Banned websites</b>.</p>
+            a certain number of violations within a certain timeframe.</p>
+          <p>
+            <b>
+              <a href="https://docs.yagpdb.xyz/tools-and-utilities/automoderator-v2" target="_blank" rel="noopener" class="link">Click here for a list of rules, conditions, and effects</a>
+            </b>
+          </p>
         </div>
         <img src="/static/img/automod1.png" class="img-fluid f_image_r second" alt="Auto Moderator in action">
         <img src="/static/img/line1.png" class="img-fluid line_image line3" alt="line">
@@ -179,12 +176,12 @@
           <h3>Custom Commands</h3>
           <ul>
             <li>Triggers: Starts with, Contains, Exact match or Regex</li>
-            <li>Dynamic resposne</li>
+            <li>Dynamic response</li>
             <li>Useful for automatic responses to questions, command aliases or other fun stuff</li>
           </ul>
           <p>
             <b>
-              <a href="https://docs.yagpdb.xyz/examples/custom-command-examples" target="_blank" rel="noopener" class="link">Click here for custom command examples</a>
+              <a href="https://docs.yagpdb.xyz/other-1/custom-command-examples" target="_blank" rel="noopener" class="link">Click here for custom command examples</a>
             </b>
           </p>
         </div>
@@ -210,7 +207,7 @@
           <ul>
             <li>Kick, Ban and Clean</li>
             <li>Advanced cleaning parameters</li>
-            <li>Timed mute and bans</li>
+            <li>Timed mutes and bans</li>
             <li>Modlog with kicks, bans, mutes and warnings</li>
             <li>Message to the person being warned / kicked / muted / banned</li>
             <li>Message logs</li>
@@ -229,7 +226,7 @@
           <h3>Cat Facts</h3>
           <p>This feature made me spend days and nights sitting in a horrible chair in a basement staring at an old monitor
             fetching new facts. It includes
-            <b>over 230</b> different cat facts!</p>
+            <b>over 250</b> different cat facts!</p>
         </div>
       </div>
     </section>
@@ -246,8 +243,8 @@
               <li>The YAGPDB Community Server for support, suggestions, feedback and general talk can be joined
                 <a class="link" href="https://discord.gg/GcpyYh3">here</a>
               </li>
-              <li>If you want to donate using Patreon or crypto currencies, check out
-                <a class="link" href="https://docs.yagpdb.xyz/other/donating">this page</a>
+              <li>If you want to donate using Patreon or cryptocurrencies, check out
+                <a class="link" href="https://docs.yagpdb.xyz/donating">this page</a>
               </li>
             </ul>
           </div>
@@ -279,7 +276,7 @@
         relativeInput: true,
         hoverOnly: true
       });
-    </script> 
+    </script>
     {{template "googleAnalytics" .}}
 </body>
 </html>

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/AYLIEN/aylien_textapi_go"
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -26,6 +26,14 @@ type Plugin struct {
 	aylien *textapi.Client
 }
 
+func (p *Plugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "AYLIEN",
+		SysName:  "aylien",
+		Category: common.PluginCategoryMisc,
+	}
+}
+
 func RegisterPlugin() {
 	if appID == "" || appKey == "" {
 		log.Warn("Missing AYLIEN appid and/or key, not loading plugin")
@@ -34,7 +42,7 @@ func RegisterPlugin() {
 
 	client, err := textapi.NewClient(textapi.Auth{ApplicationID: appID, ApplicationKey: appKey}, true)
 	if err != nil {
-		log.WithError(err).Error("Failed initializing aylien client")
+		log.WithError(err).Error("Failed initializing AYLIEN client")
 		return
 	}
 
@@ -45,19 +53,15 @@ func RegisterPlugin() {
 	common.RegisterPlugin(p)
 }
 
-func (p *Plugin) Name() string {
-	return "ALYIEN"
-}
-
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Cooldown:    5,
-		Name:        "sentiment",
+		Name:        "Sentiment",
 		Aliases:     []string{"sent"},
-		Description: "Does sentiment analysys on a message or your last 5 messages longer than 3 words",
+		Description: "Does sentiment analysis on a message or your last 5 messages longer than 3 words",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "text", Type: dcmd.String},
 		},
@@ -68,7 +72,7 @@ func (p *Plugin) AddCommands() {
 					Text: cmd.Args[0].Str(),
 				})
 				if err != nil {
-					return "Error querying aylien api", err
+					return "Error querying AYLIEN API", err
 				}
 				responses = []*textapi.SentimentResponse{resp}
 			} else {
@@ -76,7 +80,7 @@ func (p *Plugin) AddCommands() {
 				// Get the message to analyze
 				msgs, err := bot.GetMessages(cmd.CS.ID, 100, false)
 				if err != nil {
-					return "Error retrieving messages", err
+					return "", err
 				}
 
 				if len(msgs) < 1 {
@@ -84,13 +88,13 @@ func (p *Plugin) AddCommands() {
 				}
 
 				// filter out our own and longer than 3 words
-				toAnalyze := make([]*discordgo.Message, 0)
+				toAnalyze := make([]*dstate.MessageState, 0)
 				for i := len(msgs) - 1; i >= 0; i-- {
 					msg := msgs[i]
 					// log.Println(msg.ID, msg.ContentWithMentionsReplaced())
 					if msg.Author.ID == cmd.Msg.Author.ID {
 						if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
-							toAnalyze = append(toAnalyze, msg.Message)
+							toAnalyze = append(toAnalyze, msg)
 							if len(toAnalyze) >= 5 {
 								break
 							}
@@ -105,14 +109,14 @@ func (p *Plugin) AddCommands() {
 				for _, msg := range toAnalyze {
 					resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: msg.ContentWithMentionsReplaced()})
 					if err != nil {
-						return "Error querying aylien api", err
+						return "Error querying AYLIEN API", err
 					}
 
 					responses = append(responses, resp)
 				}
 			}
 
-			out := fmt.Sprintf("**Sentiment analysys on %d messages:**\n", len(responses))
+			out := fmt.Sprintf("**Sentiment analysis on %d messages:**\n", len(responses))
 			for _, resp := range responses {
 				out += fmt.Sprintf("*%s*\nPolarity: **%s** *(Confidence: %.2f%%)* Subjectivity: **%s** *(Confidence: %.2f%%)*\n\n", resp.Text, resp.Polarity, resp.PolarityConfidence*100, resp.Subjectivity, resp.SubjectivityConfidence*100)
 			}
@@ -159,7 +163,7 @@ func (p *Plugin) AddCommands() {
 					case resp.PolarityConfidence >= 0 && resp.PolarityConfidence < 0.5:
 						return "Not likely", nil
 					case resp.PolarityConfidence >= 0.5:
-						return "Definetively not", nil
+						return "Definitively not", nil
 					}
 				}
 				return "Dunno", nil

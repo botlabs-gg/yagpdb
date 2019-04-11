@@ -4,10 +4,11 @@
 package models
 
 import (
-	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
 	"github.com/volatiletech/sqlboiler/types"
 )
@@ -67,9 +69,101 @@ var CommandsChannelsOverrideColumns = struct {
 	IgnoreRoles:             "ignore_roles",
 }
 
+// Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelpertypes_Int64Array struct{ field string }
+
+func (w whereHelpertypes_Int64Array) EQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpertypes_Int64Array) NEQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpertypes_Int64Array) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpertypes_Int64Array) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpertypes_Int64Array) LT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_Int64Array) LTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_Int64Array) GT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+var CommandsChannelsOverrideWhere = struct {
+	ID                      whereHelperint64
+	GuildID                 whereHelperint64
+	Channels                whereHelpertypes_Int64Array
+	ChannelCategories       whereHelpertypes_Int64Array
+	Global                  whereHelperbool
+	CommandsEnabled         whereHelperbool
+	AutodeleteResponse      whereHelperbool
+	AutodeleteTrigger       whereHelperbool
+	AutodeleteResponseDelay whereHelperint
+	AutodeleteTriggerDelay  whereHelperint
+	RequireRoles            whereHelpertypes_Int64Array
+	IgnoreRoles             whereHelpertypes_Int64Array
+}{
+	ID:                      whereHelperint64{field: `id`},
+	GuildID:                 whereHelperint64{field: `guild_id`},
+	Channels:                whereHelpertypes_Int64Array{field: `channels`},
+	ChannelCategories:       whereHelpertypes_Int64Array{field: `channel_categories`},
+	Global:                  whereHelperbool{field: `global`},
+	CommandsEnabled:         whereHelperbool{field: `commands_enabled`},
+	AutodeleteResponse:      whereHelperbool{field: `autodelete_response`},
+	AutodeleteTrigger:       whereHelperbool{field: `autodelete_trigger`},
+	AutodeleteResponseDelay: whereHelperint{field: `autodelete_response_delay`},
+	AutodeleteTriggerDelay:  whereHelperint{field: `autodelete_trigger_delay`},
+	RequireRoles:            whereHelpertypes_Int64Array{field: `require_roles`},
+	IgnoreRoles:             whereHelpertypes_Int64Array{field: `ignore_roles`},
+}
+
+// CommandsChannelsOverrideRels is where relationship names are stored.
+var CommandsChannelsOverrideRels = struct {
+	CommandsCommandOverrides string
+}{
+	CommandsCommandOverrides: "CommandsCommandOverrides",
+}
+
 // commandsChannelsOverrideR is where relationships are stored.
 type commandsChannelsOverrideR struct {
 	CommandsCommandOverrides CommandsCommandOverrideSlice
+}
+
+// NewStruct creates a new relationship struct
+func (*commandsChannelsOverrideR) NewStruct() *commandsChannelsOverrideR {
+	return &commandsChannelsOverrideR{}
 }
 
 // commandsChannelsOverrideL is where Load methods for each relationship are stored.
@@ -108,27 +202,23 @@ var (
 var (
 	// Force time package dependency for automated UpdatedAt/CreatedAt.
 	_ = time.Second
-	// Force bytes in case of primary key column that uses []byte (for relationship compares)
-	_ = bytes.MinRead
+	// Force qmhelper dependency for where clause generation (which doesn't
+	// always happen)
+	_ = qmhelper.Where
 )
 
-// OneP returns a single commandsChannelsOverride record from the query, and panics on error.
-func (q commandsChannelsOverrideQuery) OneP() *CommandsChannelsOverride {
-	o, err := q.One()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// OneG returns a single commandsChannelsOverride record from the query using the global executor.
+func (q commandsChannelsOverrideQuery) OneG(ctx context.Context) (*CommandsChannelsOverride, error) {
+	return q.One(ctx, boil.GetContextDB())
 }
 
 // One returns a single commandsChannelsOverride record from the query.
-func (q commandsChannelsOverrideQuery) One() (*CommandsChannelsOverride, error) {
+func (q commandsChannelsOverrideQuery) One(ctx context.Context, exec boil.ContextExecutor) (*CommandsChannelsOverride, error) {
 	o := &CommandsChannelsOverride{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(o)
+	err := q.Bind(ctx, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -139,21 +229,16 @@ func (q commandsChannelsOverrideQuery) One() (*CommandsChannelsOverride, error) 
 	return o, nil
 }
 
-// AllP returns all CommandsChannelsOverride records from the query, and panics on error.
-func (q commandsChannelsOverrideQuery) AllP() CommandsChannelsOverrideSlice {
-	o, err := q.All()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return o
+// AllG returns all CommandsChannelsOverride records from the query using the global executor.
+func (q commandsChannelsOverrideQuery) AllG(ctx context.Context) (CommandsChannelsOverrideSlice, error) {
+	return q.All(ctx, boil.GetContextDB())
 }
 
 // All returns all CommandsChannelsOverride records from the query.
-func (q commandsChannelsOverrideQuery) All() (CommandsChannelsOverrideSlice, error) {
+func (q commandsChannelsOverrideQuery) All(ctx context.Context, exec boil.ContextExecutor) (CommandsChannelsOverrideSlice, error) {
 	var o []*CommandsChannelsOverride
 
-	err := q.Bind(&o)
+	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to CommandsChannelsOverride slice")
 	}
@@ -161,24 +246,19 @@ func (q commandsChannelsOverrideQuery) All() (CommandsChannelsOverrideSlice, err
 	return o, nil
 }
 
-// CountP returns the count of all CommandsChannelsOverride records in the query, and panics on error.
-func (q commandsChannelsOverrideQuery) CountP() int64 {
-	c, err := q.Count()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return c
+// CountG returns the count of all CommandsChannelsOverride records in the query, and panics on error.
+func (q commandsChannelsOverrideQuery) CountG(ctx context.Context) (int64, error) {
+	return q.Count(ctx, boil.GetContextDB())
 }
 
 // Count returns the count of all CommandsChannelsOverride records in the query.
-func (q commandsChannelsOverrideQuery) Count() (int64, error) {
+func (q commandsChannelsOverrideQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to count commands_channels_overrides rows")
 	}
@@ -186,24 +266,20 @@ func (q commandsChannelsOverrideQuery) Count() (int64, error) {
 	return count, nil
 }
 
-// Exists checks if the row exists in the table, and panics on error.
-func (q commandsChannelsOverrideQuery) ExistsP() bool {
-	e, err := q.Exists()
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
+// ExistsG checks if the row exists in the table, and panics on error.
+func (q commandsChannelsOverrideQuery) ExistsG(ctx context.Context) (bool, error) {
+	return q.Exists(ctx, boil.GetContextDB())
 }
 
 // Exists checks if the row exists in the table.
-func (q commandsChannelsOverrideQuery) Exists() (bool, error) {
+func (q commandsChannelsOverrideQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
+	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow().Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "models: failed to check if commands_channels_overrides exists")
 	}
@@ -211,13 +287,8 @@ func (q commandsChannelsOverrideQuery) Exists() (bool, error) {
 	return count > 0, nil
 }
 
-// CommandsCommandOverridesG retrieves all the commands_command_override's commands command overrides.
-func (o *CommandsChannelsOverride) CommandsCommandOverridesG(mods ...qm.QueryMod) commandsCommandOverrideQuery {
-	return o.CommandsCommandOverrides(boil.GetDB(), mods...)
-}
-
-// CommandsCommandOverrides retrieves all the commands_command_override's commands command overrides with an executor.
-func (o *CommandsChannelsOverride) CommandsCommandOverrides(exec boil.Executor, mods ...qm.QueryMod) commandsCommandOverrideQuery {
+// CommandsCommandOverrides retrieves all the commands_command_override's CommandsCommandOverrides with an executor.
+func (o *CommandsChannelsOverride) CommandsCommandOverrides(mods ...qm.QueryMod) commandsCommandOverrideQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
@@ -227,7 +298,7 @@ func (o *CommandsChannelsOverride) CommandsCommandOverrides(exec boil.Executor, 
 		qm.Where("\"commands_command_overrides\".\"commands_channels_overrides_id\"=?", o.ID),
 	)
 
-	query := CommandsCommandOverrides(exec, queryMods...)
+	query := CommandsCommandOverrides(queryMods...)
 	queries.SetFrom(query.Query, "\"commands_command_overrides\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
@@ -238,55 +309,74 @@ func (o *CommandsChannelsOverride) CommandsCommandOverrides(exec boil.Executor, 
 }
 
 // LoadCommandsCommandOverrides allows an eager lookup of values, cached into the
-// loaded structs of the objects.
-func (commandsChannelsOverrideL) LoadCommandsCommandOverrides(e boil.Executor, singular bool, maybeCommandsChannelsOverride interface{}) error {
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (commandsChannelsOverrideL) LoadCommandsCommandOverrides(ctx context.Context, e boil.ContextExecutor, singular bool, maybeCommandsChannelsOverride interface{}, mods queries.Applicator) error {
 	var slice []*CommandsChannelsOverride
 	var object *CommandsChannelsOverride
 
-	count := 1
 	if singular {
 		object = maybeCommandsChannelsOverride.(*CommandsChannelsOverride)
 	} else {
 		slice = *maybeCommandsChannelsOverride.(*[]*CommandsChannelsOverride)
-		count = len(slice)
 	}
 
-	args := make([]interface{}, count)
+	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
 			object.R = &commandsChannelsOverrideR{}
 		}
-		args[0] = object.ID
+		args = append(args, object.ID)
 	} else {
-		for i, obj := range slice {
+	Outer:
+		for _, obj := range slice {
 			if obj.R == nil {
 				obj.R = &commandsChannelsOverrideR{}
 			}
-			args[i] = obj.ID
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := fmt.Sprintf(
-		"select * from \"commands_command_overrides\" where \"commands_channels_overrides_id\" in (%s)",
-		strmangle.Placeholders(dialect.IndexPlaceholders, count, 1, 1),
-	)
-	if boil.DebugMode {
-		fmt.Fprintf(boil.DebugWriter, "%s\n%v\n", query, args)
+	if len(args) == 0 {
+		return nil
 	}
 
-	results, err := e.Query(query, args...)
+	query := NewQuery(qm.From(`commands_command_overrides`), qm.WhereIn(`commands_channels_overrides_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load commands_command_overrides")
 	}
-	defer results.Close()
 
 	var resultSlice []*CommandsCommandOverride
 	if err = queries.Bind(results, &resultSlice); err != nil {
 		return errors.Wrap(err, "failed to bind eager loaded slice commands_command_overrides")
 	}
 
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on commands_command_overrides")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for commands_command_overrides")
+	}
+
 	if singular {
 		object.R.CommandsCommandOverrides = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &commandsCommandOverrideR{}
+			}
+			foreign.R.CommandsChannelsOverride = object
+		}
 		return nil
 	}
 
@@ -294,6 +384,10 @@ func (commandsChannelsOverrideL) LoadCommandsCommandOverrides(e boil.Executor, s
 		for _, local := range slice {
 			if local.ID == foreign.CommandsChannelsOverridesID {
 				local.R.CommandsCommandOverrides = append(local.R.CommandsCommandOverrides, foreign)
+				if foreign.R == nil {
+					foreign.R = &commandsCommandOverrideR{}
+				}
+				foreign.R.CommandsChannelsOverride = local
 				break
 			}
 		}
@@ -307,42 +401,20 @@ func (commandsChannelsOverrideL) LoadCommandsCommandOverrides(e boil.Executor, s
 // Appends related to o.R.CommandsCommandOverrides.
 // Sets related.R.CommandsChannelsOverride appropriately.
 // Uses the global database handle.
-func (o *CommandsChannelsOverride) AddCommandsCommandOverridesG(insert bool, related ...*CommandsCommandOverride) error {
-	return o.AddCommandsCommandOverrides(boil.GetDB(), insert, related...)
-}
-
-// AddCommandsCommandOverridesP adds the given related objects to the existing relationships
-// of the commands_channels_override, optionally inserting them as new records.
-// Appends related to o.R.CommandsCommandOverrides.
-// Sets related.R.CommandsChannelsOverride appropriately.
-// Panics on error.
-func (o *CommandsChannelsOverride) AddCommandsCommandOverridesP(exec boil.Executor, insert bool, related ...*CommandsCommandOverride) {
-	if err := o.AddCommandsCommandOverrides(exec, insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// AddCommandsCommandOverridesGP adds the given related objects to the existing relationships
-// of the commands_channels_override, optionally inserting them as new records.
-// Appends related to o.R.CommandsCommandOverrides.
-// Sets related.R.CommandsChannelsOverride appropriately.
-// Uses the global database handle and panics on error.
-func (o *CommandsChannelsOverride) AddCommandsCommandOverridesGP(insert bool, related ...*CommandsCommandOverride) {
-	if err := o.AddCommandsCommandOverrides(boil.GetDB(), insert, related...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *CommandsChannelsOverride) AddCommandsCommandOverridesG(ctx context.Context, insert bool, related ...*CommandsCommandOverride) error {
+	return o.AddCommandsCommandOverrides(ctx, boil.GetContextDB(), insert, related...)
 }
 
 // AddCommandsCommandOverrides adds the given related objects to the existing relationships
 // of the commands_channels_override, optionally inserting them as new records.
 // Appends related to o.R.CommandsCommandOverrides.
 // Sets related.R.CommandsChannelsOverride appropriately.
-func (o *CommandsChannelsOverride) AddCommandsCommandOverrides(exec boil.Executor, insert bool, related ...*CommandsCommandOverride) error {
+func (o *CommandsChannelsOverride) AddCommandsCommandOverrides(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*CommandsCommandOverride) error {
 	var err error
 	for _, rel := range related {
 		if insert {
 			rel.CommandsChannelsOverridesID = o.ID
-			if err = rel.Insert(exec); err != nil {
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -358,7 +430,7 @@ func (o *CommandsChannelsOverride) AddCommandsCommandOverrides(exec boil.Executo
 				fmt.Fprintln(boil.DebugWriter, values)
 			}
 
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
@@ -386,35 +458,20 @@ func (o *CommandsChannelsOverride) AddCommandsCommandOverrides(exec boil.Executo
 	return nil
 }
 
-// CommandsChannelsOverridesG retrieves all records.
-func CommandsChannelsOverridesG(mods ...qm.QueryMod) commandsChannelsOverrideQuery {
-	return CommandsChannelsOverrides(boil.GetDB(), mods...)
-}
-
 // CommandsChannelsOverrides retrieves all the records using an executor.
-func CommandsChannelsOverrides(exec boil.Executor, mods ...qm.QueryMod) commandsChannelsOverrideQuery {
+func CommandsChannelsOverrides(mods ...qm.QueryMod) commandsChannelsOverrideQuery {
 	mods = append(mods, qm.From("\"commands_channels_overrides\""))
-	return commandsChannelsOverrideQuery{NewQuery(exec, mods...)}
+	return commandsChannelsOverrideQuery{NewQuery(mods...)}
 }
 
 // FindCommandsChannelsOverrideG retrieves a single record by ID.
-func FindCommandsChannelsOverrideG(id int64, selectCols ...string) (*CommandsChannelsOverride, error) {
-	return FindCommandsChannelsOverride(boil.GetDB(), id, selectCols...)
-}
-
-// FindCommandsChannelsOverrideGP retrieves a single record by ID, and panics on error.
-func FindCommandsChannelsOverrideGP(id int64, selectCols ...string) *CommandsChannelsOverride {
-	retobj, err := FindCommandsChannelsOverride(boil.GetDB(), id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
+func FindCommandsChannelsOverrideG(ctx context.Context, iD int64, selectCols ...string) (*CommandsChannelsOverride, error) {
+	return FindCommandsChannelsOverride(ctx, boil.GetContextDB(), iD, selectCols...)
 }
 
 // FindCommandsChannelsOverride retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindCommandsChannelsOverride(exec boil.Executor, id int64, selectCols ...string) (*CommandsChannelsOverride, error) {
+func FindCommandsChannelsOverride(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*CommandsChannelsOverride, error) {
 	commandsChannelsOverrideObj := &CommandsChannelsOverride{}
 
 	sel := "*"
@@ -425,9 +482,9 @@ func FindCommandsChannelsOverride(exec boil.Executor, id int64, selectCols ...st
 		"select %s from \"commands_channels_overrides\" where \"id\"=$1", sel,
 	)
 
-	q := queries.Raw(exec, query, id)
+	q := queries.Raw(query, iD)
 
-	err := q.Bind(commandsChannelsOverrideObj)
+	err := q.Bind(ctx, exec, commandsChannelsOverrideObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -438,43 +495,14 @@ func FindCommandsChannelsOverride(exec boil.Executor, id int64, selectCols ...st
 	return commandsChannelsOverrideObj, nil
 }
 
-// FindCommandsChannelsOverrideP retrieves a single record by ID with an executor, and panics on error.
-func FindCommandsChannelsOverrideP(exec boil.Executor, id int64, selectCols ...string) *CommandsChannelsOverride {
-	retobj, err := FindCommandsChannelsOverride(exec, id, selectCols...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return retobj
-}
-
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *CommandsChannelsOverride) InsertG(whitelist ...string) error {
-	return o.Insert(boil.GetDB(), whitelist...)
-}
-
-// InsertGP a single record, and panics on error. See Insert for whitelist
-// behavior description.
-func (o *CommandsChannelsOverride) InsertGP(whitelist ...string) {
-	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// InsertP a single record using an executor, and panics on error. See Insert
-// for whitelist behavior description.
-func (o *CommandsChannelsOverride) InsertP(exec boil.Executor, whitelist ...string) {
-	if err := o.Insert(exec, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *CommandsChannelsOverride) InsertG(ctx context.Context, columns boil.Columns) error {
+	return o.Insert(ctx, boil.GetContextDB(), columns)
 }
 
 // Insert a single record using an executor.
-// Whitelist behavior: If a whitelist is provided, only those columns supplied are inserted
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns without a default value are included (i.e. name, age)
-// - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *CommandsChannelsOverride) Insert(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
+func (o *CommandsChannelsOverride) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no commands_channels_overrides provided for insertion")
 	}
@@ -483,18 +511,17 @@ func (o *CommandsChannelsOverride) Insert(exec boil.Executor, whitelist ...strin
 
 	nzDefaults := queries.NonZeroDefaultSet(commandsChannelsOverrideColumnsWithDefault, o)
 
-	key := makeCacheKey(whitelist, nzDefaults)
+	key := makeCacheKey(columns, nzDefaults)
 	commandsChannelsOverrideInsertCacheMut.RLock()
 	cache, cached := commandsChannelsOverrideInsertCache[key]
 	commandsChannelsOverrideInsertCacheMut.RUnlock()
 
 	if !cached {
-		wl, returnColumns := strmangle.InsertColumnSet(
+		wl, returnColumns := columns.InsertColumnSet(
 			commandsChannelsOverrideColumns,
 			commandsChannelsOverrideColumnsWithDefault,
 			commandsChannelsOverrideColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
 
 		cache.valueMapping, err = queries.BindMapping(commandsChannelsOverrideType, commandsChannelsOverrideMapping, wl)
@@ -506,9 +533,9 @@ func (o *CommandsChannelsOverride) Insert(exec boil.Executor, whitelist ...strin
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"commands_channels_overrides\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"commands_channels_overrides\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"commands_channels_overrides\" DEFAULT VALUES"
+			cache.query = "INSERT INTO \"commands_channels_overrides\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -517,9 +544,7 @@ func (o *CommandsChannelsOverride) Insert(exec boil.Executor, whitelist ...strin
 			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
 		}
 
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
-		}
+		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
 	}
 
 	value := reflect.Indirect(reflect.ValueOf(o))
@@ -531,9 +556,9 @@ func (o *CommandsChannelsOverride) Insert(exec boil.Executor, whitelist ...strin
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 
 	if err != nil {
@@ -549,56 +574,33 @@ func (o *CommandsChannelsOverride) Insert(exec boil.Executor, whitelist ...strin
 	return nil
 }
 
-// UpdateG a single CommandsChannelsOverride record. See Update for
-// whitelist behavior description.
-func (o *CommandsChannelsOverride) UpdateG(whitelist ...string) error {
-	return o.Update(boil.GetDB(), whitelist...)
-}
-
-// UpdateGP a single CommandsChannelsOverride record.
-// UpdateGP takes a whitelist of column names that should be updated.
-// Panics on error. See Update for whitelist behavior description.
-func (o *CommandsChannelsOverride) UpdateGP(whitelist ...string) {
-	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateP uses an executor to update the CommandsChannelsOverride, and panics on error.
-// See Update for whitelist behavior description.
-func (o *CommandsChannelsOverride) UpdateP(exec boil.Executor, whitelist ...string) {
-	err := o.Update(exec, whitelist...)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
+// UpdateG a single CommandsChannelsOverride record using the global executor.
+// See Update for more documentation.
+func (o *CommandsChannelsOverride) UpdateG(ctx context.Context, columns boil.Columns) (int64, error) {
+	return o.Update(ctx, boil.GetContextDB(), columns)
 }
 
 // Update uses an executor to update the CommandsChannelsOverride.
-// Whitelist behavior: If a whitelist is provided, only the columns given are updated.
-// No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
-// - All columns are inferred to start with
-// - All primary keys are subtracted from this set
-// Update does not automatically update the record in case of default values. Use .Reload()
-// to refresh the records.
-func (o *CommandsChannelsOverride) Update(exec boil.Executor, whitelist ...string) error {
+// See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
+// Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
+func (o *CommandsChannelsOverride) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	key := makeCacheKey(whitelist, nil)
+	key := makeCacheKey(columns, nil)
 	commandsChannelsOverrideUpdateCacheMut.RLock()
 	cache, cached := commandsChannelsOverrideUpdateCache[key]
 	commandsChannelsOverrideUpdateCacheMut.RUnlock()
 
 	if !cached {
-		wl := strmangle.UpdateColumnSet(
+		wl := columns.UpdateColumnSet(
 			commandsChannelsOverrideColumns,
 			commandsChannelsOverridePrimaryKeyColumns,
-			whitelist,
 		)
 
-		if len(whitelist) == 0 {
+		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return errors.New("models: unable to update commands_channels_overrides, could not build whitelist")
+			return 0, errors.New("models: unable to update commands_channels_overrides, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"commands_channels_overrides\" SET %s WHERE %s",
@@ -607,7 +609,7 @@ func (o *CommandsChannelsOverride) Update(exec boil.Executor, whitelist ...strin
 		)
 		cache.valueMapping, err = queries.BindMapping(commandsChannelsOverrideType, commandsChannelsOverrideMapping, append(wl, commandsChannelsOverridePrimaryKeyColumns...))
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
@@ -618,9 +620,15 @@ func (o *CommandsChannelsOverride) Update(exec boil.Executor, whitelist ...strin
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	_, err = exec.Exec(cache.query, values...)
+	var result sql.Result
+	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update commands_channels_overrides row")
+		return 0, errors.Wrap(err, "models: unable to update commands_channels_overrides row")
+	}
+
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by update for commands_channels_overrides")
 	}
 
 	if !cached {
@@ -629,56 +637,45 @@ func (o *CommandsChannelsOverride) Update(exec boil.Executor, whitelist ...strin
 		commandsChannelsOverrideUpdateCacheMut.Unlock()
 	}
 
-	return nil
-}
-
-// UpdateAllP updates all rows with matching column names, and panics on error.
-func (q commandsChannelsOverrideQuery) UpdateAllP(cols M) {
-	if err := q.UpdateAll(cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpdateAll updates all rows with the specified column values.
-func (q commandsChannelsOverrideQuery) UpdateAll(cols M) error {
-	queries.SetUpdate(q.Query, cols)
-
-	_, err := q.Query.Exec()
-	if err != nil {
-		return errors.Wrap(err, "models: unable to update all for commands_channels_overrides")
-	}
-
-	return nil
+	return rowsAff, nil
 }
 
 // UpdateAllG updates all rows with the specified column values.
-func (o CommandsChannelsOverrideSlice) UpdateAllG(cols M) error {
-	return o.UpdateAll(boil.GetDB(), cols)
+func (q commandsChannelsOverrideQuery) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return q.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
-// UpdateAllGP updates all rows with the specified column values, and panics on error.
-func (o CommandsChannelsOverrideSlice) UpdateAllGP(cols M) {
-	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
-		panic(boil.WrapErr(err))
+// UpdateAll updates all rows with the specified column values.
+func (q commandsChannelsOverrideQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
+	queries.SetUpdate(q.Query, cols)
+
+	result, err := q.Query.ExecContext(ctx, exec)
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to update all for commands_channels_overrides")
 	}
+
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for commands_channels_overrides")
+	}
+
+	return rowsAff, nil
 }
 
-// UpdateAllP updates all rows with the specified column values, and panics on error.
-func (o CommandsChannelsOverrideSlice) UpdateAllP(exec boil.Executor, cols M) {
-	if err := o.UpdateAll(exec, cols); err != nil {
-		panic(boil.WrapErr(err))
-	}
+// UpdateAllG updates all rows with the specified column values.
+func (o CommandsChannelsOverrideSlice) UpdateAllG(ctx context.Context, cols M) (int64, error) {
+	return o.UpdateAll(ctx, boil.GetContextDB(), cols)
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o CommandsChannelsOverrideSlice) UpdateAll(exec boil.Executor, cols M) error {
+func (o CommandsChannelsOverrideSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
-		return nil
+		return 0, nil
 	}
 
 	if len(cols) == 0 {
-		return errors.New("models: update all requires at least one column argument")
+		return 0, errors.New("models: update all requires at least one column argument")
 	}
 
 	colNames := make([]string, len(cols))
@@ -706,45 +703,34 @@ func (o CommandsChannelsOverrideSlice) UpdateAll(exec boil.Executor, cols M) err
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all in commandsChannelsOverride slice")
+		return 0, errors.Wrap(err, "models: unable to update all in commandsChannelsOverride slice")
 	}
 
-	return nil
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all commandsChannelsOverride")
+	}
+	return rowsAff, nil
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *CommandsChannelsOverride) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
-	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...)
-}
-
-// UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *CommandsChannelsOverride) UpsertGP(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
-// UpsertP panics on error.
-func (o *CommandsChannelsOverride) UpsertP(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
-	if err := o.Upsert(exec, updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *CommandsChannelsOverride) UpsertG(ctx context.Context, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(ctx, boil.GetContextDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *CommandsChannelsOverride) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
+// See boil.Columns documentation for how to properly use updateColumns and insertColumns.
+func (o *CommandsChannelsOverride) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no commands_channels_overrides provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(commandsChannelsOverrideColumnsWithDefault, o)
 
-	// Build cache key in-line uglily - mysql vs postgres problems
+	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-
 	if updateOnConflict {
 		buf.WriteByte('t')
 	} else {
@@ -755,11 +741,13 @@ func (o *CommandsChannelsOverride) Upsert(exec boil.Executor, updateOnConflict b
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range updateColumns {
+	buf.WriteString(strconv.Itoa(updateColumns.Kind))
+	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
-	for _, c := range whitelist {
+	buf.WriteString(strconv.Itoa(insertColumns.Kind))
+	for _, c := range insertColumns.Cols {
 		buf.WriteString(c)
 	}
 	buf.WriteByte('.')
@@ -776,20 +764,18 @@ func (o *CommandsChannelsOverride) Upsert(exec boil.Executor, updateOnConflict b
 	var err error
 
 	if !cached {
-		insert, ret := strmangle.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			commandsChannelsOverrideColumns,
 			commandsChannelsOverrideColumnsWithDefault,
 			commandsChannelsOverrideColumnsWithoutDefault,
 			nzDefaults,
-			whitelist,
 		)
-
-		update := strmangle.UpdateColumnSet(
+		update := updateColumns.UpdateColumnSet(
 			commandsChannelsOverrideColumns,
 			commandsChannelsOverridePrimaryKeyColumns,
-			updateColumns,
 		)
-		if len(update) == 0 {
+
+		if updateOnConflict && len(update) == 0 {
 			return errors.New("models: unable to upsert commands_channels_overrides, could not build update column list")
 		}
 
@@ -798,7 +784,7 @@ func (o *CommandsChannelsOverride) Upsert(exec boil.Executor, updateOnConflict b
 			conflict = make([]string, len(commandsChannelsOverridePrimaryKeyColumns))
 			copy(conflict, commandsChannelsOverridePrimaryKeyColumns)
 		}
-		cache.query = queries.BuildUpsertQueryPostgres(dialect, "\"commands_channels_overrides\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"commands_channels_overrides\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(commandsChannelsOverrideType, commandsChannelsOverrideMapping, insert)
 		if err != nil {
@@ -825,12 +811,12 @@ func (o *CommandsChannelsOverride) Upsert(exec boil.Executor, updateOnConflict b
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(returns...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
 			err = nil // Postgres doesn't return anything when there's no update
 		}
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert commands_channels_overrides")
@@ -845,39 +831,17 @@ func (o *CommandsChannelsOverride) Upsert(exec boil.Executor, updateOnConflict b
 	return nil
 }
 
-// DeleteP deletes a single CommandsChannelsOverride record with an executor.
-// DeleteP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *CommandsChannelsOverride) DeleteP(exec boil.Executor) {
-	if err := o.Delete(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // DeleteG deletes a single CommandsChannelsOverride record.
 // DeleteG will match against the primary key column to find the record to delete.
-func (o *CommandsChannelsOverride) DeleteG() error {
-	if o == nil {
-		return errors.New("models: no CommandsChannelsOverride provided for deletion")
-	}
-
-	return o.Delete(boil.GetDB())
-}
-
-// DeleteGP deletes a single CommandsChannelsOverride record.
-// DeleteGP will match against the primary key column to find the record to delete.
-// Panics on error.
-func (o *CommandsChannelsOverride) DeleteGP() {
-	if err := o.DeleteG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o *CommandsChannelsOverride) DeleteG(ctx context.Context) (int64, error) {
+	return o.Delete(ctx, boil.GetContextDB())
 }
 
 // Delete deletes a single CommandsChannelsOverride record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *CommandsChannelsOverride) Delete(exec boil.Executor) error {
+func (o *CommandsChannelsOverride) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no CommandsChannelsOverride provided for delete")
+		return 0, errors.New("models: no CommandsChannelsOverride provided for delete")
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), commandsChannelsOverridePrimaryKeyMapping)
@@ -888,67 +852,53 @@ func (o *CommandsChannelsOverride) Delete(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete from commands_channels_overrides")
+		return 0, errors.Wrap(err, "models: unable to delete from commands_channels_overrides")
 	}
 
-	return nil
-}
-
-// DeleteAllP deletes all rows, and panics on error.
-func (q commandsChannelsOverrideQuery) DeleteAllP() {
-	if err := q.DeleteAll(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for commands_channels_overrides")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAll deletes all matching rows.
-func (q commandsChannelsOverrideQuery) DeleteAll() error {
+func (q commandsChannelsOverrideQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return errors.New("models: no commandsChannelsOverrideQuery provided for delete all")
+		return 0, errors.New("models: no commandsChannelsOverrideQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	_, err := q.Query.Exec()
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from commands_channels_overrides")
+		return 0, errors.Wrap(err, "models: unable to delete all from commands_channels_overrides")
 	}
 
-	return nil
-}
-
-// DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o CommandsChannelsOverrideSlice) DeleteAllGP() {
-	if err := o.DeleteAllG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for commands_channels_overrides")
 	}
+
+	return rowsAff, nil
 }
 
 // DeleteAllG deletes all rows in the slice.
-func (o CommandsChannelsOverrideSlice) DeleteAllG() error {
-	if o == nil {
-		return errors.New("models: no CommandsChannelsOverride slice provided for delete all")
-	}
-	return o.DeleteAll(boil.GetDB())
-}
-
-// DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
-func (o CommandsChannelsOverrideSlice) DeleteAllP(exec boil.Executor) {
-	if err := o.DeleteAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+func (o CommandsChannelsOverrideSlice) DeleteAllG(ctx context.Context) (int64, error) {
+	return o.DeleteAll(ctx, boil.GetContextDB())
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o CommandsChannelsOverrideSlice) DeleteAll(exec boil.Executor) error {
+func (o CommandsChannelsOverrideSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return errors.New("models: no CommandsChannelsOverride slice provided for delete all")
+		return 0, errors.New("models: no CommandsChannelsOverride slice provided for delete all")
 	}
 
 	if len(o) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	var args []interface{}
@@ -965,41 +915,32 @@ func (o CommandsChannelsOverrideSlice) DeleteAll(exec boil.Executor) error {
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
 
-	_, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from commandsChannelsOverride slice")
+		return 0, errors.Wrap(err, "models: unable to delete all from commandsChannelsOverride slice")
 	}
 
-	return nil
-}
-
-// ReloadGP refetches the object from the database and panics on error.
-func (o *CommandsChannelsOverride) ReloadGP() {
-	if err := o.ReloadG(); err != nil {
-		panic(boil.WrapErr(err))
+	rowsAff, err := result.RowsAffected()
+	if err != nil {
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for commands_channels_overrides")
 	}
-}
 
-// ReloadP refetches the object from the database with an executor. Panics on error.
-func (o *CommandsChannelsOverride) ReloadP(exec boil.Executor) {
-	if err := o.Reload(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
+	return rowsAff, nil
 }
 
 // ReloadG refetches the object from the database using the primary keys.
-func (o *CommandsChannelsOverride) ReloadG() error {
+func (o *CommandsChannelsOverride) ReloadG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: no CommandsChannelsOverride provided for reload")
 	}
 
-	return o.Reload(boil.GetDB())
+	return o.Reload(ctx, boil.GetContextDB())
 }
 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *CommandsChannelsOverride) Reload(exec boil.Executor) error {
-	ret, err := FindCommandsChannelsOverride(exec, o.ID)
+func (o *CommandsChannelsOverride) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindCommandsChannelsOverride(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1008,42 +949,24 @@ func (o *CommandsChannelsOverride) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllGP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *CommandsChannelsOverrideSlice) ReloadAllGP() {
-	if err := o.ReloadAllG(); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
-// ReloadAllP refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-// Panics on error.
-func (o *CommandsChannelsOverrideSlice) ReloadAllP(exec boil.Executor) {
-	if err := o.ReloadAll(exec); err != nil {
-		panic(boil.WrapErr(err))
-	}
-}
-
 // ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *CommandsChannelsOverrideSlice) ReloadAllG() error {
+func (o *CommandsChannelsOverrideSlice) ReloadAllG(ctx context.Context) error {
 	if o == nil {
 		return errors.New("models: empty CommandsChannelsOverrideSlice provided for reload all")
 	}
 
-	return o.ReloadAll(boil.GetDB())
+	return o.ReloadAll(ctx, boil.GetContextDB())
 }
 
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *CommandsChannelsOverrideSlice) ReloadAll(exec boil.Executor) error {
+func (o *CommandsChannelsOverrideSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
 
-	commandsChannelsOverrides := CommandsChannelsOverrideSlice{}
+	slice := CommandsChannelsOverrideSlice{}
 	var args []interface{}
 	for _, obj := range *o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), commandsChannelsOverridePrimaryKeyMapping)
@@ -1053,29 +976,34 @@ func (o *CommandsChannelsOverrideSlice) ReloadAll(exec boil.Executor) error {
 	sql := "SELECT \"commands_channels_overrides\".* FROM \"commands_channels_overrides\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, commandsChannelsOverridePrimaryKeyColumns, len(*o))
 
-	q := queries.Raw(exec, sql, args...)
+	q := queries.Raw(sql, args...)
 
-	err := q.Bind(&commandsChannelsOverrides)
+	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to reload all in CommandsChannelsOverrideSlice")
 	}
 
-	*o = commandsChannelsOverrides
+	*o = slice
 
 	return nil
 }
 
+// CommandsChannelsOverrideExistsG checks if the CommandsChannelsOverride row exists.
+func CommandsChannelsOverrideExistsG(ctx context.Context, iD int64) (bool, error) {
+	return CommandsChannelsOverrideExists(ctx, boil.GetContextDB(), iD)
+}
+
 // CommandsChannelsOverrideExists checks if the CommandsChannelsOverride row exists.
-func CommandsChannelsOverrideExists(exec boil.Executor, id int64) (bool, error) {
+func CommandsChannelsOverrideExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"commands_channels_overrides\" where \"id\"=$1 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, id)
+		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, id)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1083,29 +1011,4 @@ func CommandsChannelsOverrideExists(exec boil.Executor, id int64) (bool, error) 
 	}
 
 	return exists, nil
-}
-
-// CommandsChannelsOverrideExistsG checks if the CommandsChannelsOverride row exists.
-func CommandsChannelsOverrideExistsG(id int64) (bool, error) {
-	return CommandsChannelsOverrideExists(boil.GetDB(), id)
-}
-
-// CommandsChannelsOverrideExistsGP checks if the CommandsChannelsOverride row exists. Panics on error.
-func CommandsChannelsOverrideExistsGP(id int64) bool {
-	e, err := CommandsChannelsOverrideExists(boil.GetDB(), id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
-}
-
-// CommandsChannelsOverrideExistsP checks if the CommandsChannelsOverride row exists. Panics on error.
-func CommandsChannelsOverrideExistsP(exec boil.Executor, id int64) bool {
-	e, err := CommandsChannelsOverrideExists(exec, id)
-	if err != nil {
-		panic(boil.WrapErr(err))
-	}
-
-	return e
 }

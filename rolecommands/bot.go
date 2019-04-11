@@ -1,46 +1,146 @@
 package rolecommands
 
 import (
+	"context"
 	"database/sql"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func (p *Plugin) AddCommands() {
+	const msgIDDocs = "To get the id of a message you have to turn on developer mode in Discord's appearances settings then right click the message and copy id."
+
+	categoryRoleMenu := &dcmd.Category{
+		Name:        "Rolemenu",
+		Description: "Rolemenu commands",
+		HelpEmoji:   "🔘",
+		EmbedColor:  0x42b9f4,
+	}
+
 	commands.AddRootCommands(
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
 			Name:        "Role",
-			Description: "Give yourself a role or list all available roles",
+			Description: "Toggle a role on yourself or list all available roles, they have to be set up in the control panel first, under 'rolecommands' ",
 			Arguments: []*dcmd.ArgDef{
 				&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
 			},
 			RunFunc: CmdFuncRole,
-		}, &commands.YAGCommand{
-			CmdCategory: commands.CategoryTool,
-			Name:        "RoleMenu",
-			Description: "Set up a role menu, specify a message with -m to use an existing message instead of having the bot make one, if there's already a menu on this message it will be updated with the missing options.",
-			Arguments: []*dcmd.ArgDef{
-				&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
-			},
-			ArgSwitches: []*dcmd.ArgDef{
-				&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
-				&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
-			},
-			RunFunc: CmdFuncRoleMenu,
+		})
+
+	cmdCreate := &commands.YAGCommand{
+		Name:                "Create",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"c"},
+		Description:         "Set up a role menu.",
+		LongDescription:     "Specify a message with -m to use an existing message instead of having the bot make one\n\n" + msgIDDocs,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
 		},
-	)
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
+			&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
+			&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
+			&dcmd.ArgDef{Switch: "skip", Name: "Number of roles to skip", Default: 0, Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuCreate,
+	}
+
+	cmdRemoveRoleMenu := &commands.YAGCommand{
+		Name:                "Remove",
+		CmdCategory:         categoryRoleMenu,
+		Description:         "Removes a rolemenu from a message.",
+		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuRemove,
+	}
+
+	cmdUpdate := &commands.YAGCommand{
+		Name:                "Update",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"u"},
+		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
+		LongDescription:     "\n\n" + msgIDDocs,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
+			&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
+		},
+		RunFunc: cmdFuncRoleMenuUpdate,
+	}
+
+	cmdResetReactions := &commands.YAGCommand{
+		Name:                "ResetReactions",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"reset"},
+		Description:         "Removes all reactions on the specified menu message and re-adds them.",
+		LongDescription:     "Can be used to fix the order after updating it.\n\n" + msgIDDocs,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuResetReactions,
+	}
+
+	cmdEditOption := &commands.YAGCommand{
+		Name:                "EditOption",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"edit"},
+		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards.",
+		LongDescription:     "\n\n" + msgIDDocs,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuEditOption,
+	}
+
+	menuContainer := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
+
+	const notFoundMessage = "Unknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu update ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
+	menuContainer.NotFound = commands.CommonContainerNotFoundHandler(menuContainer, notFoundMessage)
+
+	menuContainer.AddCommand(cmdCreate, cmdCreate.GetTrigger())
+	menuContainer.AddCommand(cmdRemoveRoleMenu, cmdRemoveRoleMenu.GetTrigger())
+	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
+	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
+	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
+}
+
+type ScheduledMemberRoleRemoveData struct {
+	GuildID int64 `json:"guild_id"`
+	GroupID int64 `json:"group_id"`
+	UserID  int64 `json:"user_id"`
+	RoleID  int64 `json:"role_id"`
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(handleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandler(handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+
+	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
 }
 
 func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
@@ -50,10 +150,10 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 
 	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
 	if err != nil {
-		return "Failed retrieving you?", err
+		return nil, err
 	}
 
-	given, err := FindAssignRole(parsed.GS.ID, member, parsed.Args[0].Str())
+	given, err := FindToggleRole(parsed.Context(), member, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
@@ -100,7 +200,7 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 }
 
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
-	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.GS.ID)
+	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.Context(), parsed.GS.ID)
 	if err != nil {
 		return "Failed retrieving role commands", err
 	}
@@ -157,4 +257,41 @@ func StringCommands(cmds []*models.RoleCommand) string {
 	}
 
 	return output + "```\n"
+}
+
+func handleRemoveMemberRole(evt *schEvtsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	dataCast := data.(*ScheduledMemberRoleRemoveData)
+	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	// remove the reaction
+	menus, err := models.RoleMenus(
+		qm.Where("role_group_id = ? AND guild_id =?", dataCast.GroupID, dataCast.GuildID),
+		qm.OrderBy("message_id desc"),
+		qm.Limit(10),
+		qm.Load("RoleMenuOptions.RoleCommand")).AllG(context.Background())
+	if err != nil {
+		return false, err
+	}
+
+OUTER:
+	for _, v := range menus {
+		for _, opt := range v.R.RoleMenuOptions {
+			if opt.R.RoleCommand.Role == dataCast.RoleID {
+				// remove it
+				emoji := opt.UnicodeEmoji
+				if opt.EmojiID != 0 {
+					emoji = "aaa:" + discordgo.StrID(opt.EmojiID)
+				}
+
+				err := common.BotSession.MessageReactionRemove(v.ChannelID, v.MessageID, emoji, dataCast.UserID)
+				common.LogIgnoreError(err, "rolecommands: failed removing reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
+				continue OUTER
+			}
+		}
+	}
+
+	return scheduledevents2.CheckDiscordErrRetry(err), err
 }

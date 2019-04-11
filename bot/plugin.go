@@ -2,7 +2,8 @@ package bot
 
 import (
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil/dstate"
+	"github.com/jonas747/dshardorchestrator"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
 	"sync"
@@ -28,11 +29,13 @@ type BotInitHandler interface {
 	BotInit()
 }
 
-// Fired after the bot has connected all shards
-type BotStartedHandler interface {
-	BotStarted()
+// Fired when the bot it starting up, after BotInit
+type LateBotInitHandler interface {
+	LateBotInit()
 }
 
+// BotStopperHandler runs when the bot is shuttdown down
+// you need to call wg.Done when you have completed your plugin shutdown (stopped background workers)
 type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)
 }
@@ -46,8 +49,16 @@ func EmitGuildRemoved(guildID int64) {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(guildID)
 			if err != nil {
-				logrus.WithError(err).Error("Error Running RemoveGuild on ", v.Name())
+				logrus.WithError(err).Error("Error Running RemoveGuild on ", v.PluginInfo().Name)
 			}
 		}
 	}
+}
+
+type ShardMigrationSender interface {
+	ShardMigrationSend(shard int) int
+}
+
+type ShardMigrationReceiver interface {
+	ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{})
 }

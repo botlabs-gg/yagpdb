@@ -3,12 +3,17 @@ package bot
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/master"
-	"github.com/mediocregopher/radix.v3"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix"
 	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"runtime/debug"
 	"sync"
-	"sync/atomic"
+	"time"
 )
 
 var (
@@ -18,43 +23,6 @@ var (
 
 	botStartedFired = new(int32)
 )
-
-// Once we have received a guild create for all guilds
-// We fire BotStarted
-func setWaitingGuildReady(g int64) {
-	if atomic.LoadInt32(botStartedFired) == 1 {
-		return
-	}
-
-	waitingGuildsMU.Lock()
-	delete(waitingGuilds, g)
-	shouldFireStarted := len(waitingReadies) < 1
-
-	// Some shards aren't ready yet
-	if len(waitingReadies) > 0 {
-		shouldFireStarted = false
-	}
-
-	if shouldFireStarted {
-		atomic.StoreInt32(botStartedFired, 1)
-	}
-
-	waitingGuildsMU.Unlock()
-
-	if shouldFireStarted {
-		log.Println("Bot is now fully ready")
-
-		stateLock.Lock()
-		currentState := state
-		stateLock.Unlock()
-
-		if currentState == StateSoftStarting {
-			SlaveClient.Send(master.EvtSoftStartComplete, nil, true)
-		}
-
-		BotStarted()
-	}
-}
 
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
@@ -72,7 +40,7 @@ func HandleReady(data *eventsystem.EventData) {
 	}
 	waitingGuildsMU.Unlock()
 
-	ContextSession(data.Context()).UpdateStatus(0, "v"+common.VERSION+" :)")
+	RefreshStatus(ContextSession(data.Context()))
 
 	// We pass the common.Session to the command system and that needs the user from the state
 	common.BotSession.State.Lock()
@@ -83,6 +51,36 @@ func HandleReady(data *eventsystem.EventData) {
 	}
 	common.BotSession.State.Ready = ready
 	common.BotSession.State.Unlock()
+
+	var listedServers []int64
+	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
+	if err != nil {
+		log.WithError(err).Error("Failed retrieving connected servers")
+	}
+
+	numShards := ShardManager.GetNumShards()
+
+OUTER:
+	for _, v := range listedServers {
+		shard := (v >> 22) % int64(numShards)
+		if int(shard) != data.Session.ShardID {
+			continue
+		}
+
+		for _, readyGuild := range evt.Guilds {
+			if readyGuild.ID == v {
+				continue OUTER
+			}
+		}
+
+		log.Info("Left server while bot was down: ", v)
+		common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
+		go EmitGuildRemoved(v)
+
+		if common.Statsd != nil {
+			common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
+		}
+	}
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
@@ -92,28 +90,46 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		"guild":  g.ID,
 	}).Debug("Joined guild")
 
-	setWaitingGuildReady(g.ID)
-
 	var n int
 	err := common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
 	if err != nil {
 		log.WithError(err).Error("Redis error")
 	}
 
+	// check if this server is new
 	if n > 0 {
 		log.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
 		go eventsystem.EmitEvent(&eventsystem.EventData{
 			EvtInterface: g,
 			Type:         eventsystem.EventNewGuild,
 		}, eventsystem.EventNewGuild)
+
+		if common.Statsd != nil {
+			common.Statsd.Incr("yagpdb.joined_guilds", nil, 1)
+		}
 	}
 
+	// check if the server is banned from using the bot
 	var banned bool
 	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
 	if banned {
 		log.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
 		common.BotSession.GuildLeave(g.ID)
+	}
+
+	gm := &models.JoinedGuild{
+		ID:          g.ID,
+		MemberCount: int64(g.MemberCount),
+		OwnerID:     g.OwnerID,
+		JoinedAt:    time.Now(),
+		Name:        g.Name,
+		Avatar:      g.Icon,
+	}
+
+	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("member_count", "name", "avatar", "owner_id", "left_at"), boil.Infer())
+	if err != nil {
+		log.WithError(err).Error("failed upserting guild")
 	}
 }
 
@@ -122,8 +138,6 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 		// Just a guild outage
 		return
 	}
-
-	setWaitingGuildReady(evt.GuildDelete().ID)
 
 	log.WithFields(log.Fields{
 		"g_name": evt.GuildDelete().Name,
@@ -135,6 +149,60 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 	}
 
 	go EmitGuildRemoved(evt.GuildDelete().ID)
+
+	if common.Statsd != nil {
+		common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
+	}
+
+	models.JoinedGuilds(qm.Where("id = ?", evt.GuildDelete().ID)).UpdateAll(evt.Context(), common.PQ, models.M{
+		"left_at": null.TimeFrom(time.Now()),
+	})
+}
+
+func HandleGuildMemberAdd(evt *eventsystem.EventData) {
+	ma := evt.GuildMemberAdd()
+
+	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
+
+	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
+	if err != nil {
+		log.WithError(err).Error("failed updating guild member count")
+	}
+}
+
+func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+	mr := evt.GuildMemberRemove()
+	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
+	if err != nil {
+		log.WithError(err).Error("failed updating guild member count")
+	}
+}
+
+func HandleResumed(evt *eventsystem.EventData) {
+	guilds := State.GuildsSlice(true)
+
+	for _, v := range guilds {
+		v.RLock()
+		name := v.Guild.Name
+		mc := v.Guild.MemberCount
+		ownerID := v.Guild.OwnerID
+		icon := v.Guild.Icon
+		v.RUnlock()
+
+		gm := &models.JoinedGuild{
+			ID:          v.ID,
+			MemberCount: int64(mc),
+			OwnerID:     ownerID,
+			JoinedAt:    time.Now(),
+			Name:        name,
+			Avatar:      icon,
+		}
+
+		err := gm.Upsert(evt.Context(), common.PQ, false, []string{"id"}, boil.Infer(), boil.Infer())
+		if err != nil {
+			log.WithError(err).Error("failed upserting guild in resume")
+		}
+	}
 }
 
 // StateHandler updates the world state
@@ -145,6 +213,22 @@ func StateHandler(evt *eventsystem.EventData) {
 
 func HandleGuildUpdate(evt *eventsystem.EventData) {
 	InvalidateCache(evt.GuildUpdate().Guild.ID, 0)
+
+	g := evt.GuildUpdate().Guild
+
+	gm := &models.JoinedGuild{
+		ID:          g.ID,
+		MemberCount: int64(g.MemberCount),
+		OwnerID:     g.OwnerID,
+		JoinedAt:    time.Now(),
+		Name:        g.Name,
+		Avatar:      g.Icon,
+	}
+
+	err := gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("name", "avatar", "owner_id"), boil.Infer())
+	if err != nil {
+		log.WithError(err).Error("failed upserting guild in update")
+	}
 }
 
 func HandleGuildRoleUpdate(evt *eventsystem.EventData) {
@@ -185,6 +269,46 @@ func InvalidateCache(guildID, userID int64) {
 
 func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {
 	return func(evt *eventsystem.EventData) {
-		go inner(evt)
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					stack := string(debug.Stack())
+					log.WithField(log.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+				}
+			}()
+
+			inner(evt)
+		}()
+	}
+}
+
+func HandleReactionAdd(evt *eventsystem.EventData) {
+	ra := evt.MessageReactionAdd()
+	if ra.GuildID != 0 {
+		return
+	}
+	if ra.UserID == common.BotUser.ID {
+		return
+	}
+
+	err := pubsub.Publish("dm_reaction", -1, ra)
+	if err != nil {
+		log.WithError(err).Error("failed publishing dm reaction")
+	}
+}
+
+func HandleMessageCreate(evt *eventsystem.EventData) {
+	mc := evt.MessageCreate()
+	if mc.GuildID != 0 {
+		return
+	}
+
+	if mc.Author == nil || mc.Author.ID == common.BotUser.ID {
+		return
+	}
+
+	err := pubsub.Publish("dm_message", -1, mc)
+	if err != nil {
+		log.WithError(err).Error("failed publishing dm message")
 	}
 }
