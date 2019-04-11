@@ -123,6 +123,7 @@ So if you're behind a NAT, forward those, if not you can either use the `-pa` sw
 
 * Youtube-Feed
 * Stream-announcements
+* Server Stats
 * Soundboard
 * Reputation
 * Reminder
