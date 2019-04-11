@@ -4,4 +4,4 @@ In order to make a suggestion, head to the [issues page](https://github.com/jona
 
 If you want to make a contribution, create a fork, then push the changes you make to the dev branch (Jonas747/yagpdb/dev). This is key for larger commits and edits to important / complicated parts of the bot so it can be tested safely without breaking everything.
 
-Any further inquiries? Join the [support server](https://discord.gg/NR6Hpz3) and ask a member of the support team or an active contributor!
+Any further inquiries? Join the [support server](https://discord.gg/4udtcA5) and ask a member of the support team or an active contributor!
