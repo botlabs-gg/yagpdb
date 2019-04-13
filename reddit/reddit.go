@@ -82,6 +82,11 @@ func RegisterPlugin() {
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
 
+	if ClientID == "" || ClientSecret == "" || RefreshToken == "" {
+		log.Warn("[reddit] Missing reddit config, not enabling plugin")
+		return
+	}
+
 	plugin.redditClient = setupClient()
 
 	common.RegisterPlugin(plugin)
