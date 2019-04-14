@@ -4,6 +4,6 @@ services:
   app:
     ports:
       # If not using proxied (docker-compose -f), then we expose these ports on the host.
-      - "80"
-      - "443"
+      - "80:80"
+      - "443:443"
 
