@@ -28,7 +28,7 @@ services:
     env_file:
       - app.env
     environment:
-      - external_tls=-https=false
+      - extra_flags=-https=false -exthttps=true
 
   redis:
     image: redis
