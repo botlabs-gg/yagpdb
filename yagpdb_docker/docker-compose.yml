@@ -4,6 +4,7 @@ volumes:
   db:
   redis:
   cert_cache:
+  soundboard:
 
 networks:
   default:
@@ -23,6 +24,7 @@ services:
       - default
     volumes:
       - cert_cache:/app/cert
+      - soundboard:/app/soundboard
     env_file:
       - app.env
 
