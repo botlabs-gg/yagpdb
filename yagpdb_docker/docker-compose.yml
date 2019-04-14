@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 volumes:
   db:
@@ -21,9 +21,6 @@ services:
       - db
     networks:
       - default
-    ports:
-      - "80"
-      - "443"
     volumes:
       - cert_cache:/app/cert
     env_file:
