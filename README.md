@@ -7,7 +7,7 @@ YAGPDB is a multifunctional, modular Discord bot. It's modular in that plugins e
 
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
- - [For updates and support join my discord server](https://discord.gg/Cj6kCba)
+ - [For updates and support join my discord server](https://discord.gg/4udtcA5)
  - [The documentation of YAGPDB](https://docs.yagpdb.xyz/)
 
 ### Running YAGPDB yourself
@@ -123,8 +123,8 @@ So if you're behind a NAT, forward those, if not you can either use the `-pa` sw
 
 * Youtube-Feed
 * Stream-announcements
+* Server Stats
 * Soundboard
-* Serverstats
 * Reputation
 * Reminder
 * Reddit-Feed
