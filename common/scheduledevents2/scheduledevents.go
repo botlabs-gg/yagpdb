@@ -43,17 +43,9 @@ func (p *ScheduledEvents) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	err := InitSchema()
-	if err != nil {
-		logrus.WithError(err).Fatal("scheduledevents failed initializing db schema")
-	}
+	common.InitSchema(DBSchema, "scheduledevents2")
 
 	common.RegisterPlugin(newScheduledEventsPlugin())
-}
-
-func InitSchema() error {
-	_, err := common.PQ.Exec(DBSchema)
-	return err
 }
 
 type HandlerFunc func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error)

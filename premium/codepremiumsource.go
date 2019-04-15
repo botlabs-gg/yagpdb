@@ -35,10 +35,6 @@ func init() {
 type CodePremiumSource struct{}
 
 func (ps *CodePremiumSource) Init() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		logrus.WithError(err).Error("Failed initilizing premium code source")
-	}
 }
 
 func (ps *CodePremiumSource) Names() (human string, idname string) {

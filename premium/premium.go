@@ -35,6 +35,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
+	common.InitSchema(DBSchema, "premium")
+
 	common.RegisterPlugin(&Plugin{})
 
 	for _, v := range PremiumSources {

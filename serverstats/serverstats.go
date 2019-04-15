@@ -32,12 +32,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	common.ValidateSQLSchema(DBSchema)
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		log.WithError(err).Error("serverstats: failed initializing db schema, serverstats will be disabled")
-		return
-	}
+	common.InitSchema(DBSchema, "serverstats")
 
 	plugin := &Plugin{
 		stopStatsLoop: make(chan *sync.WaitGroup),

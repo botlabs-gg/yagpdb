@@ -72,11 +72,7 @@ func (p *Plugin) WebhookAvatar() string {
 }
 
 func RegisterPlugin() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		log.WithError(err).Error("reddit: failed initalizing database schema, not enabling plugin")
-		return
-	}
+	common.InitSchema(DBSchema, "reddit")
 
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),

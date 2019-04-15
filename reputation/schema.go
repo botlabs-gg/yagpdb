@@ -1,8 +1,6 @@
 package reputation
 
 const DBSchema = `
--- DROP TABLE IF EXISTS reputation_configs;
-
 CREATE TABLE IF NOT EXISTS reputation_configs (
 	guild_id        bigint PRIMARY KEY,
 	points_name     varchar(50) NOT NULL,
@@ -61,8 +59,6 @@ END $$;
 
 
 
--- DROP TABLE IF EXISTS reputation_users;
-
 CREATE TABLE IF NOT EXISTS reputation_users (
 	user_id  bigint NOT NULL,
 	guild_id bigint NOT NULL,
@@ -72,8 +68,6 @@ CREATE TABLE IF NOT EXISTS reputation_users (
 
 	PRIMARY KEY(guild_id, user_id)
 );
-
--- DROP TABLE IF EXISTS reputation_log;
 
 CREATE TABLE IF NOT EXISTS reputation_log (
 	id bigserial 	 PRIMARY KEY,

@@ -29,11 +29,7 @@ func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.S
 type Plugin struct{}
 
 func RegisterPlugin() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		log.WithError(err).Error("failed initializing custom commands schema, not enabling")
-		return
-	}
+	common.InitSchema(DBSchema, "customcommands")
 
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)

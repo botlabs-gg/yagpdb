@@ -11,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -36,18 +35,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		logrus.WithError(err).Error("failed initializing logging database, will be disabled")
-		return
-	}
-
-	// err := common.GORM.AutoMigrate(&MessageLog{}, &Message{}, &UsernameListing{}, &NicknameListing{}, GuildLoggingConfig{}).Error
-	// if err != nil {
-	// panic(err)
-	// }
-
-	// configstore.RegisterConfig(configstore.SQL, &GuildLoggingConfig{})
+	common.InitSchema(DBSchema, "logs")
 
 	p := &Plugin{}
 	common.RegisterPlugin(p)

@@ -21,10 +21,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	if !common.InitSchema(DBSchema, "tickets") {
-		logrus.Error("[tickets] failed initializing tickets schema, not enabling plugin")
-		return
-	}
+	common.InitSchema(DBSchema, "tickets")
 
 	common.RegisterPlugin(&Plugin{})
 }

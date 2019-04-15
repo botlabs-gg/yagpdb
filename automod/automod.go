@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/karlseguin/ccache"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"unicode"
@@ -32,11 +31,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 func RegisterPlugin() {
 	RegexCache = ccache.New(ccache.Configure())
 
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		logrus.WithError(err).Error("Failed setting up automod postgres tables, plugin will be disabled.")
-		return
-	}
+	common.InitSchema(DBSchema, "automod_v2")
 
 	p := &Plugin{}
 	common.RegisterPlugin(p)

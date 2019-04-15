@@ -93,9 +93,7 @@ func Init() error {
 		panic(err)
 	}
 
-	if !InitSchema(CoreServerConfDBSchema, "core configs") {
-		logrus.Fatal("error initializing schema")
-	}
+	InitSchema(CoreServerConfDBSchema, "core_configs")
 
 	return err
 }
@@ -179,12 +177,11 @@ func connectDB(host, user, pass, dbName string) error {
 	return err
 }
 
-func InitSchema(schema string, name string) bool {
+func InitSchema(schema string, name string) {
 	_, err := PQ.Exec(schema)
 	if err != nil {
-		logrus.WithError(err).Error("failed initializing postgres db schema for ", name)
-		return false
+		logrus.WithError(err).Fatal("failed initializing postgres db schema for ", name)
 	}
 
-	return true
+	return
 }

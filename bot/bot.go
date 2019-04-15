@@ -54,10 +54,7 @@ var (
 )
 
 func setup() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		log.WithError(err).Fatal("failed initializing db schema")
-	}
+	common.InitSchema(DBSchema, "core_bot")
 
 	discordgo.IdentifyRatelimiter = &identifyRatelimiter{}
 
