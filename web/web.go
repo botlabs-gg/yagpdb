@@ -246,8 +246,8 @@ func setupRoutes() *goji.Mux {
 	serverPublicMux.Use(LoadCoreConfigMiddleware)
 	serverPublicMux.Use(SetGuildMemberMiddleware)
 
-	RootMux.Handle(pat.Get("/public/:server"), serverPublicMux)
-	RootMux.Handle(pat.Get("/public/:server/*"), serverPublicMux)
+	RootMux.Handle(pat.New("/public/:server"), serverPublicMux)
+	RootMux.Handle(pat.New("/public/:server/*"), serverPublicMux)
 	ServerPublicMux = serverPublicMux
 
 	// same as above but for API stuff
