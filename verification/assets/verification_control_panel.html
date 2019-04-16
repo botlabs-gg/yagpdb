@@ -31,7 +31,7 @@
                             <div class="form-group">
                                 <label>Verified Role</label><br>
                                 <select name="VerifiedRole" class="form-control">
-                                    {{roleOptions .ActiveGuild.Roles nil .PluginSettings.VerifiedRole}}
+                                    {{roleOptions .ActiveGuild.Roles .HighestRole .PluginSettings.VerifiedRole}}
                                 </select>
                             </div>
 
