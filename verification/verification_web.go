@@ -81,7 +81,9 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 		LogChannel:          formConfig.LogChannel,
 	}
 
-	err := model.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
+	columns := boil.Whitelist("enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel")
+	columnsCreate := boil.Whitelist("guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel")
+	err := model.UpsertG(ctx, true, []string{"guild_id"}, columns, columnsCreate)
 	return templateData, err
 }
 
