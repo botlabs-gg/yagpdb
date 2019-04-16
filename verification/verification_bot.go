@@ -129,7 +129,7 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 
 	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, conf.VerifiedRole)
 	if err == nil {
-		p.logAction(conf.LogChannel, ms.DGoUser(), "User sucessfully verified", 0x49ed47)
+		p.logAction(conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
 	}
 
 	return scheduledevents2.CheckDiscordErrRetry(err), err
