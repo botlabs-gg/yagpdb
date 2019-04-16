@@ -89,9 +89,6 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 	ctx := r.Context()
 	g, templateData := web.GetBaseCPContextData(ctx)
 
-	templateData["ExtraHead"] = template.HTML(`<script src="https://www.google.com/recaptcha/api.js" async defer></script>`)
-	templateData["GoogleReCaptchaSiteKey"] = GoogleReCAPTCHASiteKey
-
 	// render main page content
 	settings, err := models.FindVerificationConfigG(ctx, g.ID)
 	if err == sql.ErrNoRows {
@@ -100,6 +97,18 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 		}
 		err = nil
 	}
+
+	if err != nil {
+		return templateData, err
+	}
+
+	if !settings.Enabled {
+		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this server"))
+		return templateData, nil
+	}
+
+	templateData["ExtraHead"] = template.HTML(`<script src="https://www.google.com/recaptcha/api.js" async defer></script>`)
+	templateData["GoogleReCaptchaSiteKey"] = GoogleReCAPTCHASiteKey
 
 	msg := settings.PageContent
 	if msg == "" {
@@ -116,6 +125,23 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	g, templateData := web.GetBaseCPContextData(ctx)
+
+	settings, err := models.FindVerificationConfigG(ctx, g.ID)
+	if err == sql.ErrNoRows {
+		settings = &models.VerificationConfig{
+			GuildID: g.ID,
+		}
+		err = nil
+	}
+
+	if err != nil {
+		return templateData, err
+	}
+
+	if !settings.Enabled {
+		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this server"))
+		return templateData, nil
+	}
 
 	valid, err := p.checkCAPTCHAResponse(r.FormValue("g-recaptcha-response"))
 
