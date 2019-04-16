@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
 	"html/template"
@@ -191,6 +192,10 @@ func (p *Plugin) checkCAPTCHAResponse(response string) (valid bool, err error) {
 	err = decoder.Decode(&dst)
 	if err != nil {
 		return false, err
+	}
+
+	if !dst.Success {
+		logrus.Warnf("reCATPCHA failed: %#v", dst)
 	}
 
 	return dst.Success, nil
