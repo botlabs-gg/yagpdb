@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 volumes:
   proxy_certs:
@@ -17,16 +17,16 @@ services:
     image: jwilder/nginx-proxy
     restart: unless-stopped
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     volumes:
       - proxy_config:/etc/nginx
-      - proxy_certs:/etc/nginx/certs:ro
       - proxy_dhparam:/etc/nginx/dhparam
-      - proxy_html:/usr/share/nginx/html
-      # Hack to create dir since the companion expects it from start.
-      - proxy_vhost:/etc/nginx/vhost.d
       - /var/run/docker.sock:/tmp/docker.sock:ro
+      # For sharing with jrcs/letsencrypt-nginx-proxy-companion
+      - proxy_certs:/etc/nginx/certs:ro
+      - proxy_vhost:/etc/nginx/vhost.d
+      - proxy_html:/usr/share/nginx/html
     labels:
       com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
     networks:
@@ -35,11 +35,11 @@ services:
   letsencrypt-companion:
     image: jrcs/letsencrypt-nginx-proxy-companion
     restart: unless-stopped
-    volumes_from:
-      - proxy
     volumes:
+      - proxy_certs:/etc/nginx/certs
+      - proxy_vhost:/etc/nginx/vhost.d
+      - proxy_html:/usr/share/nginx/html
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - proxy_certs:/etc/nginx/certs:rw
     networks:
       - proxy-tier
     depends_on:

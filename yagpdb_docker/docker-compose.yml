@@ -1,9 +1,10 @@
-version: '2'
+version: '3'
 
 volumes:
   db:
   redis:
   cert_cache:
+  soundboard:
 
 networks:
   default:
@@ -21,11 +22,9 @@ services:
       - db
     networks:
       - default
-    ports:
-      - "80"
-      - "443"
     volumes:
       - cert_cache:/app/cert
+      - soundboard:/app/soundboard
     env_file:
       - app.env
 
