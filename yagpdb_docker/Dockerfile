@@ -5,7 +5,7 @@ WORKDIR $GOPATH/src
 RUN git clone -b yagpdb https://github.com/jonas747/discordgo github.com/jonas747/discordgo \
   && git clone -b dgofork https://github.com/jonas747/dutil github.com/jonas747/dutil \
   && git clone -b dgofork https://github.com/jonas747/dshardmanager github.com/jonas747/dshardmanager \
-  && git clone -b dgofork https://github.com/jonas747/dcmd github.com/jonas747/dcmd \
+  && git clone -b dgofork https://github.com/jonas747/dcmd github.com/jonas747/dcmd
 
 RUN go get -d -v \
   github.com/jonas747/yagpdb/cmd/yagpdb

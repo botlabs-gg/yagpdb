@@ -1,50 +1,14 @@
-version: '2'
-
-volumes:
-  db:
-  redis:
-  cert_cache:
+version: '3'
 
 networks:
-  default:
   proxy-tier:
     external:
       name: proxy-tier
 
 services:
   app:
-    build:
-      # We change context so that we can copy the local repo in during
-      # development
-      context: ../
-      dockerfile: yagpdb_docker/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - redis
-      - db
     networks:
-      - default
       - proxy-tier
-    env_file:
-      - app.env
     environment:
-      - external_tls=-https=false
-
-  redis:
-    image: redis
-    restart: unless-stopped
-    networks:
-      - default
-    volumes:
-      - redis:/data
-
-  db:
-    image: postgres
-    restart: unless-stopped
-    volumes:
-      - db:/var/lib/postgresql/data
-    networks:
-      - default
-    env_file:
-      - db.env
+      - extra_flags=-https=false -exthttps=true
 

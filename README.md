@@ -7,7 +7,7 @@ YAGPDB is a multifunctional, modular Discord bot. It's modular in that plugins e
 
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
- - [For updates and support join my discord server](https://discord.gg/Cj6kCba)
+ - [For updates and support join my discord server](https://discord.gg/4udtcA5)
  - [The documentation of YAGPDB](https://docs.yagpdb.xyz/)
 
 ### Running YAGPDB yourself
@@ -55,7 +55,7 @@ Edit `app.env` and `db.env` to specify the Discord bot values from above.
 
 Make sure ports 80 and 443 are accessible on your network and launch:
 
-    docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml up
+    docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml -f yagpdb/yagpdb_docker/docker-compose.override.yml up
 
 The bot will connect automatically and the control panel will be available via
 your host after a short setup.
@@ -71,7 +71,7 @@ websites:
 
 And then start the bot using the proxy:
 
-    docker-compose -f yagpdb/yagpdb_docker/docker-compose.proxied.yml up
+    docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml -f yagpdb/yagpdb_docker/docker-compose.proxied.yml up
 
 #### Standalone/Manual setup
 
@@ -123,8 +123,8 @@ So if you're behind a NAT, forward those, if not you can either use the `-pa` sw
 
 * Youtube-Feed
 * Stream-announcements
+* Server Stats
 * Soundboard
-* Serverstats
 * Reputation
 * Reminder
 * Reddit-Feed
