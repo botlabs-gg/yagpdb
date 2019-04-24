@@ -114,6 +114,10 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 			Statsd.Incr("discord.requests.429", []string{"method:" + request.Method, "path:" + request.Method + "-" + path}, 1)
 		}
 
+		if since > 1000 {
+			logrus.WithField("path", request.URL.Path).WithField("ms", since).WithField("method", request.Method).Warn("Request took longer than a second to complete!")
+		}
+
 		// Statsd.Incr("discord.response.code."+strconv.Itoa(floored), nil, 1)
 		// Statsd.Incr("discord.request.method."+request.Method, nil, 1)
 	}()

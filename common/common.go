@@ -13,8 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
+	"net"
+	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 const (
@@ -137,8 +140,20 @@ func ConnectDatadog() {
 
 	Statsd = client
 
-	oldInnerClientTransport := BotSession.Client.HTTPClient.Transport
-	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: oldInnerClientTransport}
+	innerTransport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   5 * time.Second,
+			KeepAlive: 5 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: innerTransport}
 }
 
 func InitTest() {
