@@ -137,8 +137,8 @@ func ConnectDatadog() {
 
 	Statsd = client
 
-	currentTransport := BotSession.Client.HTTPClient.Transport
-	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: currentTransport}
+	oldInnerClientTransport := BotSession.Client.HTTPClient.Transport
+	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: oldInnerClientTransport}
 }
 
 func InitTest() {
