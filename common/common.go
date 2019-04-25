@@ -78,7 +78,12 @@ func Init() error {
 		return err
 	}
 
-	err = connectDB(config.PQHost, config.PQUsername, config.PQPassword, "yagpdb")
+	db := "yagpdb"
+	if config.PQDB != "" {
+		db = config.PQDB
+	}
+
+	err = connectDB(config.PQHost, config.PQUsername, config.PQPassword, db)
 	if err != nil {
 		panic(err)
 	}
