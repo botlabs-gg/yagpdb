@@ -13,8 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
+	"net"
+	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 const (
@@ -114,6 +117,26 @@ func setupGlobalDGoSession() (err error) {
 	BotSession.MaxRestRetries = 5
 	BotSession.Ratelimiter.MaxConcurrentRequests = maxCCReqs
 
+	innerTransport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   5 * time.Second,
+			KeepAlive: 5 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	if os.Getenv("YAGPDB_DISABLE_KEEPALIVES") != "" {
+		innerTransport.DisableKeepAlives = true
+		logrus.Info("Keep alive connections to REST api for discord is disabled, may cause overhead")
+	}
+
+	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: innerTransport}
+
 	return nil
 }
 
@@ -135,8 +158,6 @@ func ConnectDatadog() {
 
 	Statsd = client
 
-	currentTransport := BotSession.Client.HTTPClient.Transport
-	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: currentTransport}
 }
 
 func InitTest() {
