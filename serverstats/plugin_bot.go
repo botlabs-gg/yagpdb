@@ -2,7 +2,6 @@ package serverstats
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -216,7 +215,6 @@ func (p *Plugin) runOnlineUpdater() {
 	var i int
 	var numToCheckPerRun int
 
-OUTER:
 	for {
 		select {
 		case <-ticker.C:
@@ -237,23 +235,39 @@ OUTER:
 
 		started := time.Now()
 
+		totalCounts := make(map[int64][2]int)
+
+		checkedThisRound := 0
+		for ; i < len(guildsToCheck) && checkedThisRound < numToCheckPerRun; i++ {
+			g := guildsToCheck[i]
+			online, total := p.checkGuildOnlineCount(g)
+
+			totalCounts[g.ID] = [2]int{online, total}
+			checkedThisRound++
+		}
+
+		t := RoundHour(time.Now())
+
 		tx, err := common.PQ.Begin()
 		if err != nil {
 			log.WithError(err).Error("[serverstats] failed starting online count transaction")
 			continue
 		}
 
-		checkedThisRound := 0
-		for ; i < len(guildsToCheck) && checkedThisRound < numToCheckPerRun; i++ {
-			g := guildsToCheck[i]
-			err := p.checkGuildOnlineCount(g, tx)
+		for g, counts := range totalCounts {
+			_, err := tx.Exec(`INSERT INTO server_stats_member_periods  (guild_id, created_at, num_members, joins, leaves, max_online)
+VALUES ($1, $2, $3, 0, 0, $4)
+ON CONFLICT (guild_id, created_at)
+DO UPDATE SET 
+max_online = GREATEST (server_stats_member_periods.max_online, $4)
+`, g, t, counts[1], counts[0]) // update clause vars
+
 			if err != nil {
-				log.WithError(err).WithField("guild", g.ID).Error("[serverstats] failed checking guild online count")
+				log.WithError(err).WithField("guild", g).Error("[serverstats] failed checking guild online count")
 				tx.Rollback()
-				continue OUTER
+				break
 			}
 
-			checkedThisRound++
 		}
 
 		err = tx.Commit()
@@ -267,12 +281,10 @@ OUTER:
 	}
 }
 
-func (p *Plugin) checkGuildOnlineCount(guild *dstate.GuildState, tx *sql.Tx) error {
-	online := 0
-	totalMembers := 0
+func (p *Plugin) checkGuildOnlineCount(guild *dstate.GuildState) (online int, total int) {
 
 	guild.RLock()
-	totalMembers = guild.Guild.MemberCount
+	total = guild.Guild.MemberCount
 	for _, v := range guild.Members {
 		if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
 			online++
@@ -280,14 +292,5 @@ func (p *Plugin) checkGuildOnlineCount(guild *dstate.GuildState, tx *sql.Tx) err
 	}
 	guild.RUnlock()
 
-	t := RoundHour(time.Now())
-
-	_, err := tx.Exec(`INSERT INTO server_stats_member_periods  (guild_id, created_at, num_members, joins, leaves, max_online)
-VALUES ($1, $2, $3, 0, 0, $4)
-ON CONFLICT (guild_id, created_at)
-DO UPDATE SET 
-max_online = GREATEST (server_stats_member_periods.max_online, $4)
-`, guild.ID, t, totalMembers, online) // update clause vars
-
-	return err
+	return online, total
 }
