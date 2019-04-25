@@ -17,6 +17,7 @@ type CoreConfig struct {
 	PQHost     string
 	PQUsername string
 	PQPassword string
+	PQDB       string
 	Redis      string
 
 	DogStatsdAddress string
