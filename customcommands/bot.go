@@ -99,6 +99,9 @@ var cmdListCommands = &commands.YAGCommand{
 		foundCCS, provided := FindCommands(ccs, data)
 		if len(foundCCS) < 1 {
 			list := StringCommands(ccs)
+			if len(list) == 0 {
+				return "This server has no custom commands, sry.", nil
+			}
 			if provided {
 				return "No command by that name or id found, here is a list of them all:\n" + list, nil
 			} else {
