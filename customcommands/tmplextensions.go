@@ -35,9 +35,11 @@ func init() {
 		ctx.ContextFuncs["dbSetExpire"] = tmplDBSetExpire(ctx)
 		ctx.ContextFuncs["dbIncr"] = tmplDBIncr(ctx)
 		ctx.ContextFuncs["dbGet"] = tmplDBGet(ctx)
-		ctx.ContextFuncs["dbGetPattern"] = tmplDBGetPattern(ctx)
+		ctx.ContextFuncs["dbGetPattern"] = tmplDBGetPattern(ctx, false)
+		ctx.ContextFuncs["dbGetPatternReverse"] = tmplDBGetPattern(ctx, true)
 		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
-		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx)
+		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
+		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
 	})
 }
 
@@ -422,7 +424,12 @@ func tmplDBGet(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBGetPattern(ctx *templates.Context) interface{} {
+func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
+	order := "id asc"
+	if inverse {
+		order = "id desc"
+	}
+
 	return func(userID int64, pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
@@ -441,7 +448,7 @@ func tmplDBGetPattern(ctx *templates.Context) interface{} {
 		keyStr := limitString(templates.ToString(pattern), 256)
 		results, err := models.TemplatesUserDatabases(
 			qm.Where("guild_id = ? AND user_id = ? AND key LIKE ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, userID, keyStr),
-			qm.OrderBy("ID ASC"), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
+			qm.OrderBy(order), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
@@ -465,7 +472,12 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBTopEntries(ctx *templates.Context) interface{} {
+func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
+	orderBy := "value_num DESC"
+	if bottom {
+		orderBy = "value_num ASC"
+	}
+
 	return func(pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
@@ -484,7 +496,7 @@ func tmplDBTopEntries(ctx *templates.Context) interface{} {
 		keyStr := limitString(templates.ToString(pattern), 256)
 		results, err := models.TemplatesUserDatabases(
 			qm.Where("guild_id = ? AND key LIKE ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, keyStr),
-			qm.OrderBy("value_num DESC"), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
+			qm.OrderBy(orderBy), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
