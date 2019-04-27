@@ -4,10 +4,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"math"
 	"net/http"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -125,4 +127,73 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 	}()
 
 	return resp, err
+}
+
+type PrefixedLogFormatter struct {
+	Inner  logrus.Formatter
+	Prefix string
+}
+
+func (p *PrefixedLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	entryCop := *entry
+	entryCop.Message = p.Prefix + entryCop.Message
+
+	return p.Inner.Format(&entryCop)
+}
+
+// We pretty the logging up a bit here, adding a prefix for plugins
+var loggers = []*logrus.Logger{logrus.StandardLogger()}
+var loggersmu sync.Mutex
+
+func AddLogHook(hook logrus.Hook) {
+	loggersmu.Lock()
+
+	for _, v := range loggers {
+		v.AddHook(hook)
+	}
+
+	loggersmu.Unlock()
+}
+
+func SetLogFormatter(formatter logrus.Formatter) {
+	loggersmu.Lock()
+
+	for _, v := range loggers {
+		if cast, ok := v.Formatter.(*PrefixedLogFormatter); ok {
+			cast.Inner = formatter
+		} else {
+			v.SetFormatter(formatter)
+		}
+	}
+
+	loggersmu.Unlock()
+}
+
+func GetPluginLogger(plugin Plugin) *logrus.Logger {
+	info := plugin.PluginInfo()
+
+	l := logrus.New()
+	stdLogger := logrus.StandardLogger()
+	cop := make(logrus.LevelHooks)
+	for k, v := range stdLogger.Hooks {
+		cop[k] = make([]logrus.Hook, len(v))
+		copy(cop[k], v)
+	}
+
+	l.Level = logrus.InfoLevel
+	if os.Getenv("YAGPDB_TESTING") != "" || os.Getenv("YAGPDB_DEBUG_LOG") != "" {
+		l.Level = logrus.DebugLevel
+	}
+
+	l.Hooks = cop
+	l.Formatter = &PrefixedLogFormatter{
+		Inner:  stdLogger.Formatter,
+		Prefix: "[" + info.SysName + "] ",
+	}
+
+	loggersmu.Lock()
+	loggers = append(loggers, l)
+	loggersmu.Unlock()
+
+	return l
 }
