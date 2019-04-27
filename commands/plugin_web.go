@@ -10,7 +10,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
@@ -201,7 +200,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 				// Insert it
 				err = override.InsertG(r.Context(), boil.Infer())
 				if err != nil {
-					logrus.WithError(err).Error("Failed inserting global commands row")
+					logger.WithError(err).Error("Failed inserting global commands row")
 					// Was inserted somewhere else in the meantime
 					override, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).OneG(r.Context())
 				}

@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -166,7 +165,7 @@ func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cm
 		cmdLine += " "
 	}
 
-	logrus.Info("Custom template is executing a command:", cmdLine)
+	logger.Info("Custom template is executing a command:", cmdLine)
 
 	fakeMsg.Content = cmdLine
 

@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -38,7 +37,7 @@ func (p *Plugin) BotInit() {
 		gs.UserCacheDel(true, CacheKeyRulesets)
 		gs.UserCacheDel(true, CacheKeyLists)
 
-		logrus.Println("cleared automod cache for ", gs.ID)
+		logger.Println("cleared automod cache for ", gs.ID)
 	}, nil)
 }
 
@@ -59,7 +58,7 @@ func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
 
 	ms, err := bot.GetMember(msg.GuildID, msg.Author.ID)
 	if err != nil {
-		logrus.WithError(err).Debug("automod failed fetching member")
+		logger.WithError(err).Debug("automod failed fetching member")
 		return true
 	}
 
@@ -85,13 +84,13 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 	ctxData.TriggeredRules = nil
 
 	if ctxData.RecursionCounter > 2 {
-		logrus.WithField("guild", ctxData.GS.ID).Warn("automod stopped infinite recursion")
+		logger.WithField("guild", ctxData.GS.ID).Warn("automod stopped infinite recursion")
 		return
 	}
 
 	rulesets, err := p.FetchGuildRulesets(ctxData.GS)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed fetching guild rulesets")
+		logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed fetching guild rulesets")
 		return
 	}
 
@@ -102,7 +101,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 	// retrieve users violations
 	userViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.ID, violationName)).AllG(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("automod failed retrieving user violations")
+		logger.WithError(err).Error("automod failed retrieving user violations")
 		return
 	}
 
@@ -141,7 +140,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 				matched, err := violationTrigger.CheckUser(ctxData, userViolations, trig.ParsedSettings, false)
 				if err != nil {
-					logrus.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking violations trigger")
+					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking violations trigger")
 					continue
 				}
 
@@ -176,7 +175,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 			violationTrigger := t.Part.(ViolationListener)
 			matched, err := violationTrigger.CheckUser(ctxData, userViolations, t.ParsedSettings, triggeredOne)
 			if err != nil {
-				logrus.WithError(err).WithField("part_id", t.RuleModel.ID).Error("failed checking violations trigger")
+				logger.WithError(err).WithField("part_id", t.RuleModel.ID).Error("failed checking violations trigger")
 				continue
 			}
 
@@ -194,7 +193,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 		cClone.CurrentRule = nil
 
 		go p.RulesetRulesTriggered(cClone, true)
-		logrus.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(finalTriggeredRules), " violation rules")
+		logger.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(finalTriggeredRules), " violation rules")
 	}
 }
 
@@ -260,7 +259,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 		var err error
 		rulesets, err = p.FetchGuildRulesets(ms.Guild)
 		if err != nil {
-			logrus.WithError(err).WithField("guild", ms.Guild.ID).Error("automod: failed fetching triggers")
+			logger.WithError(err).WithField("guild", ms.Guild.ID).Error("failed fetching triggers")
 			return false
 		}
 
@@ -309,7 +308,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 
 				activated, err := checkF(trig)
 				if err != nil {
-					logrus.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking trigger")
+					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking trigger")
 					continue
 				}
 
@@ -338,7 +337,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, ms *dstate.MemberState
 		go p.RulesetRulesTriggered(ctxData, true)
 		activatededRules = true
 
-		logrus.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(triggeredRules), " rules")
+		logger.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(triggeredRules), " rules")
 	}
 
 	return activatededRules
@@ -383,7 +382,7 @@ func (p *Plugin) CheckConditions(ctxData *TriggeredRuleData, conditions []*Parse
 	for _, cond := range conditions {
 		met, err := cond.Part.(Condition).IsMet(ctxData, cond.ParsedSettings)
 		if err != nil {
-			logrus.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed checking if automod condition was met")
+			logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed checking if automod condition was met")
 			return false // assume the condition failed
 		}
 
@@ -407,7 +406,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			go func(fx *ParsedPart, ctx *TriggeredRuleData) {
 				err := fx.Part.(Effect).Apply(ctx, fx.ParsedSettings)
 				if err != nil {
-					logrus.WithError(err).WithField("guild", ruleset.RSModel.GuildID).WithField("part", fx.Part.Name()).Error("failed applying automod effect")
+					logger.WithError(err).WithField("guild", ruleset.RSModel.GuildID).WithField("part", fx.Part.Name()).Error("failed applying automod effect")
 				}
 			}(effect, ctxData.Clone())
 		}
@@ -438,7 +437,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			var err error
 			serializedExtraData, err = json.Marshal(ctxData.Message)
 			if err != nil {
-				logrus.WithError(err).Error("automod failed serializing extra data")
+				logger.WithError(err).Error("automod failed serializing extra data")
 				serializedExtraData = []byte("{}")
 			}
 		}
@@ -460,14 +459,14 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	tx, err := common.PQ.BeginTx(context.Background(), nil)
 	if err != nil {
-		logrus.WithError(err).Error("automod: failed creating transaction")
+		logger.WithError(err).Error("failed creating transaction")
 		return
 	}
 
 	for _, v := range loggedModels {
 		err = v.Insert(context.Background(), tx, boil.Infer())
 		if err != nil {
-			logrus.WithError(err).Error("automod: failed inserting logged triggered rule")
+			logger.WithError(err).Error("failed inserting logged triggered rule")
 			tx.Rollback()
 			return
 		}
@@ -475,7 +474,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	err = tx.Commit()
 	if err != nil {
-		logrus.WithError(err).Error("automod: failed committing logging transaction")
+		logger.WithError(err).Error("failed committing logging transaction")
 	}
 }
 

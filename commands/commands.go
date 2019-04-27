@@ -8,8 +8,9 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 )
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 type CtxKey int
 
@@ -39,7 +40,7 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
 	if err != nil {
-		log.WithError(err).Fatal("Failed migrating logged commands database")
+		logger.WithError(err).Fatal("Failed migrating logged commands database")
 	}
 
 	common.InitSchema(DBSchema, "commands")
