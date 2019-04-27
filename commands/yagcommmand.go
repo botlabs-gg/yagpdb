@@ -11,7 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
 	"sync"
@@ -389,7 +389,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 	cdLeft, err := yc.CooldownLeft(data.Msg.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
-		log.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
+		logger.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
@@ -415,7 +415,7 @@ func (yc *YAGCommand) humanizedRequiredPerms() string {
 }
 
 func (cs *YAGCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
-	log.Infof("Handled Command [%4dms] %s: %s", int(dur.Seconds()*1000), sender, raw)
+	logger.Infof("Handled Command [%4dms] %s: %s", int(dur.Seconds()*1000), sender, raw)
 }
 
 func (cs *YAGCommand) deleteResponse(msgs []*discordgo.Message) {
@@ -616,8 +616,8 @@ func (cs *YAGCommand) SetCooldown(userID int64) error {
 	return err
 }
 
-func (yc *YAGCommand) Logger(data *dcmd.Data) *log.Entry {
-	l := log.WithField("cmd", yc.Name)
+func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
+	l := logger.WithField("cmd", yc.Name)
 	if data != nil {
 		if data.Msg != nil {
 			l = l.WithField("user_n", data.Msg.Author.Username)

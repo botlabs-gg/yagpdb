@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/automod_legacy"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/safebrowsing"
-	"github.com/sirupsen/logrus"
 	"net/url"
 	"regexp"
 	"strings"
@@ -292,7 +291,7 @@ func (dt *DomainTrigger) containsDomain(link string, list []string) (bool, strin
 
 	parsed, err := url.ParseRequestURI(link)
 	if err != nil {
-		logrus.WithError(err).WithField("url", link).Error("Failed parsing request url matched with regex")
+		logger.WithError(err).WithField("url", link).Error("Failed parsing request url matched with regex")
 		return false, ""
 	}
 
@@ -550,7 +549,7 @@ func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
 func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	threat, err := safebrowsing.CheckString(forwardSlashReplacer.Replace(m.Content))
 	if err != nil {
-		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
+		logger.WithError(err).Error("Failed checking urls against google safebrowser")
 		return false, nil
 	}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -46,12 +45,12 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 
 		if time.Since(startedWaiting) > time.Second*60 {
 			// timeout
-			log.Infof("[commands] timeout waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+			logger.Infof("[commands] timeout waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
 			wg.Done()
 			return
 		}
 
-		log.Infof("[commands] waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+		logger.Infof("[commands] waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
 		time.Sleep(time.Millisecond * 500)
 	}
 }
@@ -162,7 +161,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 func (p *Plugin) Prefix(data *dcmd.Data) string {
 	prefix, err := GetCommandPrefix(data.GS.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving commands prefix")
+		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
 
 	return prefix
@@ -224,7 +223,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	var prefixExists bool
 	err := common.RedisPool.Do(radix.Cmd(&prefixExists, "EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
 	if err != nil {
-		log.WithError(err).Error("Failed checking if prefix exists")
+		logger.WithError(err).Error("Failed checking if prefix exists")
 		return
 	}
 
@@ -235,7 +234,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		}
 
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
-		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
+		logger.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
 }
 

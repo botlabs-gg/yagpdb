@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
@@ -188,7 +187,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 
 			channelOverrides, err := GetOverridesForChannel(data.CS.ID, cParentID, data.GS.ID)
 			if err != nil {
-				logrus.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed retrieving command overrides")
+				logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed retrieving command overrides")
 				return nil, nil
 			}
 
@@ -201,7 +200,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 				cast := v.Command.(*YAGCommand)
 				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GS.ID, channelOverrides)
 				if err != nil {
-					logrus.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed checking if command was enabled")
+					logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed checking if command was enabled")
 					continue
 				}
 
