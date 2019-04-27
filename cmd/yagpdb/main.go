@@ -86,9 +86,9 @@ func main() {
 	bot.FlagNodeID = flagNodeID
 	common.NodeID = flagNodeID
 
-	log.AddHook(common.ContextHook{})
+	common.AddLogHook(common.ContextHook{})
 
-	log.SetFormatter(&log.TextFormatter{
+	common.SetLogFormatter(&log.TextFormatter{
 		DisableTimestamp: !common.Testing,
 		ForceColors:      common.Testing,
 	})
@@ -105,7 +105,7 @@ func main() {
 		})
 
 		if err == nil {
-			log.AddHook(hook)
+			common.AddLogHook(hook)
 			log.Info("Added Sentry Hook")
 		} else {
 			log.WithError(err).Error("Failed adding sentry hook")
