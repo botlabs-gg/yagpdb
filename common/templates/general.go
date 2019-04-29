@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
+	"math"
 	"math/rand"
 	"reflect"
 	"strconv"
