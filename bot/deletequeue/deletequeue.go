@@ -2,7 +2,6 @@ package deletequeue
 
 import (
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -11,6 +10,8 @@ type Queue struct {
 	channels         map[int64]*ChannelQueue
 	customdeleteFunc func(channel int64, msg []int64) error // for testing
 }
+
+var logger = common.GetFixedPrefixLogger("delete_queue")
 
 func NewQueue() *Queue {
 	return &Queue{
@@ -109,8 +110,8 @@ func (cq *ChannelQueue) processBatch(ids []int64) {
 	}
 
 	if err != nil {
-		logrus.WithError(err).Error("delete queue failed deleting messages")
+		logger.WithError(err).Error("delete queue failed deleting messages")
 	}
 
-	logrus.Debug("Delete queue: deleted msgs ", ids)
+	logger.Debug("Delete queue: deleted msgs ", ids)
 }

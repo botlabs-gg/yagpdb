@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"strconv"
@@ -96,7 +95,7 @@ func setup() {
 func Run() {
 	setup()
 
-	log.Println("Running bot")
+	logger.Println("Running bot")
 
 	connEvtChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNEVT_CHANNEL"), 10, 64)
 	connStatusChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNSTATUS_CHANNEL"), 10, 64)
@@ -134,9 +133,9 @@ func Run() {
 	orcheStratorAddress := os.Getenv("YAGPDB_ORCHESTRATOR_ADDRESS")
 	if orcheStratorAddress != "" {
 		UsingOrchestrator = true
-		log.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)
+		logger.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)
 	} else {
-		log.Info("Running standalone without any orchestrator")
+		logger.Info("Running standalone without any orchestrator")
 		SetupStandalone()
 	}
 
@@ -159,11 +158,11 @@ func Run() {
 	// 	state = StateWaitingHelloMaster
 	// 	stateLock.Unlock()
 
-	// 	log.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
+	// 	logger.Println("Connecting to master at ", masterAddr, ", wont start until connected and told to start")
 	// 	var err error
 	// 	SlaveClient, err = slave.ConnectToMaster(&SlaveImpl{}, masterAddr)
 	// 	if err != nil {
-	// 		log.WithError(err).Error("Failed connecting to master")
+	// 		logger.WithError(err).Error("Failed connecting to master")
 	// 		os.Exit(1)
 	// 	}
 	// } else {
@@ -173,7 +172,7 @@ func Run() {
 
 	// 	InitPlugins()
 
-	// 	log.Println("Running normally without a master")
+	// 	logger.Println("Running normally without a master")
 	// 	go ShardManager.Start()
 	// 	go MonitorLoading()
 	// }
@@ -182,7 +181,7 @@ func Run() {
 	// 	starter, ok := p.(BotStarterHandler)
 	// 	if ok {
 	// 		starter.StartBot()
-	// 		log.Debug("Ran StartBot for ", p.Name())
+	// 		logger.Debug("Ran StartBot for ", p.Name())
 	// 	}
 	// }
 }
@@ -204,7 +203,7 @@ func SetupStandalone() {
 
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
 	if err != nil {
-		log.WithError(err).Error("failed setting shard count")
+		logger.WithError(err).Error("failed setting shard count")
 	}
 }
 
@@ -245,7 +244,7 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 				continue
 			}
 			wg.Add(1)
-			log.Debug("Calling bot stopper for: ", v.PluginInfo().Name)
+			logger.Debug("Calling bot stopper for: ", v.PluginInfo().Name)
 			go stopper.StopBot(wg)
 		}
 
@@ -284,7 +283,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify() {
 		var resp string
 		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "5", "NX"))
 		if err != nil {
-			log.WithError(err).Error("failed ratelimiting gateway")
+			logger.WithError(err).Error("failed ratelimiting gateway")
 			time.Sleep(time.Second)
 			continue
 		}

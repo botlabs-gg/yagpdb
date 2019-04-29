@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
-	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -76,7 +75,7 @@ func CheckMessage(m *discordgo.Message) bool {
 
 	cs := bot.State.Channel(true, m.ChannelID)
 	if cs == nil {
-		logrus.WithField("channel", m.ChannelID).Error("Channel not found in state")
+		logger.WithField("channel", m.ChannelID).Error("Channel not found in state")
 		return false
 	}
 
@@ -86,7 +85,7 @@ func CheckMessage(m *discordgo.Message) bool {
 
 	config, err := CachedGetConfig(cs.Guild.ID)
 	if err != nil {
-		logrus.WithError(err).Error("Failed retrieving config")
+		logger.WithError(err).Error("Failed retrieving config")
 		return false
 	}
 
@@ -96,7 +95,7 @@ func CheckMessage(m *discordgo.Message) bool {
 
 	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", cs.Guild.ID).Warn("Member not found in state, automod ignoring")
+		logger.WithError(err).WithField("guild", cs.Guild.ID).Warn("Member not found in state, automod ignoring")
 		return false
 	}
 
@@ -126,7 +125,7 @@ func CheckMessage(m *discordgo.Message) bool {
 			del = true
 		}
 		if err != nil {
-			logrus.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed checking aumod rule:", err)
+			logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed checking aumod rule:", err)
 			continue
 		}
 
@@ -171,7 +170,7 @@ func CheckMessage(m *discordgo.Message) bool {
 		common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
 
 		if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
-			logrus.WithError(err).Error("Error carrying out punishment")
+			logger.WithError(err).Error("Error carrying out punishment")
 		}
 	}()
 

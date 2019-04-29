@@ -11,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix"
 	"github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -136,11 +135,11 @@ func SetStatus(streaming, status string) {
 	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming", streaming))
 	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", status))
 	if err1 != nil {
-		logrus.WithError(err1).Error("failed setting bot status in redis")
+		logger.WithError(err1).Error("failed setting bot status in redis")
 	}
 
 	if err2 != nil {
-		logrus.WithError(err2).Error("failed setting bot status in redis")
+		logger.WithError(err2).Error("failed setting bot status in redis")
 	}
 
 	pubsub.Publish("bot_status_changed", -1, nil)
@@ -168,7 +167,7 @@ func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bo
 func BotProbablyHasPermissionGS(lock bool, gs *dstate.GuildState, channelID int64, permission int) bool {
 	perms, err := gs.MemberPermissions(lock, channelID, common.BotUser.ID)
 	if err != nil && err != dstate.ErrChannelNotFound {
-		logrus.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
+		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
 	}
 
@@ -276,7 +275,7 @@ func runNumShardsUpdater() {
 	for {
 		err := fetchTotalShardsFromRedis()
 		if err != nil {
-			logrus.WithError(err).Error("[botrest] failed retrieving total shards")
+			logger.WithError(err).Error("[botrest] failed retrieving total shards")
 		}
 		<-t.C
 	}
@@ -291,7 +290,7 @@ func fetchTotalShardsFromRedis() error {
 
 	old := atomic.SwapInt64(redisSetTotalShards, result)
 	if old != result {
-		logrus.Info("[botrest] new shard count received: ", old, " -> ", result)
+		logger.Info("[botrest] new shard count received: ", old, " -> ", result)
 	}
 
 	return nil
@@ -322,10 +321,10 @@ func RefreshStatus(session *discordgo.Session) {
 	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
 	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
 	if err1 != nil {
-		logrus.WithError(err1).Error("failed retrieiving bot streaming status")
+		logger.WithError(err1).Error("failed retrieiving bot streaming status")
 	}
 	if err2 != nil {
-		logrus.WithError(err2).Error("failed retrieiving bot status")
+		logger.WithError(err2).Error("failed retrieiving bot status")
 	}
 
 	if streamingURL != "" {

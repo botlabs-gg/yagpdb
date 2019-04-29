@@ -14,7 +14,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"sort"
 	"strings"
@@ -22,6 +21,7 @@ import (
 
 var (
 	RegexCache = *ccache.New(ccache.Configure())
+	logger     = common.GetPluginLogger(&Plugin{})
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -280,7 +280,7 @@ func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 		var decoded *CustomCommand
 		err = json.Unmarshal([]byte(raw), &decoded)
 		if err != nil {
-			log.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
+			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
 			result[i] = &CustomCommand{}
 		} else {
 			result[i] = decoded.Migrate()

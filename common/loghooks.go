@@ -171,6 +171,10 @@ func SetLogFormatter(formatter logrus.Formatter) {
 
 func GetPluginLogger(plugin Plugin) *logrus.Logger {
 	info := plugin.PluginInfo()
+	return GetFixedPrefixLogger(info.SysName)
+}
+
+func GetFixedPrefixLogger(prefix string) *logrus.Logger {
 
 	l := logrus.New()
 	stdLogger := logrus.StandardLogger()
@@ -188,7 +192,7 @@ func GetPluginLogger(plugin Plugin) *logrus.Logger {
 	l.Hooks = cop
 	l.Formatter = &PrefixedLogFormatter{
 		Inner:  stdLogger.Formatter,
-		Prefix: "[" + info.SysName + "] ",
+		Prefix: "[" + prefix + "] ",
 	}
 
 	loggersmu.Lock()

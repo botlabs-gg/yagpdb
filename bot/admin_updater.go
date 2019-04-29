@@ -5,7 +5,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 	"time"
@@ -70,7 +69,7 @@ func loopCheckAdmins() {
 func requestCheckBotAdmins(mainServer, adminRole, readOnlyRole int64) {
 	relevantSession := ShardManager.SessionForGuild(mainServer)
 	if relevantSession == nil || relevantSession.GatewayManager.Status() != discordgo.GatewayStatusReady {
-		logrus.WithField("shard", relevantSession.ShardID).Error("shard not ready, not updating bot admins")
+		logger.WithField("shard", relevantSession.ShardID).Error("shard not ready, not updating bot admins")
 		return
 	}
 
@@ -92,14 +91,14 @@ func HandleGuildMembersChunk(data *eventsystem.EventData) {
 		if adminRole != 0 && common.ContainsInt64Slice(member.Roles, adminRole) {
 			err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", tmpRedisKeyAdmins, member.User.ID))
 			if err != nil {
-				logrus.WithError(err).Error("failed adding user to admins")
+				logger.WithError(err).Error("failed adding user to admins")
 			}
 		}
 
 		if readOnlyAccessRole != 0 && common.ContainsInt64Slice(member.Roles, readOnlyAccessRole) {
 			err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", tmpRedisKeyReadOnlyAccess, member.User.ID))
 			if err != nil {
-				logrus.WithError(err).Error("failed adding user to read only access users")
+				logger.WithError(err).Error("failed adding user to read only access users")
 			}
 		}
 	}

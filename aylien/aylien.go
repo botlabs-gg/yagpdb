@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"os"
 	"strings"
@@ -20,6 +19,8 @@ var (
 
 	appID  = os.Getenv("YAGPDB_AYLIENAPPID")
 	appKey = os.Getenv("YAGPDB_AYLIENAPPKEY")
+
+	logger = common.GetPluginLogger(&Plugin{})
 )
 
 type Plugin struct {
@@ -36,13 +37,13 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func RegisterPlugin() {
 	if appID == "" || appKey == "" {
-		log.Warn("Missing AYLIEN appid and/or key, not loading plugin")
+		logger.Warn("Missing AYLIEN appid and/or key, not loading plugin")
 		return
 	}
 
 	client, err := textapi.NewClient(textapi.Auth{ApplicationID: appID, ApplicationKey: appKey}, true)
 	if err != nil {
-		log.WithError(err).Error("Failed initializing AYLIEN client")
+		logger.WithError(err).Error("Failed initializing AYLIEN client")
 		return
 	}
 
@@ -91,7 +92,7 @@ func (p *Plugin) AddCommands() {
 				toAnalyze := make([]*dstate.MessageState, 0)
 				for i := len(msgs) - 1; i >= 0; i-- {
 					msg := msgs[i]
-					// log.Println(msg.ID, msg.ContentWithMentionsReplaced())
+					// logger.Println(msg.ID, msg.ContentWithMentionsReplaced())
 					if msg.Author.ID == cmd.Msg.Author.ID {
 						if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
 							toAnalyze = append(toAnalyze, msg)

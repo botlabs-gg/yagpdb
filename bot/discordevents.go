@@ -7,7 +7,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -55,7 +55,7 @@ func HandleReady(data *eventsystem.EventData) {
 	var listedServers []int64
 	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving connected servers")
+		logger.WithError(err).Error("Failed retrieving connected servers")
 	}
 
 	numShards := ShardManager.GetNumShards()
@@ -73,7 +73,7 @@ OUTER:
 			}
 		}
 
-		log.Info("Left server while bot was down: ", v)
+		logger.Info("Left server while bot was down: ", v)
 		common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
 		go EmitGuildRemoved(v)
 
@@ -85,7 +85,7 @@ OUTER:
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	g := evt.GuildCreate()
-	log.WithFields(log.Fields{
+	logger.WithFields(logrus.Fields{
 		"g_name": g.Name,
 		"guild":  g.ID,
 	}).Debug("Joined guild")
@@ -93,12 +93,12 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	var n int
 	err := common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
 	if err != nil {
-		log.WithError(err).Error("Redis error")
+		logger.WithError(err).Error("Redis error")
 	}
 
 	// check if this server is new
 	if n > 0 {
-		log.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
+		logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
 		go eventsystem.EmitEvent(&eventsystem.EventData{
 			EvtInterface: g,
 			Type:         eventsystem.EventNewGuild,
@@ -113,7 +113,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	var banned bool
 	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
 	if banned {
-		log.WithField("guild", g.ID).Info("Banned server tried to add bot back")
+		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
 		common.BotSession.GuildLeave(g.ID)
 	}
@@ -129,7 +129,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("member_count", "name", "avatar", "owner_id", "left_at"), boil.Infer())
 	if err != nil {
-		log.WithError(err).Error("failed upserting guild")
+		logger.WithError(err).Error("failed upserting guild")
 	}
 }
 
@@ -139,13 +139,13 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 		return
 	}
 
-	log.WithFields(log.Fields{
+	logger.WithFields(logrus.Fields{
 		"g_name": evt.GuildDelete().Name,
 	}).Info("Left guild")
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(evt.GuildDelete().ID)))
 	if err != nil {
-		log.WithError(err).Error("Redis error")
+		logger.WithError(err).Error("Redis error")
 	}
 
 	go EmitGuildRemoved(evt.GuildDelete().ID)
@@ -166,7 +166,7 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) {
 
 	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
 	if err != nil {
-		log.WithError(err).Error("failed updating guild member count")
+		logger.WithError(err).Error("failed updating guild member count")
 	}
 }
 
@@ -174,7 +174,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 	mr := evt.GuildMemberRemove()
 	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
 	if err != nil {
-		log.WithError(err).Error("failed updating guild member count")
+		logger.WithError(err).Error("failed updating guild member count")
 	}
 }
 
@@ -200,7 +200,7 @@ func HandleResumed(evt *eventsystem.EventData) {
 
 		err := gm.Upsert(evt.Context(), common.PQ, false, []string{"id"}, boil.Infer(), boil.Infer())
 		if err != nil {
-			log.WithError(err).Error("failed upserting guild in resume")
+			logger.WithError(err).Error("failed upserting guild in resume")
 		}
 	}
 }
@@ -227,7 +227,7 @@ func HandleGuildUpdate(evt *eventsystem.EventData) {
 
 	err := gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("name", "avatar", "owner_id"), boil.Infer())
 	if err != nil {
-		log.WithError(err).Error("failed upserting guild in update")
+		logger.WithError(err).Error("failed upserting guild in update")
 	}
 }
 
@@ -273,7 +273,7 @@ func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {
 			defer func() {
 				if err := recover(); err != nil {
 					stack := string(debug.Stack())
-					log.WithField(log.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
 				}
 			}()
 
@@ -293,7 +293,7 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_reaction", -1, ra)
 	if err != nil {
-		log.WithError(err).Error("failed publishing dm reaction")
+		logger.WithError(err).Error("failed publishing dm reaction")
 	}
 }
 
@@ -309,6 +309,6 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_message", -1, mc)
 	if err != nil {
-		log.WithError(err).Error("failed publishing dm message")
+		logger.WithError(err).Error("failed publishing dm message")
 	}
 }

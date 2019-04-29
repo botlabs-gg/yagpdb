@@ -6,6 +6,8 @@ import (
 	"github.com/jonas747/yagpdb/web"
 )
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 type Condition string
 
 // Redis keys

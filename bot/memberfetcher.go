@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -189,7 +188,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 
 	m.Unlock()
 
-	logrus.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
+	logger.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
 
 	if gs := State.Guild(true, guildID); gs != nil {
 		if member := gs.MemberCopy(true, elem.Member); member != nil && member.MemberSet {
@@ -218,7 +217,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 		var member *discordgo.Member
 		member, err = common.BotSession.GuildMember(guildID, elem.Member)
 		if err != nil {
-			logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
+			logger.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
 			code, _ := common.DiscordError(err)
 			if code == discordgo.ErrCodeUnknownUser {
 				failedUsersCache.Set(failedCacheKey, 1, time.Hour)

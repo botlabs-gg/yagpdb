@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 	"os"
 	"runtime/debug"
 	"sync"
@@ -39,7 +38,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 
 		err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", info.TotalShards))
 		if err != nil {
-			logrus.WithError(err).Error("failed setting shard count")
+			logger.WithError(err).Error("failed setting shard count")
 		}
 
 		err = ShardManager.Init()
@@ -79,7 +78,7 @@ func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64) {
 
 	err := ShardManager.Sessions[shard].Close()
 	if err != nil {
-		logrus.WithError(err).Error("failed stopping shard: ", err)
+		logger.WithError(err).Error("failed stopping shard: ", err)
 	}
 
 	sessionID, sequence = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
@@ -98,7 +97,7 @@ func (n *NodeImpl) StartShard(shard int, sessionID string, sequence int64) {
 	ShardManager.Sessions[shard].GatewayManager.SetSessionInfo(sessionID, sequence)
 	err := ShardManager.Sessions[shard].GatewayManager.Open()
 	if err != nil {
-		logrus.WithError(err).Error("Failed migrating shard")
+		logger.WithError(err).Error("Failed migrating shard")
 	}
 }
 
@@ -203,7 +202,7 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	close(workChan)
 	wg.Wait()
 
-	logrus.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
+	logger.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
 	totalSentEvents += len(guildsToSend)
 	return totalSentEvents
 }

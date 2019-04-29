@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/safebrowsing"
 	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 	"net/url"
 	"strconv"
 	"strings"
@@ -212,7 +211,7 @@ OUTER:
 		// Check to see if its a valid id, and if so check if its to the same server were on
 		invite, err := common.BotSession.Invite(id)
 		if err != nil {
-			logrus.WithError(err).WithField("guild", guildID).Error("Failed checking invite ", invite)
+			logger.WithError(err).WithField("guild", guildID).Error("Failed checking invite ", invite)
 			return true // assume bad since discord...
 		}
 
@@ -384,7 +383,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 
 		parsed, err := url.ParseRequestURI(v)
 		if err != nil {
-			logrus.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
+			logger.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
 		} else {
 			if banned, item := s.isBanned(parsed.Host); banned {
 				return true, item, ""
@@ -400,7 +399,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 
 	threat, err := safebrowsing.CheckString(message)
 	if err != nil {
-		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
+		logger.WithError(err).Error("Failed checking urls against google safebrowser")
 		return false, "", ""
 	}
 

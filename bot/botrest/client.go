@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -22,6 +21,10 @@ var (
 	ErrCantFindServer = errors.New("can't find botrest server for provided shard")
 )
 
+var (
+	clientLogger = common.GetFixedPrefixLogger("botrest_client")
+)
+
 func GetServerAddrForGuild(guildID int64) string {
 	shard := bot.GuildShardID(guildID)
 	return GetServerAddrForShard(shard)
@@ -31,7 +34,7 @@ func GetServerAddrForShard(shard int) string {
 	resp := ""
 	err := common.RedisPool.Do(radix.Cmd(&resp, "GET", RedisKeyShardAddressMapping(shard)))
 	if err != nil {
-		logrus.WithError(err).Error("[botrest] failed retrieving shard server addr")
+		clientLogger.WithError(err).Error("failed retrieving shard server addr")
 	}
 
 	return resp
@@ -207,14 +210,14 @@ func getNodeStatusesClustered() (st []*NodeStatus, err error) {
 		var addr string
 		err = common.RedisPool.Do(radix.Cmd(&addr, "GET", RedisKeyNodeAddressMapping(n)))
 		if err != nil {
-			logrus.WithError(err).Error("failed retrieving rest address for bot for node id: ", n)
+			clientLogger.WithError(err).Error("failed retrieving rest address for bot for node id: ", n)
 			continue
 		}
 
 		var status []*ShardStatus
 		err = GetWithAddress(addr, "gw_status", &status)
 		if err != nil {
-			logrus.WithError(err).Error("failed retrieving shard status for node ", n)
+			clientLogger.WithError(err).Error("failed retrieving shard status for node ", n)
 			continue
 		}
 
@@ -261,12 +264,12 @@ func RunPinger() {
 		err := Get(0, "ping", &dest)
 		if err != nil {
 			if !lastFailed {
-				logrus.Warn("Ping to bot failed: ", err)
+				clientLogger.Warn("Ping to bot failed: ", err)
 				lastFailed = true
 			}
 			continue
 		} else if lastFailed {
-			logrus.Info("Ping to bot succeeded again after failing!")
+			clientLogger.Info("Ping to bot succeeded again after failing!")
 		}
 
 		lastPingMutex.Lock()
