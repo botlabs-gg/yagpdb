@@ -3,8 +3,9 @@ package autorole
 import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 )
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 func KeyGeneral(guildID int64) string { return "autorole:" + discordgo.StrID(guildID) + ":general" }
 func KeyProcessing(guildID int64) string {
@@ -39,7 +40,7 @@ func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
 	err := common.GetRedisJson(KeyGeneral(guildID), conf)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("failed retreiving autorole config")
+		logger.WithError(err).WithField("guild", guildID).Error("failed retreiving autorole config")
 	}
 	return conf, err
 }

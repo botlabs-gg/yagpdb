@@ -2,7 +2,6 @@ package bot
 
 import (
 	"github.com/shirou/gopsutil/mem"
-	"github.com/sirupsen/logrus"
 	"os"
 	"runtime/debug"
 	"time"
@@ -25,7 +24,7 @@ func watchMemusage() {
 }
 
 func (mw *MemWatcher) Run() {
-	logrus.Info("[mem_monitor] launching memory monitor")
+	logger.Info("[mem_monitor] launching memory monitor")
 	ticker := time.NewTicker(time.Second * 10)
 	for {
 		<-ticker.C
@@ -40,12 +39,12 @@ func (mw *MemWatcher) Check() {
 
 	sysMem, err := mem.VirtualMemory()
 	if err != nil {
-		logrus.WithError(err).Error("[mem_monitor] failed retrieving os memory stats")
+		logger.WithError(err).Error("[mem_monitor] failed retrieving os memory stats")
 		return
 	}
 
 	if sysMem.UsedPercent > MemFreeThreshold {
-		logrus.Info("[mem_monitor] LOW SYSTEM MEMORY, ATTEMPTING TO FREE SOME")
+		logger.Info("[mem_monitor] LOW SYSTEM MEMORY, ATTEMPTING TO FREE SOME")
 		debug.FreeOSMemory()
 		mw.lastTimeFreed = time.Now()
 	}

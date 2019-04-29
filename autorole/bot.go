@@ -11,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"sync"
 	"time"
@@ -174,7 +173,7 @@ func stateLockedSkipGuild(gs *dstate.GuildState, conf *GeneralConfig) bool {
 func checkGuild(gs *dstate.GuildState) {
 	conf, err := GuildCacheGetGeneralConfig(gs)
 	if err != nil {
-		logrus.WithField("guild", gs.ID).WithError(err).Error("Failed retrieivng general config")
+		logger.WithField("guild", gs.ID).WithError(err).Error("Failed retrieivng general config")
 		return
 	}
 
@@ -250,7 +249,7 @@ OUTER:
 		time.Sleep(time.Second)
 		select {
 		case <-stopChan:
-			logrus.WithField("guild", gs.ID).Info("Stopping autorole assigning...")
+			logger.WithField("guild", gs.ID).Info("Stopping autorole assigning...")
 			return
 		default:
 		}
@@ -261,12 +260,12 @@ OUTER:
 		if err != nil {
 			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
 				// No perms, remove autorole
-				logrus.WithError(err).Info("No perms to add autorole, removing from config")
+				logger.WithError(err).Info("No perms to add autorole, removing from config")
 				config.Role = 0
 				saveGeneral(gs.ID, config)
 				return
 			}
-			logrus.WithError(err).WithField("guild", gs.ID).Error("Failed adding autorole role")
+			logger.WithError(err).WithField("guild", gs.ID).Error("Failed adding autorole role")
 		} else {
 			if setProcessingRedis && cntSinceLastRedisUpdate > 10 {
 				common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
@@ -280,7 +279,7 @@ func saveGeneral(guildID int64, config *GeneralConfig) {
 
 	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
-		logrus.WithError(err).Error("Failed saving autorole config")
+		logger.WithError(err).Error("Failed saving autorole config")
 	}
 }
 
@@ -295,7 +294,7 @@ func OnMemberJoin(evt *eventsystem.EventData) {
 	gs := bot.State.Guild(true, addEvt.GuildID)
 	ms := gs.MemberCopy(true, addEvt.User.ID)
 	if ms == nil {
-		logrus.Error("Member not found in add event")
+		logger.Error("Member not found in add event")
 		return
 	}
 
@@ -340,7 +339,7 @@ func HandleGuildChunk(evt *eventsystem.EventData) {
 	chunk := evt.GuildMembersChunk()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
 	if err != nil {
-		logrus.WithError(err).Error("failed marking autorole chunk processing")
+		logger.WithError(err).Error("failed marking autorole chunk processing")
 	}
 
 	config, err := GetGeneralConfig(chunk.GuildID)
@@ -361,7 +360,7 @@ OUTER:
 	for _, m := range chunk.Members {
 		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
-			logrus.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed parsing join timestamp")
+			logger.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed parsing join timestamp")
 			if config.RequiredDuration > 0 {
 				continue // Need the joined_at field for this
 			}
@@ -379,14 +378,14 @@ OUTER:
 
 		time.Sleep(time.Second)
 
-		logrus.Println("assigning to ", m.User.ID, " from guild chunk event")
+		logger.Println("assigning to ", m.User.ID, " from guild chunk event")
 		err = common.AddRole(m, config.Role, chunk.GuildID)
 		if err != nil {
-			logrus.WithError(err).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed adding autorole role")
+			logger.WithError(err).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed adding autorole role")
 
 			if common.IsDiscordErr(err, 50013, 10011) {
 				// No perms, remove autorole
-				logrus.WithError(err).WithField("guild", chunk.GuildID).Info("No perms to add autorole, or nonexistant, removing from config")
+				logger.WithError(err).WithField("guild", chunk.GuildID).Info("No perms to add autorole, or nonexistant, removing from config")
 				config.Role = 0
 				saveGeneral(chunk.GuildID, config)
 				return
@@ -406,7 +405,7 @@ OUTER:
 
 			config = newConf
 			if config.Role == 0 {
-				logrus.WithField("guild", chunk.GuildID).Info("autorole role was set to none in the middle of full retroactive assignment, cancelling")
+				logger.WithField("guild", chunk.GuildID).Info("autorole role was set to none in the middle of full retroactive assignment, cancelling")
 				return
 			}
 		}
@@ -416,7 +415,7 @@ OUTER:
 
 			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
 			if err != nil {
-				logrus.WithError(err).Error("failed marking autorole chunk processing")
+				logger.WithError(err).Error("failed marking autorole chunk processing")
 			}
 		}
 	}
@@ -426,7 +425,7 @@ func WorkingOnFullScan(guildID int64) bool {
 	var b bool
 	err := common.RedisPool.Do(radix.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("[autorole] failed checking WorkingOnFullScan")
+		logger.WithError(err).WithField("guild", guildID).Error("failed checking WorkingOnFullScan")
 		return false
 	}
 

@@ -10,7 +10,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
 	"net/http"
@@ -30,6 +29,8 @@ var (
 	_ bot.BotInitHandler    = (*Plugin)(nil)
 	_ bot.BotStopperHandler = (*Plugin)(nil)
 )
+
+var serverLogger = common.GetFixedPrefixLogger("botrest_server")
 
 type BotRestPlugin interface {
 	InitBotRestServer(mux *goji.Mux)
@@ -93,7 +94,7 @@ func (p *Plugin) BotInit() {
 		for {
 			address := listenAddr + ":" + strconv.Itoa(currentPort)
 
-			logrus.Println("[botrest] starting botrest on ", address)
+			serverLogger.Println("[botrest] starting botrest on ", address)
 
 			p.srvMU.Lock()
 			p.srv.Addr = address
@@ -103,18 +104,18 @@ func (p *Plugin) BotInit() {
 			if err != nil {
 				// Shutdown was called for graceful shutdown
 				if err == http.ErrServerClosed {
-					logrus.Info("[botrest] server closed, shutting down...")
+					serverLogger.Info("[botrest] server closed, shutting down...")
 					return
 				}
 
 				// Retry with a higher port until we succeed
-				logrus.WithError(err).Error("[botrest] failed starting botrest http server on ", address, " trying again on next port")
+				serverLogger.WithError(err).Error("[botrest] failed starting botrest http server on ", address, " trying again on next port")
 				currentPort++
 				time.Sleep(time.Millisecond)
 				continue
 			}
 
-			logrus.Println("[botrest] botrest returned without any error")
+			serverLogger.Println("[botrest] botrest returned without any error")
 			break
 		}
 	}()
@@ -158,18 +159,18 @@ func (p *Plugin) mapAddressToShards(address string) {
 
 	processShards := bot.GetProcessShards()
 
-	// logrus.Debug("[botrest] mapping ", address, " to current process shards")
+	// serverLogger.Debug("[botrest] mapping ", address, " to current process shards")
 	for _, shard := range processShards {
 		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyShardAddressMapping(shard), address))
 		if err != nil {
-			logrus.WithError(err).Error("[botrest] failed mapping botrest")
+			serverLogger.WithError(err).Error("[botrest] failed mapping botrest")
 		}
 	}
 
 	if bot.UsingOrchestrator {
 		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyNodeAddressMapping(bot.NodeConn.GetIDLock()), address))
 		if err != nil {
-			logrus.WithError(err).Error("[botrest] failed mapping node")
+			serverLogger.WithError(err).Error("[botrest] failed mapping node")
 		}
 	}
 }
@@ -182,7 +183,7 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		logrus.WithError(err).Error("Failed sending json")
+		serverLogger.WithError(err).Error("Failed sending json")
 	}
 }
 
@@ -443,11 +444,11 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 }
 
 func RestartAll(reidentify bool) {
-	logrus.Println("Reconnecting all shards re-identify:", reidentify)
+	serverLogger.Println("Reconnecting all shards re-identify:", reidentify)
 	for _, v := range bot.ShardManager.Sessions {
 		err := v.GatewayManager.Reconnect(reidentify)
 		if err != nil {
-			logrus.WithError(err).Error("Failed reconnecting shard")
+			serverLogger.WithError(err).Error("Failed reconnecting shard")
 		}
 		time.Sleep(time.Second * 5)
 	}

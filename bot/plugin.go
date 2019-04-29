@@ -5,7 +5,6 @@ import (
 	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -49,7 +48,7 @@ func EmitGuildRemoved(guildID int64) {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(guildID)
 			if err != nil {
-				logrus.WithError(err).Error("Error Running RemoveGuild on ", v.PluginInfo().Name)
+				logger.WithError(err).Error("Error Running RemoveGuild on ", v.PluginInfo().Name)
 			}
 		}
 	}
@@ -61,4 +60,18 @@ type ShardMigrationSender interface {
 
 type ShardMigrationReceiver interface {
 	ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{})
+}
+
+// bot plugin
+var logger = common.GetPluginLogger(&botPlugin{})
+
+type botPlugin struct {
+}
+
+func (p *botPlugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Bot Core",
+		SysName:  "bot_core",
+		Category: common.PluginCategoryCore,
+	}
 }
