@@ -13,7 +13,6 @@ import (
 	"github.com/jonas747/yagpdb/logs"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"time"
@@ -35,7 +34,7 @@ func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) (ms *dst
 	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
 		// Fallback
-		logrus.WithError(err).WithField("guild", gs.ID).Info("Failed retrieving member")
+		logger.WithError(err).WithField("guild", gs.ID).Info("Failed retrieving member")
 		ms = &dstate.MemberState{
 			ID:       user.ID,
 			Guild:    gs,
@@ -98,7 +97,7 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		return err
 	}
 
-	logrus.Println("MODERATION:", author.Username, action.Prefix, user.Username, "cause", reason)
+	logger.Info("MODERATION:", author.Username, action.Prefix, user.Username, "cause", reason)
 
 	if memberNotFound {
 		// Wait a tiny bit to make sure the audit log is updated
@@ -151,7 +150,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 
 	executed, err := ctx.Execute(dmMsg)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
+		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
 		executed = "Failed executing template."
 	}
 
@@ -470,7 +469,7 @@ func CreateLogs(guildID, channelID int64, user *discordgo.User) string {
 		if err == logs.ErrChannelBlacklisted {
 			return ""
 		}
-		logrus.WithError(err).Error("Log Creation Failed")
+		logger.WithError(err).Error("Log Creation Failed")
 		return "Log Creation Failed"
 	}
 	return logs.CreateLink(guildID, lgs.ID)

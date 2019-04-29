@@ -75,6 +75,8 @@ var (
 	}
 )
 
+var logger = common.GetFixedPrefixLogger("templates")
+
 func TODO() {}
 
 type ContextSetupFunc func(ctx *Context)
@@ -253,7 +255,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 
 	// deal with the results
 	if err != nil {
-		logrus.WithField("guild", c.GS.ID).WithError(err).Error("Error executing template: " + c.Name)
+		logger.WithField("guild", c.GS.ID).WithError(err).Error("Error executing template: " + c.Name)
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
 		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
 	}
@@ -305,7 +307,7 @@ func (c *Context) IncreaseCheckStateLock() bool {
 }
 
 func (c *Context) LogEntry() *logrus.Entry {
-	f := logrus.WithFields(logrus.Fields{
+	f := logger.WithFields(logrus.Fields{
 		"guild": c.GS.ID,
 		"name":  c.Name,
 	})
@@ -404,7 +406,7 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	if delaySeconds > 10 {
 		err := scheduledevents2.ScheduleDeleteMessages(guildID, channelID, time.Now().Add(time.Second*time.Duration(delaySeconds)), messageID)
 		if err != nil {
-			logrus.WithError(err).Error("failed scheduling message deletion")
+			logger.WithError(err).Error("failed scheduling message deletion")
 		}
 	} else {
 		go func() {

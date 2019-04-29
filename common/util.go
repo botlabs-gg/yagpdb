@@ -8,7 +8,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"math/rand"
 	"path/filepath"
 	"regexp"
@@ -59,7 +59,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
 	if err != nil {
-		log.WithError(err).Error("Failed deleting message")
+		logger.WithError(err).Error("Failed deleting message")
 	}
 }
 
@@ -581,12 +581,12 @@ func HumanizePermissions(perms int64) (res []string) {
 	return
 }
 
-func LogIgnoreError(err error, msg string, data log.Fields) {
+func LogIgnoreError(err error, msg string, data logrus.Fields) {
 	if err == nil {
 		return
 	}
 
-	l := log.WithError(err)
+	l := logger.WithError(err)
 	if data != nil {
 		l = l.WithFields(data)
 	}

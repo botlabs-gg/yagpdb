@@ -14,6 +14,8 @@ const (
 	MaxUserMessages = 10
 )
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 type Plugin struct{}
 
 func RegisterPlugin() {

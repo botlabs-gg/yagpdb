@@ -28,6 +28,8 @@ var (
 	numWorkers = new(int32)
 
 	webhookSession *discordgo.Session
+
+	logger = common.GetPluginLogger(&Plugin{})
 )
 
 type PluginWithErrorHandler interface {
@@ -59,7 +61,7 @@ func RegisterPlugin() {
 	var err error
 	webhookSession, err = discordgo.New()
 	if err != nil {
-		logrus.WithError(err).Error("[mqueue] failed initiializing webhook session")
+		logger.WithError(err).Error("failed initiializing webhook session")
 	}
 
 	p := &Plugin{}
@@ -73,7 +75,7 @@ func RegisterSource(name string, source PluginWithErrorHandler) {
 func IncrIDCounter() (next int64) {
 	err := common.RedisPool.Do(radix.Cmd(&next, "INCR", "mqueue_id_counter"))
 	if err != nil {
-		logrus.WithError(err).Error("Failed increasing mqueue id counter")
+		logger.WithError(err).Error("Failed increasing mqueue id counter")
 		return -1
 	}
 
@@ -112,7 +114,7 @@ func QueueMessageWebhook(source, sourceID string, guildID, channel int64, msgStr
 
 	serialized, err := json.Marshal(elem)
 	if err != nil {
-		logrus.WithError(err).Error("Failed marshaling mqueue element")
+		logger.WithError(err).Error("Failed marshaling mqueue element")
 		return
 	}
 
@@ -175,7 +177,7 @@ func workerScaler() {
 		sizeAverage := calcListAverage(sizeHistory)
 
 		if deltaAverage > 1 && sizeAverage > 1000 {
-			logrus.Info("Launched new mqueue worker, total workers: ", atomic.LoadInt32(numWorkers)+1)
+			logger.Info("Launched new mqueue worker, total workers: ", atomic.LoadInt32(numWorkers)+1)
 			go processWorker()
 			lastWorkerSpawnedAt = time.Now()
 		}
@@ -248,7 +250,7 @@ func pollRedis(first bool) {
 
 	err := common.RedisPool.Do(radix.Cmd(&results, "ZRANGEBYSCORE", "mqueue", "-1", "("+max))
 	if err != nil {
-		logrus.WithError(err).Error("Failed polling redis mqueue")
+		logger.WithError(err).Error("Failed polling redis mqueue")
 		return
 	}
 
@@ -265,7 +267,7 @@ func pollRedis(first bool) {
 			var parsed *QueuedElement
 			err := json.Unmarshal(elem, &parsed)
 			if err != nil {
-				logrus.WithError(err).Error("Failed parsing mqueue redis elemtn")
+				logger.WithError(err).Error("Failed parsing mqueue redis elemtn")
 				continue
 			}
 
@@ -376,7 +378,7 @@ func processWorker() {
 func process(elem *QueuedElement, raw []byte) {
 	id := elem.ID
 
-	queueLogger := logrus.WithField("mq_id", id)
+	queueLogger := logger.WithField("mq_id", id)
 
 	defer func() {
 		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(raw)))
@@ -402,7 +404,7 @@ func process(elem *QueuedElement, raw []byte) {
 			}
 		}
 
-		queueLogger.Warn("MQueue: Non-discord related error when sending message, retrying. ", err)
+		queueLogger.Warn("Non-discord related error when sending message, retrying. ", err)
 		time.Sleep(time.Second)
 	}
 }
@@ -413,7 +415,7 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	} else if elem.MessageEmbed != nil {
 		_, err = common.BotSession.ChannelMessageSendEmbed(elem.Channel, elem.MessageEmbed)
 	} else {
-		l.Error("MQueue: Both MessageEmbed and MessageStr empty")
+		l.Error("Both MessageEmbed and MessageStr empty")
 	}
 
 	return
@@ -421,7 +423,7 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 
 func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 	if elem.MessageStr == "" && elem.MessageEmbed == nil {
-		l.Error("MQueue: Both MessageEmbed and MessageStr empty")
+		l.Error("Both MessageEmbed and MessageStr empty")
 		return
 	}
 

@@ -48,7 +48,11 @@ var (
 	CurrentRunCounter int64
 
 	NodeID string
-	_      interface{} = ensure64bit
+
+	// if your compile failed at this line, you're likely not compiling for 64bit, which is unsupported.
+	_ interface{} = ensure64bit
+
+	logger = GetFixedPrefixLogger("common")
 )
 
 // Initalizes all database connections, config loading and so on
@@ -117,7 +121,7 @@ func setupGlobalDGoSession() (err error) {
 		maxCCReqs = 25
 	}
 
-	logrus.Info("max ccr set to: ", maxCCReqs)
+	logger.Info("max ccr set to: ", maxCCReqs)
 
 	BotSession.MaxRestRetries = 5
 	BotSession.Ratelimiter.MaxConcurrentRequests = maxCCReqs
@@ -137,7 +141,7 @@ func setupGlobalDGoSession() (err error) {
 
 	if os.Getenv("YAGPDB_DISABLE_KEEPALIVES") != "" {
 		innerTransport.DisableKeepAlives = true
-		logrus.Info("Keep alive connections to REST api for discord is disabled, may cause overhead")
+		logger.Info("Keep alive connections to REST api for discord is disabled, may cause overhead")
 	}
 
 	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: innerTransport}
@@ -147,13 +151,13 @@ func setupGlobalDGoSession() (err error) {
 
 func ConnectDatadog() {
 	if Conf.DogStatsdAddress == "" {
-		logrus.Warn("No datadog info provided, not connecting to datadog aggregator")
+		logger.Warn("No datadog info provided, not connecting to datadog aggregator")
 		return
 	}
 
 	client, err := statsd.New(Conf.DogStatsdAddress)
 	if err != nil {
-		logrus.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
+		logger.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
 		return
 	}
 
@@ -180,7 +184,7 @@ func InitTest() {
 func connectRedis(addr string) (err error) {
 	RedisPool, err = radix.NewPool("tcp", addr, RedisPoolSize, radix.PoolOnEmptyWait())
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed intitializing redis pool")
+		logger.WithError(err).Fatal("Failed intitializing redis pool")
 	}
 
 	return
@@ -206,7 +210,7 @@ func connectDB(host, user, pass, dbName string) error {
 func InitSchema(schema string, name string) {
 	_, err := PQ.Exec(schema)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed initializing postgres db schema for ", name)
+		logger.WithError(err).Fatal("failed initializing postgres db schema for ", name)
 	}
 
 	return
