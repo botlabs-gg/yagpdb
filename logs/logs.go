@@ -22,6 +22,8 @@ import (
 
 var (
 	ErrChannelBlacklisted = errors.New("Channel blacklisted from creating message logs")
+
+	logger = common.GetPluginLogger(&Plugin{})
 )
 
 type Plugin struct{}

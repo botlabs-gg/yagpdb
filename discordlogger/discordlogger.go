@@ -5,7 +5,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 )
@@ -13,6 +12,8 @@ import (
 var (
 	// Send bot leaves joins to this disocrd channel
 	BotLeavesJoins int64
+
+	logger = common.GetPluginLogger(&Plugin{})
 )
 
 func init() {
@@ -21,7 +22,7 @@ func init() {
 
 func Register() {
 	if BotLeavesJoins != 0 {
-		logrus.Info("Listening for bot leaves and join")
+		logger.Info("Listening for bot leaves and join")
 		common.RegisterPlugin(&Plugin{})
 	}
 }
@@ -45,7 +46,7 @@ func (p *Plugin) BotInit() {
 func EventHandler(evt *eventsystem.EventData) {
 	count, err := common.GetJoinedServerCount()
 	if err != nil {
-		logrus.WithError(err).Error("failed checking server count")
+		logger.WithError(err).Error("failed checking server count")
 	}
 
 	msg := ""
