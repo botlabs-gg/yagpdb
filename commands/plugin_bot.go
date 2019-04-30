@@ -193,14 +193,16 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 
 	// Send the targetted help in the channel it was requested in
 	resp = dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
-	if len(resp) < 1 {
-		return CmdNotFound(target), nil
-	}
 
-	if len(resp) == 1 {
+	if target != "" {
+		if len(resp) != 1 {
+			// Send command not found in same channel
+			return CmdNotFound(target), nil
+		}
+
 		// Send short help in same channel
-		return resp, nil
-	}
+		return resp, nil 
+    	}
 
 	// Send full help in DM
 	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
