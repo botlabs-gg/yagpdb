@@ -2,20 +2,19 @@ package moderation
 
 import (
 	"fmt"
+	"github.com/jinzhu/gorm"
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/pkg/errors"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {

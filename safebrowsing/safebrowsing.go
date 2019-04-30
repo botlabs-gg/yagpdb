@@ -3,7 +3,6 @@ package safebrowsing
 import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"net/http"
 	"sync"
@@ -13,6 +12,8 @@ var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 type Plugin struct {
 }
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
 	common.RegisterPlugin(&Plugin{})
@@ -30,7 +31,7 @@ func (p *Plugin) RunBackgroundWorker() {
 	if SafeBrowser == nil {
 		err := runDatabase()
 		if err != nil {
-			logrus.WithError(err).Error("[safebrowsing] failed starting database")
+			logger.WithError(err).Error("failed starting database")
 			return
 		}
 	}

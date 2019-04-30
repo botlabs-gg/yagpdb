@@ -23,6 +23,8 @@ const (
 	RedisKeyPremiumGuildLastActive = "premium_guild_last_active"
 )
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 type Plugin struct {
 }
 
@@ -35,6 +37,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
+	common.InitSchema(DBSchema, "premium")
+
 	common.RegisterPlugin(&Plugin{})
 
 	for _, v := range PremiumSources {

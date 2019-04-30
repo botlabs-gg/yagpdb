@@ -1,13 +1,8 @@
 package moderation
 
 import (
-	"github.com/jonas747/dshardorchestrator"
-	"github.com/pkg/errors"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -17,7 +12,10 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var (
@@ -228,7 +226,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(guildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
+		logger.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
 		return
 	}
 
@@ -268,7 +266,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	err = CreateModlogEmbed(config.IntActionChannel(), author, action, user, reason, "")
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
+		logger.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
 	}
 }
 
@@ -277,7 +275,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(data.GuildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed retrieving config")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed retrieving config")
 		return
 	}
 
@@ -300,7 +298,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	err = CreateModlogEmbed(config.IntActionChannel(), author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
-		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
 	}
 }
 
@@ -346,17 +344,17 @@ func HandleMemberJoin(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
+		logger.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
 		return
 	}
 	if config.MuteRole == "" {
 		return
 	}
 
-	logrus.WithField("guild", c.GuildID).WithField("user", c.User.ID).Info("Assigning back mute role after member rejoined")
+	logger.WithField("guild", c.GuildID).WithField("user", c.User.ID).Info("Assigning back mute role after member rejoined")
 	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.IntMuteRole())
 	if err != nil {
-		logrus.WithField("guild", c.GuildID).WithError(err).Error("Failed assigning mute role")
+		logger.WithField("guild", c.GuildID).WithError(err).Error("Failed assigning mute role")
 	}
 }
 
@@ -365,7 +363,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
+		logger.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
 		return
 	}
 	if config.MuteRole == "" {
@@ -381,11 +379,11 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 		return // Probably deleted the mute role, do nothing then
 	}
 
-	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
+	logger.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
 
 	removedRoles, err := AddMemberMuteRole(config, c.Member.User.ID, c.Member.Roles)
 	if err != nil {
-		logrus.WithError(err).Error("Failed adding mute role to user in member update")
+		logger.WithError(err).Error("Failed adding mute role to user in member update")
 	}
 
 	if len(removedRoles) < 1 {
@@ -394,7 +392,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 
 	tx, err := common.PQ.Begin()
 	if err != nil {
-		logrus.WithError(err).Error("Failed starting transaction")
+		logger.WithError(err).Error("Failed starting transaction")
 		return
 	}
 
@@ -403,14 +401,14 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	for _, v := range removedRoles {
 		_, err := tx.Exec(queryStr, c.GuildID, c.Member.User.ID, v)
 		if err != nil {
-			logrus.WithError(err).Error("Failed updating removed roles")
+			logger.WithError(err).Error("Failed updating removed roles")
 			break
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		logrus.WithError(err).Error("Failed comitting transaction")
+		logger.WithError(err).Error("Failed comitting transaction")
 	}
 }
 
@@ -447,7 +445,7 @@ func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Dur
 func handleMigrateScheduledUnmute(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logrus.Error("invalid unmute event", data)
+		logger.Error("invalid unmute event", data)
 		return nil
 	}
 
@@ -462,7 +460,7 @@ func handleMigrateScheduledUnmute(t time.Time, data string) error {
 func handleMigrateScheduledUnban(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logrus.Error("Invalid unban event", data)
+		logger.Error("Invalid unban event", data)
 		return nil // Can't re-schedule an invalid event..
 	}
 
@@ -498,7 +496,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 
 	g := bot.State.Guild(true, guildID)
 	if g == nil {
-		logrus.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
+		logger.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
 		return false, nil
 	}
 
@@ -506,7 +504,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 
 	err = common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {
-		logrus.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
+		logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 

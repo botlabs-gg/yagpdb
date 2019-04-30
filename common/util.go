@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/jonas747/discordgo"
@@ -9,7 +8,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"math/rand"
 	"path/filepath"
 	"regexp"
@@ -22,7 +21,7 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
+var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/)?(www\.)?[-a-zA-Z0-9@:%_\+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
 
 type GuildWithConnected struct {
 	*discordgo.UserGuild
@@ -60,7 +59,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
 	if err != nil {
-		log.WithError(err).Error("Failed deleting message")
+		logger.WithError(err).Error("Failed deleting message")
 	}
 }
 
@@ -441,23 +440,6 @@ func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
 	return err
 }
 
-// ValidateSQLSchema does some simple security checks on a sql schema file
-// At the moment it only checks for drop table/index statements accidentally left in the schema file
-func ValidateSQLSchema(input string) {
-	scanner := bufio.NewScanner(strings.NewReader(input))
-	lineCount := 0
-	for scanner.Scan() {
-		lineCount++
-		trimmed := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(strings.ToLower(trimmed), "drop table") || strings.HasPrefix(strings.ToLower(trimmed), "drop index") {
-			panic(fmt.Errorf("Schema file L%d: starts with drop table/index.\n%s", lineCount, trimmed))
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("reading standard input:", err)
-	}
-}
-
 // DiscordError extracts the errorcode discord sent us
 func DiscordError(err error) (code int, msg string) {
 	err = errors.Cause(err)
@@ -599,12 +581,12 @@ func HumanizePermissions(perms int64) (res []string) {
 	return
 }
 
-func LogIgnoreError(err error, msg string, data log.Fields) {
+func LogIgnoreError(err error, msg string, data logrus.Fields) {
 	if err == nil {
 		return
 	}
 
-	l := log.WithError(err)
+	l := logger.WithError(err)
 	if data != nil {
 		l = l.WithFields(data)
 	}

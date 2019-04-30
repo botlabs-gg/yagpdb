@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
-	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"strings"
 )
@@ -41,7 +40,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 	if config.JoinDMEnabled && !evt.User.Bot {
 		cid, err := common.BotSession.UserChannelCreate(evt.User.ID)
 		if err != nil {
-			log.WithError(err).WithField("user", evt.User.ID).Error("Failed retrieving user channel")
+			logger.WithError(err).WithField("user", evt.User.ID).Error("Failed retrieving user channel")
 			return
 		}
 
@@ -107,7 +106,7 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 	msg, err := ctx.Execute(tmpl)
 
 	if err != nil {
-		log.WithError(err).WithField("guild", cs.Guild.ID).Warnf("Failed parsing/executing %s template", name)
+		logger.WithError(err).WithField("guild", cs.Guild.ID).Warnf("Failed parsing/executing %s template", name)
 		return
 	}
 
@@ -119,7 +118,7 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 	if cs.Type == discordgo.ChannelTypeDM {
 		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
 		if err != nil {
-			log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
+			logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
 		}
 	} else if !ctx.DelResponse {
 		bot.QueueMergedMessage(cs.ID, msg)
@@ -161,7 +160,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	go func() {
 		_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic)))
 		if err != nil {
-			log.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
+			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
 		}
 	}()
 }

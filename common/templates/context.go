@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var (
@@ -73,6 +74,8 @@ var (
 		baseContextFuncs,
 	}
 )
+
+var logger = common.GetFixedPrefixLogger("templates")
 
 func TODO() {}
 
@@ -243,6 +246,28 @@ func (c *Context) Execute(source string) (string, error) {
 	return result, nil
 }
 
+func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error {
+	out, err := c.Execute(source)
+
+	if utf8.RuneCountInString(out) > 2000 {
+		out = "Template output for " + c.Name + " was longer than 2k (contact an admin on the server...)"
+	}
+
+	// deal with the results
+	if err != nil {
+		logger.WithField("guild", c.GS.ID).WithError(err).Error("Error executing template: " + c.Name)
+		out += "\nAn error caused the execution of the custom command template to stop:\n"
+		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+	}
+
+	if strings.TrimSpace(out) != "" {
+		_, err := common.BotSession.ChannelMessageSend(channelID, out)
+		return err
+	}
+
+	return nil
+}
+
 // IncreaseCheckCallCounter Returns true if key is above the limit
 func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
 	current, ok := c.Counters[key]
@@ -282,7 +307,7 @@ func (c *Context) IncreaseCheckStateLock() bool {
 }
 
 func (c *Context) LogEntry() *logrus.Entry {
-	f := logrus.WithFields(logrus.Fields{
+	f := logger.WithFields(logrus.Fields{
 		"guild": c.GS.ID,
 		"name":  c.Name,
 	})
@@ -381,7 +406,7 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	if delaySeconds > 10 {
 		err := scheduledevents2.ScheduleDeleteMessages(guildID, channelID, time.Now().Add(time.Second*time.Duration(delaySeconds)), messageID)
 		if err != nil {
-			logrus.WithError(err).Error("failed scheduling message deletion")
+			logger.WithError(err).Error("failed scheduling message deletion")
 		}
 	} else {
 		go func() {

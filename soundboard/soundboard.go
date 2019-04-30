@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/soundboard/models"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/net/context"
 	"os"
@@ -23,18 +22,16 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 func RegisterPlugin() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		logrus.WithError(err).Error("failed initializing soundbaord database schema, not running...")
-		return
-	}
+	common.InitSchema(DBSchema, "soundboard")
 
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
 	// Setup directories
-	err = os.MkdirAll("soundboard/queue", 0755)
+	err := os.MkdirAll("soundboard/queue", 0755)
 	if err != nil {
 		if !os.IsExist(err) {
 			panic(err)

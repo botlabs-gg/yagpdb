@@ -12,7 +12,6 @@ import (
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/natefinch/lumberjack"
-	log "github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
 	"html/template"
@@ -50,6 +49,8 @@ var (
 	StartedAt = time.Now()
 
 	CurrentAd *Advertisement
+
+	logger = common.GetFixedPrefixLogger("web")
 )
 
 type Advertisement struct {
@@ -136,7 +137,7 @@ func Run() {
 
 	LoadAd()
 
-	log.Info("Running webservers")
+	logger.Info("Running webservers")
 	runServers(mux)
 }
 
@@ -180,7 +181,7 @@ func IsAcceptingRequests() bool {
 
 func runServers(mainMuxer *goji.Mux) {
 	if !https {
-		log.Info("Starting yagpdb web server http:", ListenAddressHTTP)
+		logger.Info("Starting yagpdb web server http:", ListenAddressHTTP)
 
 		server := &http.Server{
 			Addr:        ListenAddressHTTP,
@@ -190,10 +191,10 @@ func runServers(mainMuxer *goji.Mux) {
 
 		err := server.ListenAndServe()
 		if err != nil {
-			log.Error("Failed http ListenAndServe:", err)
+			logger.Error("Failed http ListenAndServe:", err)
 		}
 	} else {
-		log.Info("Starting yagpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
+		logger.Info("Starting yagpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
 
 		cache := autocert.DirCache("cert")
 
@@ -214,7 +215,7 @@ func runServers(mainMuxer *goji.Mux) {
 
 			err := unsafeHandler.ListenAndServe()
 			if err != nil {
-				log.Error("Failed http ListenAndServe:", err)
+				logger.Error("Failed http ListenAndServe:", err)
 			}
 		}()
 
@@ -229,7 +230,7 @@ func runServers(mainMuxer *goji.Mux) {
 
 		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
-			log.Error("Failed https ListenAndServeTLS:", err)
+			logger.Error("Failed https ListenAndServeTLS:", err)
 		}
 	}
 }
@@ -315,7 +316,7 @@ func setupRoutes() *goji.Mux {
 	for _, plugin := range common.Plugins {
 		if webPlugin, ok := plugin.(Plugin); ok {
 			webPlugin.InitWeb()
-			log.Info("Initialized web plugin:", plugin.PluginInfo().Name)
+			logger.Info("Initialized web plugin:", plugin.PluginInfo().Name)
 		}
 	}
 
@@ -362,7 +363,7 @@ func AddGlobalTemplateData(key string, data interface{}) {
 }
 
 func legacyCPRedirHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Hit cp path: ", r.RequestURI)
+	logger.Println("Hit cp path: ", r.RequestURI)
 	trimmed := strings.TrimPrefix(r.RequestURI, "/cp")
 	http.Redirect(w, r, "/manage"+trimmed, http.StatusMovedPermanently)
 }

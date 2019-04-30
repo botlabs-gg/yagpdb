@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"regexp"
 	"strconv"
@@ -57,7 +56,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 			err = err2
 		}
 
-		logrus.WithError(err).Error("Failed retrieving bot member")
+		logger.WithError(err).Error("Failed retrieving bot member")
 		return
 	}
 
@@ -71,7 +70,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 			// Ignore this error silently
 			return
 		}
-		logrus.WithError(err).Error("Failed giving rep")
+		logger.WithError(err).Error("Failed giving rep")
 		return
 	}
 

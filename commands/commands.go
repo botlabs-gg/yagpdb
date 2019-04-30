@@ -43,11 +43,7 @@ func RegisterPlugin() {
 		logger.WithError(err).Fatal("Failed migrating logged commands database")
 	}
 
-	common.ValidateSQLSchema(DBSchema)
-	_, err = common.PQ.Exec(DBSchema)
-	if err != nil {
-		logger.WithError(err).Fatal("Failed setting up commands settings tables")
-	}
+	common.InitSchema(DBSchema, "commands")
 }
 
 type CommandProvider interface {

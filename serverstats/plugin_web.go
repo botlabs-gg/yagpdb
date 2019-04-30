@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/rcache"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
@@ -253,7 +252,7 @@ func CacheGetCharts(guildID int64, days int) *ChartResponse {
 func cacheChartFetcher(key string) interface{} {
 	split := strings.Split(key, ":")
 	if len(split) < 3 {
-		logrus.Error("[serverstats] invalid cache key: ", key)
+		logger.Error("invalid cache key: ", key)
 		return nil
 	}
 
@@ -262,13 +261,13 @@ func cacheChartFetcher(key string) interface{} {
 
 	memberData, err := RetrieveMemberChartStats(guildID, days)
 	if err != nil {
-		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving member chart data")
+		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving member chart data")
 		return nil
 	}
 
 	messageData, err := RetrieveMessageChartData(guildID, days)
 	if err != nil {
-		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving message chart data")
+		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving message chart data")
 		return nil
 	}
 

@@ -17,6 +17,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)

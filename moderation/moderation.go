@@ -16,6 +16,8 @@ const (
 	ActionWarned   = "Warned"
 )
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 type Plugin struct{}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {

@@ -3,7 +3,6 @@ package configstore
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"math/rand"
 	"strings"
@@ -22,7 +21,7 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf Guild
 		err := common.GORM.Where("guild_id = ?", guildID).First(conf).Error
 		if err == nil {
 			if currentRetries > 1 {
-				logrus.Info("Suceeded after ", currentRetries, " retries")
+				logger.Info("Suceeded after ", currentRetries, " retries")
 			}
 			return nil
 		}

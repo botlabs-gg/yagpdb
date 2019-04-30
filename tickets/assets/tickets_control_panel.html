@@ -1,0 +1,95 @@
+{{define "cp_tickets_settings"}}
+
+{{template "cp_head" .}}
+
+<div class="page-header">
+    <h2>Tickets</h2>
+</div>
+
+{{template "cp_alerts" .}}
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <form role="form" method="post" data-async-form action="/manage/{{.ActiveGuild.ID}}/tickets/settings">
+            <section class="card {{if .PluginSettings.Enabled}}card-featured card-featured-success{{end}}">
+                <header class="card-header">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="tickets-enabled-box" name="Enabled" {{if .PluginSettings.Enabled}} checked{{end}}>
+                        <label class="form-check-label" for="tickets-enabled-box">
+                            <h2 class="card-title">Tickets enabled</h2>
+                        </label>
+                    </div>
+                </header>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="form-group">
+								<label>Role(s) for people considered mods</label><br>
+                                <select name="ModRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .PluginSettings.ModRoles}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+								<label>Role(s) for people considered admins</label><br>
+                                <select name="AdminRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .PluginSettings.AdminRoles}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                            	<label>Channel category to create ticket channels in</label>
+                            	<select class="form-control" name="TicketsChannelCategory">
+									{{catChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsChannelCategory true "None"}}
+								</select>
+                            </div>
+                            <div class="form-group">
+                            	<label>Channel to send closed ticket transcripts and attachments in</label>
+                            	<select class="form-control" name="TicketsTranscriptsChannel">
+									{{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannel true "None"}}
+								</select>
+                            </div>
+                            <div class="form-group">
+                                <label>Channel to send ticket status updates in</label>
+                                <select class="form-control" name="StatusChannel">
+                                    {{textChannelOptions .ActiveGuild.Channels .PluginSettings.StatusChannel true "None"}}
+                                </select>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="tickets-create-transcripts-checkbox" {{if .PluginSettings.TicketsUseTXTTranscripts}}checked{{end}} name="TicketsUseTXTTranscripts"></input>
+                                <label class="form-check-label" for="tickets-create-transcripts-checkbox">Create .txt transcripts when tickets close</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="tickets-download-att-checkbox" {{if .PluginSettings.DownloadAttachments}}checked{{end}} name="DownloadAttachments"></input>
+                                <label class="form-check-label" for="tickets-download-att-checkbox">Download and archive attachments when closing the ticket</label>
+                            </div>
+                            <div class="form-group">
+                                <label>Opening message in new tickets</label>
+                                <textarea rows="5" class="form-control"  name="TicketOpenMSG" placeholder="{{.DefaultTicketMessage}}">{{or .PluginSettings.TicketOpenMSG .DefaultTicketMessage}}</textarea>
+                                <p class="help-block">
+                                    Available template data:<br/>
+                                    {{template "template_helper_user"}} - The user opening the ticket<br/>
+                                    <code>{{"{{.Reason}}"}}</code> - The reason for opening the ticket<br/>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- /.panel -->
+        </form>
+        <!-- /form -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
+
+{{template "cp_footer" .}}
+
+{{end}}

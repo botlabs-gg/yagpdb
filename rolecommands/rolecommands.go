@@ -15,7 +15,6 @@ import (
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/sirupsen/logrus"
 	"github.com/tidwall/buntdb"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sort"
@@ -32,6 +31,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 		Category: common.PluginCategoryMisc,
 	}
 }
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 const (
 	GroupModeNone = iota
@@ -61,10 +62,7 @@ func RegisterPlugin() {
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		logrus.WithError(err).Fatal("Failed initializing db schema")
-	}
+	common.InitSchema(DBSchema, "rolecommands")
 }
 
 func FindToggleRole(ctx context.Context, ms *dstate.MemberState, name string) (gaveRole bool, err error) {

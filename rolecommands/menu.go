@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -263,7 +262,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 
 		err = common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
 		if err != nil {
-			logrus.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
+			logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
 		}
 
 		model.R = model.R.NewStruct()
@@ -338,7 +337,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	menu, err := FindRolemenuFull(evt.Context(), mID, gID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logrus.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
+			logger.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
 		}
 		return
 	}
@@ -352,7 +351,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 		resp, err := MenuReactedNotDone(evt.Context(), menu, emoji, uID)
 		if err != nil {
-			logrus.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup, or editing menu")
+			logger.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup, or editing menu")
 		}
 
 		if resp != "" {
@@ -387,7 +386,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 	resp, err := MemberChooseOption(evt.Context(), menu, gs, option, uID, emoji, raAdd)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingPermissions) {
-		logrus.WithError(err).WithField("option", option.ID).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
+		logger.WithError(err).WithField("option", option.ID).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
 	}
 
 	if resp != "" {
@@ -563,7 +562,7 @@ func handleMessageRemove(evt *eventsystem.EventData) {
 func messageRemoved(ctx context.Context, id int64) {
 	_, err := models.RoleMenus(qm.Where("message_id=?", id)).DeleteAll(ctx, common.PQ)
 	if err != nil {
-		logrus.WithError(err).Error("Failed removing old role menus")
+		logger.WithError(err).Error("Failed removing old role menus")
 	}
 }
 
@@ -732,7 +731,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 
 	msg, err := common.BotSession.ChannelMessageSend(rm.ChannelID, msgContents)
 	if err != nil {
-		logrus.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed creating setup message for menu")
+		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed creating setup message for menu")
 		return
 	}
 
@@ -740,7 +739,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 		rm.SetupMSGID = msg.ID
 		_, err = rm.UpdateG(ctx, boil.Whitelist("setup_msg_id"))
 		if err != nil {
-			logrus.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed upating menu model")
+			logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed upating menu model")
 		}
 	}
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
-	"github.com/sirupsen/logrus"
 	"runtime"
 	"time"
 )
@@ -24,6 +23,8 @@ var Command = &commands.YAGCommand{
 	RunFunc:     cmdFuncYagStatus,
 }
 
+var logger = common.GetFixedPrefixLogger("yagstatuc_cmd")
+
 func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -36,7 +37,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 		sysMemStats = fmt.Sprintf("%dMB (%.0f%%), %dMB", sysMem.Used/1000000, sysMem.UsedPercent, sysMem.Total/1000000)
 	} else {
 		sysMemStats = "Failed collecting mem stats"
-		logrus.WithError(err).Error("Failed collecting memory stats")
+		logger.WithError(err).Error("Failed collecting memory stats")
 	}
 
 	sysLoad, err := load.Avg()
@@ -45,7 +46,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 		sysLoadStats = fmt.Sprintf("%.2f, %.2f, %.2f", sysLoad.Load1, sysLoad.Load5, sysLoad.Load15)
 	} else {
 		sysLoadStats = "Failed collecting"
-		logrus.WithError(err).Error("Failed collecting load stats")
+		logger.WithError(err).Error("Failed collecting load stats")
 	}
 
 	uptime := time.Since(bot.Started)
@@ -83,7 +84,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 			}
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: v.PluginInfo().Name + ": " + name, Value: val, Inline: true})
 			elapsed := time.Since(started)
-			logrus.Println("Took ", elapsed.Seconds(), " to gather stats from ", v.PluginInfo().Name)
+			logger.Println("Took ", elapsed.Seconds(), " to gather stats from ", v.PluginInfo().Name)
 		}
 	}
 

@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"time"
 )
@@ -17,7 +16,7 @@ import (
 type PremiumSource struct{}
 
 func RegisterPlugin() {
-	logrus.Info("Registered patreon premium source")
+	logger.Info("Registered patreon premium source")
 	premium.RegisterPremiumSource(&PremiumSource{})
 	common.RegisterPlugin(&Plugin{})
 }
@@ -27,6 +26,8 @@ func (ps *PremiumSource) Init() {}
 func (ps *PremiumSource) Names() (human string, idname string) {
 	return "Patreon", "patreon"
 }
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 // Since we keep the patrons loaded on the webserver, we also do the updating of the patreon premium slots on the webserver
 // in the future this should be cleaned up (maybe keep patrons in redis)
@@ -57,7 +58,7 @@ func RunPoller() {
 		<-ticker.C
 		err := UpdatePremiumSlots(context.Background())
 		if err != nil {
-			logrus.WithError(err).Error("Failed updating premium slots for patrons")
+			logger.WithError(err).Error("Failed updating premium slots for patrons")
 		}
 	}
 }
@@ -108,7 +109,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 					return errors.WithMessage(err, "CreatePremiumSlot")
 				}
 
-				logrus.Info("Created patreon premium slot #", slot.ID, slot.UserID)
+				logger.Info("Created patreon premium slot #", slot.ID, slot.UserID)
 			}
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
@@ -117,7 +118,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 			for i := 0; i < len(userSlots)-slotsForPledge; i++ {
 				slot := userSlots[i]
 				slotsToRemove = append(slotsToRemove, slot.ID)
-				logrus.Info("Marked patreon slot for deletion #", slot.ID, slot.UserID)
+				logger.Info("Marked patreon slot for deletion #", slot.ID, slot.UserID)
 			}
 
 			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
@@ -151,7 +152,7 @@ OUTER:
 				return errors.WithMessage(err, "new CreatePremiumSlot")
 			}
 
-			logrus.Info("Created new patreon premium slot #", slot.ID, slot.ID)
+			logger.Info("Created new patreon premium slot #", slot.ID, slot.ID)
 		}
 	}
 

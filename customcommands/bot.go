@@ -18,7 +18,7 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"math/rand"
@@ -99,6 +99,9 @@ var cmdListCommands = &commands.YAGCommand{
 		foundCCS, provided := FindCommands(ccs, data)
 		if len(foundCCS) < 1 {
 			list := StringCommands(ccs)
+			if len(list) == 0 {
+				return "This server has no custom commands, sry.", nil
+			}
 			if provided {
 				return "No command by that name or id found, here is a list of them all:\n" + list, nil
 			} else {
@@ -166,7 +169,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	}
 
 	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
-		log.WithField("guild", cmd.GuildID).Warn("[cc] went above delayed cc run ratelimit")
+		logger.WithField("guild", cmd.GuildID).Warn("went above delayed cc run ratelimit")
 		return false, nil
 	}
 
@@ -176,7 +179,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
 			return false, nil
 		} else if err != nil {
-			log.WithError(err).Error("failed checking if bot is on guild")
+			logger.WithError(err).Error("failed checking if bot is on guild")
 		}
 
 		return true, nil
@@ -232,7 +235,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
 			return false, nil
 		} else if err != nil {
-			log.WithError(err).Error("failed checking if bot is on guild")
+			logger.WithError(err).Error("failed checking if bot is on guild")
 		}
 
 		return true, nil
@@ -255,7 +258,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	cmd.LastRun = cmd.NextRun
 	err = UpdateCommandNextRunTime(cmd, true)
 	if err != nil {
-		log.WithError(err).Error("failed updating custom command next run time")
+		logger.WithError(err).Error("failed updating custom command next run time")
 	}
 
 	return false, nil
@@ -267,7 +270,7 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 	}
 
 	if cState == nil {
-		log.Warn("Channel not found in state")
+		logger.Warn("Channel not found in state")
 		return true
 	}
 
@@ -295,7 +298,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, evt.Context())
 	if err != nil {
-		log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
+		logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
 		return
 	}
 
@@ -305,7 +308,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	prefix, err := commands.GetCommandPrefix(cs.Guild.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed getting prefix")
+		logger.WithError(err).Error("Failed getting prefix")
 		return
 	}
 
@@ -349,7 +352,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	err = ExecuteCustomCommandFromMessage(matched, member, cs, args, stripped, mc.Message)
 	if err != nil {
-		log.WithField("guild", mc.GuildID).WithError(err).Error("Error executing custom command")
+		logger.WithField("guild", mc.GuildID).WithError(err).Error("Error executing custom command")
 	}
 }
 
@@ -395,7 +398,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	tmplCtx.Name = "CC #" + strconv.Itoa(int(cmd.LocalID))
 
 	csCop := tmplCtx.CS.Copy(true)
-	f := log.WithFields(log.Fields{
+	f := logger.WithFields(logrus.Fields{
 		"trigger":      cmd.TextTrigger,
 		"trigger_type": CommandTriggerType(cmd.TriggerType).String(),
 		"guild":        csCop.Guild.ID,
@@ -428,7 +431,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 
 	// deal with the results
 	if err != nil {
-		log.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
+		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
 		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
 	}
@@ -440,7 +443,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
 		m, err := common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
 		if err != nil {
-			log.WithError(err).Error("Failed sending message")
+			logger.WithError(err).Error("Failed sending message")
 		} else {
 			if tmplCtx.DelResponse {
 				templates.MaybeScheduledDeleteMessage(tmplCtx.GS.ID, tmplCtx.CS.ID, m.ID, tmplCtx.DelResponseDelay)
@@ -460,7 +463,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 }
 
 func onExecError(err error, tmplCtx *templates.Context, logStack bool) {
-	l := log.WithField("guild", tmplCtx.GS.ID).WithError(err)
+	l := logger.WithField("guild", tmplCtx.GS.ID).WithError(err)
 	if logStack {
 		stack := string(debug.Stack())
 		l = l.WithField("stack", stack)

@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
@@ -242,7 +241,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	for k, v := range msgLogs.R.Messages {
 		parsed, err := discordgo.Timestamp(v.Timestamp.String).Parse()
 		if err != nil {
-			logrus.WithError(err).Error("Failed parsing logged message timestamp")
+			web.CtxLogger(r.Context()).WithError(err).Error("Failed parsing logged message timestamp")
 			continue
 		}
 		ts := parsed.UTC().Format(TimeFormat)
