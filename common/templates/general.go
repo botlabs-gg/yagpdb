@@ -291,23 +291,32 @@ func randInt(args ...interface{}) int {
 	return int(r + min)
 }
 
-func tmplRound(args ...interface{}) interface{} {
+func tmplRound(args ...interface{}) float64 {
 	if len(args) < 1 {
 		return 0
-	} else if len(args) == 1 {
-		return int(math.Round(ToFloat64(args[0])))
 	}
+	return math.Round(ToFloat64(args[0]))
+}
 
-	switch args[1]{
-	case "floor":
-		return math.Floor(ToFloat64(args[0]))
-	case "ceil": 
-		return math.Ceil(ToFloat64(args[0]))
-	case "even":
-		return math.RoundToEven(ToFloat64(args[0]))
-	default:
-		return math.Round(ToFloat64(args[0]))	
+func tmplRoundCeil(args ...interface{}) float64 {
+	if len(args) < 1 {
+		return 0
 	}
+	return math.Ceil(ToFloat64(args[0]))
+}
+
+func tmplRoundFloor(args ...interface{}) float64 {
+	if len(args) < 1 {
+		return 0
+	}
+	return math.Floor(ToFloat64(args[0]))
+}
+
+func tmplRoundEven(args ...interface{}) float64 {
+	if len(args) < 1 {
+		return 0
+	}
+	return math.RoundToEven(ToFloat64(args[0]))
 }
 
 func joinStrings(sep string, args ...interface{}) string {
