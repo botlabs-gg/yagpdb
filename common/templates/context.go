@@ -43,6 +43,9 @@ var (
 		"div":	tmplDiv,
 		"fdiv":	tmplFDiv,
 		"round":	tmplRound,
+		"roundCeil":	tmplRoundCeil,
+		"roundFloor":	tmplRoundFloor,
+		"roundEven":	tmplRoundEven,
 
 		// misc
 		"dict":   Dictionary,
