@@ -133,7 +133,7 @@ It is highly recommended to couple the moderation actions with the message logs,
             </label>
         </div>
         <div class="form-group">
-            <label>Allow users with the following roles to use the <code>giverole/addrole and removerole</code> commands</label><br>
+            <label>Users with the following roles will have permission to use the <code>giverole/addrole and removerole</code> commands</label><br>
             <select class="multiselect" name="GiveRoleCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.GiveRoleCmdRoles}}
             </select>
@@ -213,7 +213,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         </div>
         <hr />
         <div class="form-group">
-            <label>Allow users with the following roles to use the mute commands</label><br>
+            <label>Users with the following roles will have permission to use mute related commands</label><br>
             <select class="multiselect" name="MuteCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.MuteCmdRoles}}
             </select>
@@ -289,7 +289,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         </div>
         <hr />
         <div class="form-group">
-            <label>Allow users with the following roles to use the kick command</label><br>
+            <label>Users with the following roles will have permission to use kick related commands</label><br>
             <select class="multiselect" name="KickCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.KickCmdRoles}}
             </select>
@@ -345,7 +345,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         </div>
         <hr />
         <div class="form-group">
-            <label>Allow users with the following roles to use the ban commands</label><br>
+            <label>Users with the following roles will have permission to use ban related commands</label><br>
             <select class="multiselect" name="BanCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.BanCmdRoles}}
             </select>
@@ -391,7 +391,7 @@ It is highly recommended to couple the moderation actions with the message logs,
         </div>
         <hr />
         <div class="form-group">
-            <label>Allow users with the following roles to use the warning commands</label><br>
+            <label>Users with the following roles will have permission to use warning related commands</label><br>
             <select class="multiselect" name="WarnCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.WarnCmdRoles}}
             </select>
