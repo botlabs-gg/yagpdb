@@ -185,6 +185,11 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 			cParentID := data.CS.ParentID
 			data.GS.RUnlock()
 
+			ms, _ := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
+			if ms == nil {
+				return nil, nil
+			}
+
 			channelOverrides, err := GetOverridesForChannel(data.CS.ID, cParentID, data.GS.ID)
 			if err != nil {
 				logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed retrieving command overrides")
@@ -201,6 +206,16 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GS.ID, channelOverrides)
 				if err != nil {
 					logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed checking if command was enabled")
+					continue
+				}
+
+				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Roles) {
+					// missing required role
+					continue
+				}
+
+				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Roles) {
+					// has ignored role
 					continue
 				}
 
