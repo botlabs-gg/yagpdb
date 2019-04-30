@@ -8,7 +8,6 @@ import (
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"strconv"
 	"strings"
@@ -29,21 +28,21 @@ func migrateLegacyRedisFormatToPostgres() {
 			split := strings.SplitN(key, ":", 2)
 			guildID, err := strconv.ParseInt(split[1], 10, 64)
 			if err != nil {
-				logrus.WithError(err).WithField("str", key).Error("reddit: failed migrating from redis, key is invalid")
+				logger.WithError(err).WithField("str", key).Error("reddit: failed migrating from redis, key is invalid")
 				continue
 			}
 
 			// perform the migration
 			err = migrateGuildConfig(guildID)
 			if err != nil {
-				logrus.WithError(err).WithField("str", key).Error("reddit: failed migrating from redis")
+				logger.WithError(err).WithField("str", key).Error("reddit: failed migrating from redis")
 				continue
 			}
-			logrus.Info("migrating reddit config for ", guildID)
+			logger.Info("migrating reddit config for ", guildID)
 		}
 
 		if err := scanner.Close(); err != nil {
-			logrus.WithError(err).Error("failed scanning keys while migrating reddit")
+			logger.WithError(err).Error("failed scanning keys while migrating reddit")
 			return err
 		}
 
@@ -164,7 +163,7 @@ func GetLegacyConfig(key string) ([]*LegacySubredditWatchItem, error) {
 				Channel: "ERROR DECODING",
 				ID:      int(id),
 			}
-			logrus.WithError(err).Error("Failed decoding reddit watch item")
+			logger.WithError(err).Error("Failed decoding reddit watch item")
 		} else {
 			out[i] = decoded
 		}

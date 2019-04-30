@@ -14,7 +14,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/tickets/models"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"io"
@@ -152,7 +151,7 @@ func (p *Plugin) AddCommands() {
 
 			err = tmplCTX.ExecuteAndSendWithErrors(ticketOpenMsg, channel.ID)
 			if err != nil {
-				logrus.WithError(err).WithField("guild", parsed.GS.ID).Error("failed sending ticket open message")
+				logger.WithError(err).WithField("guild", parsed.GS.ID).Error("failed sending ticket open message")
 			}
 
 			// send the log message
@@ -391,7 +390,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if err != nil {
-					logrus.WithError(err).WithField("guild", parsed.GS.ID).Error("[tickets] failed to update channel overwrite")
+					logger.WithError(err).WithField("guild", parsed.GS.ID).Error("[tickets] failed to update channel overwrite")
 				}
 			}
 
@@ -409,7 +408,7 @@ func (p *Plugin) AddCommands() {
 					// need to create a new overwrite
 					err := common.BotSession.ChannelPermissionSet(parsed.CS.ID, v, "role", InTicketPerms, 0)
 					if err != nil {
-						logrus.WithError(err).WithField("guild", parsed.GS.ID).Error("[tickets] failed to create channel overwrite")
+						logger.WithError(err).WithField("guild", parsed.GS.ID).Error("[tickets] failed to create channel overwrite")
 					}
 				}
 			}
@@ -608,7 +607,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 
 			f, err := zw.Create(v.Filename)
 			if err != nil {
-				logrus.WithError(err).Info("failed creating zip file")
+				logger.WithError(err).Info("failed creating zip file")
 				continue
 			}
 
@@ -625,7 +624,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 		buf.Reset()
 
 		if err != nil {
-			logrus.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] failed archiving batch of attachments")
+			logger.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] failed archiving batch of attachments")
 		}
 	}
 }

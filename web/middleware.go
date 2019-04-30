@@ -10,7 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/miolini/datacounter"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"io"
 	"net/http"
@@ -46,7 +46,7 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, common.ContextKeyIsPartial, true)
 		}
 
-		entry := log.WithFields(log.Fields{
+		entry := logger.WithFields(logrus.Fields{
 			"ip":  r.RemoteAddr,
 			"url": r.URL.Path,
 		})
@@ -617,7 +617,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) ht
 		}
 
 		err := form.Save(g.ID)
-		if !CheckErr(templateData, err, "Failed saving config", log.Error) {
+		if !CheckErr(templateData, err, "Failed saving config", CtxLogger(ctx).Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 			if ok {
@@ -739,7 +739,7 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 			permsInterface := ctx.Value(common.ContextKeyBotPermissions)
 			currentPerms := 0
 			if permsInterface == nil {
-				log.Warn("Requires perms but no permsinterface available")
+				logger.Warn("Requires perms but no permsinterface available")
 			} else {
 				currentPerms = permsInterface.(int)
 			}

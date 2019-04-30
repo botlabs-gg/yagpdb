@@ -117,7 +117,7 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 		}
 
 		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-		// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		// logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
 		p.handlePost(v, 0)
 	}
 }
@@ -125,7 +125,7 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
 
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
-	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
+	// logger.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
 	qms := []qm.QueryMod{
 		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
@@ -139,7 +139,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 
 	config, err := models.RedditFeeds(qms...).AllG(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("failed retrieving reddit feeds for subreddit")
+		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
 	}
 
@@ -151,7 +151,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		return nil
 	}
 
-	logrus.WithFields(logrus.Fields{
+	logger.WithFields(logrus.Fields{
 		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
 	}).Debug("Found matched reddit post")
@@ -290,10 +290,10 @@ func (r RedditIdSlice) Less(i, j int) bool {
 	a, err1 := strconv.ParseInt(r[i], 36, 64)
 	b, err2 := strconv.ParseInt(r[j], 36, 64)
 	if err1 != nil {
-		logrus.WithError(err1).Error("Failed parsing id")
+		logger.WithError(err1).Error("Failed parsing id")
 	}
 	if err2 != nil {
-		logrus.WithError(err2).Error("Failed parsing id")
+		logger.WithError(err2).Error("Failed parsing id")
 	}
 
 	return a > b

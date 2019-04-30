@@ -13,7 +13,6 @@ import (
 	"github.com/mediocregopher/radix"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"html/template"
 	"io"
@@ -114,7 +113,7 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 	if joinedGuildParsed != 0 {
 		guild, err := common.BotSession.Guild(joinedGuildParsed)
 		if err != nil {
-			logrus.WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed fetching guild")
+			CtxLogger(r.Context()).WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed fetching guild")
 		} else {
 			tmpl["JoinedGuild"] = guild
 		}
@@ -220,7 +219,7 @@ func pollCommandsRan() {
 
 		err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("COUNT(*)").Where("created_at > ?", within).Scan(&result).Error
 		if err != nil {
-			logrus.WithError(err).Error("failed counting commands ran today")
+			logger.WithError(err).Error("failed counting commands ran today")
 		} else {
 			atomic.StoreInt64(commandsRanToday, result.Count)
 		}

@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/models"
 	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
@@ -44,7 +43,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	csrfToken, err := CreateCSRFToken()
 	if err != nil {
-		log.WithError(err).Error("Failed generating csrf token")
+		CtxLogger(r.Context()).WithError(err).Error("Failed generating csrf token")
 		return
 	}
 
@@ -63,9 +62,9 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
 	if ok, err := CheckCSRFToken(state); !ok {
 		if err != nil {
-			log.WithError(err).Error("Failed validating CSRF token")
+			CtxLogger(ctx).WithError(err).Error("Failed validating CSRF token")
 		} else {
-			log.Info("Invalid oauth state", state)
+			CtxLogger(ctx).Info("Invalid oauth state", state)
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -74,7 +73,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	token, err := oauthConf.Exchange(ctx, code)
 	if err != nil {
-		log.WithError(err).Error("oauthConf.Exchange() failed")
+		CtxLogger(ctx).WithError(err).Error("oauthConf.Exchange() failed")
 		http.Redirect(w, r, "/?error=oauth2failure", http.StatusTemporaryRedirect)
 		return
 	}
@@ -82,7 +81,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	// Create a new session cookie cause we can
 	sessionCookie, err := CreateCookieSession(token)
 	if err != nil {
-		log.WithError(err).Error("Failed setting auth token")
+		CtxLogger(ctx).WithError(err).Error("Failed setting auth token")
 		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}

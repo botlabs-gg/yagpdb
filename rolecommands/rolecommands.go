@@ -32,6 +32,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 const (
 	GroupModeNone = iota
 	GroupModeSingle

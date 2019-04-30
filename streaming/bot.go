@@ -11,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
 	"sync"
@@ -41,7 +40,7 @@ func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data in
 
 // YAGPDB event
 func HandleUpdateStreaming(event *pubsub.Event) {
-	log.Info("Received update streaming event ", event.TargetGuild)
+	logger.Info("Received update streaming event ", event.TargetGuild)
 
 	gs := bot.State.Guild(true, event.TargetGuildInt)
 	if gs == nil {
@@ -57,7 +56,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 
 	config, err := GetConfig(gs.ID)
 	if err != nil {
-		log.WithError(err).WithField("guild", gs.ID).Error("Failed retrieving streaming config")
+		logger.WithError(err).WithField("guild", gs.ID).Error("Failed retrieving streaming config")
 	}
 
 	if !config.Enabled {
@@ -92,7 +91,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 
 			err = CheckPresence(conn, config, ms, gs)
 			if err != nil {
-				log.WithError(err).Error("Error checking presence")
+				logger.WithError(err).Error("Error checking presence")
 				continue
 			}
 		}
@@ -108,7 +107,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 		return
 	}
 
-	log.WithField("guild", gs.ID).Info("Starting slowcheck")
+	logger.WithField("guild", gs.ID).Info("Starting slowcheck")
 
 	gs.RLock()
 	err = common.RedisPool.Do(radix.WithConn(KeyCurrentlyStreaming(gs.ID), func(conn radix.Conn) error {
@@ -120,7 +119,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 
 			err = CheckPresence(conn, config, ms, gs)
 			if err != nil {
-				log.WithError(err).Error("Error checking presence")
+				logger.WithError(err).Error("Error checking presence")
 				continue
 			}
 		}
@@ -129,7 +128,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 	}))
 	gs.RUnlock()
 
-	log.WithField("guild", gs.ID).Info("Done slowcheck")
+	logger.WithField("guild", gs.ID).Info("Done slowcheck")
 }
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
@@ -142,7 +141,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 
 	config, err := BotCachedGetConfig(gs)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving streaming config")
+		logger.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
 
@@ -152,7 +151,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 
 	ms := gs.Member(true, m.User.ID)
 	if ms == nil {
-		log.WithField("guild", m.GuildID).Error("Member not found in state")
+		logger.WithField("guild", m.GuildID).Error("Member not found in state")
 		return
 	}
 
@@ -160,13 +159,13 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	defer gs.RUnlock()
 
 	if !ms.PresenceSet {
-		log.WithField("guild", m.GuildID).Warn("Presence not found in state")
+		logger.WithField("guild", m.GuildID).Warn("Presence not found in state")
 		return
 	}
 
 	err = CheckPresence(common.RedisPool, config, ms, gs)
 	if err != nil {
-		log.WithError(err).Error("Failed checking presence")
+		logger.WithError(err).Error("Failed checking presence")
 	}
 }
 
@@ -176,7 +175,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(g.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving streaming config")
+		logger.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
 
@@ -185,7 +184,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	}
 	gs := bot.State.Guild(true, g.ID)
 	if gs == nil {
-		log.WithField("guild", g.ID).Error("Guild not found in state")
+		logger.WithField("guild", g.ID).Error("Guild not found in state")
 		return
 	}
 
@@ -203,7 +202,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 			err = CheckPresence(conn, config, ms, gs)
 
 			if err != nil {
-				log.WithError(err).Error("Failed checking presence")
+				logger.WithError(err).Error("Failed checking presence")
 			}
 		}
 
@@ -221,7 +220,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	config, err := BotCachedGetConfig(gs)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving streaming config")
+		logger.WithError(err).Error("Failed retrieving streaming config")
 		return
 	}
 
@@ -231,7 +230,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	ms, err := bot.GetMember(p.GuildID, p.User.ID)
 	if ms == nil || err != nil {
-		log.WithError(err).WithField("guild", p.GuildID).WithField("user", p.User.ID).Debug("Failed retrieving member")
+		logger.WithError(err).WithField("guild", p.GuildID).WithField("user", p.User.ID).Debug("Failed retrieving member")
 		return
 	}
 
@@ -240,7 +239,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	err = CheckPresence(common.RedisPool, config, ms, gs)
 	if err != nil {
-		log.WithError(err).WithField("guild", p.GuildID).Error("Failed checking presence")
+		logger.WithError(err).WithField("guild", p.GuildID).Error("Failed checking presence")
 	}
 }
 
@@ -347,12 +346,12 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
 	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
-		log.WithError(err).Error("failed setting streaming announcment cooldown")
+		logger.WithError(err).Error("failed setting streaming announcment cooldown")
 		return
 	}
 
 	if resp != "OK" {
-		log.Info("streaming announcment cooldown: ", ms.ID)
+		logger.Info("streaming announcment cooldown: ", ms.ID)
 		return
 	}
 
@@ -369,7 +368,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 		config.AnnounceChannel = 0
 		config.Save(guild.ID)
 
-		log.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not found in state, not sending streaming announcement")
+		logger.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not found in state, not sending streaming announcement")
 		return
 	}
 
@@ -383,7 +382,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	out, err := ctx.Execute(config.AnnounceMessage)
 	guild.RLock()
 	if err != nil {
-		log.WithError(err).WithField("guild", guild.ID).Warn("Failed executing template")
+		logger.WithError(err).WithField("guild", guild.ID).Warn("Failed executing template")
 		return
 	}
 
@@ -405,7 +404,7 @@ func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guil
 			DisableStreamingRole(guild.ID)
 		}
 
-		log.WithError(err).WithField("guild", guild.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
+		logger.WithError(err).WithField("guild", guild.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
 		common.RedisPool.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guild.ID), ms.ID))
 	}
 }
@@ -417,7 +416,7 @@ func RemoveStreamingRole(ms *dstate.MemberState, role int64, guildID int64) {
 
 	err := common.RemoveRoleDS(ms, role)
 	if err != nil {
-		log.WithError(err).WithField("guild", guildID).WithField("user", ms.ID).WithField("role", role).Error("Failed removing streaming role")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", ms.ID).WithField("role", role).Error("Failed removing streaming role")
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
 			DisableStreamingRole(guildID)
 		}
@@ -425,11 +424,11 @@ func RemoveStreamingRole(ms *dstate.MemberState, role int64, guildID int64) {
 }
 
 func DisableStreamingRole(guildID int64) {
-	log.WithField("guild", guildID).Warn("Disabling streaming role for server because of misssing permissions or unknown role")
+	logger.WithField("guild", guildID).Warn("Disabling streaming role for server because of misssing permissions or unknown role")
 
 	conf, err := GetConfig(guildID)
 	if err != nil {
-		log.WithField("guild", guildID).WithError(err).Error("Failed retrieving streaming config, when there should be one?")
+		logger.WithField("guild", guildID).WithError(err).Error("Failed retrieving streaming config, when there should be one?")
 		return
 	}
 

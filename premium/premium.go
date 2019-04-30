@@ -23,6 +23,8 @@ const (
 	RedisKeyPremiumGuildLastActive = "premium_guild_last_active"
 )
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 type Plugin struct {
 }
 

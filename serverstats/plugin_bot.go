@@ -14,7 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -109,7 +109,7 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 	SetUpdateMemberStatsPeriod(g.GuildID, 1, mc)
 
 	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
-		"[serverstats] failed marking guildmembers changed", log.Fields{"guild": g.GuildID})
+		"[serverstats] failed marking guildmembers changed", logrus.Fields{"guild": g.GuildID})
 }
 
 func HandleMemberRemove(evt *eventsystem.EventData) {
@@ -127,7 +127,7 @@ func HandleMemberRemove(evt *eventsystem.EventData) {
 	SetUpdateMemberStatsPeriod(g.GuildID, -1, mc)
 
 	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
-		"[serverstats] failed marking guildmembers changed", log.Fields{"guild": g.GuildID})
+		"[serverstats] failed marking guildmembers changed", logrus.Fields{"guild": g.GuildID})
 }
 
 func SetUpdateMemberStatsPeriod(guildID int64, memberIncr int, numMembers int) {
@@ -151,7 +151,7 @@ leaves = server_stats_member_periods.leaves + $5,
 num_members = server_stats_member_periods.num_members + $6;`, guildID, t, numMembers, joins, leaves, memberIncr) // update clause vars
 
 	if err != nil {
-		log.WithError(err).Error("[serverstats] failed setting member stats period")
+		logger.WithError(err).Error("failed setting member stats period")
 	}
 
 }
@@ -165,13 +165,13 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	channel := bot.State.Channel(true, m.ChannelID)
 	if channel == nil {
-		log.WithField("channel", m.ChannelID).Warn("Channel not in state")
+		logger.WithField("channel", m.ChannelID).Warn("Channel not in state")
 		return
 	}
 
 	config, err := BotCachedFetchGuildConfig(evt.Context(), channel.Guild)
 	if err != nil {
-		log.WithError(err).WithField("guild", channel.Guild.ID).Error("Failed retrieving config")
+		logger.WithError(err).WithField("guild", channel.Guild.ID).Error("Failed retrieving config")
 		return
 	}
 
@@ -182,7 +182,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	val := channel.StrID() + ":" + discordgo.StrID(m.ID) + ":" + discordgo.StrID(m.Author.ID)
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), val))
 	if err != nil {
-		log.WithError(err).Error("Failed adding member to stats")
+		logger.WithError(err).Error("Failed adding member to stats")
 	}
 
 	MarkGuildAsToBeChecked(channel.Guild.ID)
@@ -250,7 +250,7 @@ func (p *Plugin) runOnlineUpdater() {
 
 		tx, err := common.PQ.Begin()
 		if err != nil {
-			log.WithError(err).Error("[serverstats] failed starting online count transaction")
+			logger.WithError(err).Error("[serverstats] failed starting online count transaction")
 			continue
 		}
 
@@ -263,20 +263,19 @@ max_online = GREATEST (server_stats_member_periods.max_online, $4)
 `, g, t, counts[1], counts[0]) // update clause vars
 
 			if err != nil {
-				log.WithError(err).WithField("guild", g).Error("[serverstats] failed checking guild online count")
+				logger.WithError(err).WithField("guild", g).Error("failed checking guild online count")
 				tx.Rollback()
 				break
 			}
-
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			log.WithError(err).Error("[serverstats] failed comitting online counts")
+			logger.WithError(err).Error("failed comitting online counts")
 		}
 
 		if time.Since(started) > time.Millisecond*250 {
-			log.Warnf("Tok %s to update online counts of %d guilds", time.Since(started).String(), checkedThisRound)
+			logger.Warnf("Tok %s to update online counts of %d guilds", time.Since(started).String(), checkedThisRound)
 		}
 	}
 }

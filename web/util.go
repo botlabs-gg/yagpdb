@@ -9,7 +9,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"goji.io/pattern"
 	"net/http"
 	"net/url"
@@ -65,7 +65,7 @@ func GenSessionCookie() *http.Cookie {
 
 func LogIgnoreErr(err error) {
 	if err != nil {
-		log.Error("Error:", err)
+		logger.Error("Error:", err)
 	}
 }
 
@@ -252,12 +252,12 @@ type APIError struct {
 }
 
 // CtxLogger Returns an always non nil entry either from the context or standard logger
-func CtxLogger(ctx context.Context) *log.Entry {
+func CtxLogger(ctx context.Context) *logrus.Entry {
 	if inter := ctx.Value(common.ContextKeyLogger); inter != nil {
-		return inter.(*log.Entry)
+		return inter.(*logrus.Entry)
 	}
 
-	return log.NewEntry(log.StandardLogger())
+	return logrus.NewEntry(logger)
 }
 
 func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, statusCode int) {

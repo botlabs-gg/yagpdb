@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/tickets/models"
-	"github.com/sirupsen/logrus"
 )
 
 type Plugin struct{}
@@ -19,6 +18,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 		Category: common.PluginCategoryMisc,
 	}
 }
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
 	common.InitSchema(DBSchema, "tickets")
@@ -44,6 +45,6 @@ func TicketLog(conf *models.TicketConfig, guildID int64, author *discordgo.User,
 
 	_, err := common.BotSession.ChannelMessageSendEmbed(conf.StatusChannel, embed)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("[tickets] failed sending log message to guild")
+		logger.WithError(err).WithField("guild", guildID).Error("[tickets] failed sending log message to guild")
 	}
 }

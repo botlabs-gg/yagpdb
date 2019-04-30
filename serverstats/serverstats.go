@@ -11,7 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"strings"
@@ -30,6 +30,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 		Category: common.PluginCategoryMisc,
 	}
 }
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
 	common.InitSchema(DBSchema, "serverstats")
@@ -124,7 +126,7 @@ func RetrieveRedisStats(guildID int64) (*DailyStats, error) {
 	online, err := botrest.GetOnlineCount(guildID)
 	if err != nil {
 		if botrest.BotIsRunning() {
-			log.WithError(err).Error("Failed fetching online count")
+			logger.WithError(err).Error("Failed fetching online count")
 		}
 	}
 
@@ -148,7 +150,7 @@ func parseMessageStats(raw []string, guildID int64) (map[string]*ChannelStats, e
 		split := strings.Split(result, ":")
 		if len(split) < 2 {
 
-			log.WithFields(log.Fields{
+			logger.WithFields(logrus.Fields{
 				"guild":  guildID,
 				"result": result,
 			}).Error("Invalid message stats")

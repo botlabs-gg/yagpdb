@@ -5,7 +5,6 @@ import (
 	"github.com/google/safebrowsing"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -23,7 +22,7 @@ func CheckString(input string) (*safebrowsing.URLThreat, error) {
 }
 
 func performLocalLookup(input string) (*safebrowsing.URLThreat, error) {
-	logrus.Debug("[safebrowsing] performing local lookup")
+	logger.Debug("performing local lookup")
 
 	result, err := serverPerformLookup(input)
 	if err != nil {
@@ -34,7 +33,7 @@ func performLocalLookup(input string) (*safebrowsing.URLThreat, error) {
 }
 
 func performRemoteLookup(input string) (*safebrowsing.URLThreat, error) {
-	logrus.Debug("[safebrowsing] performing remote lookup")
+	logger.Debug("performing remote lookup")
 
 	bodyR := strings.NewReader(input)
 	req, err := http.NewRequest("POST", "http://"+backgroundworkers.HTTPAddr+"/safebroswing/checkmessage", bodyR)

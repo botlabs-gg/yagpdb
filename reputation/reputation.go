@@ -20,6 +20,8 @@ import (
 	"time"
 )
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 func RegisterPlugin() {
 
 	plugin := &Plugin{}

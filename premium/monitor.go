@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"sync"
@@ -27,11 +26,11 @@ func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 func runMonitor() {
 	ticker := time.NewTicker(time.Second * 30)
 	time.Sleep(time.Second * 3)
-	logrus.Info("started premium server monitor")
+	logger.Info("started premium server monitor")
 
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("Failed checking for expired premium slots")
+		logger.WithError(err).Error("Failed checking for expired premium slots")
 	}
 
 	checkedExpiredSlots := false
@@ -41,13 +40,13 @@ func runMonitor() {
 		if checkedExpiredSlots {
 			err := updatePremiumServers(context.Background())
 			if err != nil {
-				logrus.WithError(err).Error("Failed updating premium servers")
+				logger.WithError(err).Error("Failed updating premium servers")
 			}
 			checkedExpiredSlots = false
 		} else {
 			err := checkExpiredSlots(context.Background())
 			if err != nil {
-				logrus.WithError(err).Error("Failed checking for expired premium slots")
+				logger.WithError(err).Error("Failed checking for expired premium slots")
 			}
 			checkedExpiredSlots = true
 		}
@@ -66,7 +65,7 @@ func checkExpiredSlots(ctx context.Context) error {
 		if SlotDurationLeft(v) <= 0 {
 			err := SlotExpired(ctx, v)
 			if err != nil {
-				logrus.WithError(err).WithField("slot", v.ID).Error("Failed expiring premium slot")
+				logger.WithError(err).WithField("slot", v.ID).Error("Failed expiring premium slot")
 			}
 		}
 	}
