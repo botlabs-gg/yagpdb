@@ -158,7 +158,7 @@ func (pa *ParsedArgs) IsSet(index int) interface{} {
 // or schedules a custom command to be run in the future sometime with the provided data placed in .ExecData
 func tmplRunCC(ctx *templates.Context) interface{} {
 	return func(ccID int, channel interface{}, delaySeconds interface{}, data interface{}) (string, error) {
-		if ctx.IncreaseCheckCallCounter("runcc", 1) {
+		if ctx.IncreaseCheckCallCounterPremium("runcc", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -235,7 +235,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 // then when you use the custom mute command again it will overwrite the mute duration and overwrite the scheduled unmute cc for that user
 func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 	return func(ccID int, channel interface{}, delaySeconds interface{}, key interface{}, data interface{}) (string, error) {
-		if ctx.IncreaseCheckCallCounter("runcc", 1) {
+		if ctx.IncreaseCheckCallCounterPremium("runcc", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -300,7 +300,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 // tmplCancelUniqueCC cancels a scheduled cc execution in the future with the provided cc id and key
 func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 	return func(ccID int, key interface{}) (string, error) {
-		if ctx.IncreaseCheckCallCounter("cancelcc", 2) {
+		if ctx.IncreaseCheckCallCounter("cancelcc", 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
