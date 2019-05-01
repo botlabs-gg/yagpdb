@@ -412,7 +412,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	}
 	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 	if lockHandle == -1 {
-		f.Warn("[cc] Exceeded max lock attempts for cc")
+		f.Warn("Exceeded max lock attempts for cc")
 		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
 		return nil
 	}
@@ -420,7 +420,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	defer CCExecLock.Unlock(lockKey, lockHandle)
 
 	// pick a response and execute it
-	f.Info("[cc] Custom command triggered")
+	f.Info("Custom command triggered")
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
@@ -469,7 +469,7 @@ func onExecError(err error, tmplCtx *templates.Context, logStack bool) {
 		l = l.WithField("stack", stack)
 	}
 
-	l.Error("[cc] Error executing custom command")
+	l.Error("Error executing custom command")
 	out := "\nAn error caused the execution of the custom command template to stop:\n"
 	out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
 
