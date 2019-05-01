@@ -31,6 +31,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func RegisterPlugin() {
 	RegexCache = ccache.New(ccache.Configure())
+
 	common.InitSchema(DBSchema, "automod_v2")
 
 	p := &Plugin{}
