@@ -172,7 +172,7 @@ For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></
 {{end}}
 
 {{/*Specific template helpers*/}}
-{{define "template_helper_user"}}<code>{{"{{"}}.User.(ID/Username/Discriminator/Bot{{"}}"}}</code>{{end}}
+{{define "template_helper_user"}}<code>{{"{{"}}.User.(ID/Username/Mention/Discriminator/Bot{{"}}"}}</code>{{end}}
 {{define "template_helper_guild"}}<code>{{"{{"}}.Server.(ID/Name/Icon/Owner/Permissions){{"}}"}}</code>{{end}}
 
 {{define "set_roles"}}<script>var activeGuildRoles = JSON.parse('{{json .ActiveGuild.Roles}}');</script>{{end}}
