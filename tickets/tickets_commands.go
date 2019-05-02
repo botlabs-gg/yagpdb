@@ -548,6 +548,10 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket) error {
 			msgs = append(msgs, m...)
 		}
 
+		if len(msgs) > 100000 {
+			break // hard limit at 100k
+		}
+
 		if len(m) == 100 {
 			// More...
 			before = m[len(m)-1].ID
