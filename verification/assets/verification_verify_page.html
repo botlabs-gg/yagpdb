@@ -1,0 +1,28 @@
+{{define "verification_verify_page"}}
+
+{{template "cp_head" .}}
+
+<header class="page-header">
+    <h2>Verification - {{.ActiveGuild.Name}}</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<div class="row justify-content-center">
+	<div class="col-md-6">
+		{{if .REValid}}
+		<h2>Success! you can now return to Discord.</h2>
+		{{else if .GoogleReCaptchaSiteKey}}
+		{{.RenderedPageContent}}
+		<form method="POST">
+		  <div class="g-recaptcha" data-sitekey="{{.GoogleReCaptchaSiteKey}}"></div>
+		  <br/>
+		  <input type="submit" class="btn btn-success" value="Continue">
+		</form>
+		{{end}}
+	</div>
+</div>
+
+{{template "cp_footer"}}
+
+{{end}}
