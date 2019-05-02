@@ -2,7 +2,6 @@
 
 # General discord stuff
 export YAGPDB_OWNER="Insert owner id here"
-export YAGPDB_BOTID="Insert bot ID here"
 export YAGPDB_CLIENTID="Insert client id here"
 export YAGPDB_CLIENTSECRET="Insert client secret here"
 export YAGPDB_BOTTOKEN="Bot token_here"
