@@ -404,6 +404,10 @@ func process(elem *QueuedElement, raw []byte) {
 			}
 		}
 
+		if c, _ := common.DiscordError(err); c != 0 {
+			break
+		}
+
 		queueLogger.Warn("Non-discord related error when sending message, retrying. ", err)
 		time.Sleep(time.Second)
 	}
