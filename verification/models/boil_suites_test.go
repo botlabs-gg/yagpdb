@@ -13,47 +13,59 @@ import "testing"
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigs)
+	t.Run("VerificationSessions", testVerificationSessions)
 }
 
 func TestDelete(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsDelete)
+	t.Run("VerificationSessions", testVerificationSessionsDelete)
 }
 
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsQueryDeleteAll)
+	t.Run("VerificationSessions", testVerificationSessionsQueryDeleteAll)
 }
 
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsSliceDeleteAll)
+	t.Run("VerificationSessions", testVerificationSessionsSliceDeleteAll)
 }
 
 func TestExists(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsExists)
+	t.Run("VerificationSessions", testVerificationSessionsExists)
 }
 
 func TestFind(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsFind)
+	t.Run("VerificationSessions", testVerificationSessionsFind)
 }
 
 func TestBind(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsBind)
+	t.Run("VerificationSessions", testVerificationSessionsBind)
 }
 
 func TestOne(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsOne)
+	t.Run("VerificationSessions", testVerificationSessionsOne)
 }
 
 func TestAll(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsAll)
+	t.Run("VerificationSessions", testVerificationSessionsAll)
 }
 
 func TestCount(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsCount)
+	t.Run("VerificationSessions", testVerificationSessionsCount)
 }
 
 func TestInsert(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsInsert)
 	t.Run("VerificationConfigs", testVerificationConfigsInsertWhitelist)
+	t.Run("VerificationSessions", testVerificationSessionsInsert)
+	t.Run("VerificationSessions", testVerificationSessionsInsertWhitelist)
 }
 
 // TestToOne tests cannot be run in parallel
@@ -98,20 +110,25 @@ func TestToManyRemove(t *testing.T) {}
 
 func TestReload(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsReload)
+	t.Run("VerificationSessions", testVerificationSessionsReload)
 }
 
 func TestReloadAll(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsReloadAll)
+	t.Run("VerificationSessions", testVerificationSessionsReloadAll)
 }
 
 func TestSelect(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsSelect)
+	t.Run("VerificationSessions", testVerificationSessionsSelect)
 }
 
 func TestUpdate(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsUpdate)
+	t.Run("VerificationSessions", testVerificationSessionsUpdate)
 }
 
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsSliceUpdateAll)
+	t.Run("VerificationSessions", testVerificationSessionsSliceUpdateAll)
 }

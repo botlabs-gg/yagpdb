@@ -4,7 +4,9 @@
 package models
 
 var TableNames = struct {
-	VerificationConfigs string
+	VerificationConfigs  string
+	VerificationSessions string
 }{
-	VerificationConfigs: "verification_configs",
+	VerificationConfigs:  "verification_configs",
+	VerificationSessions: "verification_sessions",
 }

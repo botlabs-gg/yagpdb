@@ -4,7 +4,6 @@ package verification
 
 import (
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 	"os"
 )
 
@@ -21,10 +20,12 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 func RegisterPlugin() {
 
 	if GoogleReCAPTCHASecret == "" || GoogleReCAPTCHASiteKey == "" {
-		logrus.Warn("[verification] no YAGPDB_GOOGLE_RECAPTCHA_SECRET and/or YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY provided, not enabling verification plugin")
+		logger.Warn("no YAGPDB_GOOGLE_RECAPTCHA_SECRET and/or YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY provided, not enabling verification plugin")
 		return
 	}
 
@@ -38,3 +39,8 @@ const (
 
 Please solve the following reCAPTCHA to make sure you're not a robot`
 )
+
+const DefaultDMMessage = `{{sendMessage nil (cembed
+"title" "Are you a bot?"
+"description" (printf "Please solve the CAPTCHA at this link to make sure you're human, before you can enter %s: %s" .Server.Name .Link)
+)}}`

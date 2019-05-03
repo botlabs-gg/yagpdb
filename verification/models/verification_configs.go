@@ -31,6 +31,7 @@ type VerificationConfig struct {
 	WarnUnverifiedAfter int    `boil:"warn_unverified_after" json:"warn_unverified_after" toml:"warn_unverified_after" yaml:"warn_unverified_after"`
 	WarnMessage         string `boil:"warn_message" json:"warn_message" toml:"warn_message" yaml:"warn_message"`
 	LogChannel          int64  `boil:"log_channel" json:"log_channel" toml:"log_channel" yaml:"log_channel"`
+	DMMessage           string `boil:"dm_message" json:"dm_message" toml:"dm_message" yaml:"dm_message"`
 
 	R *verificationConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L verificationConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -45,6 +46,7 @@ var VerificationConfigColumns = struct {
 	WarnUnverifiedAfter string
 	WarnMessage         string
 	LogChannel          string
+	DMMessage           string
 }{
 	GuildID:             "guild_id",
 	Enabled:             "enabled",
@@ -54,6 +56,7 @@ var VerificationConfigColumns = struct {
 	WarnUnverifiedAfter: "warn_unverified_after",
 	WarnMessage:         "warn_message",
 	LogChannel:          "log_channel",
+	DMMessage:           "dm_message",
 }
 
 // Generated where
@@ -103,6 +106,7 @@ var VerificationConfigWhere = struct {
 	WarnUnverifiedAfter whereHelperint
 	WarnMessage         whereHelperstring
 	LogChannel          whereHelperint64
+	DMMessage           whereHelperstring
 }{
 	GuildID:             whereHelperint64{field: `guild_id`},
 	Enabled:             whereHelperbool{field: `enabled`},
@@ -112,6 +116,7 @@ var VerificationConfigWhere = struct {
 	WarnUnverifiedAfter: whereHelperint{field: `warn_unverified_after`},
 	WarnMessage:         whereHelperstring{field: `warn_message`},
 	LogChannel:          whereHelperint64{field: `log_channel`},
+	DMMessage:           whereHelperstring{field: `dm_message`},
 }
 
 // VerificationConfigRels is where relationship names are stored.
@@ -131,9 +136,9 @@ func (*verificationConfigR) NewStruct() *verificationConfigR {
 type verificationConfigL struct{}
 
 var (
-	verificationConfigColumns               = []string{"guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel"}
-	verificationConfigColumnsWithoutDefault = []string{"guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message"}
-	verificationConfigColumnsWithDefault    = []string{"log_channel"}
+	verificationConfigColumns               = []string{"guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel", "dm_message"}
+	verificationConfigColumnsWithoutDefault = []string{"guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel"}
+	verificationConfigColumnsWithDefault    = []string{"dm_message"}
 	verificationConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
 

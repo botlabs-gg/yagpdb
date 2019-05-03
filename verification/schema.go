@@ -16,4 +16,16 @@ CREATE TABLE IF NOT EXISTS verification_configs  (
 
 	log_channel BIGINT NOT NULL
 );
+
+ALTER TABLE verification_configs ADD COLUMN IF NOT EXISTS dm_message TEXT NOT NULL DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS verification_sessions  (
+	token TEXT PRIMARY KEY,
+	user_id BIGINT NOT NULL,
+	guild_id BIGINT NOT NULL,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
+	solved_at TIMESTAMP WITH TIME ZONE,
+	expired_at TIMESTAMP WITH TIME ZONE
+);
 `

@@ -427,7 +427,7 @@ func testVerificationConfigsSelect(t *testing.T) {
 }
 
 var (
-	verificationConfigDBTypes = map[string]string{`GuildID`: `bigint`, `Enabled`: `boolean`, `VerifiedRole`: `bigint`, `PageContent`: `text`, `KickUnverifiedAfter`: `integer`, `WarnUnverifiedAfter`: `integer`, `WarnMessage`: `text`, `LogChannel`: `bigint`}
+	verificationConfigDBTypes = map[string]string{`GuildID`: `bigint`, `Enabled`: `boolean`, `VerifiedRole`: `bigint`, `PageContent`: `text`, `KickUnverifiedAfter`: `integer`, `WarnUnverifiedAfter`: `integer`, `WarnMessage`: `text`, `LogChannel`: `bigint`, `DMMessage`: `text`}
 	_                         = bytes.MinRead
 )
 

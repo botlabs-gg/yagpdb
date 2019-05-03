@@ -39,7 +39,17 @@
                                 <label>Verify Page content</label>
                                 <textarea rows="5" class="form-control"  name="PageContent" placeholder="{{.DefaultPageContent}}">{{or .PluginSettings.PageContent .DefaultPageContent}}</textarea>
                                 <p class="help-block">
-                                    The verify page content in markdown format
+                                    The verify page content in markdown format (similar to discord formatting)
+                                </p>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Verification DM message (empty for default)</label>
+                                <textarea rows="5" class="form-control"  name="DMMessage" placeholder="">{{or .PluginSettings.DMMessage ""}}</textarea>
+                                <p class="help-block">
+                                    Available template data:<br/>
+                                    {{template "template_helper_user"}} - The user being notified<br/>
+                                    <code>{{"{{.Link}}"}} - The link they have to visit to verify</code>
                                 </p>
                             </div>
 
@@ -69,6 +79,7 @@
                                 <p class="help-block">
                                     Available template data:<br/>
                                     {{template "template_helper_user"}} - The user being notified<br/>
+                                    <code>{{"{{.Link}}"}} - The link they have to visit to verify</code>
                                 </p>
                             </div>
 
