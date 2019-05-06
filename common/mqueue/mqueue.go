@@ -395,10 +395,10 @@ func process(elem *QueuedElement, raw []byte) {
 			break
 		}
 
-		if e, ok := err.(*discordgo.RESTError); ok {
+		if e, ok := errors.Cause(err).(*discordgo.RESTError); ok {
 			if (e.Response != nil && e.Response.StatusCode >= 400 && e.Response.StatusCode < 500) || (e.Message != nil && e.Message.Code != 0) {
 				if source, ok := sources[elem.Source]; ok {
-					source.HandleMQueueError(elem, err)
+					source.HandleMQueueError(elem, errors.Cause(err))
 				}
 				break
 			}
