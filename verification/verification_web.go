@@ -3,6 +3,7 @@ package verification
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/verification/models"
@@ -12,6 +13,7 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
+	"html"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -243,4 +245,51 @@ func (p *Plugin) checkCAPTCHAResponse(response string) (valid bool, err error) {
 	}
 
 	return dst.Success, nil
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+
+	templateData["WidgetTitle"] = "Google reCAPTCHA Verification"
+	templateData["SettingsPath"] = "/verification"
+
+	settings, err := models.FindVerificationConfigG(ctx, ag.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			settings = &models.VerificationConfig{
+				GuildID: ag.ID,
+			}
+		} else {
+			return templateData, err
+		}
+	}
+
+	format := `<ul>
+	<li>Enabled: %s</li>
+	<li>Role: <code>%s</code> %s</li>
+</ul>`
+
+	status := web.EnabledDisabledSpanStatus(settings.Enabled)
+
+	if settings.Enabled {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	roleStr := "none / unknown"
+	indicatorRole := ""
+	if role := ag.Role(settings.VerifiedRole); role != nil {
+		roleStr = html.EscapeString(role.Name)
+		indicatorRole = web.Indicator(true)
+	} else {
+		indicatorRole = web.Indicator(false)
+	}
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, status, roleStr, indicatorRole))
+
+	return templateData, nil
 }

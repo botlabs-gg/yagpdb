@@ -2,11 +2,13 @@ package tickets
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/tickets/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
+	"html/template"
 	"net/http"
 )
 
@@ -76,4 +78,36 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 
 	err := model.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
 	return templateData, err
+}
+
+var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+
+	settings, err := models.FindTicketConfigG(r.Context(), activeGuild.ID)
+	if err != nil && err != sql.ErrNoRows {
+		return templateData, err
+	}
+
+	enabled := false
+	if settings != nil {
+		enabled = true
+	}
+
+	templateData["WidgetTitle"] = "Tickets"
+	templateData["SettingsPath"] = "/tickets/settings"
+	if enabled {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	const format = `<ul>
+	<li>Tickets enabled: %s</li>
+ </ul>`
+
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(enabled)))
+
+	return templateData, nil
 }
