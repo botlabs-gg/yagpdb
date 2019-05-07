@@ -55,6 +55,8 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	}
 }
 
+var helpFormatter = &dcmd.StdHelpFormatter{}
+
 func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 		yc, ok := data.Cmd.Command.(*YAGCommand)
@@ -110,6 +112,27 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		}
 
 		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
+
+		err = dcmd.ParseCmdArgs(data)
+		if err != nil {
+			if dcmd.IsUserError(err) {
+
+				args := helpFormatter.ArgDefs(data.Cmd, data)
+				switches := helpFormatter.Switches(data.Cmd.Command)
+
+				resp := ""
+				if args != "" {
+					resp += "```\n" + args + "\n```"
+				}
+				if switches != "" {
+					resp += "```\n" + switches + "\n```"
+				}
+
+				return resp + "\nInvalid arguments provided: " + err.Error(), nil
+			}
+
+			return nil, err
+		}
 
 		innerResp, err := inner(data)
 
@@ -200,8 +223,8 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 		}
 
 		// Send short help in same channel
-		return resp, nil 
-    	}
+		return resp, nil
+	}
 
 	// Send full help in DM
 	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
