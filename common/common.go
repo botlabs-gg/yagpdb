@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -57,6 +58,8 @@ var (
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
+	rand.Seed(time.Now().UnixNano())
+
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
 
