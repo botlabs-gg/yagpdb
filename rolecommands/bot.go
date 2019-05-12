@@ -117,6 +117,20 @@ func (p *Plugin) AddCommands() {
 		RunFunc: cmdFuncRoleMenuEditOption,
 	}
 
+	cmdFinishSetup := &commands.YAGCommand{
+		Name:                "Complete",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"finish"},
+		Description:         "Marks the menu as done.",
+		LongDescription:     "\n\n" + msgIDDocs,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuComplete,
+	}
+
 	menuContainer := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
 
 	const notFoundMessage = "Unknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu update ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
@@ -127,6 +141,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
+	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
 }
 
 type ScheduledMemberRoleRemoveData struct {
