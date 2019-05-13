@@ -422,7 +422,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			if msg.Author.ID != common.Conf.BotID {
+			if msg.Author.ID != common.BotUser.ID {
 				return "I didn't make that message", nil
 			}
 

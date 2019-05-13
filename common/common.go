@@ -9,10 +9,13 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common/basicredispool"
 	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -33,7 +36,7 @@ var (
 	GORM *gorm.DB
 	PQ   *sql.DB
 
-	RedisPool *radix.Pool
+	RedisPool *basicredispool.Pool
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
@@ -57,6 +60,8 @@ var (
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
+	rand.Seed(time.Now().UnixNano())
+
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
 
@@ -182,10 +187,26 @@ func InitTest() {
 }
 
 func connectRedis(addr string) (err error) {
-	RedisPool, err = radix.NewPool("tcp", addr, RedisPoolSize, radix.PoolOnEmptyWait())
-	if err != nil {
-		logger.WithError(err).Fatal("Failed intitializing redis pool")
-	}
+	RedisPool, err = basicredispool.NewPool(RedisPoolSize, &retryableredis.DialConfig{
+		Network: "tcp",
+		Addr:    addr,
+		OnReconnect: func(err error) {
+			if err == nil {
+				return
+			}
+
+			logrus.WithError(err).Warn("[core] redis reconnect triggered")
+			if Statsd != nil {
+				Statsd.Incr("yagpdb.redis.reconnects", nil, 1)
+			}
+		},
+		OnRetry: func(err error) {
+			logrus.WithError(err).Warn("[core] redis retrying failed action")
+			if Statsd != nil {
+				Statsd.Incr("yagpdb.redis.retries", nil, 1)
+			}
+		},
+	})
 
 	return
 }

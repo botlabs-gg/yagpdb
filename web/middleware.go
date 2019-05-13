@@ -363,7 +363,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 		member, err := botrest.GetBotMember(parsedGuildID)
 		if err != nil {
 			CtxLogger(r.Context()).WithError(err).Warn("Failed contacting bot about bot member information, falling back to discord api for retrieving bot member")
-			member, err = common.BotSession.GuildMember(parsedGuildID, common.Conf.BotID)
+			member, err = common.BotSession.GuildMember(parsedGuildID, common.BotUser.ID)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
 				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)

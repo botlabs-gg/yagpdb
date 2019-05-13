@@ -6,7 +6,6 @@ import (
 
 type CoreConfig struct {
 	Owner int64
-	BotID int64
 
 	ClientID     string
 	ClientSecret string

@@ -122,8 +122,8 @@ var cmds = []*commands.YAGCommand{
 				return "An error occured while finding the server config", err
 			}
 
-			member, _ := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
-			if member == nil || !IsAdmin(parsed.GS, member, conf) {
+			member := commands.ContextMS(parsed.Context())
+			if !IsAdmin(parsed.GS, member, conf) {
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 

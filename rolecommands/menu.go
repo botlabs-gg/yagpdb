@@ -637,6 +637,28 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	return nil, nil
 }
 
+func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
+	mID := data.Args[0].Int64()
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
+	if err != nil {
+		return "Couldn't find menu", nil
+	}
+
+	if menu.State == RoleMenuStateDone {
+		return "This menu is already marked as done", nil
+	}
+
+	menu.State = RoleMenuStateDone
+	menu.SetupMSGID = 0
+
+	_, err = menu.UpdateG(data.Context(), boil.Whitelist("state", "setup_msg_id"))
+	if err != nil {
+		return nil, err
+	}
+
+	return "Menu marked as done", nil
+}
+
 func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
 		return "Someone is currently editing or setting up this menu, please wait", nil

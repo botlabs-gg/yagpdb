@@ -24,17 +24,35 @@
 
                 <div class="card-body">
                     <div class="row">
+                        <div class="col">
+                            <p>Tickets is a plugin which gives the ability for users on your server to open tickets which then only your staff and other ticket participants can interact with.</p>
+                            <p>The flow goes like this:</p>
+                            <ol>
+                                <li>User opens a ticket using <code>-ticket open (reason-here)</code></li>
+                                <li>A new channel gets made in the open tickets category</li>
+                                <li>Permissions on that channel is set so that only ticket participants gets access</li>
+                                <li>User can also add more people to the ticket</li>
+                                <li>User talks with the staff, posts evidence in attachments or links</li>
+                                <li>When its over the ticket is closed</li>
+                                <li>All attachments and message history will then be downloaded and put in another channel (specified below)</li>
+                                <li>Channel gets deleted</li>
+                            </ol>
+                            <p>There's more functionality here thats not mentioned, use <code>-help ticket</code> for all the commands.<br>
+                            More functionality is also planned, such as adding a interface on the website so that it can be used for things like ban appeals.</p>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-lg-12">
-                            <div class="form-group">
-								<label>Role(s) for people considered mods</label><br>
-                                <select name="ModRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
-                                    {{roleOptionsMulti .ActiveGuild.Roles nil .PluginSettings.ModRoles}}
-                                </select>
-                            </div>
                             <div class="form-group">
 								<label>Role(s) for people considered admins</label><br>
                                 <select name="AdminRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .PluginSettings.AdminRoles}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+								<label>Role(s) for people considered mods (tickets can be set to a admin only mode)</label><br>
+                                <select name="ModRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .PluginSettings.ModRoles}}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -76,7 +94,7 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
+                            <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
                         </div>
                     </div>
                 </div>

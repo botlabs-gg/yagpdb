@@ -106,6 +106,9 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 	if vc == nil || !vc.Ready {
 		vc, err = session.GatewayManager.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
 		if err != nil {
+			if err == discordgo.ErrTimeoutWaitingForVoice {
+				bot.ShardManager.SessionForGuild(req.GuildID).GatewayManager.ChannelVoiceLeave(req.GuildID)
+			}
 			return nil, common.ErrWithCaller(err)
 		}
 		<-vc.Connected

@@ -3,7 +3,6 @@ package poll
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/pkg/errors"
@@ -56,9 +55,9 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 	}
 
 	author := data.Msg.Author
-	authorName := author.Username
-	if member, err := bot.GetMember(data.GS.ID, author.ID); err == nil && member.Nick != "" {
-		authorName = member.Nick
+	authorName := commands.ContextMS(data.Context()).Nick
+	if authorName == "" {
+		authorName = author.Username
 	}
 
 	response := discordgo.MessageEmbed{

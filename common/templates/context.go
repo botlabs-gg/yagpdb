@@ -38,10 +38,14 @@ var (
 		"title":     strings.Title,
 
 		// math
-		"add":  add,
-		"mult": tmplMult,
-		"div":  tmplDiv,
-		"fdiv": tmplFDiv,
+		"add":	add,
+		"mult":	tmplMult,
+		"div":	tmplDiv,
+		"fdiv":	tmplFDiv,
+		"round":	tmplRound,
+		"roundCeil":	tmplRoundCeil,
+		"roundFloor":	tmplRoundFloor,
+		"roundEven":	tmplRoundEven,
 
 		// misc
 		"dict":   Dictionary,
