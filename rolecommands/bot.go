@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -36,7 +35,8 @@ func (p *Plugin) AddCommands() {
 				&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
 			},
 			RunFunc: CmdFuncRole,
-		})
+		}
+	)
 
 	cmdCreate := &commands.YAGCommand{
 		Name:                "Create",
@@ -163,11 +163,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return CmdFuncListCommands(parsed)
 	}
 
-	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
-	if err != nil {
-		return nil, err
-	}
-
+	member := commands.ContextMS(parsed.Context())
 	given, err := FindToggleRole(parsed.Context(), member, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {

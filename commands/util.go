@@ -185,10 +185,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 			cParentID := data.CS.ParentID
 			data.GS.RUnlock()
 
-			ms, _ := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
-			if ms == nil {
-				return nil, nil
-			}
+			ms := ContextMS(data.Context())
 
 			channelOverrides, err := GetOverridesForChannel(data.CS.ID, cParentID, data.GS.ID)
 			if err != nil {
