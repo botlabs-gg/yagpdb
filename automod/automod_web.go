@@ -139,7 +139,7 @@ func (p *Plugin) handlePostAutomodCreateRuleset(w http.ResponseWriter, r *http.R
 		return tmpl, err
 	}
 
-	if currentCount >= MaxRulesets {
+	if currentCount >= int64(GuildMaxRulesets(g.ID)) {
 		tmpl.AddAlerts(web.ErrorAlert("Reached max number of rulesets, ", MaxRulesets))
 		return tmpl, nil
 	}
