@@ -128,7 +128,8 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 					resp += "```\n" + switches + "\n```"
 				}
 
-				return resp + "\nInvalid arguments provided: " + err.Error(), nil
+				resp = resp + "\nInvalid arguments provided: " + err.Error()
+				return common.EscapeSpecialMentions(resp), nil
 			}
 
 			return nil, err
