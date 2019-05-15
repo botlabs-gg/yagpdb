@@ -127,8 +127,8 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 				if switches != "" {
 					resp += "```\n" + switches + "\n```"
 				}
-
-				return resp + "\nInvalid arguments provided: " + err.Error(), nil
+				// TODO replace all @here & @everyone with "everyone" & "here", issue #449
+				return (resp + "\nInvalid arguments provided: " + err.Error()).Replace("@",nil), nil
 			}
 
 			return nil, err
