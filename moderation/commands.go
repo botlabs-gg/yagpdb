@@ -34,7 +34,7 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 			gs.RUnlock()
 
 			if !above {
-				return config, targetMember.DGoUser(), commands.NewPublicError("Can't use moderation commands on users ranked higher than you")
+				return config, targetMember.DGoUser(), commands.NewPublicError("Can't use moderation commands on users ranked the same or higher than you")
 			}
 
 			return config, targetMember.DGoUser(), nil
