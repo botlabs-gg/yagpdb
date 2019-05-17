@@ -6,11 +6,7 @@
 package eventsystem
 
 import (
-	"context"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
-	"runtime/debug"
 )
 
 type Event int
@@ -63,6 +59,7 @@ const (
 	EventUserUpdate               Event = 44
 	EventVoiceServerUpdate        Event = 45
 	EventVoiceStateUpdate         Event = 46
+	EventWebhooksUpdate           Event = 47
 )
 
 var EventNames = []string{
@@ -113,6 +110,7 @@ var EventNames = []string{
 	"UserUpdate",
 	"VoiceServerUpdate",
 	"VoiceStateUpdate",
+	"WebhooksUpdate",
 }
 
 func (e Event) String() string {
@@ -162,6 +160,7 @@ var AllDiscordEvents = []Event{
 	EventUserUpdate,
 	EventVoiceServerUpdate,
 	EventVoiceStateUpdate,
+	EventWebhooksUpdate,
 }
 
 var AllEvents = []Event{
@@ -212,9 +211,10 @@ var AllEvents = []Event{
 	EventUserUpdate,
 	EventVoiceServerUpdate,
 	EventVoiceStateUpdate,
+	EventWebhooksUpdate,
 }
 
-var handlers = make([][]*Handler, 47)
+var handlers = make([][][]Handler, 48)
 
 func (data *EventData) ChannelCreate() *discordgo.ChannelCreate {
 	return data.EvtInterface.(*discordgo.ChannelCreate)
@@ -342,15 +342,13 @@ func (data *EventData) VoiceServerUpdate() *discordgo.VoiceServerUpdate {
 func (data *EventData) VoiceStateUpdate() *discordgo.VoiceStateUpdate {
 	return data.EvtInterface.(*discordgo.VoiceStateUpdate)
 }
+func (data *EventData) WebhooksUpdate() *discordgo.WebhooksUpdate {
+	return data.EvtInterface.(*discordgo.WebhooksUpdate)
+}
 
-func HandleEvent(s *discordgo.Session, evt interface{}) {
+func fillEvent(evtData *EventData) {
 
-	var evtData = &EventData{
-		Session:      s,
-		EvtInterface: evt,
-	}
-
-	switch evt.(type) {
+	switch evtData.EvtInterface.(type) {
 	case *discordgo.ChannelCreate:
 		evtData.Type = Event(5)
 	case *discordgo.ChannelDelete:
@@ -435,20 +433,11 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 		evtData.Type = Event(45)
 	case *discordgo.VoiceStateUpdate:
 		evtData.Type = Event(46)
+	case *discordgo.WebhooksUpdate:
+		evtData.Type = Event(47)
 	default:
 		return
 	}
 
-	defer func() {
-		if err := recover(); err != nil {
-			stack := string(debug.Stack())
-			logrus.WithField(logrus.ErrorKey, err).WithField("evt", evtData.Type.String()).Error("Recovered from panic in event handler\n" + stack)
-		}
-	}()
-
-	ctx := context.WithValue(context.Background(), common.ContextKeyDiscordSession, s)
-	evtData.ctx = ctx
-	EmitEvent(evtData, EventAllPre)
-	EmitEvent(evtData, evtData.Type)
-	EmitEvent(evtData, EventAllPost)
+	return
 }

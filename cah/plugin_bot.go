@@ -49,7 +49,7 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(func(evt *eventsystem.EventData) {
+	eventsystem.AddHandlerAsyncLast(func(evt *eventsystem.EventData) {
 		switch t := evt.EvtInterface.(type) {
 		case *discordgo.MessageCreate:
 			if t.GuildID == 0 {

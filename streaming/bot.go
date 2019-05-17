@@ -22,9 +22,9 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
-	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 

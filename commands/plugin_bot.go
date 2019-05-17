@@ -24,8 +24,8 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(handleMsgCreate, eventsystem.EventMessageCreate)
 
 	CommandSystem.State = bot.State
 }

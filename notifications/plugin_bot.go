@@ -15,9 +15,9 @@ import (
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandlerBefore(HandleChannelUpdate, eventsystem.EventChannelUpdate, bot.StateHandlerPtr)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerFirst(HandleChannelUpdate, eventsystem.EventChannelUpdate)
 }
 
 func HandleGuildMemberAdd(evtData *eventsystem.EventData) {

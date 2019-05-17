@@ -151,8 +151,8 @@ type ScheduledMemberRoleRemoveData struct {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
-	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+	eventsystem.AddHandlerAsyncLast(handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
+	eventsystem.AddHandlerAsyncLast(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
 }

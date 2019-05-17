@@ -46,13 +46,13 @@ func (p *Plugin) BotInit() {
 	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
 	scheduledevents2.RegisterLegacyMigrater("mod_unban", handleMigrateScheduledUnban)
 
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandler(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
 
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 }

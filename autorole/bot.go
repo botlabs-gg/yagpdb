@@ -25,9 +25,9 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(OnMemberJoin, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
-	eventsystem.AddHandler(HandleGuildChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLast(OnMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildChunk, eventsystem.EventGuildMembersChunk)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
 	go runDurationChecker()

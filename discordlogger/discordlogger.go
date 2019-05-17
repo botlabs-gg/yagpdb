@@ -40,7 +40,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
+	eventsystem.AddHandlerAsyncLast(EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
 }
 
 func EventHandler(evt *eventsystem.EventData) {

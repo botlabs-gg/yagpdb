@@ -23,7 +23,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(handleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)

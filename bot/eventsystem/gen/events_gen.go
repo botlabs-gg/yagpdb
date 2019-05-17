@@ -26,11 +26,7 @@ const templateSource = `// GENERATED using events_gen.go
 package eventsystem
 
 import (
-	"context"
-	"github.com/sirupsen/logrus"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"runtime/debug"
 )
 
 type Event int
@@ -56,39 +52,23 @@ var AllEvents = []Event{ {{range .}}
 	Event{{.Name}},{{end}}
 }
 
-var handlers = make([][]*Handler, {{len .}})
+var handlers = make([][][]Handler, {{len .}})
 
 {{range .}}{{if .Discord}}
 func (data *EventData) {{.Name}}() *discordgo.{{.Name}}{ 
 	return data.EvtInterface.(*discordgo.{{.Name}})
 }{{end}}{{end}}
 
-func HandleEvent(s *discordgo.Session, evt interface{}){
+func fillEvent(evtData *EventData) {
 
-	var evtData = &EventData{
-		Session: s,
-		EvtInterface: evt,
-	}
-
-	switch evt.(type){ {{range $k, $v := .}}{{if .Discord}}
+	switch evtData.EvtInterface.(type){ {{range $k, $v := .}}{{if .Discord}}
 	case *discordgo.{{.Name}}:
 		evtData.Type = Event({{$k}}){{end}}{{end}}
 	default:
 		return
 	}
 
-	defer func() {
-		if err := recover(); err != nil {
-			stack := string(debug.Stack())
-			logrus.WithField(logrus.ErrorKey, err).WithField("evt", evtData.Type.String()).Error("Recovered from panic in event handler\n" + stack)
-		}
-	}()
-
-	ctx := context.WithValue(context.Background(), common.ContextKeyDiscordSession, s)
-	evtData.ctx = ctx
-	EmitEvent(evtData, EventAllPre)
-	EmitEvent(evtData, evtData.Type)
-	EmitEvent(evtData, EventAllPost)
+	return 
 }
 `
 
@@ -138,11 +118,11 @@ func main() {
 	sort.Strings(names)
 
 	// Create the combined event slice
-	events := make([]Event, len(names)+len(NonStandardEvents)-1)
+	events := make([]Event, len(names)+len(NonStandardEvents)-3)
 	copy(events, NonStandardEvents)
 	i := len(NonStandardEvents)
 	for _, name := range names {
-		if name == "Event" {
+		if name == "Event" || name == "GuildEvent" || name == "ChannelEvent" {
 			continue
 		}
 		evt := Event{

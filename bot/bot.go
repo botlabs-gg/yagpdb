@@ -27,8 +27,6 @@ var (
 	State        *dstate.State
 	ShardManager *dshardmanager.Manager
 
-	StateHandlerPtr *eventsystem.Handler
-
 	NodeConn          *node.Conn
 	UsingOrchestrator bool
 
@@ -67,29 +65,28 @@ func setup() {
 	State.CacheExpirey = time.Minute * 10
 	go State.RunGCWorker()
 
-	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
-	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
-	eventsystem.ConcurrentAfter = StateHandlerPtr
+	eventsystem.AddHandlerFirst(HandleReady, eventsystem.EventReady)
+	eventsystem.AddHandlerSecond(StateHandler, eventsystem.EventAll)
 
-	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
+	eventsystem.AddHandlerAsyncLast(EventLogger.handleEvent, eventsystem.EventAll)
 
-	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(HandleGuildDelete, eventsystem.EventGuildDelete)
+	eventsystem.AddHandlerAsyncLast(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildDelete, eventsystem.EventGuildDelete)
 
-	eventsystem.AddHandler(HandleGuildUpdate, eventsystem.EventGuildUpdate)
-	eventsystem.AddHandler(HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
-	eventsystem.AddHandler(HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
-	eventsystem.AddHandler(HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
-	eventsystem.AddHandler(HandleChannelCreate, eventsystem.EventChannelCreate)
-	eventsystem.AddHandler(HandleChannelUpdate, eventsystem.EventChannelUpdate)
-	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
-	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
-	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
-	eventsystem.AddHandler(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
-	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandler(HandleResumed, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLast(HandleGuildUpdate, eventsystem.EventGuildUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
+	eventsystem.AddHandlerAsyncLast(HandleChannelCreate, eventsystem.EventChannelCreate)
+	eventsystem.AddHandlerAsyncLast(HandleChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleChannelDelete, eventsystem.EventChannelDelete)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLast(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLast(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(HandleResumed, eventsystem.EventResumed)
 }
 
 func Run() {
