@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -40,7 +41,6 @@ var (
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
-	Conf       *CoreConfig
 
 	RedisPoolSize = 25
 
@@ -69,11 +69,10 @@ func Init() error {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	config, err := LoadConfig()
+	err := LoadConfig()
 	if err != nil {
 		return err
 	}
-	Conf = config
 
 	err = setupGlobalDGoSession()
 	if err != nil {
@@ -82,17 +81,17 @@ func Init() error {
 
 	ConnectDatadog()
 
-	err = connectRedis(config.Redis)
+	err = connectRedis(ConfRedis.GetString())
 	if err != nil {
 		return err
 	}
 
 	db := "yagpdb"
-	if config.PQDB != "" {
-		db = config.PQDB
+	if ConfPQDB.GetString() != "" {
+		db = ConfPQDB.GetString()
 	}
 
-	err = connectDB(config.PQHost, config.PQUsername, config.PQPassword, db)
+	err = connectDB(ConfPQHost.GetString(), ConfPQUsername.GetString(), ConfPQPassword.GetString(), db)
 	if err != nil {
 		panic(err)
 	}
@@ -115,8 +114,17 @@ func Init() error {
 	return err
 }
 
+func GetBotToken() string {
+	token := ConfBotToken.GetString()
+	if !strings.HasPrefix(token, "Bot ") {
+		token = "Bot " + token
+	}
+	return token
+}
+
 func setupGlobalDGoSession() (err error) {
-	BotSession, err = discordgo.New(Conf.BotToken)
+
+	BotSession, err = discordgo.New(GetBotToken())
 	if err != nil {
 		return err
 	}
@@ -155,12 +163,12 @@ func setupGlobalDGoSession() (err error) {
 }
 
 func ConnectDatadog() {
-	if Conf.DogStatsdAddress == "" {
+	if ConfDogStatsdAddress.GetString() == "" {
 		logger.Warn("No datadog info provided, not connecting to datadog aggregator")
 		return
 	}
 
-	client, err := statsd.New(Conf.DogStatsdAddress)
+	client, err := statsd.New(ConfDogStatsdAddress.GetString())
 	if err != nil {
 		logger.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
 		return

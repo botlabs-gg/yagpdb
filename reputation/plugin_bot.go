@@ -327,7 +327,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			leaderboardURL := "https://" + common.Conf.Host + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
+			leaderboardURL := "https://" + common.ConfHost.GetString() + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
 			out := "```\n# -- Points -- User\n"
 			for _, v := range detailed {
 				user := v.Username

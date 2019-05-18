@@ -98,7 +98,7 @@ func Run() {
 	connStatusChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNSTATUS_CHANNEL"), 10, 64)
 
 	// Set up shard manager
-	ShardManager = dshardmanager.New(common.Conf.BotToken)
+	ShardManager = dshardmanager.New(common.GetBotToken())
 	ShardManager.LogChannel = connEvtChannel
 	ShardManager.StatusMessageChannel = connStatusChannel
 	ShardManager.Name = "YAGPDB"

@@ -158,7 +158,7 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			split := strings.SplitN(origin, ":", 3)
-			hostSplit := strings.SplitN(common.Conf.Host, ":", 2)
+			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
 
 			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
 				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
@@ -202,7 +202,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 
 		templateData := map[string]interface{}{
 			"User":       user,
-			"IsBotOwner": user.ID == common.Conf.Owner,
+			"IsBotOwner": user.ID == int64(common.ConfOwner.GetInt()),
 		}
 
 		// update the logger with the user and update the context with all the new info

@@ -104,7 +104,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	// hub.lease_seconds:
 
 	values := url.Values{
-		"hub.callback":     {"https://" + common.Conf.Host + "/yt_new_upload/" + WebSubVerifyToken},
+		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + WebSubVerifyToken},
 		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"subscribe"},
@@ -136,7 +136,7 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 	// hub.lease_seconds:
 
 	values := url.Values{
-		"hub.callback":     {"https://" + common.Conf.Host + "/yt_new_upload/" + WebSubVerifyToken},
+		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + WebSubVerifyToken},
 		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"unsubscribe"},

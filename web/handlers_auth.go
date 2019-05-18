@@ -23,8 +23,8 @@ var (
 
 func InitOauth() {
 	oauthConf = &oauth2.Config{
-		ClientID:     common.Conf.ClientID,
-		ClientSecret: common.Conf.ClientSecret,
+		ClientID:     common.ConfClientID.GetString(),
+		ClientSecret: common.ConfClientSecret.GetString(),
 		Scopes:       []string{"identify", "guilds"},
 		Endpoint: oauth2.Endpoint{
 			TokenURL: "https://discordapp.com/api/oauth2/token",
@@ -33,9 +33,9 @@ func InitOauth() {
 	}
 
 	if https || exthttps {
-		oauthConf.RedirectURL = "https://" + common.Conf.Host + "/confirm_login"
+		oauthConf.RedirectURL = "https://" + common.ConfHost.GetString() + "/confirm_login"
 	} else {
-		oauthConf.RedirectURL = "http://" + common.Conf.Host + "/confirm_login"
+		oauthConf.RedirectURL = "http://" + common.ConfHost.GetString() + "/confirm_login"
 	}
 }
 

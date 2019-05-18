@@ -202,7 +202,7 @@ func (p *Poller) Poll() {
 	}
 
 	patrons = append(patrons, &Patron{
-		DiscordID:   common.Conf.Owner,
+		DiscordID:   int64(common.ConfOwner.GetInt()),
 		Name:        "Owner",
 		AmountCents: 10000,
 	})

@@ -99,10 +99,10 @@ func loadTemplates() {
 
 func BaseURL() string {
 	if https || exthttps {
-		return "https://" + common.Conf.Host
+		return "https://" + common.ConfHost.GetString()
 	}
 
-	return "http://" + common.Conf.Host
+	return "http://" + common.ConfHost.GetString()
 }
 
 func Run() {
@@ -110,8 +110,8 @@ func Run() {
 
 	loadTemplates()
 
-	AddGlobalTemplateData("ClientID", common.Conf.ClientID)
-	AddGlobalTemplateData("Host", common.Conf.Host)
+	AddGlobalTemplateData("ClientID", common.ConfClientID.GetString())
+	AddGlobalTemplateData("Host", common.ConfHost.GetString())
 	AddGlobalTemplateData("Version", common.VERSION)
 	AddGlobalTemplateData("Testing", common.Testing)
 
@@ -200,8 +200,8 @@ func runServers(mainMuxer *goji.Mux) {
 
 		certManager := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(common.Conf.Host, "www."+common.Conf.Host),
-			Email:      common.Conf.Email,
+			HostPolicy: autocert.HostWhitelist(common.ConfHost.GetString(), "www."+common.ConfHost.GetString()),
+			Email:      common.ConfEmail.GetString(),
 			Cache:      cache,
 		}
 
