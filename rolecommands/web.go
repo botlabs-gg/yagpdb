@@ -48,6 +48,11 @@ type FormGroup struct {
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../rolecommands/assets/rolecommands.html", "templates/plugins/rolecommands.html")
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Role Commands",
+		URL:  "rolecommands/",
+	})
+
 	// Setup SubMuxer
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/rolecommands/*"), subMux)

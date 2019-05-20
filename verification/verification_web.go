@@ -36,6 +36,11 @@ func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../verification/assets/verification_control_panel.html", "templates/plugins/verification_control_panel.html")
 	web.LoadHTMLTemplate("../../verification/assets/verification_verify_page.html", "templates/plugins/verification_verify_page.html")
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Verification",
+		URL:  "verification",
+	})
+
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_verification_settings")
 	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated verification settings")
 

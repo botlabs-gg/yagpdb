@@ -49,6 +49,11 @@ func (lp *Plugin) InitWeb() {
 		tmplPathView = "../../logs/assets/logs_view.html"
 	}
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Logging",
+		URL:  "logging/",
+	})
+
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathView))
 
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))

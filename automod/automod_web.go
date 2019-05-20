@@ -33,6 +33,10 @@ var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../automod/assets/automod.html", "templates/plugins/automod.html")
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Automoderator v2",
+		URL:  "automod",
+	})
 
 	muxer := goji.SubMux()
 

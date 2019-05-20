@@ -28,6 +28,11 @@ type FormData struct {
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../tickets/assets/tickets_control_panel.html", "templates/plugins/tickets_control_panel.html")
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Ticket System",
+		URL:  "tickets/settings",
+	})
+
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_tickets_settings")
 	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated ticket settings")
 

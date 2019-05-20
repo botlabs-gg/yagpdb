@@ -28,6 +28,11 @@ func (p *Plugin) InitWeb() {
 		tmplPath = "../../automod_legacy/assets/automod_legacy.html"
 	}
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Legacy Automoderator",
+		URL:  "automod_legacy",
+	})
+
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	autmodMux := goji.SubMux()
