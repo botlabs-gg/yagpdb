@@ -87,6 +87,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"LightTheme":       lightTheme,
 			"SidebarCollapsed": collapseSidebar,
 			"GAID":             GAID,
+			"SidebarItems":     sideBarItems,
 		}
 
 		baseData["BaseURL"] = BaseURL()

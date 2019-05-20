@@ -376,3 +376,21 @@ func LoadHTMLTemplate(pathTesting, pathProd string) {
 
 	Templates = template.Must(Templates.ParseFiles(path))
 }
+
+const (
+	SidebarCategoryTopLevel = "Top"
+	SidebarCategoryFeeds    = "Feeds"
+	SidebarCategoryTools    = "Tools"
+	SidebarCategoryFun      = "Fun"
+)
+
+type SidebarItem struct {
+	Name string
+	URL  string
+}
+
+var sideBarItems = make(map[string][]*SidebarItem)
+
+func AddSidebarItem(category string, sItem *SidebarItem) {
+	sideBarItems[category] = append(sideBarItems[category], sItem)
+}

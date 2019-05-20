@@ -151,6 +151,7 @@
             <nav id="menu" class="nav-main" role="navigation">
                 <ul class="nav nav-main">
                     {{if and .ActiveGuild .IsAdmin}}
+                    {{$ag := .ActiveGuild}}
                     <li>
                         <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/home">
                             <i class="fas fa-home" aria-hidden="true"></i>
@@ -189,6 +190,13 @@
                                     Control Panel Logs
                                 </a>                        
                             </li>
+                            {{range (index .SidebarItems "Core")}}
+                            <li>
+                                <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
+                                    {{.Name}}
+                                </a>                        
+                            </li>                            
+                            {{end}}
                         </ul>
                     </li>
                     <li class="nav-parent   ">
@@ -217,6 +225,13 @@
                                     Streaming
                                 </a>
                             </li>
+                            {{range (index .SidebarItems "Feeds")}}
+                            <li>
+                                <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
+                                    {{.Name}}
+                                </a>                        
+                            </li>                            
+                            {{end}}
                         </ul>
                     </li>
                     <li class="nav-parent">
@@ -225,46 +240,13 @@
                             <span>Tools & Utilities</span>
                         </a>
                         <ul class="nav nav-children">
+                            {{range (index .SidebarItems "Tools")}}
                             <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/moderation">
-                                    Moderation
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/automod_legacy">
-                                    Legacy Automoderator
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/automod">
-                                    Automoderator v2
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/autorole">
-                                    Autorole
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/rolecommands/">
-                                    Role Commands
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/logging/">
-                                    Logging
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/tickets/settings">
-                                    Tickets
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/verification">
-                                    Verification
-                                </a>
-                            </li>
+                                <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
+                                    {{.Name}}
+                                </a>                        
+                            </li>                            
+                            {{end}}
                         </ul>
                     </li>
                     <li class="nav-parent">
@@ -283,6 +265,13 @@
                                     Soundboard
                                 </a>
                             </li>
+                            {{range (index .SidebarItems "Fun")}}
+                            <li>
+                                <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
+                                    {{.Name}}
+                                </a>                        
+                            </li>                            
+                            {{end}}
                         </ul>
                     </li>
                     {{end}}
