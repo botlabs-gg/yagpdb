@@ -28,6 +28,14 @@ type EventData struct {
 	cancelled *int32
 }
 
+func NewEventData(session *discordgo.Session, t Event, evtInterface interface{}) *EventData {
+	return &EventData{
+		EvtInterface: evtInterface,
+		Type:         t,
+		Session:      session,
+		cancelled:    new(int32),
+	}
+}
 func (evt *EventData) Cancel() {
 	atomic.StoreInt32(evt.cancelled, 1)
 }

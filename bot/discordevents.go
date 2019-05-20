@@ -99,10 +99,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	// check if this server is new
 	if n > 0 {
 		logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
-		go eventsystem.EmitEvent(&eventsystem.EventData{
-			EvtInterface: g,
-			Type:         eventsystem.EventNewGuild,
-		}, eventsystem.EventNewGuild)
+		go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
 
 		if common.Statsd != nil {
 			common.Statsd.Incr("yagpdb.joined_guilds", nil, 1)
