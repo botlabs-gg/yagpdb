@@ -161,6 +161,11 @@ func AddRootCommands(cmds ...*YAGCommand) {
 		CommandSystem.Root.AddCommand(v, v.GetTrigger())
 	}
 }
+func AddRootCommandsWithMiddlewares(middlewares []dcmd.MiddleWareFunc, cmds ...*YAGCommand) {
+	for _, v := range cmds {
+		CommandSystem.Root.AddCommand(v, v.GetTrigger().SetMiddlewares(middlewares...))
+	}
+}
 
 func handleMsgCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate()
