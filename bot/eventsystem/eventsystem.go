@@ -126,7 +126,7 @@ func AddHandlerSecond(handler Handler, evts ...Event) {
 
 // AddHandlerAsyncLast adds handlers using the OrderAsyncPostState order
 func AddHandlerAsyncLast(handler Handler, evts ...Event) {
-	AddHandler(handler, OrderSyncPostState, evts...)
+	AddHandler(handler, OrderAsyncPostState, evts...)
 }
 
 func HandleEvent(s *discordgo.Session, evt interface{}) {
