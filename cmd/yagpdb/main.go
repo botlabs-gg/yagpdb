@@ -16,6 +16,7 @@ import (
 	// Core yagpdb packages
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/common/configstore"
@@ -49,6 +50,7 @@ import (
 	"github.com/jonas747/yagpdb/tickets"
 	"github.com/jonas747/yagpdb/verification"
 	"github.com/jonas747/yagpdb/youtube"
+	// External plugins
 )
 
 var (
@@ -132,6 +134,7 @@ func main() {
 	configstore.InitDatabases()
 
 	//BotSession.LogLevel = discordgo.LogInformational
+	paginatedmessages.RegisterPlugin()
 
 	// Setup plugins
 	safebrowsing.RegisterPlugin()
