@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix"
 	"github.com/patrickmn/go-cache"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -395,4 +396,46 @@ func MemberHighestRole(gs *dstate.GuildState, ms *dstate.MemberState) *discordgo
 	}
 
 	return highest
+}
+
+func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return nil
+	}
+
+	return GetUsersGS(gs, ids...)
+}
+
+func GetUsersGS(gs *dstate.GuildState, ids ...int64) []*discordgo.User {
+	gs.RLock()
+	defer gs.RUnlock()
+
+	resp := make([]*discordgo.User, 0, len(ids))
+	for _, id := range ids {
+		m := gs.Member(false, id)
+		if m != nil {
+			resp = append(resp, m.DGoUser())
+			continue
+		}
+
+		gs.RUnlock()
+
+		user, err := common.BotSession.User(id)
+
+		gs.RLock()
+
+		if err != nil {
+			logger.WithError(err).WithField("guild", gs.ID).Error("failed retrieving user from api")
+			resp = append(resp, &discordgo.User{
+				ID:       id,
+				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
+			})
+			continue
+		}
+
+		resp = append(resp, user)
+	}
+
+	return resp
 }
