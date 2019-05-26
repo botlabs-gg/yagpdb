@@ -125,6 +125,7 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 
 	// don't reuse the old setup message
 	menu.SetupMSGID = 0
+	menu.OwnerID = parsed.Msg.Author.ID
 
 	menu.UpdateG(parsed.Context(), boil.Infer())
 
