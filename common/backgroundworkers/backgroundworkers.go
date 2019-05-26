@@ -3,13 +3,13 @@ package backgroundworkers
 import (
 	"context"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"goji.io"
 	"net/http"
-	"os"
 	"sync"
 )
 
-var HTTPAddr = loadHTTPAddr()
+var HTTPAddr = config.RegisterOption("yagpdb.bgworker.http_server_addr", "Backgroundn worker http server address", "localhost:5004")
 var RESTServerMuxer *goji.Mux
 
 var restServer *http.Server
@@ -54,20 +54,11 @@ func runWebserver() {
 
 	restServer := &http.Server{
 		Handler: RESTServerMuxer,
-		Addr:    HTTPAddr,
+		Addr:    HTTPAddr.GetString(),
 	}
 
 	err := restServer.ListenAndServe()
 	if err != nil {
 		logger.WithError(err).Error("Failed starting http server")
 	}
-}
-
-func loadHTTPAddr() string {
-	addr := os.Getenv("YAGPDB_BGWORKER_HTTP_SERVER_ADDR")
-	if addr == "" {
-		addr = "localhost:5004"
-	}
-
-	return addr
 }

@@ -144,7 +144,7 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 	}
 
 	templateData["ExtraHead"] = template.HTML(`<script src="https://www.google.com/recaptcha/api.js" async defer></script>`)
-	templateData["GoogleReCaptchaSiteKey"] = GoogleReCAPTCHASiteKey
+	templateData["GoogleReCaptchaSiteKey"] = confGoogleReCAPTCHASiteKey.GetString()
 
 	msg := settings.PageContent
 	if msg == "" {
@@ -228,7 +228,7 @@ func (p *Plugin) checkCAPTCHAResponse(response string) (valid bool, err error) {
 
 	v := url.Values{
 		"response": {response},
-		"secret":   {GoogleReCAPTCHASecret},
+		"secret":   {confGoogleReCAPTCHASecret.GetString()},
 	}
 
 	resp, err := http.PostForm("https://www.google.com/recaptcha/api/siteverify", v)

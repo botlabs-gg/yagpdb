@@ -329,7 +329,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 		}
 
 		if !settings.Enabled {
-			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", yc.Name, common.Conf.Host)
+			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", yc.Name, common.ConfHost.GetString())
 			return
 		}
 
@@ -642,7 +642,7 @@ func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
 func CensorError(err error) string {
 	toCensor := []string{
 		common.BotSession.Token,
-		common.Conf.ClientSecret,
+		common.ConfClientSecret.GetString(),
 	}
 
 	out := err.Error()

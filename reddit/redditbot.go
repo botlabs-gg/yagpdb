@@ -6,6 +6,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/sirupsen/logrus"
@@ -25,10 +26,10 @@ const (
 )
 
 var (
-	ClientID     = os.Getenv("YAGPDB_REDDIT_CLIENTID")
-	ClientSecret = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
-	RedirectURI  = os.Getenv("YAGPDB_REDDIT_REDIRECT")
-	RefreshToken = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
+	confClientID     = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
+	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
+	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
+	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
 
 	feedLock sync.Mutex
 	fastFeed *PostFetcher
@@ -68,12 +69,13 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 }
 
 func UserAgent() string {
-	return fmt.Sprintf("YAGPDB:%s:%s (by /u/jonas747)", ClientID, common.VERSIONNUMBER)
+	return fmt.Sprintf("YAGPDB:%s:%s (by /u/jonas747)", confClientID.GetString(), common.VERSIONNUMBER)
 }
 
 func setupClient() *reddit.Client {
-	authenticator := reddit.NewAuthenticator(UserAgent(), ClientID, ClientSecret, RedirectURI, "a", reddit.ScopeEdit+" "+reddit.ScopeRead)
-	redditClient := authenticator.GetAuthClient(&oauth2.Token{RefreshToken: RefreshToken}, UserAgent())
+	authenticator := reddit.NewAuthenticator(UserAgent(), confClientID.GetString(), confClientSecret.GetString(), confRedirectURI.GetString(),
+		"a", reddit.ScopeEdit+" "+reddit.ScopeRead)
+	redditClient := authenticator.GetAuthClient(&oauth2.Token{RefreshToken: confRefreshToken.GetString()}, UserAgent())
 	return redditClient
 }
 

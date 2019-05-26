@@ -10,12 +10,12 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"os"
 	"sort"
 	"sync"
 	"time"
@@ -472,10 +472,12 @@ type reactionRemovalOccurence struct {
 var (
 	activeReactionRemovals   = make([]*reactionRemovalOccurence, 0)
 	activeReactionRemovalsmu sync.Mutex
+
+	confDisableReactionRemovalSingleMode = config.RegisterOption("yagpdb.rolecommands.disable_reaction_removal_single_mode", "Disable reaction removal in single mode, could be heavy on number of requests", false)
 )
 
 func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, userID int64) {
-	if os.Getenv("YAGPDB_DISABLE_REACTION_REMOVAL_SINGLE_MODE") != "" {
+	if confDisableReactionRemovalSingleMode.GetBool() {
 		// since this is an experimental feature
 		return
 	}

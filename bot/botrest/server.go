@@ -8,13 +8,13 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"sort"
 	"strconv"
 	"sync"
@@ -30,6 +30,7 @@ var (
 	_ bot.BotStopperHandler = (*Plugin)(nil)
 )
 
+var confBotrestListenAddr = config.RegisterOption("yagpdb.botrest.listen_address", "botrest listening address, it will use the first port available above 5010", "127.0.0.1")
 var serverLogger = common.GetFixedPrefixLogger("botrest_server")
 
 type BotRestPlugin interface {
@@ -85,7 +86,7 @@ func (p *Plugin) BotInit() {
 
 	go func() {
 		// listen address excluding port
-		listenAddr := os.Getenv("YAGPDB_BOTREST_LISTEN_ADDRESS")
+		listenAddr := confBotrestListenAddr.GetString()
 		if listenAddr == "" {
 			// default to safe loopback interface
 			listenAddr = "127.0.0.1"
@@ -94,7 +95,7 @@ func (p *Plugin) BotInit() {
 		for {
 			address := listenAddr + ":" + strconv.Itoa(currentPort)
 
-			serverLogger.Println("[botrest] starting botrest on ", address)
+			serverLogger.Println("starting botrest on ", address)
 
 			p.srvMU.Lock()
 			p.srv.Addr = address
@@ -104,18 +105,18 @@ func (p *Plugin) BotInit() {
 			if err != nil {
 				// Shutdown was called for graceful shutdown
 				if err == http.ErrServerClosed {
-					serverLogger.Info("[botrest] server closed, shutting down...")
+					serverLogger.Info("server closed, shutting down...")
 					return
 				}
 
 				// Retry with a higher port until we succeed
-				serverLogger.WithError(err).Error("[botrest] failed starting botrest http server on ", address, " trying again on next port")
+				serverLogger.WithError(err).Error("failed starting botrest http server on ", address, " trying again on next port")
 				currentPort++
 				time.Sleep(time.Millisecond)
 				continue
 			}
 
-			serverLogger.Println("[botrest] botrest returned without any error")
+			serverLogger.Println("botrest returned without any error")
 			break
 		}
 	}()
@@ -159,18 +160,18 @@ func (p *Plugin) mapAddressToShards(address string) {
 
 	processShards := bot.GetProcessShards()
 
-	// serverLogger.Debug("[botrest] mapping ", address, " to current process shards")
+	// serverLogger.Debug("mapping ", address, " to current process shards")
 	for _, shard := range processShards {
 		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyShardAddressMapping(shard), address))
 		if err != nil {
-			serverLogger.WithError(err).Error("[botrest] failed mapping botrest")
+			serverLogger.WithError(err).Error("failed mapping botrest")
 		}
 	}
 
 	if bot.UsingOrchestrator {
 		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyNodeAddressMapping(bot.NodeConn.GetIDLock()), address))
 		if err != nil {
-			serverLogger.WithError(err).Error("[botrest] failed mapping node")
+			serverLogger.WithError(err).Error("failed mapping node")
 		}
 	}
 }
