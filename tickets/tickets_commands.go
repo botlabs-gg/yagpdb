@@ -56,6 +56,10 @@ func (p *Plugin) AddCommands() {
 				return "You're currently in over 10 open tickets on this server, please close some of the ones you're in.", nil
 			}
 
+			if len(parsed.Args[0].Str()) > 90 {
+				return "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created", nil
+			}
+
 			// assemble the permission overwrites for the channel were about to create
 			overwrites := []*discordgo.PermissionOverwrite{
 				&discordgo.PermissionOverwrite{
