@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -33,6 +34,8 @@ func init() {
 
 		return false
 	}
+
+	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 }
 
 func ContextSession(ctx context.Context) *discordgo.Session {
@@ -396,4 +399,77 @@ func MemberHighestRole(gs *dstate.GuildState, ms *dstate.MemberState) *discordgo
 	}
 
 	return highest
+}
+
+func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return nil
+	}
+
+	return GetUsersGS(gs, ids...)
+}
+
+func GetUsersGS(gs *dstate.GuildState, ids ...int64) []*discordgo.User {
+	gs.RLock()
+	defer gs.RUnlock()
+
+	resp := make([]*discordgo.User, 0, len(ids))
+	for _, id := range ids {
+		m := gs.Member(false, id)
+		if m != nil {
+			resp = append(resp, m.DGoUser())
+			continue
+		}
+
+		gs.RUnlock()
+
+		user, err := common.BotSession.User(id)
+
+		gs.RLock()
+
+		if err != nil {
+			logger.WithError(err).WithField("guild", gs.ID).Error("failed retrieving user from api")
+			resp = append(resp, &discordgo.User{
+				ID:       id,
+				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
+			})
+			continue
+		}
+
+		resp = append(resp, user)
+	}
+
+	return resp
+}
+
+func EvictGSCache(guildID int64, key GSCacheKey) {
+	if Enabled {
+		evictGSCacheLocal(guildID, key)
+	} else {
+		evictGSCacheRemote(guildID, key)
+	}
+}
+
+func evictGSCacheLocal(guildID int64, key GSCacheKey) {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return
+	}
+
+	gs.UserCacheDel(true, key)
+}
+
+type GSCacheKey string
+
+func evictGSCacheRemote(guildID int64, key GSCacheKey) {
+	err := pubsub.Publish("bot_core_evict_gs_cache", guildID, key)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).WithField("key", key).Error("failed evicting remote cache")
+	}
+}
+
+func handleEvictCachePubsub(evt *pubsub.Event) {
+	key := evt.Data.(*string)
+	evictGSCacheLocal(evt.TargetGuildInt, GSCacheKey(*key))
 }
