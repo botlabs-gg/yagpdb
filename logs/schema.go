@@ -65,9 +65,7 @@ CREATE TABLE IF NOT EXISTS username_listings (
 	username TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_username_listings_deleted_at ON username_listings(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_username_listings_user_id ON username_listings(user_id);
-
 
 CREATE TABLE IF NOT EXISTS nickname_listings (
 	id SERIAL PRIMARY KEY,
