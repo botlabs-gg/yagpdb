@@ -33,6 +33,8 @@ func init() {
 
 		return false
 	}
+
+	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 }
 
 func ContextSession(ctx context.Context) *discordgo.Session {
@@ -438,4 +440,38 @@ func GetUsersGS(gs *dstate.GuildState, ids ...int64) []*discordgo.User {
 	}
 
 	return resp
+}
+
+func EvictGSCache(guildID int64, key GSCacheKey) {
+	if Enabled {
+		logger.Println("Evicting local...")
+		evictGSCacheLocal(guildID, key)
+	} else {
+		logger.Println("Evicting remote...")
+		evictGSCacheRemote(guildID, key)
+	}
+}
+
+func evictGSCacheLocal(guildID int64, key GSCacheKey) {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return
+	}
+
+	gs.UserCacheDel(true, key)
+}
+
+type GSCacheKey string
+
+func evictGSCacheRemote(guildID int64, key GSCacheKey) {
+	err := pubsub.Publish("bot_core_evict_gs_cache", guildID, key)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).WithField("key", key).Error("failed evicting remote cache")
+	}
+}
+
+func handleEvictCachePubsub(evt *pubsub.Event) {
+	key := evt.Data.(*string)
+	logger.Println("Evicting cache: ", *key)
+	evictGSCacheLocal(evt.TargetGuildInt, GSCacheKey(*key))
 }
