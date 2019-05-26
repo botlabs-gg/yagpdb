@@ -11,14 +11,11 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sort"
 )
-
-const PubSubEvtCleaCache = "automod_2_clear_guild_cache"
 
 func (p *Plugin) BotInit() {
 
@@ -27,18 +24,6 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLast(p.handleMsgUpdate, eventsystem.EventMessageUpdate)
 	eventsystem.AddHandlerAsyncLast(p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
-
-	pubsub.AddHandler(PubSubEvtCleaCache, func(evt *pubsub.Event) {
-		gs := bot.State.Guild(true, evt.TargetGuildInt)
-		if gs == nil {
-			return
-		}
-
-		gs.UserCacheDel(true, CacheKeyRulesets)
-		gs.UserCacheDel(true, CacheKeyLists)
-
-		logger.Println("cleared automod cache for ", gs.ID)
-	}, nil)
 }
 
 func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
@@ -481,11 +466,9 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 	}
 }
 
-type CacheKey int
-
 const (
-	CacheKeyRulesets CacheKey = iota
-	CacheKeyLists
+	CacheKeyRulesets bot.GSCacheKey = "automod_2_rulesets"
+	CacheKeyLists    bot.GSCacheKey = "automod_2_lists"
 )
 
 func (p *Plugin) FetchGuildRulesets(gs *dstate.GuildState) ([]*ParsedRuleset, error) {
