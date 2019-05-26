@@ -1,5 +1,9 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**26th May 2019 (1.19-dev)**
+
+ - Removed automigration from legacy format for reddit and custom commands, if you have them in the legacy format still you need to run the webserver on 1.18 first to migrate them to the new format, this auto-migration has been in place since 1.14, if you used any versions after that they should already be in the new format.
+
 **4th january 2019 (1.14)**
 
  - Reddit feeds are now stored in postgres instead of redis, a migration will automatically start on the webserver and can be disabled by setting YAGPDB_REDDIT_DISABLE_REDIS_PQ_MIGRATION to anything but empty, automigration will be turned into opt-in instead of opt out in a couple versions, then removed.

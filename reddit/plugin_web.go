@@ -13,7 +13,6 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,10 +43,6 @@ type UpdateForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	if os.Getenv("YAGPDB_REDDIT_DISABLE_REDIS_PQ_MIGRATION") == "" {
-		go migrateLegacyRedisFormatToPostgres()
-	}
-
 	tmplPathSettings := "templates/plugins/reddit.html"
 	if common.Testing {
 		tmplPathSettings = "../../reddit/assets/reddit.html"

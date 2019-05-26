@@ -14,7 +14,6 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"os"
 	"strconv"
 	"unicode/utf8"
 )
@@ -30,10 +29,6 @@ type GroupForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	if os.Getenv("YAGPDB_CC_DISABLE_REDIS_PQ_MIGRATION") == "" {
-		go migrateFromRedis()
-	}
-
 	tmplPathSettings := "templates/plugins/customcommands.html"
 	if common.Testing {
 		tmplPathSettings = "../../customcommands/assets/customcommands.html"
