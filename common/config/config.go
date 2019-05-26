@@ -50,6 +50,10 @@ func (opt *ConfigOption) GetInt() int {
 	return intVal(opt.LoadedValue)
 }
 
+func (opt *ConfigOption) GetBool() bool {
+	return boolVal(opt.LoadedValue)
+}
+
 type ConfigManager struct {
 	sources []ConfigSource
 	options map[string]*ConfigOption
@@ -123,6 +127,8 @@ func boolVal(i interface{}) bool {
 		return false
 	case int:
 		return t > 0
+	case bool:
+		return t
 	}
 
 	return false

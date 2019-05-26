@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/premium"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 )
@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	WebSubVerifyToken = os.Getenv("YAGPDB_YOUTUBE_VERIFY_TOKEN")
+	confWebsubVerifytoken = config.RegisterOption("yagpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
 
 	logger = common.GetPluginLogger(&Plugin{})
 )
@@ -104,11 +104,11 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	// hub.lease_seconds:
 
 	values := url.Values{
-		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + WebSubVerifyToken},
+		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
 		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"subscribe"},
-		"hub.verify_token": {WebSubVerifyToken},
+		"hub.verify_token": {confWebsubVerifytoken.GetString()},
 		// "hub.lease_seconds": {"60"},
 	}
 
@@ -136,11 +136,11 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 	// hub.lease_seconds:
 
 	values := url.Values{
-		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + WebSubVerifyToken},
+		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
 		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"unsubscribe"},
-		"hub.verify_token": {WebSubVerifyToken},
+		"hub.verify_token": {confWebsubVerifytoken.GetString()},
 	}
 
 	resp, err := http.PostForm(GoogleWebsubHub, values)

@@ -10,11 +10,10 @@ import (
 	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix"
-	"os"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -33,6 +32,12 @@ var (
 	MessageDeleteQueue = deletequeue.NewQueue()
 
 	FlagNodeID string
+)
+
+var (
+	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
+	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
+	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
 )
 
 var (
@@ -94,13 +99,13 @@ func Run() {
 
 	logger.Println("Running bot")
 
-	connEvtChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNEVT_CHANNEL"), 10, 64)
-	connStatusChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNSTATUS_CHANNEL"), 10, 64)
+	connEvtChannel := confConnEventChannel.GetInt()
+	connStatusChannel := confConnStatus.GetInt()
 
 	// Set up shard manager
 	ShardManager = dshardmanager.New(common.GetBotToken())
-	ShardManager.LogChannel = connEvtChannel
-	ShardManager.StatusMessageChannel = connStatusChannel
+	ShardManager.LogChannel = int64(connEvtChannel)
+	ShardManager.StatusMessageChannel = int64(connStatusChannel)
 	ShardManager.Name = "YAGPDB"
 	ShardManager.GuildCountsFunc = GuildCountsFunc
 	ShardManager.SessionFunc = func(token string) (session *discordgo.Session, err error) {
@@ -127,7 +132,7 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
-	orcheStratorAddress := os.Getenv("YAGPDB_ORCHESTRATOR_ADDRESS")
+	orcheStratorAddress := confShardOrchestratorAddress.GetString()
 	if orcheStratorAddress != "" {
 		UsingOrchestrator = true
 		logger.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)

@@ -8,6 +8,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/patreon"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/web/discordblog"
@@ -16,8 +17,6 @@ import (
 	"goji.io/pat"
 	"html/template"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -51,6 +50,16 @@ var (
 	CurrentAd *Advertisement
 
 	logger = common.GetFixedPrefixLogger("web")
+
+	confAnnouncementsChannel = config.RegisterOption("yagpdb.announcements_channel", "Channel to pull announcements from and display on the control panel homepage", 0)
+
+	confAdPath    = config.RegisterOption("yagpdb.ad.img_path", "The ad image ", "")
+	confAdLinkurl = config.RegisterOption("yagpdb.ad.link", "Link to follow when clicking on the ad", "")
+	confAdWidth   = config.RegisterOption("yagpdb.ad.w", "Ad width", 0)
+	confAdHeight  = config.RegisterOption("yagpdb.ad.h", "Ad Height", 0)
+	ConfAdVideos  = config.RegisterOption("yagpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
+
+	confDisableRequestLogging = config.RegisterOption("yagpdb.disable_request_logging", "Disable logging of http requests to web server", false)
 )
 
 type Advertisement struct {
@@ -129,10 +138,9 @@ func Run() {
 	go botrest.RunPinger()
 	go pollCommandsRan()
 
-	blogChannel := os.Getenv("YAGPDB_ANNOUNCEMENTS_CHANNEL")
-	parsedBlogChannel, _ := strconv.ParseInt(blogChannel, 10, 64)
-	if parsedBlogChannel != 0 {
-		go discordblog.RunPoller(common.BotSession, parsedBlogChannel, time.Minute)
+	blogChannel := confAnnouncementsChannel.GetInt()
+	if blogChannel != 0 {
+		go discordblog.RunPoller(common.BotSession, int64(blogChannel), time.Minute)
 	}
 
 	LoadAd()
@@ -142,19 +150,17 @@ func Run() {
 }
 
 func LoadAd() {
-	path := os.Getenv("YAGPDB_AD_IMG_PATH")
-	linkurl := os.Getenv("YAGPDB_AD_LINK")
-	width, _ := strconv.Atoi(os.Getenv("YAGPDB_AD_W"))
-	height, _ := strconv.Atoi(os.Getenv("YAGPDB_AD_H"))
+	path := confAdPath.GetString()
+	linkurl := confAdLinkurl.GetString()
 
 	CurrentAd = &Advertisement{
 		Path:    template.URL(path),
 		LinkURL: template.URL(linkurl),
-		Width:   width,
-		Height:  height,
+		Width:   confAdWidth.GetInt(),
+		Height:  confAdHeight.GetInt(),
 	}
 
-	videos := strings.Split(os.Getenv("YAGPDB_AD_VIDEO_PATHS"), ",")
+	videos := strings.Split(ConfAdVideos.GetString(), ",")
 	for _, v := range videos {
 		if v == "" {
 			continue
@@ -327,7 +333,7 @@ func setupRootMux() {
 	mux := goji.NewMux()
 	RootMux = mux
 
-	if os.Getenv("YAGPDB_DISABLE_REQUEST_LOGGING") == "" {
+	if confDisableRequestLogging.GetBool() {
 		requestLogger := &lumberjack.Logger{
 			Filename: "access.log",
 			MaxSize:  10,

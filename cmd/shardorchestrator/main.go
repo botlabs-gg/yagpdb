@@ -5,10 +5,10 @@ import (
 	"github.com/jonas747/dshardorchestrator/orchestrator"
 	"github.com/jonas747/dshardorchestrator/orchestrator/rest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -16,17 +16,20 @@ import (
 	_ "github.com/jonas747/yagpdb/bot" // register the custom orchestrator events
 )
 
-func main() {
-	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors: true,
-	})
+var (
+	confTotalShards  = config.RegisterOption("yagpdb.sharding.total_shards", "Total number shards", 0)
+	confActiveShards = config.RegisterOption("yagpdb.sharding.active_shards", "Shards active on this hoste, ex: '1-10,25'", "")
+)
 
-	activeShards := ReadActiveShards()
-	totalShards, err := strconv.Atoi(os.Getenv("YAGPDB_SHARDING_TOTAL_SHARDS"))
+func main() {
+	common.RedisPoolSize = 2
+	err := common.Init()
 	if err != nil {
-		panic("Invalid YAGPDB_SHARDING_TOTAL_SHARDS: " + err.Error())
+		panic("failed initializing: " + err.Error())
 	}
 
+	activeShards := ReadActiveShards()
+	totalShards := confTotalShards.GetInt()
 	if totalShards < 1 {
 		panic("YAGPDB_SHARDING_TOTAL_SHARDS needs to be set to a resonable number of total shards")
 	}
@@ -36,12 +39,6 @@ func main() {
 	}
 
 	logrus.Info("Running shards (", len(activeShards), "): ", activeShards)
-
-	common.RedisPoolSize = 2
-	err = common.Init()
-	if err != nil {
-		panic("failed initializing: " + err.Error())
-	}
 
 	orch := orchestrator.NewStandardOrchestrator(common.BotSession)
 	orch.FixedTotalShardCount = totalShards
@@ -98,7 +95,7 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 }
 
 func ReadActiveShards() []int {
-	str := os.Getenv("YAGPDB_SHARDING_ACTIVE_SHARDS")
+	str := confActiveShards.GetString()
 	split := strings.Split(str, ",")
 
 	shards := make([]int, 0)

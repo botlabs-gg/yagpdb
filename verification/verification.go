@@ -4,11 +4,11 @@ package verification
 
 import (
 	"github.com/jonas747/yagpdb/common"
-	"os"
+	"github.com/jonas747/yagpdb/common/config"
 )
 
-var GoogleReCAPTCHASiteKey = os.Getenv("YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY")
-var GoogleReCAPTCHASecret = os.Getenv("YAGPDB_GOOGLE_RECAPTCHA_SECRET")
+var confGoogleReCAPTCHASiteKey = config.RegisterOption("yagpdb.google.recaptcha_site_key", "Google reCAPTCHA site key", "")
+var confGoogleReCAPTCHASecret = config.RegisterOption("yagpdb.google.recaptcha_secret", "Google reCAPTCHA site secret", "")
 
 type Plugin struct{}
 
@@ -24,7 +24,7 @@ var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
 
-	if GoogleReCAPTCHASecret == "" || GoogleReCAPTCHASiteKey == "" {
+	if confGoogleReCAPTCHASecret.GetString() == "" || confGoogleReCAPTCHASiteKey.GetString() == "" {
 		logger.Warn("no YAGPDB_GOOGLE_RECAPTCHA_SECRET and/or YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY provided, not enabling verification plugin")
 		return
 	}

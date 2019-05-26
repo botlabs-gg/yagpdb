@@ -169,7 +169,7 @@ func (p *Plugin) bgworkerHandleGetSound(w http.ResponseWriter, r *http.Request) 
 }
 
 func getSoundFromBGWorker(soundID int) (rc io.ReadCloser, err error) {
-	path := "http://" + backgroundworkers.HTTPAddr + "/soundboard/sounddata/" + strconv.Itoa(soundID)
+	path := "http://" + backgroundworkers.HTTPAddr.GetString() + "/soundboard/sounddata/" + strconv.Itoa(soundID)
 
 	resp, err := http.Get(path)
 	if err != nil {

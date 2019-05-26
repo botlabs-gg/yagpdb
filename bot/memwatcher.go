@@ -1,8 +1,9 @@
 package bot
 
 import (
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/shirou/gopsutil/mem"
-	"os"
 	"runtime/debug"
 	"time"
 )
@@ -13,9 +14,13 @@ type MemWatcher struct {
 	lastTimeFreed time.Time
 }
 
+var confEnableMemMonitor = config.RegisterOption("yagpdb.mem_monitor.enabled", "Enable the memory monitor, will attempt to free resources when os is running low", true)
+var memLogger = common.GetFixedPrefixLogger("[mem_monitor]")
+
 func watchMemusage() {
-	if os.Getenv("YAGPDB_ENABLE_MEM_MONITOR") == "" || os.Getenv("YAGPDB_ENABLE_MEM_MONITOR") == "no" || os.Getenv("YAGPDB_ENABLE_MEM_MONITOR") == "false" {
+	if !confEnableMemMonitor.GetBool() {
 		// not enabled
+		memLogger.Info("memory monitor disabled")
 		return
 	}
 
@@ -24,7 +29,7 @@ func watchMemusage() {
 }
 
 func (mw *MemWatcher) Run() {
-	logger.Info("[mem_monitor] launching memory monitor")
+	memLogger.Info("launching memory monitor")
 	ticker := time.NewTicker(time.Second * 10)
 	for {
 		<-ticker.C
@@ -39,12 +44,12 @@ func (mw *MemWatcher) Check() {
 
 	sysMem, err := mem.VirtualMemory()
 	if err != nil {
-		logger.WithError(err).Error("[mem_monitor] failed retrieving os memory stats")
+		memLogger.WithError(err).Error("failed retrieving os memory stats")
 		return
 	}
 
 	if sysMem.UsedPercent > MemFreeThreshold {
-		logger.Info("[mem_monitor] LOW SYSTEM MEMORY, ATTEMPTING TO FREE SOME")
+		memLogger.Info("LOW SYSTEM MEMORY, ATTEMPTING TO FREE SOME")
 		debug.FreeOSMemory()
 		mw.lastTimeFreed = time.Now()
 	}

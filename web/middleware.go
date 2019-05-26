@@ -9,12 +9,12 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/miolini/datacounter"
 	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"io"
 	"net/http"
-	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	GAID = os.Getenv("YAGPDB_GA_ID")
+	confGAID = config.RegisterOption("yagpdb.ga_id", "Google analytics id", "")
 )
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
@@ -86,7 +86,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"CurrentAd":        CurrentAd,
 			"LightTheme":       lightTheme,
 			"SidebarCollapsed": collapseSidebar,
-			"GAID":             GAID,
+			"GAID":             confGAID.GetString(),
 		}
 
 		baseData["BaseURL"] = BaseURL()

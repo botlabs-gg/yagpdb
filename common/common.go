@@ -19,7 +19,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -129,7 +128,7 @@ func setupGlobalDGoSession() (err error) {
 		return err
 	}
 
-	maxCCReqs, _ := strconv.Atoi(os.Getenv("YAGPDB_MAX_CCR"))
+	maxCCReqs := ConfMaxCCR.GetInt()
 	if maxCCReqs < 1 {
 		maxCCReqs = 25
 	}
@@ -152,7 +151,7 @@ func setupGlobalDGoSession() (err error) {
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
-	if os.Getenv("YAGPDB_DISABLE_KEEPALIVES") != "" {
+	if ConfDisableKeepalives.GetBool() {
 		innerTransport.DisableKeepAlives = true
 		logger.Info("Keep alive connections to REST api for discord is disabled, may cause overhead")
 	}

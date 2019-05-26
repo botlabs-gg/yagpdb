@@ -36,7 +36,7 @@ func performRemoteLookup(input string) (*safebrowsing.URLThreat, error) {
 	logger.Debug("performing remote lookup")
 
 	bodyR := strings.NewReader(input)
-	req, err := http.NewRequest("POST", "http://"+backgroundworkers.HTTPAddr+"/safebroswing/checkmessage", bodyR)
+	req, err := http.NewRequest("POST", "http://"+backgroundworkers.HTTPAddr.GetString()+"/safebroswing/checkmessage", bodyR)
 	if err != nil {
 		return nil, errors.WithMessage(err, "NewRequest")
 	}

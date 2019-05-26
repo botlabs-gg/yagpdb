@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/evalphobia/logrus_sentry"
 	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/safebrowsing"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -67,6 +68,8 @@ var (
 	flagNodeID string
 )
 
+var confSentryDSN = config.RegisterOption("yagpdb.sentry_dsn", "Sentry credentials for sentry logging hook", nil)
+
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
@@ -98,8 +101,9 @@ func main() {
 		AddSyslogHooks()
 	}
 
-	if os.Getenv("YAGPDB_SENTRY_DSN") != "" {
-		hook, err := logrus_sentry.NewSentryHook(os.Getenv("YAGPDB_SENTRY_DSN"), []log.Level{
+	config.Load()
+	if confSentryDSN.GetString() != "" {
+		hook, err := logrus_sentry.NewSentryHook(confSentryDSN.GetString(), []log.Level{
 			log.PanicLevel,
 			log.FatalLevel,
 			log.ErrorLevel,
