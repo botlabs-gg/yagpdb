@@ -444,10 +444,8 @@ func GetUsersGS(gs *dstate.GuildState, ids ...int64) []*discordgo.User {
 
 func EvictGSCache(guildID int64, key GSCacheKey) {
 	if Enabled {
-		logger.Println("Evicting local...")
 		evictGSCacheLocal(guildID, key)
 	} else {
-		logger.Println("Evicting remote...")
 		evictGSCacheRemote(guildID, key)
 	}
 }
@@ -472,6 +470,5 @@ func evictGSCacheRemote(guildID int64, key GSCacheKey) {
 
 func handleEvictCachePubsub(evt *pubsub.Event) {
 	key := evt.Data.(*string)
-	logger.Println("Evicting cache: ", *key)
 	evictGSCacheLocal(evt.TargetGuildInt, GSCacheKey(*key))
 }
