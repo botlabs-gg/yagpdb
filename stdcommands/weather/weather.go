@@ -2,14 +2,15 @@ package weather
 
 import (
 	"fmt"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/lunixbochs/vtclean"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/commands"
+	"github.com/lunixbochs/vtclean"
 )
 
 var TempRangeRegex = regexp.MustCompile("(-?[0-9]{1,3})( ?- ?(-?[0-9]{1,3}))? ?°C")

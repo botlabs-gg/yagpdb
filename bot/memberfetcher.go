@@ -2,13 +2,14 @@ package bot
 
 import (
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
-	"sync"
-	"time"
 )
 
 var (

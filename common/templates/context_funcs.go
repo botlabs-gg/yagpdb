@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"

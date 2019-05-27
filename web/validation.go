@@ -27,16 +27,17 @@ package web
 import (
 	"errors"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/lib/pq"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/lib/pq"
 )
 
 type CustomValidator interface {

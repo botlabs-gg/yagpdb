@@ -3,12 +3,6 @@ package common
 import (
 	"bytes"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/lib/pq"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"math/rand"
 	"path/filepath"
 	"regexp"
@@ -16,6 +10,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/lib/pq"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
@@ -36,19 +37,16 @@ func GetGuildsWithConnected(in []*discordgo.UserGuild) ([]*GuildWithConnected, e
 
 	out := make([]*GuildWithConnected, len(in))
 
-	actions := make([]radix.CmdAction, len(in))
 	for i, g := range in {
 		out[i] = &GuildWithConnected{
 			UserGuild: g,
 			Connected: false,
 		}
 
-		actions[i] = radix.Cmd(&out[i].Connected, "SISMEMBER", "connected_guilds", strconv.FormatInt(g.ID, 10))
-	}
-
-	err := RedisPool.Do(radix.Pipeline(actions...))
-	if err != nil {
-		return nil, err
+		err := RedisPool.Do(retryableredis.Cmd(&out[i].Connected, "SISMEMBER", "connected_guilds", strconv.FormatInt(g.ID, 10)))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return out, nil
@@ -610,18 +608,18 @@ func ErrPQIsUniqueViolation(err error) bool {
 
 func GetJoinedServerCount() (int64, error) {
 	var count int64
-	err := RedisPool.Do(radix.Cmd(&count, "SCARD", "connected_guilds"))
+	err := RedisPool.Do(retryableredis.Cmd(&count, "SCARD", "connected_guilds"))
 	return count, err
 }
 
 func BotIsOnGuild(guildID int64) (bool, error) {
 	isOnGuild := false
-	err := RedisPool.Do(radix.FlatCmd(&isOnGuild, "SISMEMBER", "connected_guilds", guildID))
+	err := RedisPool.Do(retryableredis.FlatCmd(&isOnGuild, "SISMEMBER", "connected_guilds", guildID))
 	return isOnGuild, err
 }
 
 func GetActiveNodes() ([]string, error) {
 	var nodes []string
-	err := RedisPool.Do(radix.FlatCmd(&nodes, "ZRANGEBYSCORE", "dshardorchestrator_nodes_z", time.Now().Add(-time.Minute).Unix(), "+inf"))
+	err := RedisPool.Do(retryableredis.FlatCmd(&nodes, "ZRANGEBYSCORE", "dshardorchestrator_nodes_z", time.Now().Add(-time.Minute).Unix(), "+inf"))
 	return nodes, err
 }

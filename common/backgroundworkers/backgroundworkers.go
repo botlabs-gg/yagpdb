@@ -2,11 +2,12 @@ package backgroundworkers
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/common"
-	"goji.io"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/jonas747/yagpdb/common"
+	"goji.io"
 )
 
 var HTTPAddr = loadHTTPAddr()

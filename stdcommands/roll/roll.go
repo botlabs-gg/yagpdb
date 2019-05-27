@@ -2,10 +2,11 @@ package roll
 
 import (
 	"fmt"
+	"math/rand"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/yagpdb/commands"
-	"math/rand"
 )
 
 var Command = &commands.YAGCommand{

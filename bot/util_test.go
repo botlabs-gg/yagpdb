@@ -2,9 +2,10 @@ package bot
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"testing"
 )
 
 func TestMemberHighestRole(t *testing.T) {

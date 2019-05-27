@@ -1,8 +1,9 @@
 package eventsystem
 
 import (
-	"github.com/jonas747/discordgo"
 	"testing"
+
+	"github.com/jonas747/discordgo"
 )
 
 func TestAddHandlerAfter(t *testing.T) {

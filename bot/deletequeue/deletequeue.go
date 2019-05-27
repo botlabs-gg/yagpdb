@@ -1,8 +1,9 @@
 package deletequeue
 
 import (
-	"github.com/jonas747/yagpdb/common"
 	"sync"
+
+	"github.com/jonas747/yagpdb/common"
 )
 
 type Queue struct {

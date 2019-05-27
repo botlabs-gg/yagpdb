@@ -3,20 +3,21 @@ package commands
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands/models"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type ContextKey int
@@ -452,7 +453,7 @@ func (cs *YAGCommand) customEnabled(guildID int64) (bool, error) {
 
 	// Check redis for settings
 	var enabled bool
-	err := common.RedisPool.Do(radix.Cmd(&enabled, "GET", cs.Key+discordgo.StrID(guildID)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&enabled, "GET", cs.Key+discordgo.StrID(guildID)))
 	if err != nil {
 		return false, err
 	}
@@ -597,7 +598,7 @@ func (cs *YAGCommand) CooldownLeft(userID int64) (int, error) {
 	}
 
 	var ttl int
-	err := common.RedisPool.Do(radix.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.Name)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.Name)))
 	if ttl < 1 {
 		return 0, nil
 	}
@@ -612,7 +613,7 @@ func (cs *YAGCommand) SetCooldown(userID int64) error {
 	}
 	now := time.Now().Unix()
 
-	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown))
+	err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown))
 	return err
 }
 

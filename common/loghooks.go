@@ -1,7 +1,6 @@
 package common
 
 import (
-	"github.com/sirupsen/logrus"
 	"math"
 	"net/http"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ContextHook struct{}

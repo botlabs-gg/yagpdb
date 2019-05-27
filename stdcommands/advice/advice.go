@@ -2,10 +2,11 @@ package advice
 
 import (
 	"encoding/json"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/commands"
 	"net/http"
 	"net/url"
+
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/commands"
 )
 
 var Command = &commands.YAGCommand{

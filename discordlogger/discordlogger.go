@@ -2,11 +2,12 @@ package discordlogger
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"os"
-	"strconv"
 )
 
 var (

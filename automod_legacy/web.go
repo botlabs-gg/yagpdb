@@ -2,14 +2,15 @@ package automod_legacy
 
 import (
 	"fmt"
+	"html/template"
+	"net/http"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
 )
 
 type CtxKey int

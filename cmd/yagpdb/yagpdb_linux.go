@@ -1,10 +1,11 @@
 package main
 
 import (
+	"log/syslog"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
 	lsyslog "github.com/sirupsen/logrus/hooks/syslog"
-	"log/syslog"
 )
 
 func AddSyslogHooks() {

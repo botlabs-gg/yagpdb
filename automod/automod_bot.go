@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sort"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
@@ -15,7 +17,6 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"sort"
 )
 
 const PubSubEvtCleaCache = "automod_2_clear_guild_cache"

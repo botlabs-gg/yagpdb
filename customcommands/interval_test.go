@@ -1,10 +1,11 @@
 package customcommands
 
 import (
-	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/volatiletech/null"
 	"testing"
 	"time"
+
+	"github.com/jonas747/yagpdb/customcommands/models"
+	"github.com/volatiletech/null"
 )
 
 func TestNextRunTimeBasic(t *testing.T) {

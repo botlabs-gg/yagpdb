@@ -2,20 +2,21 @@ package serverstats
 
 import (
 	"context"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/lib/pq"
-	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -55,7 +56,7 @@ func (p *Plugin) UpdateStatsLoop() {
 
 func (p *Plugin) getLastTimeRanHourly() time.Time {
 	var last int64
-	err := common.RedisPool.Do(radix.Cmd(&last, "GET", RedisKeyLastHourlyRan))
+	err := common.RedisPool.Do(retryableredis.Cmd(&last, "GET", RedisKeyLastHourlyRan))
 	if err != nil {
 		logger.WithError(err).Error("[serverstats] failed getting last hourly worker run time")
 	}
@@ -104,7 +105,7 @@ func UpdateGuildStats(guildID int64) error {
 	strGID := discordgo.StrID(guildID)
 	var messageStatsRaw []string
 
-	err := common.RedisPool.Do(radix.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
+	err := common.RedisPool.Do(retryableredis.FlatCmd(&messageStatsRaw, "ZRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
 	if err != nil {
 		return err
 	}
@@ -154,7 +155,7 @@ func UpdateGuildStats(guildID int64) error {
 		return errors.WithMessage(err, "commit")
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "ZREMRANGEBYSCORE", "guild_stats_msg_channel_day:"+strGID, "-inf", unixminAgo))
 	if err != nil {
 		return errors.WithMessage(err, "zremrangebyscore")
 	}
@@ -241,25 +242,25 @@ func (p *Plugin) RunCleanup() {
 func getActiveServersList(key string, full bool) ([]int64, error) {
 	var guilds []int64
 	if full {
-		err := common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", "connected_guilds"))
+		err := common.RedisPool.Do(retryableredis.Cmd(&guilds, "SMEMBERS", "connected_guilds"))
 		return guilds, errors.Wrap(err, "smembers conn_guilds")
 	}
 
 	var exists bool
-	if common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(&exists, "EXISTS", key)), "[serverstats] "+key, nil); !exists {
+	if common.LogIgnoreError(common.RedisPool.Do(retryableredis.Cmd(&exists, "EXISTS", key)), "[serverstats] "+key, nil); !exists {
 		return guilds, nil // no guilds to process
 	}
 
-	err := common.RedisPool.Do(radix.Cmd(nil, "RENAME", key, key+"_processing"))
+	err := common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", key, key+"_processing"))
 	if err != nil {
 		return guilds, errors.Wrap(err, "rename")
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", key+"_processing"))
+	err = common.RedisPool.Do(retryableredis.Cmd(&guilds, "SMEMBERS", key+"_processing"))
 	if err != nil {
 		return guilds, errors.Wrap(err, "smembers")
 	}
 
-	common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(nil, "DEL", "serverstats_active_guilds_processing")), "[serverstats] del "+key, nil)
+	common.LogIgnoreError(common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", "serverstats_active_guilds_processing")), "[serverstats] del "+key, nil)
 	return guilds, err
 }

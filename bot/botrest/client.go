@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -32,7 +33,7 @@ func GetServerAddrForGuild(guildID int64) string {
 
 func GetServerAddrForShard(shard int) string {
 	resp := ""
-	err := common.RedisPool.Do(radix.Cmd(&resp, "GET", RedisKeyShardAddressMapping(shard)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&resp, "GET", RedisKeyShardAddressMapping(shard)))
 	if err != nil {
 		clientLogger.WithError(err).Error("failed retrieving shard server addr")
 	}
@@ -178,7 +179,7 @@ func GetNodeStatuses() (st []*NodeStatus, err error) {
 
 	// Special handling if were in clustered mode
 	var clustered bool
-	err = common.RedisPool.Do(radix.Cmd(&clustered, "EXISTS", "dshardorchestrator_nodes_z"))
+	err = common.RedisPool.Do(retryableredis.Cmd(&clustered, "EXISTS", "dshardorchestrator_nodes_z"))
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +209,7 @@ func getNodeStatusesClustered() (st []*NodeStatus, err error) {
 	for _, n := range nodeIDs {
 		// retrieve the REST address for this node
 		var addr string
-		err = common.RedisPool.Do(radix.Cmd(&addr, "GET", RedisKeyNodeAddressMapping(n)))
+		err = common.RedisPool.Do(retryableredis.Cmd(&addr, "GET", RedisKeyNodeAddressMapping(n)))
 		if err != nil {
 			clientLogger.WithError(err).Error("failed retrieving rest address for bot for node id: ", n)
 			continue

@@ -2,13 +2,14 @@ package ping
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var Command = &commands.YAGCommand{

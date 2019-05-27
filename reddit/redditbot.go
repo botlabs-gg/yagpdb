@@ -3,6 +3,13 @@ package reddit
 import (
 	"context"
 	"fmt"
+	"html"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
@@ -11,12 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/oauth2"
-	"html"
-	"os"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (

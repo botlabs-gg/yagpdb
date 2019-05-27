@@ -5,11 +5,12 @@
 package bot
 
 import (
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
-	"sync"
-	"time"
 )
 
 var (

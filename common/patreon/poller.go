@@ -2,13 +2,15 @@ package patreon
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
-	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
 	"os"
 	"strconv"
+
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
+
 	// "strconv"
 	"sync"
 	"time"
@@ -38,7 +40,7 @@ func Run() {
 	}
 
 	var storedRefreshToken string
-	common.RedisPool.Do(radix.Cmd(&storedRefreshToken, "GET", "patreon_refresh_token"))
+	common.RedisPool.Do(retryableredis.Cmd(&storedRefreshToken, "GET", "patreon_refresh_token"))
 
 	config := &oauth2.Config{
 		ClientID:     clientID,
@@ -231,7 +233,7 @@ func (t *TokenSourceSaver) Token() (*oauth2.Token, error) {
 	if err == nil {
 		if t.lastRefreshToken != tk.RefreshToken {
 			logger.Info("New refresh token")
-			common.RedisPool.Do(radix.Cmd(nil, "SET", "patreon_refresh_token", tk.RefreshToken))
+			common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "patreon_refresh_token", tk.RefreshToken))
 			t.lastRefreshToken = tk.RefreshToken
 		}
 	}

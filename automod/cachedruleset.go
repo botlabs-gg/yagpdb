@@ -2,6 +2,7 @@ package automod
 
 import (
 	"encoding/json"
+
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/pkg/errors"
 )

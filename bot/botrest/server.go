@@ -3,15 +3,6 @@ package botrest
 import (
 	"context"
 	"encoding/json"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"goji.io"
-	"goji.io/pat"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -19,6 +10,16 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
+	"goji.io"
+	"goji.io/pat"
 )
 
 func RegisterPlugin() {
@@ -161,14 +162,14 @@ func (p *Plugin) mapAddressToShards(address string) {
 
 	// serverLogger.Debug("[botrest] mapping ", address, " to current process shards")
 	for _, shard := range processShards {
-		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyShardAddressMapping(shard), address))
+		err := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", RedisKeyShardAddressMapping(shard), address))
 		if err != nil {
 			serverLogger.WithError(err).Error("[botrest] failed mapping botrest")
 		}
 	}
 
 	if bot.UsingOrchestrator {
-		err := common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyNodeAddressMapping(bot.NodeConn.GetIDLock()), address))
+		err := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", RedisKeyNodeAddressMapping(bot.NodeConn.GetIDLock()), address))
 		if err != nil {
 			serverLogger.WithError(err).Error("[botrest] failed mapping node")
 		}

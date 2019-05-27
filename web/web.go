@@ -3,6 +3,14 @@ package web
 import (
 	"crypto/tls"
 	"flag"
+	"html/template"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"sync/atomic"
+	"time"
+
 	"github.com/NYTimes/gziphandler"
 	"github.com/golang/crypto/acme/autocert"
 	"github.com/jonas747/discordgo"
@@ -14,13 +22,6 @@ import (
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"sync/atomic"
-	"time"
 )
 
 var (

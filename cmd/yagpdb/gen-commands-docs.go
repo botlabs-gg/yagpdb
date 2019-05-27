@@ -2,10 +2,11 @@ package main
 
 import (
 	"bytes"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/commands"
 	"os"
 	"strings"
+
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/yagpdb/commands"
 )
 
 func GenCommandsDocs() {

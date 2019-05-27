@@ -1,13 +1,14 @@
 package discordblog
 
 import (
-	"github.com/jonas747/discordgo"
-	"github.com/shurcooL/github_flavored_markdown"
-	"github.com/sirupsen/logrus"
 	"html/template"
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/shurcooL/github_flavored_markdown"
+	"github.com/sirupsen/logrus"
 )
 
 type Post struct {

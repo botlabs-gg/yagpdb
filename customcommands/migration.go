@@ -2,11 +2,13 @@ package customcommands
 
 import (
 	"context"
+	"strconv"
+	"strings"
+
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
 	"github.com/volatiletech/sqlboiler/boil"
-	"strconv"
-	"strings"
 )
 
 // contains stuff for migrating from redis to postgres based configs
@@ -69,7 +71,7 @@ func migrateGuildConfig(rc radix.Client, guildID int64) error {
 
 	}
 
-	err = rc.Do(radix.Cmd(nil, "DEL", KeyCommands(guildID)))
+	err = rc.Do(retryableredis.Cmd(nil, "DEL", KeyCommands(guildID)))
 	logger.Println("migrated ", len(commands), " custom commands from ", guildID)
 	return err
 }

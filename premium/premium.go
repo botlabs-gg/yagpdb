@@ -3,15 +3,16 @@ package premium
 import (
 	"context"
 	"database/sql"
+	"time"
+
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 const (
@@ -51,20 +52,20 @@ func RegisterPlugin() {
 // IsGuildPremium return true if the provided guild has the premium status provided to it by a user
 func IsGuildPremium(guildID int64) (bool, error) {
 	var premium bool
-	err := common.RedisPool.Do(radix.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
+	err := common.RedisPool.Do(retryableredis.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
 	return premium, errors.WithMessage(err, "IsGuildPremium")
 }
 
 func PremiumProvidedBy(guildID int64) (int64, error) {
 	var userID int64
-	err := common.RedisPool.Do(radix.FlatCmd(&userID, "HGET", RedisKeyPremiumGuilds, guildID))
+	err := common.RedisPool.Do(retryableredis.FlatCmd(&userID, "HGET", RedisKeyPremiumGuilds, guildID))
 	return userID, errors.WithMessage(err, "PremiumProvidedBy")
 }
 
 // AllGuildsOncePremium returns all the guilds that have has premium once, and the last time that was active
 func AllGuildsOncePremium() (map[int64]time.Time, error) {
 	var result []int64
-	err := common.RedisPool.Do(radix.Cmd(&result, "ZRANGE", RedisKeyPremiumGuildLastActive, "0", "-1", "WITHSCORES"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&result, "ZRANGE", RedisKeyPremiumGuildLastActive, "0", "-1", "WITHSCORES"))
 	if err != nil {
 		return nil, errors.Wrap(err, "zrange")
 	}
@@ -141,7 +142,7 @@ func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {
 		return errors.WithMessage(err, "Commit")
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, slot.GuildID.Int64, slot.UserID))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, slot.GuildID.Int64, slot.UserID))
 	return errors.WithMessage(err, "HSET")
 }
 
@@ -294,7 +295,7 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 		return errors.WithMessage(err, "Commit")
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, guildID, userID))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, guildID, userID))
 	return errors.WithMessage(err, "Hset.RedisKeyPremiumGuilds")
 }
 
@@ -333,6 +334,6 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 		errors.WithMessage(err, "Commit")
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, oldGuildID))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, oldGuildID))
 	return errors.WithMessage(err, "HDEL.RedisKeyPremiumGuilds")
 }

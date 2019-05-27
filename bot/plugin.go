@@ -1,11 +1,12 @@
 package bot
 
 import (
+	"sync"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
-	"sync"
 )
 
 const (

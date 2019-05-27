@@ -3,6 +3,8 @@ package patreonpremiumsource
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/patreon"
 	"github.com/jonas747/yagpdb/premium"
@@ -10,7 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 type PremiumSource struct{}

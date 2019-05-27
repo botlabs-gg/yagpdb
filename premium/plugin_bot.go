@@ -1,10 +1,11 @@
 package premium
 
 import (
+	"time"
+
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
-	"time"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)

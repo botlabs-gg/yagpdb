@@ -2,6 +2,10 @@ package reputation
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -10,9 +14,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)

@@ -2,6 +2,7 @@ package define
 
 import (
 	"fmt"
+
 	"github.com/dpatrie/urbandictionary"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"

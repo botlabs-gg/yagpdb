@@ -1,10 +1,11 @@
 package bot
 
 import (
-	"github.com/shirou/gopsutil/mem"
 	"os"
 	"runtime/debug"
 	"time"
+
+	"github.com/shirou/gopsutil/mem"
 )
 
 const MemFreeThreshold = 90

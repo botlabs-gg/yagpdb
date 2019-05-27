@@ -8,6 +8,8 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"fmt"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -19,7 +21,6 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 var (

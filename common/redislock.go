@@ -1,17 +1,18 @@
 package common
 
 import (
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
 	"strconv"
 	"time"
+
+	"github.com/jonas747/retryableredis"
+	"github.com/pkg/errors"
 )
 
 // Locks the lock and if succeded sets it to expire after maxdur
 // So that if someting went wrong its not locked forever
 func TryLockRedisKey(key string, maxDur int) (bool, error) {
 	resp := ""
-	err := RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "NX", "EX", strconv.Itoa(maxDur)))
+	err := RedisPool.Do(retryableredis.Cmd(&resp, "SET", key, "1", "NX", "EX", strconv.Itoa(maxDur)))
 	if err != nil {
 		return false, err
 	}
@@ -55,5 +56,5 @@ func BlockingLockRedisKey(key string, maxTryDuration time.Duration, maxLockDur i
 }
 
 func UnlockRedisKey(key string) {
-	RedisPool.Do(radix.Cmd(nil, "DEL", key))
+	RedisPool.Do(retryableredis.Cmd(nil, "DEL", key))
 }

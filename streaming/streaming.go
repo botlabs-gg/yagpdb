@@ -2,9 +2,10 @@ package streaming
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"strconv"
 )
 
 type Plugin struct{}

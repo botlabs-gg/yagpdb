@@ -2,15 +2,16 @@ package premium
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
+	"github.com/jonas747/yagpdb/premium/models"
+	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
@@ -81,7 +82,7 @@ func updatePremiumServers(ctx context.Context) error {
 
 	if len(slots) < 1 {
 		// Fast path
-		err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyPremiumGuilds))
+		err = common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyPremiumGuilds))
 		return errors.WithMessage(err, "do.Del")
 	}
 
@@ -97,15 +98,16 @@ func updatePremiumServers(ctx context.Context) error {
 		rCmdLastTimesPremium = append(rCmdLastTimesPremium, now, strGID)
 	}
 
-	err = common.RedisPool.Do(radix.Pipeline(
-		radix.Cmd(nil, "DEL", RedisKeyPremiumGuildsTmp),
-		radix.Cmd(nil, "HMSET", rCmd...),
-		radix.Cmd(nil, "RENAME", RedisKeyPremiumGuildsTmp, RedisKeyPremiumGuilds),
-	))
-	if err != nil {
-		return errors.WithMessage(err, "radix.Pipeline")
+	if err = common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyPremiumGuildsTmp)); err != nil {
+		return errors.WithMessage(err, "del tmp")
+	}
+	if err = common.RedisPool.Do(retryableredis.Cmd(nil, "HMSET", rCmd...)); err != nil {
+		return errors.WithMessage(err, "hmset")
+	}
+	if err = common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", RedisKeyPremiumGuildsTmp, RedisKeyPremiumGuilds)); err != nil {
+		return errors.WithMessage(err, "rename")
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", rCmdLastTimesPremium...))
+	err = common.RedisPool.Do(retryableredis.Cmd(nil, "ZADD", rCmdLastTimesPremium...))
 	return errors.WithMessage(err, "last_premium_times")
 }

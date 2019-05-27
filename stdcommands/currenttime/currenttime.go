@@ -1,11 +1,12 @@
 package currenttime
 
 import (
+	"strings"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/tkuchiki/go-timezone"
-	"strings"
-	"time"
 )
 
 var Command = &commands.YAGCommand{

@@ -3,6 +3,14 @@ package customcommands
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"regexp"
+	"runtime/debug"
+	"strconv"
+	"strings"
+	"time"
+	"unicode/utf8"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -21,13 +29,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"math/rand"
-	"regexp"
-	"runtime/debug"
-	"strconv"
-	"strings"
-	"time"
-	"unicode/utf8"
 )
 
 var (

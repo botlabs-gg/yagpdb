@@ -2,16 +2,17 @@ package main
 
 import (
 	"flag"
-	"github.com/evalphobia/logrus_sentry"
-	"github.com/jonas747/yagpdb/automod"
-	"github.com/jonas747/yagpdb/safebrowsing"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/evalphobia/logrus_sentry"
+	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/safebrowsing"
+	log "github.com/sirupsen/logrus"
 
 	// Core yagpdb packages
 	"github.com/jonas747/yagpdb/bot"

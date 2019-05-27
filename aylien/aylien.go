@@ -3,15 +3,16 @@ package aylien
 import (
 	"errors"
 	"fmt"
-	"github.com/AYLIEN/aylien_textapi_go"
+	"math/rand"
+	"os"
+	"strings"
+
+	textapi "github.com/AYLIEN/aylien_textapi_go"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"math/rand"
-	"os"
-	"strings"
 )
 
 var (

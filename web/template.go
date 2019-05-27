@@ -3,13 +3,14 @@ package web
 import (
 	"bytes"
 	"errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common/templates"
 	"html/template"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common/templates"
 )
 
 func prettyTime(t time.Time) string {

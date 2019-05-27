@@ -4,6 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"net/http"
+	"net/url"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
@@ -15,12 +22,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"net/url"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 type CtxKey int

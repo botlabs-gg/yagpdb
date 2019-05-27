@@ -2,16 +2,17 @@ package commands
 
 import (
 	"fmt"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 )
 
 type DurationArg struct {

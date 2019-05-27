@@ -1,9 +1,14 @@
 package moderation
 
 import (
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -11,11 +16,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (
@@ -200,10 +201,10 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		action = MABanned
 
 		var i int
-		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
+		common.RedisPool.Do(retryableredis.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot banned the user earlier, don't make duplicate entries in the modlog
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
+			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
 			return
 		}
 
@@ -213,10 +214,10 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		guildID = evt.GuildBanRemove().GuildID
 
 		var i int
-		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
+		common.RedisPool.Do(retryableredis.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot was the one that performed the unban
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
+			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
 			botPerformed = true
 		}
 
@@ -321,7 +322,7 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 
 		// If there's less than 2 seconds of the mute left, don't bother doing anything
 		var muteLeft int
-		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		common.RedisPool.Do(retryableredis.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
 		if muteLeft < 5 {
 			return
 		}
@@ -330,7 +331,7 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 		defer UnlockMute(userID)
 
 		// The situation may have changed at this point, check again
-		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		common.RedisPool.Do(retryableredis.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
 		if muteLeft < 5 {
 			return
 		}
@@ -500,7 +501,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 		return false, nil
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
+	common.RedisPool.Do(retryableredis.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
 
 	err = common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {

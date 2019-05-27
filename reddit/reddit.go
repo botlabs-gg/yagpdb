@@ -4,15 +4,16 @@ package reddit
 
 import (
 	"context"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/reddit/models"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 const (

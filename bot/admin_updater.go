@@ -1,13 +1,14 @@
 package bot
 
 import (
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/common"
 )
 
 var (
@@ -28,12 +29,12 @@ func IsBotAdmin(userID int64) (isAdmin bool, err error) {
 		return true, nil
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(&isAdmin, "SISMEMBER", RedisKeyAdmins, userID))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(&isAdmin, "SISMEMBER", RedisKeyAdmins, userID))
 	return
 }
 
 func HasReadOnlyAccess(userID int64) (hasAccess bool, err error) {
-	err = common.RedisPool.Do(radix.FlatCmd(&hasAccess, "SISMEMBER", RedisKeyReadOnlyAccess, userID))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(&hasAccess, "SISMEMBER", RedisKeyReadOnlyAccess, userID))
 	return
 }
 
@@ -74,8 +75,8 @@ func requestCheckBotAdmins(mainServer, adminRole, readOnlyRole int64) {
 	}
 
 	// Swap the keys updated last round, assuming thats done
-	common.RedisPool.Do(radix.Cmd(nil, "RENAME", tmpRedisKeyAdmins, RedisKeyAdmins))
-	common.RedisPool.Do(radix.Cmd(nil, "RENAME", tmpRedisKeyReadOnlyAccess, RedisKeyReadOnlyAccess))
+	common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", tmpRedisKeyAdmins, RedisKeyAdmins))
+	common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", tmpRedisKeyReadOnlyAccess, RedisKeyReadOnlyAccess))
 
 	relevantSession.GatewayManager.RequestGuildMembers(mainServer, "", 0)
 }
@@ -89,14 +90,14 @@ func HandleGuildMembersChunk(data *eventsystem.EventData) {
 
 	for _, member := range evt.Members {
 		if adminRole != 0 && common.ContainsInt64Slice(member.Roles, adminRole) {
-			err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", tmpRedisKeyAdmins, member.User.ID))
+			err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SADD", tmpRedisKeyAdmins, member.User.ID))
 			if err != nil {
 				logger.WithError(err).Error("failed adding user to admins")
 			}
 		}
 
 		if readOnlyAccessRole != 0 && common.ContainsInt64Slice(member.Roles, readOnlyAccessRole) {
-			err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", tmpRedisKeyReadOnlyAccess, member.User.ID))
+			err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SADD", tmpRedisKeyReadOnlyAccess, member.User.ID))
 			if err != nil {
 				logger.WithError(err).Error("failed adding user to read only access users")
 			}

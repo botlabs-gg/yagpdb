@@ -3,6 +3,11 @@ package logs
 import (
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
@@ -12,10 +17,6 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 var AuthorColors = []string{

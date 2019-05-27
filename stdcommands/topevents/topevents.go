@@ -2,11 +2,12 @@ package topevents
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
-	"sort"
 )
 
 var Command = &commands.YAGCommand{

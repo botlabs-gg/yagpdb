@@ -2,6 +2,8 @@ package customcommands
 
 import (
 	"context"
+	"time"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
@@ -10,7 +12,6 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {

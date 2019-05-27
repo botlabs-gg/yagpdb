@@ -1,7 +1,5 @@
 package common
 
-import ()
-
 var (
 	Plugins []Plugin
 )

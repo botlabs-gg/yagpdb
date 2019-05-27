@@ -3,20 +3,21 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardmanager"
-	"github.com/jonas747/dshardorchestrator/node"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot/deletequeue"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/mediocregopher/radix"
 	"os"
 	"runtime"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dshardmanager"
+	"github.com/jonas747/dshardorchestrator/node"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot/deletequeue"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
 var (
@@ -201,7 +202,7 @@ func SetupStandalone() {
 		processShards[i] = i
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
 	if err != nil {
 		logger.WithError(err).Error("failed setting shard count")
 	}
@@ -281,7 +282,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify() {
 	const key = "yagpdb.gateway.identify.limit"
 	for {
 		var resp string
-		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "5", "NX"))
+		err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", key, "1", "EX", "5", "NX"))
 		if err != nil {
 			logger.WithError(err).Error("failed ratelimiting gateway")
 			time.Sleep(time.Second)

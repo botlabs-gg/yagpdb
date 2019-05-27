@@ -1,17 +1,18 @@
 package main
 
 import (
-	"github.com/jonas747/dshardorchestrator"
-	"github.com/jonas747/dshardorchestrator/orchestrator"
-	"github.com/jonas747/dshardorchestrator/orchestrator/rest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/dshardorchestrator"
+	"github.com/jonas747/dshardorchestrator/orchestrator"
+	"github.com/jonas747/dshardorchestrator/orchestrator/rest"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/jonas747/yagpdb/bot" // register the custom orchestrator events
 )
@@ -89,7 +90,7 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 				continue
 			}
 
-			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisNodesKey, time.Now().Unix(), v.ID))
+			err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "ZADD", RedisNodesKey, time.Now().Unix(), v.ID))
 			if err != nil {
 				logrus.WithError(err).Error("[orchestrator] failed setting active nodes in redis")
 			}

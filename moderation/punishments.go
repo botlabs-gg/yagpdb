@@ -2,20 +2,21 @@ package moderation
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strconv"
-	"time"
 )
 
 type Punishment int
@@ -219,7 +220,7 @@ func DeleteMessages(channelID int64, filterUser int64, deleteNum, fetchNum int) 
 
 func BanUserWithDuration(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
+	common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
 	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration)
 	if err != nil {
 		return err
@@ -325,7 +326,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 			UserID: member.ID,
 		})
 
-		common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1))
+		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1))
 		if err != nil {
 			return errors.WithMessage(err, "failed scheduling unmute")
 		}
@@ -338,7 +339,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 
 		if alreadyMuted {
 			common.GORM.Delete(&currentMute)
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.ID)))
+			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.ID)))
 		}
 	}
 

@@ -5,18 +5,19 @@ package serverstats
 import (
 	"context"
 	"database/sql"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/serverstats/models"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/serverstats/models"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type Plugin struct {
@@ -118,7 +119,7 @@ func RetrieveRedisStats(guildID int64) (*DailyStats, error) {
 
 	var messageStatsRaw []string
 
-	err := common.RedisPool.Do(radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", RedisKeyChannelMessages(guildID), unixYesterday, "+inf"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", RedisKeyChannelMessages(guildID), unixYesterday, "+inf"))
 	if err != nil {
 		return nil, err
 	}

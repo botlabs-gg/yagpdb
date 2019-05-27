@@ -4,9 +4,10 @@ package eventsystem
 
 import (
 	"context"
+	"runtime/debug"
+
 	"github.com/jonas747/discordgo"
 	"github.com/sirupsen/logrus"
-	"runtime/debug"
 )
 
 type Handler func(evtData *EventData)

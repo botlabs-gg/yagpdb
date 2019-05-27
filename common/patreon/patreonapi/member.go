@@ -1,7 +1,5 @@
 package patreonapi
 
-import ()
-
 type MembersResponse struct {
 	Data     []*MemberData `json:"data"`
 	Included []*Include    `json:"included"`

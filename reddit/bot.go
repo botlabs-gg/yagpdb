@@ -3,6 +3,8 @@ package reddit
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -10,7 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)

@@ -3,17 +3,18 @@ package premium
 import (
 	"context"
 	"fmt"
+	"html"
+	"html/template"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"html"
-	"html/template"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 type CtxKey int

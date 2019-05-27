@@ -3,16 +3,17 @@ package youtube
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/premium"
-	"google.golang.org/api/youtube/v3"
 	"net/http"
 	"net/url"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/premium"
+	"google.golang.org/api/youtube/v3"
 )
 
 const (

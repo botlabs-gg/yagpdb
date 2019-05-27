@@ -2,16 +2,17 @@ package templates
 
 import (
 	"encoding/json"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
 	"math"
 	"math/rand"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/pkg/errors"
 )
 
 // dictionary creates a map[string]interface{} from the given parameters by

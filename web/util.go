@@ -6,14 +6,15 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
 	"goji.io/pattern"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")

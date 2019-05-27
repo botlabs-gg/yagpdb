@@ -5,6 +5,12 @@ package scheduledevents2
 import (
 	"context"
 	"encoding/json"
+	"math/rand"
+	"reflect"
+	"runtime/debug"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -12,11 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"math/rand"
-	"reflect"
-	"runtime/debug"
-	"sync"
-	"time"
 )
 
 type ScheduledEvents struct {

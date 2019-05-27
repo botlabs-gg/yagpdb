@@ -1,9 +1,10 @@
 package bot
 
 import (
+	"sort"
+
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
-	"sort"
 )
 
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api

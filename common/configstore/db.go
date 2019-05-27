@@ -2,14 +2,15 @@ package configstore
 
 import (
 	"errors"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/karlseguin/ccache"
 	"golang.org/x/net/context"
-	"reflect"
-	"strconv"
-	"time"
 )
 
 var (

@@ -2,6 +2,7 @@ package topservers
 
 import (
 	"fmt"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/commands"

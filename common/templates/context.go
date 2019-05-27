@@ -2,6 +2,13 @@ package templates
 
 import (
 	"bytes"
+	"io"
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
+	"unicode/utf8"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/template"
@@ -10,12 +17,6 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"io"
-	"net/url"
-	"regexp"
-	"strings"
-	"time"
-	"unicode/utf8"
 )
 
 var (
@@ -38,14 +39,14 @@ var (
 		"title":     strings.Title,
 
 		// math
-		"add":	add,
-		"mult":	tmplMult,
-		"div":	tmplDiv,
-		"fdiv":	tmplFDiv,
-		"round":	tmplRound,
-		"roundCeil":	tmplRoundCeil,
-		"roundFloor":	tmplRoundFloor,
-		"roundEven":	tmplRoundEven,
+		"add":        add,
+		"mult":       tmplMult,
+		"div":        tmplDiv,
+		"fdiv":       tmplFDiv,
+		"round":      tmplRound,
+		"roundCeil":  tmplRoundCeil,
+		"roundFloor": tmplRoundFloor,
+		"roundEven":  tmplRoundEven,
 
 		// misc
 		"dict":   Dictionary,

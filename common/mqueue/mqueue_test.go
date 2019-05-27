@@ -1,13 +1,14 @@
 package mqueue
 
 import (
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 )
 
 var ()

@@ -2,6 +2,9 @@ package yagstatus
 
 import (
 	"fmt"
+	"runtime"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -9,8 +12,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
-	"runtime"
-	"time"
 )
 
 var Command = &commands.YAGCommand{

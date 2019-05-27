@@ -1,19 +1,20 @@
 package bot
 
 import (
+	"runtime/debug"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/mediocregopher/radix"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"runtime/debug"
-	"sync"
-	"time"
 )
 
 var (
@@ -53,7 +54,7 @@ func HandleReady(data *eventsystem.EventData) {
 	common.BotSession.State.Unlock()
 
 	var listedServers []int64
-	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving connected servers")
 	}
@@ -74,7 +75,7 @@ OUTER:
 		}
 
 		logger.Info("Left server while bot was down: ", v)
-		common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
 		go EmitGuildRemoved(v)
 
 		if common.Statsd != nil {
@@ -91,7 +92,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	}).Debug("Joined guild")
 
 	var n int
-	err := common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
 	if err != nil {
 		logger.WithError(err).Error("Redis error")
 	}
@@ -111,7 +112,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	// check if the server is banned from using the bot
 	var banned bool
-	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
+	common.RedisPool.Do(retryableredis.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
 	if banned {
 		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
@@ -143,7 +144,7 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 		"g_name": evt.GuildDelete().Name,
 	}).Info("Left guild")
 
-	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(evt.GuildDelete().ID)))
+	err := common.RedisPool.Do(retryableredis.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(evt.GuildDelete().ID)))
 	if err != nil {
 		logger.WithError(err).Error("Redis error")
 	}
@@ -259,11 +260,11 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 
 func InvalidateCache(guildID, userID int64) {
 	if userID != 0 {
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds"))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds"))
 	}
 	if guildID != 0 {
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID)))
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID)))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID)))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID)))
 	}
 }
 

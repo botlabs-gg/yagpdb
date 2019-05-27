@@ -2,6 +2,8 @@ package automod
 
 import (
 	"context"
+	"time"
+
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
@@ -11,7 +13,6 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 type Effect interface {

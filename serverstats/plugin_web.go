@@ -2,6 +2,12 @@ package serverstats
 
 import (
 	"fmt"
+	"html/template"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -13,11 +19,6 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)

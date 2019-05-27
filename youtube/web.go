@@ -5,13 +5,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix"
-	"goji.io"
-	"goji.io/pat"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -19,6 +12,15 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix"
+	"goji.io"
+	"goji.io/pat"
 )
 
 type CtxKey int
@@ -197,7 +199,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		common.RedisPool.Do(radix.Cmd(nil, "ZREM", RedisKeyWebSubChannels, topicURI.Query().Get("channel_id")))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "ZREM", RedisKeyWebSubChannels, topicURI.Query().Get("channel_id")))
 		return
 	}
 
@@ -227,13 +229,13 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
 	var mn radix.MaybeNil
-	common.RedisPool.Do(radix.Cmd(&mn, "ZSCORE", "youtube_subbed_channels", parsed.ChannelID))
+	common.RedisPool.Do(retryableredis.Cmd(&mn, "ZSCORE", "youtube_subbed_channels", parsed.ChannelID))
 	if mn.Nil {
 		return
 	}
 
 	// Reset the score to be instantly scanned
-	common.RedisPool.Do(radix.Cmd(nil, "ZADD", "youtube_subbed_channels", "0", parsed.ChannelID))
+	common.RedisPool.Do(retryableredis.Cmd(nil, "ZADD", "youtube_subbed_channels", "0", parsed.ChannelID))
 }
 
 func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, query url.Values) {
@@ -255,7 +257,7 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 			return
 		}
 
-		common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id")))
+		common.RedisPool.Do(retryableredis.FlatCmd(nil, "ZADD", RedisKeyWebSubChannels, expires, topicURI.Query().Get("channel_id")))
 	}
 }
 

@@ -2,18 +2,20 @@ package streaming
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+	"sync"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix"
-	"regexp"
-	"strings"
-	"sync"
 )
 
 func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }
@@ -265,7 +267,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 		// if true, then we were marked now, and not before
 		var markedNow bool
-		client.Do(radix.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), ms.ID))
+		client.Do(retryableredis.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), ms.ID))
 		if !markedNow {
 			// Already marked
 			return nil
@@ -328,12 +330,12 @@ func (config *Config) MeetsRequirements(ms *dstate.MemberState) bool {
 
 func RemoveStreaming(client radix.Client, config *Config, guildID int64, ms *dstate.MemberState) {
 	if ms.MemberSet {
-		client.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), ms.ID))
+		client.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), ms.ID))
 		go RemoveStreamingRole(ms, config.GiveRole, guildID)
 	} else {
 		// Was not streaming before if we removed 0 elements
 		var removed bool
-		client.Do(radix.FlatCmd(&removed, "SREM", KeyCurrentlyStreaming(guildID), ms.ID))
+		client.Do(retryableredis.FlatCmd(&removed, "SREM", KeyCurrentlyStreaming(guildID), ms.ID))
 		if removed && config.GiveRole != 0 {
 			go common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, config.GiveRole)
 		}
@@ -344,7 +346,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	// Only send one announcment every 1 hour
 	var resp string
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
-	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
 		logger.WithError(err).Error("failed setting streaming announcment cooldown")
 		return
@@ -405,7 +407,7 @@ func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guil
 		}
 
 		logger.WithError(err).WithField("guild", guild.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
-		common.RedisPool.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guild.ID), ms.ID))
+		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guild.ID), ms.ID))
 	}
 }
 

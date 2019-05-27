@@ -5,6 +5,10 @@ package logs
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -15,9 +19,6 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/net/context"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (

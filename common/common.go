@@ -5,15 +5,6 @@ package common
 import (
 	"database/sql"
 	"fmt"
-	"github.com/DataDog/datadog-go/statsd"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
-	"github.com/jonas747/yagpdb/common/basicredispool"
-	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
 	stdlog "log"
 	"math/rand"
 	"net"
@@ -21,6 +12,15 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/DataDog/datadog-go/statsd"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common/basicredispool"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 const (
@@ -105,7 +105,7 @@ func Init() error {
 		User: BotUser,
 	}
 
-	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
+	err = RedisPool.Do(retryableredis.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
 		panic(err)
 	}

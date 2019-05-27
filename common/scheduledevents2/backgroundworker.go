@@ -2,12 +2,13 @@ package scheduledevents2
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"sync"
-	"time"
 )
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*ScheduledEvents)(nil)

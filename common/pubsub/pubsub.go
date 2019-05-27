@@ -7,14 +7,16 @@ package pubsub
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
 	"reflect"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix"
 )
 
 type Event struct {
@@ -72,7 +74,7 @@ func Publish(evt string, target int64, data interface{}) error {
 	}
 
 	value := fmt.Sprintf("%d,%s,%s", target, evt, dataStr)
-	return common.RedisPool.Do(radix.Cmd(nil, "PUBLISH", "events", value))
+	return common.RedisPool.Do(retryableredis.Cmd(nil, "PUBLISH", "events", value))
 }
 
 func PollEvents() {

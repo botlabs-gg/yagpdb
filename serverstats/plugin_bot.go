@@ -3,23 +3,24 @@ package serverstats
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 func MarkGuildAsToBeChecked(guildID int64) {
-	common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "serverstats_active_guilds", guildID))
+	common.RedisPool.Do(retryableredis.FlatCmd(nil, "SADD", "serverstats_active_guilds", guildID))
 }
 
 var (
@@ -108,7 +109,7 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 
 	SetUpdateMemberStatsPeriod(g.GuildID, 1, mc)
 
-	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
+	common.LogIgnoreError(common.RedisPool.Do(retryableredis.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
 		"[serverstats] failed marking guildmembers changed", logrus.Fields{"guild": g.GuildID})
 }
 
@@ -126,7 +127,7 @@ func HandleMemberRemove(evt *eventsystem.EventData) {
 
 	SetUpdateMemberStatsPeriod(g.GuildID, -1, mc)
 
-	common.LogIgnoreError(common.RedisPool.Do(radix.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
+	common.LogIgnoreError(common.RedisPool.Do(retryableredis.FlatCmd(nil, "SADD", RedisKeyGuildMembersChanged, g.GuildID)),
 		"[serverstats] failed marking guildmembers changed", logrus.Fields{"guild": g.GuildID})
 }
 
@@ -180,7 +181,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	val := channel.StrID() + ":" + discordgo.StrID(m.ID) + ":" + discordgo.StrID(m.Author.ID)
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), val))
+	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), val))
 	if err != nil {
 		logger.WithError(err).Error("Failed adding member to stats")
 	}

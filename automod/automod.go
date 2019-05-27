@@ -2,13 +2,14 @@ package automod
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
+	"unicode"
+
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/karlseguin/ccache"
-	"strconv"
-	"strings"
-	"unicode"
 )
 
 //go:generate sqlboiler --no-hooks psql

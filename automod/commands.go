@@ -2,13 +2,14 @@ package automod
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strings"
 )
 
 func (p *Plugin) AddCommands() {
@@ -59,7 +60,7 @@ func (p *Plugin) AddCommands() {
 			if err != nil {
 				return nil, err
 			}
- 
+
 			if len(rulesets) < 1 {
 				return "No automod v2 rulesets set up on this server", nil
 			}
@@ -75,7 +76,6 @@ func (p *Plugin) AddCommands() {
 				out.WriteString(fmt.Sprintf("%s: %s\n", v.Name, onOff))
 			}
 			out.WriteString("```")
-
 
 			return out.String(), nil
 		},

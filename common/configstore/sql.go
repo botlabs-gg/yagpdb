@@ -1,12 +1,13 @@
 package configstore
 
 import (
-	"github.com/jinzhu/gorm"
-	"github.com/jonas747/yagpdb/common"
-	"golang.org/x/net/context"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	"github.com/jonas747/yagpdb/common"
+	"golang.org/x/net/context"
 )
 
 const MaxRetries = 1000

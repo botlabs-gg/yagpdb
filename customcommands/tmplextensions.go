@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -20,7 +22,6 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 func init() {

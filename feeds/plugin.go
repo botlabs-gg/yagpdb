@@ -1,9 +1,10 @@
 package feeds
 
 import (
-	"github.com/jonas747/yagpdb/common"
 	"strings"
 	"sync"
+
+	"github.com/jonas747/yagpdb/common"
 )
 
 type Plugin interface {

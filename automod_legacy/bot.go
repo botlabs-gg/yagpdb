@@ -1,6 +1,8 @@
 package automod_legacy
 
 import (
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -9,7 +11,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
-	"time"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)

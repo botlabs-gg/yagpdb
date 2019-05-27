@@ -4,14 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/schema"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/miolini/datacounter"
-	"github.com/sirupsen/logrus"
-	"goji.io/pat"
 	"io"
 	"net/http"
 	"os"
@@ -20,6 +12,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gorilla/schema"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/miolini/datacounter"
+	"github.com/sirupsen/logrus"
+	"goji.io/pat"
 )
 
 var (

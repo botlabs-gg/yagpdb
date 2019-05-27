@@ -1,15 +1,16 @@
 package bot
 
 import (
-	"github.com/jonas747/dshardorchestrator"
-	"github.com/jonas747/dshardorchestrator/node"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
 	"os"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/jonas747/dshardorchestrator"
+	"github.com/jonas747/dshardorchestrator/node"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
 )
 
 func init() {
@@ -36,7 +37,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 		EventLogger.init(info.TotalShards)
 		go EventLogger.run()
 
-		err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", info.TotalShards))
+		err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", "yagpdb_total_shards", info.TotalShards))
 		if err != nil {
 			logger.WithError(err).Error("failed setting shard count")
 		}

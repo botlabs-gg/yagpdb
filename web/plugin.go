@@ -1,9 +1,10 @@
 package web
 
 import (
-	"github.com/jonas747/yagpdb/common"
 	"html/template"
 	"net/http"
+
+	"github.com/jonas747/yagpdb/common"
 )
 
 // Plugin represents a web plugin

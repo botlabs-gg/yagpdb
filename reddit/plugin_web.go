@@ -3,6 +3,13 @@ package reddit
 import (
 	"context"
 	"fmt"
+	"html/template"
+	"net/http"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reddit/models"
@@ -11,12 +18,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"os"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 type CtxKey int

@@ -3,16 +3,18 @@ package mqueue
 import (
 	"container/list"
 	"encoding/json"
+	"strconv"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 var (
@@ -73,7 +75,7 @@ func RegisterSource(name string, source PluginWithErrorHandler) {
 }
 
 func IncrIDCounter() (next int64) {
-	err := common.RedisPool.Do(radix.Cmd(&next, "INCR", "mqueue_id_counter"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&next, "INCR", "mqueue_id_counter"))
 	if err != nil {
 		logger.WithError(err).Error("Failed increasing mqueue id counter")
 		return -1
@@ -118,7 +120,7 @@ func QueueMessageWebhook(source, sourceID string, guildID, channel int64, msgStr
 		return
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", "mqueue", "-1", string(serialized)))
+	err = common.RedisPool.Do(retryableredis.Cmd(nil, "ZADD", "mqueue", "-1", string(serialized)))
 	if err != nil {
 		return
 	}
@@ -248,7 +250,7 @@ func pollRedis(first bool) {
 		max = strconv.FormatInt(common.CurrentRunCounter, 10)
 	}
 
-	err := common.RedisPool.Do(radix.Cmd(&results, "ZRANGEBYSCORE", "mqueue", "-1", "("+max))
+	err := common.RedisPool.Do(retryableredis.Cmd(&results, "ZRANGEBYSCORE", "mqueue", "-1", "("+max))
 	if err != nil {
 		logger.WithError(err).Error("Failed polling redis mqueue")
 		return
@@ -276,7 +278,7 @@ func pollRedis(first bool) {
 			}
 
 			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed
-			rc.Do(radix.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
+			rc.Do(retryableredis.FlatCmd(nil, "ZADD", "mqueue", common.CurrentRunCounter, string(elem)))
 
 			workSlice = append(workSlice, &WorkItem{
 				elem: parsed,
@@ -381,7 +383,7 @@ func process(elem *QueuedElement, raw []byte) {
 	queueLogger := logger.WithField("mq_id", id)
 
 	defer func() {
-		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(raw)))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "ZREM", "mqueue", string(raw)))
 	}()
 
 	for {
