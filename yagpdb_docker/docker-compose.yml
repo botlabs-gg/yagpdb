@@ -13,6 +13,7 @@ services:
   app:
     image: caskd/yagpdb
     restart: unless-stopped
+    command: '-all -pa -exthttps=false -https=true'
     depends_on:
       - redis
       - db
@@ -21,6 +22,9 @@ services:
     volumes:
       - cert_cache:/app/cert
       - soundboard:/app/soundboard
+    ports:
+      #- '80:80' # Uncomment if you want to use external reverse proxy
+      - '443:443'
     env_file:
       - app.env
 
