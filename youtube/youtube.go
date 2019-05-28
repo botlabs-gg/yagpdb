@@ -3,7 +3,6 @@ package youtube
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/mqueue"
@@ -77,14 +76,10 @@ type YoutubePlaylistID struct {
 	PlaylistID string
 }
 
-// Remove feeds if they don't point to a proper channel
-func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
-	code, _ := common.DiscordError(err)
-	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess && code != discordgo.ErrCodeMissingPermissions {
-		logger.WithError(err).WithField("channel", elem.Channel).Warn("Error posting youtube message")
-		return
-	}
+var _ mqueue.PluginWithErrorHandler = (*Plugin)(nil)
 
+// Remove feeds if they don't point to a proper channel
+func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	// Remove it
 	err = common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
 	if err != nil {

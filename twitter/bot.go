@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/twitter/models"
+	"strconv"
 )
 
 func (p *Plugin) Status() (string, string) {
@@ -17,6 +18,18 @@ func (p *Plugin) Status() (string, string) {
 	return "Twitter feeds", fmt.Sprintf("%d", numFeeds)
 }
 
-func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
-	logger.WithError(err).Error("got error: ", err)
+var _ mqueue.PluginWithErrorHandler = (*Plugin)(nil)
+
+func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
+
+	feedID, err := strconv.ParseInt(elem.SourceID, 10, 64)
+	if err != nil {
+		logger.WithError(err).WithField("source_id", elem.SourceID).Error("failed parsing sourceID!??!")
+		return
+	}
+
+	_, err = models.TwitterFeeds(models.TwitterFeedWhere.ID.EQ(feedID)).UpdateAllG(context.Background(), models.M{"disabled": true})
+	if err != nil {
+		logger.WithError(err).WithField("feed_id", feedID).Error("failed removing feed")
+	}
 }
