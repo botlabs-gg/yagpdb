@@ -49,6 +49,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/tickets"
+	"github.com/jonas747/yagpdb/twitter"
 	"github.com/jonas747/yagpdb/verification"
 	"github.com/jonas747/yagpdb/youtube"
 	// External plugins
@@ -167,6 +168,7 @@ func main() {
 	premium.RegisterPlugin()
 	patreonpremiumsource.RegisterPlugin()
 	scheduledevents2.RegisterPlugin()
+	twitter.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")

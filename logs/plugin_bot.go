@@ -578,7 +578,7 @@ func EvtProcesser() {
 
 		conf, err := GetConfigCached(gID)
 		if err != nil {
-			logger.WithError(err).Error("Failed fetching config")
+			logger.WithError(err).WithField("guild", gID).Error("Failed fetching config")
 			continue
 		}
 
