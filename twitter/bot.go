@@ -28,7 +28,7 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 		return
 	}
 
-	_, err = models.TwitterFeeds(models.TwitterFeedWhere.ID.EQ(feedID)).UpdateAllG(context.Background(), models.M{"disabled": true})
+	_, err = models.TwitterFeeds(models.TwitterFeedWhere.ID.EQ(feedID)).UpdateAllG(context.Background(), models.M{"enabled": false})
 	if err != nil {
 		logger.WithError(err).WithField("feed_id", feedID).Error("failed removing feed")
 	}
