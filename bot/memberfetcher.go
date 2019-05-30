@@ -223,6 +223,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 				failedUsersCache.Set(failedCacheKey, 1, time.Hour)
 			}
 		} else {
+			member.GuildID = guildID
 			go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventMemberFetched, &discordgo.GuildMemberAdd{Member: member}), eventsystem.EventMemberFetched)
 
 			if gs := State.Guild(true, guildID); gs != nil {
