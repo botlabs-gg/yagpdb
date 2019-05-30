@@ -44,6 +44,7 @@ import (
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/rolecommands"
+	"github.com/jonas747/yagpdb/rsvp"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/stdcommands"
@@ -169,6 +170,7 @@ func main() {
 	patreonpremiumsource.RegisterPlugin()
 	scheduledevents2.RegisterPlugin()
 	twitter.RegisterPlugin()
+	rsvp.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
