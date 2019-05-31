@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -207,10 +208,9 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		participants = m.R.RSVPSessionsMessageRSVPParticipants
 	}
 
-	fetchedUsers := bot.GetUsers(m.GuildID, usersToFetch...)
+	fetchedMembers, _ := bot.GetMembers(m.GuildID, usersToFetch...)
 
-	author := fetchedUsers[0]
-	participantUsers := fetchedUsers[1:]
+	author := findUserWithNickname(fetchedMembers, m.AuthorID)
 
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
@@ -262,12 +262,12 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 	addedParticipants := 0
 	numWaitingList := 0
-	for i, v := range participants {
+	for _, v := range participants {
 		if v.JoinState != int16(ParticipantStateJoining) && v.JoinState != int16(ParticipantStateWaitlist) {
 			continue
 		}
 
-		user := participantUsers[i]
+		user := findUserWithNickname(fetchedMembers, v.UserID)
 		if (addedParticipants >= m.MaxParticipants && m.MaxParticipants > 0) || v.JoinState == int16(ParticipantStateWaitlist) {
 			// we hit the max limit so add them to the waiting list instead
 			waitingListField.Value += user.Username + "#" + user.Discriminator + "\n"
@@ -298,7 +298,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	}
 
 	// The undecided and maybe people
-	undecidedField := ParticipantField(ParticipantStateMaybe, participants, participantUsers, "❔ Undecided")
+	undecidedField := ParticipantField(ParticipantStateMaybe, participants, fetchedMembers, "❔ Undecided")
 	// notJoiningField := ParticipantField(ParticipantStateNotJoining, participants, participantUsers, "Not joining")
 
 	embed.Fields = append(embed.Fields, participantsEmbed, waitingListField, undecidedField)
@@ -307,7 +307,25 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	return err
 }
 
-func ParticipantField(state ParticipantState, participants []*models.RSVPParticipant, users []*discordgo.User, name string) *discordgo.MessageEmbedField {
+func findUserWithNickname(members []*dstate.MemberState, target int64) *discordgo.User {
+
+	for _, v := range members {
+		if v.ID == target {
+			dgoUser := v.DGoUser()
+			if v.Nick != "" {
+				dgoUser.Username = v.Nick
+			}
+			return dgoUser
+		}
+	}
+
+	return &discordgo.User{
+		Username: "Unknown (" + strconv.FormatInt(target, 10) + ")",
+		ID:       target,
+	}
+}
+
+func ParticipantField(state ParticipantState, participants []*models.RSVPParticipant, users []*dstate.MemberState, name string) *discordgo.MessageEmbedField {
 	field := &discordgo.MessageEmbedField{
 		Name:   name,
 		Inline: true,
@@ -315,8 +333,8 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 	}
 
 	count := 0
-	for i, v := range participants {
-		user := users[i]
+	for _, v := range participants {
+		user := findUserWithNickname(users, v.UserID)
 
 		if v.JoinState == int16(state) {
 			field.Value += user.Username + "#" + user.Discriminator + "\n"
@@ -560,7 +578,6 @@ func (u *UpdatingSession) run() {
 		if u.lastEmbedUpdate.After(u.lastModelUpdate) || u.lastEmbedUpdate.Equal(u.lastModelUpdate) {
 			// remove, no need for further updates
 
-			logger.Println("removing")
 			for i, v := range updatingSessionEmbeds {
 				if v == u {
 					updatingSessionEmbeds = append(updatingSessionEmbeds[:i], updatingSessionEmbeds[i+1:]...)
@@ -577,8 +594,6 @@ func (u *UpdatingSession) run() {
 }
 
 func (u *UpdatingSession) update() {
-	logger.Println("Updating")
-
 	updatingSessiosMU.Lock()
 	u.lastEmbedUpdate = time.Now()
 	updatingSessiosMU.Unlock()

@@ -8,11 +8,13 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/rsvp/models"
+	"github.com/jonas747/yagpdb/timezonecompanion"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules"
 	wcommon "github.com/olebedev/when/rules/common"
 	"github.com/olebedev/when/rules/en"
 	"github.com/volatiletech/sqlboiler/boil"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -159,8 +161,10 @@ func (s *SetupSession) handleMessageSetupStateMaxParticipants(m *discordgo.Messa
 	s.MaxParticipants = int(participants)
 	s.State = SetupStateWhen
 
-	s.sendMessage("Set max participants to **%d**, now please enter when this event starts. (example: `tomorrow 10pm`, `10 may 2pm`)", s.MaxParticipants)
+	s.sendMessage("Set max participants to **%d**, now please enter when this event starts, in either your registered time zone (using the `setz` command) or UTC. (example: `tomorrow 10pm`, `10 may 2pm UTC`)", s.MaxParticipants)
 }
+
+var UTCRegex = regexp.MustCompile(`(?i)\butc\b`)
 
 func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 	w := when.New(&rules.Options{
@@ -170,7 +174,12 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 	w.Add(en.All...)
 	w.Add(wcommon.All...)
 
-	t, err := w.Parse(m.Content, time.Now().UTC())
+	registeredTimezone := timezonecompanion.GetUserTimezone(s.AuthorID)
+	if registeredTimezone == nil || UTCRegex.MatchString(m.Content) {
+		registeredTimezone = time.UTC
+	}
+
+	t, err := w.Parse(m.Content, time.Now().In(registeredTimezone))
 	// t, err := dateparse.ParseAny(m.Content)
 	if err != nil {
 		s.sendMessage("Couldn't understand that date, Please try changing the format a little bit and try again\n||Error: %v||", err)
