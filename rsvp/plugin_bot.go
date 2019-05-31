@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	eventModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rsvp/models"
+	"github.com/jonas747/yagpdb/timezonecompanion"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
@@ -73,6 +74,7 @@ func (p *Plugin) AddCommands() {
 				AuthorID:           parsed.Msg.Author.ID,
 				LastAction:         time.Now(),
 				plugin:             p,
+				setupMessages:      []int64{parsed.Msg.ID},
 
 				stopCH: make(chan bool),
 			}
@@ -81,7 +83,87 @@ func (p *Plugin) AddCommands() {
 			p.setupSessions = append(p.setupSessions, setupSession)
 			p.setupSessionsMU.Unlock()
 
-			return "Started interactive setup:\nWhat channel should i put the event embed in? (type `this` or `here` for the current one)", nil
+			setupSession.mu.Lock()
+			setupSession.sendMessage("Started interactive setup:\nWhat channel should i put the event embed in? (type `this` or `here` for the current one)")
+			setupSession.mu.Unlock()
+
+			return "", nil
+		},
+	}
+
+	cmdEdit := &commands.YAGCommand{
+		CmdCategory:         catEvents,
+		Name:                "Edit",
+		Description:         "Edits an event",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+		},
+		RequiredArgs: 1,
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "title", Help: "Change the title of the event", Type: dcmd.String},
+			&dcmd.ArgDef{Switch: "time", Help: "Change the start time of the event", Type: dcmd.String},
+			&dcmd.ArgDef{Switch: "max", Help: "Change max participants", Type: dcmd.Int},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			m, err := models.RSVPSessions(
+				models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID),
+				models.RSVPSessionWhere.LocalID.EQ(parsed.Args[0].Int64()),
+				qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc")),
+			).OneG(parsed.Context())
+
+			if err != nil {
+				if err == sql.ErrNoRows {
+					return "Unknown event", nil
+				}
+
+				return nil, err
+			}
+
+			if parsed.Switch("title").Value != nil {
+				m.Title = parsed.Switch("title").Str()
+			}
+
+			if parsed.Switch("max").Value != nil {
+				m.MaxParticipants = parsed.Switch("max").Int()
+			}
+
+			timeChanged := false
+			if parsed.Switch("time").Value != nil {
+				registeredTimezone := timezonecompanion.GetUserTimezone(parsed.Msg.Author.ID)
+				if registeredTimezone == nil || UTCRegex.MatchString(parsed.Switch("time").Str()) {
+					registeredTimezone = time.UTC
+				}
+
+				t, err := dateParser.Parse(parsed.Switch("time").Str(), time.Now().In(registeredTimezone))
+				if err != nil || t == nil {
+					return "failed parsing the date; " + err.Error(), nil
+				}
+
+				m.StartsAt = t.Time
+				timeChanged = true
+			}
+
+			_, err = m.UpdateG(parsed.Context(), boil.Infer())
+			if err != nil {
+				return nil, err
+			}
+
+			if timeChanged {
+				_, err := eventModels.ScheduledEvents(qm.Where("event_name='rsvp_update_session' AND  guild_id = ? AND data::text::bigint = ? AND processed = false", parsed.GS.ID, m.MessageID)).DeleteAll(parsed.Context(), common.PQ)
+				if err != nil {
+					return nil, err
+				}
+
+				err = scheduledevents2.ScheduleEvent("rsvp_update_session", m.GuildID, NextUpdateTime(m), m.MessageID)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			UpdateEventEmbed(m)
+
+			return fmt.Sprintf("Updated #%d to %q - with max %d participants, starting at: %s", m.LocalID, m.Title, m.MaxParticipants, m.StartsAt.Format("02 Jan 2006 15:04 MST")), nil
 		},
 	}
 
@@ -90,7 +172,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "List",
 		Aliases:             []string{"ls"},
 		Description:         "Lists all events in this server",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			events, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID), qm.OrderBy("starts_at asc")).AllG(parsed.Context())
 			if err != nil {
@@ -119,7 +201,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Delete",
 		Aliases:             []string{"rm", "del"},
 		Description:         "Deletes a event, specify the event ID of the event you wanna delete",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
@@ -171,6 +253,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	container.AddCommand(cmdCreateEvent, cmdCreateEvent.GetTrigger())
+	container.AddCommand(cmdEdit, cmdEdit.GetTrigger())
 	container.AddCommand(cmdList, cmdList.GetTrigger())
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
@@ -496,7 +579,7 @@ func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
 		}
 	}
 
-	common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
+	// common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
 
 	if joining {
 		if participant.JoinState == int16(ParticipantStateJoining) {

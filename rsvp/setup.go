@@ -9,11 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/rsvp/models"
 	"github.com/jonas747/yagpdb/timezonecompanion"
-	"github.com/jonas747/yagpdb/timezonecompanion/trules"
-	"github.com/olebedev/when"
-	"github.com/olebedev/when/rules"
-	wcommon "github.com/olebedev/when/rules/common"
-	"github.com/olebedev/when/rules/en"
 	"github.com/volatiletech/sqlboiler/boil"
 	"regexp"
 	"strconv"
@@ -168,28 +163,12 @@ func (s *SetupSession) handleMessageSetupStateMaxParticipants(m *discordgo.Messa
 var UTCRegex = regexp.MustCompile(`(?i)\butc\b`)
 
 func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
-	w := when.New(&rules.Options{
-		Distance:     10,
-		MatchByOrder: true})
-
-	w.Add(
-		en.Weekday(rules.Override),
-		en.CasualDate(rules.Override),
-		en.CasualTime(rules.Override),
-		trules.Hour(rules.Override),
-		trules.HourMinute(rules.Override),
-		en.Deadline(rules.Override),
-		en.PastTime(rules.Override),
-		en.ExactMonthDate(rules.Override),
-	)
-	w.Add(wcommon.All...)
-
 	registeredTimezone := timezonecompanion.GetUserTimezone(s.AuthorID)
 	if registeredTimezone == nil || UTCRegex.MatchString(m.Content) {
 		registeredTimezone = time.UTC
 	}
 
-	t, err := w.Parse(m.Content, time.Now().In(registeredTimezone))
+	t, err := dateParser.Parse(m.Content, time.Now().In(registeredTimezone))
 	// t, err := dateparse.ParseAny(m.Content)
 	if err != nil {
 		s.sendMessage("Couldn't understand that date, Please try changing the format a little bit and try again\n||Error: %v||", err)
