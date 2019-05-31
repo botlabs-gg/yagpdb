@@ -37,7 +37,7 @@ func (p *Plugin) AddCommands() {
 	catEvents := &dcmd.Category{
 		Name:        "Events",
 		Description: "Event commands",
-		HelpEmoji:   "🎫",
+		HelpEmoji:   "🎟",
 		EmbedColor:  0x42b9f4,
 	}
 	container := commands.CommandSystem.Root.Sub("events", "event")
