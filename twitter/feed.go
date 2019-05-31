@@ -45,6 +45,7 @@ func (p *Plugin) runFeedLoop() {
 
 	ticker := time.NewTicker(time.Minute)
 	startDelay := time.After(time.Second * 2)
+	var lastStart time.Time
 	for {
 		select {
 		case <-startDelay:
@@ -62,7 +63,7 @@ func (p *Plugin) runFeedLoop() {
 		newFeeds := p.feeds
 		p.feedsLock.Unlock()
 
-		if !feedsChanged(currentFeeds, newFeeds) && stream != nil && atomic.LoadInt32(stoppedCheck) == 0 {
+		if !feedsChanged(currentFeeds, newFeeds) && stream != nil && atomic.LoadInt32(stoppedCheck) == 0 || time.Since(lastStart) < time.Minute*10 {
 			continue
 		}
 
@@ -85,6 +86,8 @@ func (p *Plugin) runFeedLoop() {
 		if err != nil {
 			logger.WithError(err).Error("failed starting stream")
 			time.Sleep(time.Second * 10)
+		} else {
+			lastStart = time.Now()
 		}
 	}
 }
@@ -250,7 +253,7 @@ OUTER2:
 }
 
 func (p *Plugin) updateConfigsLoop() {
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * 60)
 	defer ticker.Stop()
 	for {
 		p.updateConfigs()
