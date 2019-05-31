@@ -29,7 +29,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:  commands.CategoryTool,
 		Name:         "settimezone",
 		Aliases:      []string{"setz", "tzset"},
-		Description:  "Sets your timezone, used for various purposes such as auto conversion. (example: Europe/oslo, America/Phoenix)",
+		Description:  "Sets your timezone, used for various purposes such as auto conversion. Give it your country.",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "Timezone", Type: dcmd.String},
@@ -38,7 +38,7 @@ func (p *Plugin) AddCommands() {
 
 			zones := FindZone(parsed.Args[0].Str())
 			if len(zones) < 1 {
-				return "Unknown timezone, enter a country or timezone", nil
+				return "Unknown timezone, enter a country or timezone, there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker/> you can use, enter the `Area/City` result", nil
 			}
 
 			if len(zones) > 1 {

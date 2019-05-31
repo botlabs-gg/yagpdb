@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/rsvp/models"
 	"github.com/jonas747/yagpdb/timezonecompanion"
+	"github.com/jonas747/yagpdb/timezonecompanion/trules"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules"
 	wcommon "github.com/olebedev/when/rules/common"
@@ -171,7 +172,16 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 		Distance:     10,
 		MatchByOrder: true})
 
-	w.Add(en.All...)
+	w.Add(
+		en.Weekday(rules.Override),
+		en.CasualDate(rules.Override),
+		en.CasualTime(rules.Override),
+		trules.Hour(rules.Override),
+		trules.HourMinute(rules.Override),
+		en.Deadline(rules.Override),
+		en.PastTime(rules.Override),
+		en.ExactMonthDate(rules.Override),
+	)
 	w.Add(wcommon.All...)
 
 	registeredTimezone := timezonecompanion.GetUserTimezone(s.AuthorID)

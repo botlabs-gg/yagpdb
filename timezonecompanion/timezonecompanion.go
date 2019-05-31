@@ -5,9 +5,9 @@ package timezonecompanion
 
 import (
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/timezonecompanion/trules"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules"
-	"github.com/olebedev/when/rules/en"
 )
 
 type Plugin struct {
@@ -30,7 +30,7 @@ func RegisterPlugin() {
 		Distance:     10,
 		MatchByOrder: true})
 
-	w.Add(en.Hour(rules.Override), en.HourMinute(rules.Override))
+	w.Add(trules.Hour(rules.Override), trules.HourMinute(rules.Override))
 
 	common.InitSchema(DBSchema, "timezonecompanion")
 	common.RegisterPlugin(&Plugin{
