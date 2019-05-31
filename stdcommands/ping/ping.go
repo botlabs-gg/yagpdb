@@ -12,7 +12,7 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:     commands.CategoryTool,
+	CmdCategory:     commands.CategoryDebug,
 	Name:            "Ping",
 	Description:     "Shows the latency from the bot to the discord servers.",
 	LongDescription: "Note that high latencies can be the fault of ratelimits and the bot itself, it's not a absolute metric.",

@@ -9,7 +9,7 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory: commands.CategoryTool,
+	CmdCategory: commands.CategoryDebug,
 	Name:        "ViewPerms",
 	Description: "Shows you or the targets permissions in this channel",
 	Arguments: []*dcmd.ArgDef{
