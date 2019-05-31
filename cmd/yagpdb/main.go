@@ -50,6 +50,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands"
 	"github.com/jonas747/yagpdb/streaming"
 	"github.com/jonas747/yagpdb/tickets"
+	"github.com/jonas747/yagpdb/timezonecompanion"
 	"github.com/jonas747/yagpdb/twitter"
 	"github.com/jonas747/yagpdb/verification"
 	"github.com/jonas747/yagpdb/youtube"
@@ -171,6 +172,7 @@ func main() {
 	scheduledevents2.RegisterPlugin()
 	twitter.RegisterPlugin()
 	rsvp.RegisterPlugin()
+	timezonecompanion.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
