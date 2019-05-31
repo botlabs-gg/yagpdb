@@ -559,6 +559,7 @@ func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
 			return
 		}
 		logger.WithError(err).WithField("guild", ra.GuildID).Error("failed retrieving RSVP session")
+		return
 	}
 
 	foundExisting := false
