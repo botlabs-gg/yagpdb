@@ -32,7 +32,7 @@ type VerificationEventData struct {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
 	scheduledevents2.RegisterHandler("verification_user_verified", int64(0), ScheduledEventMW(p.handleUserVerifiedScheduledEvent))
 	scheduledevents2.RegisterHandler("verification_user_warn", VerificationEventData{}, ScheduledEventMW(p.handleWarnUserVerification))
 	scheduledevents2.RegisterHandler("verification_user_kick", VerificationEventData{}, ScheduledEventMW(p.handleKickUser))

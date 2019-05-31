@@ -36,6 +36,11 @@ func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../verification/assets/verification_control_panel.html", "templates/plugins/verification_control_panel.html")
 	web.LoadHTMLTemplate("../../verification/assets/verification_verify_page.html", "templates/plugins/verification_verify_page.html")
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Verification",
+		URL:  "verification",
+	})
+
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_verification_settings")
 	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated verification settings")
 
@@ -139,7 +144,7 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 	}
 
 	templateData["ExtraHead"] = template.HTML(`<script src="https://www.google.com/recaptcha/api.js" async defer></script>`)
-	templateData["GoogleReCaptchaSiteKey"] = GoogleReCAPTCHASiteKey
+	templateData["GoogleReCaptchaSiteKey"] = confGoogleReCAPTCHASiteKey.GetString()
 
 	msg := settings.PageContent
 	if msg == "" {
@@ -223,7 +228,7 @@ func (p *Plugin) checkCAPTCHAResponse(response string) (valid bool, err error) {
 
 	v := url.Values{
 		"response": {response},
-		"secret":   {GoogleReCAPTCHASecret},
+		"secret":   {confGoogleReCAPTCHASecret.GetString()},
 	}
 
 	resp, err := http.PostForm("https://www.google.com/recaptcha/api/siteverify", v)

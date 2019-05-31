@@ -54,7 +54,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
 
 	// add the pubsub handler for cache eviction
 	pubsub.AddHandler("custom_commands_clear_cache", func(event *pubsub.Event) {

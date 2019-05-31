@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"path/filepath"
@@ -622,4 +623,21 @@ func GetActiveNodes() ([]string, error) {
 	var nodes []string
 	err := RedisPool.Do(retryableredis.FlatCmd(&nodes, "ZRANGEBYSCORE", "dshardorchestrator_nodes_z", time.Now().Add(-time.Minute).Unix(), "+inf"))
 	return nodes, err
+}
+
+// helper for creating transactions
+func SqlTX(f func(tx *sql.Tx) error) error {
+	tx, err := PQ.Begin()
+	if err != nil {
+		return err
+	}
+
+	err = f(tx)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }

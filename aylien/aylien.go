@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"strings"
 
 	textapi "github.com/AYLIEN/aylien_textapi_go"
@@ -13,13 +12,14 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 )
 
 var (
 	ErrNoMessages = errors.New("Failed finding any messages to analyze")
 
-	appID  = os.Getenv("YAGPDB_AYLIENAPPID")
-	appKey = os.Getenv("YAGPDB_AYLIENAPPKEY")
+	confAppID  = config.RegisterOption("yagpdb.aylienappid", "AYLIEN App ID", "")
+	confAppKey = config.RegisterOption("yagpdb.aylienappkey", "AYLIEN App Key", "")
 
 	logger = common.GetPluginLogger(&Plugin{})
 )
@@ -37,12 +37,12 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	if appID == "" || appKey == "" {
+	if confAppID.GetString() == "" || confAppKey.GetString() == "" {
 		logger.Warn("Missing AYLIEN appid and/or key, not loading plugin")
 		return
 	}
 
-	client, err := textapi.NewClient(textapi.Auth{ApplicationID: appID, ApplicationKey: appKey}, true)
+	client, err := textapi.NewClient(textapi.Auth{ApplicationID: confAppID.GetString(), ApplicationKey: confAppKey.GetString()}, true)
 	if err != nil {
 		logger.WithError(err).Error("Failed initializing AYLIEN client")
 		return

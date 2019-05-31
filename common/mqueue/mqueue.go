@@ -35,7 +35,7 @@ var (
 )
 
 type PluginWithErrorHandler interface {
-	HandleMQueueError(elem *QueuedElement, err error)
+	DisableFeed(elem *QueuedElement, err error)
 }
 
 type PluginWithWebhookAvatar interface {
@@ -400,8 +400,9 @@ func process(elem *QueuedElement, raw []byte) {
 		if e, ok := errors.Cause(err).(*discordgo.RESTError); ok {
 			if (e.Response != nil && e.Response.StatusCode >= 400 && e.Response.StatusCode < 500) || (e.Message != nil && e.Message.Code != 0) {
 				if source, ok := sources[elem.Source]; ok {
-					source.HandleMQueueError(elem, errors.Cause(err))
+					maybeDisableFeed(source, elem, e)
 				}
+
 				break
 			}
 		}
@@ -413,6 +414,31 @@ func process(elem *QueuedElement, raw []byte) {
 		queueLogger.Warn("Non-discord related error when sending message, retrying. ", err)
 		time.Sleep(time.Second)
 	}
+}
+
+var disableOnError = []int{
+	discordgo.ErrCodeUnknownChannel,
+	discordgo.ErrCodeMissingAccess,
+	discordgo.ErrCodeMissingPermissions,
+	30007, // max number of webhooks
+}
+
+func maybeDisableFeed(source PluginWithErrorHandler, elem *QueuedElement, err *discordgo.RESTError) {
+	// source.HandleMQueueError(elem, errors.Cause(err))
+	if err.Message == nil || !common.ContainsIntSlice(disableOnError, err.Message.Code) {
+		// don't disable
+		l := logger.WithError(err).WithField("source", elem.Source).WithField("sourceid", elem.SourceID)
+		if elem.MessageEmbed != nil {
+			serializedEmbed, _ := json.Marshal(elem.MessageEmbed)
+			l = l.WithField("embed", serializedEmbed)
+		}
+
+		l.Error("error sending mqueue message")
+		return
+	}
+
+	logger.WithError(err).Warnf("disabling feed item %s from %s", elem.SourceID, elem.Source)
+	source.DisableFeed(elem, err)
 }
 
 func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {

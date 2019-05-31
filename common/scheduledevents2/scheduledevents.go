@@ -144,6 +144,32 @@ func (se *ScheduledEvents) check() {
 			continue
 		}
 
+		// make sure the guild is available
+		gs := bot.State.Guild(true, p.GuildID)
+		if gs == nil {
+			onGuild, err := common.BotIsOnGuild(p.GuildID)
+			if err != nil {
+				logger.WithError(err).WithField("guild", p.GuildID).Error("failed checking if bot is on guild")
+			} else if !onGuild {
+				logger.WithField("guild", p.GuildID).Info("completely skipping event from guild not joined")
+				se.markDone(p)
+				continue
+			}
+
+			numSkipped++
+			continue
+		}
+
+		gs.RLock()
+		unavailable := gs.Guild.Unavailable
+		gs.RUnlock()
+
+		if unavailable {
+			// wait until the guild is available before handling this event
+			numSkipped++
+			continue
+		}
+
 		if v := se.currentlyProcessing[p.ID]; v {
 			continue
 		}

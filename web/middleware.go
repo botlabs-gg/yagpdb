@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -18,13 +17,14 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/miolini/datacounter"
 	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 )
 
 var (
-	GAID = os.Getenv("YAGPDB_GA_ID")
+	confGAID = config.RegisterOption("yagpdb.ga_id", "Google analytics id", "")
 )
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
@@ -87,7 +87,8 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"CurrentAd":        CurrentAd,
 			"LightTheme":       lightTheme,
 			"SidebarCollapsed": collapseSidebar,
-			"GAID":             GAID,
+			"SidebarItems":     sideBarItems,
+			"GAID":             confGAID.GetString(),
 		}
 
 		baseData["BaseURL"] = BaseURL()
@@ -159,7 +160,7 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			split := strings.SplitN(origin, ":", 3)
-			hostSplit := strings.SplitN(common.Conf.Host, ":", 2)
+			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
 
 			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
 				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
@@ -203,7 +204,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 
 		templateData := map[string]interface{}{
 			"User":       user,
-			"IsBotOwner": user.ID == common.Conf.Owner,
+			"IsBotOwner": user.ID == int64(common.ConfOwner.GetInt()),
 		}
 
 		// update the logger with the user and update the context with all the new info

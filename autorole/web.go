@@ -43,6 +43,11 @@ func (p *Plugin) InitWeb() {
 		tmplPathSettings = "../../autorole/assets/autorole.html"
 	}
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Autorole",
+		URL:  "autorole",
+	})
+
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
 	muxer := goji.SubMux()

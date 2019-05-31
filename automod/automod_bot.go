@@ -22,9 +22,9 @@ func (p *Plugin) BotInit() {
 
 	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, p.checkMessage)
 
-	eventsystem.AddHandler(p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
-	eventsystem.AddHandler(p.handleMsgUpdate, eventsystem.EventMessageUpdate)
-	eventsystem.AddHandler(p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(p.handleMsgUpdate, eventsystem.EventMessageUpdate)
+	eventsystem.AddHandlerAsyncLast(p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
 }
 
 func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {

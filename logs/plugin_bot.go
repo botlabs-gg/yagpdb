@@ -31,11 +31,11 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
-	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
+	eventsystem.AddHandlerFirst(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 
 	var err error
 	nicknameQueryStatement, err = common.PQ.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
@@ -579,7 +579,7 @@ func EvtProcesser() {
 
 		conf, err := GetConfigCached(gID)
 		if err != nil {
-			logger.WithError(err).Error("Failed fetching config")
+			logger.WithError(err).WithField("guild", gID).Error("Failed fetching config")
 			continue
 		}
 

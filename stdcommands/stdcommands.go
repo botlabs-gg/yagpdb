@@ -114,7 +114,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(ping.HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(ping.HandleMessageCreate, eventsystem.EventMessageCreate)
 	mentionrole.AddScheduledEventListener()
 }
 

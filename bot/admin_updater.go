@@ -1,14 +1,13 @@
 package bot
 
 import (
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 )
 
 var (
@@ -25,7 +24,7 @@ var (
 )
 
 func IsBotAdmin(userID int64) (isAdmin bool, err error) {
-	if userID == common.Conf.Owner {
+	if userID == int64(common.ConfOwner.GetInt()) {
 		return true, nil
 	}
 
@@ -40,14 +39,17 @@ func HasReadOnlyAccess(userID int64) (hasAccess bool, err error) {
 
 var stopRunCheckAdmins = make(chan bool)
 
-func loopCheckAdmins() {
-	mainServerStr := os.Getenv("YAGPDB_MAIN_SERVER")
-	adminRoleStr := os.Getenv("YAGPDB_ADMIN_ROLE")
-	readOnlyAccessRoleStr := os.Getenv("YAGPDB_READONLY_ACCESS_ROLE")
+var (
+	confMainServer         = config.RegisterOption("yagpdb.main.server", "Main server used for various purposes, like assigning people with a certain role as bot admins", 0)
+	confAdminRole          = config.RegisterOption("yagpdb.admin.role", "People with this role on the main server has bot admin status", 0)
+	confReadOnlyAccessRole = config.RegisterOption("yagpdb.readonly.access.role", "People with this role on the main server has global read only access to configs", 0)
+)
 
-	mainServer, _ = strconv.ParseInt(mainServerStr, 10, 64)
-	adminRole, _ = strconv.ParseInt(adminRoleStr, 10, 64)
-	readOnlyAccessRole, _ = strconv.ParseInt(readOnlyAccessRoleStr, 10, 64)
+func loopCheckAdmins() {
+
+	mainServer = int64(confMainServer.GetInt())
+	adminRole = int64(confAdminRole.GetInt())
+	readOnlyAccessRole = int64(confReadOnlyAccessRole.GetInt())
 
 	if mainServer == 0 || (adminRole == 0 && readOnlyAccessRole == 0) {
 		return

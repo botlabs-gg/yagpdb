@@ -2,18 +2,16 @@ package patreon
 
 import (
 	"context"
-	"os"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-
-	// "strconv"
-	"sync"
-	"time"
 )
 
 var logger = common.GetFixedPrefixLogger("patreon")
@@ -27,12 +25,19 @@ type Poller struct {
 	activePatrons []*Patron
 }
 
+var (
+	confAccessToken  = config.RegisterOption("yagpdb.patreon.api_access_token", "Access token for the patreon integration", "")
+	confRefreshToken = config.RegisterOption("yagpdb.patreon.api_refresh_token", "Refresh token for the patreon integration", "")
+	confClientID     = config.RegisterOption("yagpdb.patreon.api_client_id", "Client id for the patreon integration", "")
+	confClientSecret = config.RegisterOption("yagpdb.patreon.api_client_secret", "Client secret for the patreon integration", "")
+)
+
 func Run() {
 
-	accessToken := os.Getenv("YAGPDB_PATREON_API_ACCESS_TOKEN")
-	refreshToken := os.Getenv("YAGPDB_PATREON_API_REFRESH_TOKEN")
-	clientID := os.Getenv("YAGPDB_PATREON_API_CLIENT_ID")
-	clientSecret := os.Getenv("YAGPDB_PATREON_API_CLIENT_SECRET")
+	accessToken := confAccessToken.GetString()
+	refreshToken := confRefreshToken.GetString()
+	clientID := confClientID.GetString()
+	clientSecret := confClientSecret.GetString()
 
 	if accessToken == "" || clientID == "" || clientSecret == "" {
 		PatreonDisabled(nil, "Missing one of YAGPDB_PATREON_API_ACCESS_TOKEN, YAGPDB_PATREON_API_CLIENT_ID, YAGPDB_PATREON_API_CLIENT_SECRET")
@@ -204,7 +209,7 @@ func (p *Poller) Poll() {
 	}
 
 	patrons = append(patrons, &Patron{
-		DiscordID:   common.Conf.Owner,
+		DiscordID:   int64(common.ConfOwner.GetInt()),
 		Name:        "Owner",
 		AmountCents: 10000,
 	})

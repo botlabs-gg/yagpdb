@@ -25,8 +25,8 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(handleMsgCreate, eventsystem.EventMessageCreate)
 
 	CommandSystem.State = bot.State
 }
@@ -160,6 +160,11 @@ func FilterResp(in interface{}, guildID int64) interface{} {
 func AddRootCommands(cmds ...*YAGCommand) {
 	for _, v := range cmds {
 		CommandSystem.Root.AddCommand(v, v.GetTrigger())
+	}
+}
+func AddRootCommandsWithMiddlewares(middlewares []dcmd.MiddleWareFunc, cmds ...*YAGCommand) {
+	for _, v := range cmds {
+		CommandSystem.Root.AddCommand(v, v.GetTrigger().SetMiddlewares(middlewares...))
 	}
 }
 

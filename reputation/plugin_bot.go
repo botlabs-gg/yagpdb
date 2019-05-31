@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
+	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -24,7 +25,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(handleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
@@ -328,7 +329,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			leaderboardURL := "https://" + common.Conf.Host + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
+			leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
 			out := "```\n# -- Points -- User\n"
 			for _, v := range detailed {
 				user := v.Username

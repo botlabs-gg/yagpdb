@@ -29,10 +29,10 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(HandleMemberRemove, eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(HandleMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(HandleMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildCreate, eventsystem.EventGuildCreate)
 
 	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
@@ -58,7 +58,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if !config.Public {
-				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.Conf.Host), nil
+				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.ConfHost.GetString()), nil
 			}
 
 			stats, err := RetrieveDailyStats(data.GS.ID)

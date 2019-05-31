@@ -88,7 +88,7 @@ func PollEvents() {
 func runPollEvents() error {
 	logger.Info("Listening for pubsub events")
 
-	client, err := radix.Dial("tcp", common.Conf.Redis)
+	client, err := radix.Dial("tcp", common.ConfRedis.GetString())
 	if err != nil {
 		return err
 	}

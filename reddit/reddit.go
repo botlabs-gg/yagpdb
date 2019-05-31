@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
@@ -37,23 +36,14 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+var _ mqueue.PluginWithErrorHandler = (*Plugin)(nil)
+
 // Remove feeds if they don't point to a proper channel
-func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
-	code, _ := common.DiscordError(err)
-	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess && code != discordgo.ErrCodeMissingPermissions {
-		l := logger.WithError(err).WithField("channel", elem.Channel)
-		l = l.WithField("s_msg", elem.MessageEmbed)
-
-		l.Warn("Error posting reddit message")
-		return
-	}
-
+func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	if strings.Contains(elem.SourceID, ":") {
 		// legacy format leftover, ignore...
 		return
 	}
-
-	logger.WithError(err).WithField("channel", elem.Channel).WithField("id", elem.SourceID).Info("Disabling reddit feed to nonexistant discord channel")
 
 	feedID, err := strconv.ParseInt(elem.SourceID, 10, 64)
 	if err != nil {
@@ -80,7 +70,7 @@ func RegisterPlugin() {
 		stopFeedChan: make(chan *sync.WaitGroup),
 	}
 
-	if ClientID == "" || ClientSecret == "" || RefreshToken == "" {
+	if confClientID.GetString() == "" || confClientSecret.GetString() == "" || confRefreshToken.GetString() == "" {
 		logger.Warn("Missing reddit config, not enabling plugin")
 		return
 	}

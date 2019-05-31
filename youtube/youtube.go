@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/premium"
 	"google.golang.org/api/youtube/v3"
@@ -24,7 +23,7 @@ const (
 )
 
 var (
-	WebSubVerifyToken = os.Getenv("YAGPDB_YOUTUBE_VERIFY_TOKEN")
+	confWebsubVerifytoken = config.RegisterOption("yagpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
 
 	logger = common.GetPluginLogger(&Plugin{})
 )
@@ -78,14 +77,10 @@ type YoutubePlaylistID struct {
 	PlaylistID string
 }
 
-// Remove feeds if they don't point to a proper channel
-func (p *Plugin) HandleMQueueError(elem *mqueue.QueuedElement, err error) {
-	code, _ := common.DiscordError(err)
-	if code != discordgo.ErrCodeUnknownChannel && code != discordgo.ErrCodeMissingAccess && code != discordgo.ErrCodeMissingPermissions {
-		logger.WithError(err).WithField("channel", elem.Channel).Warn("Error posting youtube message")
-		return
-	}
+var _ mqueue.PluginWithErrorHandler = (*Plugin)(nil)
 
+// Remove feeds if they don't point to a proper channel
+func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	// Remove it
 	err = common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
 	if err != nil {
@@ -105,11 +100,11 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	// hub.lease_seconds:
 
 	values := url.Values{
-		"hub.callback":     {"https://" + common.Conf.Host + "/yt_new_upload/" + WebSubVerifyToken},
+		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
 		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"subscribe"},
-		"hub.verify_token": {WebSubVerifyToken},
+		"hub.verify_token": {confWebsubVerifytoken.GetString()},
 		// "hub.lease_seconds": {"60"},
 	}
 
@@ -137,11 +132,11 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 	// hub.lease_seconds:
 
 	values := url.Values{
-		"hub.callback":     {"https://" + common.Conf.Host + "/yt_new_upload/" + WebSubVerifyToken},
+		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
 		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"unsubscribe"},
-		"hub.verify_token": {WebSubVerifyToken},
+		"hub.verify_token": {confWebsubVerifytoken.GetString()},
 	}
 
 	resp, err := http.PostForm(GoogleWebsubHub, values)

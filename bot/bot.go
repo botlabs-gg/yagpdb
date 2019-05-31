@@ -3,9 +3,7 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
-	"os"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 
@@ -17,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
@@ -28,14 +27,18 @@ var (
 	State        *dstate.State
 	ShardManager *dshardmanager.Manager
 
-	StateHandlerPtr *eventsystem.Handler
-
 	NodeConn          *node.Conn
 	UsingOrchestrator bool
 
 	MessageDeleteQueue = deletequeue.NewQueue()
 
 	FlagNodeID string
+)
+
+var (
+	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
+	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
+	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
 )
 
 var (
@@ -68,29 +71,28 @@ func setup() {
 	State.CacheExpirey = time.Minute * 10
 	go State.RunGCWorker()
 
-	eventsystem.AddHandler(HandleReady, eventsystem.EventReady)
-	StateHandlerPtr = eventsystem.AddHandler(StateHandler, eventsystem.EventAll)
-	eventsystem.ConcurrentAfter = StateHandlerPtr
+	eventsystem.AddHandlerFirst(HandleReady, eventsystem.EventReady)
+	eventsystem.AddHandlerSecond(StateHandler, eventsystem.EventAll)
 
-	eventsystem.AddHandler(ConcurrentEventHandler(EventLogger.handleEvent), eventsystem.EventAll)
+	eventsystem.AddHandlerAsyncLast(EventLogger.handleEvent, eventsystem.EventAll)
 
-	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(HandleGuildDelete, eventsystem.EventGuildDelete)
+	eventsystem.AddHandlerAsyncLast(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildDelete, eventsystem.EventGuildDelete)
 
-	eventsystem.AddHandler(HandleGuildUpdate, eventsystem.EventGuildUpdate)
-	eventsystem.AddHandler(HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
-	eventsystem.AddHandler(HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
-	eventsystem.AddHandler(HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
-	eventsystem.AddHandler(HandleChannelCreate, eventsystem.EventChannelCreate)
-	eventsystem.AddHandler(HandleChannelUpdate, eventsystem.EventChannelUpdate)
-	eventsystem.AddHandler(HandleChannelDelete, eventsystem.EventChannelDelete)
-	eventsystem.AddHandler(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
-	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandler(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
-	eventsystem.AddHandler(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
-	eventsystem.AddHandler(HandleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandler(HandleResumed, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLast(HandleGuildUpdate, eventsystem.EventGuildUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
+	eventsystem.AddHandlerAsyncLast(HandleChannelCreate, eventsystem.EventChannelCreate)
+	eventsystem.AddHandlerAsyncLast(HandleChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleChannelDelete, eventsystem.EventChannelDelete)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLast(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLast(HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLast(HandleResumed, eventsystem.EventResumed)
 }
 
 func Run() {
@@ -98,13 +100,13 @@ func Run() {
 
 	logger.Println("Running bot")
 
-	connEvtChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNEVT_CHANNEL"), 10, 64)
-	connStatusChannel, _ := strconv.ParseInt(os.Getenv("YAGPDB_CONNSTATUS_CHANNEL"), 10, 64)
+	connEvtChannel := confConnEventChannel.GetInt()
+	connStatusChannel := confConnStatus.GetInt()
 
 	// Set up shard manager
-	ShardManager = dshardmanager.New(common.Conf.BotToken)
-	ShardManager.LogChannel = connEvtChannel
-	ShardManager.StatusMessageChannel = connStatusChannel
+	ShardManager = dshardmanager.New(common.GetBotToken())
+	ShardManager.LogChannel = int64(connEvtChannel)
+	ShardManager.StatusMessageChannel = int64(connStatusChannel)
 	ShardManager.Name = "YAGPDB"
 	ShardManager.GuildCountsFunc = GuildCountsFunc
 	ShardManager.SessionFunc = func(token string) (session *discordgo.Session, err error) {
@@ -131,7 +133,7 @@ func Run() {
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
 
-	orcheStratorAddress := os.Getenv("YAGPDB_ORCHESTRATOR_ADDRESS")
+	orcheStratorAddress := confShardOrchestratorAddress.GetString()
 	if orcheStratorAddress != "" {
 		UsingOrchestrator = true
 		logger.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)

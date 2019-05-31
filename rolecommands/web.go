@@ -48,6 +48,11 @@ type FormGroup struct {
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../rolecommands/assets/rolecommands.html", "templates/plugins/rolecommands.html")
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Role Commands",
+		URL:  "rolecommands/",
+	})
+
 	// Setup SubMuxer
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/rolecommands/*"), subMux)
@@ -420,6 +425,12 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["SettingsPath"] = "/rolecommands/"
 
 	numCommands, err := models.RoleCommands(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
+	
+	if err != nil{
+		return templateData, err
+    	}
+	
+	numGroups, err := models.RoleGroups(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
 
 	if numCommands > 0 {
 		templateData["WidgetEnabled"] = true
@@ -427,7 +438,10 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		templateData["WidgetDisabled"] = true
 	}
 
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf("Active RoleCommands: <code>%d</code>", numCommands))
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
+		<li>Active RoleCommands: <code>%d</code></li>
+		<li>Active RoleGroups: <code>%d</code></li>
+		</ul>`, numCommands, numGroups))
 
 	return templateData, err
 }

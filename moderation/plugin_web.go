@@ -19,6 +19,11 @@ func (p *Plugin) InitWeb() {
 	}
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Moderation",
+		URL:  "moderation",
+	})
+
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/moderation"), subMux)
 	web.CPMux.Handle(pat.New("/moderation/*"), subMux)

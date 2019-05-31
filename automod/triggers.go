@@ -20,7 +20,7 @@ var forwardSlashReplacer = strings.NewReplacer("\\", "")
 /////////////////////////////////////////////////////////////
 
 type BaseRegexTriggerData struct {
-	Regex string `valid:",1,250`
+	Regex string `valid:",1,250"`
 }
 
 type BaseRegexTrigger struct {
