@@ -170,7 +170,7 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 
 	t, err := dateParser.Parse(m.Content, time.Now().In(registeredTimezone))
 	// t, err := dateparse.ParseAny(m.Content)
-	if err != nil {
+	if err != nil || t == nil {
 		s.sendMessage("Couldn't understand that date, Please try changing the format a little bit and try again\n||Error: %v||", err)
 		return
 	}
