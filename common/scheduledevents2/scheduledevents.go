@@ -152,7 +152,7 @@ func (se *ScheduledEvents) check() {
 				logger.WithError(err).WithField("guild", p.GuildID).Error("failed checking if bot is on guild")
 			} else if !onGuild {
 				logger.WithField("guild", p.GuildID).Info("completely skipping event from guild not joined")
-				se.markDone(p)
+				go se.markDone(p)
 				continue
 			}
 
