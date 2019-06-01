@@ -24,19 +24,25 @@ import (
 
 // TimezoneGuildConfig is an object representing the database table.
 type TimezoneGuildConfig struct {
-	GuildID            int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	DisabledInChannels types.Int64Array `boil:"disabled_in_channels" json:"disabled_in_channels,omitempty" toml:"disabled_in_channels" yaml:"disabled_in_channels,omitempty"`
+	GuildID             int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	DisabledInChannels  types.Int64Array `boil:"disabled_in_channels" json:"disabled_in_channels,omitempty" toml:"disabled_in_channels" yaml:"disabled_in_channels,omitempty"`
+	EnabledInChannels   types.Int64Array `boil:"enabled_in_channels" json:"enabled_in_channels,omitempty" toml:"enabled_in_channels" yaml:"enabled_in_channels,omitempty"`
+	NewChannelsDisabled bool             `boil:"new_channels_disabled" json:"new_channels_disabled" toml:"new_channels_disabled" yaml:"new_channels_disabled"`
 
 	R *timezoneGuildConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L timezoneGuildConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var TimezoneGuildConfigColumns = struct {
-	GuildID            string
-	DisabledInChannels string
+	GuildID             string
+	DisabledInChannels  string
+	EnabledInChannels   string
+	NewChannelsDisabled string
 }{
-	GuildID:            "guild_id",
-	DisabledInChannels: "disabled_in_channels",
+	GuildID:             "guild_id",
+	DisabledInChannels:  "disabled_in_channels",
+	EnabledInChannels:   "enabled_in_channels",
+	NewChannelsDisabled: "new_channels_disabled",
 }
 
 // Generated where
@@ -73,12 +79,25 @@ func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 var TimezoneGuildConfigWhere = struct {
-	GuildID            whereHelperint64
-	DisabledInChannels whereHelpertypes_Int64Array
+	GuildID             whereHelperint64
+	DisabledInChannels  whereHelpertypes_Int64Array
+	EnabledInChannels   whereHelpertypes_Int64Array
+	NewChannelsDisabled whereHelperbool
 }{
-	GuildID:            whereHelperint64{field: `guild_id`},
-	DisabledInChannels: whereHelpertypes_Int64Array{field: `disabled_in_channels`},
+	GuildID:             whereHelperint64{field: `guild_id`},
+	DisabledInChannels:  whereHelpertypes_Int64Array{field: `disabled_in_channels`},
+	EnabledInChannels:   whereHelpertypes_Int64Array{field: `enabled_in_channels`},
+	NewChannelsDisabled: whereHelperbool{field: `new_channels_disabled`},
 }
 
 // TimezoneGuildConfigRels is where relationship names are stored.
@@ -98,8 +117,8 @@ func (*timezoneGuildConfigR) NewStruct() *timezoneGuildConfigR {
 type timezoneGuildConfigL struct{}
 
 var (
-	timezoneGuildConfigColumns               = []string{"guild_id", "disabled_in_channels"}
-	timezoneGuildConfigColumnsWithoutDefault = []string{"guild_id", "disabled_in_channels"}
+	timezoneGuildConfigColumns               = []string{"guild_id", "disabled_in_channels", "enabled_in_channels", "new_channels_disabled"}
+	timezoneGuildConfigColumnsWithoutDefault = []string{"guild_id", "disabled_in_channels", "enabled_in_channels", "new_channels_disabled"}
 	timezoneGuildConfigColumnsWithDefault    = []string{}
 	timezoneGuildConfigPrimaryKeyColumns     = []string{"guild_id"}
 )

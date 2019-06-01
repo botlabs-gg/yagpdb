@@ -80,9 +80,18 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv"},
-		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default",
+		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "falgs", Type: dcmd.String},
+		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			allStr := parsed.Args[0].Str()
+			all := false
+			if strings.EqualFold(allStr, "all") || strings.EqualFold(allStr, "*") {
+				all = true
+			}
+
 			insert := false
 			conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GS.ID)
 			if err != nil {
@@ -96,17 +105,46 @@ func (p *Plugin) AddCommands() {
 				}
 			}
 
-			found := false
-			for i, v := range conf.DisabledInChannels {
-				if v == parsed.CS.ID {
-					found = true
-					conf.DisabledInChannels = append(conf.DisabledInChannels[:i], conf.DisabledInChannels[i+1:]...)
-					break
+			resp := ""
+			if all {
+				if conf.NewChannelsDisabled {
+					conf.NewChannelsDisabled = false
+					conf.DisabledInChannels = []int64{}
+					resp = "Enabled time conversion in all channels."
+				} else {
+					conf.NewChannelsDisabled = true
+					conf.EnabledInChannels = []int64{}
+					resp = "Disabled time conversion in all channels, including newly created channels."
 				}
-			}
+			} else {
+				status := "off"
 
-			if !found {
-				conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.CS.ID)
+				found := false
+				for i, v := range conf.DisabledInChannels {
+					if v == parsed.CS.ID {
+						found = true
+						conf.DisabledInChannels = append(conf.DisabledInChannels[:i], conf.DisabledInChannels[i+1:]...)
+						status = "on"
+
+						if conf.NewChannelsDisabled {
+							conf.EnabledInChannels = append(conf.EnabledInChannels, parsed.CS.ID)
+						}
+
+						break
+					}
+				}
+
+				if !found {
+					conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.CS.ID)
+
+					for i, v := range conf.EnabledInChannels {
+						if v == parsed.CS.ID {
+							conf.EnabledInChannels = append(conf.EnabledInChannels[:i], conf.EnabledInChannels[i+1:]...)
+						}
+					}
+				}
+
+				resp = fmt.Sprintf("Automatic time conversion in this channel toggled `%s`", status)
 			}
 
 			if insert {
@@ -119,12 +157,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			status := "on"
-			if !found {
-				status = "off"
-			}
-
-			return fmt.Sprintf("Automatic time conversion toggled `%s`", status), nil
+			return resp, nil
 		},
 	})
 }
@@ -229,7 +262,7 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 			logger.WithError(err).WithField("guild", m.GuildID).Error("failed fetching guild config")
 			return
 		}
-	} else if common.ContainsInt64Slice(conf.DisabledInChannels, m.ChannelID) {
+	} else if common.ContainsInt64Slice(conf.DisabledInChannels, m.ChannelID) || (conf.NewChannelsDisabled && !common.ContainsInt64Slice(conf.EnabledInChannels, m.ChannelID)) {
 		// disabled in this channel
 		return
 	}

@@ -427,7 +427,7 @@ func testTimezoneGuildConfigsSelect(t *testing.T) {
 }
 
 var (
-	timezoneGuildConfigDBTypes = map[string]string{`GuildID`: `bigint`, `DisabledInChannels`: `ARRAYbigint`}
+	timezoneGuildConfigDBTypes = map[string]string{`GuildID`: `bigint`, `DisabledInChannels`: `ARRAYbigint`, `EnabledInChannels`: `ARRAYbigint`, `NewChannelsDisabled`: `boolean`}
 	_                          = bytes.MinRead
 )
 
