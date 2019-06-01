@@ -61,8 +61,8 @@ func (p *Plugin) AddCommands() {
 			if err != nil {
 				return "Unknown timezone", nil
 			}
-			name, offset := time.Now().In(loc).Zone()
 
+			name, _ := time.Now().In(loc).Zone()
 			zone := zones[0]
 
 			m := &models.UserTimezone{
@@ -74,7 +74,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Set your timezone to `%s` - %s: %d\n", zone, name, offset), nil
+			return fmt.Sprintf("Set your timezone to `%s`: %s\n", zone, name), nil
 		},
 	}, &commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
@@ -248,7 +248,7 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	common.BotSession.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 		Timestamp: result.Time.Format(time.RFC3339),
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: "Above clock time in your local time",
+			Text: "Above time (" + result.Time.Format("15:04 MST") + ") in your local time",
 		},
 	})
 
