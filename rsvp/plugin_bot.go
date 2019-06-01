@@ -324,7 +324,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name: "Times",
-		Value: fmt.Sprintf("UTC: `%s`\nLook at the bottom of this message for a time when it starts in your local time.",
+		Value: fmt.Sprintf("UTC: `%s`\nLook at the bottom of this message to see when the event starts in your local time.",
 			UTCTime.Format(timeFormat)),
 	}, &discordgo.MessageEmbedField{
 		Name:  "Reactions usage",
@@ -333,13 +333,13 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 	participantsEmbed := &discordgo.MessageEmbedField{
 		Name:   "Participants",
-		Inline: true,
+		Inline: false,
 		Value:  "```\n",
 	}
 
 	waitingListField := &discordgo.MessageEmbedField{
 		Name:   "🕐 Waiting list",
-		Inline: true,
+		Inline: false,
 		Value:  "```\n",
 	}
 
@@ -620,6 +620,22 @@ func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
 		logger.WithError(err).WithField("guild", ra.GuildID).Error("failed updating rsvp participant")
 	}
 
+	reactionsToRemove := []string{}
+	if !joining {
+		reactionsToRemove = append(reactionsToRemove, EmojiJoining)
+	}
+	if !notJoining {
+		reactionsToRemove = append(reactionsToRemove, EmojiNotJoining)
+	}
+	if !maybe {
+		reactionsToRemove = append(reactionsToRemove, EmojiMaybe)
+	}
+	if !waitlist {
+		reactionsToRemove = append(reactionsToRemove, EmojiWaitlist)
+	}
+
+	go removeReactions(ra.ChannelID, ra.MessageID, ra.UserID, reactionsToRemove...)
+
 	updatingSessiosMU.Lock()
 	for _, v := range updatingSessionEmbeds {
 		if v.ID == m.MessageID {
@@ -637,6 +653,16 @@ func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
 	updatingSessionEmbeds = append(updatingSessionEmbeds, s)
 	go s.run()
 	updatingSessiosMU.Unlock()
+
+}
+
+func removeReactions(channelID, messageID, userID int64, emojis ...string) {
+	for _, v := range emojis {
+		err := common.BotSession.MessageReactionRemove(channelID, messageID, v, userID)
+		if err != nil {
+			logger.WithError(err).Error("failed removing reaction")
+		}
+	}
 }
 
 var (
