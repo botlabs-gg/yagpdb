@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/timezonecompanion/models"
 	"github.com/volatiletech/sqlboiler/boil"
+	"math"
 	"strings"
 	"time"
 )
@@ -38,13 +39,13 @@ func (p *Plugin) AddCommands() {
 
 			zones := FindZone(parsed.Args[0].Str())
 			if len(zones) < 1 {
-				return "Unknown timezone, enter a country or timezone, there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker/> you can use, enter the `Area/City` result", nil
+				return "Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result", nil
 			}
 
 			if len(zones) > 1 {
 				if len(zones) > 10 {
 					_, err := paginatedmessages.CreatePaginatedMessage(
-						parsed.GS.ID, parsed.CS.ID, 1, len(zones)/10, paginatedTimezones(zones))
+						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
 					return nil, err
 				}
 
