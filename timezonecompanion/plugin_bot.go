@@ -218,7 +218,7 @@ func FindZone(in string) []string {
 	ccs := make([]string, 0)
 	for country, code := range CountryCodes {
 		if strings.Contains(strings.ToLower(country), lowerIn) {
-			ccs = append(ccs, code)
+			ccs = appendIfNotExists(ccs, code)
 		}
 	}
 
@@ -230,7 +230,7 @@ func FindZone(in string) []string {
 		// check if we specified the country
 		if common.ContainsStringSlice(ccs, code) || strings.EqualFold(code, lowerIn) {
 			for _, v := range zones {
-				matchesZones = append(matchesZones, v)
+				matchesZones = appendIfNotExists(matchesZones, v)
 			}
 
 			continue
@@ -238,12 +238,20 @@ func FindZone(in string) []string {
 
 		for _, v := range zones {
 			if strings.Contains(strings.ToLower(v), inSpaceReplaced) {
-				matchesZones = append(matchesZones, v)
+				matchesZones = appendIfNotExists(matchesZones, v)
 			}
 		}
 	}
 
 	return matchesZones
+}
+
+func appendIfNotExists(in []string, elem string) []string {
+	if !common.ContainsStringSlice(in, elem) {
+		return append(in, elem)
+	}
+
+	return in
 }
 
 func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
