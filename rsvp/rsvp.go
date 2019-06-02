@@ -52,6 +52,6 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 func RegisterPlugin() {
 	p := &Plugin{}
 
-	common.InitSchema("rsvp", DBSchema)
+	common.InitSchema(DBSchema, "rsvp")
 	common.RegisterPlugin(p)
 }
