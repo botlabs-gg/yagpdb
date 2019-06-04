@@ -566,6 +566,8 @@ var (
 
 // Queue up all the events and process them one by one, because of limited connections
 func EvtProcesser() {
+	deduper := NewDeduper(2000)
+
 	for {
 		e := <-evtChan
 
@@ -590,10 +592,16 @@ func EvtProcesser() {
 				CheckNickname(common.PQ, context.Background(), nicknameQueryStatement, t.User.ID, t.GuildID, t.Presence.Nick)
 			}
 
-			if conf.UsernameLoggingEnabled.Bool {
+			duped := deduper.CheckDupe(t.User.ID)
+
+			if conf.UsernameLoggingEnabled.Bool && !duped {
 				if t.User.Username != "" {
 					CheckUsername(common.PQ, context.Background(), usernameQueryStatement, t.User)
 				}
+
+				// logger.Info("checking username: ", t.User.ID, t.GuildID)
+			} else if duped {
+				// logger.Info("stopped dupe presence update: ", t.User.ID, t.GuildID)
 			}
 		case *discordgo.GuildMemberUpdate:
 
