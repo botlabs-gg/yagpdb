@@ -62,7 +62,7 @@ func (p *Plugin) AddCommands() {
 				return fmt.Sprintln(userTZ), nil
 			}
 
-			if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) && GetUserTimezone(parsed.Msg.Author.ID) !=nil {
+			if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) && getUserTZ !=nil {
  				m := &models.UserTimezone{
 					UserID:       parsed.Msg.Author.ID,
 					TimezoneName: localTZ.String(),
