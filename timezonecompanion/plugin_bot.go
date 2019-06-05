@@ -88,7 +88,7 @@ func (p *Plugin) AddCommands() {
 					return nil, err
 				}
 
-				out := fmt.Sprintf("More than 1 result, reuse the command with a one of the following:\n")
+				out := "More than 1 result, reuse the command with a one of the following:\n"
 				for _, v := range zones {
 					if s := StrZone(v); s != "" {
 						out += s + "\n"
