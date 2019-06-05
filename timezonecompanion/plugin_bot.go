@@ -31,15 +31,54 @@ func (p *Plugin) AddCommands() {
 		Name:         "settimezone",
 		Aliases:      []string{"setz", "tzset"},
 		Description:  "Sets your timezone, used for various purposes such as auto conversion. Give it your country.",
-		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "Timezone", Type: dcmd.String},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "u", Name: "User"},
+			&dcmd.ArgDef{Switch: "d", Name: "Delete TZ record"},
+		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+
+ 			localTZ := time.Now().Location()
+  			userZone, userOffset := time.Now().In(localTZ).Zone()
+  			getUserTZ := GetUserTimezone(parsed.Msg.Author.ID)
+ 			tzState := "server's"
+
+  			if getUserTZ != nil {
+  				userZone, userOffset = time.Now().In(getUserTZ).Zone()
+  				localTZ = getUserTZ
+  				tzState = "registered to"
+  			} 
+
+ 			humanizeOffset := fmt.Sprintf("%+d", userOffset/3600)
+ 			if (userOffset%3600/60) != 0 {
+ 				humanizeOffset += fmt.Sprintf(":%d", int(math.Abs(float64(userOffset%3600/60))))
+ 			}
+
+ 			userTZ := fmt.Sprintf("Your current time zone is %s: `%s` %s (UTC%s)", tzState, localTZ, userZone, humanizeOffset)
+ 
+			if parsed.Switches["u"].Value != nil && parsed.Switches["u"].Value.(bool) {
+				return fmt.Sprintln(userTZ), nil
+			}
+
+			if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) && GetUserTimezone(parsed.Msg.Author.ID) !=nil {
+ 				m := &models.UserTimezone{
+					UserID:       parsed.Msg.Author.ID,
+					TimezoneName: localTZ.String(),
+				}
+ 				_, err := m.DeleteG(parsed.Context())
+				if err != nil {
+					return nil, err
+				}
+				return "Deleted", nil
+			} else if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool){
+				return "You don't have a registered time zone", nil
+			}
 
 			zones := FindZone(parsed.Args[0].Str())
 			if len(zones) < 1 {
-				return "Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result", nil
+				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
 			}
 
 			if len(zones) > 1 {
@@ -49,12 +88,13 @@ func (p *Plugin) AddCommands() {
 					return nil, err
 				}
 
-				out := "More than 1 result, reuse the command with a one of the following:\n"
+				out := fmt.Sprintf("More than 1 result, reuse the command with a one of the following:\n")
 				for _, v := range zones {
 					if s := StrZone(v); s != "" {
 						out += s + "\n"
 					}
 				}
+				out += "\n" + userTZ
 
 				return out, nil
 			}
@@ -70,6 +110,7 @@ func (p *Plugin) AddCommands() {
 				UserID:       parsed.Msg.Author.ID,
 				TimezoneName: zone,
 			}
+
 			err = m.UpsertG(parsed.Context(), true, []string{"user_id"}, boil.Infer(), boil.Infer())
 			if err != nil {
 				return nil, err
