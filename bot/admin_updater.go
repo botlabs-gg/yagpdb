@@ -85,7 +85,7 @@ func requestCheckBotAdmins(mainServer, adminRole, readOnlyRole int64) {
 
 func HandleGuildMembersChunk(data *eventsystem.EventData) {
 	evt := data.GuildMembersChunk()
-
+	go BatchMemberJobManager.handleGuildMemberChunk(data)
 	if evt.GuildID != mainServer {
 		return
 	}
