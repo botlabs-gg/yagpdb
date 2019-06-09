@@ -210,7 +210,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		templateData["WidgetDisabled"] = true
 	}
 
-	const format = `<p>Active Youtube feeds: <code>%d</code></p>`
+	const format = `<p>Active Twitter feeds: <code>%d</code></p>`
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, numFeeds))
 
 	return templateData, nil
