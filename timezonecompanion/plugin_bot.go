@@ -59,7 +59,7 @@ func (p *Plugin) AddCommands() {
  			userTZ := fmt.Sprintf("Your current time zone is %s: `%s` %s (UTC%s)", tzState, localTZ, userZone, humanizeOffset)
  
 			if parsed.Switches["u"].Value != nil && parsed.Switches["u"].Value.(bool) {
-				return fmt.Sprintln(userTZ), nil
+				return userTZ, nil
 			}
 
 			if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) && getUserTZ !=nil {
