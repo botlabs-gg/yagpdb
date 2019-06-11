@@ -413,6 +413,8 @@ func tmplToInt(from interface{}) int {
 		return int(t)
 	case uint:
 		return int(t)
+	case uint8:
+		return int(t)
 	case uint32:
 		return int(t)
 	case uint64:
