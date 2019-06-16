@@ -119,7 +119,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		}
 	}
 
-	general, err := GetConfig(ctx, g.ID)
+	general, err := GetConfig(common.PQ, ctx, g.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
-	config, err := GetConfig(r.Context(), g.ID)
+	config, err := GetConfig(common.PQ, r.Context(), g.ID)
 	if web.CheckErr(tmpl, err, "Error retrieving config for this server", web.CtxLogger(r.Context()).Error) {
 		return tmpl
 	}
@@ -312,7 +312,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetTitle"] = "Logging"
 	templateData["SettingsPath"] = "/logging/"
 
-	config, err := GetConfig(r.Context(), activeGuild.ID)
+	config, err := GetConfig(common.PQ, r.Context(), activeGuild.ID)
 	if err != nil {
 		return templateData, err
 	}

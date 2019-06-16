@@ -45,9 +45,9 @@ func RegisterPlugin() {
 }
 
 // Returns either stored config, err or a default config
-func GetConfig(ctx context.Context, guildID int64) (*models.GuildLoggingConfig, error) {
+func GetConfig(exec boil.ContextExecutor, ctx context.Context, guildID int64) (*models.GuildLoggingConfig, error) {
 
-	config, err := models.FindGuildLoggingConfigG(ctx, guildID)
+	config, err := models.FindGuildLoggingConfig(ctx, exec, guildID)
 	if err == sql.ErrNoRows {
 		// return default config
 		return &models.GuildLoggingConfig{
@@ -66,7 +66,7 @@ func CreateLink(guildID int64, id int) string {
 func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLog, error) {
 	if config == nil {
 		var err error
-		config, err = GetConfig(ctx, guildID)
+		config, err = GetConfig(common.PQ, ctx, guildID)
 		if err != nil {
 			return nil, err
 		}
