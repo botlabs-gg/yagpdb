@@ -106,6 +106,8 @@ type YAGCommand struct {
 
 	RequireDiscordPerms []int64 // Require users to have one of these permission sets to run the command
 
+	Middlewares []dcmd.MiddleWareFunc
+
 	// Run is ran the the command has sucessfully been parsed
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
@@ -636,6 +638,9 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
 	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetDisableInDM(!yc.RunInDM)
 	trigger = trigger.SetHideFromHelp(yc.HideFromHelp)
+	if len(yc.Middlewares) > 0 {
+		trigger = trigger.SetMiddlewares(yc.Middlewares...)
+	}
 	return trigger
 }
 
