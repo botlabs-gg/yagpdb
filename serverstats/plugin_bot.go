@@ -209,7 +209,7 @@ func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*Ser
 
 func (p *Plugin) runOnlineUpdater() {
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Second * 10)
 	state := bot.State
 
 	var guildsToCheck []*dstate.GuildState
@@ -228,7 +228,7 @@ func (p *Plugin) runOnlineUpdater() {
 			guildsToCheck = state.GuildsSlice(true)
 
 			// Hit each guild once per hour more or less
-			numToCheckPerRun = len(guildsToCheck) / 2500
+			numToCheckPerRun = len(guildsToCheck) / 250
 			if numToCheckPerRun < 1 {
 				numToCheckPerRun = 1
 			}
@@ -275,7 +275,7 @@ max_online = GREATEST (server_stats_member_periods.max_online, $4)
 			logger.WithError(err).Error("failed comitting online counts")
 		}
 
-		if time.Since(started) > time.Millisecond*250 {
+		if time.Since(started) > time.Second {
 			logger.Warnf("Tok %s to update online counts of %d guilds", time.Since(started).String(), checkedThisRound)
 		}
 	}
