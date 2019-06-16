@@ -156,6 +156,17 @@ func AddLogHook(hook logrus.Hook) {
 	loggersmu.Unlock()
 }
 
+func SetLoggingLevel(level logrus.Level) {
+	loggersmu.Lock()
+	defer loggersmu.Unlock()
+
+	for _, v := range loggers {
+		v.SetLevel(level)
+	}
+
+	logrus.SetLevel(level)
+}
+
 func SetLogFormatter(formatter logrus.Formatter) {
 	loggersmu.Lock()
 

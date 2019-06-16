@@ -34,6 +34,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/sleep"
 	"github.com/jonas747/yagpdb/stdcommands/stateinfo"
 	"github.com/jonas747/yagpdb/stdcommands/throw"
+	"github.com/jonas747/yagpdb/stdcommands/toggledbg"
 	"github.com/jonas747/yagpdb/stdcommands/topcommands"
 	"github.com/jonas747/yagpdb/stdcommands/topevents"
 	"github.com/jonas747/yagpdb/stdcommands/topgames"
@@ -109,6 +110,7 @@ func (p *Plugin) AddCommands() {
 		dcallvoice.Command,
 		ccreqs.Command,
 		sleep.Command,
+		toggledbg.Command,
 	)
 
 }
