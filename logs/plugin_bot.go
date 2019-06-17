@@ -584,7 +584,7 @@ func EvtProcesser() {
 	queuedMembers := make([]*discordgo.Member, 0)
 	queuedUsers := make([]*UserGuildPair, 0)
 
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * 1)
 
 	for {
 		select {
@@ -769,7 +769,7 @@ const CacheKeyConfig bot.GSCacheKey = "logs_config"
 func GetConfigCached(exec boil.ContextExecutor, gID int64) (*models.GuildLoggingConfig, error) {
 	gs := bot.State.Guild(true, gID)
 	if gs == nil {
-		return nil, bot.ErrGuildNotFound
+		return GetConfig(exec, context.Background(), gID)
 	}
 
 	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
