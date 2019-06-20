@@ -25,6 +25,10 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 
 	n := len(msgBuf) - 1
 	for i := len(cs.Messages) - 1; i >= 0; i-- {
+		if cs.Messages[i] == nil {
+			continue
+		}
+
 		if !deleted {
 			if cs.Messages[i].Deleted {
 				continue
