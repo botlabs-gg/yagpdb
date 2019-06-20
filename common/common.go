@@ -244,3 +244,12 @@ func InitSchema(schema string, name string) {
 
 	return
 }
+
+func InitSchemas(name string, schemas ...string) {
+	for i, v := range schemas {
+		actualName := fmt.Sprintf("%s[%d]", name, i)
+		InitSchema(v, actualName)
+	}
+
+	return
+}
