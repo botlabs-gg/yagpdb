@@ -35,7 +35,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
-	common.InitSchema(DBSchema, "serverstats")
+	common.InitSchemas("serverstats", DBSchemas...)
 
 	plugin := &Plugin{
 		stopStatsLoop: make(chan *sync.WaitGroup),
