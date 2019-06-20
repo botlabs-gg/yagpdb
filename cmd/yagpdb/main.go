@@ -128,10 +128,6 @@ func main() {
 		return
 	}
 
-	if flagRunWeb || flagRunEverything {
-		common.RedisPoolSize = 25
-	}
-
 	log.Info("YAGPDB is initializing...")
 
 	err := common.Init()

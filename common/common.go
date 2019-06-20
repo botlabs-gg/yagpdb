@@ -41,7 +41,7 @@ var (
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
 
-	RedisPoolSize = 25
+	RedisPoolSize = 10
 
 	Statsd *statsd.Client
 
@@ -229,7 +229,7 @@ func connectDB(host, user, pass, dbName string) error {
 	PQ = db.DB()
 	boil.SetDB(PQ)
 	if err == nil {
-		PQ.SetMaxOpenConns(5)
+		PQ.SetMaxOpenConns(3)
 	}
 	GORM.SetLogger(&GORMLogger{})
 
