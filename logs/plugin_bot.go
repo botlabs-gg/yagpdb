@@ -591,6 +591,10 @@ func EvtProcesser() {
 		case e := <-evtChan:
 			switch t := e.(type) {
 			case *discordgo.PresenceUpdate:
+				if t.User.Username == "" {
+					continue
+				}
+
 				queuedUsers = append(queuedUsers, &UserGuildPair{GuildID: t.GuildID, User: t.User})
 			case *discordgo.GuildMemberUpdate:
 				queuedMembers = append(queuedMembers, t.Member)
