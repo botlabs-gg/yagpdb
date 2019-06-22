@@ -327,7 +327,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
-				Title:       fmt.Sprintf("Ticket #%d closed", currentTicket.Ticket.LocalID),
+				Title:       fmt.Sprintf("Ticket #%d - %q closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
 				Description: fmt.Sprintf("Reason: %s", parsed.Args[0].Str()),
 				Color:       0xf23c3c,
 			})
