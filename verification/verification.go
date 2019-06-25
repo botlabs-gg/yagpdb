@@ -9,6 +9,7 @@ import (
 
 var confGoogleReCAPTCHASiteKey = config.RegisterOption("yagpdb.google.recaptcha_site_key", "Google reCAPTCHA site key", "")
 var confGoogleReCAPTCHASecret = config.RegisterOption("yagpdb.google.recaptcha_secret", "Google reCAPTCHA site secret", "")
+var confVerificationTrackIPs = config.RegisterOption("yagpdb.verification.track_ips", "Track verified users ip", true)
 
 type Plugin struct{}
 
@@ -29,7 +30,7 @@ func RegisterPlugin() {
 		return
 	}
 
-	common.InitSchema(DBSchema, "verification")
+	common.InitSchemas("verification", DBSchemas...)
 
 	common.RegisterPlugin(&Plugin{})
 }

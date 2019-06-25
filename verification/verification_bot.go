@@ -202,13 +202,69 @@ func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, c
 }
 
 func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
-
 	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, conf.VerifiedRole)
-	if err == nil {
-		p.logAction(conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	return scheduledevents2.CheckDiscordErrRetry(err), err
+	model, err := models.FindVerifiedUserG(context.Background(), guildID, ms.ID)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	if !confVerificationTrackIPs.GetBool() || model.IP == "" {
+		p.logAction(conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
+		return false, nil
+	}
+
+	conflicts, err := p.findIPConflicts(guildID, ms.ID, model.IP)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	if len(conflicts) < 1 {
+		p.logAction(conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
+		return false, nil
+	}
+
+	var builder strings.Builder
+	builder.WriteString("User verified but verified with the same IP as the following users: \n")
+
+	for i, v := range conflicts {
+		builder.WriteString(fmt.Sprintf("\n%s#%s (%d)", v.Username, v.Discriminator, v.ID))
+		if i >= 20 && len(conflicts) > 21 {
+			builder.WriteString(fmt.Sprintf("\n\nAnd %d other users...", len(conflicts)-21))
+			break
+		}
+	}
+
+	p.logAction(conf.LogChannel, ms.DGoUser(), builder.String(), 0xff8228)
+	return false, nil
+}
+
+func (p *Plugin) findIPConflicts(guildID int64, userID int64, ip string) ([]*discordgo.User, error) {
+
+	conflicts, err := models.VerifiedUsers(models.VerifiedUserWhere.GuildID.EQ(guildID), models.VerifiedUserWhere.IP.EQ(ip)).AllG(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(conflicts) < 2 {
+		// this will include ourselves so ignore that
+		return nil, nil
+	}
+
+	userIDs := make([]int64, 0, len(conflicts))
+	for _, v := range conflicts {
+		if v.UserID == userID {
+			continue
+		}
+
+		userIDs = append(userIDs, v.UserID)
+	}
+
+	users := bot.GetUsers(guildID, userIDs...)
+	return users, nil
 }
 
 func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {

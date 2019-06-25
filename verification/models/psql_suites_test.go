@@ -9,4 +9,6 @@ func TestUpsert(t *testing.T) {
 	t.Run("VerificationConfigs", testVerificationConfigsUpsert)
 
 	t.Run("VerificationSessions", testVerificationSessionsUpsert)
+
+	t.Run("VerifiedUsers", testVerifiedUsersUpsert)
 }
