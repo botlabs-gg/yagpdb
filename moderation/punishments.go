@@ -87,18 +87,23 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		logLink = CreateLogs(guildID, channelID, author)
 	}
 
+	fullReason := reason
+	if author.ID != common.BotUser.ID {
+		fullReason = author.Username + "#" + author.Discriminator + ": " + reason
+	}
+
 	switch p {
 	case PunishmentKick:
-		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason)
+		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, fullReason)
 	case PunishmentBan:
-		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason, 1)
+		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, 1)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	logger.Info("MODERATION:", author.Username, action.Prefix, user.Username, "cause", reason)
+	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
 
 	if memberNotFound {
 		// Wait a tiny bit to make sure the audit log is updated
