@@ -8,22 +8,23 @@ import (
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/jonas747/yagpdb/moderation"
 	"github.com/jonas747/yagpdb/verification/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionReadMessages
 
-var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 type VerificationEventData struct {
@@ -33,13 +34,12 @@ type VerificationEventData struct {
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(p.handleBanAdd, eventsystem.EventGuildBanAdd)
 	scheduledevents2.RegisterHandler("verification_user_verified", int64(0), ScheduledEventMW(p.handleUserVerifiedScheduledEvent))
 	scheduledevents2.RegisterHandler("verification_user_warn", VerificationEventData{}, ScheduledEventMW(p.handleWarnUserVerification))
 	scheduledevents2.RegisterHandler("verification_user_kick", VerificationEventData{}, ScheduledEventMW(p.handleKickUser))
-}
 
-func (p *Plugin) AddCommands() {
-
+	go gcRecentGuildBansLoop()
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -217,6 +217,7 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 		return false, nil
 	}
 
+	// Check for IP conflicts
 	conflicts, err := p.findIPConflicts(guildID, ms.ID, model.IP)
 	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
@@ -227,6 +228,34 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 		return false, nil
 	}
 
+	// check if the user shares a IP with a banned user
+	ban, err := p.CheckBanned(guildID, conflicts)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	if ban != nil {
+		// shares a IP with a banned user
+		banReason := "Alt-" + ban.User.Username + ": " + ban.Reason
+		if utf8.RuneCountInString(banReason) > 512 {
+			// trim ban reason
+			r := []rune(banReason)
+			r = r[:509]
+			banReason = string(r) + "..."
+		}
+
+		err := moderation.BanUser(nil, guildID, 0, common.BotUser, banReason, ms.DGoUser())
+		if err != nil {
+			return scheduledevents2.CheckDiscordErrRetry(err), err
+		}
+
+		p.logAction(conf.LogChannel, ms.DGoUser(), fmt.Sprintf("User banned for sharing IP with banned user %s#%s (%d)\nReason: %s",
+			ban.User.Username, ban.User.Discriminator, ban.User.ID, ban.Reason), 0xef4640)
+
+		return false, nil
+	}
+
+	// Does not share the IP with a banned user, but warn about alt account
 	var builder strings.Builder
 	builder.WriteString("User verified but verified with the same IP as the following users: \n")
 
@@ -265,6 +294,26 @@ func (p *Plugin) findIPConflicts(guildID int64, userID int64, ip string) ([]*dis
 
 	users := bot.GetUsers(guildID, userIDs...)
 	return users, nil
+}
+
+func (p *Plugin) CheckBanned(guildID int64, users []*discordgo.User) (*discordgo.GuildBan, error) {
+	for _, v := range users {
+		ban, err := common.BotSession.GuildBan(guildID, v.ID)
+		if err != nil {
+			if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
+				if cast.Response.StatusCode == 404 {
+					continue // Not banned, ban not found
+				}
+			}
+			return nil, err
+		}
+
+		if ban != nil {
+			return ban, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
@@ -338,5 +387,142 @@ func (p *Plugin) logAction(channelID int64, author *discordgo.User, action strin
 
 	if err != nil {
 		logger.WithError(err).WithField("channel", channelID).Error("failed sending log message")
+	}
+}
+
+type RecentGuildBan struct {
+	GuildID int64
+	UserID  int64
+	T       time.Time
+}
+
+// to avoid getting in a ban loop, we keep a cache of recently banned users by the bot
+var (
+	recentGuildBans   []*RecentGuildBan
+	recentGuildBansmu sync.Mutex
+)
+
+func gcRecentGuildBansLoop() {
+	tc := time.NewTicker(time.Minute)
+	for {
+		<-tc.C
+		gcRecentGuildBans()
+	}
+}
+
+func gcRecentGuildBans() {
+	recentGuildBansmu.Lock()
+	defer recentGuildBansmu.Unlock()
+
+	if len(recentGuildBans) < 1 {
+		return
+	}
+
+	newGuildBans := make([]*RecentGuildBan, 0, len(recentGuildBans))
+	for _, v := range recentGuildBans {
+		if time.Since(v.T) < time.Second*10 {
+			newGuildBans = append(newGuildBans, v)
+		}
+	}
+
+	recentGuildBans = newGuildBans
+}
+
+func wasRecentlyBannedByVerification(guildID int64, userID int64) bool {
+	recentGuildBansmu.Lock()
+	defer recentGuildBansmu.Unlock()
+
+	for _, v := range recentGuildBans {
+		if v.GuildID != guildID || v.UserID != userID {
+			continue
+		}
+		if time.Since(v.T) > time.Second*10 {
+			continue
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func markRecentlyBannedByVerification(guildID int64, userID int64) {
+	recentGuildBansmu.Lock()
+	defer recentGuildBansmu.Unlock()
+
+	for _, v := range recentGuildBans {
+		if v.GuildID == guildID && v.UserID == userID {
+			v.T = time.Now()
+			return
+		}
+	}
+
+	recentGuildBans = append(recentGuildBans, &RecentGuildBan{
+		UserID:  userID,
+		GuildID: guildID,
+		T:       time.Now(),
+	})
+}
+
+func (p *Plugin) handleBanAdd(evt *eventsystem.EventData) {
+	ban := evt.GuildBanAdd()
+
+	if !confVerificationTrackIPs.GetBool() {
+		return
+	}
+
+	if wasRecentlyBannedByVerification(ban.GuildID, ban.User.ID) {
+		return
+	}
+
+	model, err := models.FindVerifiedUserG(context.Background(), ban.GuildID, ban.User.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return
+		}
+		logger.WithError(err).Error("error finding verified user in banadd")
+		return
+	}
+
+	if model.IP == "" {
+		return
+	}
+
+	alts, err := p.findIPConflicts(ban.GuildID, ban.User.ID, model.IP)
+	if err != nil {
+		logger.WithError(err).Error("error finding ip conflicts in banadd")
+		return
+	}
+
+	if len(alts) < 1 {
+		return
+	}
+
+	go p.banAlts(ban, alts)
+}
+
+func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
+	for i, v := range alts {
+		if i != 0 {
+			time.Sleep(time.Second)
+		}
+		// check if they're already banned
+		_, err := common.BotSession.GuildBan(ban.GuildID, v.ID)
+		if err == nil {
+			continue
+		}
+
+		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
+			if cast.Response.StatusCode == 404 {
+				// not banned
+				logger.WithField("guild", ban.GuildID).WithField("user", v.ID).WithField("dupe-of", ban.User.ID).Info("banning alt account")
+				reason := fmt.Sprintf("Alt of banned user (%s#%s (%d))", ban.User.Username, ban.User.Discriminator, ban.User.ID)
+				markRecentlyBannedByVerification(ban.GuildID, v.ID)
+				moderation.BanUser(nil, ban.GuildID, 0, common.BotUser, reason, v)
+				continue
+			}
+		}
+
+		logger.WithError(err).Error("failed retrieving guild ban")
 	}
 }
