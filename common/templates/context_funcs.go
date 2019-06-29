@@ -30,7 +30,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	memberID := c.MS.ID
 	c.GS.RUnlock()
 
-	info := fmt.Sprintf("Custom Command DM From the server **%s**", gName)
+	info := fmt.Sprintf("Custom Command DM From the server: %s", gName)
 
 	// Send embed
 	if embed, ok := s[0].(*discordgo.MessageEmbed); ok {
