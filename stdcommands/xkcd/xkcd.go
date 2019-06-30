@@ -10,7 +10,6 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
 )
 
 type Xkcd struct {
@@ -44,18 +43,11 @@ var Command = &commands.YAGCommand{
 
 		//first query to get latest number
 		latest := false
-		queryBody, err := getComic()
-		if err {
-			return "Something happened whilst getting the comic!", nil
+		xkcd, err := getComic()
+		if err != nil {
+			return "Something happened whilst getting the comic!", err
 		}
 
-		var xkcd Xkcd
-		queryErr := json.Unmarshal(queryBody, &xkcd)
-		if queryErr != nil {
-			return nil, queryErr
-		}
-
-		//by default, without extra arguments, random comic is going to be pulled from host
 		xkcdNum := rand.Int63n(xkcd.Num) + 1
 
 		//latest comic strip flag, already got that data
@@ -75,13 +67,9 @@ var Command = &commands.YAGCommand{
 
 		//if no latest flag is set, fetches a comic by number
 		if !latest {
-			queryBody, err = getComic(xkcdNum)
-			if err {
-				return "Something happened whilst getting the comic!", nil
-			}
-			queryErr = json.Unmarshal(queryBody, &xkcd)
-			if queryErr != nil {
-				return nil, queryErr
+			xkcd, err = getComic(xkcdNum)
+			if err != nil {
+				return "Something happened whilst getting the comic!", err
 			}
 		}
 
@@ -93,16 +81,12 @@ var Command = &commands.YAGCommand{
 				URL: xkcd.Img,
 			},
 		}
-
-		_, errEmbed := common.BotSession.ChannelMessageSendEmbed(data.Msg.ChannelID, embed)
-		if errEmbed != nil {
-			return errEmbed, errEmbed
-		}
-		return nil, nil
+		return embed, nil
 	},
 }
 
-func getComic(number ...int64) ([]byte, bool) {
+func getComic(number ...int64) (*Xkcd, error) {
+	xkcd := Xkcd{}
 	queryUrl := XkcdHost + XkcdJson
 
 	if len(number) >= 1 {
@@ -111,19 +95,25 @@ func getComic(number ...int64) ([]byte, bool) {
 
 	req, err := http.NewRequest("GET", queryUrl, nil)
 	if err != nil {
-		return nil, true
+		return nil, err
 	}
 
 	req.Header.Set("User-Agent", "curl/7.65.1")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, true
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, true
+		return nil, err
 	}
-	return body, false
+
+	queryErr := json.Unmarshal(body, &xkcd)
+	if queryErr != nil {
+		return nil, queryErr
+	}
+
+	return &xkcd, nil
 }
