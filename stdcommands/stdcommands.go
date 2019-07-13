@@ -45,6 +45,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/viewperms"
 	"github.com/jonas747/yagpdb/stdcommands/weather"
 	"github.com/jonas747/yagpdb/stdcommands/wouldyourather"
+	"github.com/jonas747/yagpdb/stdcommands/xkcd"
 	"github.com/jonas747/yagpdb/stdcommands/yagstatus"
 )
 
@@ -91,6 +92,7 @@ func (p *Plugin) AddCommands() {
 		undelete.Command,
 		viewperms.Command,
 		topgames.Command,
+		xkcd.Command,
 
 		// Maintenance
 		stateinfo.Command,
