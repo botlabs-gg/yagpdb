@@ -66,6 +66,11 @@ func RegisterPlugin() {
 		logger.WithError(err).Error("failed initiializing webhook session")
 	}
 
+	_, err = common.PQ.Exec(DBSchema)
+	if err != nil {
+		logrus.WithError(err).Error("[mqueue] failed initiializing db schema")
+	}
+
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 }
