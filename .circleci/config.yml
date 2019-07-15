@@ -49,9 +49,12 @@ jobs: # basic units of work in a run
       #       trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
       #       make test | tee ${TEST_RESULTS}/go-test.out
 
-      - run: go get github.com/jonas747/yagpdb/cmd/yagpdb # pull and build dependencies for the project
-      - run: go get github.com/jonas747/yagpdb/cmd/shardorchestrator # pull and build dependencies for the project
-      - run: go get github.com/jonas747/yagpdb/cmd/capturepanics # pull and build dependencies for the project
+      - run: git clone -b dgofork https://github.com/jonas747/dutil github.com/jonas747/dutil
+      - run: git clone -b dgofork https://github.com/jonas747/dshardmanager github.com/jonas747/dshardmanager
+
+      - run: go get -v github.com/jonas747/yagpdb/cmd/yagpdb # pull and build dependencies for the project
+      - run: go get -v github.com/jonas747/yagpdb/cmd/shardorchestrator # pull and build dependencies for the project
+      - run: go get -v github.com/jonas747/yagpdb/cmd/capturepanics # pull and build dependencies for the project
 
       - save_cache: # Store cache in the /go/pkg directory
           key: v1-pkg-cache
@@ -74,7 +77,11 @@ jobs: # basic units of work in a run
 
       - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
           path: /go/src/github/jonas747/yagpdb/cmd/yagpdb
-          destination: wew
+          destination: misc
+
+      - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          path: /go/bin/
+          destination: binaries
 
       # - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
       #     path: /tmp/test-results
