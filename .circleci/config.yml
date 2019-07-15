@@ -39,49 +39,24 @@ jobs: # basic units of work in a run
       #       done
       #       echo Failed waiting for Postgres && exit 1
 
-      # - run:
-      #     name: Run unit tests
-      #     environment: # environment variables for the database url and path to migration files
-      #       CONTACTS_DB_URL: "postgres://circleci-demo-go@localhost:5432/circle_test?sslmode=disable"
-      #       CONTACTS_DB_MIGRATIONS: /go/src/github.com/CircleCI-Public/circleci-demo-go/db/migrations
-      #     # Store the results of our tests in the $TEST_RESULTS directory
-      #     command: |
-      #       trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-      #       make test | tee ${TEST_RESULTS}/go-test.out
-
       - run: git clone -b dgofork https://github.com/jonas747/dutil /go/src/github.com/jonas747/dutil
       - run: git clone -b dgofork https://github.com/jonas747/dshardmanager /go/src/github.com/jonas747/dshardmanager
 
-      - run: go get -v github.com/jonas747/yagpdb/cmd/yagpdb # pull and build dependencies for the project
-      - run: go get -v github.com/jonas747/yagpdb/cmd/shardorchestrator # pull and build dependencies for the project
-      - run: go get -v github.com/jonas747/yagpdb/cmd/capturepanics # pull and build dependencies for the project
+      - run: go get -v -t github.com/jonas747/yagpdb/cmd/yagpdb # pull and build dependencies for the project
+      - run: go get -v -t github.com/jonas747/yagpdb/cmd/shardorchestrator # pull and build dependencies for the project
+      - run: go get -v -t github.com/jonas747/yagpdb/cmd/capturepanics # pull and build dependencies for the project
+
+      - run: go test -v ./...
 
       - save_cache: # Store cache in the /go/pkg directory
           key: v1-pkg-cache
           paths:
             - "/go/pkg"
 
-      # - run:
-      #     name: Start service
-      #     environment:
-      #       CONTACTS_DB_URL: "postgres://circleci-demo-go@localhost:5432/circle_test?sslmode=disable"
-      #       CONTACTS_DB_MIGRATIONS: /go/src/github.com/CircleCI-Public/circleci-demo-go/db/migrations
-      #     command: ./workdir/contacts
-      #     background: true # keep service running and proceed to next step
-
-      # - run:  
-      #     name: Validate service is working
-      #     command: |
-      #       sleep 5
-      #       curl --retry 10 --retry-delay 1 -X POST --header "Content-Type: application/json" -d '{"email":"test@example.com","name":"Test User"}' http://localhost:8080/contacts
-
       - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
-          path: /go/src/github/jonas747/yagpdb/cmd/yagpdb
+          path: /go/src/github.com/jonas747/yagpdb/cmd/yagpdb
           destination: misc
 
       - store_artifacts: # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
           path: /go/bin/
           destination: binaries
-
-      # - store_test_results: # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
-      #     path: /tmp/test-results
