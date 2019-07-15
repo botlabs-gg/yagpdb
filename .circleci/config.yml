@@ -49,8 +49,8 @@ jobs: # basic units of work in a run
       #       trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
       #       make test | tee ${TEST_RESULTS}/go-test.out
 
-      - run: git clone -b dgofork https://github.com/jonas747/dutil github.com/jonas747/dutil
-      - run: git clone -b dgofork https://github.com/jonas747/dshardmanager github.com/jonas747/dshardmanager
+      - run: git clone -b dgofork https://github.com/jonas747/dutil /go/src/github.com/jonas747/dutil
+      - run: git clone -b dgofork https://github.com/jonas747/dshardmanager /go/src/github.com/jonas747/dshardmanager
 
       - run: go get -v github.com/jonas747/yagpdb/cmd/yagpdb # pull and build dependencies for the project
       - run: go get -v github.com/jonas747/yagpdb/cmd/shardorchestrator # pull and build dependencies for the project
