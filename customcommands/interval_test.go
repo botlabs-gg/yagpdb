@@ -75,9 +75,9 @@ func TestNextRunTimeExcludingDays(t *testing.T) {
 	tim := time.Time{}
 
 	nextRun := CalcNextRunTime(cc, tim)
-	expected := tim.Add((time.Hour * 2) + time.Minute)
+	expected := tim.Add(time.Hour * 24)
 
 	if nextRun != expected {
-		t.Error("next run should be now: ", expected, ", got: ", nextRun)
+		t.Error("next run should be now: ", expected, ", got: ", nextRun, tim.Weekday())
 	}
 }
