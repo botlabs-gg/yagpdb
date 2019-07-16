@@ -6,7 +6,7 @@ import (
 	"github.com/jonas747/discordgo"
 )
 
-func TestAddHandlerAfter(t *testing.T) {
+func TestAddHandlerOrder(t *testing.T) {
 	firstTriggered := false
 	h1 := func(evt *EventData) {
 		firstTriggered = true
@@ -17,7 +17,7 @@ func TestAddHandlerAfter(t *testing.T) {
 		}
 	}
 
-	h2Ptr := AddHandler(h2, EventReady)
-	AddHandlerBefore(h1, EventReady, h2Ptr)
+	AddHandlerSecond(h2, EventReady)
+	AddHandlerFirst(h1, EventReady)
 	HandleEvent(nil, &discordgo.Ready{})
 }
