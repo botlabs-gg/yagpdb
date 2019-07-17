@@ -61,12 +61,12 @@ var AutomodRulesetConditionWhere = struct {
 	TypeID    whereHelperint
 	Settings  whereHelpertypes_JSON
 }{
-	ID:        whereHelperint64{field: `id`},
-	GuildID:   whereHelperint64{field: `guild_id`},
-	RulesetID: whereHelperint64{field: `ruleset_id`},
-	Kind:      whereHelperint{field: `kind`},
-	TypeID:    whereHelperint{field: `type_id`},
-	Settings:  whereHelpertypes_JSON{field: `settings`},
+	ID:        whereHelperint64{field: "\"automod_ruleset_conditions\".\"id\""},
+	GuildID:   whereHelperint64{field: "\"automod_ruleset_conditions\".\"guild_id\""},
+	RulesetID: whereHelperint64{field: "\"automod_ruleset_conditions\".\"ruleset_id\""},
+	Kind:      whereHelperint{field: "\"automod_ruleset_conditions\".\"kind\""},
+	TypeID:    whereHelperint{field: "\"automod_ruleset_conditions\".\"type_id\""},
+	Settings:  whereHelpertypes_JSON{field: "\"automod_ruleset_conditions\".\"settings\""},
 }
 
 // AutomodRulesetConditionRels is where relationship names are stored.
@@ -90,7 +90,7 @@ func (*automodRulesetConditionR) NewStruct() *automodRulesetConditionR {
 type automodRulesetConditionL struct{}
 
 var (
-	automodRulesetConditionColumns               = []string{"id", "guild_id", "ruleset_id", "kind", "type_id", "settings"}
+	automodRulesetConditionAllColumns            = []string{"id", "guild_id", "ruleset_id", "kind", "type_id", "settings"}
 	automodRulesetConditionColumnsWithoutDefault = []string{"guild_id", "ruleset_id", "kind", "type_id", "settings"}
 	automodRulesetConditionColumnsWithDefault    = []string{"id"}
 	automodRulesetConditionPrimaryKeyColumns     = []string{"id"}
@@ -429,7 +429,7 @@ func (o *AutomodRulesetCondition) Insert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			automodRulesetConditionColumns,
+			automodRulesetConditionAllColumns,
 			automodRulesetConditionColumnsWithDefault,
 			automodRulesetConditionColumnsWithoutDefault,
 			nzDefaults,
@@ -503,7 +503,7 @@ func (o *AutomodRulesetCondition) Update(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			automodRulesetConditionColumns,
+			automodRulesetConditionAllColumns,
 			automodRulesetConditionPrimaryKeyColumns,
 		)
 
@@ -676,13 +676,13 @@ func (o *AutomodRulesetCondition) Upsert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			automodRulesetConditionColumns,
+			automodRulesetConditionAllColumns,
 			automodRulesetConditionColumnsWithDefault,
 			automodRulesetConditionColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			automodRulesetConditionColumns,
+			automodRulesetConditionAllColumns,
 			automodRulesetConditionPrimaryKeyColumns,
 		)
 
@@ -804,10 +804,6 @@ func (o AutomodRulesetConditionSlice) DeleteAllG(ctx context.Context) (int64, er
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AutomodRulesetConditionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no AutomodRulesetCondition slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

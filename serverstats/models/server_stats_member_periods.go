@@ -85,13 +85,13 @@ var ServerStatsMemberPeriodWhere = struct {
 	Leaves     whereHelperint64
 	MaxOnline  whereHelperint64
 }{
-	ID:         whereHelperint64{field: `id`},
-	GuildID:    whereHelperint64{field: `guild_id`},
-	CreatedAt:  whereHelpertime_Time{field: `created_at`},
-	NumMembers: whereHelperint64{field: `num_members`},
-	Joins:      whereHelperint64{field: `joins`},
-	Leaves:     whereHelperint64{field: `leaves`},
-	MaxOnline:  whereHelperint64{field: `max_online`},
+	ID:         whereHelperint64{field: "\"server_stats_member_periods\".\"id\""},
+	GuildID:    whereHelperint64{field: "\"server_stats_member_periods\".\"guild_id\""},
+	CreatedAt:  whereHelpertime_Time{field: "\"server_stats_member_periods\".\"created_at\""},
+	NumMembers: whereHelperint64{field: "\"server_stats_member_periods\".\"num_members\""},
+	Joins:      whereHelperint64{field: "\"server_stats_member_periods\".\"joins\""},
+	Leaves:     whereHelperint64{field: "\"server_stats_member_periods\".\"leaves\""},
+	MaxOnline:  whereHelperint64{field: "\"server_stats_member_periods\".\"max_online\""},
 }
 
 // ServerStatsMemberPeriodRels is where relationship names are stored.
@@ -111,9 +111,9 @@ func (*serverStatsMemberPeriodR) NewStruct() *serverStatsMemberPeriodR {
 type serverStatsMemberPeriodL struct{}
 
 var (
-	serverStatsMemberPeriodColumns               = []string{"id", "guild_id", "created_at", "num_members", "joins", "leaves", "max_online"}
-	serverStatsMemberPeriodColumnsWithoutDefault = []string{"guild_id", "created_at", "num_members", "joins", "leaves"}
-	serverStatsMemberPeriodColumnsWithDefault    = []string{"id", "max_online"}
+	serverStatsMemberPeriodAllColumns            = []string{"id", "guild_id", "created_at", "num_members", "joins", "leaves", "max_online"}
+	serverStatsMemberPeriodColumnsWithoutDefault = []string{"guild_id", "created_at", "num_members", "joins", "leaves", "max_online"}
+	serverStatsMemberPeriodColumnsWithDefault    = []string{"id"}
 	serverStatsMemberPeriodPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -295,7 +295,7 @@ func (o *ServerStatsMemberPeriod) Insert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodColumnsWithDefault,
 			serverStatsMemberPeriodColumnsWithoutDefault,
 			nzDefaults,
@@ -369,7 +369,7 @@ func (o *ServerStatsMemberPeriod) Update(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodPrimaryKeyColumns,
 		)
 
@@ -549,13 +549,13 @@ func (o *ServerStatsMemberPeriod) Upsert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodColumnsWithDefault,
 			serverStatsMemberPeriodColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodPrimaryKeyColumns,
 		)
 
@@ -677,10 +677,6 @@ func (o ServerStatsMemberPeriodSlice) DeleteAllG(ctx context.Context) (int64, er
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ServerStatsMemberPeriodSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ServerStatsMemberPeriod slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

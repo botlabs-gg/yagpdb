@@ -102,18 +102,18 @@ var RSVPSessionWhere = struct {
 	SendReminders   whereHelperbool
 	SentReminders   whereHelperbool
 }{
-	MessageID:       whereHelperint64{field: `message_id`},
-	GuildID:         whereHelperint64{field: `guild_id`},
-	ChannelID:       whereHelperint64{field: `channel_id`},
-	LocalID:         whereHelperint64{field: `local_id`},
-	AuthorID:        whereHelperint64{field: `author_id`},
-	CreatedAt:       whereHelpertime_Time{field: `created_at`},
-	StartsAt:        whereHelpertime_Time{field: `starts_at`},
-	Title:           whereHelperstring{field: `title`},
-	Description:     whereHelperstring{field: `description`},
-	MaxParticipants: whereHelperint{field: `max_participants`},
-	SendReminders:   whereHelperbool{field: `send_reminders`},
-	SentReminders:   whereHelperbool{field: `sent_reminders`},
+	MessageID:       whereHelperint64{field: "\"rsvp_sessions\".\"message_id\""},
+	GuildID:         whereHelperint64{field: "\"rsvp_sessions\".\"guild_id\""},
+	ChannelID:       whereHelperint64{field: "\"rsvp_sessions\".\"channel_id\""},
+	LocalID:         whereHelperint64{field: "\"rsvp_sessions\".\"local_id\""},
+	AuthorID:        whereHelperint64{field: "\"rsvp_sessions\".\"author_id\""},
+	CreatedAt:       whereHelpertime_Time{field: "\"rsvp_sessions\".\"created_at\""},
+	StartsAt:        whereHelpertime_Time{field: "\"rsvp_sessions\".\"starts_at\""},
+	Title:           whereHelperstring{field: "\"rsvp_sessions\".\"title\""},
+	Description:     whereHelperstring{field: "\"rsvp_sessions\".\"description\""},
+	MaxParticipants: whereHelperint{field: "\"rsvp_sessions\".\"max_participants\""},
+	SendReminders:   whereHelperbool{field: "\"rsvp_sessions\".\"send_reminders\""},
+	SentReminders:   whereHelperbool{field: "\"rsvp_sessions\".\"sent_reminders\""},
 }
 
 // RSVPSessionRels is where relationship names are stored.
@@ -137,7 +137,7 @@ func (*rsvpSessionR) NewStruct() *rsvpSessionR {
 type rsvpSessionL struct{}
 
 var (
-	rsvpSessionColumns               = []string{"message_id", "guild_id", "channel_id", "local_id", "author_id", "created_at", "starts_at", "title", "description", "max_participants", "send_reminders", "sent_reminders"}
+	rsvpSessionAllColumns            = []string{"message_id", "guild_id", "channel_id", "local_id", "author_id", "created_at", "starts_at", "title", "description", "max_participants", "send_reminders", "sent_reminders"}
 	rsvpSessionColumnsWithoutDefault = []string{"message_id", "guild_id", "channel_id", "local_id", "author_id", "created_at", "starts_at", "title", "description", "max_participants", "send_reminders", "sent_reminders"}
 	rsvpSessionColumnsWithDefault    = []string{}
 	rsvpSessionPrimaryKeyColumns     = []string{"message_id"}
@@ -492,7 +492,7 @@ func (o *RSVPSession) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			rsvpSessionColumns,
+			rsvpSessionAllColumns,
 			rsvpSessionColumnsWithDefault,
 			rsvpSessionColumnsWithoutDefault,
 			nzDefaults,
@@ -566,7 +566,7 @@ func (o *RSVPSession) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			rsvpSessionColumns,
+			rsvpSessionAllColumns,
 			rsvpSessionPrimaryKeyColumns,
 		)
 
@@ -746,13 +746,13 @@ func (o *RSVPSession) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			rsvpSessionColumns,
+			rsvpSessionAllColumns,
 			rsvpSessionColumnsWithDefault,
 			rsvpSessionColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			rsvpSessionColumns,
+			rsvpSessionAllColumns,
 			rsvpSessionPrimaryKeyColumns,
 		)
 
@@ -874,10 +874,6 @@ func (o RSVPSessionSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RSVPSessionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RSVPSession slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

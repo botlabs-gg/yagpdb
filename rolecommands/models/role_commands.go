@@ -163,16 +163,16 @@ var RoleCommandWhere = struct {
 	IgnoreRoles  whereHelpertypes_Int64Array
 	Position     whereHelperint64
 }{
-	ID:           whereHelperint64{field: `id`},
-	CreatedAt:    whereHelpertime_Time{field: `created_at`},
-	UpdatedAt:    whereHelpertime_Time{field: `updated_at`},
-	GuildID:      whereHelperint64{field: `guild_id`},
-	Name:         whereHelperstring{field: `name`},
-	RoleGroupID:  whereHelpernull_Int64{field: `role_group_id`},
-	Role:         whereHelperint64{field: `role`},
-	RequireRoles: whereHelpertypes_Int64Array{field: `require_roles`},
-	IgnoreRoles:  whereHelpertypes_Int64Array{field: `ignore_roles`},
-	Position:     whereHelperint64{field: `position`},
+	ID:           whereHelperint64{field: "\"role_commands\".\"id\""},
+	CreatedAt:    whereHelpertime_Time{field: "\"role_commands\".\"created_at\""},
+	UpdatedAt:    whereHelpertime_Time{field: "\"role_commands\".\"updated_at\""},
+	GuildID:      whereHelperint64{field: "\"role_commands\".\"guild_id\""},
+	Name:         whereHelperstring{field: "\"role_commands\".\"name\""},
+	RoleGroupID:  whereHelpernull_Int64{field: "\"role_commands\".\"role_group_id\""},
+	Role:         whereHelperint64{field: "\"role_commands\".\"role\""},
+	RequireRoles: whereHelpertypes_Int64Array{field: "\"role_commands\".\"require_roles\""},
+	IgnoreRoles:  whereHelpertypes_Int64Array{field: "\"role_commands\".\"ignore_roles\""},
+	Position:     whereHelperint64{field: "\"role_commands\".\"position\""},
 }
 
 // RoleCommandRels is where relationship names are stored.
@@ -202,7 +202,7 @@ func (*roleCommandR) NewStruct() *roleCommandR {
 type roleCommandL struct{}
 
 var (
-	roleCommandColumns               = []string{"id", "created_at", "updated_at", "guild_id", "name", "role_group_id", "role", "require_roles", "ignore_roles", "position"}
+	roleCommandAllColumns            = []string{"id", "created_at", "updated_at", "guild_id", "name", "role_group_id", "role", "require_roles", "ignore_roles", "position"}
 	roleCommandColumnsWithoutDefault = []string{"created_at", "updated_at", "guild_id", "name", "role_group_id", "role", "require_roles", "ignore_roles", "position"}
 	roleCommandColumnsWithDefault    = []string{"id"}
 	roleCommandPrimaryKeyColumns     = []string{"id"}
@@ -1114,7 +1114,7 @@ func (o *RoleCommand) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandColumnsWithDefault,
 			roleCommandColumnsWithoutDefault,
 			nzDefaults,
@@ -1194,7 +1194,7 @@ func (o *RoleCommand) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandPrimaryKeyColumns,
 		)
 
@@ -1375,13 +1375,13 @@ func (o *RoleCommand) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandColumnsWithDefault,
 			roleCommandColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandPrimaryKeyColumns,
 		)
 
@@ -1503,10 +1503,6 @@ func (o RoleCommandSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RoleCommandSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RoleCommand slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

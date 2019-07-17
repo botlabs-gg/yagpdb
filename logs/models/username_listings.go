@@ -61,12 +61,12 @@ var UsernameListingWhere = struct {
 	UserID    whereHelpernull_Int64
 	Username  whereHelpernull_String
 }{
-	ID:        whereHelperint{field: `id`},
-	CreatedAt: whereHelpernull_Time{field: `created_at`},
-	UpdatedAt: whereHelpernull_Time{field: `updated_at`},
-	DeletedAt: whereHelpernull_Time{field: `deleted_at`},
-	UserID:    whereHelpernull_Int64{field: `user_id`},
-	Username:  whereHelpernull_String{field: `username`},
+	ID:        whereHelperint{field: "\"username_listings\".\"id\""},
+	CreatedAt: whereHelpernull_Time{field: "\"username_listings\".\"created_at\""},
+	UpdatedAt: whereHelpernull_Time{field: "\"username_listings\".\"updated_at\""},
+	DeletedAt: whereHelpernull_Time{field: "\"username_listings\".\"deleted_at\""},
+	UserID:    whereHelpernull_Int64{field: "\"username_listings\".\"user_id\""},
+	Username:  whereHelpernull_String{field: "\"username_listings\".\"username\""},
 }
 
 // UsernameListingRels is where relationship names are stored.
@@ -86,7 +86,7 @@ func (*usernameListingR) NewStruct() *usernameListingR {
 type usernameListingL struct{}
 
 var (
-	usernameListingColumns               = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "username"}
+	usernameListingAllColumns            = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "username"}
 	usernameListingColumnsWithoutDefault = []string{"created_at", "updated_at", "deleted_at", "user_id", "username"}
 	usernameListingColumnsWithDefault    = []string{"id"}
 	usernameListingPrimaryKeyColumns     = []string{"id"}
@@ -273,7 +273,7 @@ func (o *UsernameListing) Insert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingColumnsWithDefault,
 			usernameListingColumnsWithoutDefault,
 			nzDefaults,
@@ -353,7 +353,7 @@ func (o *UsernameListing) Update(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingPrimaryKeyColumns,
 		)
 
@@ -534,13 +534,13 @@ func (o *UsernameListing) Upsert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingColumnsWithDefault,
 			usernameListingColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingPrimaryKeyColumns,
 		)
 
@@ -662,10 +662,6 @@ func (o UsernameListingSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o UsernameListingSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no UsernameListing slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

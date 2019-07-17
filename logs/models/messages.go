@@ -104,17 +104,17 @@ var MessageWhere = struct {
 	Content        whereHelpernull_String
 	Timestamp      whereHelpernull_String
 }{
-	ID:             whereHelperint{field: `id`},
-	CreatedAt:      whereHelpernull_Time{field: `created_at`},
-	UpdatedAt:      whereHelpernull_Time{field: `updated_at`},
-	MessageLogID:   whereHelpernull_Int{field: `message_log_id`},
-	MessageID:      whereHelpernull_String{field: `message_id`},
-	AuthorUsername: whereHelpernull_String{field: `author_username`},
-	AuthorDiscrim:  whereHelpernull_String{field: `author_discrim`},
-	AuthorID:       whereHelpernull_String{field: `author_id`},
-	Deleted:        whereHelpernull_Bool{field: `deleted`},
-	Content:        whereHelpernull_String{field: `content`},
-	Timestamp:      whereHelpernull_String{field: `timestamp`},
+	ID:             whereHelperint{field: "\"messages\".\"id\""},
+	CreatedAt:      whereHelpernull_Time{field: "\"messages\".\"created_at\""},
+	UpdatedAt:      whereHelpernull_Time{field: "\"messages\".\"updated_at\""},
+	MessageLogID:   whereHelpernull_Int{field: "\"messages\".\"message_log_id\""},
+	MessageID:      whereHelpernull_String{field: "\"messages\".\"message_id\""},
+	AuthorUsername: whereHelpernull_String{field: "\"messages\".\"author_username\""},
+	AuthorDiscrim:  whereHelpernull_String{field: "\"messages\".\"author_discrim\""},
+	AuthorID:       whereHelpernull_String{field: "\"messages\".\"author_id\""},
+	Deleted:        whereHelpernull_Bool{field: "\"messages\".\"deleted\""},
+	Content:        whereHelpernull_String{field: "\"messages\".\"content\""},
+	Timestamp:      whereHelpernull_String{field: "\"messages\".\"timestamp\""},
 }
 
 // MessageRels is where relationship names are stored.
@@ -138,7 +138,7 @@ func (*messageR) NewStruct() *messageR {
 type messageL struct{}
 
 var (
-	messageColumns               = []string{"id", "created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
+	messageAllColumns            = []string{"id", "created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
 	messageColumnsWithoutDefault = []string{"created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
 	messageColumnsWithDefault    = []string{"id"}
 	messagePrimaryKeyColumns     = []string{"id"}
@@ -530,7 +530,7 @@ func (o *Message) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messageColumnsWithDefault,
 			messageColumnsWithoutDefault,
 			nzDefaults,
@@ -610,7 +610,7 @@ func (o *Message) Update(ctx context.Context, exec boil.ContextExecutor, columns
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messagePrimaryKeyColumns,
 		)
 
@@ -791,13 +791,13 @@ func (o *Message) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messageColumnsWithDefault,
 			messageColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messagePrimaryKeyColumns,
 		)
 
@@ -919,10 +919,6 @@ func (o MessageSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o MessageSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no Message slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

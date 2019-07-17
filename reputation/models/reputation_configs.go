@@ -188,23 +188,23 @@ var ReputationConfigWhere = struct {
 	BlacklistedGiveRoles    whereHelpertypes_Int64Array
 	BlacklistedReceiveRoles whereHelpertypes_Int64Array
 }{
-	GuildID:                 whereHelperint64{field: `guild_id`},
-	PointsName:              whereHelperstring{field: `points_name`},
-	Enabled:                 whereHelperbool{field: `enabled`},
-	Cooldown:                whereHelperint{field: `cooldown`},
-	MaxGiveAmount:           whereHelperint64{field: `max_give_amount`},
-	RequiredGiveRole:        whereHelpernull_String{field: `required_give_role`},
-	RequiredReceiveRole:     whereHelpernull_String{field: `required_receive_role`},
-	BlacklistedGiveRole:     whereHelpernull_String{field: `blacklisted_give_role`},
-	BlacklistedReceiveRole:  whereHelpernull_String{field: `blacklisted_receive_role`},
-	AdminRole:               whereHelpernull_String{field: `admin_role`},
-	DisableThanksDetection:  whereHelperbool{field: `disable_thanks_detection`},
-	MaxRemoveAmount:         whereHelperint64{field: `max_remove_amount`},
-	AdminRoles:              whereHelpertypes_Int64Array{field: `admin_roles`},
-	RequiredGiveRoles:       whereHelpertypes_Int64Array{field: `required_give_roles`},
-	RequiredReceiveRoles:    whereHelpertypes_Int64Array{field: `required_receive_roles`},
-	BlacklistedGiveRoles:    whereHelpertypes_Int64Array{field: `blacklisted_give_roles`},
-	BlacklistedReceiveRoles: whereHelpertypes_Int64Array{field: `blacklisted_receive_roles`},
+	GuildID:                 whereHelperint64{field: "\"reputation_configs\".\"guild_id\""},
+	PointsName:              whereHelperstring{field: "\"reputation_configs\".\"points_name\""},
+	Enabled:                 whereHelperbool{field: "\"reputation_configs\".\"enabled\""},
+	Cooldown:                whereHelperint{field: "\"reputation_configs\".\"cooldown\""},
+	MaxGiveAmount:           whereHelperint64{field: "\"reputation_configs\".\"max_give_amount\""},
+	RequiredGiveRole:        whereHelpernull_String{field: "\"reputation_configs\".\"required_give_role\""},
+	RequiredReceiveRole:     whereHelpernull_String{field: "\"reputation_configs\".\"required_receive_role\""},
+	BlacklistedGiveRole:     whereHelpernull_String{field: "\"reputation_configs\".\"blacklisted_give_role\""},
+	BlacklistedReceiveRole:  whereHelpernull_String{field: "\"reputation_configs\".\"blacklisted_receive_role\""},
+	AdminRole:               whereHelpernull_String{field: "\"reputation_configs\".\"admin_role\""},
+	DisableThanksDetection:  whereHelperbool{field: "\"reputation_configs\".\"disable_thanks_detection\""},
+	MaxRemoveAmount:         whereHelperint64{field: "\"reputation_configs\".\"max_remove_amount\""},
+	AdminRoles:              whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"admin_roles\""},
+	RequiredGiveRoles:       whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"required_give_roles\""},
+	RequiredReceiveRoles:    whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"required_receive_roles\""},
+	BlacklistedGiveRoles:    whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"blacklisted_give_roles\""},
+	BlacklistedReceiveRoles: whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"blacklisted_receive_roles\""},
 }
 
 // ReputationConfigRels is where relationship names are stored.
@@ -224,7 +224,7 @@ func (*reputationConfigR) NewStruct() *reputationConfigR {
 type reputationConfigL struct{}
 
 var (
-	reputationConfigColumns               = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "disable_thanks_detection", "max_remove_amount", "admin_roles", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles"}
+	reputationConfigAllColumns            = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "disable_thanks_detection", "max_remove_amount", "admin_roles", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles"}
 	reputationConfigColumnsWithoutDefault = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "admin_roles", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles"}
 	reputationConfigColumnsWithDefault    = []string{"disable_thanks_detection", "max_remove_amount"}
 	reputationConfigPrimaryKeyColumns     = []string{"guild_id"}
@@ -401,7 +401,7 @@ func (o *ReputationConfig) Insert(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			reputationConfigColumns,
+			reputationConfigAllColumns,
 			reputationConfigColumnsWithDefault,
 			reputationConfigColumnsWithoutDefault,
 			nzDefaults,
@@ -475,7 +475,7 @@ func (o *ReputationConfig) Update(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			reputationConfigColumns,
+			reputationConfigAllColumns,
 			reputationConfigPrimaryKeyColumns,
 		)
 
@@ -648,13 +648,13 @@ func (o *ReputationConfig) Upsert(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			reputationConfigColumns,
+			reputationConfigAllColumns,
 			reputationConfigColumnsWithDefault,
 			reputationConfigColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			reputationConfigColumns,
+			reputationConfigAllColumns,
 			reputationConfigPrimaryKeyColumns,
 		)
 
@@ -776,10 +776,6 @@ func (o ReputationConfigSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ReputationConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ReputationConfig slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

@@ -127,16 +127,16 @@ var TicketConfigWhere = struct {
 	ModRoles                  whereHelpertypes_Int64Array
 	AdminRoles                whereHelpertypes_Int64Array
 }{
-	GuildID:                   whereHelperint64{field: `guild_id`},
-	Enabled:                   whereHelperbool{field: `enabled`},
-	TicketOpenMSG:             whereHelperstring{field: `ticket_open_msg`},
-	TicketsChannelCategory:    whereHelperint64{field: `tickets_channel_category`},
-	StatusChannel:             whereHelperint64{field: `status_channel`},
-	TicketsTranscriptsChannel: whereHelperint64{field: `tickets_transcripts_channel`},
-	DownloadAttachments:       whereHelperbool{field: `download_attachments`},
-	TicketsUseTXTTranscripts:  whereHelperbool{field: `tickets_use_txt_transcripts`},
-	ModRoles:                  whereHelpertypes_Int64Array{field: `mod_roles`},
-	AdminRoles:                whereHelpertypes_Int64Array{field: `admin_roles`},
+	GuildID:                   whereHelperint64{field: "\"ticket_configs\".\"guild_id\""},
+	Enabled:                   whereHelperbool{field: "\"ticket_configs\".\"enabled\""},
+	TicketOpenMSG:             whereHelperstring{field: "\"ticket_configs\".\"ticket_open_msg\""},
+	TicketsChannelCategory:    whereHelperint64{field: "\"ticket_configs\".\"tickets_channel_category\""},
+	StatusChannel:             whereHelperint64{field: "\"ticket_configs\".\"status_channel\""},
+	TicketsTranscriptsChannel: whereHelperint64{field: "\"ticket_configs\".\"tickets_transcripts_channel\""},
+	DownloadAttachments:       whereHelperbool{field: "\"ticket_configs\".\"download_attachments\""},
+	TicketsUseTXTTranscripts:  whereHelperbool{field: "\"ticket_configs\".\"tickets_use_txt_transcripts\""},
+	ModRoles:                  whereHelpertypes_Int64Array{field: "\"ticket_configs\".\"mod_roles\""},
+	AdminRoles:                whereHelpertypes_Int64Array{field: "\"ticket_configs\".\"admin_roles\""},
 }
 
 // TicketConfigRels is where relationship names are stored.
@@ -156,7 +156,7 @@ func (*ticketConfigR) NewStruct() *ticketConfigR {
 type ticketConfigL struct{}
 
 var (
-	ticketConfigColumns               = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles"}
+	ticketConfigAllColumns            = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles"}
 	ticketConfigColumnsWithoutDefault = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles"}
 	ticketConfigColumnsWithDefault    = []string{}
 	ticketConfigPrimaryKeyColumns     = []string{"guild_id"}
@@ -333,7 +333,7 @@ func (o *TicketConfig) Insert(ctx context.Context, exec boil.ContextExecutor, co
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			ticketConfigColumns,
+			ticketConfigAllColumns,
 			ticketConfigColumnsWithDefault,
 			ticketConfigColumnsWithoutDefault,
 			nzDefaults,
@@ -407,7 +407,7 @@ func (o *TicketConfig) Update(ctx context.Context, exec boil.ContextExecutor, co
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			ticketConfigColumns,
+			ticketConfigAllColumns,
 			ticketConfigPrimaryKeyColumns,
 		)
 
@@ -580,13 +580,13 @@ func (o *TicketConfig) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			ticketConfigColumns,
+			ticketConfigAllColumns,
 			ticketConfigColumnsWithDefault,
 			ticketConfigColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			ticketConfigColumns,
+			ticketConfigAllColumns,
 			ticketConfigPrimaryKeyColumns,
 		)
 
@@ -708,10 +708,6 @@ func (o TicketConfigSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o TicketConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no TicketConfig slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

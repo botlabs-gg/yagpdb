@@ -94,10 +94,10 @@ var TimezoneGuildConfigWhere = struct {
 	EnabledInChannels   whereHelpertypes_Int64Array
 	NewChannelsDisabled whereHelperbool
 }{
-	GuildID:             whereHelperint64{field: `guild_id`},
-	DisabledInChannels:  whereHelpertypes_Int64Array{field: `disabled_in_channels`},
-	EnabledInChannels:   whereHelpertypes_Int64Array{field: `enabled_in_channels`},
-	NewChannelsDisabled: whereHelperbool{field: `new_channels_disabled`},
+	GuildID:             whereHelperint64{field: "\"timezone_guild_configs\".\"guild_id\""},
+	DisabledInChannels:  whereHelpertypes_Int64Array{field: "\"timezone_guild_configs\".\"disabled_in_channels\""},
+	EnabledInChannels:   whereHelpertypes_Int64Array{field: "\"timezone_guild_configs\".\"enabled_in_channels\""},
+	NewChannelsDisabled: whereHelperbool{field: "\"timezone_guild_configs\".\"new_channels_disabled\""},
 }
 
 // TimezoneGuildConfigRels is where relationship names are stored.
@@ -117,7 +117,7 @@ func (*timezoneGuildConfigR) NewStruct() *timezoneGuildConfigR {
 type timezoneGuildConfigL struct{}
 
 var (
-	timezoneGuildConfigColumns               = []string{"guild_id", "disabled_in_channels", "enabled_in_channels", "new_channels_disabled"}
+	timezoneGuildConfigAllColumns            = []string{"guild_id", "disabled_in_channels", "enabled_in_channels", "new_channels_disabled"}
 	timezoneGuildConfigColumnsWithoutDefault = []string{"guild_id", "disabled_in_channels", "enabled_in_channels", "new_channels_disabled"}
 	timezoneGuildConfigColumnsWithDefault    = []string{}
 	timezoneGuildConfigPrimaryKeyColumns     = []string{"guild_id"}
@@ -294,7 +294,7 @@ func (o *TimezoneGuildConfig) Insert(ctx context.Context, exec boil.ContextExecu
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			timezoneGuildConfigColumns,
+			timezoneGuildConfigAllColumns,
 			timezoneGuildConfigColumnsWithDefault,
 			timezoneGuildConfigColumnsWithoutDefault,
 			nzDefaults,
@@ -368,7 +368,7 @@ func (o *TimezoneGuildConfig) Update(ctx context.Context, exec boil.ContextExecu
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			timezoneGuildConfigColumns,
+			timezoneGuildConfigAllColumns,
 			timezoneGuildConfigPrimaryKeyColumns,
 		)
 
@@ -541,13 +541,13 @@ func (o *TimezoneGuildConfig) Upsert(ctx context.Context, exec boil.ContextExecu
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			timezoneGuildConfigColumns,
+			timezoneGuildConfigAllColumns,
 			timezoneGuildConfigColumnsWithDefault,
 			timezoneGuildConfigColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			timezoneGuildConfigColumns,
+			timezoneGuildConfigAllColumns,
 			timezoneGuildConfigPrimaryKeyColumns,
 		)
 
@@ -669,10 +669,6 @@ func (o TimezoneGuildConfigSlice) DeleteAllG(ctx context.Context) (int64, error)
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o TimezoneGuildConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no TimezoneGuildConfig slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

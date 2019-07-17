@@ -105,11 +105,11 @@ var AutomodListWhere = struct {
 	Kind    whereHelperint
 	Content whereHelpertypes_StringArray
 }{
-	ID:      whereHelperint64{field: `id`},
-	GuildID: whereHelperint64{field: `guild_id`},
-	Name:    whereHelperstring{field: `name`},
-	Kind:    whereHelperint{field: `kind`},
-	Content: whereHelpertypes_StringArray{field: `content`},
+	ID:      whereHelperint64{field: "\"automod_lists\".\"id\""},
+	GuildID: whereHelperint64{field: "\"automod_lists\".\"guild_id\""},
+	Name:    whereHelperstring{field: "\"automod_lists\".\"name\""},
+	Kind:    whereHelperint{field: "\"automod_lists\".\"kind\""},
+	Content: whereHelpertypes_StringArray{field: "\"automod_lists\".\"content\""},
 }
 
 // AutomodListRels is where relationship names are stored.
@@ -129,7 +129,7 @@ func (*automodListR) NewStruct() *automodListR {
 type automodListL struct{}
 
 var (
-	automodListColumns               = []string{"id", "guild_id", "name", "kind", "content"}
+	automodListAllColumns            = []string{"id", "guild_id", "name", "kind", "content"}
 	automodListColumnsWithoutDefault = []string{"guild_id", "name", "kind", "content"}
 	automodListColumnsWithDefault    = []string{"id"}
 	automodListPrimaryKeyColumns     = []string{"id"}
@@ -306,7 +306,7 @@ func (o *AutomodList) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListColumnsWithDefault,
 			automodListColumnsWithoutDefault,
 			nzDefaults,
@@ -380,7 +380,7 @@ func (o *AutomodList) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListPrimaryKeyColumns,
 		)
 
@@ -553,13 +553,13 @@ func (o *AutomodList) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListColumnsWithDefault,
 			automodListColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListPrimaryKeyColumns,
 		)
 
@@ -681,10 +681,6 @@ func (o AutomodListSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AutomodListSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no AutomodList slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

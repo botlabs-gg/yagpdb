@@ -108,12 +108,12 @@ var RSVPParticipantWhere = struct {
 	ReminderEnabled         whereHelperbool
 	MarkedAsParticipatingAt whereHelpertime_Time
 }{
-	UserID:                  whereHelperint64{field: `user_id`},
-	RSVPSessionsMessageID:   whereHelperint64{field: `rsvp_sessions_message_id`},
-	GuildID:                 whereHelperint64{field: `guild_id`},
-	JoinState:               whereHelperint16{field: `join_state`},
-	ReminderEnabled:         whereHelperbool{field: `reminder_enabled`},
-	MarkedAsParticipatingAt: whereHelpertime_Time{field: `marked_as_participating_at`},
+	UserID:                  whereHelperint64{field: "\"rsvp_participants\".\"user_id\""},
+	RSVPSessionsMessageID:   whereHelperint64{field: "\"rsvp_participants\".\"rsvp_sessions_message_id\""},
+	GuildID:                 whereHelperint64{field: "\"rsvp_participants\".\"guild_id\""},
+	JoinState:               whereHelperint16{field: "\"rsvp_participants\".\"join_state\""},
+	ReminderEnabled:         whereHelperbool{field: "\"rsvp_participants\".\"reminder_enabled\""},
+	MarkedAsParticipatingAt: whereHelpertime_Time{field: "\"rsvp_participants\".\"marked_as_participating_at\""},
 }
 
 // RSVPParticipantRels is where relationship names are stored.
@@ -137,7 +137,7 @@ func (*rsvpParticipantR) NewStruct() *rsvpParticipantR {
 type rsvpParticipantL struct{}
 
 var (
-	rsvpParticipantColumns               = []string{"user_id", "rsvp_sessions_message_id", "guild_id", "join_state", "reminder_enabled", "marked_as_participating_at"}
+	rsvpParticipantAllColumns            = []string{"user_id", "rsvp_sessions_message_id", "guild_id", "join_state", "reminder_enabled", "marked_as_participating_at"}
 	rsvpParticipantColumnsWithoutDefault = []string{"user_id", "rsvp_sessions_message_id", "guild_id", "join_state", "reminder_enabled", "marked_as_participating_at"}
 	rsvpParticipantColumnsWithDefault    = []string{}
 	rsvpParticipantPrimaryKeyColumns     = []string{"rsvp_sessions_message_id", "user_id"}
@@ -476,7 +476,7 @@ func (o *RSVPParticipant) Insert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			rsvpParticipantColumns,
+			rsvpParticipantAllColumns,
 			rsvpParticipantColumnsWithDefault,
 			rsvpParticipantColumnsWithoutDefault,
 			nzDefaults,
@@ -550,7 +550,7 @@ func (o *RSVPParticipant) Update(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			rsvpParticipantColumns,
+			rsvpParticipantAllColumns,
 			rsvpParticipantPrimaryKeyColumns,
 		)
 
@@ -723,13 +723,13 @@ func (o *RSVPParticipant) Upsert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			rsvpParticipantColumns,
+			rsvpParticipantAllColumns,
 			rsvpParticipantColumnsWithDefault,
 			rsvpParticipantColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			rsvpParticipantColumns,
+			rsvpParticipantAllColumns,
 			rsvpParticipantPrimaryKeyColumns,
 		)
 
@@ -851,10 +851,6 @@ func (o RSVPParticipantSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RSVPParticipantSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RSVPParticipant slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

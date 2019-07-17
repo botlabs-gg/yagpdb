@@ -60,12 +60,12 @@ var TicketParticipantWhere = struct {
 	Discrim       whereHelperstring
 	IsStaff       whereHelperbool
 }{
-	TicketGuildID: whereHelperint64{field: `ticket_guild_id`},
-	TicketLocalID: whereHelperint64{field: `ticket_local_id`},
-	UserID:        whereHelperint64{field: `user_id`},
-	Username:      whereHelperstring{field: `username`},
-	Discrim:       whereHelperstring{field: `discrim`},
-	IsStaff:       whereHelperbool{field: `is_staff`},
+	TicketGuildID: whereHelperint64{field: "\"ticket_participants\".\"ticket_guild_id\""},
+	TicketLocalID: whereHelperint64{field: "\"ticket_participants\".\"ticket_local_id\""},
+	UserID:        whereHelperint64{field: "\"ticket_participants\".\"user_id\""},
+	Username:      whereHelperstring{field: "\"ticket_participants\".\"username\""},
+	Discrim:       whereHelperstring{field: "\"ticket_participants\".\"discrim\""},
+	IsStaff:       whereHelperbool{field: "\"ticket_participants\".\"is_staff\""},
 }
 
 // TicketParticipantRels is where relationship names are stored.
@@ -85,7 +85,7 @@ func (*ticketParticipantR) NewStruct() *ticketParticipantR {
 type ticketParticipantL struct{}
 
 var (
-	ticketParticipantColumns               = []string{"ticket_guild_id", "ticket_local_id", "user_id", "username", "discrim", "is_staff"}
+	ticketParticipantAllColumns            = []string{"ticket_guild_id", "ticket_local_id", "user_id", "username", "discrim", "is_staff"}
 	ticketParticipantColumnsWithoutDefault = []string{"ticket_guild_id", "ticket_local_id", "user_id", "username", "discrim", "is_staff"}
 	ticketParticipantColumnsWithDefault    = []string{}
 	ticketParticipantPrimaryKeyColumns     = []string{"ticket_guild_id", "ticket_local_id", "user_id"}
@@ -262,7 +262,7 @@ func (o *TicketParticipant) Insert(ctx context.Context, exec boil.ContextExecuto
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			ticketParticipantColumns,
+			ticketParticipantAllColumns,
 			ticketParticipantColumnsWithDefault,
 			ticketParticipantColumnsWithoutDefault,
 			nzDefaults,
@@ -336,7 +336,7 @@ func (o *TicketParticipant) Update(ctx context.Context, exec boil.ContextExecuto
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			ticketParticipantColumns,
+			ticketParticipantAllColumns,
 			ticketParticipantPrimaryKeyColumns,
 		)
 
@@ -509,13 +509,13 @@ func (o *TicketParticipant) Upsert(ctx context.Context, exec boil.ContextExecuto
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			ticketParticipantColumns,
+			ticketParticipantAllColumns,
 			ticketParticipantColumnsWithDefault,
 			ticketParticipantColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			ticketParticipantColumns,
+			ticketParticipantAllColumns,
 			ticketParticipantPrimaryKeyColumns,
 		)
 
@@ -637,10 +637,6 @@ func (o TicketParticipantSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o TicketParticipantSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no TicketParticipant slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

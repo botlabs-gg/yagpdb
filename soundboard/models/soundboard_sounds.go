@@ -144,15 +144,15 @@ var SoundboardSoundWhere = struct {
 	RequiredRoles    whereHelpertypes_Int64Array
 	BlacklistedRoles whereHelpertypes_Int64Array
 }{
-	ID:               whereHelperint{field: `id`},
-	CreatedAt:        whereHelpertime_Time{field: `created_at`},
-	UpdatedAt:        whereHelpertime_Time{field: `updated_at`},
-	GuildID:          whereHelperint64{field: `guild_id`},
-	RequiredRole:     whereHelperstring{field: `required_role`},
-	Name:             whereHelperstring{field: `name`},
-	Status:           whereHelperint{field: `status`},
-	RequiredRoles:    whereHelpertypes_Int64Array{field: `required_roles`},
-	BlacklistedRoles: whereHelpertypes_Int64Array{field: `blacklisted_roles`},
+	ID:               whereHelperint{field: "\"soundboard_sounds\".\"id\""},
+	CreatedAt:        whereHelpertime_Time{field: "\"soundboard_sounds\".\"created_at\""},
+	UpdatedAt:        whereHelpertime_Time{field: "\"soundboard_sounds\".\"updated_at\""},
+	GuildID:          whereHelperint64{field: "\"soundboard_sounds\".\"guild_id\""},
+	RequiredRole:     whereHelperstring{field: "\"soundboard_sounds\".\"required_role\""},
+	Name:             whereHelperstring{field: "\"soundboard_sounds\".\"name\""},
+	Status:           whereHelperint{field: "\"soundboard_sounds\".\"status\""},
+	RequiredRoles:    whereHelpertypes_Int64Array{field: "\"soundboard_sounds\".\"required_roles\""},
+	BlacklistedRoles: whereHelpertypes_Int64Array{field: "\"soundboard_sounds\".\"blacklisted_roles\""},
 }
 
 // SoundboardSoundRels is where relationship names are stored.
@@ -172,7 +172,7 @@ func (*soundboardSoundR) NewStruct() *soundboardSoundR {
 type soundboardSoundL struct{}
 
 var (
-	soundboardSoundColumns               = []string{"id", "created_at", "updated_at", "guild_id", "required_role", "name", "status", "required_roles", "blacklisted_roles"}
+	soundboardSoundAllColumns            = []string{"id", "created_at", "updated_at", "guild_id", "required_role", "name", "status", "required_roles", "blacklisted_roles"}
 	soundboardSoundColumnsWithoutDefault = []string{"created_at", "updated_at", "guild_id", "required_role", "name", "status", "required_roles", "blacklisted_roles"}
 	soundboardSoundColumnsWithDefault    = []string{"id"}
 	soundboardSoundPrimaryKeyColumns     = []string{"id"}
@@ -359,7 +359,7 @@ func (o *SoundboardSound) Insert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			soundboardSoundColumns,
+			soundboardSoundAllColumns,
 			soundboardSoundColumnsWithDefault,
 			soundboardSoundColumnsWithoutDefault,
 			nzDefaults,
@@ -439,7 +439,7 @@ func (o *SoundboardSound) Update(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			soundboardSoundColumns,
+			soundboardSoundAllColumns,
 			soundboardSoundPrimaryKeyColumns,
 		)
 
@@ -620,13 +620,13 @@ func (o *SoundboardSound) Upsert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			soundboardSoundColumns,
+			soundboardSoundAllColumns,
 			soundboardSoundColumnsWithDefault,
 			soundboardSoundColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			soundboardSoundColumns,
+			soundboardSoundAllColumns,
 			soundboardSoundPrimaryKeyColumns,
 		)
 
@@ -748,10 +748,6 @@ func (o SoundboardSoundSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o SoundboardSoundSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no SoundboardSound slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

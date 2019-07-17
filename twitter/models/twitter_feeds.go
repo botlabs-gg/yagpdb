@@ -112,13 +112,13 @@ var TwitterFeedWhere = struct {
 	ChannelID       whereHelperint64
 	Enabled         whereHelperbool
 }{
-	ID:              whereHelperint64{field: `id`},
-	GuildID:         whereHelperint64{field: `guild_id`},
-	CreatedAt:       whereHelpertime_Time{field: `created_at`},
-	TwitterUsername: whereHelperstring{field: `twitter_username`},
-	TwitterUserID:   whereHelperint64{field: `twitter_user_id`},
-	ChannelID:       whereHelperint64{field: `channel_id`},
-	Enabled:         whereHelperbool{field: `enabled`},
+	ID:              whereHelperint64{field: "\"twitter_feeds\".\"id\""},
+	GuildID:         whereHelperint64{field: "\"twitter_feeds\".\"guild_id\""},
+	CreatedAt:       whereHelpertime_Time{field: "\"twitter_feeds\".\"created_at\""},
+	TwitterUsername: whereHelperstring{field: "\"twitter_feeds\".\"twitter_username\""},
+	TwitterUserID:   whereHelperint64{field: "\"twitter_feeds\".\"twitter_user_id\""},
+	ChannelID:       whereHelperint64{field: "\"twitter_feeds\".\"channel_id\""},
+	Enabled:         whereHelperbool{field: "\"twitter_feeds\".\"enabled\""},
 }
 
 // TwitterFeedRels is where relationship names are stored.
@@ -138,7 +138,7 @@ func (*twitterFeedR) NewStruct() *twitterFeedR {
 type twitterFeedL struct{}
 
 var (
-	twitterFeedColumns               = []string{"id", "guild_id", "created_at", "twitter_username", "twitter_user_id", "channel_id", "enabled"}
+	twitterFeedAllColumns            = []string{"id", "guild_id", "created_at", "twitter_username", "twitter_user_id", "channel_id", "enabled"}
 	twitterFeedColumnsWithoutDefault = []string{"guild_id", "created_at", "twitter_username", "twitter_user_id", "channel_id", "enabled"}
 	twitterFeedColumnsWithDefault    = []string{"id"}
 	twitterFeedPrimaryKeyColumns     = []string{"id"}
@@ -322,7 +322,7 @@ func (o *TwitterFeed) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			twitterFeedColumns,
+			twitterFeedAllColumns,
 			twitterFeedColumnsWithDefault,
 			twitterFeedColumnsWithoutDefault,
 			nzDefaults,
@@ -396,7 +396,7 @@ func (o *TwitterFeed) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			twitterFeedColumns,
+			twitterFeedAllColumns,
 			twitterFeedPrimaryKeyColumns,
 		)
 
@@ -576,13 +576,13 @@ func (o *TwitterFeed) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			twitterFeedColumns,
+			twitterFeedAllColumns,
 			twitterFeedColumnsWithDefault,
 			twitterFeedColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			twitterFeedColumns,
+			twitterFeedAllColumns,
 			twitterFeedPrimaryKeyColumns,
 		)
 
@@ -704,10 +704,6 @@ func (o TwitterFeedSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o TwitterFeedSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no TwitterFeed slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

@@ -135,11 +135,11 @@ var ServerStatsConfigWhere = struct {
 	Public         whereHelpernull_Bool
 	IgnoreChannels whereHelpernull_String
 }{
-	GuildID:        whereHelperint64{field: `guild_id`},
-	CreatedAt:      whereHelpernull_Time{field: `created_at`},
-	UpdatedAt:      whereHelpernull_Time{field: `updated_at`},
-	Public:         whereHelpernull_Bool{field: `public`},
-	IgnoreChannels: whereHelpernull_String{field: `ignore_channels`},
+	GuildID:        whereHelperint64{field: "\"server_stats_configs\".\"guild_id\""},
+	CreatedAt:      whereHelpernull_Time{field: "\"server_stats_configs\".\"created_at\""},
+	UpdatedAt:      whereHelpernull_Time{field: "\"server_stats_configs\".\"updated_at\""},
+	Public:         whereHelpernull_Bool{field: "\"server_stats_configs\".\"public\""},
+	IgnoreChannels: whereHelpernull_String{field: "\"server_stats_configs\".\"ignore_channels\""},
 }
 
 // ServerStatsConfigRels is where relationship names are stored.
@@ -159,9 +159,9 @@ func (*serverStatsConfigR) NewStruct() *serverStatsConfigR {
 type serverStatsConfigL struct{}
 
 var (
-	serverStatsConfigColumns               = []string{"guild_id", "created_at", "updated_at", "public", "ignore_channels"}
-	serverStatsConfigColumnsWithoutDefault = []string{"guild_id", "created_at", "updated_at", "public", "ignore_channels"}
-	serverStatsConfigColumnsWithDefault    = []string{}
+	serverStatsConfigAllColumns            = []string{"guild_id", "created_at", "updated_at", "public", "ignore_channels"}
+	serverStatsConfigColumnsWithoutDefault = []string{"created_at", "updated_at", "public", "ignore_channels"}
+	serverStatsConfigColumnsWithDefault    = []string{"guild_id"}
 	serverStatsConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
 
@@ -346,7 +346,7 @@ func (o *ServerStatsConfig) Insert(ctx context.Context, exec boil.ContextExecuto
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			serverStatsConfigColumns,
+			serverStatsConfigAllColumns,
 			serverStatsConfigColumnsWithDefault,
 			serverStatsConfigColumnsWithoutDefault,
 			nzDefaults,
@@ -426,7 +426,7 @@ func (o *ServerStatsConfig) Update(ctx context.Context, exec boil.ContextExecuto
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			serverStatsConfigColumns,
+			serverStatsConfigAllColumns,
 			serverStatsConfigPrimaryKeyColumns,
 		)
 
@@ -607,13 +607,13 @@ func (o *ServerStatsConfig) Upsert(ctx context.Context, exec boil.ContextExecuto
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			serverStatsConfigColumns,
+			serverStatsConfigAllColumns,
 			serverStatsConfigColumnsWithDefault,
 			serverStatsConfigColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			serverStatsConfigColumns,
+			serverStatsConfigAllColumns,
 			serverStatsConfigPrimaryKeyColumns,
 		)
 
@@ -735,10 +735,6 @@ func (o ServerStatsConfigSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ServerStatsConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ServerStatsConfig slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

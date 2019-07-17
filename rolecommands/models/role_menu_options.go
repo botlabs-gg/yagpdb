@@ -61,12 +61,12 @@ var RoleMenuOptionWhere = struct {
 	RoleMenuID    whereHelperint64
 	EmojiAnimated whereHelperbool
 }{
-	ID:            whereHelperint64{field: `id`},
-	RoleCommandID: whereHelpernull_Int64{field: `role_command_id`},
-	EmojiID:       whereHelperint64{field: `emoji_id`},
-	UnicodeEmoji:  whereHelperstring{field: `unicode_emoji`},
-	RoleMenuID:    whereHelperint64{field: `role_menu_id`},
-	EmojiAnimated: whereHelperbool{field: `emoji_animated`},
+	ID:            whereHelperint64{field: "\"role_menu_options\".\"id\""},
+	RoleCommandID: whereHelpernull_Int64{field: "\"role_menu_options\".\"role_command_id\""},
+	EmojiID:       whereHelperint64{field: "\"role_menu_options\".\"emoji_id\""},
+	UnicodeEmoji:  whereHelperstring{field: "\"role_menu_options\".\"unicode_emoji\""},
+	RoleMenuID:    whereHelperint64{field: "\"role_menu_options\".\"role_menu_id\""},
+	EmojiAnimated: whereHelperbool{field: "\"role_menu_options\".\"emoji_animated\""},
 }
 
 // RoleMenuOptionRels is where relationship names are stored.
@@ -96,7 +96,7 @@ func (*roleMenuOptionR) NewStruct() *roleMenuOptionR {
 type roleMenuOptionL struct{}
 
 var (
-	roleMenuOptionColumns               = []string{"id", "role_command_id", "emoji_id", "unicode_emoji", "role_menu_id", "emoji_animated"}
+	roleMenuOptionAllColumns            = []string{"id", "role_command_id", "emoji_id", "unicode_emoji", "role_menu_id", "emoji_animated"}
 	roleMenuOptionColumnsWithoutDefault = []string{"role_command_id", "emoji_id", "unicode_emoji", "role_menu_id"}
 	roleMenuOptionColumnsWithDefault    = []string{"id", "emoji_animated"}
 	roleMenuOptionPrimaryKeyColumns     = []string{"id"}
@@ -900,7 +900,7 @@ func (o *RoleMenuOption) Insert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			roleMenuOptionColumns,
+			roleMenuOptionAllColumns,
 			roleMenuOptionColumnsWithDefault,
 			roleMenuOptionColumnsWithoutDefault,
 			nzDefaults,
@@ -974,7 +974,7 @@ func (o *RoleMenuOption) Update(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			roleMenuOptionColumns,
+			roleMenuOptionAllColumns,
 			roleMenuOptionPrimaryKeyColumns,
 		)
 
@@ -1147,13 +1147,13 @@ func (o *RoleMenuOption) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			roleMenuOptionColumns,
+			roleMenuOptionAllColumns,
 			roleMenuOptionColumnsWithDefault,
 			roleMenuOptionColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			roleMenuOptionColumns,
+			roleMenuOptionAllColumns,
 			roleMenuOptionPrimaryKeyColumns,
 		)
 
@@ -1275,10 +1275,6 @@ func (o RoleMenuOptionSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RoleMenuOptionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RoleMenuOption slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

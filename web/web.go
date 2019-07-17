@@ -335,7 +335,7 @@ func setupRootMux() {
 	mux := goji.NewMux()
 	RootMux = mux
 
-	if confDisableRequestLogging.GetBool() {
+	if !confDisableRequestLogging.GetBool() {
 		requestLogger := &lumberjack.Logger{
 			Filename: "access.log",
 			MaxSize:  10,

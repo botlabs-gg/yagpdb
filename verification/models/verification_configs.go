@@ -108,15 +108,15 @@ var VerificationConfigWhere = struct {
 	LogChannel          whereHelperint64
 	DMMessage           whereHelperstring
 }{
-	GuildID:             whereHelperint64{field: `guild_id`},
-	Enabled:             whereHelperbool{field: `enabled`},
-	VerifiedRole:        whereHelperint64{field: `verified_role`},
-	PageContent:         whereHelperstring{field: `page_content`},
-	KickUnverifiedAfter: whereHelperint{field: `kick_unverified_after`},
-	WarnUnverifiedAfter: whereHelperint{field: `warn_unverified_after`},
-	WarnMessage:         whereHelperstring{field: `warn_message`},
-	LogChannel:          whereHelperint64{field: `log_channel`},
-	DMMessage:           whereHelperstring{field: `dm_message`},
+	GuildID:             whereHelperint64{field: "\"verification_configs\".\"guild_id\""},
+	Enabled:             whereHelperbool{field: "\"verification_configs\".\"enabled\""},
+	VerifiedRole:        whereHelperint64{field: "\"verification_configs\".\"verified_role\""},
+	PageContent:         whereHelperstring{field: "\"verification_configs\".\"page_content\""},
+	KickUnverifiedAfter: whereHelperint{field: "\"verification_configs\".\"kick_unverified_after\""},
+	WarnUnverifiedAfter: whereHelperint{field: "\"verification_configs\".\"warn_unverified_after\""},
+	WarnMessage:         whereHelperstring{field: "\"verification_configs\".\"warn_message\""},
+	LogChannel:          whereHelperint64{field: "\"verification_configs\".\"log_channel\""},
+	DMMessage:           whereHelperstring{field: "\"verification_configs\".\"dm_message\""},
 }
 
 // VerificationConfigRels is where relationship names are stored.
@@ -136,7 +136,7 @@ func (*verificationConfigR) NewStruct() *verificationConfigR {
 type verificationConfigL struct{}
 
 var (
-	verificationConfigColumns               = []string{"guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel", "dm_message"}
+	verificationConfigAllColumns            = []string{"guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel", "dm_message"}
 	verificationConfigColumnsWithoutDefault = []string{"guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel"}
 	verificationConfigColumnsWithDefault    = []string{"dm_message"}
 	verificationConfigPrimaryKeyColumns     = []string{"guild_id"}
@@ -313,7 +313,7 @@ func (o *VerificationConfig) Insert(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			verificationConfigColumns,
+			verificationConfigAllColumns,
 			verificationConfigColumnsWithDefault,
 			verificationConfigColumnsWithoutDefault,
 			nzDefaults,
@@ -387,7 +387,7 @@ func (o *VerificationConfig) Update(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			verificationConfigColumns,
+			verificationConfigAllColumns,
 			verificationConfigPrimaryKeyColumns,
 		)
 
@@ -560,13 +560,13 @@ func (o *VerificationConfig) Upsert(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			verificationConfigColumns,
+			verificationConfigAllColumns,
 			verificationConfigColumnsWithDefault,
 			verificationConfigColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			verificationConfigColumns,
+			verificationConfigAllColumns,
 			verificationConfigPrimaryKeyColumns,
 		)
 
@@ -688,10 +688,6 @@ func (o VerificationConfigSlice) DeleteAllG(ctx context.Context) (int64, error) 
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o VerificationConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no VerificationConfig slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

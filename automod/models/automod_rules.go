@@ -56,11 +56,11 @@ var AutomodRuleWhere = struct {
 	Name           whereHelperstring
 	TriggerCounter whereHelperint64
 }{
-	ID:             whereHelperint64{field: `id`},
-	GuildID:        whereHelperint64{field: `guild_id`},
-	RulesetID:      whereHelperint64{field: `ruleset_id`},
-	Name:           whereHelperstring{field: `name`},
-	TriggerCounter: whereHelperint64{field: `trigger_counter`},
+	ID:             whereHelperint64{field: "\"automod_rules\".\"id\""},
+	GuildID:        whereHelperint64{field: "\"automod_rules\".\"guild_id\""},
+	RulesetID:      whereHelperint64{field: "\"automod_rules\".\"ruleset_id\""},
+	Name:           whereHelperstring{field: "\"automod_rules\".\"name\""},
+	TriggerCounter: whereHelperint64{field: "\"automod_rules\".\"trigger_counter\""},
 }
 
 // AutomodRuleRels is where relationship names are stored.
@@ -93,7 +93,7 @@ func (*automodRuleR) NewStruct() *automodRuleR {
 type automodRuleL struct{}
 
 var (
-	automodRuleColumns               = []string{"id", "guild_id", "ruleset_id", "name", "trigger_counter"}
+	automodRuleAllColumns            = []string{"id", "guild_id", "ruleset_id", "name", "trigger_counter"}
 	automodRuleColumnsWithoutDefault = []string{"guild_id", "ruleset_id", "name", "trigger_counter"}
 	automodRuleColumnsWithDefault    = []string{"id"}
 	automodRulePrimaryKeyColumns     = []string{"id"}
@@ -1123,7 +1123,7 @@ func (o *AutomodRule) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			automodRuleColumns,
+			automodRuleAllColumns,
 			automodRuleColumnsWithDefault,
 			automodRuleColumnsWithoutDefault,
 			nzDefaults,
@@ -1197,7 +1197,7 @@ func (o *AutomodRule) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			automodRuleColumns,
+			automodRuleAllColumns,
 			automodRulePrimaryKeyColumns,
 		)
 
@@ -1370,13 +1370,13 @@ func (o *AutomodRule) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			automodRuleColumns,
+			automodRuleAllColumns,
 			automodRuleColumnsWithDefault,
 			automodRuleColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			automodRuleColumns,
+			automodRuleAllColumns,
 			automodRulePrimaryKeyColumns,
 		)
 
@@ -1498,10 +1498,6 @@ func (o AutomodRuleSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AutomodRuleSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no AutomodRule slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
