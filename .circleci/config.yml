@@ -5,17 +5,8 @@ jobs: # basic units of work in a run
       # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
       - image: circleci/golang:1.12 #
 
-      - image: circleci/postgres:9.6.2-alpine
-        environment:
-          POSTGRES_USER: root
-          POSTGRES_DB: yagpdb_test_db
-
     # directory where steps are run. Path must conform to the Go Workspace requirements
     working_directory: /go/src/github.com/jonas747/yagpdb
-
-    environment: # environment variables for the build itself
-      PSQL_TESTDBNAME: yagpdb_test_db # path to where test results will be saved
-      PSQL_USER: root # path to where test results will be saved
 
     steps: # steps that comprise the `build` job
       - checkout # check out source code to working directory
@@ -26,25 +17,6 @@ jobs: # basic units of work in a run
       # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           keys:
             - v1-pkg-cache
-
-      # Normally, this step would be in a custom primary image;
-      # we've added it here for the sake of explanation.
-      # - run: go get github.com/lib/pq
-      # - run: go get github.com/mattes/migrate
-      # - run: go get github.com/jstemmer/go-junit-report
-
-      #  CircleCi's Go Docker image includes netcat
-      #  This allows polling the DB port to confirm it is open before proceeding
-      - run:
-          name: Waiting for Postgres to be ready
-          command: |
-            for i in `seq 1 10`;
-            do
-              nc -z localhost 5432 && echo Success && exit 0
-              echo -n .
-              sleep 1
-            done
-            echo Failed waiting for Postgres && exit 1
 
       - run: git clone -b dgofork https://github.com/jonas747/dutil /go/src/github.com/jonas747/dutil
       - run: git clone -b dgofork https://github.com/jonas747/dshardmanager /go/src/github.com/jonas747/dshardmanager
