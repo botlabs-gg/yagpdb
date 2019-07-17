@@ -36,8 +36,8 @@ type RoleMenu struct {
 	RemoveRoleOnReactionRemove bool       `boil:"remove_role_on_reaction_remove" json:"remove_role_on_reaction_remove" toml:"remove_role_on_reaction_remove" yaml:"remove_role_on_reaction_remove"`
 	FixedAmount                bool       `boil:"fixed_amount" json:"fixed_amount" toml:"fixed_amount" yaml:"fixed_amount"`
 	SkipAmount                 int        `boil:"skip_amount" json:"skip_amount" toml:"skip_amount" yaml:"skip_amount"`
-	EditingOptionID            null.Int64 `boil:"editing_option_id" json:"editing_option_id,omitempty" toml:"editing_option_id" yaml:"editing_option_id,omitempty"`
 	SetupMSGID                 int64      `boil:"setup_msg_id" json:"setup_msg_id" toml:"setup_msg_id" yaml:"setup_msg_id"`
+	EditingOptionID            null.Int64 `boil:"editing_option_id" json:"editing_option_id,omitempty" toml:"editing_option_id" yaml:"editing_option_id,omitempty"`
 
 	R *roleMenuR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L roleMenuL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -56,8 +56,8 @@ var RoleMenuColumns = struct {
 	RemoveRoleOnReactionRemove string
 	FixedAmount                string
 	SkipAmount                 string
-	EditingOptionID            string
 	SetupMSGID                 string
+	EditingOptionID            string
 }{
 	MessageID:                  "message_id",
 	GuildID:                    "guild_id",
@@ -71,8 +71,8 @@ var RoleMenuColumns = struct {
 	RemoveRoleOnReactionRemove: "remove_role_on_reaction_remove",
 	FixedAmount:                "fixed_amount",
 	SkipAmount:                 "skip_amount",
-	EditingOptionID:            "editing_option_id",
 	SetupMSGID:                 "setup_msg_id",
+	EditingOptionID:            "editing_option_id",
 }
 
 // Generated where
@@ -90,8 +90,8 @@ var RoleMenuWhere = struct {
 	RemoveRoleOnReactionRemove whereHelperbool
 	FixedAmount                whereHelperbool
 	SkipAmount                 whereHelperint
-	EditingOptionID            whereHelpernull_Int64
 	SetupMSGID                 whereHelperint64
+	EditingOptionID            whereHelpernull_Int64
 }{
 	MessageID:                  whereHelperint64{field: "\"role_menus\".\"message_id\""},
 	GuildID:                    whereHelperint64{field: "\"role_menus\".\"guild_id\""},
@@ -105,8 +105,8 @@ var RoleMenuWhere = struct {
 	RemoveRoleOnReactionRemove: whereHelperbool{field: "\"role_menus\".\"remove_role_on_reaction_remove\""},
 	FixedAmount:                whereHelperbool{field: "\"role_menus\".\"fixed_amount\""},
 	SkipAmount:                 whereHelperint{field: "\"role_menus\".\"skip_amount\""},
-	EditingOptionID:            whereHelpernull_Int64{field: "\"role_menus\".\"editing_option_id\""},
 	SetupMSGID:                 whereHelperint64{field: "\"role_menus\".\"setup_msg_id\""},
+	EditingOptionID:            whereHelpernull_Int64{field: "\"role_menus\".\"editing_option_id\""},
 }
 
 // RoleMenuRels is where relationship names are stored.
@@ -139,7 +139,7 @@ func (*roleMenuR) NewStruct() *roleMenuR {
 type roleMenuL struct{}
 
 var (
-	roleMenuAllColumns            = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount", "editing_option_id", "setup_msg_id"}
+	roleMenuAllColumns            = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount", "setup_msg_id", "editing_option_id"}
 	roleMenuColumnsWithoutDefault = []string{"message_id", "guild_id", "channel_id", "owner_id", "own_message", "state", "next_role_command_id", "role_group_id", "editing_option_id"}
 	roleMenuColumnsWithDefault    = []string{"disable_send_dm", "remove_role_on_reaction_remove", "fixed_amount", "skip_amount", "setup_msg_id"}
 	roleMenuPrimaryKeyColumns     = []string{"message_id"}
