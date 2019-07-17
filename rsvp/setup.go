@@ -97,7 +97,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		targetChannel = s.SetupChannel
 	} else if strings.HasPrefix(m.Content, "<#") && strings.HasSuffix(m.Content, ">") {
 		// channel mention
-		idStr := m.Content[2 : len(m.Content)-2]
+		idStr := m.Content[2 : len(m.Content)-1]
 		if parsed, err := strconv.ParseInt(idStr, 10, 64); err == nil {
 			if gs.Channel(true, parsed) != nil {
 				targetChannel = parsed
@@ -127,6 +127,18 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 
 	if targetChannel == 0 {
 		s.sendMessage("Couldn't find that channel, say `this` or `here` for the current channel, otherwise type the name, id or mention it.")
+		return
+	}
+
+	perms, err := gs.MemberPermissions(true, targetChannel, s.AuthorID)
+	if err != nil {
+		s.sendMessage("Failed retrieving your pems, check with bot owner")
+		logger.WithError(err).WithField("guild", gs.ID).Error("failed calculating permissions")
+		return
+	}
+
+	if (perms & discordgo.PermissionSendMessages) == 0 {
+		s.sendMessage("You don't have permissions to send messages there, please pick another channel")
 		return
 	}
 
