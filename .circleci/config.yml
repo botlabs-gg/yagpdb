@@ -39,11 +39,7 @@ jobs: # basic units of work in a run
             mkdir -p cmd/yagpdb/templates/plugins
             cp */assets/* cmd/yagpdb/templates/plugins/
 
-            mkdir tmp_artifacts
-            cp -r cmd/yagpdb/templates tmp_artifacts/
-            cp -r cmd/yagpdb/static tmp_artifacts/
-
-            tar -cvf misc_artifacts.tar tmp_artifacts/
+            tar -cvf misc_artifacts.tar cmd/yagpdb/templates/ cmd/yagpdb/static/
             
       - store_artifacts:
           path: misc_artifacts.tar
