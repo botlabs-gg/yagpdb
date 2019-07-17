@@ -88,13 +88,13 @@ var NicknameListingWhere = struct {
 	GuildID   whereHelpernull_String
 	Nickname  whereHelpernull_String
 }{
-	ID:        whereHelperint{field: `id`},
-	CreatedAt: whereHelpernull_Time{field: `created_at`},
-	UpdatedAt: whereHelpernull_Time{field: `updated_at`},
-	DeletedAt: whereHelpernull_Time{field: `deleted_at`},
-	UserID:    whereHelpernull_Int64{field: `user_id`},
-	GuildID:   whereHelpernull_String{field: `guild_id`},
-	Nickname:  whereHelpernull_String{field: `nickname`},
+	ID:        whereHelperint{field: "\"nickname_listings\".\"id\""},
+	CreatedAt: whereHelpernull_Time{field: "\"nickname_listings\".\"created_at\""},
+	UpdatedAt: whereHelpernull_Time{field: "\"nickname_listings\".\"updated_at\""},
+	DeletedAt: whereHelpernull_Time{field: "\"nickname_listings\".\"deleted_at\""},
+	UserID:    whereHelpernull_Int64{field: "\"nickname_listings\".\"user_id\""},
+	GuildID:   whereHelpernull_String{field: "\"nickname_listings\".\"guild_id\""},
+	Nickname:  whereHelpernull_String{field: "\"nickname_listings\".\"nickname\""},
 }
 
 // NicknameListingRels is where relationship names are stored.
@@ -114,7 +114,7 @@ func (*nicknameListingR) NewStruct() *nicknameListingR {
 type nicknameListingL struct{}
 
 var (
-	nicknameListingColumns               = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "guild_id", "nickname"}
+	nicknameListingAllColumns            = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "guild_id", "nickname"}
 	nicknameListingColumnsWithoutDefault = []string{"created_at", "updated_at", "deleted_at", "user_id", "guild_id", "nickname"}
 	nicknameListingColumnsWithDefault    = []string{"id"}
 	nicknameListingPrimaryKeyColumns     = []string{"id"}
@@ -301,7 +301,7 @@ func (o *NicknameListing) Insert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingColumnsWithDefault,
 			nicknameListingColumnsWithoutDefault,
 			nzDefaults,
@@ -381,7 +381,7 @@ func (o *NicknameListing) Update(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingPrimaryKeyColumns,
 		)
 
@@ -562,13 +562,13 @@ func (o *NicknameListing) Upsert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingColumnsWithDefault,
 			nicknameListingColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingPrimaryKeyColumns,
 		)
 
@@ -690,10 +690,6 @@ func (o NicknameListingSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o NicknameListingSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no NicknameListing slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

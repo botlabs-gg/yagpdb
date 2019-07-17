@@ -106,13 +106,13 @@ var CustomCommandGroupWhere = struct {
 	WhitelistRoles    whereHelpertypes_Int64Array
 	WhitelistChannels whereHelpertypes_Int64Array
 }{
-	ID:                whereHelperint64{field: `id`},
-	GuildID:           whereHelperint64{field: `guild_id`},
-	Name:              whereHelperstring{field: `name`},
-	IgnoreRoles:       whereHelpertypes_Int64Array{field: `ignore_roles`},
-	IgnoreChannels:    whereHelpertypes_Int64Array{field: `ignore_channels`},
-	WhitelistRoles:    whereHelpertypes_Int64Array{field: `whitelist_roles`},
-	WhitelistChannels: whereHelpertypes_Int64Array{field: `whitelist_channels`},
+	ID:                whereHelperint64{field: "\"custom_command_groups\".\"id\""},
+	GuildID:           whereHelperint64{field: "\"custom_command_groups\".\"guild_id\""},
+	Name:              whereHelperstring{field: "\"custom_command_groups\".\"name\""},
+	IgnoreRoles:       whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"ignore_roles\""},
+	IgnoreChannels:    whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"ignore_channels\""},
+	WhitelistRoles:    whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"whitelist_roles\""},
+	WhitelistChannels: whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"whitelist_channels\""},
 }
 
 // CustomCommandGroupRels is where relationship names are stored.
@@ -136,7 +136,7 @@ func (*customCommandGroupR) NewStruct() *customCommandGroupR {
 type customCommandGroupL struct{}
 
 var (
-	customCommandGroupColumns               = []string{"id", "guild_id", "name", "ignore_roles", "ignore_channels", "whitelist_roles", "whitelist_channels"}
+	customCommandGroupAllColumns            = []string{"id", "guild_id", "name", "ignore_roles", "ignore_channels", "whitelist_roles", "whitelist_channels"}
 	customCommandGroupColumnsWithoutDefault = []string{"guild_id", "name", "ignore_roles", "ignore_channels", "whitelist_roles", "whitelist_channels"}
 	customCommandGroupColumnsWithDefault    = []string{"id"}
 	customCommandGroupPrimaryKeyColumns     = []string{"id"}
@@ -573,7 +573,7 @@ func (o *CustomCommandGroup) Insert(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			customCommandGroupColumns,
+			customCommandGroupAllColumns,
 			customCommandGroupColumnsWithDefault,
 			customCommandGroupColumnsWithoutDefault,
 			nzDefaults,
@@ -647,7 +647,7 @@ func (o *CustomCommandGroup) Update(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			customCommandGroupColumns,
+			customCommandGroupAllColumns,
 			customCommandGroupPrimaryKeyColumns,
 		)
 
@@ -820,13 +820,13 @@ func (o *CustomCommandGroup) Upsert(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			customCommandGroupColumns,
+			customCommandGroupAllColumns,
 			customCommandGroupColumnsWithDefault,
 			customCommandGroupColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			customCommandGroupColumns,
+			customCommandGroupAllColumns,
 			customCommandGroupPrimaryKeyColumns,
 		)
 
@@ -948,10 +948,6 @@ func (o CustomCommandGroupSlice) DeleteAllG(ctx context.Context) (int64, error) 
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o CustomCommandGroupSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no CustomCommandGroup slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

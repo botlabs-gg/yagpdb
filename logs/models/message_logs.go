@@ -82,15 +82,15 @@ var MessageLogWhere = struct {
 	Author      whereHelpernull_String
 	AuthorID    whereHelpernull_String
 }{
-	ID:          whereHelperint{field: `id`},
-	CreatedAt:   whereHelpernull_Time{field: `created_at`},
-	UpdatedAt:   whereHelpernull_Time{field: `updated_at`},
-	DeletedAt:   whereHelpernull_Time{field: `deleted_at`},
-	ChannelName: whereHelpernull_String{field: `channel_name`},
-	ChannelID:   whereHelpernull_String{field: `channel_id`},
-	GuildID:     whereHelpernull_String{field: `guild_id`},
-	Author:      whereHelpernull_String{field: `author`},
-	AuthorID:    whereHelpernull_String{field: `author_id`},
+	ID:          whereHelperint{field: "\"message_logs\".\"id\""},
+	CreatedAt:   whereHelpernull_Time{field: "\"message_logs\".\"created_at\""},
+	UpdatedAt:   whereHelpernull_Time{field: "\"message_logs\".\"updated_at\""},
+	DeletedAt:   whereHelpernull_Time{field: "\"message_logs\".\"deleted_at\""},
+	ChannelName: whereHelpernull_String{field: "\"message_logs\".\"channel_name\""},
+	ChannelID:   whereHelpernull_String{field: "\"message_logs\".\"channel_id\""},
+	GuildID:     whereHelpernull_String{field: "\"message_logs\".\"guild_id\""},
+	Author:      whereHelpernull_String{field: "\"message_logs\".\"author\""},
+	AuthorID:    whereHelpernull_String{field: "\"message_logs\".\"author_id\""},
 }
 
 // MessageLogRels is where relationship names are stored.
@@ -114,7 +114,7 @@ func (*messageLogR) NewStruct() *messageLogR {
 type messageLogL struct{}
 
 var (
-	messageLogColumns               = []string{"id", "created_at", "updated_at", "deleted_at", "channel_name", "channel_id", "guild_id", "author", "author_id"}
+	messageLogAllColumns            = []string{"id", "created_at", "updated_at", "deleted_at", "channel_name", "channel_id", "guild_id", "author", "author_id"}
 	messageLogColumnsWithoutDefault = []string{"created_at", "updated_at", "deleted_at", "channel_name", "channel_id", "guild_id", "author", "author_id"}
 	messageLogColumnsWithDefault    = []string{"id"}
 	messageLogPrimaryKeyColumns     = []string{"id"}
@@ -561,7 +561,7 @@ func (o *MessageLog) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			messageLogColumns,
+			messageLogAllColumns,
 			messageLogColumnsWithDefault,
 			messageLogColumnsWithoutDefault,
 			nzDefaults,
@@ -641,7 +641,7 @@ func (o *MessageLog) Update(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			messageLogColumns,
+			messageLogAllColumns,
 			messageLogPrimaryKeyColumns,
 		)
 
@@ -822,13 +822,13 @@ func (o *MessageLog) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			messageLogColumns,
+			messageLogAllColumns,
 			messageLogColumnsWithDefault,
 			messageLogColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			messageLogColumns,
+			messageLogAllColumns,
 			messageLogPrimaryKeyColumns,
 		)
 
@@ -950,10 +950,6 @@ func (o MessageLogSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o MessageLogSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no MessageLog slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

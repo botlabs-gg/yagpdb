@@ -171,16 +171,16 @@ var PremiumCodeWhere = struct {
 	Permanent whereHelperbool
 	Duration  whereHelperint64
 }{
-	ID:        whereHelperint64{field: `id`},
-	Code:      whereHelperstring{field: `code`},
-	Message:   whereHelperstring{field: `message`},
-	CreatedAt: whereHelpertime_Time{field: `created_at`},
-	UsedAt:    whereHelpernull_Time{field: `used_at`},
-	SlotID:    whereHelpernull_Int64{field: `slot_id`},
-	UserID:    whereHelpernull_Int64{field: `user_id`},
-	GuildID:   whereHelpernull_Int64{field: `guild_id`},
-	Permanent: whereHelperbool{field: `permanent`},
-	Duration:  whereHelperint64{field: `duration`},
+	ID:        whereHelperint64{field: "\"premium_codes\".\"id\""},
+	Code:      whereHelperstring{field: "\"premium_codes\".\"code\""},
+	Message:   whereHelperstring{field: "\"premium_codes\".\"message\""},
+	CreatedAt: whereHelpertime_Time{field: "\"premium_codes\".\"created_at\""},
+	UsedAt:    whereHelpernull_Time{field: "\"premium_codes\".\"used_at\""},
+	SlotID:    whereHelpernull_Int64{field: "\"premium_codes\".\"slot_id\""},
+	UserID:    whereHelpernull_Int64{field: "\"premium_codes\".\"user_id\""},
+	GuildID:   whereHelpernull_Int64{field: "\"premium_codes\".\"guild_id\""},
+	Permanent: whereHelperbool{field: "\"premium_codes\".\"permanent\""},
+	Duration:  whereHelperint64{field: "\"premium_codes\".\"duration\""},
 }
 
 // PremiumCodeRels is where relationship names are stored.
@@ -204,7 +204,7 @@ func (*premiumCodeR) NewStruct() *premiumCodeR {
 type premiumCodeL struct{}
 
 var (
-	premiumCodeColumns               = []string{"id", "code", "message", "created_at", "used_at", "slot_id", "user_id", "guild_id", "permanent", "duration"}
+	premiumCodeAllColumns            = []string{"id", "code", "message", "created_at", "used_at", "slot_id", "user_id", "guild_id", "permanent", "duration"}
 	premiumCodeColumnsWithoutDefault = []string{"code", "message", "created_at", "used_at", "slot_id", "user_id", "guild_id", "permanent", "duration"}
 	premiumCodeColumnsWithDefault    = []string{"id"}
 	premiumCodePrimaryKeyColumns     = []string{"id"}
@@ -593,7 +593,7 @@ func (o *PremiumCode) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			premiumCodeColumns,
+			premiumCodeAllColumns,
 			premiumCodeColumnsWithDefault,
 			premiumCodeColumnsWithoutDefault,
 			nzDefaults,
@@ -667,7 +667,7 @@ func (o *PremiumCode) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			premiumCodeColumns,
+			premiumCodeAllColumns,
 			premiumCodePrimaryKeyColumns,
 		)
 
@@ -847,13 +847,13 @@ func (o *PremiumCode) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			premiumCodeColumns,
+			premiumCodeAllColumns,
 			premiumCodeColumnsWithDefault,
 			premiumCodeColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			premiumCodeColumns,
+			premiumCodeAllColumns,
 			premiumCodePrimaryKeyColumns,
 		)
 
@@ -975,10 +975,6 @@ func (o PremiumCodeSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o PremiumCodeSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no PremiumCode slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

@@ -93,15 +93,15 @@ var ReputationLogWhere = struct {
 	ReceiverUsername whereHelperstring
 	SenderUsername   whereHelperstring
 }{
-	ID:               whereHelperint64{field: `id`},
-	CreatedAt:        whereHelpertime_Time{field: `created_at`},
-	GuildID:          whereHelperint64{field: `guild_id`},
-	SenderID:         whereHelperint64{field: `sender_id`},
-	ReceiverID:       whereHelperint64{field: `receiver_id`},
-	SetFixedAmount:   whereHelperbool{field: `set_fixed_amount`},
-	Amount:           whereHelperint64{field: `amount`},
-	ReceiverUsername: whereHelperstring{field: `receiver_username`},
-	SenderUsername:   whereHelperstring{field: `sender_username`},
+	ID:               whereHelperint64{field: "\"reputation_log\".\"id\""},
+	CreatedAt:        whereHelpertime_Time{field: "\"reputation_log\".\"created_at\""},
+	GuildID:          whereHelperint64{field: "\"reputation_log\".\"guild_id\""},
+	SenderID:         whereHelperint64{field: "\"reputation_log\".\"sender_id\""},
+	ReceiverID:       whereHelperint64{field: "\"reputation_log\".\"receiver_id\""},
+	SetFixedAmount:   whereHelperbool{field: "\"reputation_log\".\"set_fixed_amount\""},
+	Amount:           whereHelperint64{field: "\"reputation_log\".\"amount\""},
+	ReceiverUsername: whereHelperstring{field: "\"reputation_log\".\"receiver_username\""},
+	SenderUsername:   whereHelperstring{field: "\"reputation_log\".\"sender_username\""},
 }
 
 // ReputationLogRels is where relationship names are stored.
@@ -121,7 +121,7 @@ func (*reputationLogR) NewStruct() *reputationLogR {
 type reputationLogL struct{}
 
 var (
-	reputationLogColumns               = []string{"id", "created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount", "receiver_username", "sender_username"}
+	reputationLogAllColumns            = []string{"id", "created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount", "receiver_username", "sender_username"}
 	reputationLogColumnsWithoutDefault = []string{"created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount"}
 	reputationLogColumnsWithDefault    = []string{"id", "receiver_username", "sender_username"}
 	reputationLogPrimaryKeyColumns     = []string{"id"}
@@ -305,7 +305,7 @@ func (o *ReputationLog) Insert(ctx context.Context, exec boil.ContextExecutor, c
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogColumnsWithDefault,
 			reputationLogColumnsWithoutDefault,
 			nzDefaults,
@@ -379,7 +379,7 @@ func (o *ReputationLog) Update(ctx context.Context, exec boil.ContextExecutor, c
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogPrimaryKeyColumns,
 		)
 
@@ -559,13 +559,13 @@ func (o *ReputationLog) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogColumnsWithDefault,
 			reputationLogColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogPrimaryKeyColumns,
 		)
 
@@ -687,10 +687,6 @@ func (o ReputationLogSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ReputationLogSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ReputationLog slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

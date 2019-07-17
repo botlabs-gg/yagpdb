@@ -117,15 +117,15 @@ var TicketWhere = struct {
 	AuthorID              whereHelperint64
 	AuthorUsernameDiscrim whereHelperstring
 }{
-	GuildID:               whereHelperint64{field: `guild_id`},
-	LocalID:               whereHelperint64{field: `local_id`},
-	ChannelID:             whereHelperint64{field: `channel_id`},
-	Title:                 whereHelperstring{field: `title`},
-	CreatedAt:             whereHelpertime_Time{field: `created_at`},
-	ClosedAt:              whereHelpernull_Time{field: `closed_at`},
-	LogsID:                whereHelperint64{field: `logs_id`},
-	AuthorID:              whereHelperint64{field: `author_id`},
-	AuthorUsernameDiscrim: whereHelperstring{field: `author_username_discrim`},
+	GuildID:               whereHelperint64{field: "\"tickets\".\"guild_id\""},
+	LocalID:               whereHelperint64{field: "\"tickets\".\"local_id\""},
+	ChannelID:             whereHelperint64{field: "\"tickets\".\"channel_id\""},
+	Title:                 whereHelperstring{field: "\"tickets\".\"title\""},
+	CreatedAt:             whereHelpertime_Time{field: "\"tickets\".\"created_at\""},
+	ClosedAt:              whereHelpernull_Time{field: "\"tickets\".\"closed_at\""},
+	LogsID:                whereHelperint64{field: "\"tickets\".\"logs_id\""},
+	AuthorID:              whereHelperint64{field: "\"tickets\".\"author_id\""},
+	AuthorUsernameDiscrim: whereHelperstring{field: "\"tickets\".\"author_username_discrim\""},
 }
 
 // TicketRels is where relationship names are stored.
@@ -145,7 +145,7 @@ func (*ticketR) NewStruct() *ticketR {
 type ticketL struct{}
 
 var (
-	ticketColumns               = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id", "author_id", "author_username_discrim"}
+	ticketAllColumns            = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id", "author_id", "author_username_discrim"}
 	ticketColumnsWithoutDefault = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id", "author_id", "author_username_discrim"}
 	ticketColumnsWithDefault    = []string{}
 	ticketPrimaryKeyColumns     = []string{"guild_id", "local_id"}
@@ -329,7 +329,7 @@ func (o *Ticket) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			ticketColumns,
+			ticketAllColumns,
 			ticketColumnsWithDefault,
 			ticketColumnsWithoutDefault,
 			nzDefaults,
@@ -403,7 +403,7 @@ func (o *Ticket) Update(ctx context.Context, exec boil.ContextExecutor, columns 
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			ticketColumns,
+			ticketAllColumns,
 			ticketPrimaryKeyColumns,
 		)
 
@@ -583,13 +583,13 @@ func (o *Ticket) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			ticketColumns,
+			ticketAllColumns,
 			ticketColumnsWithDefault,
 			ticketColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			ticketColumns,
+			ticketAllColumns,
 			ticketPrimaryKeyColumns,
 		)
 
@@ -711,10 +711,6 @@ func (o TicketSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o TicketSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no Ticket slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

@@ -127,13 +127,13 @@ var JoinedGuildWhere = struct {
 	OwnerID     whereHelperint64
 	Avatar      whereHelperstring
 }{
-	ID:          whereHelperint64{field: `id`},
-	JoinedAt:    whereHelpertime_Time{field: `joined_at`},
-	LeftAt:      whereHelpernull_Time{field: `left_at`},
-	MemberCount: whereHelperint64{field: `member_count`},
-	Name:        whereHelperstring{field: `name`},
-	OwnerID:     whereHelperint64{field: `owner_id`},
-	Avatar:      whereHelperstring{field: `avatar`},
+	ID:          whereHelperint64{field: "\"joined_guilds\".\"id\""},
+	JoinedAt:    whereHelpertime_Time{field: "\"joined_guilds\".\"joined_at\""},
+	LeftAt:      whereHelpernull_Time{field: "\"joined_guilds\".\"left_at\""},
+	MemberCount: whereHelperint64{field: "\"joined_guilds\".\"member_count\""},
+	Name:        whereHelperstring{field: "\"joined_guilds\".\"name\""},
+	OwnerID:     whereHelperint64{field: "\"joined_guilds\".\"owner_id\""},
+	Avatar:      whereHelperstring{field: "\"joined_guilds\".\"avatar\""},
 }
 
 // JoinedGuildRels is where relationship names are stored.
@@ -153,7 +153,7 @@ func (*joinedGuildR) NewStruct() *joinedGuildR {
 type joinedGuildL struct{}
 
 var (
-	joinedGuildColumns               = []string{"id", "joined_at", "left_at", "member_count", "name", "owner_id", "avatar"}
+	joinedGuildAllColumns            = []string{"id", "joined_at", "left_at", "member_count", "name", "owner_id", "avatar"}
 	joinedGuildColumnsWithoutDefault = []string{"id", "joined_at", "left_at", "member_count", "name", "owner_id", "avatar"}
 	joinedGuildColumnsWithDefault    = []string{}
 	joinedGuildPrimaryKeyColumns     = []string{"id"}
@@ -330,7 +330,7 @@ func (o *JoinedGuild) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			joinedGuildColumns,
+			joinedGuildAllColumns,
 			joinedGuildColumnsWithDefault,
 			joinedGuildColumnsWithoutDefault,
 			nzDefaults,
@@ -404,7 +404,7 @@ func (o *JoinedGuild) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			joinedGuildColumns,
+			joinedGuildAllColumns,
 			joinedGuildPrimaryKeyColumns,
 		)
 
@@ -577,13 +577,13 @@ func (o *JoinedGuild) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			joinedGuildColumns,
+			joinedGuildAllColumns,
 			joinedGuildColumnsWithDefault,
 			joinedGuildColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			joinedGuildColumns,
+			joinedGuildAllColumns,
 			joinedGuildPrimaryKeyColumns,
 		)
 
@@ -705,10 +705,6 @@ func (o JoinedGuildSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o JoinedGuildSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no JoinedGuild slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

@@ -85,18 +85,18 @@ var PremiumSlotWhere = struct {
 	Permanent         whereHelperbool
 	DurationRemaining whereHelperint64
 }{
-	ID:                whereHelperint64{field: `id`},
-	CreatedAt:         whereHelpertime_Time{field: `created_at`},
-	AttachedAt:        whereHelpernull_Time{field: `attached_at`},
-	UserID:            whereHelperint64{field: `user_id`},
-	GuildID:           whereHelpernull_Int64{field: `guild_id`},
-	Title:             whereHelperstring{field: `title`},
-	Message:           whereHelperstring{field: `message`},
-	Source:            whereHelperstring{field: `source`},
-	SourceID:          whereHelperint64{field: `source_id`},
-	FullDuration:      whereHelperint64{field: `full_duration`},
-	Permanent:         whereHelperbool{field: `permanent`},
-	DurationRemaining: whereHelperint64{field: `duration_remaining`},
+	ID:                whereHelperint64{field: "\"premium_slots\".\"id\""},
+	CreatedAt:         whereHelpertime_Time{field: "\"premium_slots\".\"created_at\""},
+	AttachedAt:        whereHelpernull_Time{field: "\"premium_slots\".\"attached_at\""},
+	UserID:            whereHelperint64{field: "\"premium_slots\".\"user_id\""},
+	GuildID:           whereHelpernull_Int64{field: "\"premium_slots\".\"guild_id\""},
+	Title:             whereHelperstring{field: "\"premium_slots\".\"title\""},
+	Message:           whereHelperstring{field: "\"premium_slots\".\"message\""},
+	Source:            whereHelperstring{field: "\"premium_slots\".\"source\""},
+	SourceID:          whereHelperint64{field: "\"premium_slots\".\"source_id\""},
+	FullDuration:      whereHelperint64{field: "\"premium_slots\".\"full_duration\""},
+	Permanent:         whereHelperbool{field: "\"premium_slots\".\"permanent\""},
+	DurationRemaining: whereHelperint64{field: "\"premium_slots\".\"duration_remaining\""},
 }
 
 // PremiumSlotRels is where relationship names are stored.
@@ -120,7 +120,7 @@ func (*premiumSlotR) NewStruct() *premiumSlotR {
 type premiumSlotL struct{}
 
 var (
-	premiumSlotColumns               = []string{"id", "created_at", "attached_at", "user_id", "guild_id", "title", "message", "source", "source_id", "full_duration", "permanent", "duration_remaining"}
+	premiumSlotAllColumns            = []string{"id", "created_at", "attached_at", "user_id", "guild_id", "title", "message", "source", "source_id", "full_duration", "permanent", "duration_remaining"}
 	premiumSlotColumnsWithoutDefault = []string{"created_at", "attached_at", "user_id", "guild_id", "title", "message", "source", "source_id", "full_duration", "permanent", "duration_remaining"}
 	premiumSlotColumnsWithDefault    = []string{"id"}
 	premiumSlotPrimaryKeyColumns     = []string{"id"}
@@ -564,7 +564,7 @@ func (o *PremiumSlot) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			premiumSlotColumns,
+			premiumSlotAllColumns,
 			premiumSlotColumnsWithDefault,
 			premiumSlotColumnsWithoutDefault,
 			nzDefaults,
@@ -638,7 +638,7 @@ func (o *PremiumSlot) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			premiumSlotColumns,
+			premiumSlotAllColumns,
 			premiumSlotPrimaryKeyColumns,
 		)
 
@@ -818,13 +818,13 @@ func (o *PremiumSlot) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			premiumSlotColumns,
+			premiumSlotAllColumns,
 			premiumSlotColumnsWithDefault,
 			premiumSlotColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			premiumSlotColumns,
+			premiumSlotAllColumns,
 			premiumSlotPrimaryKeyColumns,
 		)
 
@@ -946,10 +946,6 @@ func (o PremiumSlotSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o PremiumSlotSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no PremiumSlot slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

@@ -105,12 +105,12 @@ var VerificationSessionWhere = struct {
 	SolvedAt  whereHelpernull_Time
 	ExpiredAt whereHelpernull_Time
 }{
-	Token:     whereHelperstring{field: `token`},
-	UserID:    whereHelperint64{field: `user_id`},
-	GuildID:   whereHelperint64{field: `guild_id`},
-	CreatedAt: whereHelpertime_Time{field: `created_at`},
-	SolvedAt:  whereHelpernull_Time{field: `solved_at`},
-	ExpiredAt: whereHelpernull_Time{field: `expired_at`},
+	Token:     whereHelperstring{field: "\"verification_sessions\".\"token\""},
+	UserID:    whereHelperint64{field: "\"verification_sessions\".\"user_id\""},
+	GuildID:   whereHelperint64{field: "\"verification_sessions\".\"guild_id\""},
+	CreatedAt: whereHelpertime_Time{field: "\"verification_sessions\".\"created_at\""},
+	SolvedAt:  whereHelpernull_Time{field: "\"verification_sessions\".\"solved_at\""},
+	ExpiredAt: whereHelpernull_Time{field: "\"verification_sessions\".\"expired_at\""},
 }
 
 // VerificationSessionRels is where relationship names are stored.
@@ -130,7 +130,7 @@ func (*verificationSessionR) NewStruct() *verificationSessionR {
 type verificationSessionL struct{}
 
 var (
-	verificationSessionColumns               = []string{"token", "user_id", "guild_id", "created_at", "solved_at", "expired_at"}
+	verificationSessionAllColumns            = []string{"token", "user_id", "guild_id", "created_at", "solved_at", "expired_at"}
 	verificationSessionColumnsWithoutDefault = []string{"token", "user_id", "guild_id", "created_at", "solved_at", "expired_at"}
 	verificationSessionColumnsWithDefault    = []string{}
 	verificationSessionPrimaryKeyColumns     = []string{"token"}
@@ -314,7 +314,7 @@ func (o *VerificationSession) Insert(ctx context.Context, exec boil.ContextExecu
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			verificationSessionColumns,
+			verificationSessionAllColumns,
 			verificationSessionColumnsWithDefault,
 			verificationSessionColumnsWithoutDefault,
 			nzDefaults,
@@ -388,7 +388,7 @@ func (o *VerificationSession) Update(ctx context.Context, exec boil.ContextExecu
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			verificationSessionColumns,
+			verificationSessionAllColumns,
 			verificationSessionPrimaryKeyColumns,
 		)
 
@@ -568,13 +568,13 @@ func (o *VerificationSession) Upsert(ctx context.Context, exec boil.ContextExecu
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			verificationSessionColumns,
+			verificationSessionAllColumns,
 			verificationSessionColumnsWithDefault,
 			verificationSessionColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			verificationSessionColumns,
+			verificationSessionAllColumns,
 			verificationSessionPrimaryKeyColumns,
 		)
 
@@ -696,10 +696,6 @@ func (o VerificationSessionSlice) DeleteAllG(ctx context.Context) (int64, error)
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o VerificationSessionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no VerificationSession slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

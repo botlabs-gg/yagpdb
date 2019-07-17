@@ -61,12 +61,12 @@ var AutomodViolationWhere = struct {
 	CreatedAt whereHelpertime_Time
 	Name      whereHelperstring
 }{
-	ID:        whereHelperint64{field: `id`},
-	GuildID:   whereHelperint64{field: `guild_id`},
-	UserID:    whereHelperint64{field: `user_id`},
-	RuleID:    whereHelpernull_Int64{field: `rule_id`},
-	CreatedAt: whereHelpertime_Time{field: `created_at`},
-	Name:      whereHelperstring{field: `name`},
+	ID:        whereHelperint64{field: "\"automod_violations\".\"id\""},
+	GuildID:   whereHelperint64{field: "\"automod_violations\".\"guild_id\""},
+	UserID:    whereHelperint64{field: "\"automod_violations\".\"user_id\""},
+	RuleID:    whereHelpernull_Int64{field: "\"automod_violations\".\"rule_id\""},
+	CreatedAt: whereHelpertime_Time{field: "\"automod_violations\".\"created_at\""},
+	Name:      whereHelperstring{field: "\"automod_violations\".\"name\""},
 }
 
 // AutomodViolationRels is where relationship names are stored.
@@ -90,7 +90,7 @@ func (*automodViolationR) NewStruct() *automodViolationR {
 type automodViolationL struct{}
 
 var (
-	automodViolationColumns               = []string{"id", "guild_id", "user_id", "rule_id", "created_at", "name"}
+	automodViolationAllColumns            = []string{"id", "guild_id", "user_id", "rule_id", "created_at", "name"}
 	automodViolationColumnsWithoutDefault = []string{"guild_id", "user_id", "rule_id", "created_at", "name"}
 	automodViolationColumnsWithDefault    = []string{"id"}
 	automodViolationPrimaryKeyColumns     = []string{"id"}
@@ -479,7 +479,7 @@ func (o *AutomodViolation) Insert(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			automodViolationColumns,
+			automodViolationAllColumns,
 			automodViolationColumnsWithDefault,
 			automodViolationColumnsWithoutDefault,
 			nzDefaults,
@@ -553,7 +553,7 @@ func (o *AutomodViolation) Update(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			automodViolationColumns,
+			automodViolationAllColumns,
 			automodViolationPrimaryKeyColumns,
 		)
 
@@ -733,13 +733,13 @@ func (o *AutomodViolation) Upsert(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			automodViolationColumns,
+			automodViolationAllColumns,
 			automodViolationColumnsWithDefault,
 			automodViolationColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			automodViolationColumns,
+			automodViolationAllColumns,
 			automodViolationPrimaryKeyColumns,
 		)
 
@@ -861,10 +861,6 @@ func (o AutomodViolationSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AutomodViolationSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no AutomodViolation slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

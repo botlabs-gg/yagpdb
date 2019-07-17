@@ -53,8 +53,8 @@ var UserTimezoneWhere = struct {
 	UserID       whereHelperint64
 	TimezoneName whereHelperstring
 }{
-	UserID:       whereHelperint64{field: `user_id`},
-	TimezoneName: whereHelperstring{field: `timezone_name`},
+	UserID:       whereHelperint64{field: "\"user_timezones\".\"user_id\""},
+	TimezoneName: whereHelperstring{field: "\"user_timezones\".\"timezone_name\""},
 }
 
 // UserTimezoneRels is where relationship names are stored.
@@ -74,7 +74,7 @@ func (*userTimezoneR) NewStruct() *userTimezoneR {
 type userTimezoneL struct{}
 
 var (
-	userTimezoneColumns               = []string{"user_id", "timezone_name"}
+	userTimezoneAllColumns            = []string{"user_id", "timezone_name"}
 	userTimezoneColumnsWithoutDefault = []string{"user_id", "timezone_name"}
 	userTimezoneColumnsWithDefault    = []string{}
 	userTimezonePrimaryKeyColumns     = []string{"user_id"}
@@ -251,7 +251,7 @@ func (o *UserTimezone) Insert(ctx context.Context, exec boil.ContextExecutor, co
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			userTimezoneColumns,
+			userTimezoneAllColumns,
 			userTimezoneColumnsWithDefault,
 			userTimezoneColumnsWithoutDefault,
 			nzDefaults,
@@ -325,7 +325,7 @@ func (o *UserTimezone) Update(ctx context.Context, exec boil.ContextExecutor, co
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			userTimezoneColumns,
+			userTimezoneAllColumns,
 			userTimezonePrimaryKeyColumns,
 		)
 
@@ -498,13 +498,13 @@ func (o *UserTimezone) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			userTimezoneColumns,
+			userTimezoneAllColumns,
 			userTimezoneColumnsWithDefault,
 			userTimezoneColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			userTimezoneColumns,
+			userTimezoneAllColumns,
 			userTimezonePrimaryKeyColumns,
 		)
 
@@ -626,10 +626,6 @@ func (o UserTimezoneSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o UserTimezoneSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no UserTimezone slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

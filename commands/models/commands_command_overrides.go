@@ -102,17 +102,17 @@ var CommandsCommandOverrideWhere = struct {
 	RequireRoles                whereHelpertypes_Int64Array
 	IgnoreRoles                 whereHelpertypes_Int64Array
 }{
-	ID:                          whereHelperint64{field: `id`},
-	GuildID:                     whereHelperint64{field: `guild_id`},
-	CommandsChannelsOverridesID: whereHelperint64{field: `commands_channels_overrides_id`},
-	Commands:                    whereHelpertypes_StringArray{field: `commands`},
-	CommandsEnabled:             whereHelperbool{field: `commands_enabled`},
-	AutodeleteResponse:          whereHelperbool{field: `autodelete_response`},
-	AutodeleteTrigger:           whereHelperbool{field: `autodelete_trigger`},
-	AutodeleteResponseDelay:     whereHelperint{field: `autodelete_response_delay`},
-	AutodeleteTriggerDelay:      whereHelperint{field: `autodelete_trigger_delay`},
-	RequireRoles:                whereHelpertypes_Int64Array{field: `require_roles`},
-	IgnoreRoles:                 whereHelpertypes_Int64Array{field: `ignore_roles`},
+	ID:                          whereHelperint64{field: "\"commands_command_overrides\".\"id\""},
+	GuildID:                     whereHelperint64{field: "\"commands_command_overrides\".\"guild_id\""},
+	CommandsChannelsOverridesID: whereHelperint64{field: "\"commands_command_overrides\".\"commands_channels_overrides_id\""},
+	Commands:                    whereHelpertypes_StringArray{field: "\"commands_command_overrides\".\"commands\""},
+	CommandsEnabled:             whereHelperbool{field: "\"commands_command_overrides\".\"commands_enabled\""},
+	AutodeleteResponse:          whereHelperbool{field: "\"commands_command_overrides\".\"autodelete_response\""},
+	AutodeleteTrigger:           whereHelperbool{field: "\"commands_command_overrides\".\"autodelete_trigger\""},
+	AutodeleteResponseDelay:     whereHelperint{field: "\"commands_command_overrides\".\"autodelete_response_delay\""},
+	AutodeleteTriggerDelay:      whereHelperint{field: "\"commands_command_overrides\".\"autodelete_trigger_delay\""},
+	RequireRoles:                whereHelpertypes_Int64Array{field: "\"commands_command_overrides\".\"require_roles\""},
+	IgnoreRoles:                 whereHelpertypes_Int64Array{field: "\"commands_command_overrides\".\"ignore_roles\""},
 }
 
 // CommandsCommandOverrideRels is where relationship names are stored.
@@ -136,7 +136,7 @@ func (*commandsCommandOverrideR) NewStruct() *commandsCommandOverrideR {
 type commandsCommandOverrideL struct{}
 
 var (
-	commandsCommandOverrideColumns               = []string{"id", "guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
+	commandsCommandOverrideAllColumns            = []string{"id", "guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
 	commandsCommandOverrideColumnsWithoutDefault = []string{"guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
 	commandsCommandOverrideColumnsWithDefault    = []string{"id"}
 	commandsCommandOverridePrimaryKeyColumns     = []string{"id"}
@@ -475,7 +475,7 @@ func (o *CommandsCommandOverride) Insert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverrideColumnsWithDefault,
 			commandsCommandOverrideColumnsWithoutDefault,
 			nzDefaults,
@@ -549,7 +549,7 @@ func (o *CommandsCommandOverride) Update(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverridePrimaryKeyColumns,
 		)
 
@@ -722,13 +722,13 @@ func (o *CommandsCommandOverride) Upsert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverrideColumnsWithDefault,
 			commandsCommandOverrideColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverridePrimaryKeyColumns,
 		)
 
@@ -850,10 +850,6 @@ func (o CommandsCommandOverrideSlice) DeleteAllG(ctx context.Context) (int64, er
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o CommandsCommandOverrideSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no CommandsCommandOverride slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

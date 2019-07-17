@@ -98,11 +98,11 @@ var CoreConfigWhere = struct {
 	AllowAllMembersReadOnly whereHelperbool
 	AllowNonMembersReadOnly whereHelperbool
 }{
-	GuildID:                 whereHelperint64{field: `guild_id`},
-	AllowedReadOnlyRoles:    whereHelpertypes_Int64Array{field: `allowed_read_only_roles`},
-	AllowedWriteRoles:       whereHelpertypes_Int64Array{field: `allowed_write_roles`},
-	AllowAllMembersReadOnly: whereHelperbool{field: `allow_all_members_read_only`},
-	AllowNonMembersReadOnly: whereHelperbool{field: `allow_non_members_read_only`},
+	GuildID:                 whereHelperint64{field: "\"core_configs\".\"guild_id\""},
+	AllowedReadOnlyRoles:    whereHelpertypes_Int64Array{field: "\"core_configs\".\"allowed_read_only_roles\""},
+	AllowedWriteRoles:       whereHelpertypes_Int64Array{field: "\"core_configs\".\"allowed_write_roles\""},
+	AllowAllMembersReadOnly: whereHelperbool{field: "\"core_configs\".\"allow_all_members_read_only\""},
+	AllowNonMembersReadOnly: whereHelperbool{field: "\"core_configs\".\"allow_non_members_read_only\""},
 }
 
 // CoreConfigRels is where relationship names are stored.
@@ -122,7 +122,7 @@ func (*coreConfigR) NewStruct() *coreConfigR {
 type coreConfigL struct{}
 
 var (
-	coreConfigColumns               = []string{"guild_id", "allowed_read_only_roles", "allowed_write_roles", "allow_all_members_read_only", "allow_non_members_read_only"}
+	coreConfigAllColumns            = []string{"guild_id", "allowed_read_only_roles", "allowed_write_roles", "allow_all_members_read_only", "allow_non_members_read_only"}
 	coreConfigColumnsWithoutDefault = []string{"guild_id", "allowed_read_only_roles", "allowed_write_roles", "allow_all_members_read_only", "allow_non_members_read_only"}
 	coreConfigColumnsWithDefault    = []string{}
 	coreConfigPrimaryKeyColumns     = []string{"guild_id"}
@@ -299,7 +299,7 @@ func (o *CoreConfig) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			coreConfigColumns,
+			coreConfigAllColumns,
 			coreConfigColumnsWithDefault,
 			coreConfigColumnsWithoutDefault,
 			nzDefaults,
@@ -373,7 +373,7 @@ func (o *CoreConfig) Update(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			coreConfigColumns,
+			coreConfigAllColumns,
 			coreConfigPrimaryKeyColumns,
 		)
 
@@ -546,13 +546,13 @@ func (o *CoreConfig) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			coreConfigColumns,
+			coreConfigAllColumns,
 			coreConfigColumnsWithDefault,
 			coreConfigColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			coreConfigColumns,
+			coreConfigAllColumns,
 			coreConfigPrimaryKeyColumns,
 		)
 
@@ -674,10 +674,6 @@ func (o CoreConfigSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o CoreConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no CoreConfig slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

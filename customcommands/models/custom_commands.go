@@ -191,23 +191,23 @@ var CustomCommandWhere = struct {
 	RolesWhitelistMode        whereHelperbool
 	ContextChannel            whereHelperint64
 }{
-	LocalID:                   whereHelperint64{field: `local_id`},
-	GuildID:                   whereHelperint64{field: `guild_id`},
-	GroupID:                   whereHelpernull_Int64{field: `group_id`},
-	TriggerType:               whereHelperint{field: `trigger_type`},
-	TextTrigger:               whereHelperstring{field: `text_trigger`},
-	TextTriggerCaseSensitive:  whereHelperbool{field: `text_trigger_case_sensitive`},
-	TimeTriggerInterval:       whereHelperint{field: `time_trigger_interval`},
-	TimeTriggerExcludingDays:  whereHelpertypes_Int64Array{field: `time_trigger_excluding_days`},
-	TimeTriggerExcludingHours: whereHelpertypes_Int64Array{field: `time_trigger_excluding_hours`},
-	LastRun:                   whereHelpernull_Time{field: `last_run`},
-	NextRun:                   whereHelpernull_Time{field: `next_run`},
-	Responses:                 whereHelpertypes_StringArray{field: `responses`},
-	Channels:                  whereHelpertypes_Int64Array{field: `channels`},
-	ChannelsWhitelistMode:     whereHelperbool{field: `channels_whitelist_mode`},
-	Roles:                     whereHelpertypes_Int64Array{field: `roles`},
-	RolesWhitelistMode:        whereHelperbool{field: `roles_whitelist_mode`},
-	ContextChannel:            whereHelperint64{field: `context_channel`},
+	LocalID:                   whereHelperint64{field: "\"custom_commands\".\"local_id\""},
+	GuildID:                   whereHelperint64{field: "\"custom_commands\".\"guild_id\""},
+	GroupID:                   whereHelpernull_Int64{field: "\"custom_commands\".\"group_id\""},
+	TriggerType:               whereHelperint{field: "\"custom_commands\".\"trigger_type\""},
+	TextTrigger:               whereHelperstring{field: "\"custom_commands\".\"text_trigger\""},
+	TextTriggerCaseSensitive:  whereHelperbool{field: "\"custom_commands\".\"text_trigger_case_sensitive\""},
+	TimeTriggerInterval:       whereHelperint{field: "\"custom_commands\".\"time_trigger_interval\""},
+	TimeTriggerExcludingDays:  whereHelpertypes_Int64Array{field: "\"custom_commands\".\"time_trigger_excluding_days\""},
+	TimeTriggerExcludingHours: whereHelpertypes_Int64Array{field: "\"custom_commands\".\"time_trigger_excluding_hours\""},
+	LastRun:                   whereHelpernull_Time{field: "\"custom_commands\".\"last_run\""},
+	NextRun:                   whereHelpernull_Time{field: "\"custom_commands\".\"next_run\""},
+	Responses:                 whereHelpertypes_StringArray{field: "\"custom_commands\".\"responses\""},
+	Channels:                  whereHelpertypes_Int64Array{field: "\"custom_commands\".\"channels\""},
+	ChannelsWhitelistMode:     whereHelperbool{field: "\"custom_commands\".\"channels_whitelist_mode\""},
+	Roles:                     whereHelpertypes_Int64Array{field: "\"custom_commands\".\"roles\""},
+	RolesWhitelistMode:        whereHelperbool{field: "\"custom_commands\".\"roles_whitelist_mode\""},
+	ContextChannel:            whereHelperint64{field: "\"custom_commands\".\"context_channel\""},
 }
 
 // CustomCommandRels is where relationship names are stored.
@@ -231,7 +231,7 @@ func (*customCommandR) NewStruct() *customCommandR {
 type customCommandL struct{}
 
 var (
-	customCommandColumns               = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel"}
+	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel"}
 	customCommandColumnsWithoutDefault = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode"}
 	customCommandColumnsWithDefault    = []string{"context_channel"}
 	customCommandPrimaryKeyColumns     = []string{"guild_id", "local_id"}
@@ -613,7 +613,7 @@ func (o *CustomCommand) Insert(ctx context.Context, exec boil.ContextExecutor, c
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			customCommandColumns,
+			customCommandAllColumns,
 			customCommandColumnsWithDefault,
 			customCommandColumnsWithoutDefault,
 			nzDefaults,
@@ -687,7 +687,7 @@ func (o *CustomCommand) Update(ctx context.Context, exec boil.ContextExecutor, c
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			customCommandColumns,
+			customCommandAllColumns,
 			customCommandPrimaryKeyColumns,
 		)
 
@@ -860,13 +860,13 @@ func (o *CustomCommand) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			customCommandColumns,
+			customCommandAllColumns,
 			customCommandColumnsWithDefault,
 			customCommandColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			customCommandColumns,
+			customCommandAllColumns,
 			customCommandPrimaryKeyColumns,
 		)
 
@@ -988,10 +988,6 @@ func (o CustomCommandSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o CustomCommandSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no CustomCommand slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

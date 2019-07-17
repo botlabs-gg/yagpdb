@@ -99,17 +99,17 @@ var RoleGroupWhere = struct {
 	SingleRequireOne      whereHelperbool
 	TemporaryRoleDuration whereHelperint
 }{
-	ID:                    whereHelperint64{field: `id`},
-	GuildID:               whereHelperint64{field: `guild_id`},
-	Name:                  whereHelperstring{field: `name`},
-	RequireRoles:          whereHelpertypes_Int64Array{field: `require_roles`},
-	IgnoreRoles:           whereHelpertypes_Int64Array{field: `ignore_roles`},
-	Mode:                  whereHelperint64{field: `mode`},
-	MultipleMax:           whereHelperint64{field: `multiple_max`},
-	MultipleMin:           whereHelperint64{field: `multiple_min`},
-	SingleAutoToggleOff:   whereHelperbool{field: `single_auto_toggle_off`},
-	SingleRequireOne:      whereHelperbool{field: `single_require_one`},
-	TemporaryRoleDuration: whereHelperint{field: `temporary_role_duration`},
+	ID:                    whereHelperint64{field: "\"role_groups\".\"id\""},
+	GuildID:               whereHelperint64{field: "\"role_groups\".\"guild_id\""},
+	Name:                  whereHelperstring{field: "\"role_groups\".\"name\""},
+	RequireRoles:          whereHelpertypes_Int64Array{field: "\"role_groups\".\"require_roles\""},
+	IgnoreRoles:           whereHelpertypes_Int64Array{field: "\"role_groups\".\"ignore_roles\""},
+	Mode:                  whereHelperint64{field: "\"role_groups\".\"mode\""},
+	MultipleMax:           whereHelperint64{field: "\"role_groups\".\"multiple_max\""},
+	MultipleMin:           whereHelperint64{field: "\"role_groups\".\"multiple_min\""},
+	SingleAutoToggleOff:   whereHelperbool{field: "\"role_groups\".\"single_auto_toggle_off\""},
+	SingleRequireOne:      whereHelperbool{field: "\"role_groups\".\"single_require_one\""},
+	TemporaryRoleDuration: whereHelperint{field: "\"role_groups\".\"temporary_role_duration\""},
 }
 
 // RoleGroupRels is where relationship names are stored.
@@ -136,7 +136,7 @@ func (*roleGroupR) NewStruct() *roleGroupR {
 type roleGroupL struct{}
 
 var (
-	roleGroupColumns               = []string{"id", "guild_id", "name", "require_roles", "ignore_roles", "mode", "multiple_max", "multiple_min", "single_auto_toggle_off", "single_require_one", "temporary_role_duration"}
+	roleGroupAllColumns            = []string{"id", "guild_id", "name", "require_roles", "ignore_roles", "mode", "multiple_max", "multiple_min", "single_auto_toggle_off", "single_require_one", "temporary_role_duration"}
 	roleGroupColumnsWithoutDefault = []string{"guild_id", "name", "require_roles", "ignore_roles", "mode", "multiple_max", "multiple_min", "single_auto_toggle_off", "single_require_one"}
 	roleGroupColumnsWithDefault    = []string{"id", "temporary_role_duration"}
 	roleGroupPrimaryKeyColumns     = []string{"id"}
@@ -833,7 +833,7 @@ func (o *RoleGroup) Insert(ctx context.Context, exec boil.ContextExecutor, colum
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			roleGroupColumns,
+			roleGroupAllColumns,
 			roleGroupColumnsWithDefault,
 			roleGroupColumnsWithoutDefault,
 			nzDefaults,
@@ -907,7 +907,7 @@ func (o *RoleGroup) Update(ctx context.Context, exec boil.ContextExecutor, colum
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			roleGroupColumns,
+			roleGroupAllColumns,
 			roleGroupPrimaryKeyColumns,
 		)
 
@@ -1080,13 +1080,13 @@ func (o *RoleGroup) Upsert(ctx context.Context, exec boil.ContextExecutor, updat
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			roleGroupColumns,
+			roleGroupAllColumns,
 			roleGroupColumnsWithDefault,
 			roleGroupColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			roleGroupColumns,
+			roleGroupAllColumns,
 			roleGroupPrimaryKeyColumns,
 		)
 
@@ -1208,10 +1208,6 @@ func (o RoleGroupSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RoleGroupSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RoleGroup slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

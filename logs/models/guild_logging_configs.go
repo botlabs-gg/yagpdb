@@ -175,15 +175,15 @@ var GuildLoggingConfigWhere = struct {
 	EveryoneCanViewDeleted       whereHelpernull_Bool
 	MessageLogsAllowedRoles      whereHelpertypes_Int64Array
 }{
-	GuildID:                      whereHelperint64{field: `guild_id`},
-	CreatedAt:                    whereHelpernull_Time{field: `created_at`},
-	UpdatedAt:                    whereHelpernull_Time{field: `updated_at`},
-	UsernameLoggingEnabled:       whereHelpernull_Bool{field: `username_logging_enabled`},
-	NicknameLoggingEnabled:       whereHelpernull_Bool{field: `nickname_logging_enabled`},
-	BlacklistedChannels:          whereHelpernull_String{field: `blacklisted_channels`},
-	ManageMessagesCanViewDeleted: whereHelpernull_Bool{field: `manage_messages_can_view_deleted`},
-	EveryoneCanViewDeleted:       whereHelpernull_Bool{field: `everyone_can_view_deleted`},
-	MessageLogsAllowedRoles:      whereHelpertypes_Int64Array{field: `message_logs_allowed_roles`},
+	GuildID:                      whereHelperint64{field: "\"guild_logging_configs\".\"guild_id\""},
+	CreatedAt:                    whereHelpernull_Time{field: "\"guild_logging_configs\".\"created_at\""},
+	UpdatedAt:                    whereHelpernull_Time{field: "\"guild_logging_configs\".\"updated_at\""},
+	UsernameLoggingEnabled:       whereHelpernull_Bool{field: "\"guild_logging_configs\".\"username_logging_enabled\""},
+	NicknameLoggingEnabled:       whereHelpernull_Bool{field: "\"guild_logging_configs\".\"nickname_logging_enabled\""},
+	BlacklistedChannels:          whereHelpernull_String{field: "\"guild_logging_configs\".\"blacklisted_channels\""},
+	ManageMessagesCanViewDeleted: whereHelpernull_Bool{field: "\"guild_logging_configs\".\"manage_messages_can_view_deleted\""},
+	EveryoneCanViewDeleted:       whereHelpernull_Bool{field: "\"guild_logging_configs\".\"everyone_can_view_deleted\""},
+	MessageLogsAllowedRoles:      whereHelpertypes_Int64Array{field: "\"guild_logging_configs\".\"message_logs_allowed_roles\""},
 }
 
 // GuildLoggingConfigRels is where relationship names are stored.
@@ -203,7 +203,7 @@ func (*guildLoggingConfigR) NewStruct() *guildLoggingConfigR {
 type guildLoggingConfigL struct{}
 
 var (
-	guildLoggingConfigColumns               = []string{"guild_id", "created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
+	guildLoggingConfigAllColumns            = []string{"guild_id", "created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
 	guildLoggingConfigColumnsWithoutDefault = []string{"created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
 	guildLoggingConfigColumnsWithDefault    = []string{"guild_id"}
 	guildLoggingConfigPrimaryKeyColumns     = []string{"guild_id"}
@@ -390,7 +390,7 @@ func (o *GuildLoggingConfig) Insert(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			guildLoggingConfigColumns,
+			guildLoggingConfigAllColumns,
 			guildLoggingConfigColumnsWithDefault,
 			guildLoggingConfigColumnsWithoutDefault,
 			nzDefaults,
@@ -470,7 +470,7 @@ func (o *GuildLoggingConfig) Update(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			guildLoggingConfigColumns,
+			guildLoggingConfigAllColumns,
 			guildLoggingConfigPrimaryKeyColumns,
 		)
 
@@ -651,13 +651,13 @@ func (o *GuildLoggingConfig) Upsert(ctx context.Context, exec boil.ContextExecut
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			guildLoggingConfigColumns,
+			guildLoggingConfigAllColumns,
 			guildLoggingConfigColumnsWithDefault,
 			guildLoggingConfigColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			guildLoggingConfigColumns,
+			guildLoggingConfigAllColumns,
 			guildLoggingConfigPrimaryKeyColumns,
 		)
 
@@ -779,10 +779,6 @@ func (o GuildLoggingConfigSlice) DeleteAllG(ctx context.Context) (int64, error) 
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o GuildLoggingConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no GuildLoggingConfig slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

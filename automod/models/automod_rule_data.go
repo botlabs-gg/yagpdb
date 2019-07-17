@@ -82,12 +82,12 @@ var AutomodRuleDatumWhere = struct {
 	TypeID   whereHelperint
 	Settings whereHelpertypes_JSON
 }{
-	ID:       whereHelperint64{field: `id`},
-	GuildID:  whereHelperint64{field: `guild_id`},
-	RuleID:   whereHelperint64{field: `rule_id`},
-	Kind:     whereHelperint{field: `kind`},
-	TypeID:   whereHelperint{field: `type_id`},
-	Settings: whereHelpertypes_JSON{field: `settings`},
+	ID:       whereHelperint64{field: "\"automod_rule_data\".\"id\""},
+	GuildID:  whereHelperint64{field: "\"automod_rule_data\".\"guild_id\""},
+	RuleID:   whereHelperint64{field: "\"automod_rule_data\".\"rule_id\""},
+	Kind:     whereHelperint{field: "\"automod_rule_data\".\"kind\""},
+	TypeID:   whereHelperint{field: "\"automod_rule_data\".\"type_id\""},
+	Settings: whereHelpertypes_JSON{field: "\"automod_rule_data\".\"settings\""},
 }
 
 // AutomodRuleDatumRels is where relationship names are stored.
@@ -114,7 +114,7 @@ func (*automodRuleDatumR) NewStruct() *automodRuleDatumR {
 type automodRuleDatumL struct{}
 
 var (
-	automodRuleDatumColumns               = []string{"id", "guild_id", "rule_id", "kind", "type_id", "settings"}
+	automodRuleDatumAllColumns            = []string{"id", "guild_id", "rule_id", "kind", "type_id", "settings"}
 	automodRuleDatumColumnsWithoutDefault = []string{"guild_id", "rule_id", "kind", "type_id", "settings"}
 	automodRuleDatumColumnsWithDefault    = []string{"id"}
 	automodRuleDatumPrimaryKeyColumns     = []string{"id"}
@@ -713,7 +713,7 @@ func (o *AutomodRuleDatum) Insert(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			automodRuleDatumColumns,
+			automodRuleDatumAllColumns,
 			automodRuleDatumColumnsWithDefault,
 			automodRuleDatumColumnsWithoutDefault,
 			nzDefaults,
@@ -787,7 +787,7 @@ func (o *AutomodRuleDatum) Update(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			automodRuleDatumColumns,
+			automodRuleDatumAllColumns,
 			automodRuleDatumPrimaryKeyColumns,
 		)
 
@@ -960,13 +960,13 @@ func (o *AutomodRuleDatum) Upsert(ctx context.Context, exec boil.ContextExecutor
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			automodRuleDatumColumns,
+			automodRuleDatumAllColumns,
 			automodRuleDatumColumnsWithDefault,
 			automodRuleDatumColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			automodRuleDatumColumns,
+			automodRuleDatumAllColumns,
 			automodRuleDatumPrimaryKeyColumns,
 		)
 
@@ -1088,10 +1088,6 @@ func (o AutomodRuleDatumSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AutomodRuleDatumSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no AutomodRuleDatum slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

@@ -138,14 +138,14 @@ var ScheduledEventWhere = struct {
 	Data         whereHelpertypes_JSON
 	Processed    whereHelperbool
 }{
-	ID:           whereHelperint64{field: `id`},
-	CreatedAt:    whereHelpertime_Time{field: `created_at`},
-	TriggersAt:   whereHelpertime_Time{field: `triggers_at`},
-	RetryOnError: whereHelperbool{field: `retry_on_error`},
-	GuildID:      whereHelperint64{field: `guild_id`},
-	EventName:    whereHelperstring{field: `event_name`},
-	Data:         whereHelpertypes_JSON{field: `data`},
-	Processed:    whereHelperbool{field: `processed`},
+	ID:           whereHelperint64{field: "\"scheduled_events\".\"id\""},
+	CreatedAt:    whereHelpertime_Time{field: "\"scheduled_events\".\"created_at\""},
+	TriggersAt:   whereHelpertime_Time{field: "\"scheduled_events\".\"triggers_at\""},
+	RetryOnError: whereHelperbool{field: "\"scheduled_events\".\"retry_on_error\""},
+	GuildID:      whereHelperint64{field: "\"scheduled_events\".\"guild_id\""},
+	EventName:    whereHelperstring{field: "\"scheduled_events\".\"event_name\""},
+	Data:         whereHelpertypes_JSON{field: "\"scheduled_events\".\"data\""},
+	Processed:    whereHelperbool{field: "\"scheduled_events\".\"processed\""},
 }
 
 // ScheduledEventRels is where relationship names are stored.
@@ -165,7 +165,7 @@ func (*scheduledEventR) NewStruct() *scheduledEventR {
 type scheduledEventL struct{}
 
 var (
-	scheduledEventColumns               = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
+	scheduledEventAllColumns            = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
 	scheduledEventColumnsWithoutDefault = []string{"created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
 	scheduledEventColumnsWithDefault    = []string{"id"}
 	scheduledEventPrimaryKeyColumns     = []string{"id"}
@@ -349,7 +349,7 @@ func (o *ScheduledEvent) Insert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventColumnsWithDefault,
 			scheduledEventColumnsWithoutDefault,
 			nzDefaults,
@@ -423,7 +423,7 @@ func (o *ScheduledEvent) Update(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventPrimaryKeyColumns,
 		)
 
@@ -603,13 +603,13 @@ func (o *ScheduledEvent) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventColumnsWithDefault,
 			scheduledEventColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventPrimaryKeyColumns,
 		)
 
@@ -731,10 +731,6 @@ func (o ScheduledEventSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ScheduledEventSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ScheduledEvent slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

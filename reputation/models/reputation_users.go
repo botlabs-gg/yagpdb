@@ -52,10 +52,10 @@ var ReputationUserWhere = struct {
 	CreatedAt whereHelpertime_Time
 	Points    whereHelperint64
 }{
-	UserID:    whereHelperint64{field: `user_id`},
-	GuildID:   whereHelperint64{field: `guild_id`},
-	CreatedAt: whereHelpertime_Time{field: `created_at`},
-	Points:    whereHelperint64{field: `points`},
+	UserID:    whereHelperint64{field: "\"reputation_users\".\"user_id\""},
+	GuildID:   whereHelperint64{field: "\"reputation_users\".\"guild_id\""},
+	CreatedAt: whereHelpertime_Time{field: "\"reputation_users\".\"created_at\""},
+	Points:    whereHelperint64{field: "\"reputation_users\".\"points\""},
 }
 
 // ReputationUserRels is where relationship names are stored.
@@ -75,7 +75,7 @@ func (*reputationUserR) NewStruct() *reputationUserR {
 type reputationUserL struct{}
 
 var (
-	reputationUserColumns               = []string{"user_id", "guild_id", "created_at", "points"}
+	reputationUserAllColumns            = []string{"user_id", "guild_id", "created_at", "points"}
 	reputationUserColumnsWithoutDefault = []string{"user_id", "guild_id", "created_at", "points"}
 	reputationUserColumnsWithDefault    = []string{}
 	reputationUserPrimaryKeyColumns     = []string{"guild_id", "user_id"}
@@ -259,7 +259,7 @@ func (o *ReputationUser) Insert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserColumnsWithDefault,
 			reputationUserColumnsWithoutDefault,
 			nzDefaults,
@@ -333,7 +333,7 @@ func (o *ReputationUser) Update(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserPrimaryKeyColumns,
 		)
 
@@ -513,13 +513,13 @@ func (o *ReputationUser) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserColumnsWithDefault,
 			reputationUserColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserPrimaryKeyColumns,
 		)
 
@@ -641,10 +641,6 @@ func (o ReputationUserSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ReputationUserSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ReputationUser slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

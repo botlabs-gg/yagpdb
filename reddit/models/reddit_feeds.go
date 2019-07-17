@@ -108,15 +108,15 @@ var RedditFeedWhere = struct {
 	Slow       whereHelperbool
 	Disabled   whereHelperbool
 }{
-	ID:         whereHelperint64{field: `id`},
-	GuildID:    whereHelperint64{field: `guild_id`},
-	ChannelID:  whereHelperint64{field: `channel_id`},
-	Subreddit:  whereHelperstring{field: `subreddit`},
-	FilterNSFW: whereHelperint{field: `filter_nsfw`},
-	MinUpvotes: whereHelperint{field: `min_upvotes`},
-	UseEmbeds:  whereHelperbool{field: `use_embeds`},
-	Slow:       whereHelperbool{field: `slow`},
-	Disabled:   whereHelperbool{field: `disabled`},
+	ID:         whereHelperint64{field: "\"reddit_feeds\".\"id\""},
+	GuildID:    whereHelperint64{field: "\"reddit_feeds\".\"guild_id\""},
+	ChannelID:  whereHelperint64{field: "\"reddit_feeds\".\"channel_id\""},
+	Subreddit:  whereHelperstring{field: "\"reddit_feeds\".\"subreddit\""},
+	FilterNSFW: whereHelperint{field: "\"reddit_feeds\".\"filter_nsfw\""},
+	MinUpvotes: whereHelperint{field: "\"reddit_feeds\".\"min_upvotes\""},
+	UseEmbeds:  whereHelperbool{field: "\"reddit_feeds\".\"use_embeds\""},
+	Slow:       whereHelperbool{field: "\"reddit_feeds\".\"slow\""},
+	Disabled:   whereHelperbool{field: "\"reddit_feeds\".\"disabled\""},
 }
 
 // RedditFeedRels is where relationship names are stored.
@@ -136,7 +136,7 @@ func (*redditFeedR) NewStruct() *redditFeedR {
 type redditFeedL struct{}
 
 var (
-	redditFeedColumns               = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow", "disabled"}
+	redditFeedAllColumns            = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow", "disabled"}
 	redditFeedColumnsWithoutDefault = []string{"guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow"}
 	redditFeedColumnsWithDefault    = []string{"id", "disabled"}
 	redditFeedPrimaryKeyColumns     = []string{"id"}
@@ -313,7 +313,7 @@ func (o *RedditFeed) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedColumnsWithDefault,
 			redditFeedColumnsWithoutDefault,
 			nzDefaults,
@@ -387,7 +387,7 @@ func (o *RedditFeed) Update(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedPrimaryKeyColumns,
 		)
 
@@ -560,13 +560,13 @@ func (o *RedditFeed) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedColumnsWithDefault,
 			redditFeedColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedPrimaryKeyColumns,
 		)
 
@@ -688,10 +688,6 @@ func (o RedditFeedSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RedditFeedSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RedditFeed slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
