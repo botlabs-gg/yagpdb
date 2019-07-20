@@ -1,6 +1,6 @@
 package reputation
 
-const DBSchema = `
+var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS reputation_configs (
 	guild_id        bigint PRIMARY KEY,
 	points_name     varchar(50) NOT NULL,
@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS reputation_configs (
 	blacklisted_receive_role varchar(30),
 	admin_role               varchar(30)
 );
-
+`, `
 ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS disable_thanks_detection BOOLEAN NOT NULL DEFAULT false;
-
+`, `
 DO $$
 BEGIN
 
@@ -54,11 +54,8 @@ IF (SELECT COUNT(*) FROM information_schema.columns WHERE table_name='reputation
 	UPDATE reputation_configs SET blacklisted_receive_roles=ARRAY[blacklisted_receive_role]::BIGINT[] WHERE blacklisted_receive_role IS NOT NULL AND blacklisted_receive_role != '';
 	
 END IF;
-
 END $$;
-
-
-
+`, `
 CREATE TABLE IF NOT EXISTS reputation_users (
 	user_id  bigint NOT NULL,
 	guild_id bigint NOT NULL,
@@ -68,7 +65,7 @@ CREATE TABLE IF NOT EXISTS reputation_users (
 
 	PRIMARY KEY(guild_id, user_id)
 );
-
+`, `
 CREATE TABLE IF NOT EXISTS reputation_log (
 	id bigserial 	 PRIMARY KEY,
 	created_at	     TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -79,11 +76,14 @@ CREATE TABLE IF NOT EXISTS reputation_log (
 	set_fixed_amount bool NOT NULL,
 	amount 			 bigint NOT NULL
 );
-
+`, `
 ALTER TABLE reputation_log ADD COLUMN IF NOT EXISTS receiver_username TEXT NOT NULL DEFAULT '';
+`, `
 ALTER TABLE reputation_log ADD COLUMN IF NOT EXISTS sender_username TEXT NOT NULL DEFAULT '';
-
+`, `
 CREATE INDEX IF NOT EXISTS reputation_log_guild_idx ON reputation_log (guild_id);
+`, `
 CREATE INDEX IF NOT EXISTS reputation_log_sender_idx ON reputation_log (sender_id);
+`, `
 CREATE INDEX IF NOT EXISTS reputation_log_receiver_idx ON reputation_log (receiver_id);	
-`
+`}

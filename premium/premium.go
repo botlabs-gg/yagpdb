@@ -38,7 +38,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	common.InitSchema(DBSchema, "premium")
+	common.InitSchemas("premium", DBSchemas...)
 
 	common.RegisterPlugin(&Plugin{})
 

@@ -64,7 +64,7 @@ func (p *Plugin) WebhookAvatar() string {
 }
 
 func RegisterPlugin() {
-	common.InitSchema(DBSchema, "reddit")
+	common.InitSchemas("reddit", DBSchemas...)
 
 	plugin := &Plugin{
 		stopFeedChan: make(chan *sync.WaitGroup),

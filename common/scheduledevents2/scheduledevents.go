@@ -43,7 +43,7 @@ func (p *ScheduledEvents) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	common.InitSchema(DBSchema, "scheduledevents2")
+	common.InitSchemas("scheduledevents2", DBSchemas...)
 
 	common.RegisterPlugin(newScheduledEventsPlugin())
 }

@@ -57,7 +57,7 @@ var (
 )
 
 func setup() {
-	common.InitSchema(DBSchema, "core_bot")
+	common.InitSchemas("core_bot", DBSchema)
 
 	discordgo.IdentifyRatelimiter = &identifyRatelimiter{}
 

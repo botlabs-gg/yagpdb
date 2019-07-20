@@ -27,7 +27,7 @@ func RegisterPlugin() {
 
 	plugin := &Plugin{}
 
-	common.InitSchema(DBSchema, "reputation")
+	common.InitSchemas("reputation", DBSchemas...)
 
 	common.RegisterPlugin(plugin)
 }

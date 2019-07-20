@@ -1,6 +1,6 @@
 package twitter
 
-const DBSchema = `
+var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS twitter_feeds (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
@@ -11,6 +11,6 @@ CREATE TABLE IF NOT EXISTS twitter_feeds (
 	channel_id BIGINT NOT NULL,
 	enabled BOOLEAN NOT NULL
 );
-
+`, `
 CREATE INDEX IF NOT EXISTS twitter_user_id_idx ON twitter_feeds(twitter_user_id);
-`
+`}

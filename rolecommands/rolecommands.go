@@ -62,7 +62,7 @@ func RegisterPlugin() {
 	p := &Plugin{}
 	common.RegisterPlugin(p)
 
-	common.InitSchema(DBSchema, "rolecommands")
+	common.InitSchemas("rolecommands", DBSchemas...)
 }
 
 func FindToggleRole(ctx context.Context, ms *dstate.MemberState, name string) (gaveRole bool, err error) {

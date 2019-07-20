@@ -30,7 +30,7 @@ func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.S
 type Plugin struct{}
 
 func RegisterPlugin() {
-	common.InitSchema(DBSchema, "customcommands")
+	common.InitSchemas("customcommands", DBSchemas...)
 
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)

@@ -22,7 +22,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
-	common.InitSchema(DBSchema, "tickets")
+	common.InitSchemas("tickets", DBSchemas...)
 
 	common.RegisterPlugin(&Plugin{})
 }
