@@ -25,7 +25,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
-	common.InitSchema(DBSchema, "soundboard")
+	common.InitSchemas("soundboard", DBSchemas...)
 
 	p := &Plugin{}
 	common.RegisterPlugin(p)

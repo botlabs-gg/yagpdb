@@ -1,6 +1,6 @@
 package scheduledevents2
 
-const DBSchema = `
+var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS scheduled_events (
 	id BIGSERIAL PRIMARY KEY,
 
@@ -15,6 +15,6 @@ CREATE TABLE IF NOT EXISTS scheduled_events (
 
 	processed BOOL not null
 );
-
+`, `
 CREATE INDEX IF NOT EXISTS scheduled_events_triggers_at_idx ON scheduled_events(triggers_at);
-`
+`}

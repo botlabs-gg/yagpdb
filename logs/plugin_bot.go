@@ -584,7 +584,7 @@ func EvtProcesser() {
 	queuedMembers := make([]*discordgo.Member, 0)
 	queuedUsers := make([]*UserGuildPair, 0)
 
-	ticker := time.NewTicker(time.Second * 1)
+	ticker := time.NewTicker(time.Second * 10)
 
 	for {
 		select {

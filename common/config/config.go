@@ -56,12 +56,12 @@ func (opt *ConfigOption) GetBool() bool {
 
 type ConfigManager struct {
 	sources []ConfigSource
-	options map[string]*ConfigOption
+	Options map[string]*ConfigOption
 }
 
 func NewConfigManager() *ConfigManager {
 	return &ConfigManager{
-		options: make(map[string]*ConfigOption),
+		Options: make(map[string]*ConfigOption),
 	}
 }
 
@@ -77,12 +77,12 @@ func (c *ConfigManager) RegisterOption(name, desc string, defaultValue interface
 		Manager:      c,
 	}
 
-	c.options[name] = opt
+	c.Options[name] = opt
 	return opt
 }
 
 func (c *ConfigManager) Load() {
-	for _, v := range c.options {
+	for _, v := range c.Options {
 		v.LoadValue()
 	}
 }

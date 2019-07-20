@@ -2,7 +2,10 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/jonas747/yagpdb/common/config"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/jonas747/dcmd"
@@ -78,4 +81,54 @@ func GenCommandsDocs() {
 	os.Stdout.Write(out.Bytes())
 
 	return
+}
+
+func GenConfigDocs() {
+
+	keys := make([]string, 0, len(config.Singleton.Options))
+	for k, _ := range config.Singleton.Options {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	var out bytes.Buffer
+
+	for _, k := range keys {
+		v := config.Singleton.Options[k]
+
+		out.WriteString("**" + v.Description + "**")
+
+		typeStr := ""
+		def := ""
+		switch t := v.DefaultValue.(type) {
+		case string:
+			typeStr = "string"
+			def = t
+		case bool:
+			typeStr = "true/false"
+			def = "true"
+			if !t {
+				def = "false"
+			}
+		case int, uint, float32, float64, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+			typeStr = "number"
+			def = fmt.Sprint(t)
+		}
+
+		if typeStr != "" {
+			out.WriteString(" (" + typeStr)
+			if def != "" {
+				out.WriteString(", default: " + def)
+			}
+			out.WriteString(")")
+		}
+		out.WriteString("\n")
+
+		properKey := strings.ToUpper(v.Name)
+		properKey = strings.Replace(properKey, ".", "_", -1)
+		out.WriteString(properKey + "\n\n")
+	}
+
+	os.Stdout.Write(out.Bytes())
 }

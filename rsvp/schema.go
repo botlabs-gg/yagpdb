@@ -1,6 +1,6 @@
 package rsvp
 
-const DBSchema = `
+var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS rsvp_sessions (
 	message_id BIGINT PRIMARY KEY,
 
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS rsvp_sessions (
 	send_reminders BOOLEAN NOT NULL,
 	sent_reminders BOOLEAN NOT NULL
 );
-
+`, `
 CREATE TABLE IF NOT EXISTS rsvp_participants (
 	user_id BIGINT NOT NULL,
 	rsvp_sessions_message_id BIGINT NOT NULL REFERENCES rsvp_sessions(message_id) ON DELETE CASCADE,
@@ -32,4 +32,4 @@ CREATE TABLE IF NOT EXISTS rsvp_participants (
 
 	PRIMARY KEY(rsvp_sessions_message_id, user_id)
 );
-`
+`}

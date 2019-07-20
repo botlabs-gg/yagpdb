@@ -1,6 +1,6 @@
 package premium
 
-const DBSchema = `
+var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS premium_slots (
 	id BIGSERIAL PRIMARY KEY,
 
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS premium_slots (
 	permanent BOOLEAN NOT NULL,
 	duration_remaining BIGINT NOT NULL
 );
-
+`, `
 CREATE TABLE IF NOT EXISTS premium_codes (
 	id BIGSERIAL PRIMARY KEY,
 
@@ -36,6 +36,6 @@ CREATE TABLE IF NOT EXISTS premium_codes (
 	permanent BOOLEAN NOT NULL,
 	duration BIGINT NOT NULL
 );
-
+`, `
 CREATE INDEX IF NOT EXISTS premium_codes_code_idx ON premium_codes(code);
-`
+`}

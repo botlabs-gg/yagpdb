@@ -8,4 +8,4 @@ host="localhost"
 user="postgres"
 pass="123"
 sslmode="disable"
-whitelist=["verification_configs", "verification_sessions"]
+whitelist=["verification_configs", "verification_sessions", "verified_users"]

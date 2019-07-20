@@ -55,7 +55,7 @@ func RegisterPlugin() {
 
 	common.RegisterPlugin(p)
 	mqueue.RegisterSource("twitter", p)
-	common.InitSchema(DBSchema, "twitter")
+	common.InitSchemas("twitter", DBSchemas...)
 	go p.CheckCredentials()
 }
 

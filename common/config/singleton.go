@@ -1,15 +1,15 @@
 package config
 
-var singleton = NewConfigManager()
+var Singleton = NewConfigManager()
 
 func AddSource(source ConfigSource) {
-	singleton.AddSource(source)
+	Singleton.AddSource(source)
 }
 
 func RegisterOption(name, desc string, defaultValue interface{}) *ConfigOption {
-	return singleton.RegisterOption(name, desc, defaultValue)
+	return Singleton.RegisterOption(name, desc, defaultValue)
 }
 
 func Load() {
-	singleton.Load()
+	Singleton.Load()
 }

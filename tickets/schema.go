@@ -1,6 +1,6 @@
 package tickets
 
-const DBSchema = `
+var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS ticket_configs  (
 	guild_id BIGINT PRIMARY KEY,
 
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS ticket_configs  (
 	mod_roles BIGINT[],
 	admin_roles BIGINT[]
 );
-
+`, `
 CREATE TABLE IF NOT EXISTS tickets (
 	guild_id BIGINT NOT NULL,
 	local_id BIGINT NOT NULL,
@@ -37,8 +37,10 @@ CREATE TABLE IF NOT EXISTS tickets (
 	PRIMARY KEY(guild_id, local_id)
 );
 
+`, `
 CREATE INDEX IF NOT EXISTS tickets_guild_id_channel_id_idx ON tickets(guild_id, channel_id);
 
+`, `
 CREATE TABLE IF NOT EXISTS ticket_participants (
 	ticket_guild_id BIGINT NOT NULL,
 	ticket_local_id BIGINT NOT NULL,
@@ -56,6 +58,7 @@ CREATE TABLE IF NOT EXISTS ticket_participants (
 
 
 );
+`, `
 
 CREATE INDEX IF NOT EXISTS ticket_participants_ticket_local_id_idx ON ticket_participants(ticket_guild_id, ticket_local_id);
-`
+`}

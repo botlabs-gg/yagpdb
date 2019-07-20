@@ -1,6 +1,6 @@
 package customcommands
 
-const DBSchema = `
+var DBSchemas = []string{`
 
 CREATE TABLE IF NOT EXISTS custom_command_groups (
 	id BIGSERIAL PRIMARY KEY,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS custom_command_groups (
 	whitelist_roles BIGINT[],
 	whitelist_channels BIGINT[]
 );
-
+`, `
 CREATE TABLE IF NOT EXISTS custom_commands (
 	local_id BIGINT NOT NULL,
 	guild_id BIGINT NOT NULL,
@@ -40,12 +40,16 @@ CREATE TABLE IF NOT EXISTS custom_commands (
 	
 	PRIMARY KEY(guild_id, local_id)
 );
+`, `
 
 CREATE INDEX IF NOT EXISTS custom_commands_guild_idx ON custom_commands(guild_id);
+`, `
 CREATE INDEX IF NOT EXISTS custom_commands_next_run_idx ON custom_commands(next_run);
 
+`, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS context_channel BIGINT NOT NULL DEFAULT 0;
 
+`, `
 CREATE TABLE IF NOT EXISTS templates_user_database (
 	id BIGSERIAL PRIMARY KEY,
 
@@ -63,6 +67,8 @@ CREATE TABLE IF NOT EXISTS templates_user_database (
 	UNIQUE(guild_id, user_id, key)
 );
 
+`, `
 CREATE INDEX IF NOT EXISTS templates_user_database_combined_idx ON templates_user_database (guild_id, user_id, key, value_num);
+`, `
 CREATE INDEX IF NOT EXISTS templates_user_database_expires_idx ON templates_user_database (expires_at);
-`
+`}

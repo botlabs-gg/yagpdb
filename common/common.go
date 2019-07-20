@@ -108,7 +108,7 @@ func Init() error {
 		panic(err)
 	}
 
-	InitSchema(CoreServerConfDBSchema, "core_configs")
+	InitSchemas("core_configs", CoreServerConfDBSchema)
 
 	return err
 }
@@ -236,7 +236,7 @@ func connectDB(host, user, pass, dbName string) error {
 	return err
 }
 
-func InitSchema(schema string, name string) {
+func initSchema(schema string, name string) {
 	_, err := PQ.Exec(schema)
 	if err != nil {
 		logger.WithError(err).Fatal("failed initializing postgres db schema for ", name)
@@ -248,7 +248,7 @@ func InitSchema(schema string, name string) {
 func InitSchemas(name string, schemas ...string) {
 	for i, v := range schemas {
 		actualName := fmt.Sprintf("%s[%d]", name, i)
-		InitSchema(v, actualName)
+		initSchema(v, actualName)
 	}
 
 	return

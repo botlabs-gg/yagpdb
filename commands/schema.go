@@ -1,6 +1,6 @@
 package commands
 
-const DBSchema = `
+var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS commands_channels_overrides (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
@@ -20,10 +20,11 @@ CREATE TABLE IF NOT EXISTS commands_channels_overrides (
 	require_roles BIGINT[] NOT NULL,
 	ignore_roles BIGINT[] NOT NULL
 );
-
+`, `
 CREATE INDEX IF NOT EXISTS commands_channels_overrides_guild_idx ON commands_channels_overrides(guild_id);
+`, `
 CREATE UNIQUE INDEX IF NOT EXISTS commands_channels_overrides_global_uniquex ON commands_channels_overrides (guild_id) WHERE global;
-
+`, `
 CREATE TABLE IF NOT EXISTS commands_command_overrides (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
@@ -42,7 +43,6 @@ CREATE TABLE IF NOT EXISTS commands_command_overrides (
 	require_roles BIGINT[] NOT NULL,
 	ignore_roles BIGINT[] NOT NULL
 );
-
+`, `
 CREATE INDEX IF NOT EXISTS commands_command_groups_channels_override_idx ON commands_command_overrides(commands_channels_overrides_id);
-
-`
+`}

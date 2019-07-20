@@ -200,6 +200,24 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	if valid {
+		ip := ""
+		if confVerificationTrackIPs.GetBool() {
+			ip = web.GetRequestIP(r)
+		}
+
+		model := &models.VerifiedUser{
+			UserID:     userID,
+			GuildID:    g.ID,
+			VerifiedAt: time.Now(),
+			IP:         ip,
+		}
+
+		err := model.UpsertG(ctx, true, []string{"guild_id", "user_id"}, boil.Infer(), boil.Infer())
+		if err != nil {
+			web.CtxLogger(r.Context()).WithError(err).Error("failed verifying user")
+			return templateData, err
+		}
+
 		scheduledevents2.ScheduleEvent("verification_user_verified", g.ID, time.Now(), userID)
 		verSession.SolvedAt = null.TimeFrom(time.Now())
 		verSession.UpdateG(ctx, boil.Infer())

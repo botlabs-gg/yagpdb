@@ -48,11 +48,10 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 		}
 
 		entry := logger.WithFields(logrus.Fields{
-			"ip":  r.RemoteAddr,
+			"ip":  GetRequestIP(r),
 			"url": r.URL.Path,
 		})
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
-
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
 		inner.ServeHTTP(w, r.WithContext(ctx))

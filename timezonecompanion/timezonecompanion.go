@@ -32,7 +32,7 @@ func RegisterPlugin() {
 
 	w.Add(trules.Hour(rules.Override), trules.HourMinute(rules.Override))
 
-	common.InitSchema(DBSchema, "timezonecompanion")
+	common.InitSchemas("timezonecompanion", DBSchemas...)
 	common.RegisterPlugin(&Plugin{
 		DateParser: w,
 	})

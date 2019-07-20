@@ -335,3 +335,12 @@ func EnabledDisabledSpanStatus(enabled bool) (str string) {
 
 	return fmt.Sprintf("<span class=\"text-%s\">%s</span>%s", enabledClass, enabledStr, indicator)
 }
+
+func GetRequestIP(r *http.Request) string {
+	headerField := confReverseProxyClientIPHeader.GetString()
+	if headerField == "" {
+		return strings.Split(r.RemoteAddr, ":")[0]
+	}
+
+	return r.Header.Get(headerField)
+}
