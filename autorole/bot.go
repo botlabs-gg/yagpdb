@@ -247,7 +247,7 @@ OUTER:
 
 	cntSinceLastRedisUpdate := 0
 	for i, userID := range membersToGiveRole {
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 2)
 		select {
 		case <-stopChan:
 			logger.WithField("guild", gs.ID).Info("Stopping autorole assigning...")
@@ -377,7 +377,7 @@ OUTER:
 			}
 		}
 
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 2)
 
 		logger.Println("assigning to ", m.User.ID, " from guild chunk event")
 		err = common.AddRole(m, config.Role, chunk.GuildID)
