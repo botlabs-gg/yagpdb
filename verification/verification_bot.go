@@ -209,6 +209,9 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 
 	model, err := models.FindVerifiedUserG(context.Background(), guildID, ms.ID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, err
+		}
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
