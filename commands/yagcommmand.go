@@ -137,7 +137,9 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send typing to indicate the bot's working
-	common.BotSession.ChannelTyping(data.Msg.ChannelID)
+	if confSetTyping.GetBool() {
+		common.BotSession.ChannelTyping(data.Msg.ChannelID)
+	}
 
 	logger := yc.Logger(data)
 
