@@ -2,6 +2,7 @@ package autorole
 
 import (
 	"fmt"
+	"github.com/jonas747/yagpdb/premium"
 	"strconv"
 	"sync"
 	"time"
@@ -128,6 +129,8 @@ func runDurationChecker() {
 		case <-ticker.C:
 		}
 
+		nonPremiumRetroActiveAssignment := confDisableNonPremiumRetroActiveAssignment.GetBool()
+
 		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
 			// Copy the list of guilds so that we dont need to keep the entire state locked
 			guildsToCheck = state.GuildsSlice(true)
@@ -142,6 +145,14 @@ func runDurationChecker() {
 
 		for checkedThisRound := 0; i < len(guildsToCheck) && checkedThisRound < numToCheckPerRun; i++ {
 			g := guildsToCheck[i]
+			if !nonPremiumRetroActiveAssignment {
+				if ok, err := premium.IsGuildPremium(g.ID); !ok && err == nil {
+					continue
+				} else if err != nil {
+					logger.WithError(err).Error("failed checking if guild is premium")
+				}
+			}
+
 			checkGuild(g)
 
 			checkedThisRound++
