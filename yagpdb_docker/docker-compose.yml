@@ -13,7 +13,11 @@ services:
   app:
     image: caskd/yagpdb
     restart: unless-stopped
-    command: ["-all", "-pa", "-exthttps=false", "-https=true"]
+    command:
+      - "-all"
+      - "-pa"
+      - "-exthttps=false"
+      - "-https=true"
     depends_on:
       - redis
       - db

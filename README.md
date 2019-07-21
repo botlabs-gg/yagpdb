@@ -55,7 +55,7 @@ Edit `app.env` and `db.env` to specify the Discord bot values from above.
 
 Make sure ports 80 and 443 are accessible on your network and launch:
 
-    docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml -f yagpdb/yagpdb_docker/docker-compose.override.yml up
+    docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml up
 
 The bot will connect automatically and the control panel will be available via
 your host after a short setup.
@@ -71,7 +71,7 @@ websites:
 
 And then start the bot using the proxy:
 
-    docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml -f yagpdb/yagpdb_docker/docker-compose.proxied.yml up
+    docker-compose -f yagpdb/yagpdb_docker/docker-compose.proxied.yml up
 
 #### Standalone/Manual setup
 

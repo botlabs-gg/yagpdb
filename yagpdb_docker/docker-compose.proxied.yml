@@ -1,14 +1,53 @@
 version: '3'
 
+volumes:
+  db:
+  redis:
+  cert_cache:
+  soundboard:
+
 networks:
+  default:
   proxy-tier:
     external:
       name: proxy-tier
 
 services:
   app:
+    image: caskd/yagpdb
+    restart: unless-stopped
+    command:
+      - "-all"
+      - "-pa"
+      - "-exthttps=true"
+      - "-https=false"
+    depends_on:
+      - redis
+      - db
     networks:
+      - default
       - proxy-tier
-    environment:
-      - extra_flags=-https=false -exthttps=true
+    volumes:
+      - cert_cache:/app/cert
+      - soundboard:/app/soundboard
+    env_file:
+      - app.env
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - redis:/data
+
+  db:
+    image: postgres:11
+    restart: unless-stopped
+    volumes:
+      - db:/var/lib/postgresql/data
+    networks:
+      - default
+    env_file:
+      - db.env
 
