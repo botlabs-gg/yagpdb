@@ -101,9 +101,9 @@
                         {{range .Logs}}
                         <tr>
                             <td>#{{.ID}}</td>
-                            <td>{{formatTime .CreatedAt.Time}}</td>
-                            <td>{{.Author.String}} ({{.AuthorID.String}})</td>
-                            <td>#{{.ChannelName.String}}</td>
+                            <td>{{formatTime .CreatedAt}}</td>
+                            <td>{{.AuthorUsername}} ({{.AuthorID}})</td>
+                            <td>#{{.ChannelName}}</td>
                             <td>
                                 <form method="post" data-async-form>
                                     <input class="hidden" type="text" name="id" value="{{.ID}}" />
