@@ -37,7 +37,7 @@ services:
       - redis:/data
 
   db:
-    image: postgres
+    image: postgres:11
     restart: unless-stopped
     volumes:
       - db:/var/lib/postgresql/data
