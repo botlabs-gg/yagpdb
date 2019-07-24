@@ -2,22 +2,25 @@ package logs
 
 var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS message_logs2 (
-	id SERIAL PRIMARY KEY,
-	
+	id INT NOT NULL,
+	guild_id BIGINT NOT NULL,
+	legacy_id INT NOT NULL,
+
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
 	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
 	channel_name TEXT NOT NULL,
 	channel_id BIGINT NOT NULL,
-	guild_id BIGINT NOT NULL,
 	author_id BIGINT NOT NULL,
 	author_username TEXT NOT NULL,
 
-	messages BIGINT[]
+	messages BIGINT[],
+
+	PRIMARY KEY(guild_id, id)
 );
-`, `
-CREATE INDEX IF NOT EXISTS message_logs2_guild_id_idx ON message_logs2(guild_id);
-`, `
+`,
+	//CREATE INDEX IF NOT EXISTS message_logs2_guild_id_idx ON message_logs2(guild_id);
+	`
 CREATE TABLE IF NOT EXISTS messages2 (
 	id BIGINT PRIMARY KEY,
 	guild_id BIGINT NOT NULL,

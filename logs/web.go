@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"html/template"
@@ -58,8 +59,11 @@ func (lp *Plugin) InitWeb() {
 
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathView))
 
-	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
-	web.ServerPublicMux.Handle(pat.Get("/logs/:id/"), web.RenderHandler(HandleLogsHTML, "public_server_logs"))
+	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(LogFetchMW(HandleLogsHTML, true), "public_server_logs"))
+	web.ServerPublicMux.Handle(pat.Get("/logs/:id/"), web.RenderHandler(LogFetchMW(HandleLogsHTML, true), "public_server_logs"))
+
+	web.ServerPublicMux.Handle(pat.Get("/log/:id"), web.RenderHandler(LogFetchMW(HandleLogsHTML, false), "public_server_logs"))
+	web.ServerPublicMux.Handle(pat.Get("/log/:id/"), web.RenderHandler(LogFetchMW(HandleLogsHTML, false), "public_server_logs"))
 
 	logCPMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/logging"), logCPMux)
@@ -78,8 +82,8 @@ func (lp *Plugin) InitWeb() {
 	logCPMux.Handle(pat.Post("/"), saveHandler)
 	logCPMux.Handle(pat.Post(""), saveHandler)
 
-	logCPMux.Handle(pat.Post("/fulldelete"), fullDeleteHandler)
-	logCPMux.Handle(pat.Post("/msgdelete"), msgDeleteHandler)
+	logCPMux.Handle(pat.Post("/fulldelete2"), fullDeleteHandler)
+	logCPMux.Handle(pat.Post("/msgdelete2"), msgDeleteHandler)
 }
 
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -212,6 +216,58 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 	return true
 }
 
+type ctxKey int
+
+const (
+	ctxKeyLogs ctxKey = iota
+	ctxKeyMessages
+	ctxKeyConfig
+)
+
+func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) interface{} {
+		g, tmpl := web.GetBaseCPContextData(r.Context())
+
+		idString := pat.Param(r, "id")
+
+		parsed, err := strconv.ParseInt(idString, 10, 64)
+		if web.CheckErr(tmpl, err, "Thats's not a real log id", nil) {
+			return tmpl
+		}
+
+		config, err := GetConfig(common.PQ, r.Context(), g.ID)
+		if web.CheckErr(tmpl, err, "Error retrieving config for this server", web.CtxLogger(r.Context()).Error) {
+			return tmpl
+		}
+
+		if !CheckCanAccessLogs(w, r, config) {
+			return tmpl
+		}
+
+		sm := SearchModeLegacy
+		if !legacy {
+			sm = SearchModeNew
+		}
+
+		// retrieve logs
+		msgLogs, messages, err := GetChannelLogs(r.Context(), parsed, g.ID, sm)
+		if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {
+			return tmpl
+		}
+
+		if msgLogs.GuildID != g.ID {
+			return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
+		}
+
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, ctxKeyLogs, msgLogs)
+		ctx = context.WithValue(ctx, ctxKeyMessages, messages)
+		ctx = context.WithValue(ctx, ctxKeyConfig, config)
+
+		return inner(w, r.WithContext(ctx))
+	}
+}
+
 type MessageView struct {
 	Model *models.Messages2
 
@@ -222,21 +278,9 @@ type MessageView struct {
 func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
-	idString := pat.Param(r, "id")
-
-	parsed, err := strconv.ParseInt(idString, 10, 64)
-	if web.CheckErr(tmpl, err, "Thats's not a real log id", nil) {
-		return tmpl
-	}
-
-	config, err := GetConfig(common.PQ, r.Context(), g.ID)
-	if web.CheckErr(tmpl, err, "Error retrieving config for this server", web.CtxLogger(r.Context()).Error) {
-		return tmpl
-	}
-
-	if !CheckCanAccessLogs(w, r, config) {
-		return tmpl
-	}
+	logs := r.Context().Value(ctxKeyLogs).(*models.MessageLogs2)
+	messages := r.Context().Value(ctxKeyMessages).([]*models.Messages2)
+	config := r.Context().Value(ctxKeyConfig).(*models.GuildLoggingConfig)
 
 	// check if were allowed to view deleted messages
 	canViewDeleted := web.IsAdminRequest(r.Context(), r)
@@ -248,19 +292,8 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 
 	tmpl["CanViewDeleted"] = canViewDeleted
 
-	// retrieve logs
-	msgLogs, messages, err := GetChannelLogs(r.Context(), parsed, g.ID)
-	if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {
-		return tmpl
-	}
-
-	if msgLogs.GuildID != g.ID {
-		return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
-	}
-
+	// Convert into views with formatted dates and colors
 	const TimeFormat = "2006 Jan 02 15:04"
-
-	// Fetch the role colors if possible
 	messageViews := make([]*MessageView, len(messages))
 	for i, _ := range messageViews {
 		m := messages[i]
@@ -273,7 +306,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 
 	SetMessageLogsColors(g.ID, messageViews)
 
-	tmpl["Logs"] = msgLogs
+	tmpl["Logs"] = logs
 	tmpl["Messages"] = messageViews
 
 	return tmpl

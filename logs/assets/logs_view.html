@@ -7,7 +7,7 @@
 }
 </style>
 <header class="page-header">
-    <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete" method="post">
+    <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete2" method="post">
         <h2>Message logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName}} <small>(ID: {{.Logs.ChannelID}})</small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h2>
         <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
     </form>
@@ -28,7 +28,6 @@
 
             <tbody>
                 {{$IsAdmin := .IsAdmin}}
-                {{$Colors := .MessageColors}}
                 {{$CanViewDeleted := .CanViewDeleted}}
                 {{range $i, $v := .Messages}}
                 <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.Model.AuthorID}} Message ID: {{.Model.ID}}">
@@ -64,7 +63,7 @@ function deleteMessage(msg){
     req.addEventListener("error", function(){
         alert("An error occured");
     });
-    req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete");
+    req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete2");
 
     var data = new FormData();
     data.set("LogID", logsID);

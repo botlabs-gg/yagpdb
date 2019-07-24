@@ -59,7 +59,7 @@ func GetConfig(exec boil.ContextExecutor, ctx context.Context, guildID int64) (*
 }
 
 func CreateLink(guildID int64, id int) string {
-	return fmt.Sprintf("%s/public/%d/logs/%d", web.BaseURL(), guildID, id)
+	return fmt.Sprintf("%s/public/%d/log/%d", web.BaseURL(), guildID, id)
 }
 
 func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLogs2, error) {
@@ -138,12 +138,21 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		logIds = append(logIds, v.ID)
 	}
 
+	id, err := common.GenLocalIncrID(channel.Guild.ID, "message_logs")
+	if err != nil {
+		tx.Rollback()
+		return nil, errors.Wrap(err, "log.gen_id")
+	}
+
 	log := &models.MessageLogs2{
+		GuildID:  channel.Guild.ID,
+		ID:       int(id),
+		LegacyID: 0,
+
 		ChannelID:      channel.ID,
 		ChannelName:    channel.Name,
 		AuthorUsername: author,
 		AuthorID:       authorID,
-		GuildID:        channel.Guild.ID,
 		Messages:       logIds,
 	}
 
@@ -161,13 +170,58 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	return log, nil
 }
 
-func GetChannelLogs(ctx context.Context, id, guildID int64) (*models.MessageLogs2, []*models.Messages2, error) {
+type SearchMode int
 
-	logs, err := models.MessageLogs2s(
+const (
+	SearchModeNew SearchMode = iota
+	SearchModeLegacy
+)
+
+func logsSearchNew(ctx context.Context, guildID, id int64) (*models.MessageLogs2, error) {
+	return models.MessageLogs2s(
 		models.MessageLogs2Where.ID.EQ(int(id)),
 		models.MessageLogs2Where.GuildID.EQ(guildID)).OneG(ctx)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "messagelogs2")
+}
+
+func logsSearchLegacy(ctx context.Context, guildID, id int64) (*models.MessageLogs2, error) {
+	return models.MessageLogs2s(
+		models.MessageLogs2Where.LegacyID.EQ(int(id)),
+		models.MessageLogs2Where.GuildID.EQ(guildID)).OneG(ctx)
+}
+
+func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*models.MessageLogs2, []*models.Messages2, error) {
+	var logs *models.MessageLogs2
+	var err error
+
+	if sm == SearchModeNew {
+		// try with new ID system first
+		logs, err = logsSearchNew(ctx, guildID, id)
+		if err == sql.ErrNoRows {
+			// fallback to legacy ids
+			logs, err = logsSearchLegacy(ctx, guildID, id)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "messagelogs2")
+		}
+	} else {
+		// try with legacy id system first
+		logs, err = logsSearchLegacy(ctx, guildID, id)
+		if err == sql.ErrNoRows {
+			// fallback to new ids
+			logs, err = logsSearchNew(ctx, guildID, id)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "messagelogs2")
+		}
+
 	}
 
 	args := []interface{}{}

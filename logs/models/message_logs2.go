@@ -25,11 +25,12 @@ import (
 // MessageLogs2 is an object representing the database table.
 type MessageLogs2 struct {
 	ID             int              `boil:"id" json:"id" toml:"id" yaml:"id"`
+	LegacyID       int              `boil:"legacy_id" json:"legacy_id" toml:"legacy_id" yaml:"legacy_id"`
+	GuildID        int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
 	CreatedAt      time.Time        `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt      time.Time        `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	ChannelName    string           `boil:"channel_name" json:"channel_name" toml:"channel_name" yaml:"channel_name"`
 	ChannelID      int64            `boil:"channel_id" json:"channel_id" toml:"channel_id" yaml:"channel_id"`
-	GuildID        int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
 	AuthorID       int64            `boil:"author_id" json:"author_id" toml:"author_id" yaml:"author_id"`
 	AuthorUsername string           `boil:"author_username" json:"author_username" toml:"author_username" yaml:"author_username"`
 	Messages       types.Int64Array `boil:"messages" json:"messages,omitempty" toml:"messages" yaml:"messages,omitempty"`
@@ -40,21 +41,23 @@ type MessageLogs2 struct {
 
 var MessageLogs2Columns = struct {
 	ID             string
+	LegacyID       string
+	GuildID        string
 	CreatedAt      string
 	UpdatedAt      string
 	ChannelName    string
 	ChannelID      string
-	GuildID        string
 	AuthorID       string
 	AuthorUsername string
 	Messages       string
 }{
 	ID:             "id",
+	LegacyID:       "legacy_id",
+	GuildID:        "guild_id",
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
 	ChannelName:    "channel_name",
 	ChannelID:      "channel_id",
-	GuildID:        "guild_id",
 	AuthorID:       "author_id",
 	AuthorUsername: "author_username",
 	Messages:       "messages",
@@ -94,21 +97,23 @@ func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.f
 
 var MessageLogs2Where = struct {
 	ID             whereHelperint
+	LegacyID       whereHelperint
+	GuildID        whereHelperint64
 	CreatedAt      whereHelpertime_Time
 	UpdatedAt      whereHelpertime_Time
 	ChannelName    whereHelperstring
 	ChannelID      whereHelperint64
-	GuildID        whereHelperint64
 	AuthorID       whereHelperint64
 	AuthorUsername whereHelperstring
 	Messages       whereHelpertypes_Int64Array
 }{
 	ID:             whereHelperint{field: "\"message_logs2\".\"id\""},
+	LegacyID:       whereHelperint{field: "\"message_logs2\".\"legacy_id\""},
+	GuildID:        whereHelperint64{field: "\"message_logs2\".\"guild_id\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"message_logs2\".\"created_at\""},
 	UpdatedAt:      whereHelpertime_Time{field: "\"message_logs2\".\"updated_at\""},
 	ChannelName:    whereHelperstring{field: "\"message_logs2\".\"channel_name\""},
 	ChannelID:      whereHelperint64{field: "\"message_logs2\".\"channel_id\""},
-	GuildID:        whereHelperint64{field: "\"message_logs2\".\"guild_id\""},
 	AuthorID:       whereHelperint64{field: "\"message_logs2\".\"author_id\""},
 	AuthorUsername: whereHelperstring{field: "\"message_logs2\".\"author_username\""},
 	Messages:       whereHelpertypes_Int64Array{field: "\"message_logs2\".\"messages\""},
@@ -131,9 +136,9 @@ func (*messageLogs2R) NewStruct() *messageLogs2R {
 type messageLogs2L struct{}
 
 var (
-	messageLogs2AllColumns            = []string{"id", "created_at", "updated_at", "channel_name", "channel_id", "guild_id", "author_id", "author_username", "messages"}
-	messageLogs2ColumnsWithoutDefault = []string{"created_at", "updated_at", "channel_name", "channel_id", "guild_id", "author_id", "author_username", "messages"}
-	messageLogs2ColumnsWithDefault    = []string{"id"}
+	messageLogs2AllColumns            = []string{"id", "legacy_id", "guild_id", "created_at", "updated_at", "channel_name", "channel_id", "author_id", "author_username", "messages"}
+	messageLogs2ColumnsWithoutDefault = []string{"id", "legacy_id", "guild_id", "created_at", "updated_at", "channel_name", "channel_id", "author_id", "author_username", "messages"}
+	messageLogs2ColumnsWithDefault    = []string{}
 	messageLogs2PrimaryKeyColumns     = []string{"id"}
 )
 

@@ -107,8 +107,8 @@
                             <td>
                                 <form method="post" data-async-form>
                                     <input class="hidden" type="text" name="id" value="{{.ID}}" />
-                                    <button type="submit" formaction="fulldelete" class="btn btn-sm btn-danger" value="Delete" data-async-form>Delete</button>
-                                    <a class="btn btn-sm btn-primary" href="/public/{{$g}}/logs/{{.ID}}">View</a>
+                                    <button type="submit" formaction="/manage/{{$g}}/logging/fulldelete2" class="btn btn-sm btn-danger" value="Delete" data-async-form>Delete</button>
+                                    <a class="btn btn-sm btn-primary" href="/public/{{$g}}/log/{{.ID}}">View</a>
                                 </form>
                             </td>
                         </tr>
