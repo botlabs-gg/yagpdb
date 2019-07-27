@@ -17,6 +17,12 @@ services:
       context: ../
       dockerfile: yagpdb_docker/Dockerfile
     restart: unless-stopped
+    command:
+      - "/app/yagpdb"
+      - "-all"
+      - "-pa"
+      - "-exthttps=false"
+      - "-https=true"
     depends_on:
       - redis
       - db
@@ -25,6 +31,9 @@ services:
     volumes:
       - cert_cache:/app/cert
       - soundboard:/app/soundboard
+    ports:
+      - '80:80'
+      - '443:443'
     env_file:
       - app.env
 
@@ -37,7 +46,7 @@ services:
       - redis:/data
 
   db:
-    image: postgres
+    image: postgres:11
     restart: unless-stopped
     volumes:
       - db:/var/lib/postgresql/data
