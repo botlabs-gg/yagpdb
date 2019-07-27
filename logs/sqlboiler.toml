@@ -8,4 +8,4 @@ host="localhost"
 user="postgres"
 pass="123"
 sslmode="disable"
-whitelist=["message_logs", "messages", "guild_logging_configs", "username_listings", "nickname_listings"]
+whitelist=["message_logs", "message_logs2", "messages", "messages2", "guild_logging_configs", "username_listings", "nickname_listings"]

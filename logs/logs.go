@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -60,10 +59,10 @@ func GetConfig(exec boil.ContextExecutor, ctx context.Context, guildID int64) (*
 }
 
 func CreateLink(guildID int64, id int) string {
-	return fmt.Sprintf("%s/public/%d/logs/%d", web.BaseURL(), guildID, id)
+	return fmt.Sprintf("%s/public/%d/log/%d", web.BaseURL(), guildID, id)
 }
 
-func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLog, error) {
+func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLogs2, error) {
 	if config == nil {
 		var err error
 		config, err = GetConfig(common.PQ, ctx, guildID)
@@ -95,25 +94,12 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		return nil, err
 	}
 
-	logMsgs := make([]*models.Message, 0, len(msgs))
+	logMsgs := make([]*models.Messages2, 0, len(msgs))
+	logIds := make([]int64, 0, len(msgs))
 
 	tx, err := common.PQ.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "pq.begin")
-	}
-
-	log := &models.MessageLog{
-		ChannelID:   null.StringFrom(discordgo.StrID(channel.ID)),
-		ChannelName: null.StringFrom(channel.Name),
-		Author:      null.StringFrom(author),
-		AuthorID:    null.StringFrom(discordgo.StrID(authorID)),
-		GuildID:     null.StringFrom(discordgo.StrID(channel.Guild.ID)),
-	}
-
-	err = log.Insert(ctx, tx, boil.Infer())
-	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "log.insert")
 	}
 
 	for _, v := range msgs {
@@ -129,24 +115,51 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
 		body = strings.Replace(body, string(0), "", -1)
 
-		messageModel := &models.Message{
-			MessageID:      null.StringFrom(discordgo.StrID(v.ID)),
-			MessageLogID:   null.IntFrom(log.ID),
-			Content:        null.StringFrom(body),
-			Timestamp:      null.StringFrom(v.ParsedCreated.Format(time.RFC3339)),
-			AuthorUsername: null.StringFrom(v.Author.Username),
-			AuthorDiscrim:  null.StringFrom(v.Author.Discriminator),
-			AuthorID:       null.StringFrom(discordgo.StrID(v.Author.ID)),
-			Deleted:        null.BoolFrom(v.Deleted),
+		messageModel := &models.Messages2{
+			ID:      v.ID,
+			GuildID: guildID,
+			Content: body,
+
+			CreatedAt: v.ParsedCreated,
+			UpdatedAt: v.ParsedCreated,
+
+			AuthorUsername: v.Author.Username + "#" + v.Author.Discriminator,
+			AuthorID:       v.Author.ID,
+			Deleted:        v.Deleted,
 		}
 
-		err = messageModel.Insert(ctx, tx, boil.Infer())
+		err = messageModel.Upsert(ctx, tx, true, []string{"id"}, boil.Blacklist("deleted"), boil.Infer())
 		if err != nil {
 			tx.Rollback()
 			return nil, errors.Wrap(err, "message.insert")
 		}
 
 		logMsgs = append(logMsgs, messageModel)
+		logIds = append(logIds, v.ID)
+	}
+
+	id, err := common.GenLocalIncrID(channel.Guild.ID, "message_logs")
+	if err != nil {
+		tx.Rollback()
+		return nil, errors.Wrap(err, "log.gen_id")
+	}
+
+	log := &models.MessageLogs2{
+		GuildID:  channel.Guild.ID,
+		ID:       int(id),
+		LegacyID: 0,
+
+		ChannelID:      channel.ID,
+		ChannelName:    channel.Name,
+		AuthorUsername: author,
+		AuthorID:       authorID,
+		Messages:       logIds,
+	}
+
+	err = log.Insert(ctx, tx, boil.Infer())
+	if err != nil {
+		tx.Rollback()
+		return nil, errors.Wrap(err, "log.insert")
 	}
 
 	err = tx.Commit()
@@ -154,39 +167,91 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		return nil, errors.Wrap(err, "commit")
 	}
 
-	log.R = log.R.NewStruct()
-	log.R.Messages = logMsgs
-
 	return log, nil
 }
 
-func GetChannelLogs(ctx context.Context, id, guildID int64) (*models.MessageLog, error) {
+type SearchMode int
 
-	logs, err := models.MessageLogs(
-		models.MessageLogWhere.ID.EQ(int(id)),
-		models.MessageLogWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(guildID))),
-		models.MessageLogWhere.DeletedAt.IsNull(),
-		qm.Load("Messages", qm.OrderBy("id desc"))).OneG(ctx)
+const (
+	SearchModeNew SearchMode = iota
+	SearchModeLegacy
+)
 
-	return logs, err
+func logsSearchNew(ctx context.Context, guildID, id int64) (*models.MessageLogs2, error) {
+	return models.MessageLogs2s(
+		models.MessageLogs2Where.ID.EQ(int(id)),
+		models.MessageLogs2Where.GuildID.EQ(guildID)).OneG(ctx)
 }
 
-func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) ([]*models.MessageLog, error) {
+func logsSearchLegacy(ctx context.Context, guildID, id int64) (*models.MessageLogs2, error) {
+	return models.MessageLogs2s(
+		models.MessageLogs2Where.LegacyID.EQ(int(id)),
+		models.MessageLogs2Where.GuildID.EQ(guildID)).OneG(ctx)
+}
+
+func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*models.MessageLogs2, []*models.Messages2, error) {
+	var logs *models.MessageLogs2
+	var err error
+
+	if sm == SearchModeNew {
+		// try with new ID system first
+		logs, err = logsSearchNew(ctx, guildID, id)
+		if err == sql.ErrNoRows {
+			// fallback to legacy ids
+			logs, err = logsSearchLegacy(ctx, guildID, id)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "messagelogs2")
+		}
+	} else {
+		// try with legacy id system first
+		logs, err = logsSearchLegacy(ctx, guildID, id)
+		if err == sql.ErrNoRows {
+			// fallback to new ids
+			logs, err = logsSearchNew(ctx, guildID, id)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "messagelogs2")
+		}
+
+	}
+
+	args := []interface{}{}
+	for _, v := range logs.Messages {
+		args = append(args, v)
+	}
+
+	messages, err := models.Messages2s(qm.WhereIn("id in ?", args...)).AllG(ctx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "messages2")
+	}
+
+	return logs, messages, err
+}
+
+func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) ([]*models.MessageLogs2, error) {
 
 	qms := []qm.QueryMod{
 		qm.OrderBy("id desc"),
 		qm.Limit(limit),
-		models.MessageLogWhere.DeletedAt.IsNull(),
-		models.MessageLogWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(guildID))),
+		models.MessageLogs2Where.GuildID.EQ(guildID),
 	}
 
 	if before != 0 {
-		qms = append(qms, models.MessageLogWhere.ID.LT(before))
+		qms = append(qms, models.MessageLogs2Where.ID.LT(before))
 	} else if after != 0 {
-		qms = append(qms, models.MessageLogWhere.ID.GT(after))
+		qms = append(qms, models.MessageLogs2Where.ID.GT(after))
 	}
 
-	logs, err := models.MessageLogs(qms...).AllG(ctx)
+	logs, err := models.MessageLogs2s(qms...).AllG(ctx)
 	return logs, err
 }
 

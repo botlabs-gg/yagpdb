@@ -1,44 +1,42 @@
 package logs
 
-var DBSchemas = []string{
-	`CREATE TABLE IF NOT EXISTS message_logs (
-	id SERIAL PRIMARY KEY,
-	created_at TIMESTAMP WITH TIME ZONE,
-	updated_at TIMESTAMP WITH TIME ZONE,
-	deleted_at TIMESTAMP WITH TIME ZONE,
+var DBSchemas = []string{`
+CREATE TABLE IF NOT EXISTS message_logs2 (
+	id INT NOT NULL,
+	guild_id BIGINT NOT NULL,
+	legacy_id INT NOT NULL,
 
-	channel_name TEXT,
-	channel_id TEXT,
-	guild_id TEXT,
-	author TEXT,
-	author_id TEXT
-);`,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
-	`CREATE INDEX IF NOT EXISTS idx_message_logs_deleted_at ON message_logs(deleted_at);`,
+	channel_name TEXT NOT NULL,
+	channel_id BIGINT NOT NULL,
+	author_id BIGINT NOT NULL,
+	author_username TEXT NOT NULL,
 
-	`CREATE TABLE IF NOT EXISTS messages (
-	id SERIAL PRIMARY KEY,
+	messages BIGINT[],
 
-	created_at TIMESTAMP WITH TIME ZONE,
-	updated_at TIMESTAMP WITH TIME ZONE,
-	-- deleted_at TIMESTAMP WITH TIME ZONE, Note: this column exists in setups from below 1.15, but during the upgrade to sqlboiler i deemed it useless and don't include it in the schema anymore
+	PRIMARY KEY(guild_id, id)
+);
+`,
+	//CREATE INDEX IF NOT EXISTS message_logs2_guild_id_idx ON message_logs2(guild_id);
+	`
+CREATE TABLE IF NOT EXISTS messages2 (
+	id BIGINT PRIMARY KEY,
+	guild_id BIGINT NOT NULL,
 
-	message_log_id INT REFERENCES message_logs(id) ON DELETE CASCADE,
-	message_id TEXT,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+	deleted BOOLEAN NOT NULL,
 
-	author_username TEXT,
-	author_discrim TEXT,
-	author_id TEXT,
-	deleted BOOLEAN,
+	author_username TEXT NOT NULL,
+	author_id BIGINT NOT NULL,
 
-	content TEXT,
-	timestamp TEXT
-);`,
+	content TEXT NOT NULL
+);
+`, `
 
-	`CREATE INDEX IF NOT EXISTS idx_messages_message_id ON messages(message_id);`,
-	`CREATE INDEX IF NOT EXISTS idx_messages_message_log_id ON messages(message_log_id);`,
-
-	`CREATE TABLE IF NOT EXISTS guild_logging_configs (
+CREATE TABLE IF NOT EXISTS guild_logging_configs (
 	guild_id BIGINT PRIMARY KEY,
 
 	created_at TIMESTAMP WITH TIME ZONE,
