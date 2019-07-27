@@ -16,30 +16,41 @@ import (
 	"time"
 )
 
+/*
+If you accidentally run the migrate command several times you can get rid of duplicates using the following query:
+
+DELETE FROM message_logs2 a USING (
+      SELECT MIN(ctid) as ctid, legacy_id
+        FROM message_logs2
+        GROUP BY legacy_id HAVING COUNT(*) > 1
+      ) b
+      WHERE a.legacy_id = b.legacy_id
+      AND a.ctid <> b.ctid
+      AND a.legacy_id != 0;
+*/
+
 var cmdMigrate = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryTool,
 	Name:                 "MigrateLogs",
-	Description:          "Migrates logs from the old format to the new format.",
+	Description:          "Migrates logs from the old format to the new format. This dosen't delete anything and also dosen't deal with duplicates, you should not run it several times.",
 	HideFromHelp:         true,
 	RunInDM:              true,
 	HideFromCommandsPage: true,
-	Arguments: []*dcmd.ArgDef{
-		{Name: "User", Type: dcmd.User},
-	},
 	RunFunc: util.RequireOwner(func(parsed *dcmd.Data) (interface{}, error) {
-
 		last := -1
 		more := true
 		for more {
 			started := time.Now()
 			var err error
-			last, more, err = migrateLogs(last, 10)
+			last, more, err = migrateLogs(last, 500)
 			if err != nil {
 				return nil, err
 			}
 
 			s := time.Since(started)
-			logger.Infof("Migrated %d logs in %s, last: %d, more: %t", 10, s.String(), last, more)
+			logger.Infof("Migrated %d logs in %s, last: %d, more: %t", 500, s.String(), last, more)
+
+			time.Sleep(time.Second)
 		}
 
 		return "Doneso!", nil
