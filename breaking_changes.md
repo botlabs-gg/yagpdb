@@ -1,5 +1,23 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**27th Jul 2019 (1.19.12-dev)**
+
+ - You can't access old message logs unless you migrate them from the old format using the `migratelogs` owner only command. Be carefull and only run this once as otherwise youll have duplicate log entries.
+ - Message log tables has been restructured, the ones used now are messages2 and message_logs2. 
+ - Note that this does not remove the old logs after migrating them, so you'll have to delete those tables (messages, message_logs) yourself if you want to save space.
+
+ - If you somehow to manage to run it several times then use the following query to delete legacy imported duplicates:
+```sql
+ DELETE FROM message_logs2 a USING (
+      SELECT MIN(ctid) as ctid, legacy_id
+        FROM message_logs2 
+        GROUP BY legacy_id HAVING COUNT(*) > 1
+      ) b
+      WHERE a.legacy_id = b.legacy_id
+      AND a.ctid <> b.ctid
+      AND a.legacy_id != 0;
+```
+
 **26th May 2019 (1.19-dev)**
 
  - Removed automigration from legacy format for reddit and custom commands, if you have them in the legacy format still you need to run the webserver on 1.18 first to migrate them to the new format, this auto-migration has been in place since 1.14, if you used any versions after that they should already be in the new format.
