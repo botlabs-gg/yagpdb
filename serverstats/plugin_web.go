@@ -74,10 +74,6 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	}
 
 	templateData["Config"] = config
-	templateData["ExtraHead"] = template.HTML(`
-<link rel="stylesheet" href="/static/vendor/morris/morris.css" />
-<link rel="stylesheet" href="/static/vendor/chartist/chartist.min.css" />
-	`)
 
 	return templateData, nil
 }
