@@ -345,7 +345,7 @@ func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key interface{},
 		}
 
 		vNum := templates.ToFloat64(value)
-		keyStr := templates.ToString(key)
+		keyStr := limitString(templates.ToString(key), 256)
 
 		var expires null.Time
 		if ttl > 0 {
