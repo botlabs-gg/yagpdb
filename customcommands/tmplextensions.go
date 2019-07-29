@@ -39,6 +39,7 @@ func init() {
 		ctx.ContextFuncs["dbGetPattern"] = tmplDBGetPattern(ctx, false)
 		ctx.ContextFuncs["dbGetPatternReverse"] = tmplDBGetPattern(ctx, true)
 		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
+		ctx.ContextFuncs["dbDelById"] = tmplDBDelById(ctx)
 		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
 	})
@@ -468,6 +469,20 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 
 		keyStr := limitString(templates.ToString(key), 256)
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ?", ctx.GS.ID, userID, keyStr)).DeleteAll(context.Background(), common.PQ)
+
+		return "", err
+	}
+}
+
+func tmplDBDelById(ctx *templates.Context) interface{} {
+	return func(userID int64, id int64) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		ctx.GS.UserCacheDel(true, CacheKeyDBLimits)
+
+		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND id = ?", ctx.GS.ID, userID, id)).DeleteAll(context.Background(), common.PQ)
 
 		return "", err
 	}
