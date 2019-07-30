@@ -397,6 +397,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	}()
 
 	tmplCtx.Name = "CC #" + strconv.Itoa(int(cmd.LocalID))
+	tmplCtx.Data["CCID"] = cmd.LocalID
 
 	csCop := tmplCtx.CS.Copy(true)
 	f := logger.WithFields(logrus.Fields{
