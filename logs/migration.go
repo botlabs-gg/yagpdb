@@ -99,14 +99,14 @@ func migrateLog(tx *sql.Tx, l *models.MessageLog) error {
 		return errors.Wrap(err, "gen_id")
 	}
 
-	mIds := make([]int64, len(l.R.Messages))
-	for i, v := range l.R.Messages {
+	mIds := make([]int64, 0, len(l.R.Messages))
+	for _, v := range l.R.Messages {
 		parsedMID, err := strconv.ParseInt(v.MessageID.String, 10, 64)
 		if err != nil {
-			return errors.Wrapf(err, "parse msg id %d", v.ID)
+			continue
 		}
 
-		mIds[i] = parsedMID
+		mIds = append(mIds, parsedMID)
 	}
 
 	authorID, _ := strconv.ParseInt(l.AuthorID.String, 10, 64)
@@ -152,7 +152,7 @@ func migrateMessage(tx *sql.Tx, guildID int64, m *models.Message) error {
 
 	mID, err := strconv.ParseInt(m.MessageID.String, 10, 64)
 	if err != nil {
-		return errors.Wrap(err, "parse messageid")
+		return nil
 	}
 
 	authorID, _ := strconv.ParseInt(m.AuthorID.String, 10, 64)
