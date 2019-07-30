@@ -262,14 +262,7 @@ func tmplMod(args ...interface{}) interface{} {
 		return 0
 	}
 
-	switch args[0].(type) {
-	case float32, float64:
-		sumF := Math.Modf(ToFloat64(args[0]), ToFloat64(args[1]))
-		return sumF
-	default:
-		sumI := Math.Mod(tmplToInt(args[0]), tmplToInt(args[1]))
-		return sumI
-	}
+	return math.Mod(ToFloat64(args[0]), ToFloat64(args[1]))
 }
 
 func tmplFDiv(args ...interface{}) interface{} {
