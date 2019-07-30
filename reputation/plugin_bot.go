@@ -2,6 +2,7 @@ package reputation
 
 import (
 	"fmt"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"regexp"
 	"strconv"
 	"strings"
@@ -314,33 +315,46 @@ var cmds = []*commands.YAGCommand{
 		Name:        "TopRep",
 		Description: "Shows top 15 rep on the server",
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Offset", Type: dcmd.Int, Default: 0},
+			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			offset := parsed.Args[0].Int()
+			intialPage := parsed.Args[0].Int()
 
-			entries, err := TopUsers(parsed.GS.ID, offset, 15)
-			if err != nil {
-				return nil, err
-			}
+			_, err := paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, intialPage, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
-			detailed, err := DetailedLeaderboardEntries(parsed.GS.ID, entries)
-			if err != nil {
-				return nil, err
-			}
-
-			leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
-			out := "```\n# -- Points -- User\n"
-			for _, v := range detailed {
-				user := v.Username
-				if user == "" {
-					user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
+				offset := (page - 1) * 15
+				entries, err := TopUsers(parsed.GS.ID, offset, 15)
+				if err != nil {
+					return nil, err
 				}
-				out += fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user)
-			}
-			out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
 
-			return out, nil
+				detailed, err := DetailedLeaderboardEntries(parsed.GS.ID, entries)
+				if err != nil {
+					return nil, err
+				}
+
+				embed := &discordgo.MessageEmbed{
+					Title: "Reputation leaderboard",
+				}
+
+				leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
+				out := "```\n# -- Points -- User\n"
+				for _, v := range detailed {
+					user := v.Username
+					if user == "" {
+						user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
+					}
+					out += fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user)
+				}
+				out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
+
+				embed.Description = out
+
+				return embed, nil
+
+			})
+
+			return nil, err
 		},
 	},
 }
