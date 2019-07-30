@@ -204,8 +204,8 @@ type guildLoggingConfigL struct{}
 
 var (
 	guildLoggingConfigAllColumns            = []string{"guild_id", "created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
-	guildLoggingConfigColumnsWithoutDefault = []string{"created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
-	guildLoggingConfigColumnsWithDefault    = []string{"guild_id"}
+	guildLoggingConfigColumnsWithoutDefault = []string{"guild_id", "created_at", "updated_at", "username_logging_enabled", "nickname_logging_enabled", "blacklisted_channels", "manage_messages_can_view_deleted", "everyone_can_view_deleted", "message_logs_allowed_roles"}
+	guildLoggingConfigColumnsWithDefault    = []string{}
 	guildLoggingConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
 

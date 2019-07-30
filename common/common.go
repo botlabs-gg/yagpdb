@@ -246,6 +246,12 @@ func initSchema(schema string, name string) {
 }
 
 func InitSchemas(name string, schemas ...string) {
+	if err := BlockingLockRedisKey("schema_init", time.Minute*10, 60*60); err != nil {
+		panic(err)
+	}
+
+	defer UnlockRedisKey("schema_init")
+
 	for i, v := range schemas {
 		actualName := fmt.Sprintf("%s[%d]", name, i)
 		initSchema(v, actualName)

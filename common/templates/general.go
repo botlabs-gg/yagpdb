@@ -257,6 +257,14 @@ func tmplDiv(args ...interface{}) interface{} {
 	}
 }
 
+func tmplMod(args ...interface{}) interface{} {
+	if len(args) != 2 {
+		return 0
+	}
+
+	return math.Mod(ToFloat64(args[0]), ToFloat64(args[1]))
+}
+
 func tmplFDiv(args ...interface{}) interface{} {
 	if len(args) < 1 {
 		return 0

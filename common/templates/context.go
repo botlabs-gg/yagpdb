@@ -42,6 +42,7 @@ var (
 		"add":        add,
 		"mult":       tmplMult,
 		"div":        tmplDiv,
+		"mod":        tmplMod,
 		"fdiv":       tmplFDiv,
 		"round":      tmplRound,
 		"roundCeil":  tmplRoundCeil,

@@ -6,13 +6,17 @@ package models
 var TableNames = struct {
 	GuildLoggingConfigs string
 	MessageLogs         string
+	MessageLogs2        string
 	Messages            string
+	Messages2           string
 	NicknameListings    string
 	UsernameListings    string
 }{
 	GuildLoggingConfigs: "guild_logging_configs",
 	MessageLogs:         "message_logs",
+	MessageLogs2:        "message_logs2",
 	Messages:            "messages",
+	Messages2:           "messages2",
 	NicknameListings:    "nickname_listings",
 	UsernameListings:    "username_listings",
 }
