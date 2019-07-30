@@ -229,7 +229,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*mod
 		args = append(args, v)
 	}
 
-	messages, err := models.Messages2s(qm.WhereIn("id in ?", args...)).AllG(ctx)
+	messages, err := models.Messages2s(qm.WhereIn("id in ?", args...), qm.OrderBy("id desc")).AllG(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "messages2")
 	}
