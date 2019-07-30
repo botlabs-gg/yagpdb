@@ -50,6 +50,7 @@ func GetConfig(exec boil.ContextExecutor, ctx context.Context, guildID int64) (*
 	if err == sql.ErrNoRows {
 		// return default config
 		return &models.GuildLoggingConfig{
+			GuildID:                guildID,
 			UsernameLoggingEnabled: null.BoolFrom(true),
 			NicknameLoggingEnabled: null.BoolFrom(true),
 		}, nil
