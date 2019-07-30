@@ -32,7 +32,7 @@ func (p *Plugin) MessageLimits(cs *dstate.ChannelState) (maxMessages int, maxMes
 		return NormalStateMaxMessages, NormalStateMaxMessageAge
 	}
 
-	premium, err := IsGuildPremium(cs.Guild.ID)
+	premium, err := IsGuildPremiumCached(cs.Guild.ID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed checking if guild is premium")
 	}

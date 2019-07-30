@@ -3,10 +3,10 @@ package premium
 import (
 	"context"
 	"database/sql"
-	// "github.com/jonas747/yagpdb/bot"
 	"time"
 
 	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/premium/models"
@@ -50,31 +50,37 @@ func RegisterPlugin() {
 	templates.GuildPremiumFunc = IsGuildPremium
 }
 
+// IsGuildPremium return true if the provided guild has the premium status provided to it by a user
+func IsGuildPremium(guildID int64) (bool, error) {
+	var premium bool
+	err := common.RedisPool.Do(retryableredis.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
+	return premium, errors.WithMessage(err, "IsGuildPremium")
+}
+
 type CacheKey int
 
 const CacheKeyIsPremium CacheKey = 1
 
 // IsGuildPremium return true if the provided guild has the premium status provided to it by a user
-func IsGuildPremium(guildID int64) (bool, error) {
-	// if bot.Enabled && bot.State != nil {
-	// 	if gs := bot.State.Guild(true, guildID); gs != nil {
-	// 		v, err := gs.UserCacheFetch(true, CacheKeyIsPremium, func() (interface{}, error) {
-	// 			var premium bool
-	// 			err := common.RedisPool.Do(retryableredis.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
-	// 			return premium, errors.WithMessage(err, "IsGuildPremium")
-	// 		})
+func IsGuildPremiumCached(guildID int64) (bool, error) {
+	if !bot.Enabled || bot.State == nil {
+		return IsGuildPremium(guildID)
+	}
 
-	// 		if err != nil {
-	// 			return false, err
-	// 		}
+	gs := bot.State.Guild(true, guildID)
+	if gs == nil {
+		return IsGuildPremium(guildID)
+	}
 
-	// 		return v.(bool), nil
-	// 	}
-	// }
+	v, err := gs.UserCacheFetch(true, CacheKeyIsPremium, func() (interface{}, error) {
+		return IsGuildPremium(guildID)
+	})
 
-	var premium bool
-	err := common.RedisPool.Do(retryableredis.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
-	return premium, errors.WithMessage(err, "IsGuildPremium")
+	if err != nil {
+		return false, err
+	}
+
+	return v.(bool), nil
 }
 
 func PremiumProvidedBy(guildID int64) (int64, error) {
