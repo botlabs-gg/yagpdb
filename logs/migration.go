@@ -109,15 +109,8 @@ func migrateLog(tx *sql.Tx, l *models.MessageLog) error {
 		mIds[i] = parsedMID
 	}
 
-	authorID, err := strconv.ParseInt(l.AuthorID.String, 10, 64)
-	if err != nil {
-		return errors.Wrap(err, "parse author")
-	}
-
-	channelID, err := strconv.ParseInt(l.ChannelID.String, 10, 64)
-	if err != nil {
-		return errors.Wrap(err, "parse channelid")
-	}
+	authorID, _ := strconv.ParseInt(l.AuthorID.String, 10, 64)
+	channelID, _ := strconv.ParseInt(l.ChannelID.String, 10, 64)
 
 	m := &models.MessageLogs2{
 		ID:       int(id),
@@ -162,10 +155,7 @@ func migrateMessage(tx *sql.Tx, guildID int64, m *models.Message) error {
 		return errors.Wrap(err, "parse messageid")
 	}
 
-	authorID, err := strconv.ParseInt(m.AuthorID.String, 10, 64)
-	if err != nil {
-		return errors.Wrap(err, "parse authorid")
-	}
+	authorID, _ := strconv.ParseInt(m.AuthorID.String, 10, 64)
 
 	parsedTS, err := discordgo.Timestamp(m.Timestamp.String).Parse()
 	if err != nil {
