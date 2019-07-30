@@ -307,7 +307,7 @@ func HandleMsgDelete(evt *eventsystem.EventData) {
 }
 
 func markLoggedMessageAsDeleted(ctx context.Context, mID int64) error {
-	_, err := models.Messages(models.MessageWhere.MessageID.EQ(null.StringFrom(discordgo.StrID(mID)))).UpdateAllG(ctx,
+	_, err := models.Messages2s(models.Messages2Where.ID.EQ(mID)).UpdateAllG(ctx,
 		models.M{"deleted": true})
 	return err
 }
