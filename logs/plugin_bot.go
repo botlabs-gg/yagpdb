@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/pkg/errors"
 	"time"
 
@@ -147,7 +148,7 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		if config.UsernameLoggingEnabled.Bool {
-			usernames, err := GetUsernames(parsed.Context(), member.ID, 5)
+			usernames, err := GetUsernames(parsed.Context(), member.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -223,25 +224,43 @@ var cmdUsernames = &commands.YAGCommand{
 			}
 		}
 
-		target := parsed.Msg.Author
-		if parsed.Args[0].Value != nil {
-			target = parsed.Args[0].Value.(*discordgo.User)
-		}
+		_, err := paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			target := parsed.Msg.Author
+			if parsed.Args[0].Value != nil {
+				target = parsed.Args[0].Value.(*discordgo.User)
+			}
 
-		usernames, err := GetUsernames(parsed.Context(), target.ID, 25)
-		if err != nil {
-			return nil, err
-		}
+			offset := (page - 1) * 15
+			usernames, err := GetUsernames(context.Background(), target.ID, 15, offset)
+			if err != nil {
+				return nil, err
+			}
 
-		out := fmt.Sprintf("Past username of **%s#%s** ```\n", target.Username, target.Discriminator)
-		for _, v := range usernames {
-			out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
-		}
-		out += "```"
-		if len(usernames) == 25 {
-			out += "\nOnly showing last 25 usernames"
-		}
-		return out, nil
+			logger.Println(page)
+			if len(usernames) < 1 && page > 1 {
+				return nil, paginatedmessages.ErrNoResults
+			}
+
+			out := fmt.Sprintf("Past username of **%s#%s** ```\n", target.Username, target.Discriminator)
+			for _, v := range usernames {
+				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
+			}
+			out += "```"
+
+			if len(usernames) < 1 {
+				out = `No logged usernames`
+			}
+
+			embed := &discordgo.MessageEmbed{
+				Color:       0x277ee3,
+				Title:       "Usernames of " + target.Username + "#" + target.Discriminator,
+				Description: out,
+			}
+
+			return embed, nil
+		})
+
+		return nil, err
 	},
 }
 

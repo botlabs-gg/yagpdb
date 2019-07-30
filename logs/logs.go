@@ -255,8 +255,8 @@ func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) (
 	return logs, err
 }
 
-func GetUsernames(ctx context.Context, userID int64, limit int) ([]*models.UsernameListing, error) {
-	result, err := models.UsernameListings(models.UsernameListingWhere.UserID.EQ(null.Int64From(userID)), qm.OrderBy("id desc"), qm.Limit(limit)).AllG(ctx)
+func GetUsernames(ctx context.Context, userID int64, limit, offset int) ([]*models.UsernameListing, error) {
+	result, err := models.UsernameListings(models.UsernameListingWhere.UserID.EQ(null.Int64From(userID)), qm.OrderBy("id desc"), qm.Limit(limit), qm.Offset(offset)).AllG(ctx)
 	return result, err
 }
 
