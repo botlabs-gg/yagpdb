@@ -61,6 +61,7 @@ func migrateLogs(after, count int) (last int, more bool, err error) {
 	err = common.SqlTX(func(tx *sql.Tx) error {
 		logs, err := models.MessageLogs(
 			models.MessageLogWhere.ID.GT(after),
+			qm.Where("deleted_at IS NULL"),
 			qm.OrderBy("id asc"),
 			qm.Limit(count),
 			qm.Load("Messages", qm.OrderBy("id desc")),
