@@ -48,7 +48,7 @@ var cmdMigrate = &commands.YAGCommand{
 			}
 
 			s := time.Since(started)
-			logger.Infof("Migrated %d logs in %s, last: %d, more: %t", 500, s.String(), last, more)
+			logger.Infof("Migrated %d logs in %s, last: %d, more: %t", 100, s.String(), last, more)
 
 			time.Sleep(time.Second)
 		}
