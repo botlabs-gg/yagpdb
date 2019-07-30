@@ -260,10 +260,12 @@ func GetUsernames(ctx context.Context, userID int64, limit, offset int) ([]*mode
 	return result, err
 }
 
-func GetNicknames(ctx context.Context, userID, guildID int64, limit int) ([]*models.NicknameListing, error) {
+func GetNicknames(ctx context.Context, userID, guildID int64, limit, offset int) ([]*models.NicknameListing, error) {
 
 	return models.NicknameListings(
 		models.NicknameListingWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(guildID))),
 		models.NicknameListingWhere.UserID.EQ(null.Int64From(userID)),
-		qm.OrderBy("id desc"), qm.Limit(limit)).AllG(ctx)
+		qm.OrderBy("id desc"),
+		qm.Limit(limit),
+		qm.Offset(offset)).AllG(ctx)
 }

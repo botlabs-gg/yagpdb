@@ -172,7 +172,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled.Bool {
 
-			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GS.ID, 5)
+			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GS.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -236,7 +236,6 @@ var cmdUsernames = &commands.YAGCommand{
 				return nil, err
 			}
 
-			logger.Println(page)
 			if len(usernames) < 1 && page > 1 {
 				return nil, paginatedmessages.ErrNoResults
 			}
@@ -290,20 +289,39 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		nicknames, err := GetNicknames(parsed.Context(), target.ID, parsed.GS.ID, 25)
-		if err != nil {
-			return nil, err
-		}
+		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
-		out := fmt.Sprintf("Past nicknames of **%s#%s** ```\n", target.Username, target.Discriminator)
-		for _, v := range nicknames {
-			out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
-		}
-		out += "```"
-		if len(nicknames) == 25 {
-			out += "\nOnly showing last 25 nicknames"
-		}
-		return out, nil
+			offset := (page - 1) * 15
+
+			nicknames, err := GetNicknames(context.Background(), target.ID, parsed.GS.ID, 15, offset)
+			if err != nil {
+				return nil, err
+			}
+
+			if page > 1 && len(nicknames) < 1 {
+				return nil, paginatedmessages.ErrNoResults
+			}
+
+			out := fmt.Sprintf("Past nicknames of **%s#%s** ```\n", target.Username, target.Discriminator)
+			for _, v := range nicknames {
+				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
+			}
+			out += "```"
+
+			if len(nicknames) < 1 {
+				out = `No nicknames tracked`
+			}
+
+			embed := &discordgo.MessageEmbed{
+				Color:       0x277ee3,
+				Title:       "Nicknames of " + target.Username + "#" + target.Discriminator,
+				Description: out,
+			}
+
+			return embed, nil
+		})
+
+		return nil, err
 	},
 }
 
@@ -430,6 +448,7 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 }
 
 func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt *sql.Stmt, userID, guildID int64, nickname string) error {
+
 	var lastNickname string
 	row := nicknameStmt.QueryRow(userID, guildID)
 	err := row.Scan(&lastNickname)
