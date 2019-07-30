@@ -1,6 +1,7 @@
 package paginatedmessages
 
 import (
+	"errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -15,6 +16,8 @@ var (
 	activePaginatedMessages []*PaginatedMessage
 	menusLock               sync.Mutex
 )
+
+var ErrNoResults = errors.New("No results")
 
 type Plugin struct{}
 
@@ -121,7 +124,9 @@ func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pa
 	if err != nil {
 		return nil, err
 	}
+
 	pm.MessageID = msg.ID
+	pm.LastResponse = embed
 
 	err = common.BotSession.MessageReactionAdd(channelID, msg.ID, EmojiPrev)
 	if err != nil {
@@ -166,8 +171,19 @@ func (p *PaginatedMessage) HandleReactionAdd(ra *discordgo.MessageReactionAdd) {
 	newPage := p.CurrentPage + pageMod
 	newMsg, err := p.Navigate(p, newPage)
 	if err != nil {
-		logger.WithError(err).WithField("guild", p.GuildID).Error("failed getting new page")
-		return
+		if err == ErrNoResults {
+			newPage--
+			if newPage < 1 {
+				newPage = 1
+			}
+
+			p.MaxPage = newPage
+			newMsg = p.LastResponse
+			logger.Println("Max page set to ", newPage)
+		} else {
+			logger.WithError(err).WithField("guild", p.GuildID).Error("failed getting new page")
+			return
+		}
 	}
 
 	if newMsg == nil {
