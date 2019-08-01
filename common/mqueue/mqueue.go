@@ -325,6 +325,17 @@ OUTER:
 			}
 		}
 
+		// Skip channels we have already skipped over
+		for j, w := range workSlice {
+			if j >= i {
+				break
+			}
+
+			if w.elem.Channel == v.elem.Channel {
+				continue OUTER
+			}
+		}
+
 		b := common.BotSession.Ratelimiter.GetBucket(discordgo.EndpointChannelMessages(v.elem.Channel))
 		b.Lock()
 		waitTime := common.BotSession.Ratelimiter.GetWaitTime(b, 1)
