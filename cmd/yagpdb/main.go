@@ -138,7 +138,10 @@ func main() {
 		log.WithError(err).Fatal("Failed intializing")
 	}
 
+	log.Info("Initiliazing generic config store")
 	configstore.InitDatabases()
+
+	log.Info("Starting plugins")
 
 	//BotSession.LogLevel = discordgo.LogInformational
 	paginatedmessages.RegisterPlugin()
