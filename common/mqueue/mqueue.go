@@ -3,6 +3,7 @@ package mqueue
 import (
 	"container/list"
 	"encoding/json"
+	"github.com/jonas747/yagpdb/common/config"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -32,6 +33,8 @@ var (
 	webhookSession *discordgo.Session
 
 	logger = common.GetPluginLogger(&Plugin{})
+
+	confMaxWorkers = config.RegisterOption("yagpdb.mqueue.max_workers", "Max mqueue sending workers", 2)
 )
 
 type PluginWithErrorHandler interface {
@@ -187,6 +190,11 @@ func workerScaler() {
 			logger.Info("Launched new mqueue worker, total workers: ", atomic.LoadInt32(numWorkers)+1)
 			go processWorker()
 			lastWorkerSpawnedAt = time.Now()
+		}
+
+		nw := atomic.LoadInt32(numWorkers)
+		if int(nw) >= confMaxWorkers.GetInt() {
+			return
 		}
 	}
 }
