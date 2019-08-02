@@ -320,8 +320,10 @@ func (p *Plugin) AddCommands() {
 			currentTicket.Ticket.ClosedAt.Time = time.Now()
 			currentTicket.Ticket.ClosedAt.Valid = true
 
+			isAdminsOnly := ticketIsAdminOnly(conf, parsed.CS)
+
 			// create the logs, download the attachments
-			err := createLogs(conf, currentTicket.Ticket)
+			err := createLogs(conf, currentTicket.Ticket, isAdminsOnly)
 			if err != nil {
 				return nil, err
 			}
@@ -494,7 +496,7 @@ type Ticket struct {
 	Participants []*models.TicketParticipant
 }
 
-func createLogs(conf *models.TicketConfig, ticket *models.Ticket) error {
+func createLogs(conf *models.TicketConfig, ticket *models.Ticket, adminOnly bool) error {
 
 	if !conf.TicketsUseTXTTranscripts && !conf.DownloadAttachments {
 		return nil // nothing to do here
@@ -567,7 +569,8 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket) error {
 	if conf.TicketsUseTXTTranscripts {
 		formattedTranscript := createTXTTranscript(ticket, msgs)
 
-		_, err := common.BotSession.ChannelFileSendWithMessage(conf.TicketsTranscriptsChannel, fmt.Sprintf("transcript-%d.txt", ticket.LocalID), fmt.Sprintf("transcript-%d.txt", ticket.LocalID), formattedTranscript)
+		channel := transcriptChannel(conf, adminOnly)
+		_, err := common.BotSession.ChannelFileSendWithMessage(channel, fmt.Sprintf("transcript-%d.txt", ticket.LocalID), fmt.Sprintf("transcript-%d.txt", ticket.LocalID), formattedTranscript)
 		if err != nil {
 			return err
 		}
@@ -575,13 +578,13 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket) error {
 
 	// compress and send the attachments
 	if conf.DownloadAttachments {
-		archiveAttachments(conf, ticket, attachments)
+		archiveAttachments(conf, ticket, attachments, adminOnly)
 	}
 
 	return nil
 }
 
-func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups [][]*discordgo.MessageAttachment) {
+func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups [][]*discordgo.MessageAttachment, adminOnly bool) {
 	var buf bytes.Buffer
 	for _, ag := range groups {
 		if len(ag) == 1 {
@@ -595,7 +598,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 			}
 
 			fName := fmt.Sprintf("attachments-%d-%s", ticket.LocalID, ag[0].Filename)
-			_, err = common.BotSession.ChannelFileSendWithMessage(conf.TicketsTranscriptsChannel,
+			_, err = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
 				fName, fName, resp.Body)
 			continue
 		}
@@ -628,7 +631,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 
 		zw.Close()
 		fname := fmt.Sprintf("attachments-%d.zip", ticket.LocalID)
-		_, err := common.BotSession.ChannelFileSendWithMessage(conf.TicketsTranscriptsChannel, fname, fname, &buf)
+		_, err := common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly), fname, fname, &buf)
 		buf.Reset()
 
 		if err != nil {
@@ -673,4 +676,30 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 	}
 
 	return &buf
+}
+
+func ticketIsAdminOnly(conf *models.TicketConfig, cs *dstate.ChannelState) bool {
+
+	isAdminsOnlyCurrently := true
+
+	cs.Guild.RLock()
+	for _, ow := range cs.PermissionOverwrites {
+		if ow.Type == "role" && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+			if (ow.Allow & InTicketPerms) == InTicketPerms {
+				// one of the mod roles has ticket perms, this is not a admin ticket currently
+				isAdminsOnlyCurrently = false
+			}
+		}
+	}
+	cs.Guild.RUnlock()
+
+	return isAdminsOnlyCurrently
+}
+
+func transcriptChannel(conf *models.TicketConfig, adminOnly bool) int64 {
+	if adminOnly && conf.TicketsTranscriptsChannelAdminOnly != 0 {
+		return conf.TicketsTranscriptsChannelAdminOnly
+	}
+
+	return conf.TicketsTranscriptsChannel
 }

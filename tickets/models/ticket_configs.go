@@ -24,43 +24,46 @@ import (
 
 // TicketConfig is an object representing the database table.
 type TicketConfig struct {
-	GuildID                   int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	Enabled                   bool             `boil:"enabled" json:"enabled" toml:"enabled" yaml:"enabled"`
-	TicketOpenMSG             string           `boil:"ticket_open_msg" json:"ticket_open_msg" toml:"ticket_open_msg" yaml:"ticket_open_msg"`
-	TicketsChannelCategory    int64            `boil:"tickets_channel_category" json:"tickets_channel_category" toml:"tickets_channel_category" yaml:"tickets_channel_category"`
-	StatusChannel             int64            `boil:"status_channel" json:"status_channel" toml:"status_channel" yaml:"status_channel"`
-	TicketsTranscriptsChannel int64            `boil:"tickets_transcripts_channel" json:"tickets_transcripts_channel" toml:"tickets_transcripts_channel" yaml:"tickets_transcripts_channel"`
-	DownloadAttachments       bool             `boil:"download_attachments" json:"download_attachments" toml:"download_attachments" yaml:"download_attachments"`
-	TicketsUseTXTTranscripts  bool             `boil:"tickets_use_txt_transcripts" json:"tickets_use_txt_transcripts" toml:"tickets_use_txt_transcripts" yaml:"tickets_use_txt_transcripts"`
-	ModRoles                  types.Int64Array `boil:"mod_roles" json:"mod_roles,omitempty" toml:"mod_roles" yaml:"mod_roles,omitempty"`
-	AdminRoles                types.Int64Array `boil:"admin_roles" json:"admin_roles,omitempty" toml:"admin_roles" yaml:"admin_roles,omitempty"`
+	GuildID                            int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	Enabled                            bool             `boil:"enabled" json:"enabled" toml:"enabled" yaml:"enabled"`
+	TicketOpenMSG                      string           `boil:"ticket_open_msg" json:"ticket_open_msg" toml:"ticket_open_msg" yaml:"ticket_open_msg"`
+	TicketsChannelCategory             int64            `boil:"tickets_channel_category" json:"tickets_channel_category" toml:"tickets_channel_category" yaml:"tickets_channel_category"`
+	StatusChannel                      int64            `boil:"status_channel" json:"status_channel" toml:"status_channel" yaml:"status_channel"`
+	TicketsTranscriptsChannel          int64            `boil:"tickets_transcripts_channel" json:"tickets_transcripts_channel" toml:"tickets_transcripts_channel" yaml:"tickets_transcripts_channel"`
+	DownloadAttachments                bool             `boil:"download_attachments" json:"download_attachments" toml:"download_attachments" yaml:"download_attachments"`
+	TicketsUseTXTTranscripts           bool             `boil:"tickets_use_txt_transcripts" json:"tickets_use_txt_transcripts" toml:"tickets_use_txt_transcripts" yaml:"tickets_use_txt_transcripts"`
+	ModRoles                           types.Int64Array `boil:"mod_roles" json:"mod_roles,omitempty" toml:"mod_roles" yaml:"mod_roles,omitempty"`
+	AdminRoles                         types.Int64Array `boil:"admin_roles" json:"admin_roles,omitempty" toml:"admin_roles" yaml:"admin_roles,omitempty"`
+	TicketsTranscriptsChannelAdminOnly int64            `boil:"tickets_transcripts_channel_admin_only" json:"tickets_transcripts_channel_admin_only" toml:"tickets_transcripts_channel_admin_only" yaml:"tickets_transcripts_channel_admin_only"`
 
 	R *ticketConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var TicketConfigColumns = struct {
-	GuildID                   string
-	Enabled                   string
-	TicketOpenMSG             string
-	TicketsChannelCategory    string
-	StatusChannel             string
-	TicketsTranscriptsChannel string
-	DownloadAttachments       string
-	TicketsUseTXTTranscripts  string
-	ModRoles                  string
-	AdminRoles                string
+	GuildID                            string
+	Enabled                            string
+	TicketOpenMSG                      string
+	TicketsChannelCategory             string
+	StatusChannel                      string
+	TicketsTranscriptsChannel          string
+	DownloadAttachments                string
+	TicketsUseTXTTranscripts           string
+	ModRoles                           string
+	AdminRoles                         string
+	TicketsTranscriptsChannelAdminOnly string
 }{
-	GuildID:                   "guild_id",
-	Enabled:                   "enabled",
-	TicketOpenMSG:             "ticket_open_msg",
-	TicketsChannelCategory:    "tickets_channel_category",
-	StatusChannel:             "status_channel",
-	TicketsTranscriptsChannel: "tickets_transcripts_channel",
-	DownloadAttachments:       "download_attachments",
-	TicketsUseTXTTranscripts:  "tickets_use_txt_transcripts",
-	ModRoles:                  "mod_roles",
-	AdminRoles:                "admin_roles",
+	GuildID:                            "guild_id",
+	Enabled:                            "enabled",
+	TicketOpenMSG:                      "ticket_open_msg",
+	TicketsChannelCategory:             "tickets_channel_category",
+	StatusChannel:                      "status_channel",
+	TicketsTranscriptsChannel:          "tickets_transcripts_channel",
+	DownloadAttachments:                "download_attachments",
+	TicketsUseTXTTranscripts:           "tickets_use_txt_transcripts",
+	ModRoles:                           "mod_roles",
+	AdminRoles:                         "admin_roles",
+	TicketsTranscriptsChannelAdminOnly: "tickets_transcripts_channel_admin_only",
 }
 
 // Generated where
@@ -116,27 +119,29 @@ func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
 }
 
 var TicketConfigWhere = struct {
-	GuildID                   whereHelperint64
-	Enabled                   whereHelperbool
-	TicketOpenMSG             whereHelperstring
-	TicketsChannelCategory    whereHelperint64
-	StatusChannel             whereHelperint64
-	TicketsTranscriptsChannel whereHelperint64
-	DownloadAttachments       whereHelperbool
-	TicketsUseTXTTranscripts  whereHelperbool
-	ModRoles                  whereHelpertypes_Int64Array
-	AdminRoles                whereHelpertypes_Int64Array
+	GuildID                            whereHelperint64
+	Enabled                            whereHelperbool
+	TicketOpenMSG                      whereHelperstring
+	TicketsChannelCategory             whereHelperint64
+	StatusChannel                      whereHelperint64
+	TicketsTranscriptsChannel          whereHelperint64
+	DownloadAttachments                whereHelperbool
+	TicketsUseTXTTranscripts           whereHelperbool
+	ModRoles                           whereHelpertypes_Int64Array
+	AdminRoles                         whereHelpertypes_Int64Array
+	TicketsTranscriptsChannelAdminOnly whereHelperint64
 }{
-	GuildID:                   whereHelperint64{field: "\"ticket_configs\".\"guild_id\""},
-	Enabled:                   whereHelperbool{field: "\"ticket_configs\".\"enabled\""},
-	TicketOpenMSG:             whereHelperstring{field: "\"ticket_configs\".\"ticket_open_msg\""},
-	TicketsChannelCategory:    whereHelperint64{field: "\"ticket_configs\".\"tickets_channel_category\""},
-	StatusChannel:             whereHelperint64{field: "\"ticket_configs\".\"status_channel\""},
-	TicketsTranscriptsChannel: whereHelperint64{field: "\"ticket_configs\".\"tickets_transcripts_channel\""},
-	DownloadAttachments:       whereHelperbool{field: "\"ticket_configs\".\"download_attachments\""},
-	TicketsUseTXTTranscripts:  whereHelperbool{field: "\"ticket_configs\".\"tickets_use_txt_transcripts\""},
-	ModRoles:                  whereHelpertypes_Int64Array{field: "\"ticket_configs\".\"mod_roles\""},
-	AdminRoles:                whereHelpertypes_Int64Array{field: "\"ticket_configs\".\"admin_roles\""},
+	GuildID:                            whereHelperint64{field: "\"ticket_configs\".\"guild_id\""},
+	Enabled:                            whereHelperbool{field: "\"ticket_configs\".\"enabled\""},
+	TicketOpenMSG:                      whereHelperstring{field: "\"ticket_configs\".\"ticket_open_msg\""},
+	TicketsChannelCategory:             whereHelperint64{field: "\"ticket_configs\".\"tickets_channel_category\""},
+	StatusChannel:                      whereHelperint64{field: "\"ticket_configs\".\"status_channel\""},
+	TicketsTranscriptsChannel:          whereHelperint64{field: "\"ticket_configs\".\"tickets_transcripts_channel\""},
+	DownloadAttachments:                whereHelperbool{field: "\"ticket_configs\".\"download_attachments\""},
+	TicketsUseTXTTranscripts:           whereHelperbool{field: "\"ticket_configs\".\"tickets_use_txt_transcripts\""},
+	ModRoles:                           whereHelpertypes_Int64Array{field: "\"ticket_configs\".\"mod_roles\""},
+	AdminRoles:                         whereHelpertypes_Int64Array{field: "\"ticket_configs\".\"admin_roles\""},
+	TicketsTranscriptsChannelAdminOnly: whereHelperint64{field: "\"ticket_configs\".\"tickets_transcripts_channel_admin_only\""},
 }
 
 // TicketConfigRels is where relationship names are stored.
@@ -156,9 +161,9 @@ func (*ticketConfigR) NewStruct() *ticketConfigR {
 type ticketConfigL struct{}
 
 var (
-	ticketConfigAllColumns            = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles"}
+	ticketConfigAllColumns            = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles", "tickets_transcripts_channel_admin_only"}
 	ticketConfigColumnsWithoutDefault = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles"}
-	ticketConfigColumnsWithDefault    = []string{}
+	ticketConfigColumnsWithDefault    = []string{"tickets_transcripts_channel_admin_only"}
 	ticketConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
 

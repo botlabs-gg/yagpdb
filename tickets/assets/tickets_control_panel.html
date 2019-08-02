@@ -62,10 +62,16 @@
 								</select>
                             </div>
                             <div class="form-group">
-                            	<label>Channel to send closed ticket transcripts and attachments in</label>
-                            	<select class="form-control" name="TicketsTranscriptsChannel">
-									{{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannel true "None"}}
-								</select>
+                                <label>Channel to send closed ticket transcripts and attachments in</label>
+                                <select class="form-control" name="TicketsTranscriptsChannel">
+                                    {{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannel true "None"}}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Channel to send closed ticket transcripts and attachments in for admin only tickets</label>
+                                <select class="form-control" name="TicketsTranscriptsChannelAdminOnly">
+                                    {{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannelAdminOnly true "None"}}
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Channel to send ticket status updates in</label>
