@@ -239,6 +239,7 @@ func connectDB(host, user, pass, dbName string) error {
 func initSchema(schema string, name string) {
 	_, err := PQ.Exec(schema)
 	if err != nil {
+		UnlockRedisKey("schema_init")
 		logger.WithError(err).Fatal("failed initializing postgres db schema for ", name)
 	}
 

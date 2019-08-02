@@ -13,16 +13,17 @@ import (
 )
 
 type FormData struct {
-	GuildID                   int64
-	Enabled                   bool
-	TicketsChannelCategory    int64
-	TicketsTranscriptsChannel int64
-	StatusChannel             int64
-	TicketsUseTXTTranscripts  bool
-	DownloadAttachments       bool
-	ModRoles                  []int64 `valid:"role"`
-	AdminRoles                []int64 `valid:"role"`
-	TicketOpenMSG             string  `valid:"template,10000"`
+	GuildID                            int64
+	Enabled                            bool
+	TicketsChannelCategory             int64 `valid:"channel,true"`
+	TicketsTranscriptsChannel          int64 `valid:"channel,true"`
+	TicketsTranscriptsChannelAdminOnly int64 `valid:"channel,true"`
+	StatusChannel                      int64 `valid:"channel,true"`
+	TicketsUseTXTTranscripts           bool
+	DownloadAttachments                bool
+	ModRoles                           []int64 `valid:"role"`
+	AdminRoles                         []int64 `valid:"role"`
+	TicketOpenMSG                      string  `valid:"template,10000"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -69,16 +70,17 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	formConfig := ctx.Value(common.ContextKeyParsedForm).(*FormData)
 
 	model := &models.TicketConfig{
-		GuildID:                   activeGuild.ID,
-		Enabled:                   formConfig.Enabled,
-		TicketsChannelCategory:    formConfig.TicketsChannelCategory,
-		TicketsTranscriptsChannel: formConfig.TicketsTranscriptsChannel,
-		StatusChannel:             formConfig.StatusChannel,
-		TicketsUseTXTTranscripts:  formConfig.TicketsUseTXTTranscripts,
-		DownloadAttachments:       formConfig.DownloadAttachments,
-		ModRoles:                  formConfig.ModRoles,
-		AdminRoles:                formConfig.AdminRoles,
-		TicketOpenMSG:             formConfig.TicketOpenMSG,
+		GuildID:                            activeGuild.ID,
+		Enabled:                            formConfig.Enabled,
+		TicketsChannelCategory:             formConfig.TicketsChannelCategory,
+		TicketsTranscriptsChannel:          formConfig.TicketsTranscriptsChannel,
+		TicketsTranscriptsChannelAdminOnly: formConfig.TicketsTranscriptsChannelAdminOnly,
+		StatusChannel:                      formConfig.StatusChannel,
+		TicketsUseTXTTranscripts:           formConfig.TicketsUseTXTTranscripts,
+		DownloadAttachments:                formConfig.DownloadAttachments,
+		ModRoles:                           formConfig.ModRoles,
+		AdminRoles:                         formConfig.AdminRoles,
+		TicketOpenMSG:                      formConfig.TicketOpenMSG,
 	}
 
 	err := model.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
