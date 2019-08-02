@@ -477,6 +477,8 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	return
 }
 
+type CacheKeyWebhook int64
+
 func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 	if elem.MessageStr == "" && elem.MessageEmbed == nil {
 		l.Error("Both MessageEmbed and MessageStr empty")
@@ -491,10 +493,20 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		}
 	}
 
-	webhook, err := FindCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
+	gs := bot.State.Guild(true, elem.Guild)
+	if gs == nil {
+		return errors.New("Guild not found")
+	}
+
+	wh, err := gs.UserCacheFetch(true, CacheKeyWebhook(elem.Channel), func() (interface{}, error) {
+		return FindCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
+		// return weho
+	})
+
 	if err != nil {
 		return err
 	}
+	webhook := wh.(*Webhook)
 
 	webhookParams := &discordgo.WebhookParams{
 		Username: elem.WebhookUsername,
@@ -513,6 +525,8 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		if err != nil {
 			return errors.Wrap(err, "sql.delete")
 		}
+
+		gs.UserCacheDel(true, CacheKeyWebhook(elem.Channel))
 
 		return errors.New("deleted webhook")
 	}
