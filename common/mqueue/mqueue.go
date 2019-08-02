@@ -3,6 +3,7 @@ package mqueue
 import (
 	"container/list"
 	"encoding/json"
+	"github.com/hashicorp/go-cleanhttp"
 	"github.com/jonas747/yagpdb/common/config"
 	"strconv"
 	"sync"
@@ -68,6 +69,8 @@ func RegisterPlugin() {
 	if err != nil {
 		logger.WithError(err).Error("failed initiializing webhook session")
 	}
+
+	webhookSession.Client.HTTPClient.Transport = cleanhttp.DefaultPooledTransport()
 
 	_, err = common.PQ.Exec(DBSchema)
 	if err != nil {
