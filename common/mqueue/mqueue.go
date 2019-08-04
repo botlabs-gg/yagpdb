@@ -432,6 +432,17 @@ func process(elem *QueuedElement, raw []byte) {
 
 				break
 			}
+		} else {
+			if onGuild, err := common.BotIsOnGuild(elem.Guild); !onGuild && err == nil {
+				if source, ok := sources[elem.Source]; ok {
+					logger.WithError(err).Warnf("disabling feed item %s from %s to nonexistant guild", elem.SourceID, elem.Source)
+					source.DisableFeed(elem, err)
+				}
+
+				break
+			} else if err != nil {
+				logger.WithError(err).Error("failed checking if bot is on guild")
+			}
 		}
 
 		if c, _ := common.DiscordError(err); c != 0 {
