@@ -25,6 +25,7 @@ var (
 	ConfDisableKeepalives = config.RegisterOption("yagpdb.disable_keepalives", "Disables keepalive connections for outgoing requests to discord, this shouldn't be needed but i had networking issues once so i had to", false)
 
 	ConfDogStatsdAddress = config.RegisterOption("yagpdb.dogstatsdaddress", "dogstatsd address", "")
+	confNoSchemaInit     = config.RegisterOption("yagpdb.no_schema_init", "Disable schema intiialization", false)
 )
 
 var configLoaded = false

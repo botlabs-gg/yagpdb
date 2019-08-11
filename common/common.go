@@ -239,6 +239,10 @@ func connectDB(host, user, pass, dbName string) error {
 }
 
 func initSchema(schema string, name string) {
+	if confNoSchemaInit.GetBool() {
+		return
+	}
+
 	_, err := PQ.Exec(schema)
 	if err != nil {
 		UnlockRedisKey("schema_init")
