@@ -363,7 +363,7 @@ func sequence(start, stop int) ([]int, error) {
 	}
 
 	if stop-start > 10000 {
-		return nil, errors.New("Sequence max length is 1000")
+		return nil, errors.New("Sequence max length is 10000")
 	}
 
 	out := make([]int, stop-start)
