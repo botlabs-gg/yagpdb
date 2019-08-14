@@ -235,32 +235,3 @@ func connectDB(host, user, pass, dbName string) error {
 
 	return err
 }
-
-func initSchema(schema string, name string) {
-	if confNoSchemaInit.GetBool() {
-		return
-	}
-
-	_, err := PQ.Exec(schema)
-	if err != nil {
-		UnlockRedisKey("schema_init")
-		logger.WithError(err).Fatal("failed initializing postgres db schema for ", name)
-	}
-
-	return
-}
-
-func InitSchemas(name string, schemas ...string) {
-	if err := BlockingLockRedisKey("schema_init", time.Minute*10, 60*60); err != nil {
-		panic(err)
-	}
-
-	defer UnlockRedisKey("schema_init")
-
-	for i, v := range schemas {
-		actualName := fmt.Sprintf("%s[%d]", name, i)
-		initSchema(v, actualName)
-	}
-
-	return
-}
