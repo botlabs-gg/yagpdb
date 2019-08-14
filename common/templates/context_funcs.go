@@ -517,7 +517,7 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleAdd(c.GS.ID, c.MS.ID, rid)
+	err := common.AddRoleDS(c.MS, rid)
 	if err != nil {
 		return "", err
 	}
@@ -547,7 +547,7 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 	if delay > 0 {
 		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
-		common.BotSession.GuildMemberRoleRemove(c.GS.ID, c.MS.ID, rid)
+		common.RemoveRoleDS(c.MS, role)
 	}
 
 	return "", nil
