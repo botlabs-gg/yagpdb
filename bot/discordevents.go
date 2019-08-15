@@ -310,3 +310,17 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		logger.WithError(err).Error("failed publishing dm message")
 	}
 }
+
+func HandleRatelimit(evt *eventsystem.EventData) {
+	rl := evt.RateLimit()
+	logger.Printf("Got 429: %s, %d", rl.Bucket, rl.RetryAfter)
+
+	reset := time.Now().Add(rl.RetryAfter * time.Millisecond)
+	err := pubsub.Publish("global_ratelimit", -1, &GlobalRatelimitTriggeredEventData{
+		Bucket: rl.Bucket,
+		Reset:  reset,
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed publishing global ratelimit")
+	}
+}
