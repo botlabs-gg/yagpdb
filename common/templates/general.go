@@ -656,6 +656,10 @@ func tmplCurrentTime() time.Time {
 	return time.Now()
 }
 
+func tmplDateToTime(year int, month time.Month, day, hour, min, sec int) time.Time {
+	return time.Date(year, month, day, hour, min, sec, 0, time.UTC)
+}
+
 func tmplEscapeHere(in string) string {
 	return common.EscapeEveryoneHere(in, false, true)
 }
