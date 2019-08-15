@@ -772,15 +772,11 @@ func (slow *EnableChannelSlowmodeEffect) checkSetCooldown(channelID int64) bool 
 	}
 
 	if v, ok := slow.lastTimes[channelID]; ok && v {
-		logger.Println("On cooldown")
 		return true
 	}
 
-	logger.Println("Not on cooldown")
-
 	slow.lastTimes[channelID] = true
 	time.AfterFunc(time.Second*10, func() {
-		logger.Println("Cooldown expired")
 		slow.mu.Lock()
 		defer slow.mu.Unlock()
 
