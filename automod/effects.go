@@ -2,6 +2,8 @@ package automod
 
 import (
 	"context"
+	"github.com/jonas747/discordgo"
+	"sync"
 	"time"
 
 	"github.com/jonas747/dstate"
@@ -9,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -663,4 +666,126 @@ func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	}
 
 	return nil
+}
+
+/////////////////////////////////////////////////////////////
+
+type EnableChannelSlowmodeEffect struct {
+	lastTimes map[int64]bool
+	mu        sync.Mutex
+}
+
+type EnableChannelSlowmodeEffectData struct {
+	Duration  int `valid:",0,604800,trimspace"`
+	Ratelimit int `valid:",0,21600,trimspace"`
+}
+
+func (slow *EnableChannelSlowmodeEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (slow *EnableChannelSlowmodeEffect) DataType() interface{} {
+	return &EnableChannelSlowmodeEffectData{}
+}
+
+func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Duration in seconds, 0 for permanent",
+			Key:     "Duration",
+			Default: 0,
+			Min:     0,
+			Max:     604800,
+			Kind:    SettingTypeInt,
+		},
+		&SettingDef{
+			Name:    "Ratelimit in seconds between messages per user",
+			Key:     "Ratelimit",
+			Default: 0,
+			Min:     0,
+			Max:     21600,
+			Kind:    SettingTypeInt,
+		},
+	}
+}
+
+func (slow *EnableChannelSlowmodeEffect) Name() (name string) {
+	return "Enable Channel slowmode"
+}
+
+func (slow *EnableChannelSlowmodeEffect) Description() (description string) {
+	return "Enables discord's builtin slowmode in the channel for the specified duration, or forever."
+}
+
+func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+
+	if slow.checkSetCooldown(ctxData.CS.ID) {
+		return nil
+	}
+
+	s := settings.(*EnableChannelSlowmodeEffectData)
+
+	rl := s.Ratelimit
+	edit := &discordgo.ChannelEdit{
+		RateLimitPerUser: &rl,
+	}
+
+	_, err := common.BotSession.ChannelEditComplex(ctxData.CS.ID, edit)
+	if err != nil {
+		return err
+	}
+
+	if s.Duration < 1 {
+		return nil
+	}
+
+	// remove existing role removal events for this channel
+	_, err = schEventsModels.ScheduledEvents(
+		qm.Where("event_name='amod2_reset_channel_ratelimit'"),
+		qm.Where("guild_id = ?", ctxData.GS.ID),
+		qm.Where("(data->>'channel_id')::bigint = ?", ctxData.CS.ID),
+		qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
+
+	if err != nil {
+		return err
+	}
+
+	// add the scheduled event for it
+	err = scheduledevents2.ScheduleEvent("amod2_reset_channel_ratelimit", ctxData.GS.ID, time.Now().Add(time.Second*time.Duration(s.Duration)), &ResetChannelRatelimitData{
+		ChannelID: ctxData.CS.ID,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (slow *EnableChannelSlowmodeEffect) checkSetCooldown(channelID int64) bool {
+	slow.mu.Lock()
+	defer slow.mu.Unlock()
+
+	if slow.lastTimes == nil {
+		slow.lastTimes = make(map[int64]bool)
+		return false
+	}
+
+	if v, ok := slow.lastTimes[channelID]; ok && v {
+		logger.Println("On cooldown")
+		return true
+	}
+
+	logger.Println("Not on cooldown")
+
+	slow.lastTimes[channelID] = true
+	time.AfterFunc(time.Second*10, func() {
+		logger.Println("Cooldown expired")
+		slow.mu.Lock()
+		defer slow.mu.Unlock()
+
+		delete(slow.lastTimes, channelID)
+	})
+
+	return false
 }
