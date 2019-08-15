@@ -93,6 +93,9 @@ func setup() {
 	eventsystem.AddHandlerAsyncLast(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
 	eventsystem.AddHandlerAsyncLast(HandleMessageCreate, eventsystem.EventMessageCreate)
 	eventsystem.AddHandlerAsyncLast(HandleResumed, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLast(HandleRatelimit, eventsystem.EventRateLimit)
+
+	common.BotSession.AddHandler(eventsystem.HandleEvent)
 }
 
 func Run() {
@@ -215,6 +218,8 @@ func InitPlugins() {
 		updateAllShardStatuses()
 	}, nil)
 
+	pubsub.AddHandler("global_ratelimit", handleGlobalRatelimtPusub, GlobalRatelimitTriggeredEventData{})
+
 	// Initialize all plugins
 	for _, plugin := range common.Plugins {
 		if initBot, ok := plugin.(BotInitHandler); ok {
@@ -308,4 +313,14 @@ func goroutineLogger() {
 		num := runtime.NumGoroutine()
 		common.Statsd.Gauge("yagpdb.numgoroutine", float64(num), nil, 1)
 	}
+}
+
+type GlobalRatelimitTriggeredEventData struct {
+	Reset  time.Time `json:"reset"`
+	Bucket string    `json:"bucket"`
+}
+
+func handleGlobalRatelimtPusub(evt *pubsub.Event) {
+	data := evt.Data.(*GlobalRatelimitTriggeredEventData)
+	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
 }
