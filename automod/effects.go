@@ -3,6 +3,7 @@ package automod
 import (
 	"context"
 	"github.com/jonas747/discordgo"
+	"sync"
 	"time"
 
 	"github.com/jonas747/dstate"
@@ -669,7 +670,10 @@ func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 
 /////////////////////////////////////////////////////////////
 
-type EnableChannelSlowmodeEffect struct{}
+type EnableChannelSlowmodeEffect struct {
+	lastTimes map[int64]bool
+	mu        sync.Mutex
+}
 
 type EnableChannelSlowmodeEffectData struct {
 	Duration  int `valid:",0,604800,trimspace"`
@@ -715,6 +719,10 @@ func (slow *EnableChannelSlowmodeEffect) Description() (description string) {
 
 func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 
+	if slow.checkSetCooldown(ctxData.CS.ID) {
+		return nil
+	}
+
 	s := settings.(*EnableChannelSlowmodeEffectData)
 
 	rl := s.Ratelimit
@@ -752,4 +760,32 @@ func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, setti
 	}
 
 	return nil
+}
+
+func (slow *EnableChannelSlowmodeEffect) checkSetCooldown(channelID int64) bool {
+	slow.mu.Lock()
+	defer slow.mu.Unlock()
+
+	if slow.lastTimes == nil {
+		slow.lastTimes = make(map[int64]bool)
+		return false
+	}
+
+	if v, ok := slow.lastTimes[channelID]; ok && v {
+		logger.Println("On cooldown")
+		return true
+	}
+
+	logger.Println("Not on cooldown")
+
+	slow.lastTimes[channelID] = true
+	time.AfterFunc(time.Second*10, func() {
+		logger.Println("Cooldown expired")
+		slow.mu.Lock()
+		defer slow.mu.Unlock()
+
+		delete(slow.lastTimes, channelID)
+	})
+
+	return false
 }
