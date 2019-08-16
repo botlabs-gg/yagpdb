@@ -46,12 +46,12 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 	cs.Owner.RUnlock()
 
 	// Check if the state was full
-	if n >= limit {
+	if n <= 0 {
 		return msgBuf, nil
 	}
 
 	// Not enough messages in state, retrieve them from the api
-	// Initialize the before id
+	// Initialize the before id to the oldest message we have
 	var before int64
 	if n+1 < len(msgBuf) {
 		if msgBuf[n+1] != nil {
