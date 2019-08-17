@@ -656,7 +656,9 @@ func tmplCurrentTime() time.Time {
 	return time.Now()
 }
 
-func tmplDateToTime(year int, month time.Month, day, hour, min, sec int) time.Time {
+func tmplDateToTime(year, monthInt, day, hour, min, sec int) time.Time {
+	var month time.Month
+	month = time.Month(monthInt)
 	return time.Date(year, month, day, hour, min, sec, 0, time.UTC)
 }
 
