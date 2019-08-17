@@ -313,6 +313,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 func HandleRatelimit(evt *eventsystem.EventData) {
 	rl := evt.RateLimit()
+	if !rl.TooManyRequests.Global {
+		return
+	}
+
 	logger.Printf("Got 429: %s, %d", rl.Bucket, rl.RetryAfter)
 
 	reset := time.Now().Add(rl.RetryAfter * time.Millisecond)
