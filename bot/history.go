@@ -46,7 +46,7 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 	cs.Owner.RUnlock()
 
 	// Check if the state was full
-	if n <= 0 {
+	if n < 0 {
 		return msgBuf, nil
 	}
 
