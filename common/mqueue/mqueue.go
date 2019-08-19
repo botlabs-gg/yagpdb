@@ -69,6 +69,7 @@ func RegisterPlugin() {
 	if err != nil {
 		logger.WithError(err).Error("failed initiializing webhook session")
 	}
+	webhookSession.AddHandler(handleWebhookSessionRatelimit)
 
 	webhookSession.Client.HTTPClient.Transport = cleanhttp.DefaultPooledTransport()
 
@@ -546,4 +547,14 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 	}
 
 	return
+}
+
+func handleWebhookSessionRatelimit(s *discordgo.Session, r *discordgo.RateLimit) {
+	if !r.TooManyRequests.Global {
+		return
+	}
+
+	if common.Statsd != nil {
+		common.Statsd.Incr("yagpdb.webhook_session_ratelimit", nil, 1)
+	}
 }
