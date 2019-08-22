@@ -65,6 +65,7 @@ var (
 		"shuffle":     shuffle,
 		"seq":         sequence,
 		"currentTime": tmplCurrentTime,
+		"newDate":     tmplNewDate,
 
 		"escapeHere":         tmplEscapeHere,
 		"escapeEveryone":     tmplEscapeEveryone,
