@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
@@ -480,6 +481,16 @@ var (
 func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, userID int64) {
 	if confDisableReactionRemovalSingleMode.GetBool() {
 		// since this is an experimental feature
+		return
+	}
+
+	isPremium, err := premium.IsGuildPremiumCached(rm.GuildID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", rm.GuildID).Error("Failed checking if guild is premium")
+		return
+	}
+
+	if !isPremium {
 		return
 	}
 
