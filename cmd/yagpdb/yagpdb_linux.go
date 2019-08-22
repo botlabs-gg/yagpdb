@@ -11,7 +11,12 @@ import (
 func AddSyslogHooks() {
 	logrus.Println("Adding syslog hook")
 
-	hook, err := lsyslog.NewSyslogHook("", "", syslog.LOG_INFO|syslog.LOG_DAEMON, flagNodeID)
+	appName := flagLogAppName
+	if flagNodeID != "" {
+		appName = flagNodeID
+	}
+
+	hook, err := lsyslog.NewSyslogHook("", "", syslog.LOG_INFO|syslog.LOG_DAEMON, appName)
 
 	if err == nil {
 		common.AddLogHook(hook)
