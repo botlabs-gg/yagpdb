@@ -2,6 +2,7 @@ package bot
 
 import (
 	"sort"
+	"time"
 
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
@@ -116,7 +117,7 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 
 	sort.Sort(DiscordMessages(cs.Messages))
 
-	cs.UpdateMessages(false, maxChannelMessages, maxMessageAge)
+	cs.UpdateMessages(false, maxChannelMessages, time.Now().Add(-maxMessageAge))
 
 	// Return at most limit results
 	if limit < len(msgBuf) {
