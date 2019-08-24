@@ -44,6 +44,19 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/customcommands"), subMux)
 	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
 
+	subMux.Use(func(inner http.Handler) http.Handler {
+		h := func(w http.ResponseWriter, r *http.Request) {
+			_, templateData := web.GetBaseCPContextData(r.Context())
+			strTriggerTypes := map[int]string{}
+			for k, v := range triggerStrings {
+				strTriggerTypes[int(k)] = v
+			}
+			templateData["CCTriggerTypes"] = strTriggerTypes
+
+			inner.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(h)
+	})
 	subMux.Use(web.RequireGuildChannelsMiddleware)
 
 	subMux.Handle(pat.Get(""), getHandler)

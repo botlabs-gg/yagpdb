@@ -3,9 +3,11 @@ package customcommands
 import (
 	"context"
 	"fmt"
+	"github.com/jonas747/yagpdb/premium"
 	"math/rand"
 	"regexp"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -289,6 +291,11 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 	return false
 }
 
+const (
+	CCMessageExecLimitNormal  = 3
+	CCMessageExecLimitPremium = 5
+)
+
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
 	cs := bot.State.Channel(true, mc.ChannelID)
@@ -307,54 +314,90 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix, err := commands.GetCommandPrefix(cs.Guild.ID)
-	if err != nil {
-		logger.WithError(err).Error("Failed getting prefix")
-		return
-	}
-
 	member, err := bot.GetMember(cs.Guild.ID, mc.Author.ID)
 	if err != nil {
 		return
 	}
 
-	var matched *models.CustomCommand
-	var stripped string
-	var args []string
-	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, member) {
-			continue
-		}
-		if matched != nil && cmd.TriggerType == int(CommandTriggerRegex) {
-			continue
-		}
-
-		if m, s, a := CheckMatch(prefix, cmd, mc.Content); m {
-			matched = cmd
-			stripped = s
-			args = a
-
-			// regex commands has lower priority
-			if cmd.TriggerType == int(CommandTriggerRegex) {
-				continue
-			} else {
-				break
-			}
-		}
+	matchedCustomCommands, err := findMessageTriggerCustomCommands(member, cmds, mc)
+	if err != nil {
+		logger.WithError(err).Error("Error mathching custom commands")
+		return
 	}
 
-	if matched == nil || len(matched.Responses) == 0 {
+	limit := CCMessageExecLimitNormal
+	if isPremium, _ := premium.IsGuildPremiumCached(mc.GuildID); isPremium {
+		limit = CCMessageExecLimitPremium
+	}
+
+	if len(matchedCustomCommands) > limit {
+		matchedCustomCommands = matchedCustomCommands[:limit]
+	}
+
+	if len(matchedCustomCommands) == 0 {
 		return
 	}
 
 	if common.Statsd != nil {
-		go common.Statsd.Incr("yagpdb.cc.executed", nil, 1)
+		go common.Statsd.Count("yagpdb.cc.executed", int64(len(matchedCustomCommands)), nil, 1)
 	}
 
-	err = ExecuteCustomCommandFromMessage(matched, member, cs, args, stripped, mc.Message)
-	if err != nil {
-		logger.WithField("guild", mc.GuildID).WithError(err).Error("Error executing custom command")
+	for _, matched := range matchedCustomCommands {
+		err = ExecuteCustomCommandFromMessage(matched.CC, member, cs, matched.Args, matched.Stripped, mc.Message)
+		if err != nil {
+			logger.WithField("guild", mc.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
+		}
 	}
+}
+
+type TriggeredCC struct {
+	CC       *models.CustomCommand
+	Stripped string
+	Args     []string
+}
+
+func findMessageTriggerCustomCommands(ms *dstate.MemberState, cmds []*models.CustomCommand, mc *discordgo.MessageCreate) (matches []*TriggeredCC, err error) {
+	prefix, err := commands.GetCommandPrefix(mc.GuildID)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetCommandPrefix")
+	}
+
+	var matched []*TriggeredCC
+	for _, cmd := range cmds {
+		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, ms) {
+			continue
+		}
+
+		if didMatch, stripped, args := CheckMatch(prefix, cmd, mc.Content); didMatch {
+
+			matched = append(matched, &TriggeredCC{
+				CC:       cmd,
+				Args:     args,
+				Stripped: stripped,
+			})
+		}
+	}
+
+	sort.Slice(matched, func(i, j int) bool {
+		a := matched[i]
+		b := matched[j]
+
+		if a.CC.TriggerType == b.CC.TriggerType {
+			return a.CC.LocalID < b.CC.LocalID
+		}
+
+		if a.CC.TriggerType == int(CommandTriggerRegex) {
+			return false
+		}
+
+		if b.CC.TriggerType == int(CommandTriggerRegex) {
+			return true
+		}
+
+		return a.CC.LocalID < b.CC.LocalID
+	})
+
+	return matched, nil
 }
 
 func ExecuteCustomCommandFromMessage(cmd *models.CustomCommand, member *dstate.MemberState, cs *dstate.ChannelState, cmdArgs []string, stripped string, m *discordgo.Message) error {
