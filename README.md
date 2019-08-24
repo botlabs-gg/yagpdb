@@ -12,7 +12,7 @@ YAGPDB is a multifunctional, modular Discord bot. It's modular in that plugins e
 
 ### Running YAGPDB yourself
 
-Running this bot may seem challenging, and that's because I don't have time to make it easy to run for everyone, for the most part, it should run fine after the initial work has been done. Please view [this page](https://docs.yagpdb.xyz/others/self-hosting-with-docker) for more information.
+Running this bot may seem challenging, and that's because I don't have time to make it easy to run for everyone, for the most part, it should run fine after the initial work has been done. Please view [this page](https://docs.yagpdb.xyz/development/self-hosting-with-docker) for more information.
 
 #### Updating
 Updating after v1 should migrate schemas automatically, but you should always take backups beforehand if things go wrong.
