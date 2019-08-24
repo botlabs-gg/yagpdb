@@ -389,7 +389,7 @@ func (o *CustomCommandGroup) AddGroupCustomCommands(ctx context.Context, exec bo
 				strmangle.SetParamNames("\"", "\"", 1, []string{"group_id"}),
 				strmangle.WhereClause("\"", "\"", 2, customCommandPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.GuildID, rel.LocalID}
+			values := []interface{}{o.ID, rel.LocalID, rel.GuildID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)

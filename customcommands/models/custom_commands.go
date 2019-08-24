@@ -42,6 +42,7 @@ type CustomCommand struct {
 	Roles                     types.Int64Array  `boil:"roles" json:"roles,omitempty" toml:"roles" yaml:"roles,omitempty"`
 	RolesWhitelistMode        bool              `boil:"roles_whitelist_mode" json:"roles_whitelist_mode" toml:"roles_whitelist_mode" yaml:"roles_whitelist_mode"`
 	ContextChannel            int64             `boil:"context_channel" json:"context_channel" toml:"context_channel" yaml:"context_channel"`
+	ReactionTriggerMode       int16             `boil:"reaction_trigger_mode" json:"reaction_trigger_mode" toml:"reaction_trigger_mode" yaml:"reaction_trigger_mode"`
 
 	R *customCommandR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customCommandL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -65,6 +66,7 @@ var CustomCommandColumns = struct {
 	Roles                     string
 	RolesWhitelistMode        string
 	ContextChannel            string
+	ReactionTriggerMode       string
 }{
 	LocalID:                   "local_id",
 	GuildID:                   "guild_id",
@@ -83,6 +85,7 @@ var CustomCommandColumns = struct {
 	Roles:                     "roles",
 	RolesWhitelistMode:        "roles_whitelist_mode",
 	ContextChannel:            "context_channel",
+	ReactionTriggerMode:       "reaction_trigger_mode",
 }
 
 // Generated where
@@ -172,6 +175,15 @@ func (w whereHelpertypes_StringArray) GTE(x types.StringArray) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperint16 struct{ field string }
+
+func (w whereHelperint16) EQ(x int16) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint16) NEQ(x int16) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint16) LT(x int16) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint16) LTE(x int16) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint16) GT(x int16) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint16) GTE(x int16) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 var CustomCommandWhere = struct {
 	LocalID                   whereHelperint64
 	GuildID                   whereHelperint64
@@ -190,6 +202,7 @@ var CustomCommandWhere = struct {
 	Roles                     whereHelpertypes_Int64Array
 	RolesWhitelistMode        whereHelperbool
 	ContextChannel            whereHelperint64
+	ReactionTriggerMode       whereHelperint16
 }{
 	LocalID:                   whereHelperint64{field: "\"custom_commands\".\"local_id\""},
 	GuildID:                   whereHelperint64{field: "\"custom_commands\".\"guild_id\""},
@@ -208,6 +221,7 @@ var CustomCommandWhere = struct {
 	Roles:                     whereHelpertypes_Int64Array{field: "\"custom_commands\".\"roles\""},
 	RolesWhitelistMode:        whereHelperbool{field: "\"custom_commands\".\"roles_whitelist_mode\""},
 	ContextChannel:            whereHelperint64{field: "\"custom_commands\".\"context_channel\""},
+	ReactionTriggerMode:       whereHelperint16{field: "\"custom_commands\".\"reaction_trigger_mode\""},
 }
 
 // CustomCommandRels is where relationship names are stored.
@@ -231,10 +245,10 @@ func (*customCommandR) NewStruct() *customCommandR {
 type customCommandL struct{}
 
 var (
-	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel"}
+	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "reaction_trigger_mode"}
 	customCommandColumnsWithoutDefault = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode"}
-	customCommandColumnsWithDefault    = []string{"context_channel"}
-	customCommandPrimaryKeyColumns     = []string{"guild_id", "local_id"}
+	customCommandColumnsWithDefault    = []string{"context_channel", "reaction_trigger_mode"}
+	customCommandPrimaryKeyColumns     = []string{"local_id", "guild_id"}
 )
 
 type (
@@ -483,7 +497,7 @@ func (o *CustomCommand) SetGroup(ctx context.Context, exec boil.ContextExecutor,
 		strmangle.SetParamNames("\"", "\"", 1, []string{"group_id"}),
 		strmangle.WhereClause("\"", "\"", 2, customCommandPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.GuildID, o.LocalID}
+	values := []interface{}{related.ID, o.LocalID, o.GuildID}
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -560,13 +574,13 @@ func CustomCommands(mods ...qm.QueryMod) customCommandQuery {
 }
 
 // FindCustomCommandG retrieves a single record by ID.
-func FindCustomCommandG(ctx context.Context, guildID int64, localID int64, selectCols ...string) (*CustomCommand, error) {
-	return FindCustomCommand(ctx, boil.GetContextDB(), guildID, localID, selectCols...)
+func FindCustomCommandG(ctx context.Context, localID int64, guildID int64, selectCols ...string) (*CustomCommand, error) {
+	return FindCustomCommand(ctx, boil.GetContextDB(), localID, guildID, selectCols...)
 }
 
 // FindCustomCommand retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindCustomCommand(ctx context.Context, exec boil.ContextExecutor, guildID int64, localID int64, selectCols ...string) (*CustomCommand, error) {
+func FindCustomCommand(ctx context.Context, exec boil.ContextExecutor, localID int64, guildID int64, selectCols ...string) (*CustomCommand, error) {
 	customCommandObj := &CustomCommand{}
 
 	sel := "*"
@@ -574,10 +588,10 @@ func FindCustomCommand(ctx context.Context, exec boil.ContextExecutor, guildID i
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"custom_commands\" where \"guild_id\"=$1 AND \"local_id\"=$2", sel,
+		"select %s from \"custom_commands\" where \"local_id\"=$1 AND \"guild_id\"=$2", sel,
 	)
 
-	q := queries.Raw(query, guildID, localID)
+	q := queries.Raw(query, localID, guildID)
 
 	err := q.Bind(ctx, exec, customCommandObj)
 	if err != nil {
@@ -940,7 +954,7 @@ func (o *CustomCommand) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), customCommandPrimaryKeyMapping)
-	sql := "DELETE FROM \"custom_commands\" WHERE \"guild_id\"=$1 AND \"local_id\"=$2"
+	sql := "DELETE FROM \"custom_commands\" WHERE \"local_id\"=$1 AND \"guild_id\"=$2"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1031,7 +1045,7 @@ func (o *CustomCommand) ReloadG(ctx context.Context) error {
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *CustomCommand) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindCustomCommand(ctx, exec, o.GuildID, o.LocalID)
+	ret, err := FindCustomCommand(ctx, exec, o.LocalID, o.GuildID)
 	if err != nil {
 		return err
 	}
@@ -1080,21 +1094,21 @@ func (o *CustomCommandSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 }
 
 // CustomCommandExistsG checks if the CustomCommand row exists.
-func CustomCommandExistsG(ctx context.Context, guildID int64, localID int64) (bool, error) {
-	return CustomCommandExists(ctx, boil.GetContextDB(), guildID, localID)
+func CustomCommandExistsG(ctx context.Context, localID int64, guildID int64) (bool, error) {
+	return CustomCommandExists(ctx, boil.GetContextDB(), localID, guildID)
 }
 
 // CustomCommandExists checks if the CustomCommand row exists.
-func CustomCommandExists(ctx context.Context, exec boil.ContextExecutor, guildID int64, localID int64) (bool, error) {
+func CustomCommandExists(ctx context.Context, exec boil.ContextExecutor, localID int64, guildID int64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"custom_commands\" where \"guild_id\"=$1 AND \"local_id\"=$2 limit 1)"
+	sql := "select exists(select 1 from \"custom_commands\" where \"local_id\"=$1 AND \"guild_id\"=$2 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, guildID, localID)
+		fmt.Fprintln(boil.DebugWriter, localID, guildID)
 	}
 
-	row := exec.QueryRowContext(ctx, sql, guildID, localID)
+	row := exec.QueryRowContext(ctx, sql, localID, guildID)
 
 	err := row.Scan(&exists)
 	if err != nil {
