@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/retryableredis"
@@ -16,7 +17,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -311,7 +311,7 @@ func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, er
 		if err == sql.ErrNoRows {
 			return DefaultConfig(guildID), nil
 		}
-		return nil, errors.Wrap(err, "Reputation.GetConfig")
+		return nil, errors.WrapIf(err, "Reputation.GetConfig")
 	}
 
 	return conf, nil

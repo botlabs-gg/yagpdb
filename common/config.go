@@ -1,8 +1,8 @@
 package common
 
 import (
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common/config"
-	"github.com/pkg/errors"
 	"strings"
 )
 

@@ -1,10 +1,22 @@
 package eventsystem
 
 import (
+	"github.com/jonas747/yagpdb/common"
 	"testing"
 
 	"github.com/jonas747/discordgo"
 )
+
+type mockPlugin struct {
+}
+
+func (p *mockPlugin) PluginInfo() *common.PluginInfo {
+	return &common.PluginInfo{
+		Name:     "Mock",
+		SysName:  "mock",
+		Category: common.PluginCategoryCore,
+	}
+}
 
 func TestAddHandlerOrder(t *testing.T) {
 	firstTriggered := false
@@ -17,7 +29,7 @@ func TestAddHandlerOrder(t *testing.T) {
 		}
 	}
 
-	AddHandlerSecond(h2, EventReady)
-	AddHandlerFirst(h1, EventReady)
+	AddHandlerSecondLegacy(&mockPlugin{}, h2, EventReady)
+	AddHandlerFirstLegacy(&mockPlugin{}, h1, EventReady)
 	HandleEvent(nil, &discordgo.Ready{})
 }

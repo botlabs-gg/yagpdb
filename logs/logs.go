@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -100,7 +100,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 
 	tx, err := common.PQ.Begin()
 	if err != nil {
-		return nil, errors.Wrap(err, "pq.begin")
+		return nil, errors.WrapIf(err, "pq.begin")
 	}
 
 	for _, v := range msgs {
@@ -132,7 +132,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		err = messageModel.Upsert(ctx, tx, true, []string{"id"}, boil.Blacklist("deleted"), boil.Infer())
 		if err != nil {
 			tx.Rollback()
-			return nil, errors.Wrap(err, "message.insert")
+			return nil, errors.WrapIf(err, "message.insert")
 		}
 
 		logMsgs = append(logMsgs, messageModel)
@@ -142,7 +142,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	id, err := common.GenLocalIncrID(channel.Guild.ID, "message_logs")
 	if err != nil {
 		tx.Rollback()
-		return nil, errors.Wrap(err, "log.gen_id")
+		return nil, errors.WrapIf(err, "log.gen_id")
 	}
 
 	log := &models.MessageLogs2{
@@ -160,12 +160,12 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	err = log.Insert(ctx, tx, boil.Infer())
 	if err != nil {
 		tx.Rollback()
-		return nil, errors.Wrap(err, "log.insert")
+		return nil, errors.WrapIf(err, "log.insert")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, errors.Wrap(err, "commit")
+		return nil, errors.WrapIf(err, "commit")
 	}
 
 	return log, nil
@@ -206,7 +206,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*mod
 		}
 
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "messagelogs2")
+			return nil, nil, errors.WrapIf(err, "messagelogs2")
 		}
 	} else {
 		// try with legacy id system first
@@ -220,7 +220,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*mod
 		}
 
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "messagelogs2")
+			return nil, nil, errors.WrapIf(err, "messagelogs2")
 		}
 
 	}
@@ -232,7 +232,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*mod
 
 	messages, err := models.Messages2s(qm.WhereIn("id in ?", args...), qm.OrderBy("id desc")).AllG(ctx)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "messages2")
+		return nil, nil, errors.WrapIf(err, "messages2")
 	}
 
 	return logs, messages, err
@@ -256,15 +256,17 @@ func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) (
 	return logs, err
 }
 
-func GetUsernames(ctx context.Context, userID int64, limit int) ([]*models.UsernameListing, error) {
-	result, err := models.UsernameListings(models.UsernameListingWhere.UserID.EQ(null.Int64From(userID)), qm.OrderBy("id desc"), qm.Limit(limit)).AllG(ctx)
+func GetUsernames(ctx context.Context, userID int64, limit, offset int) ([]*models.UsernameListing, error) {
+	result, err := models.UsernameListings(models.UsernameListingWhere.UserID.EQ(null.Int64From(userID)), qm.OrderBy("id desc"), qm.Limit(limit), qm.Offset(offset)).AllG(ctx)
 	return result, err
 }
 
-func GetNicknames(ctx context.Context, userID, guildID int64, limit int) ([]*models.NicknameListing, error) {
+func GetNicknames(ctx context.Context, userID, guildID int64, limit, offset int) ([]*models.NicknameListing, error) {
 
 	return models.NicknameListings(
 		models.NicknameListingWhere.GuildID.EQ(null.StringFrom(discordgo.StrID(guildID))),
 		models.NicknameListingWhere.UserID.EQ(null.Int64From(userID)),
-		qm.OrderBy("id desc"), qm.Limit(limit)).AllG(ctx)
+		qm.OrderBy("id desc"),
+		qm.Limit(limit),
+		qm.Offset(offset)).AllG(ctx)
 }

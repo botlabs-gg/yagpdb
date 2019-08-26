@@ -71,29 +71,31 @@ func setup() {
 	State.CacheExpirey = time.Minute * 10
 	go State.RunGCWorker()
 
-	eventsystem.AddHandlerFirst(HandleReady, eventsystem.EventReady)
-	eventsystem.AddHandlerSecond(StateHandler, eventsystem.EventAll)
+	eventsystem.DiscordState = State
 
-	eventsystem.AddHandlerAsyncLast(EventLogger.handleEvent, eventsystem.EventAll)
+	eventsystem.AddHandlerFirstLegacy(BotPlugin, HandleReady, eventsystem.EventReady)
+	eventsystem.AddHandlerSecondLegacy(BotPlugin, StateHandler, eventsystem.EventAll)
 
-	eventsystem.AddHandlerAsyncLast(HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildDelete, eventsystem.EventGuildDelete)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, EventLogger.handleEvent, eventsystem.EventAll)
 
-	eventsystem.AddHandlerAsyncLast(HandleGuildUpdate, eventsystem.EventGuildUpdate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
-	eventsystem.AddHandlerAsyncLast(HandleChannelCreate, eventsystem.EventChannelCreate)
-	eventsystem.AddHandlerAsyncLast(HandleChannelUpdate, eventsystem.EventChannelUpdate)
-	eventsystem.AddHandlerAsyncLast(HandleChannelDelete, eventsystem.EventChannelDelete)
-	eventsystem.AddHandlerAsyncLast(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerAsyncLast(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandlerAsyncLast(HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
-	eventsystem.AddHandlerAsyncLast(HandleReactionAdd, eventsystem.EventMessageReactionAdd)
-	eventsystem.AddHandlerAsyncLast(HandleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandlerAsyncLast(HandleResumed, eventsystem.EventResumed)
-	eventsystem.AddHandlerAsyncLast(HandleRatelimit, eventsystem.EventRateLimit)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildDelete, eventsystem.EventGuildDelete)
+
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildUpdate, eventsystem.EventGuildUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleChannelCreate, eventsystem.EventChannelCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleChannelDelete, eventsystem.EventChannelDelete)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleResumed, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
 
 	common.BotSession.AddHandler(eventsystem.HandleEvent)
 }
@@ -200,6 +202,7 @@ func SetupStandalone() {
 	totalShardCount = shardCount
 
 	EventLogger.init(shardCount)
+	eventsystem.InitWorkers(shardCount)
 	go EventLogger.run()
 
 	processShards = make([]int, totalShardCount)

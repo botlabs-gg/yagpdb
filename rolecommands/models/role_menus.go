@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -192,7 +192,7 @@ func (q roleMenuQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Rol
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for role_menus")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for role_menus")
 	}
 
 	return o, nil
@@ -209,7 +209,7 @@ func (q roleMenuQuery) All(ctx context.Context, exec boil.ContextExecutor) (Role
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to RoleMenu slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to RoleMenu slice")
 	}
 
 	return o, nil
@@ -229,7 +229,7 @@ func (q roleMenuQuery) Count(ctx context.Context, exec boil.ContextExecutor) (in
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count role_menus rows")
+		return 0, errors.WrapIf(err, "models: failed to count role_menus rows")
 	}
 
 	return count, nil
@@ -250,7 +250,7 @@ func (q roleMenuQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (b
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if role_menus exists")
+		return false, errors.WrapIf(err, "models: failed to check if role_menus exists")
 	}
 
 	return count > 0, nil
@@ -371,19 +371,19 @@ func (roleMenuL) LoadEditingOption(ctx context.Context, e boil.ContextExecutor, 
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load RoleMenuOption")
+		return errors.WrapIf(err, "failed to eager load RoleMenuOption")
 	}
 
 	var resultSlice []*RoleMenuOption
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice RoleMenuOption")
+		return errors.WrapIf(err, "failed to bind eager loaded slice RoleMenuOption")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for role_menu_options")
+		return errors.WrapIf(err, "failed to close results of eager load for role_menu_options")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menu_options")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for role_menu_options")
 	}
 
 	if len(resultSlice) == 0 {
@@ -468,19 +468,19 @@ func (roleMenuL) LoadNextRoleCommand(ctx context.Context, e boil.ContextExecutor
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load RoleCommand")
+		return errors.WrapIf(err, "failed to eager load RoleCommand")
 	}
 
 	var resultSlice []*RoleCommand
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice RoleCommand")
+		return errors.WrapIf(err, "failed to bind eager loaded slice RoleCommand")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for role_commands")
+		return errors.WrapIf(err, "failed to close results of eager load for role_commands")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_commands")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for role_commands")
 	}
 
 	if len(resultSlice) == 0 {
@@ -565,19 +565,19 @@ func (roleMenuL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, sing
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load RoleGroup")
+		return errors.WrapIf(err, "failed to eager load RoleGroup")
 	}
 
 	var resultSlice []*RoleGroup
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice RoleGroup")
+		return errors.WrapIf(err, "failed to bind eager loaded slice RoleGroup")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for role_groups")
+		return errors.WrapIf(err, "failed to close results of eager load for role_groups")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_groups")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for role_groups")
 	}
 
 	if len(resultSlice) == 0 {
@@ -656,19 +656,19 @@ func (roleMenuL) LoadRoleMenuOptions(ctx context.Context, e boil.ContextExecutor
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load role_menu_options")
+		return errors.WrapIf(err, "failed to eager load role_menu_options")
 	}
 
 	var resultSlice []*RoleMenuOption
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice role_menu_options")
+		return errors.WrapIf(err, "failed to bind eager loaded slice role_menu_options")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on role_menu_options")
+		return errors.WrapIf(err, "failed to close results in eager load on role_menu_options")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menu_options")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for role_menu_options")
 	}
 
 	if singular {
@@ -713,7 +713,7 @@ func (o *RoleMenu) SetEditingOption(ctx context.Context, exec boil.ContextExecut
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+			return errors.WrapIf(err, "failed to insert into foreign table")
 		}
 	}
 
@@ -730,7 +730,7 @@ func (o *RoleMenu) SetEditingOption(ctx context.Context, exec boil.ContextExecut
 	}
 
 	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	queries.Assign(&o.EditingOptionID, related.ID)
@@ -769,7 +769,7 @@ func (o *RoleMenu) RemoveEditingOption(ctx context.Context, exec boil.ContextExe
 
 	queries.SetScanner(&o.EditingOptionID, nil)
 	if _, err = o.Update(ctx, exec, boil.Whitelist("editing_option_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	o.R.EditingOption = nil
@@ -807,7 +807,7 @@ func (o *RoleMenu) SetNextRoleCommand(ctx context.Context, exec boil.ContextExec
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+			return errors.WrapIf(err, "failed to insert into foreign table")
 		}
 	}
 
@@ -824,7 +824,7 @@ func (o *RoleMenu) SetNextRoleCommand(ctx context.Context, exec boil.ContextExec
 	}
 
 	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	queries.Assign(&o.NextRoleCommandID, related.ID)
@@ -863,7 +863,7 @@ func (o *RoleMenu) RemoveNextRoleCommand(ctx context.Context, exec boil.ContextE
 
 	queries.SetScanner(&o.NextRoleCommandID, nil)
 	if _, err = o.Update(ctx, exec, boil.Whitelist("next_role_command_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	o.R.NextRoleCommand = nil
@@ -901,7 +901,7 @@ func (o *RoleMenu) SetRoleGroup(ctx context.Context, exec boil.ContextExecutor, 
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+			return errors.WrapIf(err, "failed to insert into foreign table")
 		}
 	}
 
@@ -918,7 +918,7 @@ func (o *RoleMenu) SetRoleGroup(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	queries.Assign(&o.RoleGroupID, related.ID)
@@ -957,7 +957,7 @@ func (o *RoleMenu) RemoveRoleGroup(ctx context.Context, exec boil.ContextExecuto
 
 	queries.SetScanner(&o.RoleGroupID, nil)
 	if _, err = o.Update(ctx, exec, boil.Whitelist("role_group_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	o.R.RoleGroup = nil
@@ -999,7 +999,7 @@ func (o *RoleMenu) AddRoleMenuOptions(ctx context.Context, exec boil.ContextExec
 		if insert {
 			rel.RoleMenuID = o.MessageID
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -1015,7 +1015,7 @@ func (o *RoleMenu) AddRoleMenuOptions(ctx context.Context, exec boil.ContextExec
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			rel.RoleMenuID = o.MessageID
@@ -1073,7 +1073,7 @@ func FindRoleMenu(ctx context.Context, exec boil.ContextExecutor, messageID int6
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from role_menus")
+		return nil, errors.WrapIf(err, "models: unable to select from role_menus")
 	}
 
 	return roleMenuObj, nil
@@ -1146,7 +1146,7 @@ func (o *RoleMenu) Insert(ctx context.Context, exec boil.ContextExecutor, column
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into role_menus")
+		return errors.WrapIf(err, "models: unable to insert into role_menus")
 	}
 
 	if !cached {
@@ -1207,12 +1207,12 @@ func (o *RoleMenu) Update(ctx context.Context, exec boil.ContextExecutor, column
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update role_menus row")
+		return 0, errors.WrapIf(err, "models: unable to update role_menus row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for role_menus")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for role_menus")
 	}
 
 	if !cached {
@@ -1235,12 +1235,12 @@ func (q roleMenuQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for role_menus")
+		return 0, errors.WrapIf(err, "models: unable to update all for role_menus")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for role_menus")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for role_menus")
 	}
 
 	return rowsAff, nil
@@ -1289,12 +1289,12 @@ func (o RoleMenuSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in roleMenu slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in roleMenu slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all roleMenu")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all roleMenu")
 	}
 	return rowsAff, nil
 }
@@ -1403,7 +1403,7 @@ func (o *RoleMenu) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert role_menus")
+		return errors.WrapIf(err, "models: unable to upsert role_menus")
 	}
 
 	if !cached {
@@ -1438,12 +1438,12 @@ func (o *RoleMenu) Delete(ctx context.Context, exec boil.ContextExecutor) (int64
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from role_menus")
+		return 0, errors.WrapIf(err, "models: unable to delete from role_menus")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for role_menus")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for role_menus")
 	}
 
 	return rowsAff, nil
@@ -1459,12 +1459,12 @@ func (q roleMenuQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor)
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from role_menus")
+		return 0, errors.WrapIf(err, "models: unable to delete all from role_menus")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for role_menus")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for role_menus")
 	}
 
 	return rowsAff, nil
@@ -1497,12 +1497,12 @@ func (o RoleMenuSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor)
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from roleMenu slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from roleMenu slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for role_menus")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for role_menus")
 	}
 
 	return rowsAff, nil
@@ -1560,7 +1560,7 @@ func (o *RoleMenuSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in RoleMenuSlice")
+		return errors.WrapIf(err, "models: unable to reload all in RoleMenuSlice")
 	}
 
 	*o = slice
@@ -1587,7 +1587,7 @@ func RoleMenuExists(ctx context.Context, exec boil.ContextExecutor, messageID in
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if role_menus exists")
+		return false, errors.WrapIf(err, "models: unable to check if role_menus exists")
 	}
 
 	return exists, nil

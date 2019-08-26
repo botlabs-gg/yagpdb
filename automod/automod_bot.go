@@ -13,6 +13,8 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -22,9 +24,15 @@ func (p *Plugin) BotInit() {
 
 	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, p.checkMessage)
 
-	eventsystem.AddHandlerAsyncLast(p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
-	eventsystem.AddHandlerAsyncLast(p.handleMsgUpdate, eventsystem.EventMessageUpdate)
-	eventsystem.AddHandlerAsyncLast(p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMsgUpdate, eventsystem.EventMessageUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
+
+	scheduledevents2.RegisterHandler("amod2_reset_channel_ratelimit", ResetChannelRatelimitData{}, handleResetChannelRatelimit)
+}
+
+type ResetChannelRatelimitData struct {
+	ChannelID int64
 }
 
 func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
@@ -203,8 +211,7 @@ func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 func (p *Plugin) handleGuildMemberJoin(evt *eventsystem.EventData) {
 	evtData := evt.GuildMemberAdd()
 
-	gs := bot.State.Guild(true, evtData.GuildID)
-	ms := dstate.MSFromDGoMember(gs, evtData.Member)
+	ms := dstate.MSFromDGoMember(evt.GS, evtData.Member)
 
 	p.checkJoin(ms)
 	p.checkUsername(ms)
@@ -534,4 +541,20 @@ func FindFetchGuildList(gs *dstate.GuildState, listID int64) (*models.AutomodLis
 	}
 
 	return nil, ErrListNotFound
+}
+
+func handleResetChannelRatelimit(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	dataCast := data.(*ResetChannelRatelimitData)
+
+	rl := 0
+	edit := &discordgo.ChannelEdit{
+		RateLimitPerUser: &rl,
+	}
+
+	_, err = common.BotSession.ChannelEditComplex(dataCast.ChannelID, edit)
+	if err != nil {
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
 }

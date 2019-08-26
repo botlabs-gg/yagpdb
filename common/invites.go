@@ -18,6 +18,7 @@ var ThirdpartyDiscordSites = []*InviteSource{
 	&InviteSource{Name: "discord.me", Regex: regexp.MustCompile(`(?i)discord\.me\/.+`)},
 	&InviteSource{Name: "invite.gg", Regex: regexp.MustCompile(`(?i)invite\.gg\/.+`)},
 	&InviteSource{Name: "discord.io", Regex: regexp.MustCompile(`(?i)discord\.io\/.+`)},
+	&InviteSource{Name: "discord.li", Regex: regexp.MustCompile(`(?i)discord\.li\/.+`)},
 	&InviteSource{Name: "disboard.org", Regex: regexp.MustCompile(`(?i)disboard\.org\/server\/join\/.+`)},
 	&InviteSource{Name: "discordy.com", Regex: regexp.MustCompile(`(?i)discordy\.com\/server\.php`)},
 

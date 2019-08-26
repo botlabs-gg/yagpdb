@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"emperror.dev/errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -24,9 +25,9 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
-	eventsystem.AddHandlerAsyncLast(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 
@@ -133,42 +134,37 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 	logger.WithField("guild", gs.ID).Info("Done slowcheck")
 }
 
-func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
+func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	m := evt.GuildMemberUpdate()
 
-	gs := bot.State.Guild(true, m.GuildID)
-	if gs == nil {
-		return
-	}
-
-	config, err := BotCachedGetConfig(gs)
+	config, err := BotCachedGetConfig(evt.GS)
 	if err != nil {
-		logger.WithError(err).Error("Failed retrieving streaming config")
-		return
+		return true, errors.WithStackIf(err)
 	}
 
 	if !config.Enabled {
-		return
+		return false, nil
 	}
 
-	ms := gs.Member(true, m.User.ID)
+	ms := evt.GS.Member(true, m.User.ID)
 	if ms == nil {
 		logger.WithField("guild", m.GuildID).Error("Member not found in state")
-		return
+		return false, nil
 	}
 
-	gs.RLock()
-	defer gs.RUnlock()
+	evt.GS.RLock()
+	defer evt.GS.RUnlock()
 
 	if !ms.PresenceSet {
-		logger.WithField("guild", m.GuildID).Warn("Presence not found in state")
-		return
+		return // no presence tracked, no poing in continuing
 	}
 
-	err = CheckPresence(common.RedisPool, config, ms, gs)
+	err = CheckPresence(common.RedisPool, config, ms, evt.GS)
 	if err != nil {
-		logger.WithError(err).Error("Failed checking presence")
+		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
@@ -212,18 +208,14 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	}))
 }
 
-func HandlePresenceUpdate(evt *eventsystem.EventData) {
+func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	p := evt.PresenceUpdate()
 
-	gs := bot.State.Guild(true, p.GuildID)
-	if gs == nil {
-		return
-	}
+	gs := evt.GS
 
 	config, err := BotCachedGetConfig(gs)
 	if err != nil {
-		logger.WithError(err).Error("Failed retrieving streaming config")
-		return
+		return true, errors.WithStackIf(err)
 	}
 
 	if !config.Enabled {
@@ -232,8 +224,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	ms, err := bot.GetMember(p.GuildID, p.User.ID)
 	if ms == nil || err != nil {
-		logger.WithError(err).WithField("guild", p.GuildID).WithField("user", p.User.ID).Debug("Failed retrieving member")
-		return
+		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 	}
 
 	gs.RLock()
@@ -241,8 +232,10 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 
 	err = CheckPresence(common.RedisPool, config, ms, gs)
 	if err != nil {
-		logger.WithError(err).WithField("guild", p.GuildID).Error("Failed checking presence")
+		return bot.CheckDiscordErrRetry(err), errors.WrapIff(err, "failed checking presence for %d", p.User.ID)
 	}
+
+	return false, nil
 }
 
 func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, gs *dstate.GuildState) error {

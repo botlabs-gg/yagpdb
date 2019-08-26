@@ -3,14 +3,17 @@ package customcommands
 import (
 	"context"
 	"fmt"
+	"github.com/jonas747/yagpdb/premium"
 	"math/rand"
 	"regexp"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -25,7 +28,6 @@ import (
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -54,7 +56,8 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(handleMessageReactions), eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 
 	// add the pubsub handler for cache eviction
 	pubsub.AddHandler("custom_commands_clear_cache", func(event *pubsub.Event) {
@@ -166,7 +169,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	dataCast := data.(*DelayedRunCCData)
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, dataCast.CmdID)).OneG(context.Background())
 	if err != nil {
-		return false, errors.Wrap(err, "find_command")
+		return false, errors.WrapIf(err, "find_command")
 	}
 
 	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
@@ -228,7 +231,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, (data.(*NextRunScheduledEvent)).CmdID)).OneG(context.Background())
 	if err != nil {
-		return false, errors.Wrap(err, "find_command")
+		return false, errors.WrapIf(err, "find_command")
 	}
 
 	gs := bot.State.Guild(true, evt.GuildID)
@@ -289,27 +292,85 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 	return false
 }
 
+const (
+	CCMessageExecLimitNormal  = 3
+	CCMessageExecLimitPremium = 5
+)
+
+func handleMessageReactions(evt *eventsystem.EventData) {
+	var reaction *discordgo.MessageReaction
+	var added bool
+
+	switch e := evt.EvtInterface.(type) {
+	case *discordgo.MessageReactionAdd:
+		added = true
+		reaction = e.MessageReaction
+	case *discordgo.MessageReactionRemove:
+		reaction = e.MessageReaction
+	}
+
+	if reaction.GuildID == 0 {
+		return
+	}
+
+	ms, err := bot.GetMember(reaction.GuildID, reaction.UserID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", reaction.GuildID).Error("failed fetching guild member")
+		return
+	}
+
+	cState := evt.CS()
+	if cState == nil {
+		return
+	}
+
+	if !bot.BotProbablyHasPermissionGS(true, cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
+		// don't run in channel we don't have perms in
+		return
+	}
+
+	triggeredCmds, err := findReactionTriggerCustomCommands(evt.Context(), cState, ms, reaction, added)
+	if common.Statsd != nil {
+		go common.Statsd.Count("yagpdb.cc.executed", int64(len(triggeredCmds)), []string{"trigger:reaction"}, 1)
+	}
+
+	if len(triggeredCmds) < 1 {
+		return
+	}
+
+	rMessage, err := common.BotSession.ChannelMessage(cState.ID, reaction.MessageID)
+	if err != nil {
+		return
+	}
+	rMessage.GuildID = cState.Guild.ID
+
+	for _, matched := range triggeredCmds {
+		err = ExecuteCustomCommandFromReaction(matched.CC, ms, cState, reaction, added, rMessage)
+		if err != nil {
+			logger.WithField("guild", cState.Guild.ID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
+		}
+	}
+}
+
+func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.MemberState, cs *dstate.ChannelState, reaction *discordgo.MessageReaction, added bool, message *discordgo.Message) error {
+	tmplCtx := templates.NewContext(cs.Guild, cs, ms)
+
+	// to make sure the message is in the proper context of the user reacting we set the mssage context to a fake message
+	fakeMsg := *message
+	fakeMsg.Author = ms.DGoUser()
+	tmplCtx.Msg = &fakeMsg
+
+	tmplCtx.Data["Reaction"] = reaction
+	tmplCtx.Data["ReactionMessage"] = reaction
+	tmplCtx.Data["ReactionAdded"] = added
+
+	return ExecuteCustomCommand(cc, tmplCtx)
+}
+
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
-	cs := bot.State.Channel(true, mc.ChannelID)
-
+	cs := evt.CS()
 	if shouldIgnoreChannel(mc, cs) {
-		return
-	}
-
-	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, evt.Context())
-	if err != nil {
-		logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed retrieving comamnds")
-		return
-	}
-
-	if len(cmds) < 1 {
-		return
-	}
-
-	prefix, err := commands.GetCommandPrefix(cs.Guild.ID)
-	if err != nil {
-		logger.WithError(err).Error("Failed getting prefix")
 		return
 	}
 
@@ -318,43 +379,128 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	var matched *models.CustomCommand
-	var stripped string
-	var args []string
-	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, member) {
-			continue
-		}
-		if matched != nil && cmd.TriggerType == int(CommandTriggerRegex) {
-			continue
-		}
-
-		if m, s, a := CheckMatch(prefix, cmd, mc.Content); m {
-			matched = cmd
-			stripped = s
-			args = a
-
-			// regex commands has lower priority
-			if cmd.TriggerType == int(CommandTriggerRegex) {
-				continue
-			} else {
-				break
-			}
-		}
+	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, mc)
+	if err != nil {
+		logger.WithError(err).Error("Error mathching custom commands")
+		return
 	}
 
-	if matched == nil || len(matched.Responses) == 0 {
+	if len(matchedCustomCommands) == 0 {
 		return
 	}
 
 	if common.Statsd != nil {
-		go common.Statsd.Incr("yagpdb.cc.executed", nil, 1)
+		go common.Statsd.Count("yagpdb.cc.executed", int64(len(matchedCustomCommands)), []string{"trigger:message"}, 1)
 	}
 
-	err = ExecuteCustomCommandFromMessage(matched, member, cs, args, stripped, mc.Message)
-	if err != nil {
-		logger.WithField("guild", mc.GuildID).WithError(err).Error("Error executing custom command")
+	for _, matched := range matchedCustomCommands {
+		err = ExecuteCustomCommandFromMessage(matched.CC, member, cs, matched.Args, matched.Stripped, mc.Message)
+		if err != nil {
+			logger.WithField("guild", mc.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
+		}
 	}
+}
+
+type TriggeredCC struct {
+	CC       *models.CustomCommand
+	Stripped string
+	Args     []string
+}
+
+func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, mc *discordgo.MessageCreate) (matches []*TriggeredCC, err error) {
+	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, ctx)
+	if err != nil {
+		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
+	}
+
+	prefix, err := commands.GetCommandPrefix(mc.GuildID)
+	if err != nil {
+		return nil, errors.WrapIf(err, "GetCommandPrefix")
+	}
+
+	var matched []*TriggeredCC
+	for _, cmd := range cmds {
+		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, ms) {
+			continue
+		}
+
+		if didMatch, stripped, args := CheckMatch(prefix, cmd, mc.Content); didMatch {
+
+			matched = append(matched, &TriggeredCC{
+				CC:       cmd,
+				Args:     args,
+				Stripped: stripped,
+			})
+		}
+	}
+
+	sortTriggeredCCs(matched)
+
+	limit := CCMessageExecLimitNormal
+	if isPremium, _ := premium.IsGuildPremiumCached(mc.GuildID); isPremium {
+		limit = CCMessageExecLimitPremium
+	}
+
+	if len(matched) > limit {
+		matched = matched[:limit]
+	}
+
+	return matched, nil
+}
+
+func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, reaction *discordgo.MessageReaction, add bool) (matches []*TriggeredCC, err error) {
+	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, ctx)
+	if err != nil {
+		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
+	}
+
+	var matched []*TriggeredCC
+	for _, cmd := range cmds {
+		if !CmdRunsInChannel(cmd, reaction.ChannelID) || !CmdRunsForUser(cmd, ms) {
+			continue
+		}
+
+		if didMatch := CheckMatchReaction(cmd, reaction, add); didMatch {
+
+			matched = append(matched, &TriggeredCC{
+				CC: cmd,
+			})
+		}
+	}
+
+	sortTriggeredCCs(matched)
+
+	limit := CCMessageExecLimitNormal
+	if isPremium, _ := premium.IsGuildPremiumCached(cs.Guild.ID); isPremium {
+		limit = CCMessageExecLimitPremium
+	}
+
+	if len(matched) > limit {
+		matched = matched[:limit]
+	}
+
+	return matched, nil
+}
+
+func sortTriggeredCCs(ccs []*TriggeredCC) {
+	sort.Slice(ccs, func(i, j int) bool {
+		a := ccs[i]
+		b := ccs[j]
+
+		if a.CC.TriggerType == b.CC.TriggerType {
+			return a.CC.LocalID < b.CC.LocalID
+		}
+
+		if a.CC.TriggerType == int(CommandTriggerRegex) {
+			return false
+		}
+
+		if b.CC.TriggerType == int(CommandTriggerRegex) {
+			return true
+		}
+
+		return a.CC.LocalID < b.CC.LocalID
+	})
 }
 
 func ExecuteCustomCommandFromMessage(cmd *models.CustomCommand, member *dstate.MemberState, cs *dstate.ChannelState, cmdArgs []string, stripped string, m *discordgo.Message) error {
@@ -503,7 +649,7 @@ func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (mat
 	case CommandTriggerExact:
 		cmdMatch += "^" + regexp.QuoteMeta(trigger) + "$"
 	default:
-		panic(fmt.Sprintf("Unknown TriggerType %s", CommandTriggerType(cmd.TriggerType)))
+		return false, "", nil
 	}
 
 	item, err := RegexCache.Fetch(cmdMatch, time.Minute*10, func() (interface{}, error) {
@@ -543,16 +689,35 @@ func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (mat
 	return
 }
 
+func CheckMatchReaction(cmd *models.CustomCommand, reaction *discordgo.MessageReaction, add bool) (match bool) {
+	if cmd.TriggerType != int(CommandTriggerReaction) {
+		return false
+	}
+
+	switch cmd.ReactionTriggerMode {
+	case ReactionModeBoth:
+		return true
+	case ReactionModeAddOnly:
+		return add
+	case ReactionModeRemoveOnly:
+		return !add
+	}
+
+	return false
+}
+
 type CacheKey int
 
 const (
 	CacheKeyCommands CacheKey = iota
+	CacheKeyReactionCommands
+
 	CacheKeyDBLimits
 )
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(true, CacheKeyCommands, func() (interface{}, error) {
-		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type != 5", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 	})
 
 	if err != nil {

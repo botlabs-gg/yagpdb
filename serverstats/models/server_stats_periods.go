@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -167,7 +167,7 @@ func (q serverStatsPeriodQuery) One(ctx context.Context, exec boil.ContextExecut
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for server_stats_periods")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for server_stats_periods")
 	}
 
 	return o, nil
@@ -184,7 +184,7 @@ func (q serverStatsPeriodQuery) All(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to ServerStatsPeriod slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to ServerStatsPeriod slice")
 	}
 
 	return o, nil
@@ -204,7 +204,7 @@ func (q serverStatsPeriodQuery) Count(ctx context.Context, exec boil.ContextExec
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count server_stats_periods rows")
+		return 0, errors.WrapIf(err, "models: failed to count server_stats_periods rows")
 	}
 
 	return count, nil
@@ -225,7 +225,7 @@ func (q serverStatsPeriodQuery) Exists(ctx context.Context, exec boil.ContextExe
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if server_stats_periods exists")
+		return false, errors.WrapIf(err, "models: failed to check if server_stats_periods exists")
 	}
 
 	return count > 0, nil
@@ -262,7 +262,7 @@ func FindServerStatsPeriod(ctx context.Context, exec boil.ContextExecutor, iD in
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from server_stats_periods")
+		return nil, errors.WrapIf(err, "models: unable to select from server_stats_periods")
 	}
 
 	return serverStatsPeriodObj, nil
@@ -335,7 +335,7 @@ func (o *ServerStatsPeriod) Insert(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into server_stats_periods")
+		return errors.WrapIf(err, "models: unable to insert into server_stats_periods")
 	}
 
 	if !cached {
@@ -396,12 +396,12 @@ func (o *ServerStatsPeriod) Update(ctx context.Context, exec boil.ContextExecuto
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update server_stats_periods row")
+		return 0, errors.WrapIf(err, "models: unable to update server_stats_periods row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for server_stats_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for server_stats_periods")
 	}
 
 	if !cached {
@@ -424,12 +424,12 @@ func (q serverStatsPeriodQuery) UpdateAll(ctx context.Context, exec boil.Context
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for server_stats_periods")
+		return 0, errors.WrapIf(err, "models: unable to update all for server_stats_periods")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for server_stats_periods")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for server_stats_periods")
 	}
 
 	return rowsAff, nil
@@ -478,12 +478,12 @@ func (o ServerStatsPeriodSlice) UpdateAll(ctx context.Context, exec boil.Context
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in serverStatsPeriod slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in serverStatsPeriod slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all serverStatsPeriod")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all serverStatsPeriod")
 	}
 	return rowsAff, nil
 }
@@ -592,7 +592,7 @@ func (o *ServerStatsPeriod) Upsert(ctx context.Context, exec boil.ContextExecuto
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert server_stats_periods")
+		return errors.WrapIf(err, "models: unable to upsert server_stats_periods")
 	}
 
 	if !cached {
@@ -627,12 +627,12 @@ func (o *ServerStatsPeriod) Delete(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from server_stats_periods")
+		return 0, errors.WrapIf(err, "models: unable to delete from server_stats_periods")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for server_stats_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for server_stats_periods")
 	}
 
 	return rowsAff, nil
@@ -648,12 +648,12 @@ func (q serverStatsPeriodQuery) DeleteAll(ctx context.Context, exec boil.Context
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from server_stats_periods")
+		return 0, errors.WrapIf(err, "models: unable to delete all from server_stats_periods")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for server_stats_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for server_stats_periods")
 	}
 
 	return rowsAff, nil
@@ -686,12 +686,12 @@ func (o ServerStatsPeriodSlice) DeleteAll(ctx context.Context, exec boil.Context
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from serverStatsPeriod slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from serverStatsPeriod slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for server_stats_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for server_stats_periods")
 	}
 
 	return rowsAff, nil
@@ -749,7 +749,7 @@ func (o *ServerStatsPeriodSlice) ReloadAll(ctx context.Context, exec boil.Contex
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in ServerStatsPeriodSlice")
+		return errors.WrapIf(err, "models: unable to reload all in ServerStatsPeriodSlice")
 	}
 
 	*o = slice
@@ -776,7 +776,7 @@ func ServerStatsPeriodExists(ctx context.Context, exec boil.ContextExecutor, iD 
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if server_stats_periods exists")
+		return false, errors.WrapIf(err, "models: unable to check if server_stats_periods exists")
 	}
 
 	return exists, nil

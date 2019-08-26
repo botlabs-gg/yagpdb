@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -206,7 +206,7 @@ func (q joinedGuildQuery) One(ctx context.Context, exec boil.ContextExecutor) (*
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for joined_guilds")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for joined_guilds")
 	}
 
 	return o, nil
@@ -223,7 +223,7 @@ func (q joinedGuildQuery) All(ctx context.Context, exec boil.ContextExecutor) (J
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to JoinedGuild slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to JoinedGuild slice")
 	}
 
 	return o, nil
@@ -243,7 +243,7 @@ func (q joinedGuildQuery) Count(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count joined_guilds rows")
+		return 0, errors.WrapIf(err, "models: failed to count joined_guilds rows")
 	}
 
 	return count, nil
@@ -264,7 +264,7 @@ func (q joinedGuildQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if joined_guilds exists")
+		return false, errors.WrapIf(err, "models: failed to check if joined_guilds exists")
 	}
 
 	return count > 0, nil
@@ -301,7 +301,7 @@ func FindJoinedGuild(ctx context.Context, exec boil.ContextExecutor, iD int64, s
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from joined_guilds")
+		return nil, errors.WrapIf(err, "models: unable to select from joined_guilds")
 	}
 
 	return joinedGuildObj, nil
@@ -374,7 +374,7 @@ func (o *JoinedGuild) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into joined_guilds")
+		return errors.WrapIf(err, "models: unable to insert into joined_guilds")
 	}
 
 	if !cached {
@@ -435,12 +435,12 @@ func (o *JoinedGuild) Update(ctx context.Context, exec boil.ContextExecutor, col
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update joined_guilds row")
+		return 0, errors.WrapIf(err, "models: unable to update joined_guilds row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for joined_guilds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for joined_guilds")
 	}
 
 	if !cached {
@@ -463,12 +463,12 @@ func (q joinedGuildQuery) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for joined_guilds")
+		return 0, errors.WrapIf(err, "models: unable to update all for joined_guilds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for joined_guilds")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for joined_guilds")
 	}
 
 	return rowsAff, nil
@@ -517,12 +517,12 @@ func (o JoinedGuildSlice) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in joinedGuild slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in joinedGuild slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all joinedGuild")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all joinedGuild")
 	}
 	return rowsAff, nil
 }
@@ -631,7 +631,7 @@ func (o *JoinedGuild) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert joined_guilds")
+		return errors.WrapIf(err, "models: unable to upsert joined_guilds")
 	}
 
 	if !cached {
@@ -666,12 +666,12 @@ func (o *JoinedGuild) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from joined_guilds")
+		return 0, errors.WrapIf(err, "models: unable to delete from joined_guilds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for joined_guilds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for joined_guilds")
 	}
 
 	return rowsAff, nil
@@ -687,12 +687,12 @@ func (q joinedGuildQuery) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from joined_guilds")
+		return 0, errors.WrapIf(err, "models: unable to delete all from joined_guilds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for joined_guilds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for joined_guilds")
 	}
 
 	return rowsAff, nil
@@ -725,12 +725,12 @@ func (o JoinedGuildSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from joinedGuild slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from joinedGuild slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for joined_guilds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for joined_guilds")
 	}
 
 	return rowsAff, nil
@@ -788,7 +788,7 @@ func (o *JoinedGuildSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in JoinedGuildSlice")
+		return errors.WrapIf(err, "models: unable to reload all in JoinedGuildSlice")
 	}
 
 	*o = slice
@@ -815,7 +815,7 @@ func JoinedGuildExists(ctx context.Context, exec boil.ContextExecutor, iD int64)
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if joined_guilds exists")
+		return false, errors.WrapIf(err, "models: unable to check if joined_guilds exists")
 	}
 
 	return exists, nil

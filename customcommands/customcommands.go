@@ -52,6 +52,7 @@ const (
 	CommandTriggerContains   CommandTriggerType = 2
 	CommandTriggerRegex      CommandTriggerType = 3
 	CommandTriggerExact      CommandTriggerType = 4
+	CommandTriggerReaction   CommandTriggerType = 6
 
 	CommandTriggerInterval CommandTriggerType = 5
 )
@@ -64,6 +65,7 @@ var (
 		CommandTriggerRegex,
 		CommandTriggerExact,
 		CommandTriggerInterval,
+		CommandTriggerReaction,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -73,7 +75,14 @@ var (
 		CommandTriggerRegex:      "Regex",
 		CommandTriggerExact:      "Exact",
 		CommandTriggerInterval:   "Interval",
+		CommandTriggerReaction:   "Reaction",
 	}
+)
+
+const (
+	ReactionModeBoth       = 0
+	ReactionModeAddOnly    = 1
+	ReactionModeRemoveOnly = 2
 )
 
 func (t CommandTriggerType) String() string {
@@ -95,6 +104,8 @@ type CustomCommand struct {
 	TimeTriggerInterval       int     `schema:"time_trigger_interval"`
 	TimeTriggerExcludingDays  []int64 `schema:"time_trigger_excluding_days"`
 	TimeTriggerExcludingHours []int64 `schema:"time_trigger_excluding_hours"`
+
+	ReactionTriggerMode int `schema:"reaction_trigger_mode"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -155,6 +166,8 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		TimeTriggerExcludingDays:  cc.TimeTriggerExcludingDays,
 		TimeTriggerExcludingHours: cc.TimeTriggerExcludingHours,
 		ContextChannel:            cc.ContextChannel,
+
+		ReactionTriggerMode: int16(cc.ReactionTriggerMode),
 
 		Responses: cc.Responses,
 	}

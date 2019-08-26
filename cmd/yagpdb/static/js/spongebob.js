@@ -460,16 +460,22 @@ function formSubmissionEvents(){
 
 	function dangerButtonClick(evt){
 		var target = $(evt.target);
+		if(target.prop("tagName") !== "BUTTON"){
+			target = target.parents("button");
+			if(!target){
+				return
+			}
+		}
+
 		if(target.attr("noconfirm") !== undefined){
 			return;
 		}
 
-		if ($(evt.target).attr("noconfirm")) {
-			console.log("no confirm")
+		if (target.attr("noconfirm")) {
 			return
 		}
 
-		if($(evt.target).attr("formaction")){
+		if(target.attr("formaction")){
 			return;
 		}
 
@@ -510,7 +516,6 @@ function formSubmissionEvents(){
 
 		if(target.prop("tagName") !== "BUTTON"){
 			target = target.parents("button");
-			console.log("Not a button!", target);
 		}
 
 		var alertsOnly = false;
@@ -520,22 +525,21 @@ function formSubmissionEvents(){
 
 		if(!target.attr("formaction")) return;
 
-
 		if(target.hasClass("btn-danger") || target.attr("data-open-confirm") || target.hasClass("delete-button")){
 			var title = target.attr("title");
-            		if(title !== undefined){
-            			if(!confirm("Deleting " + title + ". Are you sure you want to do this?" )){
-				event.preventDefault(true);
-				event.stopPropagation();
-				return;
+			if(title !== undefined){
+				if(!confirm("Deleting " + title + ". Are you sure you want to do this?" )){
+					event.preventDefault(true);
+					event.stopPropagation();
+					return;
 				}
-            		}else{
-            			if(!confirm("Are you sure you want to do this?" )){
-				event.preventDefault(true);
-				event.stopPropagation();
-				return;
-			    	}		
-            		}
+			}else{
+				if(!confirm("Are you sure you want to do this?" )){
+					event.preventDefault(true);
+					event.stopPropagation();
+					return;
+				}		
+			}
 		}
 
 		// Find the parent form using the parents or the form attribute

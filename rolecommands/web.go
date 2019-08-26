@@ -1,13 +1,13 @@
 package rolecommands
 
 import (
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -425,11 +425,11 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["SettingsPath"] = "/rolecommands/"
 
 	numCommands, err := models.RoleCommands(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
-	
-	if err != nil{
+
+	if err != nil {
 		return templateData, err
-    	}
-	
+	}
+
 	numGroups, err := models.RoleGroups(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
 
 	if numCommands > 0 {

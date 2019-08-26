@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/botrest"
@@ -20,7 +21,6 @@ import (
 	"github.com/jonas747/yagpdb/common/patreon"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
 	"goji.io/pat"
 )
 

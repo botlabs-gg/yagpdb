@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"os"
 	"runtime/debug"
 	"sync"
@@ -33,6 +34,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 	if totalShardCount == 0 {
 		totalShardCount = info.TotalShards
 		ShardManager.SetNumShards(totalShardCount)
+		eventsystem.InitWorkers(totalShardCount)
 
 		EventLogger.init(info.TotalShards)
 		go EventLogger.run()

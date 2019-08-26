@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -17,7 +18,6 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
-	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -40,8 +40,10 @@ func init() {
 		ctx.ContextFuncs["dbGetPatternReverse"] = tmplDBGetPattern(ctx, true)
 		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
 		ctx.ContextFuncs["dbDelById"] = tmplDBDelById(ctx)
+		ctx.ContextFuncs["dbDelByID"] = tmplDBDelById(ctx)
 		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
+		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
 	})
 }
 
@@ -223,7 +225,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.Wrap(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
 
 		return "", nil
@@ -292,7 +294,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.Wrap(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
 
 		return "", nil
@@ -485,6 +487,30 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND id = ?", ctx.GS.ID, userID, id)).DeleteAll(context.Background(), common.PQ)
 
 		return "", err
+	}
+}
+
+func tmplDBCount(ctx *templates.Context) interface{} {
+	return func(variadicUserID ...int64) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		var userID null.Int64
+		if len(variadicUserID) > 0 {
+			userID.Int64 = variadicUserID[0]
+			userID.Valid = true
+		}
+
+		const q = `SELECT count(*) FROM templates_user_database WHERE ( guild_id = $1 ) AND ( $2::bigint IS NULL OR user_id = $2  )`
+
+		var count int64
+		err := common.PQ.QueryRow(q, ctx.GS.ID, userID).Scan(&count)
+		return count, err
 	}
 }
 

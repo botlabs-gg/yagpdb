@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -199,7 +199,7 @@ func (q templatesUserDatabaseQuery) One(ctx context.Context, exec boil.ContextEx
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for templates_user_database")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for templates_user_database")
 	}
 
 	return o, nil
@@ -216,7 +216,7 @@ func (q templatesUserDatabaseQuery) All(ctx context.Context, exec boil.ContextEx
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to TemplatesUserDatabase slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to TemplatesUserDatabase slice")
 	}
 
 	return o, nil
@@ -236,7 +236,7 @@ func (q templatesUserDatabaseQuery) Count(ctx context.Context, exec boil.Context
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count templates_user_database rows")
+		return 0, errors.WrapIf(err, "models: failed to count templates_user_database rows")
 	}
 
 	return count, nil
@@ -257,7 +257,7 @@ func (q templatesUserDatabaseQuery) Exists(ctx context.Context, exec boil.Contex
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if templates_user_database exists")
+		return false, errors.WrapIf(err, "models: failed to check if templates_user_database exists")
 	}
 
 	return count > 0, nil
@@ -294,7 +294,7 @@ func FindTemplatesUserDatabase(ctx context.Context, exec boil.ContextExecutor, i
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from templates_user_database")
+		return nil, errors.WrapIf(err, "models: unable to select from templates_user_database")
 	}
 
 	return templatesUserDatabaseObj, nil
@@ -377,7 +377,7 @@ func (o *TemplatesUserDatabase) Insert(ctx context.Context, exec boil.ContextExe
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into templates_user_database")
+		return errors.WrapIf(err, "models: unable to insert into templates_user_database")
 	}
 
 	if !cached {
@@ -444,12 +444,12 @@ func (o *TemplatesUserDatabase) Update(ctx context.Context, exec boil.ContextExe
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update templates_user_database row")
+		return 0, errors.WrapIf(err, "models: unable to update templates_user_database row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for templates_user_database")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for templates_user_database")
 	}
 
 	if !cached {
@@ -472,12 +472,12 @@ func (q templatesUserDatabaseQuery) UpdateAll(ctx context.Context, exec boil.Con
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for templates_user_database")
+		return 0, errors.WrapIf(err, "models: unable to update all for templates_user_database")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for templates_user_database")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for templates_user_database")
 	}
 
 	return rowsAff, nil
@@ -526,12 +526,12 @@ func (o TemplatesUserDatabaseSlice) UpdateAll(ctx context.Context, exec boil.Con
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in templatesUserDatabase slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in templatesUserDatabase slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all templatesUserDatabase")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all templatesUserDatabase")
 	}
 	return rowsAff, nil
 }
@@ -648,7 +648,7 @@ func (o *TemplatesUserDatabase) Upsert(ctx context.Context, exec boil.ContextExe
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert templates_user_database")
+		return errors.WrapIf(err, "models: unable to upsert templates_user_database")
 	}
 
 	if !cached {
@@ -683,12 +683,12 @@ func (o *TemplatesUserDatabase) Delete(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from templates_user_database")
+		return 0, errors.WrapIf(err, "models: unable to delete from templates_user_database")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for templates_user_database")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for templates_user_database")
 	}
 
 	return rowsAff, nil
@@ -704,12 +704,12 @@ func (q templatesUserDatabaseQuery) DeleteAll(ctx context.Context, exec boil.Con
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from templates_user_database")
+		return 0, errors.WrapIf(err, "models: unable to delete all from templates_user_database")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for templates_user_database")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for templates_user_database")
 	}
 
 	return rowsAff, nil
@@ -742,12 +742,12 @@ func (o TemplatesUserDatabaseSlice) DeleteAll(ctx context.Context, exec boil.Con
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from templatesUserDatabase slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from templatesUserDatabase slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for templates_user_database")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for templates_user_database")
 	}
 
 	return rowsAff, nil
@@ -805,7 +805,7 @@ func (o *TemplatesUserDatabaseSlice) ReloadAll(ctx context.Context, exec boil.Co
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in TemplatesUserDatabaseSlice")
+		return errors.WrapIf(err, "models: unable to reload all in TemplatesUserDatabaseSlice")
 	}
 
 	*o = slice
@@ -832,7 +832,7 @@ func TemplatesUserDatabaseExists(ctx context.Context, exec boil.ContextExecutor,
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if templates_user_database exists")
+		return false, errors.WrapIf(err, "models: unable to check if templates_user_database exists")
 	}
 
 	return exists, nil

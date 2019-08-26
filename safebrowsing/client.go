@@ -1,10 +1,10 @@
 package safebrowsing
 
 import (
+	"emperror.dev/errors"
 	"encoding/json"
 	"github.com/google/safebrowsing"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"strings"

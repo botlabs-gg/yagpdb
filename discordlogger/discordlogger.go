@@ -1,6 +1,7 @@
 package discordlogger
 
 import (
+	"emperror.dev/errors"
 	"fmt"
 
 	"github.com/jonas747/yagpdb/bot"
@@ -36,13 +37,13 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
+	eventsystem.AddHandlerAsyncLast(p, EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
 }
 
-func EventHandler(evt *eventsystem.EventData) {
+func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 	count, err := common.GetJoinedServerCount()
 	if err != nil {
-		logger.WithError(err).Error("failed checking server count")
+		return false, errors.WithStackIf(err)
 	}
 
 	msg := ""
@@ -58,5 +59,6 @@ func EventHandler(evt *eventsystem.EventData) {
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
-	common.BotSession.ChannelMessageSend(int64(confBotLeavesJoins.GetInt()), common.EscapeSpecialMentions(msg))
+	_, err = common.BotSession.ChannelMessageSend(int64(confBotLeavesJoins.GetInt()), common.EscapeSpecialMentions(msg))
+	return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 }

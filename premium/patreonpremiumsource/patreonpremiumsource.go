@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/patreon"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 

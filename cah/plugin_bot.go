@@ -50,7 +50,7 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(func(evt *eventsystem.EventData) {
+	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
 		switch t := evt.EvtInterface.(type) {
 		case *discordgo.MessageCreate:
 			if t.GuildID == 0 {

@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"unicode/utf8"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -44,6 +44,19 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/customcommands"), subMux)
 	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
 
+	subMux.Use(func(inner http.Handler) http.Handler {
+		h := func(w http.ResponseWriter, r *http.Request) {
+			_, templateData := web.GetBaseCPContextData(r.Context())
+			strTriggerTypes := map[int]string{}
+			for k, v := range triggerStrings {
+				strTriggerTypes[int(k)] = v
+			}
+			templateData["CCTriggerTypes"] = strTriggerTypes
+
+			inner.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(h)
+	})
 	subMux.Use(web.RequireGuildChannelsMiddleware)
 
 	subMux.Handle(pat.Get(""), getHandler)
@@ -147,7 +160,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
 	if err != nil {
-		return templateData, errors.Wrap(err, "error generating local id")
+		return templateData, errors.WrapIf(err, "error generating local id")
 	}
 
 	dbModel := newCmd.ToDBModel()
@@ -369,6 +382,8 @@ func TriggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerExact
 	case "command":
 		return CommandTriggerCommand
+	case "reaction":
+		return CommandTriggerReaction
 	case "interval_minutes", "interval_hours":
 		return CommandTriggerInterval
 	default:

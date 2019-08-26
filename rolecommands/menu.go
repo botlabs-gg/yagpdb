@@ -3,6 +3,7 @@ package rolecommands
 import (
 	"context"
 	"database/sql"
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -11,8 +12,8 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/rolecommands/models"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -380,7 +381,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	gs := bot.State.Guild(true, menu.GuildID)
+	gs := evt.GS
 	gs.RLock()
 	name := gs.Guild.Name
 	gs.RUnlock()
@@ -480,6 +481,16 @@ var (
 func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, userID int64) {
 	if confDisableReactionRemovalSingleMode.GetBool() {
 		// since this is an experimental feature
+		return
+	}
+
+	isPremium, err := premium.IsGuildPremiumCached(rm.GuildID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", rm.GuildID).Error("Failed checking if guild is premium")
+		return
+	}
+
+	if !isPremium {
 		return
 	}
 

@@ -9,13 +9,13 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,6 +65,7 @@ var (
 		"shuffle":     shuffle,
 		"seq":         sequence,
 		"currentTime": tmplCurrentTime,
+		"newDate":     tmplNewDate,
 
 		"escapeHere":         tmplEscapeHere,
 		"escapeEveryone":     tmplEscapeEveryone,
@@ -199,6 +200,11 @@ func (c *Context) Parse(source string) (*template.Template, error) {
 	return parsed, nil
 }
 
+const (
+	MaxOpsNormal  = 1000000
+	MaxOpsPremium = 2500000
+)
+
 func (c *Context) Execute(source string) (string, error) {
 	if c.Msg == nil {
 		// Construct a fake message
@@ -226,6 +232,12 @@ func (c *Context) Execute(source string) (string, error) {
 	parsed, err := c.Parse(source)
 	if err != nil {
 		return "", errors.WithMessage(err, "Failed parsing template")
+	}
+
+	if c.IsPremium {
+		parsed = parsed.MaxOps(MaxOpsPremium)
+	} else {
+		parsed = parsed.MaxOps(MaxOpsNormal)
 	}
 
 	var buf bytes.Buffer
@@ -378,6 +390,9 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["reFindAll"] = c.reFindAll
 	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
 	c.ContextFuncs["reReplace"] = c.reReplace
+
+	c.ContextFuncs["editChannelName"] = c.tmplEditChannelName
+	c.ContextFuncs["onlineCount"] = c.tmplOnlineCount
 }
 
 type limitedWriter struct {

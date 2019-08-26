@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/dutil"
@@ -17,7 +18,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
-	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
 )

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
@@ -13,7 +14,6 @@ import (
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -243,7 +243,7 @@ func getActiveServersList(key string, full bool) ([]int64, error) {
 	var guilds []int64
 	if full {
 		err := common.RedisPool.Do(retryableredis.Cmd(&guilds, "SMEMBERS", "connected_guilds"))
-		return guilds, errors.Wrap(err, "smembers conn_guilds")
+		return guilds, errors.WrapIf(err, "smembers conn_guilds")
 	}
 
 	var exists bool
@@ -253,12 +253,12 @@ func getActiveServersList(key string, full bool) ([]int64, error) {
 
 	err := common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", key, key+"_processing"))
 	if err != nil {
-		return guilds, errors.Wrap(err, "rename")
+		return guilds, errors.WrapIf(err, "rename")
 	}
 
 	err = common.RedisPool.Do(retryableredis.Cmd(&guilds, "SMEMBERS", key+"_processing"))
 	if err != nil {
-		return guilds, errors.Wrap(err, "smembers")
+		return guilds, errors.WrapIf(err, "smembers")
 	}
 
 	common.LogIgnoreError(common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", "serverstats_active_guilds_processing")), "[serverstats] del "+key, nil)
