@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -128,7 +128,7 @@ func (q verifiedUserQuery) One(ctx context.Context, exec boil.ContextExecutor) (
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for verified_users")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for verified_users")
 	}
 
 	return o, nil
@@ -145,7 +145,7 @@ func (q verifiedUserQuery) All(ctx context.Context, exec boil.ContextExecutor) (
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to VerifiedUser slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to VerifiedUser slice")
 	}
 
 	return o, nil
@@ -165,7 +165,7 @@ func (q verifiedUserQuery) Count(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count verified_users rows")
+		return 0, errors.WrapIf(err, "models: failed to count verified_users rows")
 	}
 
 	return count, nil
@@ -186,7 +186,7 @@ func (q verifiedUserQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if verified_users exists")
+		return false, errors.WrapIf(err, "models: failed to check if verified_users exists")
 	}
 
 	return count > 0, nil
@@ -223,7 +223,7 @@ func FindVerifiedUser(ctx context.Context, exec boil.ContextExecutor, guildID in
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from verified_users")
+		return nil, errors.WrapIf(err, "models: unable to select from verified_users")
 	}
 
 	return verifiedUserObj, nil
@@ -296,7 +296,7 @@ func (o *VerifiedUser) Insert(ctx context.Context, exec boil.ContextExecutor, co
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into verified_users")
+		return errors.WrapIf(err, "models: unable to insert into verified_users")
 	}
 
 	if !cached {
@@ -357,12 +357,12 @@ func (o *VerifiedUser) Update(ctx context.Context, exec boil.ContextExecutor, co
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update verified_users row")
+		return 0, errors.WrapIf(err, "models: unable to update verified_users row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for verified_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for verified_users")
 	}
 
 	if !cached {
@@ -385,12 +385,12 @@ func (q verifiedUserQuery) UpdateAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for verified_users")
+		return 0, errors.WrapIf(err, "models: unable to update all for verified_users")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for verified_users")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for verified_users")
 	}
 
 	return rowsAff, nil
@@ -439,12 +439,12 @@ func (o VerifiedUserSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in verifiedUser slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in verifiedUser slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all verifiedUser")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all verifiedUser")
 	}
 	return rowsAff, nil
 }
@@ -553,7 +553,7 @@ func (o *VerifiedUser) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert verified_users")
+		return errors.WrapIf(err, "models: unable to upsert verified_users")
 	}
 
 	if !cached {
@@ -588,12 +588,12 @@ func (o *VerifiedUser) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from verified_users")
+		return 0, errors.WrapIf(err, "models: unable to delete from verified_users")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for verified_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for verified_users")
 	}
 
 	return rowsAff, nil
@@ -609,12 +609,12 @@ func (q verifiedUserQuery) DeleteAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from verified_users")
+		return 0, errors.WrapIf(err, "models: unable to delete all from verified_users")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for verified_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for verified_users")
 	}
 
 	return rowsAff, nil
@@ -651,12 +651,12 @@ func (o VerifiedUserSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from verifiedUser slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from verifiedUser slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for verified_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for verified_users")
 	}
 
 	return rowsAff, nil
@@ -714,7 +714,7 @@ func (o *VerifiedUserSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in VerifiedUserSlice")
+		return errors.WrapIf(err, "models: unable to reload all in VerifiedUserSlice")
 	}
 
 	*o = slice
@@ -741,7 +741,7 @@ func VerifiedUserExists(ctx context.Context, exec boil.ContextExecutor, guildID 
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if verified_users exists")
+		return false, errors.WrapIf(err, "models: unable to check if verified_users exists")
 	}
 
 	return exists, nil

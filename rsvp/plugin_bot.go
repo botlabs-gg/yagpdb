@@ -26,8 +26,8 @@ import (
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(p.handleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandlerAsyncLast(p.handleMessageReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMessageReactionAdd, eventsystem.EventMessageReactionAdd)
 	scheduledevents2.RegisterHandler("rsvp_update_session", int64(0), p.handleScheduledUpdate)
 }
 

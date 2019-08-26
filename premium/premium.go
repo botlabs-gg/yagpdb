@@ -6,12 +6,12 @@ import (
 	"github.com/jonas747/yagpdb/common/config"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -115,7 +115,7 @@ func AllGuildsOncePremium() (map[int64]time.Time, error) {
 	var result []int64
 	err := common.RedisPool.Do(retryableredis.Cmd(&result, "ZRANGE", RedisKeyPremiumGuildLastActive, "0", "-1", "WITHSCORES"))
 	if err != nil {
-		return nil, errors.Wrap(err, "zrange")
+		return nil, errors.WrapIf(err, "zrange")
 	}
 
 	parsed := make(map[int64]time.Time)

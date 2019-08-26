@@ -22,7 +22,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(p.handleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 func (p *Plugin) AddCommands() {

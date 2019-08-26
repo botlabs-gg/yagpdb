@@ -33,8 +33,8 @@ type VerificationEventData struct {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerAsyncLast(p.handleBanAdd, eventsystem.EventGuildBanAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleBanAdd, eventsystem.EventGuildBanAdd)
 	scheduledevents2.RegisterHandler("verification_user_verified", int64(0), ScheduledEventMW(p.handleUserVerifiedScheduledEvent))
 	scheduledevents2.RegisterHandler("verification_user_warn", VerificationEventData{}, ScheduledEventMW(p.handleWarnUserVerification))
 	scheduledevents2.RegisterHandler("verification_user_kick", VerificationEventData{}, ScheduledEventMW(p.handleKickUser))

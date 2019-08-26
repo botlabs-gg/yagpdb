@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/shurcooL/github_flavored_markdown"
 	"github.com/sirupsen/logrus"
 )

@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 

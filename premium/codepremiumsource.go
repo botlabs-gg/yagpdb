@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -17,7 +18,6 @@ import (
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"

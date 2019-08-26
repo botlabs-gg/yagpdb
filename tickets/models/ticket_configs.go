@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -214,7 +214,7 @@ func (q ticketConfigQuery) One(ctx context.Context, exec boil.ContextExecutor) (
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for ticket_configs")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for ticket_configs")
 	}
 
 	return o, nil
@@ -231,7 +231,7 @@ func (q ticketConfigQuery) All(ctx context.Context, exec boil.ContextExecutor) (
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to TicketConfig slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to TicketConfig slice")
 	}
 
 	return o, nil
@@ -251,7 +251,7 @@ func (q ticketConfigQuery) Count(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count ticket_configs rows")
+		return 0, errors.WrapIf(err, "models: failed to count ticket_configs rows")
 	}
 
 	return count, nil
@@ -272,7 +272,7 @@ func (q ticketConfigQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if ticket_configs exists")
+		return false, errors.WrapIf(err, "models: failed to check if ticket_configs exists")
 	}
 
 	return count > 0, nil
@@ -309,7 +309,7 @@ func FindTicketConfig(ctx context.Context, exec boil.ContextExecutor, guildID in
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from ticket_configs")
+		return nil, errors.WrapIf(err, "models: unable to select from ticket_configs")
 	}
 
 	return ticketConfigObj, nil
@@ -382,7 +382,7 @@ func (o *TicketConfig) Insert(ctx context.Context, exec boil.ContextExecutor, co
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into ticket_configs")
+		return errors.WrapIf(err, "models: unable to insert into ticket_configs")
 	}
 
 	if !cached {
@@ -443,12 +443,12 @@ func (o *TicketConfig) Update(ctx context.Context, exec boil.ContextExecutor, co
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update ticket_configs row")
+		return 0, errors.WrapIf(err, "models: unable to update ticket_configs row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for ticket_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for ticket_configs")
 	}
 
 	if !cached {
@@ -471,12 +471,12 @@ func (q ticketConfigQuery) UpdateAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for ticket_configs")
+		return 0, errors.WrapIf(err, "models: unable to update all for ticket_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for ticket_configs")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for ticket_configs")
 	}
 
 	return rowsAff, nil
@@ -525,12 +525,12 @@ func (o TicketConfigSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in ticketConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in ticketConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all ticketConfig")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all ticketConfig")
 	}
 	return rowsAff, nil
 }
@@ -639,7 +639,7 @@ func (o *TicketConfig) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert ticket_configs")
+		return errors.WrapIf(err, "models: unable to upsert ticket_configs")
 	}
 
 	if !cached {
@@ -674,12 +674,12 @@ func (o *TicketConfig) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from ticket_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete from ticket_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for ticket_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for ticket_configs")
 	}
 
 	return rowsAff, nil
@@ -695,12 +695,12 @@ func (q ticketConfigQuery) DeleteAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from ticket_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete all from ticket_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for ticket_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for ticket_configs")
 	}
 
 	return rowsAff, nil
@@ -733,12 +733,12 @@ func (o TicketConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from ticketConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from ticketConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for ticket_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for ticket_configs")
 	}
 
 	return rowsAff, nil
@@ -796,7 +796,7 @@ func (o *TicketConfigSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in TicketConfigSlice")
+		return errors.WrapIf(err, "models: unable to reload all in TicketConfigSlice")
 	}
 
 	*o = slice
@@ -823,7 +823,7 @@ func TicketConfigExists(ctx context.Context, exec boil.ContextExecutor, guildID 
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if ticket_configs exists")
+		return false, errors.WrapIf(err, "models: unable to check if ticket_configs exists")
 	}
 
 	return exists, nil

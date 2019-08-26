@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -190,7 +190,7 @@ func (q rsvpSessionQuery) One(ctx context.Context, exec boil.ContextExecutor) (*
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for rsvp_sessions")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for rsvp_sessions")
 	}
 
 	return o, nil
@@ -207,7 +207,7 @@ func (q rsvpSessionQuery) All(ctx context.Context, exec boil.ContextExecutor) (R
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to RSVPSession slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to RSVPSession slice")
 	}
 
 	return o, nil
@@ -227,7 +227,7 @@ func (q rsvpSessionQuery) Count(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count rsvp_sessions rows")
+		return 0, errors.WrapIf(err, "models: failed to count rsvp_sessions rows")
 	}
 
 	return count, nil
@@ -248,7 +248,7 @@ func (q rsvpSessionQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if rsvp_sessions exists")
+		return false, errors.WrapIf(err, "models: failed to check if rsvp_sessions exists")
 	}
 
 	return count > 0, nil
@@ -321,19 +321,19 @@ func (rsvpSessionL) LoadRSVPSessionsMessageRSVPParticipants(ctx context.Context,
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load rsvp_participants")
+		return errors.WrapIf(err, "failed to eager load rsvp_participants")
 	}
 
 	var resultSlice []*RSVPParticipant
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice rsvp_participants")
+		return errors.WrapIf(err, "failed to bind eager loaded slice rsvp_participants")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on rsvp_participants")
+		return errors.WrapIf(err, "failed to close results in eager load on rsvp_participants")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for rsvp_participants")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for rsvp_participants")
 	}
 
 	if singular {
@@ -382,7 +382,7 @@ func (o *RSVPSession) AddRSVPSessionsMessageRSVPParticipants(ctx context.Context
 		if insert {
 			rel.RSVPSessionsMessageID = o.MessageID
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -398,7 +398,7 @@ func (o *RSVPSession) AddRSVPSessionsMessageRSVPParticipants(ctx context.Context
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			rel.RSVPSessionsMessageID = o.MessageID
@@ -456,7 +456,7 @@ func FindRSVPSession(ctx context.Context, exec boil.ContextExecutor, messageID i
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from rsvp_sessions")
+		return nil, errors.WrapIf(err, "models: unable to select from rsvp_sessions")
 	}
 
 	return rsvpSessionObj, nil
@@ -536,7 +536,7 @@ func (o *RSVPSession) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into rsvp_sessions")
+		return errors.WrapIf(err, "models: unable to insert into rsvp_sessions")
 	}
 
 	if !cached {
@@ -597,12 +597,12 @@ func (o *RSVPSession) Update(ctx context.Context, exec boil.ContextExecutor, col
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update rsvp_sessions row")
+		return 0, errors.WrapIf(err, "models: unable to update rsvp_sessions row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for rsvp_sessions")
 	}
 
 	if !cached {
@@ -625,12 +625,12 @@ func (q rsvpSessionQuery) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: unable to update all for rsvp_sessions")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for rsvp_sessions")
 	}
 
 	return rowsAff, nil
@@ -679,12 +679,12 @@ func (o RSVPSessionSlice) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in rsvpSession slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in rsvpSession slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all rsvpSession")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all rsvpSession")
 	}
 	return rowsAff, nil
 }
@@ -800,7 +800,7 @@ func (o *RSVPSession) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert rsvp_sessions")
+		return errors.WrapIf(err, "models: unable to upsert rsvp_sessions")
 	}
 
 	if !cached {
@@ -835,12 +835,12 @@ func (o *RSVPSession) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: unable to delete from rsvp_sessions")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for rsvp_sessions")
 	}
 
 	return rowsAff, nil
@@ -856,12 +856,12 @@ func (q rsvpSessionQuery) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: unable to delete all from rsvp_sessions")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for rsvp_sessions")
 	}
 
 	return rowsAff, nil
@@ -894,12 +894,12 @@ func (o RSVPSessionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from rsvpSession slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from rsvpSession slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for rsvp_sessions")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for rsvp_sessions")
 	}
 
 	return rowsAff, nil
@@ -957,7 +957,7 @@ func (o *RSVPSessionSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in RSVPSessionSlice")
+		return errors.WrapIf(err, "models: unable to reload all in RSVPSessionSlice")
 	}
 
 	*o = slice
@@ -984,7 +984,7 @@ func RSVPSessionExists(ctx context.Context, exec boil.ContextExecutor, messageID
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if rsvp_sessions exists")
+		return false, errors.WrapIf(err, "models: unable to check if rsvp_sessions exists")
 	}
 
 	return exists, nil

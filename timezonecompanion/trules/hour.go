@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 
 	"github.com/olebedev/when/rules"
 )
@@ -35,7 +35,7 @@ func Hour(s rules.Strategy) rules.Rule {
 
 			hour, err := strconv.Atoi(m.Captures[0])
 			if err != nil {
-				return false, errors.Wrap(err, "hour rule")
+				return false, errors.WrapIf(err, "hour rule")
 			}
 
 			if hour > 12 {

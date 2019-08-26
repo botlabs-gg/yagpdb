@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -57,12 +57,12 @@ func migrateGuildConfig(guildID int64) error {
 
 	config, err := GetLegacyConfig(key)
 	if err != nil {
-		return errors.Wrapf(err, "[%d].getconfig", guildID)
+		return errors.WrapIff(err, "[%d].getconfig", guildID)
 	}
 
 	tx, err := common.PQ.Begin()
 	if err != nil {
-		return errors.Wrap(err, "pq.begin")
+		return errors.WrapIf(err, "pq.begin")
 	}
 
 	// create a new row for each feed
@@ -81,18 +81,18 @@ func migrateGuildConfig(guildID int64) error {
 		err := m.Insert(context.Background(), tx, boil.Infer())
 		if err != nil {
 			tx.Rollback()
-			return errors.Wrapf(err, "[%d:%d].insert", guildID, item.ID)
+			return errors.WrapIff(err, "[%d:%d].insert", guildID, item.ID)
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return errors.Wrapf(err, "[%d].commit", guildID)
+		return errors.WrapIff(err, "[%d].commit", guildID)
 	}
 
 	err = common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", key, "backup_"+key))
 	if err != nil {
-		return errors.Wrapf(err, "[%d].rename", guildID)
+		return errors.WrapIff(err, "[%d].rename", guildID)
 	}
 
 	return nil

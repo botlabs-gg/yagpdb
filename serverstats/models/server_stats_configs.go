@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -212,7 +212,7 @@ func (q serverStatsConfigQuery) One(ctx context.Context, exec boil.ContextExecut
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for server_stats_configs")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for server_stats_configs")
 	}
 
 	return o, nil
@@ -229,7 +229,7 @@ func (q serverStatsConfigQuery) All(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to ServerStatsConfig slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to ServerStatsConfig slice")
 	}
 
 	return o, nil
@@ -249,7 +249,7 @@ func (q serverStatsConfigQuery) Count(ctx context.Context, exec boil.ContextExec
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count server_stats_configs rows")
+		return 0, errors.WrapIf(err, "models: failed to count server_stats_configs rows")
 	}
 
 	return count, nil
@@ -270,7 +270,7 @@ func (q serverStatsConfigQuery) Exists(ctx context.Context, exec boil.ContextExe
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if server_stats_configs exists")
+		return false, errors.WrapIf(err, "models: failed to check if server_stats_configs exists")
 	}
 
 	return count > 0, nil
@@ -307,7 +307,7 @@ func FindServerStatsConfig(ctx context.Context, exec boil.ContextExecutor, guild
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from server_stats_configs")
+		return nil, errors.WrapIf(err, "models: unable to select from server_stats_configs")
 	}
 
 	return serverStatsConfigObj, nil
@@ -390,7 +390,7 @@ func (o *ServerStatsConfig) Insert(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into server_stats_configs")
+		return errors.WrapIf(err, "models: unable to insert into server_stats_configs")
 	}
 
 	if !cached {
@@ -457,12 +457,12 @@ func (o *ServerStatsConfig) Update(ctx context.Context, exec boil.ContextExecuto
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update server_stats_configs row")
+		return 0, errors.WrapIf(err, "models: unable to update server_stats_configs row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for server_stats_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for server_stats_configs")
 	}
 
 	if !cached {
@@ -485,12 +485,12 @@ func (q serverStatsConfigQuery) UpdateAll(ctx context.Context, exec boil.Context
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for server_stats_configs")
+		return 0, errors.WrapIf(err, "models: unable to update all for server_stats_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for server_stats_configs")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for server_stats_configs")
 	}
 
 	return rowsAff, nil
@@ -539,12 +539,12 @@ func (o ServerStatsConfigSlice) UpdateAll(ctx context.Context, exec boil.Context
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in serverStatsConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in serverStatsConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all serverStatsConfig")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all serverStatsConfig")
 	}
 	return rowsAff, nil
 }
@@ -661,7 +661,7 @@ func (o *ServerStatsConfig) Upsert(ctx context.Context, exec boil.ContextExecuto
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert server_stats_configs")
+		return errors.WrapIf(err, "models: unable to upsert server_stats_configs")
 	}
 
 	if !cached {
@@ -696,12 +696,12 @@ func (o *ServerStatsConfig) Delete(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from server_stats_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete from server_stats_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for server_stats_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for server_stats_configs")
 	}
 
 	return rowsAff, nil
@@ -717,12 +717,12 @@ func (q serverStatsConfigQuery) DeleteAll(ctx context.Context, exec boil.Context
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from server_stats_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete all from server_stats_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for server_stats_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for server_stats_configs")
 	}
 
 	return rowsAff, nil
@@ -755,12 +755,12 @@ func (o ServerStatsConfigSlice) DeleteAll(ctx context.Context, exec boil.Context
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from serverStatsConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from serverStatsConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for server_stats_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for server_stats_configs")
 	}
 
 	return rowsAff, nil
@@ -818,7 +818,7 @@ func (o *ServerStatsConfigSlice) ReloadAll(ctx context.Context, exec boil.Contex
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in ServerStatsConfigSlice")
+		return errors.WrapIf(err, "models: unable to reload all in ServerStatsConfigSlice")
 	}
 
 	*o = slice
@@ -845,7 +845,7 @@ func ServerStatsConfigExists(ctx context.Context, exec boil.ContextExecutor, gui
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if server_stats_configs exists")
+		return false, errors.WrapIf(err, "models: unable to check if server_stats_configs exists")
 	}
 
 	return exists, nil

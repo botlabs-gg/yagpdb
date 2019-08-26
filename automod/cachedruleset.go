@@ -3,8 +3,8 @@ package automod
 import (
 	"encoding/json"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/pkg/errors"
 )
 
 type ParsedRuleset struct {

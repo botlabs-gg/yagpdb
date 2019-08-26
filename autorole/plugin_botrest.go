@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
 )

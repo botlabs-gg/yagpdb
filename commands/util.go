@@ -8,11 +8,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
 )
 
 type DurationArg struct {
@@ -96,7 +96,7 @@ func ParseDuration(str string) (time.Duration, error) {
 	if currentNumBuf != "" {
 		d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
 		if err != nil {
-			return dur, errors.Wrap(err, "not a duration")
+			return dur, errors.WrapIf(err, "not a duration")
 		}
 
 		dur += d

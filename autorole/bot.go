@@ -1,6 +1,7 @@
 package autorole
 
 import (
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/yagpdb/premium"
 	"strconv"
@@ -27,9 +28,9 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(OnMemberJoin, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerAsyncLast(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLast(p, OnMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildChunk, eventsystem.EventGuildMembersChunk)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
 	go runDurationChecker()
@@ -65,32 +66,32 @@ func HandleUpdateAutoroles(event *pubsub.Event) {
 
 // HandlePresenceUpdate makes sure the member with joined_at is available for the relevant guilds
 // TODO: Figure out a solution that scales better
-func HandlePresenceUpdate(evt *eventsystem.EventData) {
+func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	p := evt.PresenceUpdate()
 	if p.Status == discordgo.StatusOffline {
 		return
 	}
 
-	gs := bot.State.Guild(true, p.GuildID)
-	if gs == nil {
-		return
-	}
+	gs := evt.GS
+
 	gs.RLock()
 	m := gs.Member(false, p.User.ID)
 	if m != nil && m.MemberSet {
 		gs.RUnlock()
-		return
+		return false, nil
 	}
 	gs.RUnlock()
 
 	config, err := GuildCacheGetGeneralConfig(gs)
 	if err != nil {
-		return
+		return true, errors.WithStackIf(err)
 	}
 
 	if !config.OnlyOnJoin && config.Role != 0 {
 		go bot.GetMember(gs.ID, p.User.ID)
 	}
+
+	return false, nil
 }
 
 var (
@@ -295,16 +296,15 @@ func saveGeneral(guildID int64, config *GeneralConfig) {
 	}
 }
 
-func OnMemberJoin(evt *eventsystem.EventData) {
+func OnMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	addEvt := evt.GuildMemberAdd()
 
 	config, err := GetGeneralConfig(addEvt.GuildID)
 	if err != nil {
-		return
+		return true, errors.WithStackIf(err)
 	}
 
-	gs := bot.State.Guild(true, addEvt.GuildID)
-	ms := gs.MemberCopy(true, addEvt.User.ID)
+	ms := evt.GS.MemberCopy(true, addEvt.User.ID)
 	if ms == nil {
 		logger.Error("Member not found in add event")
 		return
@@ -313,6 +313,8 @@ func OnMemberJoin(evt *eventsystem.EventData) {
 	if config.Role != 0 && config.RequiredDuration < 1 && config.CanAssignTo(ms.Roles, ms.JoinedAt) {
 		common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
 	}
+
+	return false, nil
 }
 
 func (conf *GeneralConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time) bool {

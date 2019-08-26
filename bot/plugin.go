@@ -64,7 +64,8 @@ type ShardMigrationReceiver interface {
 }
 
 // bot plugin
-var logger = common.GetPluginLogger(&botPlugin{})
+var BotPlugin = new(botPlugin)
+var logger = common.GetPluginLogger(BotPlugin)
 
 type botPlugin struct {
 }

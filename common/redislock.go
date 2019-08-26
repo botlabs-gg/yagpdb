@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/retryableredis"
-	"github.com/pkg/errors"
 )
 
 // Locks the lock and if succeded sets it to expire after maxdur

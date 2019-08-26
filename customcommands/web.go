@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"unicode/utf8"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -160,7 +160,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
 	if err != nil {
-		return templateData, errors.Wrap(err, "error generating local id")
+		return templateData, errors.WrapIf(err, "error generating local id")
 	}
 
 	dbModel := newCmd.ToDBModel()

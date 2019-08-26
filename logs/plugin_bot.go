@@ -3,9 +3,9 @@ package logs
 import (
 	"context"
 	"database/sql"
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/jonas747/dcmd"
@@ -28,11 +28,11 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
-	// eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
-	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
+	// eventsystem.AddHandlerAsyncLastLegacy(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(p, HandleMsgDelete, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
-	eventsystem.AddHandlerFirst(HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	eventsystem.AddHandlerFirstLegacy(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 
 	go EvtProcesser()
 	go EvtProcesserGCs()
@@ -326,21 +326,24 @@ var cmdNicknames = &commands.YAGCommand{
 }
 
 // Mark all log messages with this id as deleted
-func HandleMsgDelete(evt *eventsystem.EventData) {
+func HandleMsgDelete(evt *eventsystem.EventData) (retry bool, err error) {
 	if evt.Type == eventsystem.EventMessageDelete {
 		err := markLoggedMessageAsDeleted(evt.Context(), evt.MessageDelete().ID)
 		if err != nil {
-			logger.WithError(err).Error("Failed marking message as deleted")
+			return true, errors.WithStackIf(err)
 		}
-		return
+
+		return false, nil
 	}
 
 	for _, m := range evt.MessageDeleteBulk().Messages {
 		err := markLoggedMessageAsDeleted(evt.Context(), m)
 		if err != nil {
-			logger.WithError(err).Error("Failed marking message as deleted")
+			return true, errors.WithStackIf(err)
 		}
 	}
+
+	return false, nil
 }
 
 func markLoggedMessageAsDeleted(ctx context.Context, mID int64) error {
@@ -351,11 +354,7 @@ func markLoggedMessageAsDeleted(ctx context.Context, mID int64) error {
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	pu := evt.PresenceUpdate()
-	gs := bot.State.Guild(true, pu.GuildID)
-	if gs == nil {
-		queueEvt(pu)
-		return
-	}
+	gs := evt.GS
 
 	gs.RLock()
 	defer gs.RUnlock()
@@ -366,11 +365,9 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if pu.User.Username != "" {
-		if pu.User.Username != ms.Username {
-			queueEvt(pu)
-			return
-		}
+	if pu.User.Username != "" && pu.User.Username != ms.Username {
+		queueEvt(pu)
+		return
 	}
 
 	if pu.Nick != ms.Nick {
@@ -662,12 +659,12 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 	err := common.SqlTX(func(tx *sql.Tx) error {
 		nickStatement, err := tx.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
 		if err != nil {
-			return errors.Wrap(err, "nick stmnt prepare")
+			return errors.WrapIf(err, "nick stmnt prepare")
 		}
 
 		usernameStatement, err := tx.Prepare("select username from username_listings where user_id=$1 order by id desc limit 1;")
 		if err != nil {
-			return errors.Wrap(err, "username stmnt prepare")
+			return errors.WrapIf(err, "username stmnt prepare")
 		}
 
 		// first find all the configs
@@ -681,7 +678,7 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 
 			config, err := GetConfigCached(tx, v.GuildID)
 			if err != nil {
-				return errors.Wrap(err, "users_configs")
+				return errors.WrapIf(err, "users_configs")
 			}
 
 			configs = append(configs, config)
@@ -697,7 +694,7 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 
 			config, err := GetConfigCached(tx, v.GuildID)
 			if err != nil {
-				return errors.Wrap(err, "members_configs")
+				return errors.WrapIf(err, "members_configs")
 			}
 
 			configs = append(configs, config)
@@ -719,7 +716,7 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 
 			err = CheckUsername(tx, context.Background(), usernameStatement, v.User)
 			if err != nil {
-				return errors.Wrap(err, "user username check")
+				return errors.WrapIf(err, "user username check")
 			}
 		}
 
@@ -743,12 +740,12 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 
 			err = CheckUsername(tx, context.Background(), usernameStatement, v.User)
 			if err != nil {
-				return errors.Wrap(err, "members username check")
+				return errors.WrapIf(err, "members username check")
 			}
 
 			err = CheckNickname(tx, context.Background(), nickStatement, v.User.ID, v.GuildID, v.Nick)
 			if err != nil {
-				return errors.Wrap(err, "members nickname check")
+				return errors.WrapIf(err, "members nickname check")
 			}
 		}
 

@@ -265,8 +265,8 @@ func InvalidateCache(guildID, userID int64) {
 	}
 }
 
-func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {
-	return func(evt *eventsystem.EventData) {
+func ConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy) eventsystem.HandlerFuncLegacy {
+	return eventsystem.HandlerFuncLegacy(func(evt *eventsystem.EventData) {
 		go func() {
 			defer func() {
 				if err := recover(); err != nil {
@@ -277,7 +277,7 @@ func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {
 
 			inner(evt)
 		}()
-	}
+	})
 }
 
 func HandleReactionAdd(evt *eventsystem.EventData) {

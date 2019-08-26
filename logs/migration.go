@@ -3,13 +3,13 @@ package logs
 import (
 	"context"
 	"database/sql"
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
@@ -68,13 +68,13 @@ func migrateLogs(after, count int) (last int, more bool, err error) {
 		).All(context.Background(), tx)
 
 		if err != nil {
-			return errors.Wrap(err, "messagelogs")
+			return errors.WrapIf(err, "messagelogs")
 		}
 
 		for _, v := range logs {
 			err := migrateLog(tx, v)
 			if err != nil {
-				return errors.Wrapf(err, "migratelog %d", v.ID)
+				return errors.WrapIff(err, "migratelog %d", v.ID)
 			}
 		}
 
@@ -92,12 +92,12 @@ func migrateLogs(after, count int) (last int, more bool, err error) {
 func migrateLog(tx *sql.Tx, l *models.MessageLog) error {
 	guildID, err := strconv.ParseInt(l.GuildID.String, 10, 64)
 	if err != nil {
-		return errors.Wrap(err, "parse_guildid")
+		return errors.WrapIf(err, "parse_guildid")
 	}
 
 	id, err := common.GenLocalIncrID(guildID, "message_logs")
 	if err != nil {
-		return errors.Wrap(err, "gen_id")
+		return errors.WrapIf(err, "gen_id")
 	}
 
 	mIds := make([]int64, 0, len(l.R.Messages))
@@ -135,14 +135,14 @@ func migrateLog(tx *sql.Tx, l *models.MessageLog) error {
 
 	err = m.Insert(context.Background(), tx, boil.Infer())
 	if err != nil {
-		return errors.Wrap(err, "insert log")
+		return errors.WrapIf(err, "insert log")
 	}
 
 	// migrate the individual messages
 	for _, v := range l.R.Messages {
 		err = migrateMessage(tx, guildID, v)
 		if err != nil {
-			return errors.Wrapf(err, "migrate message %d", v.ID)
+			return errors.WrapIff(err, "migrate message %d", v.ID)
 		}
 	}
 
@@ -160,7 +160,7 @@ func migrateMessage(tx *sql.Tx, guildID int64, m *models.Message) error {
 
 	parsedTS, err := discordgo.Timestamp(m.Timestamp.String).Parse()
 	if err != nil {
-		return errors.Wrap(err, "parse timestamp")
+		return errors.WrapIf(err, "parse timestamp")
 	}
 
 	model := &models.Messages2{
@@ -181,7 +181,7 @@ func migrateMessage(tx *sql.Tx, guildID int64, m *models.Message) error {
 
 	err = model.Upsert(context.Background(), tx, true, []string{"id"}, updateCols, boil.Infer())
 	if err != nil {
-		return errors.Wrap(err, "insert")
+		return errors.WrapIf(err, "insert")
 	}
 
 	return nil

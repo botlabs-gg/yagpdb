@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -173,7 +173,7 @@ func (q premiumSlotQuery) One(ctx context.Context, exec boil.ContextExecutor) (*
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for premium_slots")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for premium_slots")
 	}
 
 	return o, nil
@@ -190,7 +190,7 @@ func (q premiumSlotQuery) All(ctx context.Context, exec boil.ContextExecutor) (P
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to PremiumSlot slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to PremiumSlot slice")
 	}
 
 	return o, nil
@@ -210,7 +210,7 @@ func (q premiumSlotQuery) Count(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count premium_slots rows")
+		return 0, errors.WrapIf(err, "models: failed to count premium_slots rows")
 	}
 
 	return count, nil
@@ -231,7 +231,7 @@ func (q premiumSlotQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if premium_slots exists")
+		return false, errors.WrapIf(err, "models: failed to check if premium_slots exists")
 	}
 
 	return count > 0, nil
@@ -304,19 +304,19 @@ func (premiumSlotL) LoadSlotPremiumCodes(ctx context.Context, e boil.ContextExec
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load premium_codes")
+		return errors.WrapIf(err, "failed to eager load premium_codes")
 	}
 
 	var resultSlice []*PremiumCode
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice premium_codes")
+		return errors.WrapIf(err, "failed to bind eager loaded slice premium_codes")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on premium_codes")
+		return errors.WrapIf(err, "failed to close results in eager load on premium_codes")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for premium_codes")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for premium_codes")
 	}
 
 	if singular {
@@ -365,7 +365,7 @@ func (o *PremiumSlot) AddSlotPremiumCodes(ctx context.Context, exec boil.Context
 		if insert {
 			queries.Assign(&rel.SlotID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -381,7 +381,7 @@ func (o *PremiumSlot) AddSlotPremiumCodes(ctx context.Context, exec boil.Context
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			queries.Assign(&rel.SlotID, o.ID)
@@ -435,7 +435,7 @@ func (o *PremiumSlot) SetSlotPremiumCodes(ctx context.Context, exec boil.Context
 
 	_, err := exec.ExecContext(ctx, query, values...)
 	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
+		return errors.WrapIf(err, "failed to remove relationships before set")
 	}
 
 	if o.R != nil {
@@ -528,7 +528,7 @@ func FindPremiumSlot(ctx context.Context, exec boil.ContextExecutor, iD int64, s
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from premium_slots")
+		return nil, errors.WrapIf(err, "models: unable to select from premium_slots")
 	}
 
 	return premiumSlotObj, nil
@@ -608,7 +608,7 @@ func (o *PremiumSlot) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into premium_slots")
+		return errors.WrapIf(err, "models: unable to insert into premium_slots")
 	}
 
 	if !cached {
@@ -669,12 +669,12 @@ func (o *PremiumSlot) Update(ctx context.Context, exec boil.ContextExecutor, col
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update premium_slots row")
+		return 0, errors.WrapIf(err, "models: unable to update premium_slots row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for premium_slots")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for premium_slots")
 	}
 
 	if !cached {
@@ -697,12 +697,12 @@ func (q premiumSlotQuery) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for premium_slots")
+		return 0, errors.WrapIf(err, "models: unable to update all for premium_slots")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for premium_slots")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for premium_slots")
 	}
 
 	return rowsAff, nil
@@ -751,12 +751,12 @@ func (o PremiumSlotSlice) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in premiumSlot slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in premiumSlot slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all premiumSlot")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all premiumSlot")
 	}
 	return rowsAff, nil
 }
@@ -872,7 +872,7 @@ func (o *PremiumSlot) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert premium_slots")
+		return errors.WrapIf(err, "models: unable to upsert premium_slots")
 	}
 
 	if !cached {
@@ -907,12 +907,12 @@ func (o *PremiumSlot) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from premium_slots")
+		return 0, errors.WrapIf(err, "models: unable to delete from premium_slots")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for premium_slots")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for premium_slots")
 	}
 
 	return rowsAff, nil
@@ -928,12 +928,12 @@ func (q premiumSlotQuery) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from premium_slots")
+		return 0, errors.WrapIf(err, "models: unable to delete all from premium_slots")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for premium_slots")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for premium_slots")
 	}
 
 	return rowsAff, nil
@@ -966,12 +966,12 @@ func (o PremiumSlotSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from premiumSlot slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from premiumSlot slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for premium_slots")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for premium_slots")
 	}
 
 	return rowsAff, nil
@@ -1029,7 +1029,7 @@ func (o *PremiumSlotSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in PremiumSlotSlice")
+		return errors.WrapIf(err, "models: unable to reload all in PremiumSlotSlice")
 	}
 
 	*o = slice
@@ -1056,7 +1056,7 @@ func PremiumSlotExists(ctx context.Context, exec boil.ContextExecutor, iD int64)
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if premium_slots exists")
+		return false, errors.WrapIf(err, "models: unable to check if premium_slots exists")
 	}
 
 	return exists, nil

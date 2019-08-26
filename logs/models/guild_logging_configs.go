@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -256,7 +256,7 @@ func (q guildLoggingConfigQuery) One(ctx context.Context, exec boil.ContextExecu
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for guild_logging_configs")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for guild_logging_configs")
 	}
 
 	return o, nil
@@ -273,7 +273,7 @@ func (q guildLoggingConfigQuery) All(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to GuildLoggingConfig slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to GuildLoggingConfig slice")
 	}
 
 	return o, nil
@@ -293,7 +293,7 @@ func (q guildLoggingConfigQuery) Count(ctx context.Context, exec boil.ContextExe
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count guild_logging_configs rows")
+		return 0, errors.WrapIf(err, "models: failed to count guild_logging_configs rows")
 	}
 
 	return count, nil
@@ -314,7 +314,7 @@ func (q guildLoggingConfigQuery) Exists(ctx context.Context, exec boil.ContextEx
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if guild_logging_configs exists")
+		return false, errors.WrapIf(err, "models: failed to check if guild_logging_configs exists")
 	}
 
 	return count > 0, nil
@@ -351,7 +351,7 @@ func FindGuildLoggingConfig(ctx context.Context, exec boil.ContextExecutor, guil
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from guild_logging_configs")
+		return nil, errors.WrapIf(err, "models: unable to select from guild_logging_configs")
 	}
 
 	return guildLoggingConfigObj, nil
@@ -434,7 +434,7 @@ func (o *GuildLoggingConfig) Insert(ctx context.Context, exec boil.ContextExecut
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into guild_logging_configs")
+		return errors.WrapIf(err, "models: unable to insert into guild_logging_configs")
 	}
 
 	if !cached {
@@ -501,12 +501,12 @@ func (o *GuildLoggingConfig) Update(ctx context.Context, exec boil.ContextExecut
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update guild_logging_configs row")
+		return 0, errors.WrapIf(err, "models: unable to update guild_logging_configs row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for guild_logging_configs")
 	}
 
 	if !cached {
@@ -529,12 +529,12 @@ func (q guildLoggingConfigQuery) UpdateAll(ctx context.Context, exec boil.Contex
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: unable to update all for guild_logging_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for guild_logging_configs")
 	}
 
 	return rowsAff, nil
@@ -583,12 +583,12 @@ func (o GuildLoggingConfigSlice) UpdateAll(ctx context.Context, exec boil.Contex
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in guildLoggingConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in guildLoggingConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all guildLoggingConfig")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all guildLoggingConfig")
 	}
 	return rowsAff, nil
 }
@@ -705,7 +705,7 @@ func (o *GuildLoggingConfig) Upsert(ctx context.Context, exec boil.ContextExecut
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert guild_logging_configs")
+		return errors.WrapIf(err, "models: unable to upsert guild_logging_configs")
 	}
 
 	if !cached {
@@ -740,12 +740,12 @@ func (o *GuildLoggingConfig) Delete(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete from guild_logging_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for guild_logging_configs")
 	}
 
 	return rowsAff, nil
@@ -761,12 +761,12 @@ func (q guildLoggingConfigQuery) DeleteAll(ctx context.Context, exec boil.Contex
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete all from guild_logging_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for guild_logging_configs")
 	}
 
 	return rowsAff, nil
@@ -799,12 +799,12 @@ func (o GuildLoggingConfigSlice) DeleteAll(ctx context.Context, exec boil.Contex
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from guildLoggingConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from guildLoggingConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for guild_logging_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for guild_logging_configs")
 	}
 
 	return rowsAff, nil
@@ -862,7 +862,7 @@ func (o *GuildLoggingConfigSlice) ReloadAll(ctx context.Context, exec boil.Conte
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in GuildLoggingConfigSlice")
+		return errors.WrapIf(err, "models: unable to reload all in GuildLoggingConfigSlice")
 	}
 
 	*o = slice
@@ -889,7 +889,7 @@ func GuildLoggingConfigExists(ctx context.Context, exec boil.ContextExecutor, gu
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if guild_logging_configs exists")
+		return false, errors.WrapIf(err, "models: unable to check if guild_logging_configs exists")
 	}
 
 	return exists, nil
