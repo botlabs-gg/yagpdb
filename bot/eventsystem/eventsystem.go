@@ -256,7 +256,7 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 		return
 	default:
 		// go common.SendOwnerAlert("Max events in queue!")
-		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID], s.ShardID))
+		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
 		workers[s.ShardID] <- evtData // attempt to send it anyways for now
 	}
 }
