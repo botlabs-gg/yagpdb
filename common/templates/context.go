@@ -390,6 +390,8 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["reFindAll"] = c.reFindAll
 	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
 	c.ContextFuncs["reReplace"] = c.reReplace
+
+	c.ContextFuncs["editChannelName"] = c.tmplEditChannelName
 }
 
 type limitedWriter struct {
