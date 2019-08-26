@@ -200,6 +200,11 @@ func (c *Context) Parse(source string) (*template.Template, error) {
 	return parsed, nil
 }
 
+const (
+	MaxOpsNormal  = 1000000
+	MaxOpsPremium = 2500000
+)
+
 func (c *Context) Execute(source string) (string, error) {
 	if c.Msg == nil {
 		// Construct a fake message
@@ -227,6 +232,12 @@ func (c *Context) Execute(source string) (string, error) {
 	parsed, err := c.Parse(source)
 	if err != nil {
 		return "", errors.WithMessage(err, "Failed parsing template")
+	}
+
+	if c.IsPremium {
+		parsed = parsed.MaxOps(MaxOpsPremium)
+	} else {
+		parsed = parsed.MaxOps(MaxOpsNormal)
 	}
 
 	var buf bytes.Buffer
