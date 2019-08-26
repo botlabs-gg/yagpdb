@@ -10,12 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -538,7 +538,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		const query = `DELETE FROM mqueue_webhooks WHERE id=$1`
 		_, err := common.PQ.Exec(query, webhook.ID)
 		if err != nil {
-			return errors.Wrap(err, "sql.delete")
+			return errors.WrapIf(err, "sql.delete")
 		}
 
 		gs.UserCacheDel(true, CacheKeyWebhook(elem.Channel))

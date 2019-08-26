@@ -2,7 +2,7 @@ package bot
 
 import (
 	"context"
-	"errors"
+	"emperror.dev/errors"
 	"strconv"
 	"strings"
 	"sync"
@@ -472,4 +472,26 @@ func evictGSCacheRemote(guildID int64, key GSCacheKey) {
 func handleEvictCachePubsub(evt *pubsub.Event) {
 	key := evt.Data.(*string)
 	evictGSCacheLocal(evt.TargetGuildInt, GSCacheKey(*key))
+}
+
+func CheckDiscordErrRetry(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	err = errors.Cause(err)
+
+	if cast, ok := err.(*discordgo.RESTError); ok {
+		if cast.Message != nil && cast.Message.Code != 0 {
+			// proper discord response, don't retry
+			return false
+		}
+	}
+
+	if err == ErrGuildNotFound {
+		return false
+	}
+
+	// an unknown error unrelated to the discord api occured (503's for example) attempt a retry
+	return true
 }

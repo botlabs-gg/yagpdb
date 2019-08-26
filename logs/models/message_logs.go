@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -167,7 +167,7 @@ func (q messageLogQuery) One(ctx context.Context, exec boil.ContextExecutor) (*M
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for message_logs")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for message_logs")
 	}
 
 	return o, nil
@@ -184,7 +184,7 @@ func (q messageLogQuery) All(ctx context.Context, exec boil.ContextExecutor) (Me
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to MessageLog slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to MessageLog slice")
 	}
 
 	return o, nil
@@ -204,7 +204,7 @@ func (q messageLogQuery) Count(ctx context.Context, exec boil.ContextExecutor) (
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count message_logs rows")
+		return 0, errors.WrapIf(err, "models: failed to count message_logs rows")
 	}
 
 	return count, nil
@@ -225,7 +225,7 @@ func (q messageLogQuery) Exists(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if message_logs exists")
+		return false, errors.WrapIf(err, "models: failed to check if message_logs exists")
 	}
 
 	return count > 0, nil
@@ -298,19 +298,19 @@ func (messageLogL) LoadMessages(ctx context.Context, e boil.ContextExecutor, sin
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load messages")
+		return errors.WrapIf(err, "failed to eager load messages")
 	}
 
 	var resultSlice []*Message
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice messages")
+		return errors.WrapIf(err, "failed to bind eager loaded slice messages")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on messages")
+		return errors.WrapIf(err, "failed to close results in eager load on messages")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for messages")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for messages")
 	}
 
 	if singular {
@@ -359,7 +359,7 @@ func (o *MessageLog) AddMessages(ctx context.Context, exec boil.ContextExecutor,
 		if insert {
 			queries.Assign(&rel.MessageLogID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -375,7 +375,7 @@ func (o *MessageLog) AddMessages(ctx context.Context, exec boil.ContextExecutor,
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			queries.Assign(&rel.MessageLogID, o.ID)
@@ -429,7 +429,7 @@ func (o *MessageLog) SetMessages(ctx context.Context, exec boil.ContextExecutor,
 
 	_, err := exec.ExecContext(ctx, query, values...)
 	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
+		return errors.WrapIf(err, "failed to remove relationships before set")
 	}
 
 	if o.R != nil {
@@ -522,7 +522,7 @@ func FindMessageLog(ctx context.Context, exec boil.ContextExecutor, iD int, sele
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from message_logs")
+		return nil, errors.WrapIf(err, "models: unable to select from message_logs")
 	}
 
 	return messageLogObj, nil
@@ -605,7 +605,7 @@ func (o *MessageLog) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into message_logs")
+		return errors.WrapIf(err, "models: unable to insert into message_logs")
 	}
 
 	if !cached {
@@ -672,12 +672,12 @@ func (o *MessageLog) Update(ctx context.Context, exec boil.ContextExecutor, colu
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update message_logs row")
+		return 0, errors.WrapIf(err, "models: unable to update message_logs row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for message_logs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for message_logs")
 	}
 
 	if !cached {
@@ -700,12 +700,12 @@ func (q messageLogQuery) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for message_logs")
+		return 0, errors.WrapIf(err, "models: unable to update all for message_logs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for message_logs")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for message_logs")
 	}
 
 	return rowsAff, nil
@@ -754,12 +754,12 @@ func (o MessageLogSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in messageLog slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in messageLog slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all messageLog")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all messageLog")
 	}
 	return rowsAff, nil
 }
@@ -876,7 +876,7 @@ func (o *MessageLog) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert message_logs")
+		return errors.WrapIf(err, "models: unable to upsert message_logs")
 	}
 
 	if !cached {
@@ -911,12 +911,12 @@ func (o *MessageLog) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from message_logs")
+		return 0, errors.WrapIf(err, "models: unable to delete from message_logs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for message_logs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for message_logs")
 	}
 
 	return rowsAff, nil
@@ -932,12 +932,12 @@ func (q messageLogQuery) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from message_logs")
+		return 0, errors.WrapIf(err, "models: unable to delete all from message_logs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for message_logs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for message_logs")
 	}
 
 	return rowsAff, nil
@@ -970,12 +970,12 @@ func (o MessageLogSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from messageLog slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from messageLog slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for message_logs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for message_logs")
 	}
 
 	return rowsAff, nil
@@ -1033,7 +1033,7 @@ func (o *MessageLogSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in MessageLogSlice")
+		return errors.WrapIf(err, "models: unable to reload all in MessageLogSlice")
 	}
 
 	*o = slice
@@ -1060,7 +1060,7 @@ func MessageLogExists(ctx context.Context, exec boil.ContextExecutor, iD int) (b
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if message_logs exists")
+		return false, errors.WrapIf(err, "models: unable to check if message_logs exists")
 	}
 
 	return exists, nil

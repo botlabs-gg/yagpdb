@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -189,7 +189,7 @@ func (q verificationConfigQuery) One(ctx context.Context, exec boil.ContextExecu
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for verification_configs")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for verification_configs")
 	}
 
 	return o, nil
@@ -206,7 +206,7 @@ func (q verificationConfigQuery) All(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to VerificationConfig slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to VerificationConfig slice")
 	}
 
 	return o, nil
@@ -226,7 +226,7 @@ func (q verificationConfigQuery) Count(ctx context.Context, exec boil.ContextExe
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count verification_configs rows")
+		return 0, errors.WrapIf(err, "models: failed to count verification_configs rows")
 	}
 
 	return count, nil
@@ -247,7 +247,7 @@ func (q verificationConfigQuery) Exists(ctx context.Context, exec boil.ContextEx
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if verification_configs exists")
+		return false, errors.WrapIf(err, "models: failed to check if verification_configs exists")
 	}
 
 	return count > 0, nil
@@ -284,7 +284,7 @@ func FindVerificationConfig(ctx context.Context, exec boil.ContextExecutor, guil
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from verification_configs")
+		return nil, errors.WrapIf(err, "models: unable to select from verification_configs")
 	}
 
 	return verificationConfigObj, nil
@@ -357,7 +357,7 @@ func (o *VerificationConfig) Insert(ctx context.Context, exec boil.ContextExecut
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into verification_configs")
+		return errors.WrapIf(err, "models: unable to insert into verification_configs")
 	}
 
 	if !cached {
@@ -418,12 +418,12 @@ func (o *VerificationConfig) Update(ctx context.Context, exec boil.ContextExecut
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update verification_configs row")
+		return 0, errors.WrapIf(err, "models: unable to update verification_configs row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for verification_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for verification_configs")
 	}
 
 	if !cached {
@@ -446,12 +446,12 @@ func (q verificationConfigQuery) UpdateAll(ctx context.Context, exec boil.Contex
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for verification_configs")
+		return 0, errors.WrapIf(err, "models: unable to update all for verification_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for verification_configs")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for verification_configs")
 	}
 
 	return rowsAff, nil
@@ -500,12 +500,12 @@ func (o VerificationConfigSlice) UpdateAll(ctx context.Context, exec boil.Contex
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in verificationConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in verificationConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all verificationConfig")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all verificationConfig")
 	}
 	return rowsAff, nil
 }
@@ -614,7 +614,7 @@ func (o *VerificationConfig) Upsert(ctx context.Context, exec boil.ContextExecut
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert verification_configs")
+		return errors.WrapIf(err, "models: unable to upsert verification_configs")
 	}
 
 	if !cached {
@@ -649,12 +649,12 @@ func (o *VerificationConfig) Delete(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from verification_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete from verification_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for verification_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for verification_configs")
 	}
 
 	return rowsAff, nil
@@ -670,12 +670,12 @@ func (q verificationConfigQuery) DeleteAll(ctx context.Context, exec boil.Contex
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from verification_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete all from verification_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for verification_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for verification_configs")
 	}
 
 	return rowsAff, nil
@@ -708,12 +708,12 @@ func (o VerificationConfigSlice) DeleteAll(ctx context.Context, exec boil.Contex
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from verificationConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from verificationConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for verification_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for verification_configs")
 	}
 
 	return rowsAff, nil
@@ -771,7 +771,7 @@ func (o *VerificationConfigSlice) ReloadAll(ctx context.Context, exec boil.Conte
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in VerificationConfigSlice")
+		return errors.WrapIf(err, "models: unable to reload all in VerificationConfigSlice")
 	}
 
 	*o = slice
@@ -798,7 +798,7 @@ func VerificationConfigExists(ctx context.Context, exec boil.ContextExecutor, gu
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if verification_configs exists")
+		return false, errors.WrapIf(err, "models: unable to check if verification_configs exists")
 	}
 
 	return exists, nil

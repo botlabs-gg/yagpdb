@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -15,7 +16,6 @@ import (
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 

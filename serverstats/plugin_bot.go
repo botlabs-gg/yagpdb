@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -15,7 +16,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,10 +29,10 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(HandleMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerAsyncLast(HandleMemberRemove, eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandlerAsyncLast(HandleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandlerAsyncLast(HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, HandleMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, HandleMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildCreate, eventsystem.EventGuildCreate)
 
 	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
@@ -98,10 +98,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 func HandleMemberAdd(evt *eventsystem.EventData) {
 	g := evt.GuildMemberAdd()
 
-	gs := bot.State.Guild(true, g.GuildID)
-	if gs == nil {
-		return
-	}
+	gs := evt.GS
 
 	gs.RLock()
 	mc := gs.Guild.MemberCount
@@ -116,10 +113,7 @@ func HandleMemberAdd(evt *eventsystem.EventData) {
 func HandleMemberRemove(evt *eventsystem.EventData) {
 	g := evt.GuildMemberRemove()
 
-	gs := bot.State.Guild(true, g.GuildID)
-	if gs == nil {
-		return
-	}
+	gs := evt.GS
 
 	gs.RLock()
 	mc := gs.Guild.MemberCount
@@ -157,36 +151,33 @@ num_members = server_stats_member_periods.num_members + $6;`, guildID, t, numMem
 
 }
 
-func HandleMessageCreate(evt *eventsystem.EventData) {
+func HandleMessageCreate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	m := evt.MessageCreate()
 	if m.GuildID == 0 || m.Author == nil || m.Author.Bot {
 		return // private channel
 	}
 
-	channel := bot.State.Channel(true, m.ChannelID)
-	if channel == nil {
-		logger.WithField("channel", m.ChannelID).Warn("Channel not in state")
-		return
-	}
+	channel := evt.CS()
 
 	config, err := BotCachedFetchGuildConfig(evt.Context(), channel.Guild)
 	if err != nil {
-		logger.WithError(err).WithField("guild", channel.Guild.ID).Error("Failed retrieving config")
-		return
+		return true, errors.WithStackIf(err)
 	}
 
 	if common.ContainsInt64Slice(config.ParsedChannels, channel.ID) {
-		return
+		return false, nil
 	}
 
 	val := channel.StrID() + ":" + discordgo.StrID(m.ID) + ":" + discordgo.StrID(m.Author.ID)
 	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), val))
 	if err != nil {
-		logger.WithError(err).Error("Failed adding member to stats")
+		return true, errors.WithStackIf(err)
 	}
 
 	MarkGuildAsToBeChecked(channel.Guild.ID)
+
+	return false, nil
 }
 
 type CacheKey int

@@ -23,7 +23,7 @@ var (
 func (p *Plugin) BotInit() {
 	commands.MessageFilterFuncs = append(commands.MessageFilterFuncs, CommandsMessageFilterFunc)
 
-	eventsystem.AddHandlerAsyncLast(HandleMessageUpdate, eventsystem.EventMessageUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, HandleMessageUpdate, eventsystem.EventMessageUpdate)
 
 	pubsub.AddHandler("update_automod_legacy_rules", HandleUpdateAutomodRules, nil)
 	confCache = ccache.New(ccache.Configure().MaxSize(1000))

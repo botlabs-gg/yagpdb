@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -127,7 +127,7 @@ func (q userTimezoneQuery) One(ctx context.Context, exec boil.ContextExecutor) (
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for user_timezones")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for user_timezones")
 	}
 
 	return o, nil
@@ -144,7 +144,7 @@ func (q userTimezoneQuery) All(ctx context.Context, exec boil.ContextExecutor) (
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to UserTimezone slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to UserTimezone slice")
 	}
 
 	return o, nil
@@ -164,7 +164,7 @@ func (q userTimezoneQuery) Count(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count user_timezones rows")
+		return 0, errors.WrapIf(err, "models: failed to count user_timezones rows")
 	}
 
 	return count, nil
@@ -185,7 +185,7 @@ func (q userTimezoneQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if user_timezones exists")
+		return false, errors.WrapIf(err, "models: failed to check if user_timezones exists")
 	}
 
 	return count > 0, nil
@@ -222,7 +222,7 @@ func FindUserTimezone(ctx context.Context, exec boil.ContextExecutor, userID int
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from user_timezones")
+		return nil, errors.WrapIf(err, "models: unable to select from user_timezones")
 	}
 
 	return userTimezoneObj, nil
@@ -295,7 +295,7 @@ func (o *UserTimezone) Insert(ctx context.Context, exec boil.ContextExecutor, co
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into user_timezones")
+		return errors.WrapIf(err, "models: unable to insert into user_timezones")
 	}
 
 	if !cached {
@@ -356,12 +356,12 @@ func (o *UserTimezone) Update(ctx context.Context, exec boil.ContextExecutor, co
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update user_timezones row")
+		return 0, errors.WrapIf(err, "models: unable to update user_timezones row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for user_timezones")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for user_timezones")
 	}
 
 	if !cached {
@@ -384,12 +384,12 @@ func (q userTimezoneQuery) UpdateAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for user_timezones")
+		return 0, errors.WrapIf(err, "models: unable to update all for user_timezones")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for user_timezones")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for user_timezones")
 	}
 
 	return rowsAff, nil
@@ -438,12 +438,12 @@ func (o UserTimezoneSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in userTimezone slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in userTimezone slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all userTimezone")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all userTimezone")
 	}
 	return rowsAff, nil
 }
@@ -552,7 +552,7 @@ func (o *UserTimezone) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert user_timezones")
+		return errors.WrapIf(err, "models: unable to upsert user_timezones")
 	}
 
 	if !cached {
@@ -587,12 +587,12 @@ func (o *UserTimezone) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from user_timezones")
+		return 0, errors.WrapIf(err, "models: unable to delete from user_timezones")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for user_timezones")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for user_timezones")
 	}
 
 	return rowsAff, nil
@@ -608,12 +608,12 @@ func (q userTimezoneQuery) DeleteAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from user_timezones")
+		return 0, errors.WrapIf(err, "models: unable to delete all from user_timezones")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for user_timezones")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for user_timezones")
 	}
 
 	return rowsAff, nil
@@ -646,12 +646,12 @@ func (o UserTimezoneSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from userTimezone slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from userTimezone slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for user_timezones")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for user_timezones")
 	}
 
 	return rowsAff, nil
@@ -709,7 +709,7 @@ func (o *UserTimezoneSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in UserTimezoneSlice")
+		return errors.WrapIf(err, "models: unable to reload all in UserTimezoneSlice")
 	}
 
 	*o = slice
@@ -736,7 +736,7 @@ func UserTimezoneExists(ctx context.Context, exec boil.ContextExecutor, userID i
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if user_timezones exists")
+		return false, errors.WrapIf(err, "models: unable to check if user_timezones exists")
 	}
 
 	return exists, nil

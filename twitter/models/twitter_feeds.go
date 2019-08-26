@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -191,7 +191,7 @@ func (q twitterFeedQuery) One(ctx context.Context, exec boil.ContextExecutor) (*
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for twitter_feeds")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for twitter_feeds")
 	}
 
 	return o, nil
@@ -208,7 +208,7 @@ func (q twitterFeedQuery) All(ctx context.Context, exec boil.ContextExecutor) (T
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to TwitterFeed slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to TwitterFeed slice")
 	}
 
 	return o, nil
@@ -228,7 +228,7 @@ func (q twitterFeedQuery) Count(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count twitter_feeds rows")
+		return 0, errors.WrapIf(err, "models: failed to count twitter_feeds rows")
 	}
 
 	return count, nil
@@ -249,7 +249,7 @@ func (q twitterFeedQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if twitter_feeds exists")
+		return false, errors.WrapIf(err, "models: failed to check if twitter_feeds exists")
 	}
 
 	return count > 0, nil
@@ -286,7 +286,7 @@ func FindTwitterFeed(ctx context.Context, exec boil.ContextExecutor, iD int64, s
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from twitter_feeds")
+		return nil, errors.WrapIf(err, "models: unable to select from twitter_feeds")
 	}
 
 	return twitterFeedObj, nil
@@ -366,7 +366,7 @@ func (o *TwitterFeed) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into twitter_feeds")
+		return errors.WrapIf(err, "models: unable to insert into twitter_feeds")
 	}
 
 	if !cached {
@@ -427,12 +427,12 @@ func (o *TwitterFeed) Update(ctx context.Context, exec boil.ContextExecutor, col
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update twitter_feeds row")
+		return 0, errors.WrapIf(err, "models: unable to update twitter_feeds row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for twitter_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for twitter_feeds")
 	}
 
 	if !cached {
@@ -455,12 +455,12 @@ func (q twitterFeedQuery) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for twitter_feeds")
+		return 0, errors.WrapIf(err, "models: unable to update all for twitter_feeds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for twitter_feeds")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for twitter_feeds")
 	}
 
 	return rowsAff, nil
@@ -509,12 +509,12 @@ func (o TwitterFeedSlice) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in twitterFeed slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in twitterFeed slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all twitterFeed")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all twitterFeed")
 	}
 	return rowsAff, nil
 }
@@ -630,7 +630,7 @@ func (o *TwitterFeed) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert twitter_feeds")
+		return errors.WrapIf(err, "models: unable to upsert twitter_feeds")
 	}
 
 	if !cached {
@@ -665,12 +665,12 @@ func (o *TwitterFeed) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from twitter_feeds")
+		return 0, errors.WrapIf(err, "models: unable to delete from twitter_feeds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for twitter_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for twitter_feeds")
 	}
 
 	return rowsAff, nil
@@ -686,12 +686,12 @@ func (q twitterFeedQuery) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from twitter_feeds")
+		return 0, errors.WrapIf(err, "models: unable to delete all from twitter_feeds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for twitter_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for twitter_feeds")
 	}
 
 	return rowsAff, nil
@@ -724,12 +724,12 @@ func (o TwitterFeedSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from twitterFeed slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from twitterFeed slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for twitter_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for twitter_feeds")
 	}
 
 	return rowsAff, nil
@@ -787,7 +787,7 @@ func (o *TwitterFeedSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in TwitterFeedSlice")
+		return errors.WrapIf(err, "models: unable to reload all in TwitterFeedSlice")
 	}
 
 	*o = slice
@@ -814,7 +814,7 @@ func TwitterFeedExists(ctx context.Context, exec boil.ContextExecutor, iD int64)
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if twitter_feeds exists")
+		return false, errors.WrapIf(err, "models: unable to check if twitter_feeds exists")
 	}
 
 	return exists, nil

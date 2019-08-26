@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/serverstats/models"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -259,7 +259,7 @@ ORDER BY 1 DESC`
 	rows, err := common.PQ.Query(query, args...)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "pq.query")
+		return nil, errors.WrapIf(err, "pq.query")
 	}
 
 	defer rows.Close()
@@ -281,7 +281,7 @@ ORDER BY 1 DESC`
 
 		err := rows.Scan(&t, &joins, &leaves, &numMembers, &maxOnline)
 		if err != nil {
-			return nil, errors.Wrap(err, "rows.scan")
+			return nil, errors.WrapIf(err, "rows.scan")
 		}
 
 		daysOld := int(time.Since(t).Hours() / 24)
@@ -364,7 +364,7 @@ ORDER BY 1 DESC`
 	rows, err := common.PQ.Query(queryPre+queryPost, args...)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "pq.query")
+		return nil, errors.WrapIf(err, "pq.query")
 	}
 
 	defer rows.Close()
@@ -383,7 +383,7 @@ ORDER BY 1 DESC`
 
 		err := rows.Scan(&t, &count)
 		if err != nil {
-			return nil, errors.Wrap(err, "rows.scan")
+			return nil, errors.WrapIf(err, "rows.scan")
 		}
 
 		daysOld := int(time.Since(t).Hours() / 24)

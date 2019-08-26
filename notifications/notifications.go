@@ -1,9 +1,9 @@
 package notifications
 
 import (
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -145,18 +145,22 @@ func (c *Config) AfterFind() (err error) {
 
 var DefaultConfig = &Config{}
 
-func GetConfig(guildID int64) *Config {
+func GetConfig(guildID int64) (*Config, error) {
 	var conf Config
 	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &conf)
-	if err != nil {
-		if err != configstore.ErrNotFound {
-			log.WithError(err).Error("Failed retrieving config")
-		}
+	if err == nil {
+		return &conf, nil
+	}
+
+	if err == configstore.ErrNotFound {
+		// if err != configstore.ErrNotFound {
+		// 	log.WithError(err).Error("Failed retrieving config")
+		// }
 		return &Config{
 			JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
 			LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
-		}
+		}, nil
 	}
 
-	return &conf
+	return nil, errors.WithStackIf(err)
 }

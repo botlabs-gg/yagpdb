@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -175,7 +175,7 @@ func (q coreConfigQuery) One(ctx context.Context, exec boil.ContextExecutor) (*C
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for core_configs")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for core_configs")
 	}
 
 	return o, nil
@@ -192,7 +192,7 @@ func (q coreConfigQuery) All(ctx context.Context, exec boil.ContextExecutor) (Co
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to CoreConfig slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to CoreConfig slice")
 	}
 
 	return o, nil
@@ -212,7 +212,7 @@ func (q coreConfigQuery) Count(ctx context.Context, exec boil.ContextExecutor) (
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count core_configs rows")
+		return 0, errors.WrapIf(err, "models: failed to count core_configs rows")
 	}
 
 	return count, nil
@@ -233,7 +233,7 @@ func (q coreConfigQuery) Exists(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if core_configs exists")
+		return false, errors.WrapIf(err, "models: failed to check if core_configs exists")
 	}
 
 	return count > 0, nil
@@ -270,7 +270,7 @@ func FindCoreConfig(ctx context.Context, exec boil.ContextExecutor, guildID int6
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from core_configs")
+		return nil, errors.WrapIf(err, "models: unable to select from core_configs")
 	}
 
 	return coreConfigObj, nil
@@ -343,7 +343,7 @@ func (o *CoreConfig) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into core_configs")
+		return errors.WrapIf(err, "models: unable to insert into core_configs")
 	}
 
 	if !cached {
@@ -404,12 +404,12 @@ func (o *CoreConfig) Update(ctx context.Context, exec boil.ContextExecutor, colu
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update core_configs row")
+		return 0, errors.WrapIf(err, "models: unable to update core_configs row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for core_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for core_configs")
 	}
 
 	if !cached {
@@ -432,12 +432,12 @@ func (q coreConfigQuery) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for core_configs")
+		return 0, errors.WrapIf(err, "models: unable to update all for core_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for core_configs")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for core_configs")
 	}
 
 	return rowsAff, nil
@@ -486,12 +486,12 @@ func (o CoreConfigSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in coreConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in coreConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all coreConfig")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all coreConfig")
 	}
 	return rowsAff, nil
 }
@@ -600,7 +600,7 @@ func (o *CoreConfig) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert core_configs")
+		return errors.WrapIf(err, "models: unable to upsert core_configs")
 	}
 
 	if !cached {
@@ -635,12 +635,12 @@ func (o *CoreConfig) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from core_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete from core_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for core_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for core_configs")
 	}
 
 	return rowsAff, nil
@@ -656,12 +656,12 @@ func (q coreConfigQuery) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from core_configs")
+		return 0, errors.WrapIf(err, "models: unable to delete all from core_configs")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for core_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for core_configs")
 	}
 
 	return rowsAff, nil
@@ -694,12 +694,12 @@ func (o CoreConfigSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from coreConfig slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from coreConfig slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for core_configs")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for core_configs")
 	}
 
 	return rowsAff, nil
@@ -757,7 +757,7 @@ func (o *CoreConfigSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in CoreConfigSlice")
+		return errors.WrapIf(err, "models: unable to reload all in CoreConfigSlice")
 	}
 
 	*o = slice
@@ -784,7 +784,7 @@ func CoreConfigExists(ctx context.Context, exec boil.ContextExecutor, guildID in
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if core_configs exists")
+		return false, errors.WrapIf(err, "models: unable to check if core_configs exists")
 	}
 
 	return exists, nil

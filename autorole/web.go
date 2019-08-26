@@ -6,12 +6,12 @@ import (
 	"html/template"
 	"net/http"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"goji.io"
 	"goji.io/pat"
 )

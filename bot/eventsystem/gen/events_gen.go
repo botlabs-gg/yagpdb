@@ -52,7 +52,7 @@ var AllEvents = []Event{ {{range .}}
 	Event{{.Name}},{{end}}
 }
 
-var handlers = make([][][]Handler, {{len .}})
+var handlers = make([][][]*Handler, {{len .}})
 
 {{range .}}{{if .Discord}}
 func (data *EventData) {{.Name}}() *discordgo.{{.Name}}{ 

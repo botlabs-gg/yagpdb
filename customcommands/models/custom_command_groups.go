@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -189,7 +189,7 @@ func (q customCommandGroupQuery) One(ctx context.Context, exec boil.ContextExecu
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for custom_command_groups")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for custom_command_groups")
 	}
 
 	return o, nil
@@ -206,7 +206,7 @@ func (q customCommandGroupQuery) All(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to CustomCommandGroup slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to CustomCommandGroup slice")
 	}
 
 	return o, nil
@@ -226,7 +226,7 @@ func (q customCommandGroupQuery) Count(ctx context.Context, exec boil.ContextExe
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count custom_command_groups rows")
+		return 0, errors.WrapIf(err, "models: failed to count custom_command_groups rows")
 	}
 
 	return count, nil
@@ -247,7 +247,7 @@ func (q customCommandGroupQuery) Exists(ctx context.Context, exec boil.ContextEx
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if custom_command_groups exists")
+		return false, errors.WrapIf(err, "models: failed to check if custom_command_groups exists")
 	}
 
 	return count > 0, nil
@@ -320,19 +320,19 @@ func (customCommandGroupL) LoadGroupCustomCommands(ctx context.Context, e boil.C
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load custom_commands")
+		return errors.WrapIf(err, "failed to eager load custom_commands")
 	}
 
 	var resultSlice []*CustomCommand
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice custom_commands")
+		return errors.WrapIf(err, "failed to bind eager loaded slice custom_commands")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on custom_commands")
+		return errors.WrapIf(err, "failed to close results in eager load on custom_commands")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for custom_commands")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for custom_commands")
 	}
 
 	if singular {
@@ -381,7 +381,7 @@ func (o *CustomCommandGroup) AddGroupCustomCommands(ctx context.Context, exec bo
 		if insert {
 			queries.Assign(&rel.GroupID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -397,7 +397,7 @@ func (o *CustomCommandGroup) AddGroupCustomCommands(ctx context.Context, exec bo
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			queries.Assign(&rel.GroupID, o.ID)
@@ -451,7 +451,7 @@ func (o *CustomCommandGroup) SetGroupCustomCommands(ctx context.Context, exec bo
 
 	_, err := exec.ExecContext(ctx, query, values...)
 	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
+		return errors.WrapIf(err, "failed to remove relationships before set")
 	}
 
 	if o.R != nil {
@@ -544,7 +544,7 @@ func FindCustomCommandGroup(ctx context.Context, exec boil.ContextExecutor, iD i
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from custom_command_groups")
+		return nil, errors.WrapIf(err, "models: unable to select from custom_command_groups")
 	}
 
 	return customCommandGroupObj, nil
@@ -617,7 +617,7 @@ func (o *CustomCommandGroup) Insert(ctx context.Context, exec boil.ContextExecut
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into custom_command_groups")
+		return errors.WrapIf(err, "models: unable to insert into custom_command_groups")
 	}
 
 	if !cached {
@@ -678,12 +678,12 @@ func (o *CustomCommandGroup) Update(ctx context.Context, exec boil.ContextExecut
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update custom_command_groups row")
+		return 0, errors.WrapIf(err, "models: unable to update custom_command_groups row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for custom_command_groups")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for custom_command_groups")
 	}
 
 	if !cached {
@@ -706,12 +706,12 @@ func (q customCommandGroupQuery) UpdateAll(ctx context.Context, exec boil.Contex
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for custom_command_groups")
+		return 0, errors.WrapIf(err, "models: unable to update all for custom_command_groups")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for custom_command_groups")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for custom_command_groups")
 	}
 
 	return rowsAff, nil
@@ -760,12 +760,12 @@ func (o CustomCommandGroupSlice) UpdateAll(ctx context.Context, exec boil.Contex
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in customCommandGroup slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in customCommandGroup slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all customCommandGroup")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all customCommandGroup")
 	}
 	return rowsAff, nil
 }
@@ -874,7 +874,7 @@ func (o *CustomCommandGroup) Upsert(ctx context.Context, exec boil.ContextExecut
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert custom_command_groups")
+		return errors.WrapIf(err, "models: unable to upsert custom_command_groups")
 	}
 
 	if !cached {
@@ -909,12 +909,12 @@ func (o *CustomCommandGroup) Delete(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from custom_command_groups")
+		return 0, errors.WrapIf(err, "models: unable to delete from custom_command_groups")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for custom_command_groups")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for custom_command_groups")
 	}
 
 	return rowsAff, nil
@@ -930,12 +930,12 @@ func (q customCommandGroupQuery) DeleteAll(ctx context.Context, exec boil.Contex
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from custom_command_groups")
+		return 0, errors.WrapIf(err, "models: unable to delete all from custom_command_groups")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for custom_command_groups")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for custom_command_groups")
 	}
 
 	return rowsAff, nil
@@ -968,12 +968,12 @@ func (o CustomCommandGroupSlice) DeleteAll(ctx context.Context, exec boil.Contex
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from customCommandGroup slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from customCommandGroup slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for custom_command_groups")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for custom_command_groups")
 	}
 
 	return rowsAff, nil
@@ -1031,7 +1031,7 @@ func (o *CustomCommandGroupSlice) ReloadAll(ctx context.Context, exec boil.Conte
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in CustomCommandGroupSlice")
+		return errors.WrapIf(err, "models: unable to reload all in CustomCommandGroupSlice")
 	}
 
 	*o = slice
@@ -1058,7 +1058,7 @@ func CustomCommandGroupExists(ctx context.Context, exec boil.ContextExecutor, iD
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if custom_command_groups exists")
+		return false, errors.WrapIf(err, "models: unable to check if custom_command_groups exists")
 	}
 
 	return exists, nil

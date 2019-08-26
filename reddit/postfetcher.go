@@ -5,10 +5,10 @@ import (
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	greddit "github.com/jonas747/go-reddit"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 

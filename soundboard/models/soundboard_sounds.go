@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -225,7 +225,7 @@ func (q soundboardSoundQuery) One(ctx context.Context, exec boil.ContextExecutor
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for soundboard_sounds")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for soundboard_sounds")
 	}
 
 	return o, nil
@@ -242,7 +242,7 @@ func (q soundboardSoundQuery) All(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to SoundboardSound slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to SoundboardSound slice")
 	}
 
 	return o, nil
@@ -262,7 +262,7 @@ func (q soundboardSoundQuery) Count(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count soundboard_sounds rows")
+		return 0, errors.WrapIf(err, "models: failed to count soundboard_sounds rows")
 	}
 
 	return count, nil
@@ -283,7 +283,7 @@ func (q soundboardSoundQuery) Exists(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if soundboard_sounds exists")
+		return false, errors.WrapIf(err, "models: failed to check if soundboard_sounds exists")
 	}
 
 	return count > 0, nil
@@ -320,7 +320,7 @@ func FindSoundboardSound(ctx context.Context, exec boil.ContextExecutor, iD int,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from soundboard_sounds")
+		return nil, errors.WrapIf(err, "models: unable to select from soundboard_sounds")
 	}
 
 	return soundboardSoundObj, nil
@@ -403,7 +403,7 @@ func (o *SoundboardSound) Insert(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into soundboard_sounds")
+		return errors.WrapIf(err, "models: unable to insert into soundboard_sounds")
 	}
 
 	if !cached {
@@ -470,12 +470,12 @@ func (o *SoundboardSound) Update(ctx context.Context, exec boil.ContextExecutor,
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update soundboard_sounds row")
+		return 0, errors.WrapIf(err, "models: unable to update soundboard_sounds row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for soundboard_sounds")
 	}
 
 	if !cached {
@@ -498,12 +498,12 @@ func (q soundboardSoundQuery) UpdateAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: unable to update all for soundboard_sounds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for soundboard_sounds")
 	}
 
 	return rowsAff, nil
@@ -552,12 +552,12 @@ func (o SoundboardSoundSlice) UpdateAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in soundboardSound slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in soundboardSound slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all soundboardSound")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all soundboardSound")
 	}
 	return rowsAff, nil
 }
@@ -674,7 +674,7 @@ func (o *SoundboardSound) Upsert(ctx context.Context, exec boil.ContextExecutor,
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert soundboard_sounds")
+		return errors.WrapIf(err, "models: unable to upsert soundboard_sounds")
 	}
 
 	if !cached {
@@ -709,12 +709,12 @@ func (o *SoundboardSound) Delete(ctx context.Context, exec boil.ContextExecutor)
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: unable to delete from soundboard_sounds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for soundboard_sounds")
 	}
 
 	return rowsAff, nil
@@ -730,12 +730,12 @@ func (q soundboardSoundQuery) DeleteAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: unable to delete all from soundboard_sounds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for soundboard_sounds")
 	}
 
 	return rowsAff, nil
@@ -768,12 +768,12 @@ func (o SoundboardSoundSlice) DeleteAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from soundboardSound slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from soundboardSound slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for soundboard_sounds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for soundboard_sounds")
 	}
 
 	return rowsAff, nil
@@ -831,7 +831,7 @@ func (o *SoundboardSoundSlice) ReloadAll(ctx context.Context, exec boil.ContextE
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in SoundboardSoundSlice")
+		return errors.WrapIf(err, "models: unable to reload all in SoundboardSoundSlice")
 	}
 
 	*o = slice
@@ -858,7 +858,7 @@ func SoundboardSoundExists(ctx context.Context, exec boil.ContextExecutor, iD in
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if soundboard_sounds exists")
+		return false, errors.WrapIf(err, "models: unable to check if soundboard_sounds exists")
 	}
 
 	return exists, nil

@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -27,7 +28,6 @@ import (
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -56,8 +56,8 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
-	eventsystem.AddHandlerAsyncLast(bot.ConcurrentEventHandler(handleMessageReactions), eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(handleMessageReactions), eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 
 	// add the pubsub handler for cache eviction
 	pubsub.AddHandler("custom_commands_clear_cache", func(event *pubsub.Event) {
@@ -169,7 +169,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	dataCast := data.(*DelayedRunCCData)
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, dataCast.CmdID)).OneG(context.Background())
 	if err != nil {
-		return false, errors.Wrap(err, "find_command")
+		return false, errors.WrapIf(err, "find_command")
 	}
 
 	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
@@ -231,7 +231,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, (data.(*NextRunScheduledEvent)).CmdID)).OneG(context.Background())
 	if err != nil {
-		return false, errors.Wrap(err, "find_command")
+		return false, errors.WrapIf(err, "find_command")
 	}
 
 	gs := bot.State.Guild(true, evt.GuildID)
@@ -319,7 +319,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	cState := bot.State.Channel(true, reaction.ChannelID)
+	cState := evt.CS()
 	if cState == nil {
 		return
 	}
@@ -353,8 +353,7 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.Membe
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
-	cs := bot.State.Channel(true, mc.ChannelID)
-
+	cs := evt.CS()
 	if shouldIgnoreChannel(mc, cs) {
 		return
 	}
@@ -395,12 +394,12 @@ type TriggeredCC struct {
 func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, mc *discordgo.MessageCreate) (matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "BotCachedGetCommandsWithMessageTriggers")
+		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
 	}
 
 	prefix, err := commands.GetCommandPrefix(mc.GuildID)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetCommandPrefix")
+		return nil, errors.WrapIf(err, "GetCommandPrefix")
 	}
 
 	var matched []*TriggeredCC
@@ -436,7 +435,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, reaction *discordgo.MessageReaction, add bool) (matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "BotCachedGetCommandsWithMessageTriggers")
+		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
 	}
 
 	var matched []*TriggeredCC

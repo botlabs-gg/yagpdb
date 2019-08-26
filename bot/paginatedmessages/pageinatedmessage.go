@@ -37,7 +37,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 
-	eventsystem.AddHandlerAsyncLast(func(evt *eventsystem.EventData) {
+	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
 		ra := evt.MessageReactionAdd()
 
 		if ra.UserID == common.BotUser.ID {

@@ -2,8 +2,8 @@ package logs
 
 import (
 	"context"
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/pkg/errors"
 	"time"
 )
 

@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -15,7 +16,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

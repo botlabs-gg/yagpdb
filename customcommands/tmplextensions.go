@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -17,7 +18,6 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
-	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -223,7 +223,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.Wrap(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
 
 		return "", nil
@@ -292,7 +292,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.Wrap(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
 
 		return "", nil

@@ -1,11 +1,11 @@
 package soundboard
 
 import (
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/soundboard/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -218,7 +218,7 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 
 	dbModel, err := models.SoundboardSounds(qm.Where("guild_id = ? AND id = ?", g.ID, data.ID)).OneG(ctx)
 	if err != nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Error retrieiving sound")), errors.Wrap(err, "unknown sound")
+		return tmpl.AddAlerts(web.ErrorAlert("Error retrieiving sound")), errors.WrapIf(err, "unknown sound")
 	}
 
 	nameConflict, err := models.SoundboardSounds(qm.Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID)).ExistsG(r.Context())
