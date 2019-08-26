@@ -119,12 +119,16 @@ func runEvents(h []*Handler, data *EventData) {
 				var err error
 				retry, err = v.F(data)
 
+				guildID := int64(0)
+				if guildIDProvider, ok := data.EvtInterface.(discordgo.GuildEvent); ok {
+					guildID = guildIDProvider.GetGuildID()
+				}
 				if err != nil {
-					guildID := int64(0)
-					if guildIDProvider, ok := data.EvtInterface.(discordgo.GuildEvent); ok {
-						guildID = guildIDProvider.GetGuildID()
-					}
 					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An error occured in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
+				}
+
+				if retry {
+					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: Retrying event handler... %dc", v.Plugin.PluginInfo().SysName, retryCount)
 				}
 
 			} else {
