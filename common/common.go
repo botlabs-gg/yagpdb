@@ -26,7 +26,7 @@ import (
 const (
 	VERSIONMAJOR = 1
 	VERSIONMINOR = 19
-	VERSIONPATCH = 15
+	VERSIONPATCH = 19
 )
 
 var (
@@ -95,6 +95,7 @@ func Init() error {
 		panic(err)
 	}
 
+	logger.Info("Retrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
 		panic(err)
@@ -108,6 +109,7 @@ func Init() error {
 		panic(err)
 	}
 
+	logger.Info("Initializing core schema")
 	InitSchemas("core_configs", CoreServerConfDBSchema)
 
 	return err

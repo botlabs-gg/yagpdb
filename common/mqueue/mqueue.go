@@ -73,6 +73,8 @@ func RegisterPlugin() {
 
 	webhookSession.Client.HTTPClient.Transport = cleanhttp.DefaultPooledTransport()
 
+	webhookSession.Client.HTTPClient.Transport = cleanhttp.DefaultPooledTransport()
+
 	_, err = common.PQ.Exec(DBSchema)
 	if err != nil {
 		logrus.WithError(err).Error("[mqueue] failed initiializing db schema")
