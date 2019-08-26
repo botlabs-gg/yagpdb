@@ -492,6 +492,10 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 
 func tmplDBCount(ctx *templates.Context) interface{} {
 	return func(variadicUserID ...int64) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
 		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
