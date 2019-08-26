@@ -334,18 +334,34 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		go common.Statsd.Count("yagpdb.cc.executed", int64(len(triggeredCmds)), []string{"trigger:reaction"}, 1)
 	}
 
+	if len(triggeredCmds) < 1 {
+		return
+	}
+
+	rMessage, err := common.BotSession.ChannelMessage(cState.ID, reaction.MessageID)
+	if err != nil {
+		return
+	}
+	rMessage.GuildID = cState.Guild.ID
+
 	for _, matched := range triggeredCmds {
-		err = ExecuteCustomCommandFromReaction(matched.CC, ms, cState, reaction, added)
+		err = ExecuteCustomCommandFromReaction(matched.CC, ms, cState, reaction, added, rMessage)
 		if err != nil {
 			logger.WithField("guild", cState.Guild.ID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
 		}
 	}
 }
 
-func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.MemberState, cs *dstate.ChannelState, reaction *discordgo.MessageReaction, added bool) error {
+func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.MemberState, cs *dstate.ChannelState, reaction *discordgo.MessageReaction, added bool, message *discordgo.Message) error {
 	tmplCtx := templates.NewContext(cs.Guild, cs, ms)
 
+	// to make sure the message is in the proper context of the user reacting we set the mssage context to a fake message
+	fakeMsg := *message
+	fakeMsg.Author = ms.DGoUser()
+	tmplCtx.Msg = &fakeMsg
+
 	tmplCtx.Data["Reaction"] = reaction
+	tmplCtx.Data["ReactionMessage"] = reaction
 	tmplCtx.Data["ReactionAdded"] = added
 
 	return ExecuteCustomCommand(cc, tmplCtx)
