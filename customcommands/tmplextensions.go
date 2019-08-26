@@ -43,6 +43,7 @@ func init() {
 		ctx.ContextFuncs["dbDelByID"] = tmplDBDelById(ctx)
 		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
+		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
 	})
 }
 
@@ -486,6 +487,26 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND id = ?", ctx.GS.ID, userID, id)).DeleteAll(context.Background(), common.PQ)
 
 		return "", err
+	}
+}
+
+func tmplDBCount(ctx *templates.Context) interface{} {
+	return func(variadicUserID ...int64) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		var userID null.Int64
+		if len(variadicUserID) > 0 {
+			userID.Int64 = variadicUserID[0]
+			userID.Valid = true
+		}
+
+		const q = `SELECT count(*) FROM templates_user_database WHERE ( guild_id = $1 ) AND ( $2::bigint IS NULL OR user_id = $2  )`
+
+		var count int64
+		err := common.PQ.QueryRow(q, ctx.GS.ID, userID).Scan(&count)
+		return count, err
 	}
 }
 
