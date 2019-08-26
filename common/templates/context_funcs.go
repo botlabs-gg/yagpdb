@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jonas747/dstate"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -812,4 +813,21 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 
 	_, err := common.BotSession.ChannelEdit(cID, newName)
 	return "", err
+}
+
+func (c *Context) tmplOnlineCount() (int, error) {
+	if c.IncreaseCheckCallCounter("online_users", 1) {
+		return 0, ErrTooManyCalls
+	}
+
+	online := 0
+	c.GS.RLock()
+	for _, v := range c.GS.Members {
+		if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
+			online++
+		}
+	}
+	c.GS.RUnlock()
+
+	return online, nil
 }
