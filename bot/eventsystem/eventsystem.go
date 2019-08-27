@@ -308,12 +308,15 @@ func eventWorker(ch chan *EventData) {
 func handleEvent(evtData *EventData) {
 	// fill in guild state if applicable
 	if guildEvt, ok := evtData.EvtInterface.(discordgo.GuildEvent); ok {
-		evtData.GS = DiscordState.Guild(true, guildEvt.GetGuildID())
+		id := guildEvt.GetGuildID()
+		if id != 0 {
+			evtData.GS = DiscordState.Guild(true, id)
 
-		// If guild state is not available for any guild related events, except creates and deletes, do not run the handlers
-		if evtData.GS == nil && evtData.Type != EventGuildCreate && evtData.Type != EventGuildDelete {
-			logrus.Debugf("Skipped event as guild state info is not available: %v, %d", evtData.Type, guildEvt.GetGuildID())
-			return
+			// If guild state is not available for any guild related events, except creates and deletes, do not run the handlers
+			if evtData.GS == nil && evtData.Type != EventGuildCreate && evtData.Type != EventGuildDelete {
+				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", evtData.Type, guildEvt.GetGuildID())
+				return
+			}
 		}
 	}
 
