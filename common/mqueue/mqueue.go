@@ -3,7 +3,6 @@ package mqueue
 import (
 	"container/list"
 	"encoding/json"
-	"github.com/hashicorp/go-cleanhttp"
 	"github.com/jonas747/yagpdb/common/config"
 	"net"
 	"net/http"
