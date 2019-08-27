@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/jonas747/yagpdb/common/config"
+	"net"
+	"net/http"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -71,9 +73,20 @@ func RegisterPlugin() {
 	}
 	webhookSession.AddHandler(handleWebhookSessionRatelimit)
 
-	webhookSession.Client.HTTPClient.Transport = cleanhttp.DefaultPooledTransport()
-
-	webhookSession.Client.HTTPClient.Transport = cleanhttp.DefaultPooledTransport()
+	innerTransport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConnsPerHost:   10,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	webhookSession.Client.HTTPClient.Transport = innerTransport
 
 	_, err = common.PQ.Exec(DBSchema)
 	if err != nil {
@@ -436,7 +449,7 @@ func process(elem *QueuedElement, raw []byte) {
 				break
 			}
 		} else {
-			if onGuild, err := common.BotIsOnGuild(elem.Guild); !onGuild && err == nil {
+			if onGuild, err := common.BotIsOnGuild(elem.Guild); !onGuild {
 				if source, ok := sources[elem.Source]; ok {
 					logger.WithError(err).Warnf("disabling feed item %s from %s to nonexistant guild", elem.SourceID, elem.Source)
 					source.DisableFeed(elem, err)
@@ -496,6 +509,8 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 
 type CacheKeyWebhook int64
 
+var ErrGuildNotFound = errors.New("Guild not found")
+
 func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 	if elem.MessageStr == "" && elem.MessageEmbed == nil {
 		l.Error("Both MessageEmbed and MessageStr empty")
@@ -512,7 +527,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 
 	gs := bot.State.Guild(true, elem.Guild)
 	if gs == nil {
-		return errors.New("Guild not found")
+		return ErrGuildNotFound
 	}
 
 	wh, err := gs.UserCacheFetch(true, CacheKeyWebhook(elem.Channel), func() (interface{}, error) {
