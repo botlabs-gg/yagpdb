@@ -226,6 +226,13 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 		} else {
 			member.GuildID = guildID
 			go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventMemberFetched, &discordgo.GuildMemberAdd{Member: member}), eventsystem.EventMemberFetched)
+			if member == nil {
+				panic("nil member")
+			}
+
+			if member.User == nil {
+				panic("nil user")
+			}
 
 			if gs := State.Guild(true, guildID); gs != nil {
 				gs.MemberAddUpdate(true, member)
