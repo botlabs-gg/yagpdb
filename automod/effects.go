@@ -718,6 +718,9 @@ func (slow *EnableChannelSlowmodeEffect) Description() (description string) {
 }
 
 func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	if ctxData.CS == nil {
+		return nil
+	}
 
 	if slow.checkSetCooldown(ctxData.CS.ID) {
 		return nil
