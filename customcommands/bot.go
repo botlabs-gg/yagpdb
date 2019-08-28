@@ -361,7 +361,7 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.Membe
 	tmplCtx.Msg = &fakeMsg
 
 	tmplCtx.Data["Reaction"] = reaction
-	tmplCtx.Data["ReactionMessage"] = reaction
+	tmplCtx.Data["ReactionMessage"] = message
 	tmplCtx.Data["ReactionAdded"] = added
 
 	return ExecuteCustomCommand(cc, tmplCtx)

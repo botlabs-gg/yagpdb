@@ -79,13 +79,13 @@ func RegisterPlugin() {
 			KeepAlive: 10 * time.Second,
 			DualStack: true,
 		}).DialContext,
-		MaxIdleConns:          100,
+		MaxIdleConns:          10,
 		IdleConnTimeout:       90 * time.Second,
 		MaxIdleConnsPerHost:   10,
 		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	webhookSession.Client.HTTPClient.Transport = innerTransport
+	webhookSession.Client.Transport = innerTransport
 
 	_, err = common.PQ.Exec(DBSchema)
 	if err != nil {
