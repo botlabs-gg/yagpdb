@@ -217,6 +217,10 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 
 		var member *discordgo.Member
 		member, err = common.BotSession.GuildMember(guildID, elem.Member)
+		if err == nil && (member != nil && member.User == nil) {
+			err = errors.New("User is nil")
+		}
+
 		if err != nil {
 			logger.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
 			code, _ := common.DiscordError(err)
