@@ -506,7 +506,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 			userID.Valid = true
 		}
 
-		const q = `SELECT count(*) FROM templates_user_database WHERE ( guild_id = $1 ) AND ( $2::bigint IS NULL OR user_id = $2  )`
+		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND (expires_at IS NULL or expires_at > now())`
 
 		var count int64
 		err := common.PQ.QueryRow(q, ctx.GS.ID, userID).Scan(&count)
