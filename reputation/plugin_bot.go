@@ -313,7 +313,7 @@ var cmds = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "TopRep",
-		Description: "Shows top 15 rep on the server",
+		Description: "Shows rep leaderboard on the server",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
