@@ -250,8 +250,8 @@ func BanUser(config *Config, guildID, channelID int64, author *discordgo.User, r
 	return BanUserWithDuration(config, guildID, channelID, author, reason, user, 0)
 }
 
-var (
-	ErrNoMuteRole = errors.NewConstant("No mute role")
+const (
+	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
 
 // Unmut or mute a user, ignore duration if unmuting
