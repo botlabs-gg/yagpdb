@@ -206,7 +206,6 @@ var cmdUsernames = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Usernames",
 	Description:     "Shows past usernames of a user.",
-	LongDescription: "Only shows up to the last 25 usernames.",
 	Aliases:         []string{"unames", "un"},
 	RunInDM:         true,
 	Arguments: []*dcmd.ArgDef{
@@ -267,8 +266,6 @@ var cmdNicknames = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Nicknames",
 	Description:     "Shows past nicknames of a user.",
-	LongDescription: "Only shows up to the last 25 nicknames.",
-
 	Aliases: []string{"nn"},
 	RunInDM: false,
 	Arguments: []*dcmd.ArgDef{
