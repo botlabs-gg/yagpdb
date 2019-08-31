@@ -3,6 +3,7 @@ package verification
 import (
 	"context"
 	"database/sql"
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -16,6 +17,7 @@ import (
 	"github.com/jonas747/yagpdb/verification/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"math/rand"
 	"strings"
 	"sync"
@@ -215,6 +217,11 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
+	err = p.clearScheduledEvents(context.Background(), guildID, ms.ID)
+	if err != nil {
+		return true, err
+	}
+
 	if !confVerificationTrackIPs.GetBool() || model.IP == "" {
 		p.logAction(conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
 		return false, nil
@@ -272,6 +279,19 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 
 	p.logAction(conf.LogChannel, ms.DGoUser(), builder.String(), 0xff8228)
 	return false, nil
+}
+
+func (p *Plugin) clearScheduledEvents(ctx context.Context, guildID, userID int64) error {
+	_, err := seventsmodels.ScheduledEvents(
+		qm.Where("(event_name='verification_user_warn' OR event_name='verification_user_kick')"),
+		qm.Where("guild_id = ?", guildID),
+		qm.Where("(data->>'user_id')::bigint = ?", userID),
+		qm.Where("processed = false")).DeleteAll(ctx, common.PQ)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	return nil
 }
 
 func (p *Plugin) findIPConflicts(guildID int64, userID int64, ip string) ([]*discordgo.User, error) {
