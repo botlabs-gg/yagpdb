@@ -598,6 +598,19 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	return ""
 }
 
+func (c *Context) tmplDelAllMessageReactions(channel, msgID interface{}) string {
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return ""
+	}
+
+	mID := ToInt64(msgID)
+
+	common.BotSession.MessageReactionsRemoveAll(cID, mID)
+
+	return ""
+}
+
 func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
