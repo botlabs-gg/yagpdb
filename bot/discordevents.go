@@ -15,6 +15,34 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
+func addBotHandlers() {
+	eventsystem.AddHandlerFirstLegacy(BotPlugin, HandleReady, eventsystem.EventReady)
+	eventsystem.AddHandlerSecondLegacy(BotPlugin, StateHandler, eventsystem.EventAll)
+
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, EventLogger.handleEvent, eventsystem.EventAll)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildDelete, eventsystem.EventGuildDelete)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildUpdate, eventsystem.EventGuildUpdate)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, handleInvalidateCacheEvent,
+		eventsystem.EventGuildRoleCreate,
+		eventsystem.EventGuildRoleUpdate,
+		eventsystem.EventGuildRoleDelete,
+		eventsystem.EventChannelCreate,
+		eventsystem.EventChannelUpdate,
+		eventsystem.EventChannelDelete,
+		eventsystem.EventGuildMemberUpdate)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
+}
+
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
 
