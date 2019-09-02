@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"emperror.dev/errors"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -12,9 +13,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var (
@@ -75,16 +74,11 @@ OUTER:
 		}
 
 		logger.Info("Left server while bot was down: ", v)
-		common.RedisPool.Do(retryableredis.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
-		go EmitGuildRemoved(v)
-
-		if common.Statsd != nil {
-			common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
-		}
+		go guildRemoved(v)
 	}
 }
 
-func HandleGuildCreate(evt *eventsystem.EventData) {
+func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	g := evt.GuildCreate()
 	logger.WithFields(logrus.Fields{
 		"g_name": g.Name,
@@ -92,9 +86,9 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	}).Debug("Joined guild")
 
 	var n int
-	err := common.RedisPool.Do(retryableredis.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
+	err = common.RedisPool.Do(retryableredis.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
 	if err != nil {
-		logger.WithError(err).Error("Redis error")
+		return true, errors.WithStackIf(err)
 	}
 
 	// check if this server is new
@@ -113,7 +107,10 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if banned {
 		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
-		common.BotSession.GuildLeave(g.ID)
+		err = common.BotSession.GuildLeave(g.ID)
+		if err != nil {
+			return CheckDiscordErrRetry(err), errors.WithStackIf(err)
+		}
 	}
 
 	gm := &models.JoinedGuild{
@@ -127,11 +124,13 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("member_count", "name", "avatar", "owner_id", "left_at"), boil.Infer())
 	if err != nil {
-		logger.WithError(err).Error("failed upserting guild")
+		return true, errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
-func HandleGuildDelete(evt *eventsystem.EventData) {
+func HandleGuildDelete(evt *eventsystem.EventData) (retry bool, err error) {
 	if evt.GuildDelete().Unavailable {
 		// Just a guild outage
 		return
@@ -141,66 +140,33 @@ func HandleGuildDelete(evt *eventsystem.EventData) {
 		"g_name": evt.GuildDelete().Name,
 	}).Info("Left guild")
 
-	err := common.RedisPool.Do(retryableredis.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(evt.GuildDelete().ID)))
-	if err != nil {
-		logger.WithError(err).Error("Redis error")
-	}
+	go guildRemoved(evt.GuildDelete().ID)
 
-	go EmitGuildRemoved(evt.GuildDelete().ID)
-
-	if common.Statsd != nil {
-		common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
-	}
-
-	models.JoinedGuilds(qm.Where("id = ?", evt.GuildDelete().ID)).UpdateAll(evt.Context(), common.PQ, models.M{
-		"left_at": null.TimeFrom(time.Now()),
-	})
+	return false, nil
 }
 
-func HandleGuildMemberAdd(evt *eventsystem.EventData) {
+func HandleGuildMemberAdd(evt *eventsystem.EventData) (retry bool, err error) {
 	ma := evt.GuildMemberAdd()
 
 	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
 
-	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
+	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
 	if err != nil {
-		logger.WithError(err).Error("failed updating guild member count")
+		return true, errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
-func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
 	mr := evt.GuildMemberRemove()
-	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
+
+	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
 	if err != nil {
-		logger.WithError(err).Error("failed updating guild member count")
+		return true, errors.WithStackIf(err)
 	}
-}
 
-func HandleResumed(evt *eventsystem.EventData) {
-	guilds := State.GuildsSlice(true)
-
-	for _, v := range guilds {
-		v.RLock()
-		name := v.Guild.Name
-		mc := v.Guild.MemberCount
-		ownerID := v.Guild.OwnerID
-		icon := v.Guild.Icon
-		v.RUnlock()
-
-		gm := &models.JoinedGuild{
-			ID:          v.ID,
-			MemberCount: int64(mc),
-			OwnerID:     ownerID,
-			JoinedAt:    time.Now(),
-			Name:        name,
-			Avatar:      icon,
-		}
-
-		err := gm.Upsert(evt.Context(), common.PQ, false, []string{"id"}, boil.Infer(), boil.Infer())
-		if err != nil {
-			logger.WithError(err).Error("failed upserting guild in resume")
-		}
-	}
+	return false, nil
 }
 
 // StateHandler updates the world state
@@ -209,7 +175,7 @@ func StateHandler(evt *eventsystem.EventData) {
 	State.HandleEvent(ContextSession(evt.Context()), evt.EvtInterface)
 }
 
-func HandleGuildUpdate(evt *eventsystem.EventData) {
+func HandleGuildUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	InvalidateCache(evt.GuildUpdate().Guild.ID, 0)
 
 	g := evt.GuildUpdate().Guild
@@ -223,45 +189,44 @@ func HandleGuildUpdate(evt *eventsystem.EventData) {
 		Avatar:      g.Icon,
 	}
 
-	err := gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("name", "avatar", "owner_id"), boil.Infer())
+	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("name", "avatar", "owner_id"), boil.Infer())
 	if err != nil {
-		logger.WithError(err).Error("failed upserting guild in update")
+		return true, errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
-func HandleGuildRoleUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.GuildRoleUpdate().GuildID, 0)
-}
+func handleInvalidateCacheEvent(evt *eventsystem.EventData) (bool, error) {
+	if evt.GS == nil {
+		return false, nil
+	}
 
-func HandleGuildRoleCreate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.GuildRoleCreate().GuildID, 0)
-}
+	userID := int64(0)
 
-func HandleGuildRoleRemove(evt *eventsystem.EventData) {
-	InvalidateCache(evt.GuildRoleDelete().GuildID, 0)
-}
+	if evt.Type == eventsystem.EventGuildMemberUpdate {
+		userID = evt.GuildMemberUpdate().User.ID
+	}
 
-func HandleChannelCreate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.ChannelCreate().GuildID, 0)
-}
-func HandleChannelUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.ChannelUpdate().GuildID, 0)
-}
-func HandleChannelDelete(evt *eventsystem.EventData) {
-	InvalidateCache(evt.ChannelDelete().GuildID, 0)
-}
+	InvalidateCache(evt.GS.ID, userID)
 
-func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(0, evt.GuildMemberUpdate().User.ID)
+	return false, nil
 }
 
 func InvalidateCache(guildID, userID int64) {
 	if userID != 0 {
-		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds"))
+		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds")); err != nil {
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating user guilds cache")
+		}
 	}
 	if guildID != 0 {
-		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID)))
-		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID)))
+		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))); err != nil {
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild cache")
+		}
+
+		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))); err != nil {
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild channels cache")
+		}
 	}
 }
 

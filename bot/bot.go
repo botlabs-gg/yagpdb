@@ -78,23 +78,25 @@ func setup() {
 
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, EventLogger.handleEvent, eventsystem.EventAll)
 
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildDelete, eventsystem.EventGuildDelete)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildDelete, eventsystem.EventGuildDelete)
 
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildUpdate, eventsystem.EventGuildUpdate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildRoleCreate, eventsystem.EventGuildRoleCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildRoleUpdate, eventsystem.EventGuildRoleUpdate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildRoleRemove, eventsystem.EventGuildRoleDelete)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleChannelCreate, eventsystem.EventChannelCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleChannelUpdate, eventsystem.EventChannelUpdate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleChannelDelete, eventsystem.EventChannelDelete)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildUpdate, eventsystem.EventGuildUpdate)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, handleInvalidateCacheEvent,
+		eventsystem.EventGuildRoleCreate,
+		eventsystem.EventGuildRoleUpdate,
+		eventsystem.EventGuildRoleDelete,
+		eventsystem.EventChannelCreate,
+		eventsystem.EventChannelUpdate,
+		eventsystem.EventChannelDelete,
+		eventsystem.EventGuildMemberUpdate)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleReactionAdd, eventsystem.EventMessageReactionAdd)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleResumed, eventsystem.EventResumed)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
 
 	common.BotSession.AddHandler(eventsystem.HandleEvent)
