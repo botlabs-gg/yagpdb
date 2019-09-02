@@ -3,7 +3,6 @@ package bot
 import (
 	"emperror.dev/errors"
 	"runtime/debug"
-	"sync"
 	"time"
 
 	"github.com/jonas747/discordgo"
@@ -16,29 +15,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-var (
-	waitingGuildsMU sync.Mutex
-	waitingGuilds   = make(map[int64]bool)
-	waitingReadies  []int
-
-	botStartedFired = new(int32)
-)
-
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
-
-	waitingGuildsMU.Lock()
-	for i, v := range waitingReadies {
-		if ContextSession(data.Context()).ShardID == v {
-			waitingReadies = append(waitingReadies[:i], waitingReadies[i+1:]...)
-			break
-		}
-	}
-
-	for _, v := range evt.Guilds {
-		waitingGuilds[v.ID] = true
-	}
-	waitingGuildsMU.Unlock()
 
 	RefreshStatus(ContextSession(data.Context()))
 
