@@ -6,6 +6,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
@@ -37,6 +38,16 @@ var cmdMigrate = &commands.YAGCommand{
 	RunInDM:              true,
 	HideFromCommandsPage: true,
 	RunFunc: util.RequireOwner(func(parsed *dcmd.Data) (interface{}, error) {
+		resp := ""
+		err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", "yagpdb_logs_migrated", "1", "NX"))
+		if err != nil {
+			return nil, err
+		}
+
+		if resp != "OK" {
+			return "Already ran migration previously", nil
+		}
+
 		last := -1
 		more := true
 		for more {
