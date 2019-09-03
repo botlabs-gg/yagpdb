@@ -216,7 +216,7 @@ func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 		// there is a active session, but they're not on the related guild (if any)
 
 		cast := user.(*discordgo.User)
-		if cast.ID == int64(common.ConfOwner.GetInt()) {
+		if common.IsOwner(cast.ID) {
 			return true
 		}
 

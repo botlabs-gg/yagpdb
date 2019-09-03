@@ -24,7 +24,7 @@ var (
 )
 
 func IsBotAdmin(userID int64) (isAdmin bool, err error) {
-	if userID == int64(common.ConfOwner.GetInt()) {
+	if common.IsOwner(userID) {
 		return true, nil
 	}
 

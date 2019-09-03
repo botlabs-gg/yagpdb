@@ -167,7 +167,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 
 	if user := ctx.Value(common.ContextKeyUser); user != nil {
 		cast := user.(*discordgo.User)
-		if cast.ID != int64(common.ConfOwner.GetInt()) {
+		if !common.IsOwner(cast.ID) {
 			return HandleStatus(w, r)
 		}
 	} else {

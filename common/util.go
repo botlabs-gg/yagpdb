@@ -643,10 +643,24 @@ func SqlTX(f func(tx *sql.Tx) error) error {
 }
 
 func SendOwnerAlert(msgf string, args ...interface{}) {
-	ch, err := BotSession.UserChannelCreate(int64(ConfOwner.GetInt()))
+	mainOwner := int64(0)
+	if len(BotOwners) > 0 {
+		mainOwner = BotOwners[0]
+	}
+	ch, err := BotSession.UserChannelCreate(int64(mainOwner))
 	if err != nil {
 		return
 	}
 
 	BotSession.ChannelMessageSend(ch.ID, fmt.Sprintf(msgf, args...))
+}
+
+func IsOwner(userID int64) bool {
+	for _, v := range BotOwners {
+		if v == userID {
+			return true
+		}
+	}
+
+	return false
 }

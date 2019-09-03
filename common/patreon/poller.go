@@ -208,12 +208,6 @@ func (p *Poller) Poll() {
 		page++
 	}
 
-	patrons = append(patrons, &Patron{
-		DiscordID:   int64(common.ConfOwner.GetInt()),
-		Name:        "Owner",
-		AmountCents: 10000,
-	})
-
 	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo
 	p.mu.Lock()
 	p.activePatrons = patrons
