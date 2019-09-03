@@ -98,7 +98,7 @@ func IsGuildPremiumCached(guildID int64) (bool, error) {
 
 func PremiumProvidedBy(guildID int64) (int64, error) {
 	if confAllGuildsPremium.GetBool() {
-		return int64(common.ConfOwner.GetInt()), nil
+		return int64(common.BotUser.ID), nil
 	}
 
 	var userID int64
