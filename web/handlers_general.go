@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
@@ -233,6 +234,23 @@ func handleRobotsTXT(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`User-agent: *
 Disallow: /manage/
 `))
+}
+
+func handleAdsTXT(w http.ResponseWriter, r *http.Request) {
+	adsPath := ConfAdsTxt.GetString()
+	if adsPath == "" {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(``))
+		return
+	}
+
+	f, err := ioutil.ReadFile(ConfAdsTxt.GetString())
+	if err != nil {
+		logger.WithError(err).Error("failed reading ads.txt file")
+		return
+	}
+
+	w.Write(f)
 }
 
 type ControlPanelPlugin struct{}

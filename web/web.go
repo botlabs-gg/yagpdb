@@ -61,6 +61,8 @@ var (
 	confAdHeight  = config.RegisterOption("yagpdb.ad.h", "Ad Height", 0)
 	ConfAdVideos  = config.RegisterOption("yagpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
 
+	ConfAdsTxt = config.RegisterOption("yagpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
+
 	confDisableRequestLogging = config.RegisterOption("yagpdb.disable_request_logging", "Disable logging of http requests to web server", false)
 )
 
@@ -347,6 +349,7 @@ func setupRootMux() {
 	// Setup fileserver
 	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
 	mux.Handle(pat.Get("/robots.txt"), http.HandlerFunc(handleRobotsTXT))
+	mux.Handle(pat.Get("/ads.txt"), http.HandlerFunc(handleAdsTXT))
 
 	// General middleware
 	mux.Use(SkipStaticMW(gziphandler.GzipHandler, ".css", ".js", ".map"))
