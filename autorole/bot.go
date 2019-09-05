@@ -366,15 +366,18 @@ func HandleGuildChunk(evt *eventsystem.EventData) {
 	}
 
 	stopProcessing(chunk.GuildID)
+	go assignFromGuildChunk(chunk.GuildID, config, chunk.Members)
+}
 
+func assignFromGuildChunk(guildID int64, config *GeneralConfig, members []*discordgo.Member) {
 	lastTimeUpdatedBlockingKey := time.Now()
 	lastTimeUpdatedConfig := time.Now()
 
 OUTER:
-	for _, m := range chunk.Members {
+	for _, m := range members {
 		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
-			logger.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed parsing join timestamp")
+			logger.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", guildID).Error("failed parsing join timestamp")
 			if config.RequiredDuration > 0 {
 				continue // Need the joined_at field for this
 			}
@@ -393,22 +396,22 @@ OUTER:
 		time.Sleep(time.Second * 2)
 
 		logger.Println("assigning to ", m.User.ID, " from guild chunk event")
-		err = common.AddRole(m, config.Role, chunk.GuildID)
+		err = common.AddRole(m, config.Role, guildID)
 		if err != nil {
-			logger.WithError(err).WithField("user", m.User.ID).WithField("guild", chunk.GuildID).Error("failed adding autorole role")
+			logger.WithError(err).WithField("user", m.User.ID).WithField("guild", guildID).Error("failed adding autorole role")
 
 			if common.IsDiscordErr(err, 50013, 10011) {
 				// No perms, remove autorole
-				logger.WithError(err).WithField("guild", chunk.GuildID).Info("No perms to add autorole, or nonexistant, removing from config")
+				logger.WithError(err).WithField("guild", guildID).Info("No perms to add autorole, or nonexistant, removing from config")
 				config.Role = 0
-				saveGeneral(chunk.GuildID, config)
+				saveGeneral(guildID, config)
 				return
 			}
 		}
 
 		if time.Since(lastTimeUpdatedConfig) > time.Second*10 {
 			// Refresh the config occasionally to make sure it dosen't go stale
-			newConf, err := GetGeneralConfig(chunk.GuildID)
+			newConf, err := GetGeneralConfig(guildID)
 			if err == nil {
 				config = newConf
 			} else {
@@ -419,7 +422,7 @@ OUTER:
 
 			config = newConf
 			if config.Role == 0 {
-				logger.WithField("guild", chunk.GuildID).Info("autorole role was set to none in the middle of full retroactive assignment, cancelling")
+				logger.WithField("guild", guildID).Info("autorole role was set to none in the middle of full retroactive assignment, cancelling")
 				return
 			}
 		}
@@ -427,7 +430,7 @@ OUTER:
 		if time.Since(lastTimeUpdatedBlockingKey) > time.Second*10 {
 			lastTimeUpdatedBlockingKey = time.Now()
 
-			err := common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
+			err := common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(guildID), "100", "1"))
 			if err != nil {
 				logger.WithError(err).Error("failed marking autorole chunk processing")
 			}

@@ -1,7 +1,13 @@
 package bot
 
 import (
+	"context"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot/models"
+	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"sync"
+	"time"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator"
@@ -44,7 +50,21 @@ type ShardMigrationHandler interface {
 	GuildMigrated(guild *dstate.GuildState, toThisSlave bool)
 }
 
-func EmitGuildRemoved(guildID int64) {
+func guildRemoved(guildID int64) {
+	if common.Statsd != nil {
+		common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
+	}
+
+	common.RedisPool.Do(retryableredis.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(guildID)))
+
+	_, err := models.JoinedGuilds(qm.Where("id = ?", guildID)).UpdateAll(context.Background(), common.PQ, models.M{
+		"left_at": null.TimeFrom(time.Now()),
+	})
+
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed marking guild as left")
+	}
+
 	for _, v := range common.Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(guildID)

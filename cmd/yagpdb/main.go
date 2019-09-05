@@ -99,7 +99,6 @@ func init() {
 
 func main() {
 	flag.Parse()
-	bot.FlagNodeID = flagNodeID
 	common.NodeID = flagNodeID
 
 	common.AddLogHook(common.ContextHook{})
@@ -208,7 +207,7 @@ func main() {
 	if flagRunBot || flagRunEverything {
 		mqueue.RegisterPlugin()
 		botrest.RegisterPlugin()
-		bot.Run()
+		bot.Run(flagNodeID)
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
