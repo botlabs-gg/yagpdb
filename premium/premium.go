@@ -85,7 +85,7 @@ func IsGuildPremiumCached(guildID int64) (bool, error) {
 		return IsGuildPremium(guildID)
 	}
 
-	v, err := gs.UserCacheFetch(true, CacheKeyIsPremium, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyIsPremium, func() (interface{}, error) {
 		return IsGuildPremium(guildID)
 	})
 

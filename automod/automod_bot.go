@@ -480,7 +480,7 @@ const (
 )
 
 func (p *Plugin) FetchGuildRulesets(gs *dstate.GuildState) ([]*ParsedRuleset, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyRulesets, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyRulesets, func() (interface{}, error) {
 		rulesets, err := models.AutomodRulesets(qm.Where("guild_id=?", gs.ID),
 			qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).AllG(context.Background())
 
@@ -509,7 +509,7 @@ func (p *Plugin) FetchGuildRulesets(gs *dstate.GuildState) ([]*ParsedRuleset, er
 }
 
 func FetchGuildLists(gs *dstate.GuildState) ([]*models.AutomodList, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyLists, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyLists, func() (interface{}, error) {
 		lists, err := models.AutomodLists(qm.Where("guild_id = ?", gs.ID)).AllG(context.Background())
 		if err != nil {
 			return nil, err

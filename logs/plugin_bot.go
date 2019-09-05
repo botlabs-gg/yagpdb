@@ -808,7 +808,7 @@ func GetConfigCached(exec boil.ContextExecutor, gID int64) (*models.GuildLogging
 		return GetConfig(exec, context.Background(), gID)
 	}
 
-	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
 		conf, err := GetConfig(exec, context.Background(), gID)
 		return conf, err
 	})

@@ -50,7 +50,7 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 		return
 	}
 
-	gs.UserCacheDel(true, CacheKeyConfig)
+	gs.UserCacheDel(CacheKeyConfig)
 
 	CheckGuildFull(gs, true)
 }
@@ -438,7 +438,7 @@ const (
 )
 
 func BotCachedGetConfig(gs *dstate.GuildState) (*Config, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
 		return GetConfig(gs.ID)
 	})
 

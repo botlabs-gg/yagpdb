@@ -58,7 +58,7 @@ var roleCommands = []*commands.YAGCommand{
 func HandleUpdateAutoroles(event *pubsub.Event) {
 	gs := bot.State.Guild(true, event.TargetGuildInt)
 	if gs != nil {
-		gs.UserCacheDel(true, CacheKeyConfig)
+		gs.UserCacheDel(CacheKeyConfig)
 	}
 
 	stopProcessing(event.TargetGuildInt)
@@ -454,7 +454,7 @@ type CacheKey int
 const CacheKeyConfig CacheKey = 1
 
 func GuildCacheGetGeneralConfig(gs *dstate.GuildState) (*GeneralConfig, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
 		config, err := GetGeneralConfig(gs.ID)
 		return config, err
 	})

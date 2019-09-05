@@ -37,7 +37,7 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
 		if gs != nil {
-			gs.UserCacheDel(true, CacheKeyConfig)
+			gs.UserCacheDel(CacheKeyConfig)
 		}
 	}, nil)
 
@@ -187,7 +187,7 @@ const (
 )
 
 func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*ServerStatsConfig, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyConfig, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
 		return GetConfig(ctx, gs.ID)
 	})
 

@@ -457,7 +457,7 @@ func evictGSCacheLocal(guildID int64, key GSCacheKey) {
 		return
 	}
 
-	gs.UserCacheDel(true, key)
+	gs.UserCacheDel(key)
 }
 
 type GSCacheKey string
