@@ -467,7 +467,7 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		ctx.GS.UserCacheDel(true, CacheKeyDBLimits)
+		ctx.GS.UserCacheDel(CacheKeyDBLimits)
 
 		keyStr := limitString(templates.ToString(key), 256)
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ?", ctx.GS.ID, userID, keyStr)).DeleteAll(context.Background(), common.PQ)
@@ -482,7 +482,7 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		ctx.GS.UserCacheDel(true, CacheKeyDBLimits)
+		ctx.GS.UserCacheDel(CacheKeyDBLimits)
 
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND id = ?", ctx.GS.ID, userID, id)).DeleteAll(context.Background(), common.PQ)
 
@@ -579,7 +579,7 @@ func getGuildCCDBNumValues(guildID int64) (int64, error) {
 }
 
 func cacheCheckDBLimit(gs *dstate.GuildState) (int64, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyDBLimits, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyDBLimits, func() (interface{}, error) {
 		n, err := getGuildCCDBNumValues(gs.ID)
 		return n, err
 	})

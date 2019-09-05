@@ -529,7 +529,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		return ErrGuildNotFound
 	}
 
-	wh, err := gs.UserCacheFetch(true, CacheKeyWebhook(elem.Channel), func() (interface{}, error) {
+	wh, err := gs.UserCacheFetch(CacheKeyWebhook(elem.Channel), func() (interface{}, error) {
 		return FindCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
 		// return weho
 	})
@@ -557,7 +557,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 			return errors.WrapIf(err, "sql.delete")
 		}
 
-		gs.UserCacheDel(true, CacheKeyWebhook(elem.Channel))
+		gs.UserCacheDel(CacheKeyWebhook(elem.Channel))
 
 		return errors.New("deleted webhook")
 	}

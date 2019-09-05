@@ -66,7 +66,7 @@ func (p *Plugin) BotInit() {
 			return
 		}
 
-		gs.UserCacheDel(true, CacheKeyCommands)
+		gs.UserCacheDel(CacheKeyCommands)
 	}, nil)
 
 	scheduledevents2.RegisterHandler("cc_next_run", NextRunScheduledEvent{}, handleNextRunScheduledEVent)
@@ -716,7 +716,7 @@ const (
 )
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyCommands, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyCommands, func() (interface{}, error) {
 		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 	})
 

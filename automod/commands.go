@@ -37,8 +37,8 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			data.GS.UserCacheDel(true, CacheKeyRulesets)
-			data.GS.UserCacheDel(true, CacheKeyLists)
+			data.GS.UserCacheDel(CacheKeyRulesets)
+			data.GS.UserCacheDel(CacheKeyLists)
 
 			enabledStr := "enabled"
 			if !ruleset.Enabled {
