@@ -2,7 +2,7 @@ package basicredispool
 
 import (
 	"github.com/jonas747/retryableredis"
-	"github.com/mediocregopher/radix"
+	"github.com/mediocregopher/radix/v3"
 )
 
 type Pool struct {

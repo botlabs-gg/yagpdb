@@ -1,11 +1,12 @@
 package streaming
 
 import (
-	"emperror.dev/errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"sync"
+
+	"emperror.dev/errors"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator"
@@ -16,7 +17,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/mediocregopher/radix"
+	"github.com/mediocregopher/radix/v3"
 )
 
 func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }

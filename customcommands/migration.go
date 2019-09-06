@@ -7,7 +7,7 @@ import (
 
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 

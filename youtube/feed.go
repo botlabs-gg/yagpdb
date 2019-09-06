@@ -13,7 +13,7 @@ import (
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/mediocregopher/radix"
+	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"

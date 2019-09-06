@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/golang/crypto/acme/autocert"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
@@ -21,6 +20,7 @@ import (
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 var (
