@@ -3,7 +3,6 @@ package mqueue
 import (
 	"container/list"
 	"encoding/json"
-	"github.com/jonas747/yagpdb/common/config"
 	"net"
 	"net/http"
 	"strconv"
@@ -11,12 +10,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jonas747/yagpdb/common/config"
+
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
 

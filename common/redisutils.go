@@ -2,7 +2,8 @@ package common
 
 import (
 	"encoding/json"
-	"github.com/mediocregopher/radix"
+
+	"github.com/mediocregopher/radix/v3"
 
 	"github.com/jonas747/retryableredis"
 )

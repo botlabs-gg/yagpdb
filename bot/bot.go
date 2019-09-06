@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardmanager"
 	"github.com/jonas747/dshardorchestrator/node"
 	"github.com/jonas747/dstate"
+	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
