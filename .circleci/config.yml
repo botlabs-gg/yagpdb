@@ -18,9 +18,9 @@ jobs: # basic units of work in a run
           keys:
             - v1-pkg-cache
      
-      - run: cd cmd/yagpdb && go install && cd -
-      - run: cd cmd/shardorchestrator && go install && cd -
-      - run: cd cmd/capturepanics && go install && cd -
+      - run: cd cmd/yagpdb && go install -i && cd -
+      - run: cd cmd/shardorchestrator && go install -i && cd -
+      - run: cd cmd/capturepanics && go install -i && cd -
 
       - run: go test -v ./...
 
