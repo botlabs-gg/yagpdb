@@ -17,14 +17,10 @@ jobs: # basic units of work in a run
       # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           keys:
             - v1-pkg-cache
-
-      - run: git clone -b dgofork https://github.com/jonas747/dutil /go/src/github.com/jonas747/dutil
-      - run: git clone -b dgofork https://github.com/jonas747/dshardmanager /go/src/github.com/jonas747/dshardmanager
-
-      - run: go get -d -t ./...
-      - run: go get -v -t github.com/jonas747/yagpdb/cmd/yagpdb # pull and build dependencies for the project
-      - run: go get -v -t github.com/jonas747/yagpdb/cmd/shardorchestrator # pull and build dependencies for the project
-      - run: go get -v -t github.com/jonas747/yagpdb/cmd/capturepanics # pull and build dependencies for the project
+     
+      - run: cd cmd/yagpdb && go install && cd -
+      - run: cd cmd/shardorchestrator && go install && cd -
+      - run: cd cmd/capturepanics && go install && cd -
 
       - run: go test -v ./...
 
