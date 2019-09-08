@@ -32,6 +32,8 @@ func init() {
 		ctx.ContextFuncs["scheduleUniqueCC"] = tmplScheduleUniqueCC(ctx)
 		ctx.ContextFuncs["cancelScheduledUniqueCC"] = tmplCancelUniqueCC(ctx)
 
+		ctx.ContextFuncs["append"] = appendWithLimit(ctx)
+
 		ctx.ContextFuncs["dbSet"] = tmplDBSet(ctx)
 		ctx.ContextFuncs["dbSetExpire"] = tmplDBSetExpire(ctx)
 		ctx.ContextFuncs["dbIncr"] = tmplDBIncr(ctx)
@@ -322,6 +324,20 @@ func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 	}
 }
 
+// appendWithLimit adds the following items to the slice with a size limit defined with the premium status of the server
+func appendWithLimit(ctx *templates.Context) func(slice []interface{}, values ...interface{}) ([]interface{}, error) {
+	return func(slice []interface{}, values ...interface{}) ([]interface{}, error) {
+		limitMuliplier := 1
+		if isPremium, _ := premium.IsGuildPremium(ctx.GS.ID); isPremium {
+			limitMuliplier = 10
+		}
+		if len(slice)+len(values) < limitMuliplier*50 {
+			return append(slice, values...), nil
+		}
+		return nil, errors.New("resulting slice exceeds size limit")
+	}
+}
+
 func tmplDBSet(ctx *templates.Context) interface{} {
 	return func(userID int64, key interface{}, value interface{}) (string, error) {
 		return (tmplDBSetExpire(ctx))(userID, key, value, -1)
@@ -394,9 +410,9 @@ func tmplDBIncr(ctx *templates.Context) interface{} {
 
 		keyStr := limitString(templates.ToString(key), 256)
 
-		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num) 
+		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num)
 VALUES ($1, $1, $2, $3, $4, $5, $6)
-ON CONFLICT (guild_id, user_id, key) 
+ON CONFLICT (guild_id, user_id, key)
 DO UPDATE SET value_num = templates_user_database.value_num + $6, updated_at = $1
 RETURNING value_num`
 
