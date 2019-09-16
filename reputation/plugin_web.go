@@ -222,8 +222,8 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	const format = `<ul>
-	<li>Repuatation is: %s</li>
-	<li>Repuatation name: <code>%s</code></li>
+	<li>Reputation is: %s</li>
+	<li>Reputation name: <code>%s</code></li>
 </ul>`
 
 	name := html.EscapeString(settings.PointsName)
