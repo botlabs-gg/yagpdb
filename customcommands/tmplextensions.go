@@ -331,7 +331,7 @@ func appendWithLimit(ctx *templates.Context) func(slice []interface{}, values ..
 		if isPremium, _ := premium.IsGuildPremium(ctx.GS.ID); isPremium {
 			limitMuliplier = 10
 		}
-		if len(slice)+len(values) < limitMuliplier*50 {
+		if len(slice)+len(values) < limitMuliplier*1000 {
 			return append(slice, values...), nil
 		}
 		return nil, errors.New("resulting slice exceeds size limit")
