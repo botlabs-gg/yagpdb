@@ -394,7 +394,7 @@ func baseContextFuncs(c *Context) {
 
 	c.ContextFuncs["editChannelName"] = c.tmplEditChannelName
 	c.ContextFuncs["onlineCount"] = c.tmplOnlineCount
-	c.ContextFuncs["countAllBots"] = c.tmplCountAllBots
+	c.ContextFuncs["botCount"] = c.tmplBotCount
 }
 
 type limitedWriter struct {
