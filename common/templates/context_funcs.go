@@ -849,7 +849,7 @@ func (c *Context) tmplOnlineCount() (int, error) {
 	return online, nil
 }
 
-func (c *Context) tmplBotCount() (int, error) {
+func (c *Context) tmplOnlineCountBots() (int, error) {
 	if c.IncreaseCheckCallCounter("online_bots", 1) {
 		return 0, ErrTooManyCalls
 	}
@@ -857,7 +857,7 @@ func (c *Context) tmplBotCount() (int, error) {
 	botCount := 0
 	c.GS.RLock()
 	for _, v := range c.GS.Members {
-		if v.Bot {
+		if v.Bot && v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
 			botCount++
 		}
 	}
