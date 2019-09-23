@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"strconv"
 	"strings"
 
@@ -71,11 +72,11 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 	}
 }
 
-type cmdExecFunc func(cmd string, args ...interface{}) (string, error)
+type cmdExecFunc func(cmd string, args ...interface{}) (interface{}, error)
 
 // Returns 2 functions to execute commands in user or bot context with limited about of commands executed
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
-	execUser := func(cmd string, args ...interface{}) (string, error) {
+	execUser := func(cmd string, args ...interface{}) (interface{}, error) {
 		mc := &discordgo.MessageCreate{ctx.Msg}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
@@ -84,7 +85,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 		return execCmd(ctx, dryRun, mc, cmd, args...)
 	}
 
-	execBot := func(cmd string, args ...interface{}) (string, error) {
+	execBot := func(cmd string, args ...interface{}) (interface{}, error) {
 
 		botUserCopy := *common.BotUser
 		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.Username + "#" + ctx.Msg.Author.Discriminator + ")"
@@ -103,8 +104,8 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	return execUser, execBot
 }
 
-func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cmd string, args ...interface{}) (string, error) {
-	ctxMember, err := bot.GetMember(ctx.GS.ID, m.Author.ID)
+func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cmd string, args ...interface{}) (interface{}, error) {
+	ctxMember, err := bot.GetMember(tmplCtx.GS.ID, m.Author.ID)
 	if err != nil {
 		return "error retrieving member", err
 	}
@@ -175,7 +176,8 @@ func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cm
 		return "", errors.WithMessage(err, "tmplExecCmd")
 	}
 	data.MsgStrippedPrefix = fakeMsg.Content
-	data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ctxMember))
+	ctx := context.WithValue(data.Context(), CtxKeyMS, ctxMember)
+	data = data.WithContext(context.WithValue(ctx, paginatedmessages.CtxKeyNoPagination, true))
 
 	foundCmd, foundContainer, rest := CommandSystem.Root.AbsFindCommandWithRest(cmdLine)
 	if foundCmd == nil {
@@ -223,11 +225,9 @@ func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cm
 	case string:
 		return v, nil
 	case *discordgo.MessageEmbed:
-		ctx.EmebdsToSend = append(ctx.EmebdsToSend, v)
-		return "", nil
+		return v, nil
 	case []*discordgo.MessageEmbed:
-		ctx.EmebdsToSend = append(ctx.EmebdsToSend, v...)
-		return "", nil
+		return v, nil
 	}
 
 	return "", nil
