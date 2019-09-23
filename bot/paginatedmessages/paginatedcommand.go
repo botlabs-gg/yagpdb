@@ -13,9 +13,13 @@ type PaginatedCommandFunc func(data *dcmd.Data, p *PaginatedMessage, page int) (
 
 func PaginatedCommand(pageArgIndex int, cb PaginatedCommandFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
-		page := 0
+		page := 1
 		if pageArgIndex > -1 {
 			page = data.Args[pageArgIndex].Int()
+		}
+
+		if page < 1 {
+			page = 1
 		}
 
 		if data.Context().Value(CtxKeyNoPagination) != nil {
