@@ -309,7 +309,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		reaction = e.MessageReaction
 	}
 
-	if reaction.GuildID == 0 {
+	if reaction.GuildID == 0 || reaction.UserID == common.BotUser.ID {
 		return
 	}
 
