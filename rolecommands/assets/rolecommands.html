@@ -254,7 +254,7 @@ $(function(){
                             <div class="form-group">
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="{{.Group.ID}}-single-require-one" name="SingleRequireOne" {{if .Group.SingleRequireOne}}checked{{end}}>
-                                    <label for="{{.Group.ID}}-single-require-one" class="form-check-label">Require 1 role in group at all times (after initial assignment)</label>
+                                    <label for="{{.Group.ID}}-single-require-one" class="form-check-label">Require 1 role in group at all times (after initial assignment). (Users won't be able to change roles unless the next box is checked).</label>
                                 </div>
                             </div>
                             <div class="form-group">
