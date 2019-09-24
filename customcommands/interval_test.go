@@ -81,3 +81,22 @@ func TestNextRunTimeExcludingDays(t *testing.T) {
 		t.Error("next run should be now: ", expected, ", got: ", nextRun, tim.Weekday())
 	}
 }
+
+func TestNextRunTimeExcludingDaysHours(t *testing.T) {
+	cc := &models.CustomCommand{
+		TimeTriggerInterval:       1,
+		TimeTriggerExcludingDays:  []int64{2},
+		TimeTriggerExcludingHours: []int64{0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
+	}
+
+	tim := time.Time{}
+	tim = tim.UTC()
+	tim = tim.Add(time.Hour * 2)
+
+	nextRun := CalcNextRunTime(cc, tim)
+	expected := tim.Add(time.Hour * 47)
+
+	if nextRun != expected {
+		t.Errorf("next run should be: %s (w:%d) got %s (w:%d - %d)", expected, expected.Weekday(), nextRun, int(nextRun.Weekday()), nextRun.Hour())
+	}
+}
