@@ -222,7 +222,7 @@ func (n *NodeImpl) LoadGuildState(gs *dstate.GuildState) {
 		m.Guild = gs
 	}
 
-	gs.InitCache(State)
+	// gs.InitCache(State)
 
 	State.Lock()
 	State.Guilds[gs.ID] = gs

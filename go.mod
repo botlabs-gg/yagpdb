@@ -36,7 +36,7 @@ require (
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
 	github.com/jonas747/discordgo v1.1.2
 	github.com/jonas747/dshardorchestrator v0.0.0-20190717204625-752c847fa039
-	github.com/jonas747/dstate v1.0.2
+	github.com/jonas747/dstate v1.0.0
 	github.com/jonas747/dutil v0.0.2
 	github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846
 	github.com/jonas747/jdshardmanager v1.0.1
