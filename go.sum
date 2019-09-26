@@ -182,6 +182,8 @@ github.com/jonas747/dstate v1.0.0 h1:m9fFy7266etE55ylG+Pd1/U8T6LltVAaaXEvl64pSF8
 github.com/jonas747/dstate v1.0.0/go.mod h1:IeBIDhAJ0teKYcn/NcO0YoUFObVGCYBJUyTX9x0iyvI=
 github.com/jonas747/dstate v1.0.1 h1:wETTWhK/CVUyK94xriEKMCSWhl/Ir8y5HzYqX+xINPY=
 github.com/jonas747/dstate v1.0.1/go.mod h1:IeBIDhAJ0teKYcn/NcO0YoUFObVGCYBJUyTX9x0iyvI=
+github.com/jonas747/dstate v1.0.2 h1:VlFF3RXM9VIksacx7fhYpXC6XhVR4ClRR5CLwgH6gWc=
+github.com/jonas747/dstate v1.0.2/go.mod h1:cs2apI7cGl8py1ibSN0Ha6iqHEw5k62kwPpGBZFgHUE=
 github.com/jonas747/dutil v0.0.2 h1:GV4b5tb0l/Qq11GS7g4m5hlxDkKGhZ8hXRefS4dKMMQ=
 github.com/jonas747/dutil v0.0.2/go.mod h1:FwfIRC0ShAEHhwUJ6JppfciiFrfOA/cAoyCECsfib8c=
 github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846 h1:qIj0ZTvzN3W4QFmf3Xw7vBwbLfXnqoepH6ma8hOEWD0=
