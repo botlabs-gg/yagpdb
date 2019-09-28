@@ -448,6 +448,10 @@ func process(elem *QueuedElement, raw []byte) {
 
 				break
 			}
+
+			queueLogger.Warn("Non-user error when sending message, retrying. ", err)
+			time.Sleep(1)
+			continue
 		} else {
 			if onGuild, err := common.BotIsOnGuild(elem.Guild); !onGuild {
 				if source, ok := sources[elem.Source]; ok {
@@ -457,16 +461,14 @@ func process(elem *QueuedElement, raw []byte) {
 
 				break
 			} else if err != nil {
-				logger.WithError(err).Error("failed checking if bot is on guild")
+				logger.WithError(err).Error("failed checking if bot is on guild, retrying...")
+				time.Sleep(1)
+				continue
 			}
 		}
 
-		if c, _ := common.DiscordError(err); c != 0 {
-			break
-		}
-
-		queueLogger.Warn("Non-discord related error when sending message, retrying. ", err)
-		time.Sleep(time.Second)
+		queueLogger.WithError(err).WithField("guild", elem.Guild).Error("failed sending message")
+		break
 	}
 }
 
