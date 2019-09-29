@@ -44,6 +44,7 @@ var (
 		"div":        tmplDiv,
 		"mod":        tmplMod,
 		"fdiv":       tmplFDiv,
+		"sqrt":       tmplSqrt,
 		"round":      tmplRound,
 		"roundCeil":  tmplRoundCeil,
 		"roundFloor": tmplRoundFloor,
