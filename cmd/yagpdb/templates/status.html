@@ -27,64 +27,77 @@
 </div>
 {{end}}
 
-{{range .Nodes}}
-<section class="card card-featured card-featured-success mb-4">
-    <header class="card-header">
-        <h2 class="card-title">Node {{.ID}}</h2>
-    </header>
-    <div class="card-body">
-		{{range $i, $v := .Shards}}
-		<form action="/shard/{{.ShardID}}/reconnect" method="POST">
-			<div class="row">
-			    <div class="col-lg-1">
-			    Shard: {{.ShardID}}
-			    </div>
-			    
-			    <div class="col-lg-2">
-			    {{if eq .ConnStatus 0}}
-			    Connection Status: Disconnected
-			    {{else if eq .ConnStatus 1}}
-			    Connection Status: Connecting
-			    {{else if eq .ConnStatus 2}}
-			    Connection Status: Identifying
-			    {{else if eq .ConnStatus 3}}
-			    Connection Status: Resuming
-			    {{else if eq .ConnStatus 4}}
-			    Connection Status: Ready
-			    {{end}}
-			    <span class="indicator indicator-{{if eq .ConnStatus 4}}success{{else}}danger{{end}}"></span>
-			    </div>
+<style>
+.shard {
+	width: 2em;
+	height: 2em;
+	float: left;
+	padding: 2px;
+}
 
-			    <div class="col-lg-2">
-			    Total Events: {{.TotalEvents}}
-			    </div>
-			    
-			    <div class="col-lg-1">
-			    Events/s: {{.EventsPerSecond}}
-			    </div>
-			    
-			    <div class="col-lg-2">
-			    Heartbeat Send: {{formatTime .LastHeartbeatSend.UTC "02 15:04:05"}}
-			    </div>
-			    
-			    <div class="col-lg-2">
-			    Heartbeat Ack: {{formatTime .LastHeartbeatAck "02 15:04:05"}}
-			    </div>
-			    
-			    {{if $botOwner}}
-			    <div class="col-lg-2">
-			 		<div class="btn-group flex-wrap">
-				 		<button class="btn btn-danger" type="submit">Resume</button>
-				 		<button class="btn btn-danger" type="submit" formaction="/shard/{{.ShardID}}/reconnect?reidentify=1">Re-identify</button>
-				 	</div>
-			    </div>
-			    {{end}}
+.shard:hover {
+	border: 2px solid balck;
+}
+
+.shard-status-ready{
+	background-color: rgb(47, 255, 47);
+}
+
+.shard-status-disconnected {
+	background-color: #a00;
+}
+
+.shard-status-connecting {
+	background-color: rgb(249, 156, 244);
+}
+
+.shard-status-identifying {
+	background-color:rgb(223, 255, 41);
+}
+
+.shard-status-resuming {
+	background-color: rgb(53, 53, 255);
+}
+
+.shard-quick-details {
+	background: inherit;
+	background-clip: text;
+	-webkit-background-clip: text;
+	color: transparent;
+	filter: invert(1) grayscale(1);
+	-webkit-filter: invert(1) grayscale(1);
+}
+
+.shardcluster{
+	margin-left: 10px;
+	width: {{mult .ShardsPerNode 4}}em;
+}
+</style>
+
+{{range .HostStatuses}}
+<section class="card card-featured card-featured-success mb-4">
+	<header class="card-header">
+		<h2 class="card-title">Host {{.Name}}</h2>
+	</header>
+	<div class="card-body host-status">
+			{{range .Nodes}}
+			<div class="row">
+				<b>Node {{.ID}}</b>: 
+				<div class="shardcluster">
+					{{range $i, $v := .Shards}}
+					<div class="shard shard-status-{{lower (.ConnStatus.String)}}">
+						<div class="shard-quick-details">
+							{{printf "%.1f" .EventsPerSecond}}<br>
+							{{.TotalEvents}}
+						</div>
+					</div>
+					{{end}}
+				</div>
 			</div>
-		</form>
-		{{end}}
-		<!-- /.row -->
-	</div>
-</section>
+			{{end}}
+			<!-- /.row -->
+		</div>
+	</section>
 {{end}}{{end}}
 
 {{template "cp_footer" .}}

@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"sort"
 	"strconv"
@@ -152,14 +153,66 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 func HandleStatus(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	_, tmpl := GetCreateTemplateData(r.Context())
 
-	nodes, err := botrest.GetNodeStatuses()
-	if err != nil {
-		return tmpl, err
-	}
+	// nodes, err := botrest.GetNodeStatuses()
+	// if err != nil {
+	// 	return tmpl, err
+	// }
 
-	tmpl["Nodes"] = nodes
+	tmpl["HostStatuses"] = genFakeNodeStatuses(2, 10, 20)
+	tmpl["NodesPerHost"] = 10
+	tmpl["ShardsPerNode"] = 20
 
 	return tmpl, nil
+}
+
+type HostStatus struct {
+	Name string
+
+	EventsPerSecond float64
+	TotalEvents     int64
+
+	Nodes []*botrest.NodeStatus
+}
+
+func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
+	result := make([]*HostStatus, 0, hosts)
+
+	for hostI := 0; hostI < hosts; hostI++ {
+		host := &HostStatus{
+			Name: "yagpdb-" + strconv.Itoa(hostI),
+		}
+		for nodeI := 0; nodeI < nodes; nodeI++ {
+
+			nodeID := (hostI * nodes) + nodeI
+
+			ns := &botrest.NodeStatus{
+				ID: strconv.Itoa(nodeID),
+			}
+
+			for shardI := 0; shardI < shards; shardI++ {
+				shard := &botrest.ShardStatus{
+					ShardID:         (nodeID * shards) + shardI,
+					TotalEvents:     999999,
+					EventsPerSecond: rand.Float64() * 100,
+
+					ConnStatus: discordgo.GatewayStatus(rand.Intn(5)),
+
+					LastHeartbeatSend: time.Now(),
+					LastHeartbeatAck:  time.Now(),
+				}
+				ns.Shards = append(ns.Shards, shard)
+
+				host.EventsPerSecond += shard.EventsPerSecond
+				host.TotalEvents += shard.TotalEvents
+			}
+
+			host.Nodes = append(host.Nodes, ns)
+		}
+
+		result = append(result, host)
+	}
+
+	return result
 }
 
 func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
