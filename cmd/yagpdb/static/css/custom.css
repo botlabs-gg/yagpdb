@@ -201,7 +201,7 @@ html.sidebar-left-collapsed #nav-footer {
 	display: none;
 }
 
-/*FUCK YOU SHITTY HTML STANDARDS YOU PIECE OF FUCKING SHIT*/
+/*Jonas Doesn't like HTML standards*/
 .multiselect-popout-hack .dropdown-menu {
 	position: fixed !important;
 	left: 10% !important;
@@ -216,7 +216,7 @@ html.sidebar-left-collapsed #nav-footer {
 	top: 125px !important;
 }
 
-/*Proper Design, f**king bootztrap*/
+/*Proper Design, Jonas is angry at bootstrap*/
 
 .card {
 	margin: 4px 0 !important;
