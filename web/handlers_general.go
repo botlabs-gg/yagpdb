@@ -150,19 +150,123 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	return tmpl, nil
 }
 
-func HandleStatus(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+// BotStatus represents the bot's full status
+type BotStatus struct {
+	// Invidual statuses
+	HostStatuses []*HostStatus `json:"host_statuses"`
+	NumNodes     int           `json:"num_nodes"`
+	TotalShards  int           `json:"total_shards"`
+
+	UnavailableGuilds int   `json:"unavailable_guilds"`
+	OfflineShards     []int `json:"offline_shards"`
+
+	EventsPerSecondAverage float64 `json:"events_per_second_average"`
+	EventsPerSecondMin     float64 `json:"events_per_second_min"`
+	EventsPerSecondMax     float64 `json:"events_per_second_max"`
+
+	UptimeMax time.Duration `json:"uptim_emax"`
+	UptimeMin time.Duration `json:"uptime_min"`
+}
+
+func getFullBotStatus() (*BotStatus, error) {
+	fullStatus, err := botrest.GetNodeStatuses()
+	if err != nil {
+		return nil, err
+	}
+
+	status := &BotStatus{
+		NumNodes:    len(fullStatus.Nodes),
+		TotalShards: fullStatus.TotalShards,
+
+		EventsPerSecondMin: -1,
+		EventsPerSecondMax: -1,
+
+		UptimeMax: -1,
+		UptimeMin: -1,
+
+		OfflineShards: fullStatus.MissingShards,
+	}
+
+	totalEventsPerSecond := float64(-1)
+
+	sort.Slice(fullStatus.Nodes, func(i, j int) bool {
+		return fullStatus.Nodes[i].Uptime > fullStatus.Nodes[j].Uptime
+	})
+
+	// group by hosts and calculate stats
+	for _, node := range fullStatus.Nodes {
+		var host *HostStatus
+
+		for _, v := range status.HostStatuses {
+			if v.Name == node.Host {
+				host = v
+				break
+			}
+		}
+
+		if host == nil {
+			host = &HostStatus{
+				Name: node.Host,
+			}
+			status.HostStatuses = append(status.HostStatuses, host)
+		}
+
+		host.Nodes = append(host.Nodes, node)
+
+		// update stats
+		for _, v := range node.Shards {
+			if v.EventsPerSecond < status.EventsPerSecondMin || status.EventsPerSecondMin == -1 {
+				status.EventsPerSecondMin = v.EventsPerSecond
+			}
+
+			if v.EventsPerSecond > status.EventsPerSecondMax || status.EventsPerSecondMax == -1 {
+				status.EventsPerSecondMax = v.EventsPerSecond
+			}
+
+			totalEventsPerSecond += v.EventsPerSecond
+
+			if v.ConnStatus != discordgo.GatewayStatusReady {
+				status.OfflineShards = append(status.OfflineShards, v.ShardID)
+			}
+
+			status.UnavailableGuilds += v.UnavailableGuilds
+		}
+
+		if status.UptimeMin == -1 || node.Uptime < status.UptimeMin {
+			status.UptimeMin = node.Uptime
+		}
+		if status.UptimeMax == -1 || node.Uptime > status.UptimeMax {
+			status.UptimeMax = node.Uptime
+		}
+	}
+
+	status.EventsPerSecondAverage = totalEventsPerSecond / float64(fullStatus.TotalShards)
+
+	return status, nil
+}
+
+// HandleStatusHTML handles GET /status
+func HandleStatusHTML(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	_, tmpl := GetCreateTemplateData(r.Context())
 
-	// nodes, err := botrest.GetNodeStatuses()
-	// if err != nil {
-	// 	return tmpl, err
-	// }
+	status, err := getFullBotStatus()
+	if err != nil {
+		return tmpl, err
+	}
 
-	tmpl["HostStatuses"] = genFakeNodeStatuses(2, 10, 20)
-	tmpl["NodesPerHost"] = 10
-	tmpl["ShardsPerNode"] = 20
+	tmpl["BotStatus"] = status
 
 	return tmpl, nil
+}
+
+// HandleStatusJSON handles GET /status.json
+func HandleStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
+	status, err := getFullBotStatus()
+	if err != nil {
+		return err
+	}
+
+	return status
 }
 
 type HostStatus struct {
@@ -197,7 +301,7 @@ func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
 
 					ConnStatus: discordgo.GatewayStatus(rand.Intn(5)),
 
-					LastHeartbeatSend: time.Now(),
+					LastHeartbeatSend: time.Now().Add(-time.Second * 10),
 					LastHeartbeatAck:  time.Now(),
 				}
 				ns.Shards = append(ns.Shards, shard)
@@ -222,10 +326,10 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	if user := ctx.Value(common.ContextKeyUser); user != nil {
 		cast := user.(*discordgo.User)
 		if !common.IsOwner(cast.ID) {
-			return HandleStatus(w, r)
+			return HandleStatusHTML(w, r)
 		}
 	} else {
-		return HandleStatus(w, r)
+		return HandleStatusHTML(w, r)
 	}
 
 	CtxLogger(ctx).Info("Triggering reconnect...", r.FormValue("reidentify"))
@@ -243,7 +347,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	if err != nil {
 		tmpl.AddAlerts(ErrorAlert(err.Error()))
 	}
-	return HandleStatus(w, r)
+	return HandleStatusHTML(w, r)
 }
 
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
