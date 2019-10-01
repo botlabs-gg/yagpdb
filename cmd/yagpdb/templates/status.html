@@ -147,7 +147,7 @@
 {{define "cp_status_tooltip"}}
 Events/s: {{printf "%.1f" .EventsPerSecond}} <br/>
 TotalEvents: {{.TotalEvents}} <br/>
-Last Hearbeat: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatSend)}} ago <br/>
-Last Hearbeat Ack: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatAck)}} ago <br/>
+Last Heartbeat: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatSend)}} ago <br/>
+Last Heartbeat Ack: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatAck)}} ago <br/>
 Unavailable Guilds: {{.UnavailableGuilds}}/{{.NumGuilds}}<br/>
 {{end}}
