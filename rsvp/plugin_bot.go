@@ -47,7 +47,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: catEvents,
 		Name:        "Create",
 		Aliases:     []string{"new", "make"},
-		Description: "Creates a event, You will be led through an interactive setup",
+		Description: "Creates an event, You will be led through an interactive setup",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			count, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID)).CountG(parsed.Context())
@@ -200,7 +200,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "Delete",
 		Aliases:             []string{"rm", "del"},
-		Description:         "Deletes a event, specify the event ID of the event you wanna delete",
+		Description:         "Deletes an event, specify the event ID of the event you wanna delete",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
