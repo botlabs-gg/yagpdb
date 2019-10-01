@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -168,7 +169,20 @@ type BotStatus struct {
 	UptimeMin time.Duration `json:"uptime_min"`
 }
 
+var (
+	// cached the status for a couple seconds to prevent DOS vector since this is a heavy endpoint
+	cachedBotStatus *BotStatus
+	botStatusCacheT time.Time
+	botStatusCacheL sync.Mutex
+)
+
 func getFullBotStatus() (*BotStatus, error) {
+	botStatusCacheL.Lock()
+	defer botStatusCacheL.Unlock()
+	if time.Since(botStatusCacheT) < time.Second*5 {
+		return cachedBotStatus, nil
+	}
+
 	fullStatus, err := botrest.GetNodeStatuses()
 	if err != nil {
 		return nil, err
@@ -241,6 +255,9 @@ func getFullBotStatus() (*BotStatus, error) {
 	}
 
 	status.EventsPerSecondAverage = totalEventsPerSecond / float64(fullStatus.TotalShards)
+
+	cachedBotStatus = status
+	botStatusCacheT = time.Now()
 
 	return status, nil
 }
