@@ -3,7 +3,6 @@ package customcommands
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/yagpdb/premium"
 	"math/rand"
 	"regexp"
 	"runtime/debug"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/jonas747/yagpdb/premium"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
@@ -309,7 +310,8 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		reaction = e.MessageReaction
 	}
 
-	if reaction.GuildID == 0 {
+	if reaction.GuildID == 0 || reaction.UserID == common.BotUser.ID {
+		// ignore dm reactions and reactions from the bot
 		return
 	}
 
