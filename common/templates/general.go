@@ -282,14 +282,10 @@ func tmplFDiv(args ...interface{}) interface{} {
 	return sumF
 }
 
-func tmplSqrt(args ...interface{}) float64 {
-	if len(args) != 1 {
-		return math.Sqrt(-1)
-	}
-
-	switch args[0].(type) {
+func tmplSqrt(arg interface{}) float64 {
+	switch arg.(type) {
 	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
-		return math.Sqrt(ToFloat64(args[0]))
+		return math.Sqrt(ToFloat64(arg))
 	default:
 		return math.Sqrt(-1)
 	}
