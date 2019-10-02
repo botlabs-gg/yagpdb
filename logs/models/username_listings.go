@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -61,12 +61,12 @@ var UsernameListingWhere = struct {
 	UserID    whereHelpernull_Int64
 	Username  whereHelpernull_String
 }{
-	ID:        whereHelperint{field: `id`},
-	CreatedAt: whereHelpernull_Time{field: `created_at`},
-	UpdatedAt: whereHelpernull_Time{field: `updated_at`},
-	DeletedAt: whereHelpernull_Time{field: `deleted_at`},
-	UserID:    whereHelpernull_Int64{field: `user_id`},
-	Username:  whereHelpernull_String{field: `username`},
+	ID:        whereHelperint{field: "\"username_listings\".\"id\""},
+	CreatedAt: whereHelpernull_Time{field: "\"username_listings\".\"created_at\""},
+	UpdatedAt: whereHelpernull_Time{field: "\"username_listings\".\"updated_at\""},
+	DeletedAt: whereHelpernull_Time{field: "\"username_listings\".\"deleted_at\""},
+	UserID:    whereHelpernull_Int64{field: "\"username_listings\".\"user_id\""},
+	Username:  whereHelpernull_String{field: "\"username_listings\".\"username\""},
 }
 
 // UsernameListingRels is where relationship names are stored.
@@ -86,7 +86,7 @@ func (*usernameListingR) NewStruct() *usernameListingR {
 type usernameListingL struct{}
 
 var (
-	usernameListingColumns               = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "username"}
+	usernameListingAllColumns            = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "username"}
 	usernameListingColumnsWithoutDefault = []string{"created_at", "updated_at", "deleted_at", "user_id", "username"}
 	usernameListingColumnsWithDefault    = []string{"id"}
 	usernameListingPrimaryKeyColumns     = []string{"id"}
@@ -139,7 +139,7 @@ func (q usernameListingQuery) One(ctx context.Context, exec boil.ContextExecutor
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for username_listings")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for username_listings")
 	}
 
 	return o, nil
@@ -156,7 +156,7 @@ func (q usernameListingQuery) All(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to UsernameListing slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to UsernameListing slice")
 	}
 
 	return o, nil
@@ -176,7 +176,7 @@ func (q usernameListingQuery) Count(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count username_listings rows")
+		return 0, errors.WrapIf(err, "models: failed to count username_listings rows")
 	}
 
 	return count, nil
@@ -197,7 +197,7 @@ func (q usernameListingQuery) Exists(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if username_listings exists")
+		return false, errors.WrapIf(err, "models: failed to check if username_listings exists")
 	}
 
 	return count > 0, nil
@@ -234,7 +234,7 @@ func FindUsernameListing(ctx context.Context, exec boil.ContextExecutor, iD int,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from username_listings")
+		return nil, errors.WrapIf(err, "models: unable to select from username_listings")
 	}
 
 	return usernameListingObj, nil
@@ -273,7 +273,7 @@ func (o *UsernameListing) Insert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingColumnsWithDefault,
 			usernameListingColumnsWithoutDefault,
 			nzDefaults,
@@ -317,7 +317,7 @@ func (o *UsernameListing) Insert(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into username_listings")
+		return errors.WrapIf(err, "models: unable to insert into username_listings")
 	}
 
 	if !cached {
@@ -353,7 +353,7 @@ func (o *UsernameListing) Update(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingPrimaryKeyColumns,
 		)
 
@@ -384,12 +384,12 @@ func (o *UsernameListing) Update(ctx context.Context, exec boil.ContextExecutor,
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update username_listings row")
+		return 0, errors.WrapIf(err, "models: unable to update username_listings row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for username_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for username_listings")
 	}
 
 	if !cached {
@@ -412,12 +412,12 @@ func (q usernameListingQuery) UpdateAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for username_listings")
+		return 0, errors.WrapIf(err, "models: unable to update all for username_listings")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for username_listings")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for username_listings")
 	}
 
 	return rowsAff, nil
@@ -466,12 +466,12 @@ func (o UsernameListingSlice) UpdateAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in usernameListing slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in usernameListing slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all usernameListing")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all usernameListing")
 	}
 	return rowsAff, nil
 }
@@ -534,13 +534,13 @@ func (o *UsernameListing) Upsert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingColumnsWithDefault,
 			usernameListingColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			usernameListingColumns,
+			usernameListingAllColumns,
 			usernameListingPrimaryKeyColumns,
 		)
 
@@ -588,7 +588,7 @@ func (o *UsernameListing) Upsert(ctx context.Context, exec boil.ContextExecutor,
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert username_listings")
+		return errors.WrapIf(err, "models: unable to upsert username_listings")
 	}
 
 	if !cached {
@@ -623,12 +623,12 @@ func (o *UsernameListing) Delete(ctx context.Context, exec boil.ContextExecutor)
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from username_listings")
+		return 0, errors.WrapIf(err, "models: unable to delete from username_listings")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for username_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for username_listings")
 	}
 
 	return rowsAff, nil
@@ -644,12 +644,12 @@ func (q usernameListingQuery) DeleteAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from username_listings")
+		return 0, errors.WrapIf(err, "models: unable to delete all from username_listings")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for username_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for username_listings")
 	}
 
 	return rowsAff, nil
@@ -662,10 +662,6 @@ func (o UsernameListingSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o UsernameListingSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no UsernameListing slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -686,12 +682,12 @@ func (o UsernameListingSlice) DeleteAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from usernameListing slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from usernameListing slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for username_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for username_listings")
 	}
 
 	return rowsAff, nil
@@ -749,7 +745,7 @@ func (o *UsernameListingSlice) ReloadAll(ctx context.Context, exec boil.ContextE
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in UsernameListingSlice")
+		return errors.WrapIf(err, "models: unable to reload all in UsernameListingSlice")
 	}
 
 	*o = slice
@@ -776,7 +772,7 @@ func UsernameListingExists(ctx context.Context, exec boil.ContextExecutor, iD in
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if username_listings exists")
+		return false, errors.WrapIf(err, "models: unable to check if username_listings exists")
 	}
 
 	return exists, nil

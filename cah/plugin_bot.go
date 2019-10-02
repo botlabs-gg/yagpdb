@@ -2,6 +2,7 @@ package cah
 
 import (
 	"fmt"
+
 	"github.com/jonas747/cardsagainstdiscord"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator"
@@ -49,7 +50,7 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(func(evt *eventsystem.EventData) {
+	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
 		switch t := evt.EvtInterface.(type) {
 		case *discordgo.MessageCreate:
 			if t.GuildID == 0 {

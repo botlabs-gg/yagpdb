@@ -2,14 +2,15 @@ package configstore
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/karlseguin/ccache"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/karlseguin/ccache"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -19,6 +20,8 @@ var (
 	SQL      = &Postgres{}
 	Cached   = NewCached()
 	storages = make(map[reflect.Type]Storage)
+
+	logger = common.GetFixedPrefixLogger("configstore")
 )
 
 func RegisterConfig(stor Storage, conf GuildConfig) {
@@ -123,7 +126,7 @@ func InitDatabases() {
 func HandleInvalidateCacheEvt(event *pubsub.Event) {
 	conf, ok := event.Data.(*string)
 	if !ok {
-		logrus.Error("Invalid invalidate guild config cache event")
+		logger.Error("Invalid invalidate guild config cache event")
 		return
 	}
 
@@ -149,6 +152,6 @@ func InvalidateGuildCache(guildID interface{}, conf GuildConfig) {
 	Cached.InvalidateCache(gID, conf.GetName())
 	err := pubsub.Publish("invalidate_guild_config_cache", gID, conf.GetName())
 	if err != nil {
-		logrus.WithError(err).Error("FAILED INVALIDATING CACHE")
+		logger.WithError(err).Error("FAILED INVALIDATING CACHE")
 	}
 }

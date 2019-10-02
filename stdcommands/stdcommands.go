@@ -19,6 +19,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/define"
 	"github.com/jonas747/yagpdb/stdcommands/dogfact"
 	"github.com/jonas747/yagpdb/stdcommands/findserver"
+	"github.com/jonas747/yagpdb/stdcommands/globalrl"
 	"github.com/jonas747/yagpdb/stdcommands/info"
 	"github.com/jonas747/yagpdb/stdcommands/invite"
 	"github.com/jonas747/yagpdb/stdcommands/leaveserver"
@@ -34,6 +35,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/sleep"
 	"github.com/jonas747/yagpdb/stdcommands/stateinfo"
 	"github.com/jonas747/yagpdb/stdcommands/throw"
+	"github.com/jonas747/yagpdb/stdcommands/toggledbg"
 	"github.com/jonas747/yagpdb/stdcommands/topcommands"
 	"github.com/jonas747/yagpdb/stdcommands/topevents"
 	"github.com/jonas747/yagpdb/stdcommands/topgames"
@@ -44,6 +46,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/viewperms"
 	"github.com/jonas747/yagpdb/stdcommands/weather"
 	"github.com/jonas747/yagpdb/stdcommands/wouldyourather"
+	"github.com/jonas747/yagpdb/stdcommands/xkcd"
 	"github.com/jonas747/yagpdb/stdcommands/yagstatus"
 )
 
@@ -90,6 +93,7 @@ func (p *Plugin) AddCommands() {
 		undelete.Command,
 		viewperms.Command,
 		topgames.Command,
+		xkcd.Command,
 
 		// Maintenance
 		stateinfo.Command,
@@ -109,12 +113,14 @@ func (p *Plugin) AddCommands() {
 		dcallvoice.Command,
 		ccreqs.Command,
 		sleep.Command,
+		toggledbg.Command,
+		globalrl.Command,
 	)
 
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(ping.HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, ping.HandleMessageCreate, eventsystem.EventMessageCreate)
 	mentionrole.AddScheduledEventListener()
 }
 

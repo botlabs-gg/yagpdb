@@ -2,11 +2,12 @@ package topgames
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
-	"sort"
 )
 
 var Command = &commands.YAGCommand{

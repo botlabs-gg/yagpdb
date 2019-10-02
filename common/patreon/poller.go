@@ -2,17 +2,19 @@ package patreon
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
-	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
-	"os"
 	"strconv"
-	// "strconv"
 	"sync"
 	"time"
+
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 )
+
+var logger = common.GetFixedPrefixLogger("patreon")
 
 type Poller struct {
 	mu     sync.RWMutex
@@ -23,12 +25,19 @@ type Poller struct {
 	activePatrons []*Patron
 }
 
+var (
+	confAccessToken  = config.RegisterOption("yagpdb.patreon.api_access_token", "Access token for the patreon integration", "")
+	confRefreshToken = config.RegisterOption("yagpdb.patreon.api_refresh_token", "Refresh token for the patreon integration", "")
+	confClientID     = config.RegisterOption("yagpdb.patreon.api_client_id", "Client id for the patreon integration", "")
+	confClientSecret = config.RegisterOption("yagpdb.patreon.api_client_secret", "Client secret for the patreon integration", "")
+)
+
 func Run() {
 
-	accessToken := os.Getenv("YAGPDB_PATREON_API_ACCESS_TOKEN")
-	refreshToken := os.Getenv("YAGPDB_PATREON_API_REFRESH_TOKEN")
-	clientID := os.Getenv("YAGPDB_PATREON_API_CLIENT_ID")
-	clientSecret := os.Getenv("YAGPDB_PATREON_API_CLIENT_SECRET")
+	accessToken := confAccessToken.GetString()
+	refreshToken := confRefreshToken.GetString()
+	clientID := confClientID.GetString()
+	clientSecret := confClientSecret.GetString()
 
 	if accessToken == "" || clientID == "" || clientSecret == "" {
 		PatreonDisabled(nil, "Missing one of YAGPDB_PATREON_API_ACCESS_TOKEN, YAGPDB_PATREON_API_CLIENT_ID, YAGPDB_PATREON_API_CLIENT_SECRET")
@@ -36,7 +45,7 @@ func Run() {
 	}
 
 	var storedRefreshToken string
-	common.RedisPool.Do(radix.Cmd(&storedRefreshToken, "GET", "patreon_refresh_token"))
+	common.RedisPool.Do(retryableredis.Cmd(&storedRefreshToken, "GET", "patreon_refresh_token"))
 
 	config := &oauth2.Config{
 		ClientID:     clientID,
@@ -66,7 +75,7 @@ func Run() {
 			return
 		}
 
-		logrus.WithError(err).Warn("Patreon: Failed fetching current user with env var refresh token, trying stored token")
+		logger.WithError(err).Warn("Failed fetching current user with env var refresh token, trying stored token")
 		tCop := *token
 		tCop.RefreshToken = storedRefreshToken
 
@@ -88,12 +97,12 @@ func Run() {
 
 	ActivePoller = poller
 
-	logrus.Info("Patreon integration activated as ", user.Data.ID, ": ", user.Data.Attributes.FullName)
+	logger.Info("Patreon integration activated as ", user.Data.ID, ": ", user.Data.Attributes.FullName)
 	go poller.Run()
 }
 
 func PatreonDisabled(err error, reason string) {
-	l := logrus.NewEntry(logrus.StandardLogger())
+	l := logrus.NewEntry(logger)
 
 	if err != nil {
 		l = l.WithError(err)
@@ -114,7 +123,7 @@ func (p *Poller) Poll() {
 	// Get your campaign data
 	campaignResponse, err := p.client.FetchCampaigns()
 	if err != nil || len(campaignResponse.Data) < 1 {
-		logrus.WithError(err).Error("Patreon: Failed fetching campaign")
+		logger.WithError(err).Error("Failed fetching campaign")
 		return
 	}
 
@@ -132,11 +141,11 @@ func (p *Poller) Poll() {
 		// patreon.WithCursor(cursor))
 
 		if err != nil {
-			logrus.WithError(err).Error("Patreon: Failed fetching pledges")
+			logger.WithError(err).Error("Failed fetching pledges")
 			return
 		}
 
-		// logrus.Println("num results: ", len(membersResponse.Data))
+		// logger.Println("num results: ", len(membersResponse.Data))
 
 		// Get all the users in an easy-to-lookup way
 		users := make(map[string]*patreonapi.UserAttributes)
@@ -152,12 +161,12 @@ func (p *Poller) Poll() {
 
 			user, ok := users[memberData.Relationships.User.Data.ID]
 			if !ok {
-				// logrus.Println("Unknown user: ", memberData.ID)
+				// logger.Println("Unknown user: ", memberData.ID)
 				continue
 			}
 
 			if attributes.LastChargeStatus != patreonapi.ChargeStatusPaid && attributes.LastChargeStatus != patreonapi.ChargeStatusPending {
-				// logrus.Println("Not paid: ", attributes.FullName)
+				// logger.Println("Not paid: ", attributes.FullName)
 				continue
 			}
 
@@ -165,7 +174,7 @@ func (p *Poller) Poll() {
 				continue
 			}
 
-			// logrus.Println(attributes.PatronStatus + " --- " + user.FirstName + ":" + user.LastName + ":" + user.Vanity)
+			// logger.Println(attributes.PatronStatus + " --- " + user.FirstName + ":" + user.LastName + ":" + user.Vanity)
 
 			patron := &Patron{
 				AmountCents: attributes.CurrentEntitledAmountCents,
@@ -184,26 +193,20 @@ func (p *Poller) Poll() {
 			}
 
 			patrons = append(patrons, patron)
-			// logrus.Printf("%s is pledging %d cents, Discord: %d\r\n", patron.Name, patron.AmountCents, patron.DiscordID)
+			// logger.Printf("%s is pledging %d cents, Discord: %d\r\n", patron.Name, patron.AmountCents, patron.DiscordID)
 		}
 
 		// Get the link to the next page of pledges
 		nextCursor := membersResponse.Meta.Pagination.Cursors.Next
 		if nextCursor == "" {
-			// logrus.Println("No nextlink ", page)
+			// logger.Println("No nextlink ", page)
 			break
 		}
 
 		cursor = nextCursor
-		// logrus.Println("nextlink: ", page, ": ", cursor)
+		// logger.Println("nextlink: ", page, ": ", cursor)
 		page++
 	}
-
-	patrons = append(patrons, &Patron{
-		DiscordID:   common.Conf.Owner,
-		Name:        "Owner",
-		AmountCents: 10000,
-	})
 
 	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo
 	p.mu.Lock()
@@ -228,8 +231,8 @@ func (t *TokenSourceSaver) Token() (*oauth2.Token, error) {
 	tk, err := t.inner.Token()
 	if err == nil {
 		if t.lastRefreshToken != tk.RefreshToken {
-			logrus.Info("Patreon: New refresh token")
-			common.RedisPool.Do(radix.Cmd(nil, "SET", "patreon_refresh_token", tk.RefreshToken))
+			logger.Info("New refresh token")
+			common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "patreon_refresh_token", tk.RefreshToken))
 			t.lastRefreshToken = tk.RefreshToken
 		}
 	}

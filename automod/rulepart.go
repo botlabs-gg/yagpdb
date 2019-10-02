@@ -1,11 +1,12 @@
 package automod
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
-	"sort"
-	"strings"
 )
 
 // maps rule part indentifiers to actual condition types
@@ -72,6 +73,7 @@ var RulePartMap = map[int]RulePart{
 	307: &ResetViolationsEffect{},
 	308: &DeleteMessagesEffect{},
 	309: &GiveRoleEffect{},
+	311: &EnableChannelSlowmodeEffect{},
 }
 
 var InverseRulePartMap = make(map[RulePart]int)

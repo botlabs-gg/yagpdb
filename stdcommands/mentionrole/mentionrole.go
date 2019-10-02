@@ -2,6 +2,9 @@ package mentionrole
 
 import (
 	"encoding/json"
+	"strings"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -10,8 +13,6 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 type EvtData struct {

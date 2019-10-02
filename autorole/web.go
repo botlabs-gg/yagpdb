@@ -2,17 +2,18 @@ package autorole
 
 import (
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"goji.io"
-	"goji.io/pat"
 	"html"
 	"html/template"
 	"net/http"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/web"
+	"goji.io"
+	"goji.io/pat"
 )
 
 type Form struct {
@@ -41,6 +42,11 @@ func (p *Plugin) InitWeb() {
 	if common.Testing {
 		tmplPathSettings = "../../autorole/assets/autorole.html"
 	}
+
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Autorole",
+		URL:  "autorole",
+	})
 
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
 
@@ -72,7 +78,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	tmpl["Autorole"] = general
 
 	var proc int
-	common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
+	common.RedisPool.Do(retryableredis.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 

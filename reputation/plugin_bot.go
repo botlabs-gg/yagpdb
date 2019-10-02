@@ -2,6 +2,11 @@ package reputation
 
 import (
 	"fmt"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -9,11 +14,8 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
-	"github.com/sirupsen/logrus"
+	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -24,7 +26,7 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(handleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
@@ -57,7 +59,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 			err = err2
 		}
 
-		logrus.WithError(err).Error("Failed retrieving bot member")
+		logger.WithError(err).Error("Failed retrieving bot member")
 		return
 	}
 
@@ -71,7 +73,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 			// Ignore this error silently
 			return
 		}
-		logrus.WithError(err).Error("Failed giving rep")
+		logger.WithError(err).Error("Failed giving rep")
 		return
 	}
 
@@ -123,8 +125,8 @@ var cmds = []*commands.YAGCommand{
 				return "An error occured while finding the server config", err
 			}
 
-			member, _ := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
-			if member == nil || !IsAdmin(parsed.GS, member, conf) {
+			member := commands.ContextMS(parsed.Context())
+			if !IsAdmin(parsed.GS, member, conf) {
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 
@@ -311,13 +313,12 @@ var cmds = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "TopRep",
-		Description: "Shows top 15 rep on the server",
+		Description: "Shows rep leaderboard on the server",
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Offset", Type: dcmd.Int, Default: 0},
+			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			offset := parsed.Args[0].Int()
-
+		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			offset := (page - 1) * 15
 			entries, err := TopUsers(parsed.GS.ID, offset, 15)
 			if err != nil {
 				return nil, err
@@ -328,7 +329,11 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			leaderboardURL := "https://" + common.Conf.Host + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
+			embed := &discordgo.MessageEmbed{
+				Title: "Reputation leaderboard",
+			}
+
+			leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
 			out := "```\n# -- Points -- User\n"
 			for _, v := range detailed {
 				user := v.Username
@@ -339,8 +344,11 @@ var cmds = []*commands.YAGCommand{
 			}
 			out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
 
-			return out, nil
-		},
+			embed.Description = out
+
+			return embed, nil
+
+		}),
 	},
 }
 

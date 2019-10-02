@@ -2,19 +2,21 @@ package templates
 
 import (
 	"bytes"
+	"io"
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
+	"unicode/utf8"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"io"
-	"net/url"
-	"regexp"
-	"strings"
-	"time"
 )
 
 var (
@@ -37,10 +39,15 @@ var (
 		"title":     strings.Title,
 
 		// math
-		"add":  add,
-		"mult": tmplMult,
-		"div":  tmplDiv,
-		"fdiv": tmplFDiv,
+		"add":        add,
+		"mult":       tmplMult,
+		"div":        tmplDiv,
+		"mod":        tmplMod,
+		"fdiv":       tmplFDiv,
+		"round":      tmplRound,
+		"roundCeil":  tmplRoundCeil,
+		"roundFloor": tmplRoundFloor,
+		"roundEven":  tmplRoundEven,
 
 		// misc
 		"dict":   Dictionary,
@@ -58,6 +65,7 @@ var (
 		"shuffle":     shuffle,
 		"seq":         sequence,
 		"currentTime": tmplCurrentTime,
+		"newDate":     tmplNewDate,
 
 		"escapeHere":         tmplEscapeHere,
 		"escapeEveryone":     tmplEscapeEveryone,
@@ -73,6 +81,8 @@ var (
 		baseContextFuncs,
 	}
 )
+
+var logger = common.GetFixedPrefixLogger("templates")
 
 func TODO() {}
 
@@ -190,6 +200,11 @@ func (c *Context) Parse(source string) (*template.Template, error) {
 	return parsed, nil
 }
 
+const (
+	MaxOpsNormal  = 1000000
+	MaxOpsPremium = 2500000
+)
+
 func (c *Context) Execute(source string) (string, error) {
 	if c.Msg == nil {
 		// Construct a fake message
@@ -219,6 +234,12 @@ func (c *Context) Execute(source string) (string, error) {
 		return "", errors.WithMessage(err, "Failed parsing template")
 	}
 
+	if c.IsPremium {
+		parsed = parsed.MaxOps(MaxOpsPremium)
+	} else {
+		parsed = parsed.MaxOps(MaxOpsNormal)
+	}
+
 	var buf bytes.Buffer
 	w := LimitWriter(&buf, 25000)
 
@@ -241,6 +262,28 @@ func (c *Context) Execute(source string) (string, error) {
 	}
 
 	return result, nil
+}
+
+func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error {
+	out, err := c.Execute(source)
+
+	if utf8.RuneCountInString(out) > 2000 {
+		out = "Template output for " + c.Name + " was longer than 2k (contact an admin on the server...)"
+	}
+
+	// deal with the results
+	if err != nil {
+		logger.WithField("guild", c.GS.ID).WithError(err).Error("Error executing template: " + c.Name)
+		out += "\nAn error caused the execution of the custom command template to stop:\n"
+		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+	}
+
+	if strings.TrimSpace(out) != "" {
+		_, err := common.BotSession.ChannelMessageSend(channelID, out)
+		return err
+	}
+
+	return nil
 }
 
 // IncreaseCheckCallCounter Returns true if key is above the limit
@@ -282,7 +325,7 @@ func (c *Context) IncreaseCheckStateLock() bool {
 }
 
 func (c *Context) LogEntry() *logrus.Entry {
-	f := logrus.WithFields(logrus.Fields{
+	f := logger.WithFields(logrus.Fields{
 		"guild": c.GS.ID,
 		"name":  c.Name,
 	})
@@ -333,6 +376,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
 	c.ContextFuncs["deleteMessage"] = c.tmplDelMessage
+	c.ContextFuncs["deleteAllMessageReactions"] = c.tmplDelAllMessageReactions
 	c.ContextFuncs["getMessage"] = c.tmplGetMessage
 	c.ContextFuncs["getMember"] = c.tmplGetMember
 	c.ContextFuncs["addReactions"] = c.tmplAddReactions
@@ -347,6 +391,9 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["reFindAll"] = c.reFindAll
 	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
 	c.ContextFuncs["reReplace"] = c.reReplace
+
+	c.ContextFuncs["editChannelName"] = c.tmplEditChannelName
+	c.ContextFuncs["onlineCount"] = c.tmplOnlineCount
 }
 
 type limitedWriter struct {
@@ -381,7 +428,7 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	if delaySeconds > 10 {
 		err := scheduledevents2.ScheduleDeleteMessages(guildID, channelID, time.Now().Add(time.Second*time.Duration(delaySeconds)), messageID)
 		if err != nil {
-			logrus.WithError(err).Error("failed scheduling message deletion")
+			logger.WithError(err).Error("failed scheduling message deletion")
 		}
 	} else {
 		go func() {

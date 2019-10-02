@@ -1,14 +1,15 @@
 package reddit
 
 import (
-	greddit "github.com/jonas747/go-reddit"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"sync"
 	"time"
+
+	"emperror.dev/errors"
+	greddit "github.com/jonas747/go-reddit"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
 )
 
 var KeyLastScannedPostIDFast = "reddit_last_post_id"
@@ -54,7 +55,7 @@ func NewPostFetcher(redditClient *greddit.Client, slow bool, handler PostHandler
 		delay:                delay,
 
 		handler:  handler,
-		log:      logrus.WithField("rfeed_type", name),
+		log:      logger.WithField("rfeed_type", name),
 		StopChan: make(chan *sync.WaitGroup),
 	}
 }
@@ -96,7 +97,7 @@ func (p *PostFetcher) Run() {
 
 func (p *PostFetcher) initCursor() (int64, error) {
 	var storedID int64
-	common.RedisPool.Do(radix.Cmd(&storedID, "GET", p.LastScannedPostIDKey))
+	common.RedisPool.Do(retryableredis.Cmd(&storedID, "GET", p.LastScannedPostIDKey))
 	if storedID != 0 {
 		p.log.Info("reddit feed continuing from ", storedID)
 		return storedID, nil
@@ -176,7 +177,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 
 	if highestID != -1 {
 		p.LastID = highestID
-		common.RedisPool.Do(radix.FlatCmd(nil, "SET", p.LastScannedPostIDKey, highestID))
+		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", p.LastScannedPostIDKey, highestID))
 	}
 
 	if !p.hasCaughtUp {

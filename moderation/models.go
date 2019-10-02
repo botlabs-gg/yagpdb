@@ -2,12 +2,13 @@ package moderation
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/lib/pq"
-	"strconv"
-	"time"
 )
 
 type Config struct {

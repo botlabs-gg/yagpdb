@@ -27,17 +27,17 @@ package web
 import (
 	"errors"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/lib/pq"
-	"github.com/sirupsen/logrus"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/lib/pq"
 )
 
 type CustomValidator interface {
@@ -262,7 +262,7 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (kee
 	case "channel":
 		err = ValidateChannelField(i, guild.Channels, allowEmpty)
 	default:
-		logrus.WithField("kind", kind).Error("UNKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
+		logger.WithField("kind", kind).Error("UNKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
 	}
 
 	if err != nil && allowEmpty {
@@ -368,7 +368,7 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 
 		err = ValidateNormalStringField(str, min, maxLen)
 	default:
-		logrus.WithField("kind", kind).Error("UNKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
+		logger.WithField("kind", kind).Error("UNKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
 	}
 
 	return str, err

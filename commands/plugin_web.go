@@ -3,23 +3,23 @@ package commands
 import (
 	"database/sql"
 	"fmt"
+	"html"
+	"html/template"
+	"net/http"
+	"strconv"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
 	"goji.io"
 	"goji.io/pat"
-	"html"
-	"html/template"
-	"net/http"
-	"strconv"
 )
 
 type ChannelOverrideForm struct {
@@ -172,7 +172,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 		return templateData, web.NewPublicError("Prefix is smaller than 1 or larger than 100 characters")
 	}
 
-	common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
+	common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
 
 	return templateData, nil
 }
@@ -201,7 +201,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 				// Insert it
 				err = override.InsertG(r.Context(), boil.Infer())
 				if err != nil {
-					logrus.WithError(err).Error("Failed inserting global commands row")
+					logger.WithError(err).Error("Failed inserting global commands row")
 					// Was inserted somewhere else in the meantime
 					override, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).OneG(r.Context())
 				}

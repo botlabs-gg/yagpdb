@@ -4,14 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/oauth2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/models"
-	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/oauth2"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/models"
 )
 
 const (
@@ -24,8 +24,8 @@ var (
 
 func InitOauth() {
 	oauthConf = &oauth2.Config{
-		ClientID:     common.Conf.ClientID,
-		ClientSecret: common.Conf.ClientSecret,
+		ClientID:     common.ConfClientID.GetString(),
+		ClientSecret: common.ConfClientSecret.GetString(),
 		Scopes:       []string{"identify", "guilds"},
 		Endpoint: oauth2.Endpoint{
 			TokenURL: "https://discordapp.com/api/oauth2/token",
@@ -34,9 +34,9 @@ func InitOauth() {
 	}
 
 	if https || exthttps {
-		oauthConf.RedirectURL = "https://" + common.Conf.Host + "/confirm_login"
+		oauthConf.RedirectURL = "https://" + common.ConfHost.GetString() + "/confirm_login"
 	} else {
-		oauthConf.RedirectURL = "http://" + common.Conf.Host + "/confirm_login"
+		oauthConf.RedirectURL = "http://" + common.ConfHost.GetString() + "/confirm_login"
 	}
 }
 
@@ -44,13 +44,13 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	csrfToken, err := CreateCSRFToken()
 	if err != nil {
-		log.WithError(err).Error("Failed generating csrf token")
+		CtxLogger(r.Context()).WithError(err).Error("Failed generating csrf token")
 		return
 	}
 
 	redir := r.FormValue("goto")
 	if redir != "" {
-		common.RedisPool.Do(radix.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
 	}
 
 	url := oauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
@@ -63,9 +63,9 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
 	if ok, err := CheckCSRFToken(state); !ok {
 		if err != nil {
-			log.WithError(err).Error("Failed validating CSRF token")
+			CtxLogger(ctx).WithError(err).Error("Failed validating CSRF token")
 		} else {
-			log.Info("Invalid oauth state", state)
+			CtxLogger(ctx).Info("Invalid oauth state", state)
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -74,7 +74,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	token, err := oauthConf.Exchange(ctx, code)
 	if err != nil {
-		log.WithError(err).Error("oauthConf.Exchange() failed")
+		CtxLogger(ctx).WithError(err).Error("oauthConf.Exchange() failed")
 		http.Redirect(w, r, "/?error=oauth2failure", http.StatusTemporaryRedirect)
 		return
 	}
@@ -82,7 +82,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	// Create a new session cookie cause we can
 	sessionCookie, err := CreateCookieSession(token)
 	if err != nil {
-		log.WithError(err).Error("Failed setting auth token")
+		CtxLogger(ctx).WithError(err).Error("Failed setting auth token")
 		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}
@@ -90,11 +90,11 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, sessionCookie)
 
 	var redirUrl string
-	err = common.RedisPool.Do(radix.Cmd(&redirUrl, "GET", "csrf_redir:"+state))
+	err = common.RedisPool.Do(retryableredis.Cmd(&redirUrl, "GET", "csrf_redir:"+state))
 	if err != nil {
 		redirUrl = "/manage"
 	} else {
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", "csrf_redir:"+state))
+		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", "csrf_redir:"+state))
 	}
 
 	http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
@@ -118,10 +118,10 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 func CreateCSRFToken() (string, error) {
 	str := RandBase64(32)
 
-	err := common.RedisPool.Do(radix.Pipeline(
-		radix.Cmd(nil, "LPUSH", "csrf", str),
-		radix.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
-	))
+	err := common.MultipleCmds(
+		retryableredis.Cmd(nil, "LPUSH", "csrf", str),
+		retryableredis.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
+	)
 
 	return str, err
 }
@@ -129,7 +129,7 @@ func CreateCSRFToken() (string, error) {
 // CheckCSRFToken returns true if it matched and false if not, an error if something bad happened
 func CheckCSRFToken(token string) (bool, error) {
 	var num int
-	err := common.RedisPool.Do(radix.Cmd(&num, "LREM", "csrf", "1", token))
+	err := common.RedisPool.Do(retryableredis.Cmd(&num, "LREM", "csrf", "1", token))
 	if err != nil {
 		return false, err
 	}

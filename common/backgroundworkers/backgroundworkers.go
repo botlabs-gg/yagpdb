@@ -2,18 +2,20 @@ package backgroundworkers
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
-	"goji.io"
 	"net/http"
-	"os"
 	"sync"
+
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
+	"goji.io"
 )
 
-var HTTPAddr = loadHTTPAddr()
+var HTTPAddr = config.RegisterOption("yagpdb.bgworker.http_server_addr", "Backgroundn worker http server address", "localhost:5004")
 var RESTServerMuxer *goji.Mux
 
 var restServer *http.Server
+
+var logger = common.GetFixedPrefixLogger("bgworkers")
 
 type BackgroundWorkerPlugin interface {
 	RunBackgroundWorker()
@@ -25,7 +27,7 @@ func RunWorkers() {
 
 	for _, p := range common.Plugins {
 		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logrus.Info("[bgworkers] Running background worker: ", p.PluginInfo().Name)
+			logger.Info("Running background worker: ", p.PluginInfo().Name)
 			go bwc.RunBackgroundWorker()
 		}
 	}
@@ -34,14 +36,14 @@ func RunWorkers() {
 }
 
 func StopWorkers(wg *sync.WaitGroup) {
-	logrus.Info("[bgworkers] Shutting down http server...")
+	logger.Info("Shutting down http server...")
 	if restServer != nil {
 		restServer.Shutdown(context.Background())
 	}
 
 	for _, p := range common.Plugins {
 		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logrus.Info("[bgworkers] Stopping background worker: ", p.PluginInfo().Name)
+			logger.Info("Stopping background worker: ", p.PluginInfo().Name)
 			wg.Add(1)
 			go bwc.StopBackgroundWorker(wg)
 		}
@@ -49,24 +51,15 @@ func StopWorkers(wg *sync.WaitGroup) {
 }
 
 func runWebserver() {
-	logrus.Info("[bgworkers] Starting bgworker http server on ", HTTPAddr)
+	logger.Info("Starting bgworker http server on ", HTTPAddr)
 
 	restServer := &http.Server{
 		Handler: RESTServerMuxer,
-		Addr:    HTTPAddr,
+		Addr:    HTTPAddr.GetString(),
 	}
 
 	err := restServer.ListenAndServe()
 	if err != nil {
-		logrus.WithError(err).Error("[bgworkers] Failed starting http server")
+		logger.WithError(err).Error("Failed starting http server")
 	}
-}
-
-func loadHTTPAddr() string {
-	addr := os.Getenv("YAGPDB_BGWORKER_HTTP_SERVER_ADDR")
-	if addr == "" {
-		addr = "localhost:5004"
-	}
-
-	return addr
 }

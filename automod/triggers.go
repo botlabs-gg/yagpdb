@@ -1,18 +1,18 @@
 package automod
 
 import (
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/automod_legacy"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/safebrowsing"
-	"github.com/sirupsen/logrus"
-	"net/url"
-	"regexp"
-	"strings"
-	"time"
-	"unicode"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
@@ -20,7 +20,7 @@ var forwardSlashReplacer = strings.NewReplacer("\\", "")
 /////////////////////////////////////////////////////////////
 
 type BaseRegexTriggerData struct {
-	Regex string `valid:",1,250`
+	Regex string `valid:",1,250"`
 }
 
 type BaseRegexTrigger struct {
@@ -292,7 +292,7 @@ func (dt *DomainTrigger) containsDomain(link string, list []string) (bool, strin
 
 	parsed, err := url.ParseRequestURI(link)
 	if err != nil {
-		logrus.WithError(err).WithField("url", link).Error("Failed parsing request url matched with regex")
+		logger.WithError(err).WithField("url", link).Error("Failed parsing request url matched with regex")
 		return false, ""
 	}
 
@@ -550,7 +550,7 @@ func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
 func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
 	threat, err := safebrowsing.CheckString(forwardSlashReplacer.Replace(m.Content))
 	if err != nil {
-		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
+		logger.WithError(err).Error("Failed checking urls against google safebrowser")
 		return false, nil
 	}
 

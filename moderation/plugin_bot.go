@@ -1,14 +1,15 @@
 package moderation
 
 import (
-	"github.com/jonas747/dshardorchestrator"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -16,8 +17,6 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -48,13 +47,13 @@ func (p *Plugin) BotInit() {
 	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
 	scheduledevents2.RegisterLegacyMigrater("mod_unban", handleMigrateScheduledUnban)
 
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildMemberRemove), eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandler(LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
 
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 }
@@ -116,7 +115,7 @@ func RefreshMuteOverrides(guildID int64) {
 	}
 }
 
-func HandleChannelCreateUpdate(evt *eventsystem.EventData) {
+func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	var channel *discordgo.Channel
 	if evt.Type == eventsystem.EventChannelCreate {
 		channel = evt.ChannelCreate().Channel
@@ -125,19 +124,21 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) {
 	}
 
 	if channel.GuildID == 0 {
-		return
+		return false, nil
 	}
 
 	config, err := GetConfig(channel.GuildID)
 	if err != nil {
-		return
+		return true, errors.WithStackIf(err)
 	}
 
 	if config.MuteRole == "" || !config.MuteManageRole {
-		return
+		return false, nil
 	}
 
 	RefreshMuteOverrideForChannel(config, channel)
+
+	return false, nil
 }
 
 func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
@@ -189,7 +190,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
-	var guildID int64
+	var guildID = evt.GS.ID
 	var action ModlogAction
 
 	botPerformed := false
@@ -197,28 +198,27 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	switch evt.Type {
 	case eventsystem.EventGuildBanAdd:
 
-		guildID = evt.GuildBanAdd().GuildID
 		user = evt.GuildBanAdd().User
 		action = MABanned
 
 		var i int
-		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
+		common.RedisPool.Do(retryableredis.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot banned the user earlier, don't make duplicate entries in the modlog
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
+			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
 			return
 		}
 
 	case eventsystem.EventGuildBanRemove:
+
 		action = MAUnbanned
 		user = evt.GuildBanRemove().User
-		guildID = evt.GuildBanRemove().GuildID
 
 		var i int
-		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
+		common.RedisPool.Do(retryableredis.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot was the one that performed the unban
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
+			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
 			botPerformed = true
 		}
 
@@ -228,7 +228,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(guildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
+		logger.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
 		return
 	}
 
@@ -268,23 +268,27 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	err = CreateModlogEmbed(config.IntActionChannel(), author, action, user, reason, "")
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
+		logger.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
 	}
 }
 
-func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
 	data := evt.GuildMemberRemove()
 
 	config, err := GetConfig(data.GuildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed retrieving config")
-		return
+		return true, errors.WithStackIf(err)
 	}
 
 	if config.IntActionChannel() == 0 {
-		return
+		return false, nil
 	}
 
+	go checkAuditLogMemberRemoved(config, data)
+	return false, nil
+}
+
+func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemove) {
 	// If we poll the audit log too fast then there sometimes wont be a audit log entry
 	time.Sleep(time.Second * 3)
 
@@ -298,16 +302,16 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = CreateModlogEmbed(config.IntActionChannel(), author, MAKick, data.User, entry.Reason, "")
+	err := CreateModlogEmbed(config.IntActionChannel(), author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
-		logrus.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
 	}
 }
 
 // Since updating mutes are now a complex operation with removing roles and whatnot,
 // to avoid weird bugs from happening we lock it so it can only be updated one place per user
-func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsystem.EventData) {
-	return func(evt *eventsystem.EventData) {
+func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
+	return func(evt *eventsystem.EventData) (retry bool, err error) {
 		var userID int64
 		var guild int64
 		// TODO: add utility functions to the eventdata struct for fetching things like these?
@@ -321,81 +325,76 @@ func LockMemberMuteMW(next func(evt *eventsystem.EventData)) func(evt *eventsyst
 			panic("Unknown event in lock memebr mute middleware")
 		}
 
-		// If there's less than 2 seconds of the mute left, don't bother doing anything
+		// If there's less than 5 seconds of the mute left, don't bother doing anything
 		var muteLeft int
-		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		common.RedisPool.Do(retryableredis.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
 		if muteLeft < 5 {
-			return
+			return false, nil
 		}
 
 		LockMute(userID)
 		defer UnlockMute(userID)
 
 		// The situation may have changed at this point, check again
-		common.RedisPool.Do(radix.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
+		common.RedisPool.Do(retryableredis.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
 		if muteLeft < 5 {
-			return
+			return false, nil
 		}
 
-		next(evt)
+		return next(evt)
 	}
 }
 
-func HandleMemberJoin(evt *eventsystem.EventData) {
+func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberAdd()
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
-		return
-	}
-	if config.MuteRole == "" {
-		return
+		return true, errors.WithStackIf(err)
 	}
 
-	logrus.WithField("guild", c.GuildID).WithField("user", c.User.ID).Info("Assigning back mute role after member rejoined")
+	if config.MuteRole == "" {
+		return false, nil
+	}
+
 	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.IntMuteRole())
 	if err != nil {
-		logrus.WithField("guild", c.GuildID).WithError(err).Error("Failed assigning mute role")
+		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
-func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
+func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberUpdate()
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", c.GuildID).Error("Failed retrieving config")
-		return
+		return true, errors.WithStackIf(err)
 	}
 	if config.MuteRole == "" {
-		return
+		return false, nil
 	}
 
-	guild := bot.State.Guild(true, c.GuildID)
-	if guild == nil {
-		return
-	}
+	guild := evt.GS
+
 	role := guild.RoleCopy(true, config.IntMuteRole())
 	if role == nil {
-		return // Probably deleted the mute role, do nothing then
+		return false, nil // Probably deleted the mute role, do nothing then
 	}
-
-	logrus.WithField("guild", c.Member.GuildID).WithField("user", c.User.ID).Info("Giving back mute roles arr")
 
 	removedRoles, err := AddMemberMuteRole(config, c.Member.User.ID, c.Member.Roles)
 	if err != nil {
-		logrus.WithError(err).Error("Failed adding mute role to user in member update")
+		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 	}
 
 	if len(removedRoles) < 1 {
-		return
+		return false, nil
 	}
 
 	tx, err := common.PQ.Begin()
 	if err != nil {
-		logrus.WithError(err).Error("Failed starting transaction")
-		return
+		return true, errors.WithStackIf(err)
 	}
 
 	// Append the removed roles to the removed_roles array column, if they don't already exist in it
@@ -403,15 +402,17 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
 	for _, v := range removedRoles {
 		_, err := tx.Exec(queryStr, c.GuildID, c.Member.User.ID, v)
 		if err != nil {
-			logrus.WithError(err).Error("Failed updating removed roles")
-			break
+			tx.Rollback()
+			return true, errors.WithStackIf(err)
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		logrus.WithError(err).Error("Failed comitting transaction")
+		return true, errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
 func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
@@ -447,7 +448,7 @@ func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Dur
 func handleMigrateScheduledUnmute(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logrus.Error("invalid unmute event", data)
+		logger.Error("invalid unmute event", data)
 		return nil
 	}
 
@@ -462,7 +463,7 @@ func handleMigrateScheduledUnmute(t time.Time, data string) error {
 func handleMigrateScheduledUnban(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logrus.Error("Invalid unban event", data)
+		logger.Error("Invalid unban event", data)
 		return nil // Can't re-schedule an invalid event..
 	}
 
@@ -498,15 +499,15 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 
 	g := bot.State.Guild(true, guildID)
 	if g == nil {
-		logrus.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
+		logger.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
 		return false, nil
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
+	common.RedisPool.Do(retryableredis.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
 
 	err = common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {
-		logrus.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
+		logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 

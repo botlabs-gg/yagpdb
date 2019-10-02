@@ -1,0 +1,1 @@
+A basic redis pool, since the connections are using retryableredis i dont need to do any fancy checks on them to detect dead connections, as that part is managed by retryableredis.

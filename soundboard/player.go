@@ -1,12 +1,11 @@
 package soundboard
 
 import (
+	"emperror.dev/errors"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"io"
 	"sync"
 	"time"
@@ -73,7 +72,7 @@ func runPlayer(guildID int64) {
 		var err error
 		vc, err = playSound(vc, bot.ShardManager.SessionForGuild(guildID), item)
 		if err != nil {
-			logrus.WithError(err).WithField("guild", guildID).Error("Failed playing sound")
+			logger.WithError(err).WithField("guild", guildID).Error("Failed playing sound")
 			if item.CommandRanFrom != 0 {
 				common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Failed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
 			}
@@ -85,14 +84,14 @@ func runPlayer(guildID int64) {
 		vc.Close()
 	}
 
-	logrus.Info("Done playing")
+	logger.Info("Done playing")
 	// When we break out, playqueuemutex is locked
 	delete(playQueues, guildID)
 	playQueuesMutex.Unlock()
 }
 
 func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest) (*discordgo.VoiceConnection, error) {
-	logrus.Info("Playing sound ", req.Sound)
+	logger.Info("Playing sound ", req.Sound)
 
 	// Open the sound and create a new decoder
 	reader, err := getSoundFromBGWorker(req.Sound)
@@ -107,6 +106,9 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 	if vc == nil || !vc.Ready {
 		vc, err = session.GatewayManager.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
 		if err != nil {
+			if err == discordgo.ErrTimeoutWaitingForVoice {
+				bot.ShardManager.SessionForGuild(req.GuildID).GatewayManager.ChannelVoiceLeave(req.GuildID)
+			}
 			return nil, common.ErrWithCaller(err)
 		}
 		<-vc.Connected

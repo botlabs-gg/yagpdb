@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -88,13 +88,13 @@ var NicknameListingWhere = struct {
 	GuildID   whereHelpernull_String
 	Nickname  whereHelpernull_String
 }{
-	ID:        whereHelperint{field: `id`},
-	CreatedAt: whereHelpernull_Time{field: `created_at`},
-	UpdatedAt: whereHelpernull_Time{field: `updated_at`},
-	DeletedAt: whereHelpernull_Time{field: `deleted_at`},
-	UserID:    whereHelpernull_Int64{field: `user_id`},
-	GuildID:   whereHelpernull_String{field: `guild_id`},
-	Nickname:  whereHelpernull_String{field: `nickname`},
+	ID:        whereHelperint{field: "\"nickname_listings\".\"id\""},
+	CreatedAt: whereHelpernull_Time{field: "\"nickname_listings\".\"created_at\""},
+	UpdatedAt: whereHelpernull_Time{field: "\"nickname_listings\".\"updated_at\""},
+	DeletedAt: whereHelpernull_Time{field: "\"nickname_listings\".\"deleted_at\""},
+	UserID:    whereHelpernull_Int64{field: "\"nickname_listings\".\"user_id\""},
+	GuildID:   whereHelpernull_String{field: "\"nickname_listings\".\"guild_id\""},
+	Nickname:  whereHelpernull_String{field: "\"nickname_listings\".\"nickname\""},
 }
 
 // NicknameListingRels is where relationship names are stored.
@@ -114,7 +114,7 @@ func (*nicknameListingR) NewStruct() *nicknameListingR {
 type nicknameListingL struct{}
 
 var (
-	nicknameListingColumns               = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "guild_id", "nickname"}
+	nicknameListingAllColumns            = []string{"id", "created_at", "updated_at", "deleted_at", "user_id", "guild_id", "nickname"}
 	nicknameListingColumnsWithoutDefault = []string{"created_at", "updated_at", "deleted_at", "user_id", "guild_id", "nickname"}
 	nicknameListingColumnsWithDefault    = []string{"id"}
 	nicknameListingPrimaryKeyColumns     = []string{"id"}
@@ -167,7 +167,7 @@ func (q nicknameListingQuery) One(ctx context.Context, exec boil.ContextExecutor
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for nickname_listings")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for nickname_listings")
 	}
 
 	return o, nil
@@ -184,7 +184,7 @@ func (q nicknameListingQuery) All(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to NicknameListing slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to NicknameListing slice")
 	}
 
 	return o, nil
@@ -204,7 +204,7 @@ func (q nicknameListingQuery) Count(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count nickname_listings rows")
+		return 0, errors.WrapIf(err, "models: failed to count nickname_listings rows")
 	}
 
 	return count, nil
@@ -225,7 +225,7 @@ func (q nicknameListingQuery) Exists(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if nickname_listings exists")
+		return false, errors.WrapIf(err, "models: failed to check if nickname_listings exists")
 	}
 
 	return count > 0, nil
@@ -262,7 +262,7 @@ func FindNicknameListing(ctx context.Context, exec boil.ContextExecutor, iD int,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from nickname_listings")
+		return nil, errors.WrapIf(err, "models: unable to select from nickname_listings")
 	}
 
 	return nicknameListingObj, nil
@@ -301,7 +301,7 @@ func (o *NicknameListing) Insert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingColumnsWithDefault,
 			nicknameListingColumnsWithoutDefault,
 			nzDefaults,
@@ -345,7 +345,7 @@ func (o *NicknameListing) Insert(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into nickname_listings")
+		return errors.WrapIf(err, "models: unable to insert into nickname_listings")
 	}
 
 	if !cached {
@@ -381,7 +381,7 @@ func (o *NicknameListing) Update(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingPrimaryKeyColumns,
 		)
 
@@ -412,12 +412,12 @@ func (o *NicknameListing) Update(ctx context.Context, exec boil.ContextExecutor,
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update nickname_listings row")
+		return 0, errors.WrapIf(err, "models: unable to update nickname_listings row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for nickname_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for nickname_listings")
 	}
 
 	if !cached {
@@ -440,12 +440,12 @@ func (q nicknameListingQuery) UpdateAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for nickname_listings")
+		return 0, errors.WrapIf(err, "models: unable to update all for nickname_listings")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for nickname_listings")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for nickname_listings")
 	}
 
 	return rowsAff, nil
@@ -494,12 +494,12 @@ func (o NicknameListingSlice) UpdateAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in nicknameListing slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in nicknameListing slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all nicknameListing")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all nicknameListing")
 	}
 	return rowsAff, nil
 }
@@ -562,13 +562,13 @@ func (o *NicknameListing) Upsert(ctx context.Context, exec boil.ContextExecutor,
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingColumnsWithDefault,
 			nicknameListingColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			nicknameListingColumns,
+			nicknameListingAllColumns,
 			nicknameListingPrimaryKeyColumns,
 		)
 
@@ -616,7 +616,7 @@ func (o *NicknameListing) Upsert(ctx context.Context, exec boil.ContextExecutor,
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert nickname_listings")
+		return errors.WrapIf(err, "models: unable to upsert nickname_listings")
 	}
 
 	if !cached {
@@ -651,12 +651,12 @@ func (o *NicknameListing) Delete(ctx context.Context, exec boil.ContextExecutor)
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from nickname_listings")
+		return 0, errors.WrapIf(err, "models: unable to delete from nickname_listings")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for nickname_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for nickname_listings")
 	}
 
 	return rowsAff, nil
@@ -672,12 +672,12 @@ func (q nicknameListingQuery) DeleteAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from nickname_listings")
+		return 0, errors.WrapIf(err, "models: unable to delete all from nickname_listings")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for nickname_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for nickname_listings")
 	}
 
 	return rowsAff, nil
@@ -690,10 +690,6 @@ func (o NicknameListingSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o NicknameListingSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no NicknameListing slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -714,12 +710,12 @@ func (o NicknameListingSlice) DeleteAll(ctx context.Context, exec boil.ContextEx
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from nicknameListing slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from nicknameListing slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for nickname_listings")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for nickname_listings")
 	}
 
 	return rowsAff, nil
@@ -777,7 +773,7 @@ func (o *NicknameListingSlice) ReloadAll(ctx context.Context, exec boil.ContextE
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in NicknameListingSlice")
+		return errors.WrapIf(err, "models: unable to reload all in NicknameListingSlice")
 	}
 
 	*o = slice
@@ -804,7 +800,7 @@ func NicknameListingExists(ctx context.Context, exec boil.ContextExecutor, iD in
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if nickname_listings exists")
+		return false, errors.WrapIf(err, "models: unable to check if nickname_listings exists")
 	}
 
 	return exists, nil

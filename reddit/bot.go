@@ -3,14 +3,15 @@ package reddit
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
-	"github.com/pkg/errors"
-	"strings"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
@@ -18,7 +19,7 @@ var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 func (p *Plugin) RemoveGuild(g int64) error {
 	_, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(g)).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		return errors.Wrap(err, "failed removing reddit feeds")
+		return errors.WrapIf(err, "failed removing reddit feeds")
 	}
 
 	return nil

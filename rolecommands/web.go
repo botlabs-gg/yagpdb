@@ -1,13 +1,13 @@
 package rolecommands
 
 import (
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -47,6 +47,11 @@ type FormGroup struct {
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../rolecommands/assets/rolecommands.html", "templates/plugins/rolecommands.html")
+
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Role Commands",
+		URL:  "rolecommands/",
+	})
 
 	// Setup SubMuxer
 	subMux := goji.SubMux()
@@ -421,13 +426,22 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	numCommands, err := models.RoleCommands(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
 
+	if err != nil {
+		return templateData, err
+	}
+
+	numGroups, err := models.RoleGroups(qm.Where("guild_id = ?", g.ID)).CountG(r.Context())
+
 	if numCommands > 0 {
 		templateData["WidgetEnabled"] = true
 	} else {
 		templateData["WidgetDisabled"] = true
 	}
 
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf("Active RoleCommands: <code>%d</code>", numCommands))
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
+		<li>Active RoleCommands: <code>%d</code></li>
+		<li>Active RoleGroups: <code>%d</code></li>
+		</ul>`, numCommands, numGroups))
 
 	return templateData, err
 }

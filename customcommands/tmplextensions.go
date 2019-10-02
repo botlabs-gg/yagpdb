@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"time"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -15,12 +18,10 @@ import (
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
-	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 func init() {
@@ -35,9 +36,14 @@ func init() {
 		ctx.ContextFuncs["dbSetExpire"] = tmplDBSetExpire(ctx)
 		ctx.ContextFuncs["dbIncr"] = tmplDBIncr(ctx)
 		ctx.ContextFuncs["dbGet"] = tmplDBGet(ctx)
-		ctx.ContextFuncs["dbGetPattern"] = tmplDBGetPattern(ctx)
+		ctx.ContextFuncs["dbGetPattern"] = tmplDBGetPattern(ctx, false)
+		ctx.ContextFuncs["dbGetPatternReverse"] = tmplDBGetPattern(ctx, true)
 		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
-		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx)
+		ctx.ContextFuncs["dbDelById"] = tmplDBDelById(ctx)
+		ctx.ContextFuncs["dbDelByID"] = tmplDBDelById(ctx)
+		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
+		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
+		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
 	})
 }
 
@@ -156,11 +162,11 @@ func (pa *ParsedArgs) IsSet(index int) interface{} {
 // or schedules a custom command to be run in the future sometime with the provided data placed in .ExecData
 func tmplRunCC(ctx *templates.Context) interface{} {
 	return func(ccID int, channel interface{}, delaySeconds interface{}, data interface{}) (string, error) {
-		if ctx.IncreaseCheckCallCounter("runcc", 1) {
+		if ctx.IncreaseCheckCallCounterPremium("runcc", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		cmd, err := models.FindCustomCommandG(context.Background(), int64(ccID), ctx.GS.ID)
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
 		}
@@ -219,7 +225,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.Wrap(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
 
 		return "", nil
@@ -233,11 +239,11 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 // then when you use the custom mute command again it will overwrite the mute duration and overwrite the scheduled unmute cc for that user
 func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 	return func(ccID int, channel interface{}, delaySeconds interface{}, key interface{}, data interface{}) (string, error) {
-		if ctx.IncreaseCheckCallCounter("runcc", 1) {
+		if ctx.IncreaseCheckCallCounterPremium("runcc", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		cmd, err := models.FindCustomCommandG(context.Background(), int64(ccID), ctx.GS.ID)
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
 		}
@@ -288,7 +294,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.Wrap(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
 
 		return "", nil
@@ -298,7 +304,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 // tmplCancelUniqueCC cancels a scheduled cc execution in the future with the provided cc id and key
 func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 	return func(ccID int, key interface{}) (string, error) {
-		if ctx.IncreaseCheckCallCounter("cancelcc", 2) {
+		if ctx.IncreaseCheckCallCounter("cancelcc", 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -342,7 +348,7 @@ func tmplDBSetExpire(ctx *templates.Context) func(userID int64, key interface{},
 		}
 
 		vNum := templates.ToFloat64(value)
-		keyStr := templates.ToString(key)
+		keyStr := limitString(templates.ToString(key), 256)
 
 		var expires null.Time
 		if ttl > 0 {
@@ -422,7 +428,12 @@ func tmplDBGet(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBGetPattern(ctx *templates.Context) interface{} {
+func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
+	order := "id asc"
+	if inverse {
+		order = "id desc"
+	}
+
 	return func(userID int64, pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
@@ -441,7 +452,7 @@ func tmplDBGetPattern(ctx *templates.Context) interface{} {
 		keyStr := limitString(templates.ToString(pattern), 256)
 		results, err := models.TemplatesUserDatabases(
 			qm.Where("guild_id = ? AND user_id = ? AND key LIKE ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, userID, keyStr),
-			qm.OrderBy("ID ASC"), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
+			qm.OrderBy(order), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
@@ -456,7 +467,7 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		ctx.GS.UserCacheDel(true, CacheKeyDBLimits)
+		ctx.GS.UserCacheDel(CacheKeyDBLimits)
 
 		keyStr := limitString(templates.ToString(key), 256)
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ?", ctx.GS.ID, userID, keyStr)).DeleteAll(context.Background(), common.PQ)
@@ -465,7 +476,50 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 	}
 }
 
-func tmplDBTopEntries(ctx *templates.Context) interface{} {
+func tmplDBDelById(ctx *templates.Context) interface{} {
+	return func(userID int64, id int64) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		ctx.GS.UserCacheDel(CacheKeyDBLimits)
+
+		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND id = ?", ctx.GS.ID, userID, id)).DeleteAll(context.Background(), common.PQ)
+
+		return "", err
+	}
+}
+
+func tmplDBCount(ctx *templates.Context) interface{} {
+	return func(variadicUserID ...int64) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		var userID null.Int64
+		if len(variadicUserID) > 0 {
+			userID.Int64 = variadicUserID[0]
+			userID.Valid = true
+		}
+
+		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND (expires_at IS NULL or expires_at > now())`
+
+		var count int64
+		err := common.PQ.QueryRow(q, ctx.GS.ID, userID).Scan(&count)
+		return count, err
+	}
+}
+
+func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
+	orderBy := "value_num DESC"
+	if bottom {
+		orderBy = "value_num ASC"
+	}
+
 	return func(pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
@@ -484,7 +538,7 @@ func tmplDBTopEntries(ctx *templates.Context) interface{} {
 		keyStr := limitString(templates.ToString(pattern), 256)
 		results, err := models.TemplatesUserDatabases(
 			qm.Where("guild_id = ? AND key LIKE ? AND (expires_at IS NULL OR expires_at > now())", ctx.GS.ID, keyStr),
-			qm.OrderBy("value_num DESC"), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
+			qm.OrderBy(orderBy), qm.Limit(amount), qm.Offset(skip)).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
@@ -525,7 +579,7 @@ func getGuildCCDBNumValues(guildID int64) (int64, error) {
 }
 
 func cacheCheckDBLimit(gs *dstate.GuildState) (int64, error) {
-	v, err := gs.UserCacheFetch(true, CacheKeyDBLimits, func() (interface{}, error) {
+	v, err := gs.UserCacheFetch(CacheKeyDBLimits, func() (interface{}, error) {
 		n, err := getGuildCCDBNumValues(gs.ID)
 		return n, err
 	})

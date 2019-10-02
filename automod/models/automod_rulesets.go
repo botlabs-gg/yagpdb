@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -61,10 +61,10 @@ var AutomodRulesetWhere = struct {
 	Name    whereHelperstring
 	Enabled whereHelperbool
 }{
-	ID:      whereHelperint64{field: `id`},
-	GuildID: whereHelperint64{field: `guild_id`},
-	Name:    whereHelperstring{field: `name`},
-	Enabled: whereHelperbool{field: `enabled`},
+	ID:      whereHelperint64{field: "\"automod_rulesets\".\"id\""},
+	GuildID: whereHelperint64{field: "\"automod_rulesets\".\"guild_id\""},
+	Name:    whereHelperstring{field: "\"automod_rulesets\".\"name\""},
+	Enabled: whereHelperbool{field: "\"automod_rulesets\".\"enabled\""},
 }
 
 // AutomodRulesetRels is where relationship names are stored.
@@ -91,7 +91,7 @@ func (*automodRulesetR) NewStruct() *automodRulesetR {
 type automodRulesetL struct{}
 
 var (
-	automodRulesetColumns               = []string{"id", "guild_id", "name", "enabled"}
+	automodRulesetAllColumns            = []string{"id", "guild_id", "name", "enabled"}
 	automodRulesetColumnsWithoutDefault = []string{"guild_id", "name", "enabled"}
 	automodRulesetColumnsWithDefault    = []string{"id"}
 	automodRulesetPrimaryKeyColumns     = []string{"id"}
@@ -144,7 +144,7 @@ func (q automodRulesetQuery) One(ctx context.Context, exec boil.ContextExecutor)
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for automod_rulesets")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for automod_rulesets")
 	}
 
 	return o, nil
@@ -161,7 +161,7 @@ func (q automodRulesetQuery) All(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to AutomodRuleset slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to AutomodRuleset slice")
 	}
 
 	return o, nil
@@ -181,7 +181,7 @@ func (q automodRulesetQuery) Count(ctx context.Context, exec boil.ContextExecuto
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count automod_rulesets rows")
+		return 0, errors.WrapIf(err, "models: failed to count automod_rulesets rows")
 	}
 
 	return count, nil
@@ -202,7 +202,7 @@ func (q automodRulesetQuery) Exists(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if automod_rulesets exists")
+		return false, errors.WrapIf(err, "models: failed to check if automod_rulesets exists")
 	}
 
 	return count > 0, nil
@@ -296,19 +296,19 @@ func (automodRulesetL) LoadRulesetAutomodRules(ctx context.Context, e boil.Conte
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load automod_rules")
+		return errors.WrapIf(err, "failed to eager load automod_rules")
 	}
 
 	var resultSlice []*AutomodRule
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice automod_rules")
+		return errors.WrapIf(err, "failed to bind eager loaded slice automod_rules")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on automod_rules")
+		return errors.WrapIf(err, "failed to close results in eager load on automod_rules")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for automod_rules")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_rules")
 	}
 
 	if singular {
@@ -384,19 +384,19 @@ func (automodRulesetL) LoadRulesetAutomodRulesetConditions(ctx context.Context, 
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load automod_ruleset_conditions")
+		return errors.WrapIf(err, "failed to eager load automod_ruleset_conditions")
 	}
 
 	var resultSlice []*AutomodRulesetCondition
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice automod_ruleset_conditions")
+		return errors.WrapIf(err, "failed to bind eager loaded slice automod_ruleset_conditions")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on automod_ruleset_conditions")
+		return errors.WrapIf(err, "failed to close results in eager load on automod_ruleset_conditions")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for automod_ruleset_conditions")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_ruleset_conditions")
 	}
 
 	if singular {
@@ -445,7 +445,7 @@ func (o *AutomodRuleset) AddRulesetAutomodRules(ctx context.Context, exec boil.C
 		if insert {
 			rel.RulesetID = o.ID
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -461,7 +461,7 @@ func (o *AutomodRuleset) AddRulesetAutomodRules(ctx context.Context, exec boil.C
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			rel.RulesetID = o.ID
@@ -507,7 +507,7 @@ func (o *AutomodRuleset) AddRulesetAutomodRulesetConditions(ctx context.Context,
 		if insert {
 			rel.RulesetID = o.ID
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -523,7 +523,7 @@ func (o *AutomodRuleset) AddRulesetAutomodRulesetConditions(ctx context.Context,
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			rel.RulesetID = o.ID
@@ -581,7 +581,7 @@ func FindAutomodRuleset(ctx context.Context, exec boil.ContextExecutor, iD int64
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from automod_rulesets")
+		return nil, errors.WrapIf(err, "models: unable to select from automod_rulesets")
 	}
 
 	return automodRulesetObj, nil
@@ -610,7 +610,7 @@ func (o *AutomodRuleset) Insert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			automodRulesetColumns,
+			automodRulesetAllColumns,
 			automodRulesetColumnsWithDefault,
 			automodRulesetColumnsWithoutDefault,
 			nzDefaults,
@@ -654,7 +654,7 @@ func (o *AutomodRuleset) Insert(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into automod_rulesets")
+		return errors.WrapIf(err, "models: unable to insert into automod_rulesets")
 	}
 
 	if !cached {
@@ -684,7 +684,7 @@ func (o *AutomodRuleset) Update(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			automodRulesetColumns,
+			automodRulesetAllColumns,
 			automodRulesetPrimaryKeyColumns,
 		)
 
@@ -715,12 +715,12 @@ func (o *AutomodRuleset) Update(ctx context.Context, exec boil.ContextExecutor, 
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update automod_rulesets row")
+		return 0, errors.WrapIf(err, "models: unable to update automod_rulesets row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for automod_rulesets")
 	}
 
 	if !cached {
@@ -743,12 +743,12 @@ func (q automodRulesetQuery) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to update all for automod_rulesets")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for automod_rulesets")
 	}
 
 	return rowsAff, nil
@@ -797,12 +797,12 @@ func (o AutomodRulesetSlice) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in automodRuleset slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in automodRuleset slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all automodRuleset")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all automodRuleset")
 	}
 	return rowsAff, nil
 }
@@ -857,13 +857,13 @@ func (o *AutomodRuleset) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			automodRulesetColumns,
+			automodRulesetAllColumns,
 			automodRulesetColumnsWithDefault,
 			automodRulesetColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			automodRulesetColumns,
+			automodRulesetAllColumns,
 			automodRulesetPrimaryKeyColumns,
 		)
 
@@ -911,7 +911,7 @@ func (o *AutomodRuleset) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert automod_rulesets")
+		return errors.WrapIf(err, "models: unable to upsert automod_rulesets")
 	}
 
 	if !cached {
@@ -946,12 +946,12 @@ func (o *AutomodRuleset) Delete(ctx context.Context, exec boil.ContextExecutor) 
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to delete from automod_rulesets")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for automod_rulesets")
 	}
 
 	return rowsAff, nil
@@ -967,12 +967,12 @@ func (q automodRulesetQuery) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to delete all from automod_rulesets")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_rulesets")
 	}
 
 	return rowsAff, nil
@@ -985,10 +985,6 @@ func (o AutomodRulesetSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AutomodRulesetSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no AutomodRuleset slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -1009,12 +1005,12 @@ func (o AutomodRulesetSlice) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from automodRuleset slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from automodRuleset slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_rulesets")
 	}
 
 	return rowsAff, nil
@@ -1072,7 +1068,7 @@ func (o *AutomodRulesetSlice) ReloadAll(ctx context.Context, exec boil.ContextEx
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in AutomodRulesetSlice")
+		return errors.WrapIf(err, "models: unable to reload all in AutomodRulesetSlice")
 	}
 
 	*o = slice
@@ -1099,7 +1095,7 @@ func AutomodRulesetExists(ctx context.Context, exec boil.ContextExecutor, iD int
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if automod_rulesets exists")
+		return false, errors.WrapIf(err, "models: unable to check if automod_rulesets exists")
 	}
 
 	return exists, nil

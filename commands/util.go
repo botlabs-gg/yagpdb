@@ -2,17 +2,17 @@ package commands
 
 import (
 	"fmt"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
 )
 
 type DurationArg struct {
@@ -96,7 +96,7 @@ func ParseDuration(str string) (time.Duration, error) {
 	if currentNumBuf != "" {
 		d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
 		if err != nil {
-			return dur, errors.Wrap(err, "not a duration")
+			return dur, errors.WrapIf(err, "not a duration")
 		}
 
 		dur += d
@@ -186,9 +186,14 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 			cParentID := data.CS.ParentID
 			data.GS.RUnlock()
 
+			ms, err := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
+			if err != nil {
+				return nil, nil
+			}
+
 			channelOverrides, err := GetOverridesForChannel(data.CS.ID, cParentID, data.GS.ID)
 			if err != nil {
-				logrus.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed retrieving command overrides")
+				logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed retrieving command overrides")
 				return nil, nil
 			}
 
@@ -201,7 +206,17 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 				cast := v.Command.(*YAGCommand)
 				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GS.ID, channelOverrides)
 				if err != nil {
-					logrus.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed checking if command was enabled")
+					logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed checking if command was enabled")
+					continue
+				}
+
+				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Roles) {
+					// missing required role
+					continue
+				}
+
+				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Roles) {
+					// has ignored role
 					continue
 				}
 

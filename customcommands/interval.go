@@ -2,15 +2,16 @@ package customcommands
 
 import (
 	"context"
+	"time"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
@@ -75,7 +76,7 @@ func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool) erro
 	// remove the old events
 	err := DelNextRunEvent(cc.GuildID, cc.LocalID)
 	if err != nil {
-		return errors.Wrap(err, "del_old_events")
+		return errors.WrapIf(err, "del_old_events")
 	}
 
 	if cc.TriggerType != int(CommandTriggerInterval) || cc.TimeTriggerInterval < 1 {
@@ -96,7 +97,7 @@ func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool) erro
 	}
 	_, err = cc.UpdateG(context.Background(), boil.Whitelist(toUpdate...))
 	if err != nil {
-		return errors.Wrap(err, "update_cc")
+		return errors.WrapIf(err, "update_cc")
 	}
 
 	evt := &NextRunScheduledEvent{
@@ -106,7 +107,7 @@ func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool) erro
 	// create a scheduled event to run the command again
 	err = scheduledevents2.ScheduleEvent("cc_next_run", cc.GuildID, nextRun, evt)
 	if err != nil {
-		return errors.Wrap(err, "schedule_event")
+		return errors.WrapIf(err, "schedule_event")
 	}
 
 	return nil

@@ -3,11 +3,11 @@ package common
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	"github.com/jonas747/yagpdb/common/models"
 	"github.com/karlseguin/rcache"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
-	"time"
 )
 
 const CoreServerConfDBSchema = `
@@ -32,7 +32,7 @@ func GetCoreServerConfCached(guildID int64) *models.CoreConfig {
 func coreServerConfigCacheFetcher(key int) interface{} {
 	conf, err := models.FindCoreConfigG(context.Background(), int64(key))
 	if err != nil && err != sql.ErrNoRows {
-		logrus.WithError(err).WithField("guild", key).Error("[common] failed fetching core server config")
+		logger.WithError(err).WithField("guild", key).Error("failed fetching core server config")
 	}
 
 	if conf == nil {

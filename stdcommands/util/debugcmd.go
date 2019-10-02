@@ -18,7 +18,7 @@ func RequireBotAdmin(inner dcmd.RunFunc) dcmd.RunFunc {
 
 func RequireOwner(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
-		if data.Msg.Author.ID == common.Conf.Owner {
+		if common.IsOwner(data.Msg.Author.ID) {
 			return inner(data)
 		}
 

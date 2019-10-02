@@ -10,11 +10,12 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
@@ -213,7 +214,7 @@ func checkUserScheduledEvent(evt *seventsmodels.ScheduledEvent, data interface{}
 func migrateLegacyScheduledEvents(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logrus.Error("invalid check user scheduled event: ", data)
+		logger.Error("invalid check user scheduled event: ", data)
 		return nil
 	}
 

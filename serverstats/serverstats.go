@@ -5,18 +5,19 @@ package serverstats
 import (
 	"context"
 	"database/sql"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/serverstats/models"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/serverstats/models"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type Plugin struct {
@@ -31,13 +32,10 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 func RegisterPlugin() {
-	common.ValidateSQLSchema(DBSchema)
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		log.WithError(err).Error("serverstats: failed initializing db schema, serverstats will be disabled")
-		return
-	}
+	common.InitSchemas("serverstats", DBSchemas...)
 
 	plugin := &Plugin{
 		stopStatsLoop: make(chan *sync.WaitGroup),
@@ -121,7 +119,7 @@ func RetrieveRedisStats(guildID int64) (*DailyStats, error) {
 
 	var messageStatsRaw []string
 
-	err := common.RedisPool.Do(radix.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", RedisKeyChannelMessages(guildID), unixYesterday, "+inf"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&messageStatsRaw, "ZRANGEBYSCORE", RedisKeyChannelMessages(guildID), unixYesterday, "+inf"))
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +127,7 @@ func RetrieveRedisStats(guildID int64) (*DailyStats, error) {
 	online, err := botrest.GetOnlineCount(guildID)
 	if err != nil {
 		if botrest.BotIsRunning() {
-			log.WithError(err).Error("Failed fetching online count")
+			logger.WithError(err).Error("Failed fetching online count")
 		}
 	}
 
@@ -153,7 +151,7 @@ func parseMessageStats(raw []string, guildID int64) (map[string]*ChannelStats, e
 		split := strings.Split(result, ":")
 		if len(split) < 2 {
 
-			log.WithFields(log.Fields{
+			logger.WithFields(logrus.Fields{
 				"guild":  guildID,
 				"result": result,
 			}).Error("Invalid message stats")
@@ -261,7 +259,7 @@ ORDER BY 1 DESC`
 	rows, err := common.PQ.Query(query, args...)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "pq.query")
+		return nil, errors.WrapIf(err, "pq.query")
 	}
 
 	defer rows.Close()
@@ -283,7 +281,7 @@ ORDER BY 1 DESC`
 
 		err := rows.Scan(&t, &joins, &leaves, &numMembers, &maxOnline)
 		if err != nil {
-			return nil, errors.Wrap(err, "rows.scan")
+			return nil, errors.WrapIf(err, "rows.scan")
 		}
 
 		daysOld := int(time.Since(t).Hours() / 24)
@@ -366,7 +364,7 @@ ORDER BY 1 DESC`
 	rows, err := common.PQ.Query(queryPre+queryPost, args...)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "pq.query")
+		return nil, errors.WrapIf(err, "pq.query")
 	}
 
 	defer rows.Close()
@@ -385,7 +383,7 @@ ORDER BY 1 DESC`
 
 		err := rows.Scan(&t, &count)
 		if err != nil {
-			return nil, errors.Wrap(err, "rows.scan")
+			return nil, errors.WrapIf(err, "rows.scan")
 		}
 
 		daysOld := int(time.Since(t).Hours() / 24)

@@ -7,8 +7,8 @@
 }
 </style>
 <header class="page-header">
-    <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete" method="post">
-        <h2>Message logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName.String}} <small>(ID: {{.Logs.ChannelID.String}})</small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h2>
+    <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete2" method="post">
+        <h2>Message logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName}} <small>(ID: {{.Logs.ChannelID}})</small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h2>
         <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
     </form>
 </header>
@@ -28,17 +28,15 @@
 
             <tbody>
                 {{$IsAdmin := .IsAdmin}}
-                {{$Colors := .MessageColors}}
                 {{$CanViewDeleted := .CanViewDeleted}}
-                {{range $i, $v := .Logs.R.Messages}}
-                <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.AuthorID.String}} Message ID: {{.MessageID.String}}">
-                    <td class="text-nowrap">{{.Timestamp.String}}</td>
-                    {{$col := index $Colors $i}}
-                    <td style="{{if $col}}color: #{{$col}};{{end}}font-weight: 600;">{{.AuthorUsername.String}}<small>#{{.AuthorDiscrim.String}}</small></td>
-                    <td id="msg-cell-{{.ID}}" {{if .Deleted.Bool}} class="deleted-message" {{end}}>
-                        {{if .Deleted.Bool}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Deleted.Bool) $CanViewDeleted}}{{.Content.String}}{{else}}This message has been removed from logs. only admins can see it.{{end}}
+                {{range $i, $v := .Messages}}
+                <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.Model.AuthorID}} Message ID: {{.Model.ID}}">
+                    <td class="text-nowrap">{{.Timestamp}}</td>
+                    <td style="{{if .Color}}color: #{{.Color}};{{end}}font-weight: 600;">{{.Model.AuthorUsername}}</td>
+                    <td id="msg-cell-{{.Model.ID}}" {{if .Model.Deleted}} class="deleted-message" {{end}}>
+                        {{if .Model.Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Model.Deleted) $CanViewDeleted}}{{.Model.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}
                     </td>{{if $IsAdmin}}
-                    <td>{{if not .Deleted.Bool}}<button id="msg-button-{{.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.ID}}')">Delete</button>{{end}}</td>{{end}}
+                    <td>{{if not .Model.Deleted}}<button id="msg-button-{{.Model.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.Model.ID}}')">Delete</button>{{end}}</td>{{end}}
                 </tr>
                 {{end}}
             </tbody>
@@ -65,7 +63,7 @@ function deleteMessage(msg){
     req.addEventListener("error", function(){
         alert("An error occured");
     });
-    req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete");
+    req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete2");
 
     var data = new FormData();
     data.set("LogID", logsID);

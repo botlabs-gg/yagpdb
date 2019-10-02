@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"emperror.dev/errors"
 	"fmt"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -8,7 +9,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
-	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"strings"
 )
@@ -16,15 +16,19 @@ import (
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandler(HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
-	eventsystem.AddHandlerBefore(HandleChannelUpdate, eventsystem.EventChannelUpdate, bot.StateHandlerPtr)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerFirst(p, HandleChannelUpdate, eventsystem.EventChannelUpdate)
 }
 
-func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
+func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error) {
 	evt := evtData.GuildMemberAdd()
 
-	config := GetConfig(evt.GuildID)
+	config, err := GetConfig(evt.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
 	if !config.JoinServerEnabled && !config.JoinDMEnabled {
 		return
 	}
@@ -41,19 +45,24 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 	if config.JoinDMEnabled && !evt.User.Bot {
 		cid, err := common.BotSession.UserChannelCreate(evt.User.ID)
 		if err != nil {
-			log.WithError(err).WithField("user", evt.User.ID).Error("Failed retrieving user channel")
-			return
-		}
+			if bot.CheckDiscordErrRetry(err) {
+				return true, errors.WithStackIf(err)
+			}
 
-		thinCState := &dstate.ChannelState{
-			Owner: gs,
-			Guild: gs,
-			ID:    cid.ID,
-			Name:  evt.User.Username,
-			Type:  discordgo.ChannelTypeDM,
-		}
+			logger.WithError(err).WithField("user", evt.User.ID).Error("Failed retrieving user channel")
+		} else {
+			thinCState := &dstate.ChannelState{
+				Owner: gs,
+				Guild: gs,
+				ID:    cid.ID,
+				Name:  evt.User.Username,
+				Type:  discordgo.ChannelTypeDM,
+			}
 
-		sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm", false)
+			if sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm", false) {
+				return true, nil
+			}
+		}
 	}
 
 	if config.JoinServerEnabled && len(config.JoinServerMsgs) > 0 {
@@ -63,14 +72,22 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) {
 		}
 
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		sendTemplate(channel, chanMsg, ms, "join server msg", config.CensorInvites)
+		if sendTemplate(channel, chanMsg, ms, "join server msg", config.CensorInvites) {
+			return true, nil
+		}
 	}
+
+	return false, nil
 }
 
-func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
 	memberRemove := evt.GuildMemberRemove()
 
-	config := GetConfig(memberRemove.GuildID)
+	config, err := GetConfig(memberRemove.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
 	if !config.LeaveEnabled || len(config.LeaveMsgs) == 0 {
 		return
 	}
@@ -89,10 +106,15 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) {
 
 	chanMsg := config.LeaveMsgs[rand.Intn(len(config.LeaveMsgs))]
 
-	sendTemplate(channel, chanMsg, ms, "leave", config.CensorInvites)
+	if sendTemplate(channel, chanMsg, ms, "leave", config.CensorInvites) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
-func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool) {
+// sendTemplate parses and executes the provided template, returns wether an error occured that we can retry from (temporary network failures and the like)
+func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool) bool {
 	ctx := templates.NewContext(cs.Guild, cs, ms)
 
 	ctx.Data["RealUsername"] = ms.Username
@@ -107,31 +129,35 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 	msg, err := ctx.Execute(tmpl)
 
 	if err != nil {
-		log.WithError(err).WithField("guild", cs.Guild.ID).Warnf("Failed parsing/executing %s template", name)
-		return
+		logger.WithError(err).WithField("guild", cs.Guild.ID).Warnf("Failed parsing/executing %s template", name)
+		return false
 	}
 
 	msg = strings.TrimSpace(msg)
 	if msg == "" {
-		return
+		return false
 	}
 
 	if cs.Type == discordgo.ChannelTypeDM {
 		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
-		if err != nil {
-			log.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
-		}
 	} else if !ctx.DelResponse {
 		bot.QueueMergedMessage(cs.ID, msg)
 	} else {
-		m, err := common.BotSession.ChannelMessageSend(cs.ID, msg)
+		var m *discordgo.Message
+		m, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
 		if err == nil && ctx.DelResponse {
 			templates.MaybeScheduledDeleteMessage(cs.Guild.ID, cs.ID, m.ID, ctx.DelResponseDelay)
 		}
 	}
+
+	if err != nil {
+		logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
+	}
+
+	return bot.CheckDiscordErrRetry(err)
 }
 
-func HandleChannelUpdate(evt *eventsystem.EventData) {
+func HandleChannelUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	cu := evt.ChannelUpdate()
 
 	curChannel := bot.State.ChannelCopy(true, cu.ID)
@@ -145,7 +171,11 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	config := GetConfig(cu.GuildID)
+	config, err := GetConfig(cu.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
 	if !config.TopicEnabled {
 		return
 	}
@@ -161,7 +191,9 @@ func HandleChannelUpdate(evt *eventsystem.EventData) {
 	go func() {
 		_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic)))
 		if err != nil {
-			log.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
+			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
 		}
 	}()
+
+	return false, nil
 }

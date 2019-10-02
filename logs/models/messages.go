@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -104,17 +104,17 @@ var MessageWhere = struct {
 	Content        whereHelpernull_String
 	Timestamp      whereHelpernull_String
 }{
-	ID:             whereHelperint{field: `id`},
-	CreatedAt:      whereHelpernull_Time{field: `created_at`},
-	UpdatedAt:      whereHelpernull_Time{field: `updated_at`},
-	MessageLogID:   whereHelpernull_Int{field: `message_log_id`},
-	MessageID:      whereHelpernull_String{field: `message_id`},
-	AuthorUsername: whereHelpernull_String{field: `author_username`},
-	AuthorDiscrim:  whereHelpernull_String{field: `author_discrim`},
-	AuthorID:       whereHelpernull_String{field: `author_id`},
-	Deleted:        whereHelpernull_Bool{field: `deleted`},
-	Content:        whereHelpernull_String{field: `content`},
-	Timestamp:      whereHelpernull_String{field: `timestamp`},
+	ID:             whereHelperint{field: "\"messages\".\"id\""},
+	CreatedAt:      whereHelpernull_Time{field: "\"messages\".\"created_at\""},
+	UpdatedAt:      whereHelpernull_Time{field: "\"messages\".\"updated_at\""},
+	MessageLogID:   whereHelpernull_Int{field: "\"messages\".\"message_log_id\""},
+	MessageID:      whereHelpernull_String{field: "\"messages\".\"message_id\""},
+	AuthorUsername: whereHelpernull_String{field: "\"messages\".\"author_username\""},
+	AuthorDiscrim:  whereHelpernull_String{field: "\"messages\".\"author_discrim\""},
+	AuthorID:       whereHelpernull_String{field: "\"messages\".\"author_id\""},
+	Deleted:        whereHelpernull_Bool{field: "\"messages\".\"deleted\""},
+	Content:        whereHelpernull_String{field: "\"messages\".\"content\""},
+	Timestamp:      whereHelpernull_String{field: "\"messages\".\"timestamp\""},
 }
 
 // MessageRels is where relationship names are stored.
@@ -138,7 +138,7 @@ func (*messageR) NewStruct() *messageR {
 type messageL struct{}
 
 var (
-	messageColumns               = []string{"id", "created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
+	messageAllColumns            = []string{"id", "created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
 	messageColumnsWithoutDefault = []string{"created_at", "updated_at", "message_log_id", "message_id", "author_username", "author_discrim", "author_id", "deleted", "content", "timestamp"}
 	messageColumnsWithDefault    = []string{"id"}
 	messagePrimaryKeyColumns     = []string{"id"}
@@ -191,7 +191,7 @@ func (q messageQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Mess
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for messages")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for messages")
 	}
 
 	return o, nil
@@ -208,7 +208,7 @@ func (q messageQuery) All(ctx context.Context, exec boil.ContextExecutor) (Messa
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to Message slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to Message slice")
 	}
 
 	return o, nil
@@ -228,7 +228,7 @@ func (q messageQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count messages rows")
+		return 0, errors.WrapIf(err, "models: failed to count messages rows")
 	}
 
 	return count, nil
@@ -249,7 +249,7 @@ func (q messageQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bo
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if messages exists")
+		return false, errors.WrapIf(err, "models: failed to check if messages exists")
 	}
 
 	return count > 0, nil
@@ -321,19 +321,19 @@ func (messageL) LoadMessageLog(ctx context.Context, e boil.ContextExecutor, sing
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load MessageLog")
+		return errors.WrapIf(err, "failed to eager load MessageLog")
 	}
 
 	var resultSlice []*MessageLog
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice MessageLog")
+		return errors.WrapIf(err, "failed to bind eager loaded slice MessageLog")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for message_logs")
+		return errors.WrapIf(err, "failed to close results of eager load for message_logs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for message_logs")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for message_logs")
 	}
 
 	if len(resultSlice) == 0 {
@@ -381,7 +381,7 @@ func (o *Message) SetMessageLog(ctx context.Context, exec boil.ContextExecutor, 
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+			return errors.WrapIf(err, "failed to insert into foreign table")
 		}
 	}
 
@@ -398,7 +398,7 @@ func (o *Message) SetMessageLog(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	queries.Assign(&o.MessageLogID, related.ID)
@@ -437,7 +437,7 @@ func (o *Message) RemoveMessageLog(ctx context.Context, exec boil.ContextExecuto
 
 	queries.SetScanner(&o.MessageLogID, nil)
 	if _, err = o.Update(ctx, exec, boil.Whitelist("message_log_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	o.R.MessageLog = nil
@@ -491,7 +491,7 @@ func FindMessage(ctx context.Context, exec boil.ContextExecutor, iD int, selectC
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from messages")
+		return nil, errors.WrapIf(err, "models: unable to select from messages")
 	}
 
 	return messageObj, nil
@@ -530,7 +530,7 @@ func (o *Message) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messageColumnsWithDefault,
 			messageColumnsWithoutDefault,
 			nzDefaults,
@@ -574,7 +574,7 @@ func (o *Message) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into messages")
+		return errors.WrapIf(err, "models: unable to insert into messages")
 	}
 
 	if !cached {
@@ -610,7 +610,7 @@ func (o *Message) Update(ctx context.Context, exec boil.ContextExecutor, columns
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messagePrimaryKeyColumns,
 		)
 
@@ -641,12 +641,12 @@ func (o *Message) Update(ctx context.Context, exec boil.ContextExecutor, columns
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update messages row")
+		return 0, errors.WrapIf(err, "models: unable to update messages row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for messages")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for messages")
 	}
 
 	if !cached {
@@ -669,12 +669,12 @@ func (q messageQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for messages")
+		return 0, errors.WrapIf(err, "models: unable to update all for messages")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for messages")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for messages")
 	}
 
 	return rowsAff, nil
@@ -723,12 +723,12 @@ func (o MessageSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, 
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in message slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in message slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all message")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all message")
 	}
 	return rowsAff, nil
 }
@@ -791,13 +791,13 @@ func (o *Message) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messageColumnsWithDefault,
 			messageColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			messageColumns,
+			messageAllColumns,
 			messagePrimaryKeyColumns,
 		)
 
@@ -845,7 +845,7 @@ func (o *Message) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert messages")
+		return errors.WrapIf(err, "models: unable to upsert messages")
 	}
 
 	if !cached {
@@ -880,12 +880,12 @@ func (o *Message) Delete(ctx context.Context, exec boil.ContextExecutor) (int64,
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from messages")
+		return 0, errors.WrapIf(err, "models: unable to delete from messages")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for messages")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for messages")
 	}
 
 	return rowsAff, nil
@@ -901,12 +901,12 @@ func (q messageQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) 
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from messages")
+		return 0, errors.WrapIf(err, "models: unable to delete all from messages")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for messages")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for messages")
 	}
 
 	return rowsAff, nil
@@ -919,10 +919,6 @@ func (o MessageSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o MessageSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no Message slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -943,12 +939,12 @@ func (o MessageSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) 
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from message slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from message slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for messages")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for messages")
 	}
 
 	return rowsAff, nil
@@ -1006,7 +1002,7 @@ func (o *MessageSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in MessageSlice")
+		return errors.WrapIf(err, "models: unable to reload all in MessageSlice")
 	}
 
 	*o = slice
@@ -1033,7 +1029,7 @@ func MessageExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if messages exists")
+		return false, errors.WrapIf(err, "models: unable to check if messages exists")
 	}
 
 	return exists, nil

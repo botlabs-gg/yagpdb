@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -85,13 +85,13 @@ var ServerStatsMemberPeriodWhere = struct {
 	Leaves     whereHelperint64
 	MaxOnline  whereHelperint64
 }{
-	ID:         whereHelperint64{field: `id`},
-	GuildID:    whereHelperint64{field: `guild_id`},
-	CreatedAt:  whereHelpertime_Time{field: `created_at`},
-	NumMembers: whereHelperint64{field: `num_members`},
-	Joins:      whereHelperint64{field: `joins`},
-	Leaves:     whereHelperint64{field: `leaves`},
-	MaxOnline:  whereHelperint64{field: `max_online`},
+	ID:         whereHelperint64{field: "\"server_stats_member_periods\".\"id\""},
+	GuildID:    whereHelperint64{field: "\"server_stats_member_periods\".\"guild_id\""},
+	CreatedAt:  whereHelpertime_Time{field: "\"server_stats_member_periods\".\"created_at\""},
+	NumMembers: whereHelperint64{field: "\"server_stats_member_periods\".\"num_members\""},
+	Joins:      whereHelperint64{field: "\"server_stats_member_periods\".\"joins\""},
+	Leaves:     whereHelperint64{field: "\"server_stats_member_periods\".\"leaves\""},
+	MaxOnline:  whereHelperint64{field: "\"server_stats_member_periods\".\"max_online\""},
 }
 
 // ServerStatsMemberPeriodRels is where relationship names are stored.
@@ -111,9 +111,9 @@ func (*serverStatsMemberPeriodR) NewStruct() *serverStatsMemberPeriodR {
 type serverStatsMemberPeriodL struct{}
 
 var (
-	serverStatsMemberPeriodColumns               = []string{"id", "guild_id", "created_at", "num_members", "joins", "leaves", "max_online"}
-	serverStatsMemberPeriodColumnsWithoutDefault = []string{"guild_id", "created_at", "num_members", "joins", "leaves"}
-	serverStatsMemberPeriodColumnsWithDefault    = []string{"id", "max_online"}
+	serverStatsMemberPeriodAllColumns            = []string{"id", "guild_id", "created_at", "num_members", "joins", "leaves", "max_online"}
+	serverStatsMemberPeriodColumnsWithoutDefault = []string{"guild_id", "created_at", "num_members", "joins", "leaves", "max_online"}
+	serverStatsMemberPeriodColumnsWithDefault    = []string{"id"}
 	serverStatsMemberPeriodPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -164,7 +164,7 @@ func (q serverStatsMemberPeriodQuery) One(ctx context.Context, exec boil.Context
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for server_stats_member_periods")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for server_stats_member_periods")
 	}
 
 	return o, nil
@@ -181,7 +181,7 @@ func (q serverStatsMemberPeriodQuery) All(ctx context.Context, exec boil.Context
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to ServerStatsMemberPeriod slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to ServerStatsMemberPeriod slice")
 	}
 
 	return o, nil
@@ -201,7 +201,7 @@ func (q serverStatsMemberPeriodQuery) Count(ctx context.Context, exec boil.Conte
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count server_stats_member_periods rows")
+		return 0, errors.WrapIf(err, "models: failed to count server_stats_member_periods rows")
 	}
 
 	return count, nil
@@ -222,7 +222,7 @@ func (q serverStatsMemberPeriodQuery) Exists(ctx context.Context, exec boil.Cont
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if server_stats_member_periods exists")
+		return false, errors.WrapIf(err, "models: failed to check if server_stats_member_periods exists")
 	}
 
 	return count > 0, nil
@@ -259,7 +259,7 @@ func FindServerStatsMemberPeriod(ctx context.Context, exec boil.ContextExecutor,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from server_stats_member_periods")
+		return nil, errors.WrapIf(err, "models: unable to select from server_stats_member_periods")
 	}
 
 	return serverStatsMemberPeriodObj, nil
@@ -295,7 +295,7 @@ func (o *ServerStatsMemberPeriod) Insert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodColumnsWithDefault,
 			serverStatsMemberPeriodColumnsWithoutDefault,
 			nzDefaults,
@@ -339,7 +339,7 @@ func (o *ServerStatsMemberPeriod) Insert(ctx context.Context, exec boil.ContextE
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into server_stats_member_periods")
+		return errors.WrapIf(err, "models: unable to insert into server_stats_member_periods")
 	}
 
 	if !cached {
@@ -369,7 +369,7 @@ func (o *ServerStatsMemberPeriod) Update(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodPrimaryKeyColumns,
 		)
 
@@ -400,12 +400,12 @@ func (o *ServerStatsMemberPeriod) Update(ctx context.Context, exec boil.ContextE
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update server_stats_member_periods row")
+		return 0, errors.WrapIf(err, "models: unable to update server_stats_member_periods row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for server_stats_member_periods")
 	}
 
 	if !cached {
@@ -428,12 +428,12 @@ func (q serverStatsMemberPeriodQuery) UpdateAll(ctx context.Context, exec boil.C
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: unable to update all for server_stats_member_periods")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for server_stats_member_periods")
 	}
 
 	return rowsAff, nil
@@ -482,12 +482,12 @@ func (o ServerStatsMemberPeriodSlice) UpdateAll(ctx context.Context, exec boil.C
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in serverStatsMemberPeriod slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in serverStatsMemberPeriod slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all serverStatsMemberPeriod")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all serverStatsMemberPeriod")
 	}
 	return rowsAff, nil
 }
@@ -549,13 +549,13 @@ func (o *ServerStatsMemberPeriod) Upsert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodColumnsWithDefault,
 			serverStatsMemberPeriodColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			serverStatsMemberPeriodColumns,
+			serverStatsMemberPeriodAllColumns,
 			serverStatsMemberPeriodPrimaryKeyColumns,
 		)
 
@@ -603,7 +603,7 @@ func (o *ServerStatsMemberPeriod) Upsert(ctx context.Context, exec boil.ContextE
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert server_stats_member_periods")
+		return errors.WrapIf(err, "models: unable to upsert server_stats_member_periods")
 	}
 
 	if !cached {
@@ -638,12 +638,12 @@ func (o *ServerStatsMemberPeriod) Delete(ctx context.Context, exec boil.ContextE
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: unable to delete from server_stats_member_periods")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for server_stats_member_periods")
 	}
 
 	return rowsAff, nil
@@ -659,12 +659,12 @@ func (q serverStatsMemberPeriodQuery) DeleteAll(ctx context.Context, exec boil.C
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: unable to delete all from server_stats_member_periods")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for server_stats_member_periods")
 	}
 
 	return rowsAff, nil
@@ -677,10 +677,6 @@ func (o ServerStatsMemberPeriodSlice) DeleteAllG(ctx context.Context) (int64, er
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ServerStatsMemberPeriodSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ServerStatsMemberPeriod slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -701,12 +697,12 @@ func (o ServerStatsMemberPeriodSlice) DeleteAll(ctx context.Context, exec boil.C
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from serverStatsMemberPeriod slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from serverStatsMemberPeriod slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for server_stats_member_periods")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for server_stats_member_periods")
 	}
 
 	return rowsAff, nil
@@ -764,7 +760,7 @@ func (o *ServerStatsMemberPeriodSlice) ReloadAll(ctx context.Context, exec boil.
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in ServerStatsMemberPeriodSlice")
+		return errors.WrapIf(err, "models: unable to reload all in ServerStatsMemberPeriodSlice")
 	}
 
 	*o = slice
@@ -791,7 +787,7 @@ func ServerStatsMemberPeriodExists(ctx context.Context, exec boil.ContextExecuto
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if server_stats_member_periods exists")
+		return false, errors.WrapIf(err, "models: unable to check if server_stats_member_periods exists")
 	}
 
 	return exists, nil

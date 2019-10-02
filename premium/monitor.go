@@ -2,16 +2,16 @@ package premium
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strconv"
 	"sync"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
+	"github.com/jonas747/yagpdb/premium/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
@@ -27,11 +27,11 @@ func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 func runMonitor() {
 	ticker := time.NewTicker(time.Second * 30)
 	time.Sleep(time.Second * 3)
-	logrus.Info("started premium server monitor")
+	logger.Info("started premium server monitor")
 
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("Failed checking for expired premium slots")
+		logger.WithError(err).Error("Failed checking for expired premium slots")
 	}
 
 	checkedExpiredSlots := false
@@ -41,13 +41,13 @@ func runMonitor() {
 		if checkedExpiredSlots {
 			err := updatePremiumServers(context.Background())
 			if err != nil {
-				logrus.WithError(err).Error("Failed updating premium servers")
+				logger.WithError(err).Error("Failed updating premium servers")
 			}
 			checkedExpiredSlots = false
 		} else {
 			err := checkExpiredSlots(context.Background())
 			if err != nil {
-				logrus.WithError(err).Error("Failed checking for expired premium slots")
+				logger.WithError(err).Error("Failed checking for expired premium slots")
 			}
 			checkedExpiredSlots = true
 		}
@@ -66,7 +66,7 @@ func checkExpiredSlots(ctx context.Context) error {
 		if SlotDurationLeft(v) <= 0 {
 			err := SlotExpired(ctx, v)
 			if err != nil {
-				logrus.WithError(err).WithField("slot", v.ID).Error("Failed expiring premium slot")
+				logger.WithError(err).WithField("slot", v.ID).Error("Failed expiring premium slot")
 			}
 		}
 	}
@@ -82,7 +82,7 @@ func updatePremiumServers(ctx context.Context) error {
 
 	if len(slots) < 1 {
 		// Fast path
-		err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyPremiumGuilds))
+		err = common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyPremiumGuilds))
 		return errors.WithMessage(err, "do.Del")
 	}
 
@@ -98,15 +98,16 @@ func updatePremiumServers(ctx context.Context) error {
 		rCmdLastTimesPremium = append(rCmdLastTimesPremium, now, strGID)
 	}
 
-	err = common.RedisPool.Do(radix.Pipeline(
-		radix.Cmd(nil, "DEL", RedisKeyPremiumGuildsTmp),
-		radix.Cmd(nil, "HMSET", rCmd...),
-		radix.Cmd(nil, "RENAME", RedisKeyPremiumGuildsTmp, RedisKeyPremiumGuilds),
-	))
-	if err != nil {
-		return errors.WithMessage(err, "radix.Pipeline")
+	if err = common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyPremiumGuildsTmp)); err != nil {
+		return errors.WithMessage(err, "del tmp")
+	}
+	if err = common.RedisPool.Do(retryableredis.Cmd(nil, "HMSET", rCmd...)); err != nil {
+		return errors.WithMessage(err, "hmset")
+	}
+	if err = common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", RedisKeyPremiumGuildsTmp, RedisKeyPremiumGuilds)); err != nil {
+		return errors.WithMessage(err, "rename")
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", rCmdLastTimesPremium...))
+	err = common.RedisPool.Do(retryableredis.Cmd(nil, "ZADD", rCmdLastTimesPremium...))
 	return errors.WithMessage(err, "last_premium_times")
 }

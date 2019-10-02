@@ -1,9 +1,10 @@
 package web
 
 import (
-	"github.com/jonas747/discordgo"
 	"strings"
 	"testing"
+
+	"github.com/jonas747/discordgo"
 )
 
 type StringTestStruct struct {

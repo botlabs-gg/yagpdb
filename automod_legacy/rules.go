@@ -2,16 +2,16 @@ package automod_legacy
 
 import (
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/safebrowsing"
-	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/safebrowsing"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
@@ -70,12 +70,12 @@ func (r BaseRule) IgnoreChannelsParsed() []int64 {
 
 func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 	violations := 0
-	err = common.RedisPool.Do(radix.Cmd(&violations, "INCR", key))
+	err = common.RedisPool.Do(retryableredis.Cmd(&violations, "INCR", key))
 	if err != nil {
 		return
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
+	common.RedisPool.Do(retryableredis.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
 
 	mute := r.MuteAfter > 0 && violations >= r.MuteAfter
 	kick := r.KickAfter > 0 && violations >= r.KickAfter
@@ -212,7 +212,7 @@ OUTER:
 		// Check to see if its a valid id, and if so check if its to the same server were on
 		invite, err := common.BotSession.Invite(id)
 		if err != nil {
-			logrus.WithError(err).WithField("guild", guildID).Error("Failed checking invite ", invite)
+			logger.WithError(err).WithField("guild", guildID).Error("Failed checking invite ", invite)
 			return true // assume bad since discord...
 		}
 
@@ -384,7 +384,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 
 		parsed, err := url.ParseRequestURI(v)
 		if err != nil {
-			logrus.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
+			logger.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
 		} else {
 			if banned, item := s.isBanned(parsed.Host); banned {
 				return true, item, ""
@@ -400,7 +400,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 
 	threat, err := safebrowsing.CheckString(message)
 	if err != nil {
-		logrus.WithError(err).Error("Failed checking urls against google safebrowser")
+		logger.WithError(err).Error("Failed checking urls against google safebrowser")
 		return false, "", ""
 	}
 

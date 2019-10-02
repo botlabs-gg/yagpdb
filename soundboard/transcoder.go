@@ -7,7 +7,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/soundboard/models"
-	"github.com/sirupsen/logrus"
 	"goji.io/pat"
 	"io"
 	"io/ioutil"
@@ -40,7 +39,7 @@ func (p *Plugin) RunBackgroundWorker() {
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
-	logrus.Info("Stopping soundboard transcoder...")
+	logger.Info("Stopping soundboard transcoder...")
 
 	transcoderStop <- wg
 }
@@ -56,13 +55,13 @@ func transcoderLoop() {
 			items := getQueue()
 			for _, v := range items {
 				started := time.Now()
-				logrus.Println("handling queue item")
+				logger.Println("handling queue item")
 				err := handleQueueItem(v)
-				logrus.Println("done handling queue item")
+				logger.Println("done handling queue item")
 				if err != nil {
-					logrus.WithError(err).WithField("soundid", v).Error("Failed processing transcode queue item")
+					logger.WithError(err).WithField("soundid", v).Error("Failed processing transcode queue item")
 				}
-				logrus.WithField("sounf", v).Info("Took ", time.Since(started).String(), " to transcode sound ")
+				logger.WithField("sounf", v).Info("Took ", time.Since(started).String(), " to transcode sound ")
 			}
 		}
 	}
@@ -71,7 +70,7 @@ func transcoderLoop() {
 func getQueue() []string {
 	files, err := ioutil.ReadDir("soundboard/queue")
 	if err != nil {
-		logrus.WithError(err).Error("Failed checking queue directory")
+		logger.WithError(err).Error("Failed checking queue directory")
 		return []string{}
 	}
 
@@ -104,7 +103,7 @@ func handleQueueItem(item string) error {
 		return err
 	}
 	if !locked {
-		logrus.WithField("sound", parsedId).Warn("Sound is busy, handling it later")
+		logger.WithField("sound", parsedId).Warn("Sound is busy, handling it later")
 		return nil
 	}
 	defer common.UnlockRedisKey(KeySoundLock(parsedId))
@@ -114,12 +113,12 @@ func handleQueueItem(item string) error {
 		return err
 	}
 
-	logrus.WithField("sound", sound.ID).Info("Handling queued sound ", sound.Name)
+	logger.WithField("sound", sound.ID).Info("Handling queued sound ", sound.Name)
 
 	if !skipTranscode {
 		err = transcodeSound(sound)
 		if err != nil {
-			logrus.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
+			logger.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
 			common.GORM.Model(&sound).Update("Status", TranscodingStatusFailedOther)
 			os.Remove(SoundFilePath(sound.ID, TranscodingStatusReady))
 		} else {
@@ -161,7 +160,7 @@ func (p *Plugin) bgworkerHandleGetSound(w http.ResponseWriter, r *http.Request) 
 
 	f, err := os.Open(SoundFilePath(int(parsed), TranscodingStatusReady))
 	if err != nil {
-		logrus.WithError(err).WithField("sound", parsed).Error("failed opening sound")
+		logger.WithError(err).WithField("sound", parsed).Error("failed opening sound")
 		return
 	}
 
@@ -170,7 +169,7 @@ func (p *Plugin) bgworkerHandleGetSound(w http.ResponseWriter, r *http.Request) 
 }
 
 func getSoundFromBGWorker(soundID int) (rc io.ReadCloser, err error) {
-	path := "http://" + backgroundworkers.HTTPAddr + "/soundboard/sounddata/" + strconv.Itoa(soundID)
+	path := "http://" + backgroundworkers.HTTPAddr.GetString() + "/soundboard/sounddata/" + strconv.Itoa(soundID)
 
 	resp, err := http.Get(path)
 	if err != nil {

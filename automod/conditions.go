@@ -1,9 +1,10 @@
 package automod
 
 import (
+	"time"
+
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"time"
 )
 
 type Condition interface {

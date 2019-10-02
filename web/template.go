@@ -3,13 +3,14 @@ package web
 import (
 	"bytes"
 	"errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common/templates"
 	"html/template"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common/templates"
 )
 
 func prettyTime(t time.Time) string {
@@ -167,8 +168,8 @@ func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Ro
 	return template.HTML(output)
 }
 
-func tmplChannelOpts(channelType discordgo.ChannelType, optionPrefix string) interface{} {
-	optsBuilder := tmplChannelOptsMulti(channelType, optionPrefix)
+func tmplChannelOpts(channelTypes []discordgo.ChannelType, optionPrefix string) interface{} {
+	optsBuilder := tmplChannelOptsMulti(channelTypes, optionPrefix)
 	return func(channels []*discordgo.Channel, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
 
 		const unknownName = "Deleted channel"
@@ -201,7 +202,7 @@ func tmplChannelOpts(channelType discordgo.ChannelType, optionPrefix string) int
 	}
 }
 
-func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string) func(channels []*discordgo.Channel, selections []int64) template.HTML {
+func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType, optionPrefix string) func(channels []*discordgo.Channel, selections []int64) template.HTML {
 	return func(channels []*discordgo.Channel, selections []int64) template.HTML {
 
 		var builder strings.Builder
@@ -219,7 +220,7 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 
 		// Channels without a category
 		for _, c := range channels {
-			if c.ParentID != 0 || c.Type != channelType {
+			if c.ParentID != 0 || !containsChannelType(channelTypes, c.Type) {
 				continue
 			}
 
@@ -227,7 +228,7 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 		}
 
 		// Group channels by category
-		if channelType != discordgo.ChannelTypeGuildCategory {
+		if len(channelTypes) > 1 || channelTypes[0] != discordgo.ChannelTypeGuildCategory {
 			for _, cat := range channels {
 				if cat.Type != discordgo.ChannelTypeGuildCategory {
 					continue
@@ -235,7 +236,7 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 
 				builder.WriteString("<optgroup label=\"" + template.HTMLEscapeString(cat.Name) + "\">")
 				for _, c := range channels {
-					if c.Type != channelType || c.ParentID != cat.ID {
+					if !containsChannelType(channelTypes, c.Type) || c.ParentID != cat.ID {
 						continue
 					}
 
@@ -247,4 +248,14 @@ func tmplChannelOptsMulti(channelType discordgo.ChannelType, optionPrefix string
 
 		return template.HTML(builder.String())
 	}
+}
+
+func containsChannelType(s []discordgo.ChannelType, t discordgo.ChannelType) bool {
+	for _, v := range s {
+		if v == t {
+			return true
+		}
+	}
+
+	return false
 }

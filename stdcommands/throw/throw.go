@@ -2,10 +2,11 @@ package throw
 
 import (
 	"fmt"
+	"math/rand"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
-	"math/rand"
 )
 
 var Command = &commands.YAGCommand{

@@ -2,13 +2,14 @@ package moderation
 
 import (
 	"fmt"
+	"html/template"
+	"net/http"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
 )
 
 func (p *Plugin) InitWeb() {
@@ -17,6 +18,11 @@ func (p *Plugin) InitWeb() {
 		tmplPath = "../../moderation/assets/moderation.html"
 	}
 	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Moderation",
+		URL:  "moderation",
+	})
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/moderation"), subMux)

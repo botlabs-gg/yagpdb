@@ -2,10 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/evalphobia/logrus_sentry"
-	"github.com/jonas747/yagpdb/automod"
-	"github.com/jonas747/yagpdb/safebrowsing"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"strings"
@@ -13,11 +9,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/evalphobia/logrus_sentry"
+	"github.com/jonas747/yagpdb/automod"
+	"github.com/jonas747/yagpdb/safebrowsing"
+	log "github.com/sirupsen/logrus"
+
 	// Core yagpdb packages
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -42,11 +45,17 @@ import (
 	"github.com/jonas747/yagpdb/reminders"
 	"github.com/jonas747/yagpdb/reputation"
 	"github.com/jonas747/yagpdb/rolecommands"
+	"github.com/jonas747/yagpdb/rsvp"
 	"github.com/jonas747/yagpdb/serverstats"
 	"github.com/jonas747/yagpdb/soundboard"
 	"github.com/jonas747/yagpdb/stdcommands"
 	"github.com/jonas747/yagpdb/streaming"
+	"github.com/jonas747/yagpdb/tickets"
+	"github.com/jonas747/yagpdb/timezonecompanion"
+	"github.com/jonas747/yagpdb/twitter"
+	"github.com/jonas747/yagpdb/verification"
 	"github.com/jonas747/yagpdb/youtube"
+	// External plugins
 )
 
 var (
@@ -54,26 +63,34 @@ var (
 	flagRunWeb        bool
 	flagRunFeeds      string
 	flagRunEverything bool
-	flagDryRun        bool
 	flagRunBWC        bool
+
+	flagDryRun bool
 
 	flagLogTimestamp bool
 
-	flagSysLog     bool
-	flagGenCmdDocs bool
+	flagSysLog        bool
+	flagGenCmdDocs    bool
+	flagGenConfigDocs bool
+
+	flagLogAppName string
 
 	flagNodeID string
 )
 
+var confSentryDSN = config.RegisterOption("yagpdb.sentry_dsn", "Sentry credentials for sentry logging hook", nil)
+
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
-	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (currently reddit and youtube)")
-	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver and reddit bot)")
+	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (currently reddit, youtube and twitter)")
+	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver, backgroundworkers and all feeds)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
+	flag.StringVar(&flagLogAppName, "logappname", "yagpdb", "When using syslog, the application name will be set to this")
 	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
 	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
+	flag.BoolVar(&flagGenConfigDocs, "genconfigdocs", false, "Generate config docs and exit")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 
@@ -82,12 +99,11 @@ func init() {
 
 func main() {
 	flag.Parse()
-	bot.FlagNodeID = flagNodeID
 	common.NodeID = flagNodeID
 
-	log.AddHook(common.ContextHook{})
+	common.AddLogHook(common.ContextHook{})
 
-	log.SetFormatter(&log.TextFormatter{
+	common.SetLogFormatter(&log.TextFormatter{
 		DisableTimestamp: !common.Testing,
 		ForceColors:      common.Testing,
 	})
@@ -96,28 +112,25 @@ func main() {
 		AddSyslogHooks()
 	}
 
-	if os.Getenv("YAGPDB_SENTRY_DSN") != "" {
-		hook, err := logrus_sentry.NewSentryHook(os.Getenv("YAGPDB_SENTRY_DSN"), []log.Level{
+	config.Load()
+	if confSentryDSN.GetString() != "" {
+		hook, err := logrus_sentry.NewSentryHook(confSentryDSN.GetString(), []log.Level{
 			log.PanicLevel,
 			log.FatalLevel,
 			log.ErrorLevel,
 		})
 
 		if err == nil {
-			log.AddHook(hook)
+			common.AddLogHook(hook)
 			log.Info("Added Sentry Hook")
 		} else {
 			log.WithError(err).Error("Failed adding sentry hook")
 		}
 	}
 
-	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC {
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && !flagGenConfigDocs {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
-	}
-
-	if flagRunWeb || flagRunEverything {
-		common.RedisPoolSize = 25
 	}
 
 	log.Info("YAGPDB is initializing...")
@@ -127,9 +140,13 @@ func main() {
 		log.WithError(err).Fatal("Failed intializing")
 	}
 
+	log.Info("Initiliazing generic config store")
 	configstore.InitDatabases()
 
+	log.Info("Starting plugins")
+
 	//BotSession.LogLevel = discordgo.LogInformational
+	paginatedmessages.RegisterPlugin()
 
 	// Setup plugins
 	safebrowsing.RegisterPlugin()
@@ -153,9 +170,14 @@ func main() {
 	youtube.RegisterPlugin()
 	rolecommands.RegisterPlugin()
 	cah.RegisterPlugin()
+	tickets.RegisterPlugin()
+	verification.RegisterPlugin()
 	premium.RegisterPlugin()
 	patreonpremiumsource.RegisterPlugin()
 	scheduledevents2.RegisterPlugin()
+	twitter.RegisterPlugin()
+	rsvp.RegisterPlugin()
+	timezonecompanion.RegisterPlugin()
 
 	if flagDryRun {
 		log.Println("This is a dry run, exiting")
@@ -173,6 +195,11 @@ func main() {
 		return
 	}
 
+	if flagGenConfigDocs {
+		GenConfigDocs()
+		return
+	}
+
 	if flagRunWeb || flagRunEverything {
 		go web.Run()
 	}
@@ -180,7 +207,7 @@ func main() {
 	if flagRunBot || flagRunEverything {
 		mqueue.RegisterPlugin()
 		botrest.RegisterPlugin()
-		bot.Run()
+		bot.Run(flagNodeID)
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {

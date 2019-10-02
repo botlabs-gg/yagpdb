@@ -2,6 +2,12 @@ package serverstats
 
 import (
 	"fmt"
+	"html/template"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -9,16 +15,10 @@ import (
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/rcache"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
@@ -74,10 +74,6 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	}
 
 	templateData["Config"] = config
-	templateData["ExtraHead"] = template.HTML(`
-<link rel="stylesheet" href="/static/vendor/morris/morris.css" />
-<link rel="stylesheet" href="/static/vendor/chartist/chartist.min.css" />
-	`)
 
 	return templateData, nil
 }
@@ -253,7 +249,7 @@ func CacheGetCharts(guildID int64, days int) *ChartResponse {
 func cacheChartFetcher(key string) interface{} {
 	split := strings.Split(key, ":")
 	if len(split) < 3 {
-		logrus.Error("[serverstats] invalid cache key: ", key)
+		logger.Error("invalid cache key: ", key)
 		return nil
 	}
 
@@ -262,13 +258,13 @@ func cacheChartFetcher(key string) interface{} {
 
 	memberData, err := RetrieveMemberChartStats(guildID, days)
 	if err != nil {
-		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving member chart data")
+		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving member chart data")
 		return nil
 	}
 
 	messageData, err := RetrieveMessageChartData(guildID, days)
 	if err != nil {
-		logrus.WithError(err).WithField("cache_key", key).Error("failed retrieving message chart data")
+		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving message chart data")
 		return nil
 	}
 

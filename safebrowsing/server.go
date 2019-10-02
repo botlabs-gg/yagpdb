@@ -5,18 +5,20 @@ import (
 	"errors"
 	"github.com/google/safebrowsing"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
-	"os"
 )
 
 var SafeBrowser *safebrowsing.SafeBrowser
 
 var ErrNoSafebrowsingAPIKey = errors.New("no safebrowsing api key provided")
 
+var confSafebrowsingAPIKey = config.RegisterOption("yagpdb.google.safebrowsing_api_key", "Google safebrowsing API Key", "")
+
 func runDatabase() error {
-	safebrowsingAPIKey := os.Getenv("YAGPDB_GOOGLE_SAFEBROWSING_API_KEY")
+	safebrowsingAPIKey := confSafebrowsingAPIKey.GetString()
 	if safebrowsingAPIKey == "" {
 		return ErrNoSafebrowsingAPIKey
 	}

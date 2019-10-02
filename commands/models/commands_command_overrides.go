@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -102,17 +102,17 @@ var CommandsCommandOverrideWhere = struct {
 	RequireRoles                whereHelpertypes_Int64Array
 	IgnoreRoles                 whereHelpertypes_Int64Array
 }{
-	ID:                          whereHelperint64{field: `id`},
-	GuildID:                     whereHelperint64{field: `guild_id`},
-	CommandsChannelsOverridesID: whereHelperint64{field: `commands_channels_overrides_id`},
-	Commands:                    whereHelpertypes_StringArray{field: `commands`},
-	CommandsEnabled:             whereHelperbool{field: `commands_enabled`},
-	AutodeleteResponse:          whereHelperbool{field: `autodelete_response`},
-	AutodeleteTrigger:           whereHelperbool{field: `autodelete_trigger`},
-	AutodeleteResponseDelay:     whereHelperint{field: `autodelete_response_delay`},
-	AutodeleteTriggerDelay:      whereHelperint{field: `autodelete_trigger_delay`},
-	RequireRoles:                whereHelpertypes_Int64Array{field: `require_roles`},
-	IgnoreRoles:                 whereHelpertypes_Int64Array{field: `ignore_roles`},
+	ID:                          whereHelperint64{field: "\"commands_command_overrides\".\"id\""},
+	GuildID:                     whereHelperint64{field: "\"commands_command_overrides\".\"guild_id\""},
+	CommandsChannelsOverridesID: whereHelperint64{field: "\"commands_command_overrides\".\"commands_channels_overrides_id\""},
+	Commands:                    whereHelpertypes_StringArray{field: "\"commands_command_overrides\".\"commands\""},
+	CommandsEnabled:             whereHelperbool{field: "\"commands_command_overrides\".\"commands_enabled\""},
+	AutodeleteResponse:          whereHelperbool{field: "\"commands_command_overrides\".\"autodelete_response\""},
+	AutodeleteTrigger:           whereHelperbool{field: "\"commands_command_overrides\".\"autodelete_trigger\""},
+	AutodeleteResponseDelay:     whereHelperint{field: "\"commands_command_overrides\".\"autodelete_response_delay\""},
+	AutodeleteTriggerDelay:      whereHelperint{field: "\"commands_command_overrides\".\"autodelete_trigger_delay\""},
+	RequireRoles:                whereHelpertypes_Int64Array{field: "\"commands_command_overrides\".\"require_roles\""},
+	IgnoreRoles:                 whereHelpertypes_Int64Array{field: "\"commands_command_overrides\".\"ignore_roles\""},
 }
 
 // CommandsCommandOverrideRels is where relationship names are stored.
@@ -136,7 +136,7 @@ func (*commandsCommandOverrideR) NewStruct() *commandsCommandOverrideR {
 type commandsCommandOverrideL struct{}
 
 var (
-	commandsCommandOverrideColumns               = []string{"id", "guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
+	commandsCommandOverrideAllColumns            = []string{"id", "guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
 	commandsCommandOverrideColumnsWithoutDefault = []string{"guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
 	commandsCommandOverrideColumnsWithDefault    = []string{"id"}
 	commandsCommandOverridePrimaryKeyColumns     = []string{"id"}
@@ -189,7 +189,7 @@ func (q commandsCommandOverrideQuery) One(ctx context.Context, exec boil.Context
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for commands_command_overrides")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for commands_command_overrides")
 	}
 
 	return o, nil
@@ -206,7 +206,7 @@ func (q commandsCommandOverrideQuery) All(ctx context.Context, exec boil.Context
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to CommandsCommandOverride slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to CommandsCommandOverride slice")
 	}
 
 	return o, nil
@@ -226,7 +226,7 @@ func (q commandsCommandOverrideQuery) Count(ctx context.Context, exec boil.Conte
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count commands_command_overrides rows")
+		return 0, errors.WrapIf(err, "models: failed to count commands_command_overrides rows")
 	}
 
 	return count, nil
@@ -247,7 +247,7 @@ func (q commandsCommandOverrideQuery) Exists(ctx context.Context, exec boil.Cont
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if commands_command_overrides exists")
+		return false, errors.WrapIf(err, "models: failed to check if commands_command_overrides exists")
 	}
 
 	return count > 0, nil
@@ -315,19 +315,19 @@ func (commandsCommandOverrideL) LoadCommandsChannelsOverride(ctx context.Context
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load CommandsChannelsOverride")
+		return errors.WrapIf(err, "failed to eager load CommandsChannelsOverride")
 	}
 
 	var resultSlice []*CommandsChannelsOverride
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice CommandsChannelsOverride")
+		return errors.WrapIf(err, "failed to bind eager loaded slice CommandsChannelsOverride")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for commands_channels_overrides")
+		return errors.WrapIf(err, "failed to close results of eager load for commands_channels_overrides")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for commands_channels_overrides")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for commands_channels_overrides")
 	}
 
 	if len(resultSlice) == 0 {
@@ -375,7 +375,7 @@ func (o *CommandsCommandOverride) SetCommandsChannelsOverride(ctx context.Contex
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+			return errors.WrapIf(err, "failed to insert into foreign table")
 		}
 	}
 
@@ -392,7 +392,7 @@ func (o *CommandsCommandOverride) SetCommandsChannelsOverride(ctx context.Contex
 	}
 
 	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	o.CommandsChannelsOverridesID = related.ID
@@ -446,7 +446,7 @@ func FindCommandsCommandOverride(ctx context.Context, exec boil.ContextExecutor,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from commands_command_overrides")
+		return nil, errors.WrapIf(err, "models: unable to select from commands_command_overrides")
 	}
 
 	return commandsCommandOverrideObj, nil
@@ -475,7 +475,7 @@ func (o *CommandsCommandOverride) Insert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverrideColumnsWithDefault,
 			commandsCommandOverrideColumnsWithoutDefault,
 			nzDefaults,
@@ -519,7 +519,7 @@ func (o *CommandsCommandOverride) Insert(ctx context.Context, exec boil.ContextE
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into commands_command_overrides")
+		return errors.WrapIf(err, "models: unable to insert into commands_command_overrides")
 	}
 
 	if !cached {
@@ -549,7 +549,7 @@ func (o *CommandsCommandOverride) Update(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverridePrimaryKeyColumns,
 		)
 
@@ -580,12 +580,12 @@ func (o *CommandsCommandOverride) Update(ctx context.Context, exec boil.ContextE
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update commands_command_overrides row")
+		return 0, errors.WrapIf(err, "models: unable to update commands_command_overrides row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for commands_command_overrides")
 	}
 
 	if !cached {
@@ -608,12 +608,12 @@ func (q commandsCommandOverrideQuery) UpdateAll(ctx context.Context, exec boil.C
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: unable to update all for commands_command_overrides")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for commands_command_overrides")
 	}
 
 	return rowsAff, nil
@@ -662,12 +662,12 @@ func (o CommandsCommandOverrideSlice) UpdateAll(ctx context.Context, exec boil.C
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in commandsCommandOverride slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in commandsCommandOverride slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all commandsCommandOverride")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all commandsCommandOverride")
 	}
 	return rowsAff, nil
 }
@@ -722,13 +722,13 @@ func (o *CommandsCommandOverride) Upsert(ctx context.Context, exec boil.ContextE
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverrideColumnsWithDefault,
 			commandsCommandOverrideColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			commandsCommandOverrideColumns,
+			commandsCommandOverrideAllColumns,
 			commandsCommandOverridePrimaryKeyColumns,
 		)
 
@@ -776,7 +776,7 @@ func (o *CommandsCommandOverride) Upsert(ctx context.Context, exec boil.ContextE
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert commands_command_overrides")
+		return errors.WrapIf(err, "models: unable to upsert commands_command_overrides")
 	}
 
 	if !cached {
@@ -811,12 +811,12 @@ func (o *CommandsCommandOverride) Delete(ctx context.Context, exec boil.ContextE
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: unable to delete from commands_command_overrides")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for commands_command_overrides")
 	}
 
 	return rowsAff, nil
@@ -832,12 +832,12 @@ func (q commandsCommandOverrideQuery) DeleteAll(ctx context.Context, exec boil.C
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: unable to delete all from commands_command_overrides")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for commands_command_overrides")
 	}
 
 	return rowsAff, nil
@@ -850,10 +850,6 @@ func (o CommandsCommandOverrideSlice) DeleteAllG(ctx context.Context) (int64, er
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o CommandsCommandOverrideSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no CommandsCommandOverride slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -874,12 +870,12 @@ func (o CommandsCommandOverrideSlice) DeleteAll(ctx context.Context, exec boil.C
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from commandsCommandOverride slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from commandsCommandOverride slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for commands_command_overrides")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for commands_command_overrides")
 	}
 
 	return rowsAff, nil
@@ -937,7 +933,7 @@ func (o *CommandsCommandOverrideSlice) ReloadAll(ctx context.Context, exec boil.
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in CommandsCommandOverrideSlice")
+		return errors.WrapIf(err, "models: unable to reload all in CommandsCommandOverrideSlice")
 	}
 
 	*o = slice
@@ -964,7 +960,7 @@ func CommandsCommandOverrideExists(ctx context.Context, exec boil.ContextExecuto
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if commands_command_overrides exists")
+		return false, errors.WrapIf(err, "models: unable to check if commands_command_overrides exists")
 	}
 
 	return exists, nil

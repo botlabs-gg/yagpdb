@@ -1,7 +1,5 @@
 package patreon
 
-import ()
-
 var ActivePoller *Poller
 
 type Patron struct {

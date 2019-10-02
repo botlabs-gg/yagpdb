@@ -1,9 +1,5 @@
 package common
 
-import (
-	"github.com/sirupsen/logrus"
-)
-
 var (
 	Plugins []Plugin
 )
@@ -31,13 +27,8 @@ type Plugin interface {
 	PluginInfo() *PluginInfo
 }
 
-type PluginWithLogging interface {
-	Logger() *logrus.Entry
-	SetLogger(entry *logrus.Entry)
-}
-
 // RegisterPlugin registers a plugin, should be called when the bot is starting up
 func RegisterPlugin(plugin Plugin) {
 	Plugins = append(Plugins, plugin)
-	logrus.Info("Registered plugin: " + plugin.PluginInfo().Name)
+	logger.Info("Registered plugin: " + plugin.PluginInfo().Name)
 }

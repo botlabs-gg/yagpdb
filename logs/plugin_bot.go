@@ -3,7 +3,11 @@ package logs
 import (
 	"context"
 	"database/sql"
+	"emperror.dev/errors"
 	"fmt"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -12,42 +16,23 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
-	// "github.com/lib/pq"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
-	"time"
-)
-
-var (
-	nicknameQueryStatement *sql.Stmt
-	usernameQueryStatement *sql.Stmt
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames)
+	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdMigrate)
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(bot.ConcurrentEventHandler(HandleMsgDelete), eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleQueueEvt), eventsystem.EventGuildMemberUpdate, eventsystem.EventGuildMemberAdd, eventsystem.EventMemberFetched)
+	// eventsystem.AddHandlerAsyncLastLegacy(bot.ConcurrentEventHandler(HandleGC), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(p, HandleMsgDelete, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
-	eventsystem.AddHandlerBefore(HandlePresenceUpdate, eventsystem.EventPresenceUpdate, bot.StateHandlerPtr)
-
-	var err error
-	nicknameQueryStatement, err = common.PQ.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
-	if err != nil {
-		panic("Failed preparing nick statement: " + err.Error())
-	}
-
-	usernameQueryStatement, err = common.PQ.Prepare("select username from username_listings where user_id=$1 order by id desc limit 1;")
-	if err != nil {
-		panic("Failed preparing username statement: " + err.Error())
-	}
+	eventsystem.AddHandlerFirstLegacy(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 
 	go EvtProcesser()
 	go EvtProcesserGCs()
@@ -89,7 +74,7 @@ var cmdWhois = &commands.YAGCommand{
 		{Name: "User", Type: &commands.MemberArg{}},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.Context(), parsed.GS.ID)
+		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +148,7 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		if config.UsernameLoggingEnabled.Bool {
-			usernames, err := GetUsernames(parsed.Context(), member.ID, 5)
+			usernames, err := GetUsernames(parsed.Context(), member.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -187,7 +172,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled.Bool {
 
-			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GS.ID, 5)
+			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GS.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -221,7 +206,6 @@ var cmdUsernames = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Usernames",
 	Description:     "Shows past usernames of a user.",
-	LongDescription: "Only shows up to the last 25 usernames.",
 	Aliases:         []string{"unames", "un"},
 	RunInDM:         true,
 	Arguments: []*dcmd.ArgDef{
@@ -229,7 +213,7 @@ var cmdUsernames = &commands.YAGCommand{
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		if parsed.GS != nil {
-			config, err := GetConfig(parsed.Context(), parsed.GS.ID)
+			config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -239,25 +223,42 @@ var cmdUsernames = &commands.YAGCommand{
 			}
 		}
 
-		target := parsed.Msg.Author
-		if parsed.Args[0].Value != nil {
-			target = parsed.Args[0].Value.(*discordgo.User)
-		}
+		_, err := paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			target := parsed.Msg.Author
+			if parsed.Args[0].Value != nil {
+				target = parsed.Args[0].Value.(*discordgo.User)
+			}
 
-		usernames, err := GetUsernames(parsed.Context(), target.ID, 25)
-		if err != nil {
-			return nil, err
-		}
+			offset := (page - 1) * 15
+			usernames, err := GetUsernames(context.Background(), target.ID, 15, offset)
+			if err != nil {
+				return nil, err
+			}
 
-		out := fmt.Sprintf("Past username of **%s#%s** ```\n", target.Username, target.Discriminator)
-		for _, v := range usernames {
-			out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
-		}
-		out += "```"
-		if len(usernames) == 25 {
-			out += "\nOnly showing last 25 usernames"
-		}
-		return out, nil
+			if len(usernames) < 1 && page > 1 {
+				return nil, paginatedmessages.ErrNoResults
+			}
+
+			out := fmt.Sprintf("Past username of **%s#%s** ```\n", target.Username, target.Discriminator)
+			for _, v := range usernames {
+				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
+			}
+			out += "```"
+
+			if len(usernames) < 1 {
+				out = `No logged usernames`
+			}
+
+			embed := &discordgo.MessageEmbed{
+				Color:       0x277ee3,
+				Title:       "Usernames of " + target.Username + "#" + target.Discriminator,
+				Description: out,
+			}
+
+			return embed, nil
+		})
+
+		return nil, err
 	},
 }
 
@@ -265,15 +266,13 @@ var cmdNicknames = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Nicknames",
 	Description:     "Shows past nicknames of a user.",
-	LongDescription: "Only shows up to the last 25 nicknames.",
-
 	Aliases: []string{"nn"},
 	RunInDM: false,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(parsed.Context(), parsed.GS.ID)
+		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -287,73 +286,89 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		nicknames, err := GetNicknames(parsed.Context(), target.ID, parsed.GS.ID, 25)
-		if err != nil {
-			return nil, err
-		}
+		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
-		out := fmt.Sprintf("Past nicknames of **%s#%s** ```\n", target.Username, target.Discriminator)
-		for _, v := range nicknames {
-			out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
-		}
-		out += "```"
-		if len(nicknames) == 25 {
-			out += "\nOnly showing last 25 nicknames"
-		}
-		return out, nil
+			offset := (page - 1) * 15
+
+			nicknames, err := GetNicknames(context.Background(), target.ID, parsed.GS.ID, 15, offset)
+			if err != nil {
+				return nil, err
+			}
+
+			if page > 1 && len(nicknames) < 1 {
+				return nil, paginatedmessages.ErrNoResults
+			}
+
+			out := fmt.Sprintf("Past nicknames of **%s#%s** ```\n", target.Username, target.Discriminator)
+			for _, v := range nicknames {
+				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
+			}
+			out += "```"
+
+			if len(nicknames) < 1 {
+				out = `No nicknames tracked`
+			}
+
+			embed := &discordgo.MessageEmbed{
+				Color:       0x277ee3,
+				Title:       "Nicknames of " + target.Username + "#" + target.Discriminator,
+				Description: out,
+			}
+
+			return embed, nil
+		})
+
+		return nil, err
 	},
 }
 
 // Mark all log messages with this id as deleted
-func HandleMsgDelete(evt *eventsystem.EventData) {
+func HandleMsgDelete(evt *eventsystem.EventData) (retry bool, err error) {
 	if evt.Type == eventsystem.EventMessageDelete {
 		err := markLoggedMessageAsDeleted(evt.Context(), evt.MessageDelete().ID)
 		if err != nil {
-			logrus.WithError(err).Error("Failed marking message as deleted")
+			return true, errors.WithStackIf(err)
 		}
-		return
+
+		return false, nil
 	}
 
 	for _, m := range evt.MessageDeleteBulk().Messages {
 		err := markLoggedMessageAsDeleted(evt.Context(), m)
 		if err != nil {
-			logrus.WithError(err).Error("Failed marking message as deleted")
+			return true, errors.WithStackIf(err)
 		}
 	}
+
+	return false, nil
 }
 
 func markLoggedMessageAsDeleted(ctx context.Context, mID int64) error {
-	_, err := models.Messages(models.MessageWhere.MessageID.EQ(null.StringFrom(discordgo.StrID(mID)))).UpdateAllG(ctx,
+	_, err := models.Messages2s(models.Messages2Where.ID.EQ(mID)).UpdateAllG(ctx,
 		models.M{"deleted": true})
 	return err
 }
 
 func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	pu := evt.PresenceUpdate()
-	gs := bot.State.Guild(true, pu.GuildID)
-	if gs == nil {
-		go func() { evtChan <- pu }()
-		return
-	}
+	gs := evt.GS
 
 	gs.RLock()
 	defer gs.RUnlock()
 
 	ms := gs.Member(false, pu.User.ID)
 	if ms == nil || !ms.PresenceSet || !ms.MemberSet {
-		go func() { evtChan <- pu }()
+		queueEvt(pu)
 		return
 	}
 
-	if pu.User.Username != "" {
-		if pu.User.Username != ms.Username {
-			go func() { evtChan <- pu }()
-			return
-		}
+	if pu.User.Username != "" && pu.User.Username != ms.Username {
+		queueEvt(pu)
+		return
 	}
 
 	if pu.Nick != ms.Nick {
-		go func() { evtChan <- pu }()
+		queueEvt(pu)
 		return
 	}
 }
@@ -361,7 +376,18 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 // While presence update is sent when user changes username.... MAKES NO SENSE IMO BUT WHATEVER
 // Also check nickname incase the user came online
 func HandleQueueEvt(evt *eventsystem.EventData) {
-	evtChan <- evt.EvtInterface
+	queueEvt(evt.EvtInterface)
+}
+
+func queueEvt(evt interface{}) {
+	select {
+	case evtChan <- evt:
+		return
+	default:
+		go func() {
+			evtChan <- evt
+		}()
+	}
 }
 
 func HandleGC(evt *eventsystem.EventData) {
@@ -385,17 +411,22 @@ func HandleGC(evt *eventsystem.EventData) {
 // 	Nickname string
 // }
 
-func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt *sql.Stmt, user *discordgo.User) {
+func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt *sql.Stmt, user *discordgo.User) error {
 	var lastUsername string
 	row := usernameStmt.QueryRow(user.ID)
 	err := row.Scan(&lastUsername)
 
 	if err == nil && lastUsername == user.Username {
 		// Not changed
-		return
+		return nil
 	}
 
-	logrus.Debug("[logs] User changed username, old:", lastUsername, " | new:", user.Username)
+	if err != nil && err != sql.ErrNoRows {
+		// Other error
+		return nil
+	}
+
+	logger.Debug("User changed username, old:", lastUsername, " | new:", user.Username)
 
 	listing := &models.UsernameListing{
 		UserID:   null.Int64From(user.ID),
@@ -404,25 +435,32 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logrus.WithError(err).WithField("user", user.ID).Error("[logs] failed setting last username")
+		logger.WithError(err).WithField("user", user.ID).Error("failed setting last username")
 	}
+
+	return err
 }
 
-func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt *sql.Stmt, userID, guildID int64, nickname string) {
+func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt *sql.Stmt, userID, guildID int64, nickname string) error {
+
 	var lastNickname string
 	row := nicknameStmt.QueryRow(userID, guildID)
 	err := row.Scan(&lastNickname)
 	if err == sql.ErrNoRows && nickname == "" {
 		// don't need to be putting this in the database as the first record for the user
-		return
+		return nil
 	}
 
 	if err == nil && lastNickname == nickname {
 		// Not changed
-		return
+		return nil
 	}
 
-	logrus.Debug("[logs] User changed nickname, old:", lastNickname, " | new:", nickname)
+	if err != sql.ErrNoRows && err != nil {
+		return err
+	}
+
+	logger.Debug("User changed nickname, old:", lastNickname, " | new:", nickname)
 
 	listing := &models.NicknameListing{
 		UserID:   null.Int64From(userID),
@@ -432,8 +470,10 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logrus.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("[logs] failed setting last nickname")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("failed setting last nickname")
 	}
+
+	return err
 }
 
 // func CheckNicknameBulk(gDB *gorm.DB, guildID int64, members []*discordgo.Member) {
@@ -446,7 +486,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 // 	rows, err := gDB.CommonDB().Query(
 // 		"select distinct on(user_id) nickname,user_id from nickname_listings where user_id = ANY ($1) AND guild_id=$2 order by user_id,id desc;", pq.Int64Array(ids), guildID)
 // 	if err != nil {
-// 		logrus.WithError(err).Error("Failed querying current nicknames")
+// 		logger.WithError(err).Error("Failed querying current nicknames")
 // 	}
 
 // 	// Value is wether the nickname was identical
@@ -457,7 +497,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 // 		var userID int64
 // 		err = rows.Scan(&nickname, &userID)
 // 		if err != nil {
-// 			logrus.WithError(err).Error("Error while scanning")
+// 			logger.WithError(err).Error("Error while scanning")
 // 			continue
 // 		}
 
@@ -468,7 +508,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 // 					queriedUsers[userID] = true
 // 				} else {
 // 					queriedUsers[userID] = false
-// 					logrus.Debug("CHANGED Nick: ", nickname, " : ", member.Nick)
+// 					logger.Debug("CHANGED Nick: ", nickname, " : ", member.Nick)
 // 				}
 
 // 				break
@@ -488,7 +528,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 // 			continue
 // 		}
 
-// 		logrus.Debug("User changed nickname, new: ", member.Nick)
+// 		logger.Debug("User changed nickname, new: ", member.Nick)
 
 // 		listing := NicknameListing{
 // 			UserID:   member.User.ID,
@@ -498,7 +538,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 // 		err = gDB.Create(&listing).Error
 // 		if err != nil {
-// 			logrus.WithError(err).Error("Failed setting nickname")
+// 			logger.WithError(err).Error("Failed setting nickname")
 // 		}
 // 	}
 
@@ -513,7 +553,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 // 	rows, err := gDB.CommonDB().Query(
 // 		"select distinct on(user_id) username,user_id from username_listings where user_id = ANY ($1) order by user_id,id desc;", pq.Int64Array(ids))
 // 	if err != nil {
-// 		logrus.WithError(err).Error("Failed querying current usernames")
+// 		logger.WithError(err).Error("Failed querying current usernames")
 // 	}
 
 // 	unchangedUsers := make(map[int64]bool)
@@ -523,7 +563,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 // 		var userID int64
 // 		err = rows.Scan(&username, &userID)
 // 		if err != nil {
-// 			logrus.WithError(err).Error("Error while scanning")
+// 			logger.WithError(err).Error("Error while scanning")
 // 			continue
 // 		}
 
@@ -546,7 +586,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 // 			continue
 // 		}
 
-// 		logrus.Debug("User changed username, new: ", user.Username)
+// 		logger.Debug("User changed username, new: ", user.Username)
 
 // 		listing := UsernameListing{
 // 			UserID:   user.ID,
@@ -555,72 +595,161 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 // 		err = gDB.Create(&listing).Error
 // 		if err != nil {
-// 			logrus.WithError(err).Error("Failed setting username")
+// 			logger.WithError(err).Error("Failed setting username")
 // 		}
 // 	}
 // }
 
 var (
-	evtChan   = make(chan interface{})
+	evtChan   = make(chan interface{}, 1000)
 	evtChanGC = make(chan *LightGC)
 )
 
+type UserGuildPair struct {
+	GuildID int64
+	User    *discordgo.User
+}
+
 // Queue up all the events and process them one by one, because of limited connections
 func EvtProcesser() {
+
+	queuedMembers := make([]*discordgo.Member, 0)
+	queuedUsers := make([]*UserGuildPair, 0)
+
+	ticker := time.NewTicker(time.Second * 10)
+
 	for {
-		e := <-evtChan
-
-		switch t := e.(type) {
-		case *discordgo.PresenceUpdate:
-			conf, err := GetConfig(context.Background(), t.GuildID)
-			if err != nil {
-				logrus.WithError(err).Error("Failed fetching config")
-				continue
-			}
-
-			if conf.NicknameLoggingEnabled.Bool {
-				CheckNickname(common.PQ, context.Background(), nicknameQueryStatement, t.User.ID, t.GuildID, t.Presence.Nick)
-			}
-
-			if conf.UsernameLoggingEnabled.Bool {
-				if t.User.Username != "" {
-					CheckUsername(common.PQ, context.Background(), usernameQueryStatement, t.User)
+		select {
+		case e := <-evtChan:
+			switch t := e.(type) {
+			case *discordgo.PresenceUpdate:
+				if t.User.Username == "" {
+					continue
 				}
-			}
-		case *discordgo.GuildMemberUpdate:
-			conf, err := GetConfig(context.Background(), t.GuildID)
-			if err != nil {
-				logrus.WithError(err).Error("Failed fetching config")
-				continue
-			}
-			if conf.NicknameLoggingEnabled.Bool {
-				CheckNickname(common.PQ, context.Background(), nicknameQueryStatement, t.User.ID, t.GuildID, t.Nick)
-			}
-		case *discordgo.GuildMemberAdd:
-			conf, err := GetConfig(context.Background(), t.GuildID)
-			if err != nil {
-				logrus.WithError(err).Error("Failed fetching config")
-				continue
-			}
-			if conf.UsernameLoggingEnabled.Bool {
-				CheckUsername(common.PQ, context.Background(), usernameQueryStatement, t.User)
-			}
-		case *discordgo.Member:
-			conf, err := GetConfig(context.Background(), t.GuildID)
-			if err != nil {
-				logrus.WithError(err).Error("Failed fetching config")
-				continue
-			}
 
-			if conf.NicknameLoggingEnabled.Bool {
-				CheckNickname(common.PQ, context.Background(), nicknameQueryStatement, t.User.ID, t.GuildID, t.Nick)
+				queuedUsers = append(queuedUsers, &UserGuildPair{GuildID: t.GuildID, User: t.User})
+			case *discordgo.GuildMemberUpdate:
+				queuedMembers = append(queuedMembers, t.Member)
+			case *discordgo.GuildMemberAdd:
+				queuedMembers = append(queuedMembers, t.Member)
+			case *discordgo.Member:
+				queuedMembers = append(queuedMembers, t)
 			}
-
-			if conf.UsernameLoggingEnabled.Bool {
-				CheckUsername(common.PQ, context.Background(), usernameQueryStatement, t.User)
+		case <-ticker.C:
+			started := time.Now()
+			err := ProcessBatch(queuedUsers, queuedMembers)
+			logger.Debugf("Updated %d members and %d users in %s", len(queuedMembers), len(queuedUsers), time.Since(started).String())
+			if err == nil {
+				// reset the slices
+				queuedUsers = queuedUsers[:0]
+				queuedMembers = queuedMembers[:0]
+			} else {
+				logger.WithError(err).Error("failed batch updating usernames and nicknames")
 			}
 		}
 	}
+}
+
+func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
+	configs := make([]*models.GuildLoggingConfig, 0)
+
+	err := common.SqlTX(func(tx *sql.Tx) error {
+		nickStatement, err := tx.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
+		if err != nil {
+			return errors.WrapIf(err, "nick stmnt prepare")
+		}
+
+		usernameStatement, err := tx.Prepare("select username from username_listings where user_id=$1 order by id desc limit 1;")
+		if err != nil {
+			return errors.WrapIf(err, "username stmnt prepare")
+		}
+
+		// first find all the configs
+	OUTERUSERS:
+		for _, v := range users {
+			for _, c := range configs {
+				if c.GuildID == v.GuildID {
+					continue OUTERUSERS
+				}
+			}
+
+			config, err := GetConfigCached(tx, v.GuildID)
+			if err != nil {
+				return errors.WrapIf(err, "users_configs")
+			}
+
+			configs = append(configs, config)
+		}
+
+	OUTERMEMBERS:
+		for _, v := range members {
+			for _, c := range configs {
+				if c.GuildID == v.GuildID {
+					continue OUTERMEMBERS
+				}
+			}
+
+			config, err := GetConfigCached(tx, v.GuildID)
+			if err != nil {
+				return errors.WrapIf(err, "members_configs")
+			}
+
+			configs = append(configs, config)
+		}
+
+		// update users first
+	OUTERUSERS_UPDT:
+		for _, v := range users {
+			// check if username logging is disabled
+			for _, c := range configs {
+				if c.GuildID == v.GuildID {
+					if !c.UsernameLoggingEnabled.Bool {
+						continue OUTERUSERS_UPDT
+					}
+
+					break
+				}
+			}
+
+			err = CheckUsername(tx, context.Background(), usernameStatement, v.User)
+			if err != nil {
+				return errors.WrapIf(err, "user username check")
+			}
+		}
+
+		// update members
+		for _, v := range members {
+			checkNick := false
+			checkUser := false
+
+			// find config
+			for _, c := range configs {
+				if c.GuildID == v.GuildID {
+					checkNick = c.NicknameLoggingEnabled.Bool
+					checkUser = c.UsernameLoggingEnabled.Bool
+					break
+				}
+			}
+
+			if !checkNick && !checkUser {
+				continue
+			}
+
+			err = CheckUsername(tx, context.Background(), usernameStatement, v.User)
+			if err != nil {
+				return errors.WrapIf(err, "members username check")
+			}
+
+			err = CheckNickname(tx, context.Background(), nickStatement, v.User.ID, v.GuildID, v.Nick)
+			if err != nil {
+				return errors.WrapIf(err, "members nickname check")
+			}
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 type LightGC struct {
@@ -636,7 +765,7 @@ func EvtProcesserGCs() {
 
 		// conf, err := GetConfig(gc.GuildID)
 		// if err != nil {
-		// 	logrus.WithError(err).Error("Failed fetching config")
+		// 	logger.WithError(err).Error("Failed fetching config")
 		// 	continue
 		// }
 
@@ -657,16 +786,36 @@ func EvtProcesserGCs() {
 
 		// err = tx.Commit().Error
 		// if err != nil {
-		// 	logrus.WithError(err).Error("Failed committing transaction")
+		// 	logger.WithError(err).Error("Failed committing transaction")
 		// 	continue
 		// }
 
 		// if len(gc.Members) > 100 {
-		// 	logrus.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
+		// 	logger.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
 		// 	// Make sure this dosen't use all our resources
 		// 	time.Sleep(time.Second * 25)
 		// } else {
 		// 	time.Sleep(time.Second * 15)
 		// }
 	}
+}
+
+const CacheKeyConfig bot.GSCacheKey = "logs_config"
+
+func GetConfigCached(exec boil.ContextExecutor, gID int64) (*models.GuildLoggingConfig, error) {
+	gs := bot.State.Guild(true, gID)
+	if gs == nil {
+		return GetConfig(exec, context.Background(), gID)
+	}
+
+	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
+		conf, err := GetConfig(exec, context.Background(), gID)
+		return conf, err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.(*models.GuildLoggingConfig), nil
 }

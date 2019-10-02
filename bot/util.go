@@ -2,20 +2,21 @@ package bot
 
 import (
 	"context"
-	"errors"
-	"github.com/bwmarrin/snowflake"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/mediocregopher/radix"
-	"github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
+	"emperror.dev/errors"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/bwmarrin/snowflake"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/patrickmn/go-cache"
 )
 
 var (
@@ -33,6 +34,8 @@ func init() {
 
 		return false
 	}
+
+	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 }
 
 func ContextSession(ctx context.Context) *discordgo.Session {
@@ -133,14 +136,14 @@ func SetStatus(streaming, status string) {
 		status = "v" + common.VERSION + " :)"
 	}
 
-	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming", streaming))
-	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", status))
+	err1 := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "status_streaming", streaming))
+	err2 := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "status_name", status))
 	if err1 != nil {
-		logrus.WithError(err1).Error("failed setting bot status in redis")
+		logger.WithError(err1).Error("failed setting bot status in redis")
 	}
 
 	if err2 != nil {
-		logrus.WithError(err2).Error("failed setting bot status in redis")
+		logger.WithError(err2).Error("failed setting bot status in redis")
 	}
 
 	pubsub.Publish("bot_status_changed", -1, nil)
@@ -168,7 +171,7 @@ func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bo
 func BotProbablyHasPermissionGS(lock bool, gs *dstate.GuildState, channelID int64, permission int) bool {
 	perms, err := gs.MemberPermissions(lock, channelID, common.BotUser.ID)
 	if err != nil && err != dstate.ErrChannelNotFound {
-		logrus.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
+		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
 	}
 
@@ -276,7 +279,7 @@ func runNumShardsUpdater() {
 	for {
 		err := fetchTotalShardsFromRedis()
 		if err != nil {
-			logrus.WithError(err).Error("[botrest] failed retrieving total shards")
+			logger.WithError(err).Error("[botrest] failed retrieving total shards")
 		}
 		<-t.C
 	}
@@ -284,14 +287,14 @@ func runNumShardsUpdater() {
 
 func fetchTotalShardsFromRedis() error {
 	var result int64
-	err := common.RedisPool.Do(radix.Cmd(&result, "GET", "yagpdb_total_shards"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&result, "GET", "yagpdb_total_shards"))
 	if err != nil {
 		return err
 	}
 
 	old := atomic.SwapInt64(redisSetTotalShards, result)
 	if old != result {
-		logrus.Info("[botrest] new shard count received: ", old, " -> ", result)
+		logger.Info("[botrest] new shard count received: ", old, " -> ", result)
 	}
 
 	return nil
@@ -319,13 +322,13 @@ func NodeID() string {
 func RefreshStatus(session *discordgo.Session) {
 	var streamingURL string
 	var status string
-	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
-	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
+	err1 := common.RedisPool.Do(retryableredis.Cmd(&streamingURL, "GET", "status_streaming"))
+	err2 := common.RedisPool.Do(retryableredis.Cmd(&status, "GET", "status_name"))
 	if err1 != nil {
-		logrus.WithError(err1).Error("failed retrieiving bot streaming status")
+		logger.WithError(err1).Error("failed retrieiving bot streaming status")
 	}
 	if err2 != nil {
-		logrus.WithError(err2).Error("failed retrieiving bot status")
+		logger.WithError(err2).Error("failed retrieiving bot status")
 	}
 
 	if streamingURL != "" {
@@ -396,4 +399,99 @@ func MemberHighestRole(gs *dstate.GuildState, ms *dstate.MemberState) *discordgo
 	}
 
 	return highest
+}
+
+func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return nil
+	}
+
+	return GetUsersGS(gs, ids...)
+}
+
+func GetUsersGS(gs *dstate.GuildState, ids ...int64) []*discordgo.User {
+	gs.RLock()
+	defer gs.RUnlock()
+
+	resp := make([]*discordgo.User, 0, len(ids))
+	for _, id := range ids {
+		m := gs.Member(false, id)
+		if m != nil {
+			resp = append(resp, m.DGoUser())
+			continue
+		}
+
+		gs.RUnlock()
+
+		user, err := common.BotSession.User(id)
+
+		gs.RLock()
+
+		if err != nil {
+			logger.WithError(err).WithField("guild", gs.ID).Error("failed retrieving user from api")
+			resp = append(resp, &discordgo.User{
+				ID:       id,
+				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
+			})
+			continue
+		}
+
+		resp = append(resp, user)
+	}
+
+	return resp
+}
+
+func EvictGSCache(guildID int64, key GSCacheKey) {
+	if Enabled {
+		evictGSCacheLocal(guildID, key)
+	} else {
+		evictGSCacheRemote(guildID, key)
+	}
+}
+
+func evictGSCacheLocal(guildID int64, key GSCacheKey) {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return
+	}
+
+	gs.UserCacheDel(key)
+}
+
+type GSCacheKey string
+
+func evictGSCacheRemote(guildID int64, key GSCacheKey) {
+	err := pubsub.Publish("bot_core_evict_gs_cache", guildID, key)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).WithField("key", key).Error("failed evicting remote cache")
+	}
+}
+
+func handleEvictCachePubsub(evt *pubsub.Event) {
+	key := evt.Data.(*string)
+	evictGSCacheLocal(evt.TargetGuildInt, GSCacheKey(*key))
+}
+
+func CheckDiscordErrRetry(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	err = errors.Cause(err)
+
+	if cast, ok := err.(*discordgo.RESTError); ok {
+		if cast.Message != nil && cast.Message.Code != 0 {
+			// proper discord response, don't retry
+			return false
+		}
+	}
+
+	if err == ErrGuildNotFound {
+		return false
+	}
+
+	// an unknown error unrelated to the discord api occured (503's for example) attempt a retry
+	return true
 }

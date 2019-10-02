@@ -2,6 +2,11 @@ package reputation
 
 import (
 	"fmt"
+	"html"
+	"html/template"
+	"net/http"
+	"strconv"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
@@ -10,10 +15,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html"
-	"html/template"
-	"net/http"
-	"strconv"
 )
 
 type PostConfigForm struct {
@@ -221,8 +222,8 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	const format = `<ul>
-	<li>Repuatation is: %s</li>
-	<li>Repuatation name: <code>%s</code></li>
+	<li>Reputation is: %s</li>
+	<li>Reputation name: <code>%s</code></li>
 </ul>`
 
 	name := html.EscapeString(settings.PointsName)

@@ -2,14 +2,14 @@ package bot
 
 import (
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
-	"github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 var (
@@ -189,7 +189,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 
 	m.Unlock()
 
-	logrus.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
+	logger.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
 
 	if gs := State.Guild(true, guildID); gs != nil {
 		if member := gs.MemberCopy(true, elem.Member); member != nil && member.MemberSet {
@@ -217,17 +217,26 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 
 		var member *discordgo.Member
 		member, err = common.BotSession.GuildMember(guildID, elem.Member)
+		if err == nil && (member != nil && member.User == nil) {
+			err = errors.New("User is nil")
+		}
+
 		if err != nil {
-			logrus.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
+			logger.WithField("guild", guildID).WithField("user", elem.Member).WithError(err).Debug("Failed fetching member")
 			code, _ := common.DiscordError(err)
 			if code == discordgo.ErrCodeUnknownUser {
 				failedUsersCache.Set(failedCacheKey, 1, time.Hour)
 			}
 		} else {
-			go eventsystem.EmitEvent(&eventsystem.EventData{
-				EvtInterface: &discordgo.GuildMemberAdd{Member: member},
-				Type:         eventsystem.EventMemberFetched,
-			}, eventsystem.EventMemberFetched)
+			member.GuildID = guildID
+			go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventMemberFetched, &discordgo.GuildMemberAdd{Member: member}), eventsystem.EventMemberFetched)
+			if member == nil {
+				panic("nil member")
+			}
+
+			if member.User == nil {
+				panic("nil user")
+			}
 
 			if gs := State.Guild(true, guildID); gs != nil {
 				gs.MemberAddUpdate(true, member)

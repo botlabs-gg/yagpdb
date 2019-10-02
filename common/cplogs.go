@@ -3,10 +3,10 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 )
 
 type CPLogEntry struct {
@@ -27,21 +27,21 @@ func AddCPLogEntry(user *discordgo.User, guild int64, args ...interface{}) {
 
 	serialized, err := json.Marshal(entry)
 	if err != nil {
-		log.WithError(err).Error("Failed marshalling cp log entry")
+		logger.WithError(err).Error("Failed marshalling cp log entry")
 		return
 	}
 
 	key := "cp_logs:" + discordgo.StrID(guild)
-	err = RedisPool.Do(radix.Cmd(nil, "LPUSH", key, string(serialized)))
-	RedisPool.Do(radix.Cmd(nil, "LTRIM", key, "0", "100"))
+	err = RedisPool.Do(retryableredis.Cmd(nil, "LPUSH", key, string(serialized)))
+	RedisPool.Do(retryableredis.Cmd(nil, "LTRIM", key, "0", "100"))
 	if err != nil {
-		log.WithError(err).WithField("guild", guild).Error("Failed updating cp logs")
+		logger.WithError(err).WithField("guild", guild).Error("Failed updating cp logs")
 	}
 }
 
 func GetCPLogEntries(guild int64) ([]*CPLogEntry, error) {
 	var entriesRaw [][]byte
-	err := RedisPool.Do(radix.Cmd(&entriesRaw, "LRANGE", "cp_logs:"+discordgo.StrID(guild), "0", "-1"))
+	err := RedisPool.Do(retryableredis.Cmd(&entriesRaw, "LRANGE", "cp_logs:"+discordgo.StrID(guild), "0", "-1"))
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func GetCPLogEntries(guild int64) ([]*CPLogEntry, error) {
 		err = json.Unmarshal(entryRaw, &decoded)
 		if err != nil {
 			result[k] = &CPLogEntry{Action: "Failed decoding"}
-			log.WithError(err).WithField("guild", guild).WithField("cp_log_enry", k).Error("Failed decoding cp log entry")
+			logger.WithError(err).WithField("guild", guild).WithField("cp_log_enry", k).Error("Failed decoding cp log entry")
 		} else {
 			decoded.TimestampString = time.Unix(decoded.Timestamp, 0).Format(time.Stamp)
 			result[k] = decoded

@@ -1,9 +1,10 @@
 package multiratelimit
 
 import (
-	"golang.org/x/time/rate"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 type MultiRatelimiter struct {

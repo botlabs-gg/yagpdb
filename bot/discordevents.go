@@ -1,44 +1,50 @@
 package bot
 
 import (
+	"emperror.dev/errors"
+	"runtime/debug"
+	"time"
+
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	"runtime/debug"
-	"sync"
-	"time"
 )
 
-var (
-	waitingGuildsMU sync.Mutex
-	waitingGuilds   = make(map[int64]bool)
-	waitingReadies  []int
+func addBotHandlers() {
+	eventsystem.AddHandlerFirstLegacy(BotPlugin, HandleReady, eventsystem.EventReady)
+	eventsystem.AddHandlerSecondLegacy(BotPlugin, StateHandler, eventsystem.EventAll)
 
-	botStartedFired = new(int32)
-)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, EventLogger.handleEvent, eventsystem.EventAll)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildDelete, eventsystem.EventGuildDelete)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildUpdate, eventsystem.EventGuildUpdate)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, handleInvalidateCacheEvent,
+		eventsystem.EventGuildRoleCreate,
+		eventsystem.EventGuildRoleUpdate,
+		eventsystem.EventGuildRoleDelete,
+		eventsystem.EventChannelCreate,
+		eventsystem.EventChannelUpdate,
+		eventsystem.EventChannelDelete,
+		eventsystem.EventGuildMemberUpdate)
+
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(BotPlugin, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleGuildMembersChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleMessageCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
+}
 
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
-
-	waitingGuildsMU.Lock()
-	for i, v := range waitingReadies {
-		if ContextSession(data.Context()).ShardID == v {
-			waitingReadies = append(waitingReadies[:i], waitingReadies[i+1:]...)
-			break
-		}
-	}
-
-	for _, v := range evt.Guilds {
-		waitingGuilds[v.ID] = true
-	}
-	waitingGuildsMU.Unlock()
 
 	RefreshStatus(ContextSession(data.Context()))
 
@@ -53,9 +59,9 @@ func HandleReady(data *eventsystem.EventData) {
 	common.BotSession.State.Unlock()
 
 	var listedServers []int64
-	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving connected servers")
+		logger.WithError(err).Error("Failed retrieving connected servers")
 	}
 
 	numShards := ShardManager.GetNumShards()
@@ -73,36 +79,28 @@ OUTER:
 			}
 		}
 
-		log.Info("Left server while bot was down: ", v)
-		common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(v)))
-		go EmitGuildRemoved(v)
-
-		if common.Statsd != nil {
-			common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
-		}
+		logger.Info("Left server while bot was down: ", v)
+		go guildRemoved(v)
 	}
 }
 
-func HandleGuildCreate(evt *eventsystem.EventData) {
+func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	g := evt.GuildCreate()
-	log.WithFields(log.Fields{
+	logger.WithFields(logrus.Fields{
 		"g_name": g.Name,
 		"guild":  g.ID,
 	}).Debug("Joined guild")
 
 	var n int
-	err := common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
+	err = common.RedisPool.Do(retryableredis.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
 	if err != nil {
-		log.WithError(err).Error("Redis error")
+		return true, errors.WithStackIf(err)
 	}
 
 	// check if this server is new
 	if n > 0 {
-		log.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
-		go eventsystem.EmitEvent(&eventsystem.EventData{
-			EvtInterface: g,
-			Type:         eventsystem.EventNewGuild,
-		}, eventsystem.EventNewGuild)
+		logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
+		go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
 
 		if common.Statsd != nil {
 			common.Statsd.Incr("yagpdb.joined_guilds", nil, 1)
@@ -111,11 +109,14 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	// check if the server is banned from using the bot
 	var banned bool
-	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
+	common.RedisPool.Do(retryableredis.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
 	if banned {
-		log.WithField("guild", g.ID).Info("Banned server tried to add bot back")
+		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
-		common.BotSession.GuildLeave(g.ID)
+		err = common.BotSession.GuildLeave(g.ID)
+		if err != nil {
+			return CheckDiscordErrRetry(err), errors.WithStackIf(err)
+		}
 	}
 
 	gm := &models.JoinedGuild{
@@ -129,80 +130,49 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("member_count", "name", "avatar", "owner_id", "left_at"), boil.Infer())
 	if err != nil {
-		log.WithError(err).Error("failed upserting guild")
+		return true, errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
-func HandleGuildDelete(evt *eventsystem.EventData) {
+func HandleGuildDelete(evt *eventsystem.EventData) (retry bool, err error) {
 	if evt.GuildDelete().Unavailable {
 		// Just a guild outage
 		return
 	}
 
-	log.WithFields(log.Fields{
+	logger.WithFields(logrus.Fields{
 		"g_name": evt.GuildDelete().Name,
 	}).Info("Left guild")
 
-	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(evt.GuildDelete().ID)))
-	if err != nil {
-		log.WithError(err).Error("Redis error")
-	}
+	go guildRemoved(evt.GuildDelete().ID)
 
-	go EmitGuildRemoved(evt.GuildDelete().ID)
-
-	if common.Statsd != nil {
-		common.Statsd.Incr("yagpdb.left_guilds", nil, 1)
-	}
-
-	models.JoinedGuilds(qm.Where("id = ?", evt.GuildDelete().ID)).UpdateAll(evt.Context(), common.PQ, models.M{
-		"left_at": null.TimeFrom(time.Now()),
-	})
+	return false, nil
 }
 
-func HandleGuildMemberAdd(evt *eventsystem.EventData) {
+func HandleGuildMemberAdd(evt *eventsystem.EventData) (retry bool, err error) {
 	ma := evt.GuildMemberAdd()
 
 	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
 
-	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
+	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
 	if err != nil {
-		log.WithError(err).Error("failed updating guild member count")
+		return true, errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
-func HandleGuildMemberRemove(evt *eventsystem.EventData) {
+func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
 	mr := evt.GuildMemberRemove()
-	_, err := common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
+
+	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
 	if err != nil {
-		log.WithError(err).Error("failed updating guild member count")
+		return true, errors.WithStackIf(err)
 	}
-}
 
-func HandleResumed(evt *eventsystem.EventData) {
-	guilds := State.GuildsSlice(true)
-
-	for _, v := range guilds {
-		v.RLock()
-		name := v.Guild.Name
-		mc := v.Guild.MemberCount
-		ownerID := v.Guild.OwnerID
-		icon := v.Guild.Icon
-		v.RUnlock()
-
-		gm := &models.JoinedGuild{
-			ID:          v.ID,
-			MemberCount: int64(mc),
-			OwnerID:     ownerID,
-			JoinedAt:    time.Now(),
-			Name:        name,
-			Avatar:      icon,
-		}
-
-		err := gm.Upsert(evt.Context(), common.PQ, false, []string{"id"}, boil.Infer(), boil.Infer())
-		if err != nil {
-			log.WithError(err).Error("failed upserting guild in resume")
-		}
-	}
+	return false, nil
 }
 
 // StateHandler updates the world state
@@ -211,7 +181,7 @@ func StateHandler(evt *eventsystem.EventData) {
 	State.HandleEvent(ContextSession(evt.Context()), evt.EvtInterface)
 }
 
-func HandleGuildUpdate(evt *eventsystem.EventData) {
+func HandleGuildUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	InvalidateCache(evt.GuildUpdate().Guild.ID, 0)
 
 	g := evt.GuildUpdate().Guild
@@ -225,61 +195,60 @@ func HandleGuildUpdate(evt *eventsystem.EventData) {
 		Avatar:      g.Icon,
 	}
 
-	err := gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("name", "avatar", "owner_id"), boil.Infer())
+	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("name", "avatar", "owner_id"), boil.Infer())
 	if err != nil {
-		log.WithError(err).Error("failed upserting guild in update")
+		return true, errors.WithStackIf(err)
 	}
+
+	return false, nil
 }
 
-func HandleGuildRoleUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.GuildRoleUpdate().GuildID, 0)
-}
+func handleInvalidateCacheEvent(evt *eventsystem.EventData) (bool, error) {
+	if evt.GS == nil {
+		return false, nil
+	}
 
-func HandleGuildRoleCreate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.GuildRoleCreate().GuildID, 0)
-}
+	userID := int64(0)
 
-func HandleGuildRoleRemove(evt *eventsystem.EventData) {
-	InvalidateCache(evt.GuildRoleDelete().GuildID, 0)
-}
+	if evt.Type == eventsystem.EventGuildMemberUpdate {
+		userID = evt.GuildMemberUpdate().User.ID
+	}
 
-func HandleChannelCreate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.ChannelCreate().GuildID, 0)
-}
-func HandleChannelUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(evt.ChannelUpdate().GuildID, 0)
-}
-func HandleChannelDelete(evt *eventsystem.EventData) {
-	InvalidateCache(evt.ChannelDelete().GuildID, 0)
-}
+	InvalidateCache(evt.GS.ID, userID)
 
-func HandleGuildMemberUpdate(evt *eventsystem.EventData) {
-	InvalidateCache(0, evt.GuildMemberUpdate().User.ID)
+	return false, nil
 }
 
 func InvalidateCache(guildID, userID int64) {
 	if userID != 0 {
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds"))
+		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds")); err != nil {
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating user guilds cache")
+		}
 	}
 	if guildID != 0 {
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID)))
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID)))
+		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))); err != nil {
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild cache")
+		}
+
+		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))); err != nil {
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild channels cache")
+		}
 	}
 }
 
-func ConcurrentEventHandler(inner eventsystem.Handler) eventsystem.Handler {
-	return func(evt *eventsystem.EventData) {
+func ConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy) eventsystem.HandlerFuncLegacy {
+	return eventsystem.HandlerFuncLegacy(func(evt *eventsystem.EventData) {
 		go func() {
 			defer func() {
 				if err := recover(); err != nil {
 					stack := string(debug.Stack())
-					log.WithField(log.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
 				}
 			}()
 
 			inner(evt)
 		}()
-	}
+	})
 }
 
 func HandleReactionAdd(evt *eventsystem.EventData) {
@@ -293,7 +262,7 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_reaction", -1, ra)
 	if err != nil {
-		log.WithError(err).Error("failed publishing dm reaction")
+		logger.WithError(err).Error("failed publishing dm reaction")
 	}
 }
 
@@ -309,6 +278,24 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_message", -1, mc)
 	if err != nil {
-		log.WithError(err).Error("failed publishing dm message")
+		logger.WithError(err).Error("failed publishing dm message")
+	}
+}
+
+func HandleRatelimit(evt *eventsystem.EventData) {
+	rl := evt.RateLimit()
+	if !rl.TooManyRequests.Global {
+		return
+	}
+
+	logger.Printf("Got 429: %s, %d", rl.Bucket, rl.RetryAfter)
+
+	reset := time.Now().Add(rl.RetryAfter * time.Millisecond)
+	err := pubsub.Publish("global_ratelimit", -1, &GlobalRatelimitTriggeredEventData{
+		Bucket: rl.Bucket,
+		Reset:  reset,
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed publishing global ratelimit")
 	}
 }

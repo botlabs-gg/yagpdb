@@ -1,31 +1,34 @@
-version: '2'
+version: '3'
 
 volumes:
   db:
   redis:
   cert_cache:
+  soundboard:
 
 networks:
   default:
 
 services:
   app:
-    build:
-      # We change context so that we can copy the local repo in during
-      # development
-      context: ../
-      dockerfile: yagpdb_docker/Dockerfile
+    image: caskd/yagpdb
     restart: unless-stopped
+    command:
+      - "-all"
+      - "-pa"
+      - "-exthttps=false"
+      - "-https=true"
     depends_on:
       - redis
       - db
     networks:
       - default
-    ports:
-      - "80"
-      - "443"
     volumes:
       - cert_cache:/app/cert
+      - soundboard:/app/soundboard
+    ports:
+      - '80:80'
+      - '443:443'
     env_file:
       - app.env
 
@@ -38,7 +41,7 @@ services:
       - redis:/data
 
   db:
-    image: postgres
+    image: postgres:11
     restart: unless-stopped
     volumes:
       - db:/var/lib/postgresql/data

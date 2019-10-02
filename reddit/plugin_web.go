@@ -3,6 +3,12 @@ package reddit
 import (
 	"context"
 	"fmt"
+	"html/template"
+	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reddit/models"
@@ -11,12 +17,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"os"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 type CtxKey int
@@ -44,10 +44,6 @@ type UpdateForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	if os.Getenv("YAGPDB_REDDIT_DISABLE_REDIS_PQ_MIGRATION") == "" {
-		go migrateLegacyRedisFormatToPostgres()
-	}
-
 	tmplPathSettings := "templates/plugins/reddit.html"
 	if common.Testing {
 		tmplPathSettings = "../../reddit/assets/reddit.html"

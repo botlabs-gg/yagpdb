@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -105,11 +105,11 @@ var AutomodListWhere = struct {
 	Kind    whereHelperint
 	Content whereHelpertypes_StringArray
 }{
-	ID:      whereHelperint64{field: `id`},
-	GuildID: whereHelperint64{field: `guild_id`},
-	Name:    whereHelperstring{field: `name`},
-	Kind:    whereHelperint{field: `kind`},
-	Content: whereHelpertypes_StringArray{field: `content`},
+	ID:      whereHelperint64{field: "\"automod_lists\".\"id\""},
+	GuildID: whereHelperint64{field: "\"automod_lists\".\"guild_id\""},
+	Name:    whereHelperstring{field: "\"automod_lists\".\"name\""},
+	Kind:    whereHelperint{field: "\"automod_lists\".\"kind\""},
+	Content: whereHelpertypes_StringArray{field: "\"automod_lists\".\"content\""},
 }
 
 // AutomodListRels is where relationship names are stored.
@@ -129,7 +129,7 @@ func (*automodListR) NewStruct() *automodListR {
 type automodListL struct{}
 
 var (
-	automodListColumns               = []string{"id", "guild_id", "name", "kind", "content"}
+	automodListAllColumns            = []string{"id", "guild_id", "name", "kind", "content"}
 	automodListColumnsWithoutDefault = []string{"guild_id", "name", "kind", "content"}
 	automodListColumnsWithDefault    = []string{"id"}
 	automodListPrimaryKeyColumns     = []string{"id"}
@@ -182,7 +182,7 @@ func (q automodListQuery) One(ctx context.Context, exec boil.ContextExecutor) (*
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for automod_lists")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for automod_lists")
 	}
 
 	return o, nil
@@ -199,7 +199,7 @@ func (q automodListQuery) All(ctx context.Context, exec boil.ContextExecutor) (A
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to AutomodList slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to AutomodList slice")
 	}
 
 	return o, nil
@@ -219,7 +219,7 @@ func (q automodListQuery) Count(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count automod_lists rows")
+		return 0, errors.WrapIf(err, "models: failed to count automod_lists rows")
 	}
 
 	return count, nil
@@ -240,7 +240,7 @@ func (q automodListQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if automod_lists exists")
+		return false, errors.WrapIf(err, "models: failed to check if automod_lists exists")
 	}
 
 	return count > 0, nil
@@ -277,7 +277,7 @@ func FindAutomodList(ctx context.Context, exec boil.ContextExecutor, iD int64, s
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from automod_lists")
+		return nil, errors.WrapIf(err, "models: unable to select from automod_lists")
 	}
 
 	return automodListObj, nil
@@ -306,7 +306,7 @@ func (o *AutomodList) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListColumnsWithDefault,
 			automodListColumnsWithoutDefault,
 			nzDefaults,
@@ -350,7 +350,7 @@ func (o *AutomodList) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into automod_lists")
+		return errors.WrapIf(err, "models: unable to insert into automod_lists")
 	}
 
 	if !cached {
@@ -380,7 +380,7 @@ func (o *AutomodList) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListPrimaryKeyColumns,
 		)
 
@@ -411,12 +411,12 @@ func (o *AutomodList) Update(ctx context.Context, exec boil.ContextExecutor, col
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update automod_lists row")
+		return 0, errors.WrapIf(err, "models: unable to update automod_lists row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for automod_lists")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for automod_lists")
 	}
 
 	if !cached {
@@ -439,12 +439,12 @@ func (q automodListQuery) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for automod_lists")
+		return 0, errors.WrapIf(err, "models: unable to update all for automod_lists")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for automod_lists")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for automod_lists")
 	}
 
 	return rowsAff, nil
@@ -493,12 +493,12 @@ func (o AutomodListSlice) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in automodList slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in automodList slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all automodList")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all automodList")
 	}
 	return rowsAff, nil
 }
@@ -553,13 +553,13 @@ func (o *AutomodList) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListColumnsWithDefault,
 			automodListColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			automodListColumns,
+			automodListAllColumns,
 			automodListPrimaryKeyColumns,
 		)
 
@@ -607,7 +607,7 @@ func (o *AutomodList) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert automod_lists")
+		return errors.WrapIf(err, "models: unable to upsert automod_lists")
 	}
 
 	if !cached {
@@ -642,12 +642,12 @@ func (o *AutomodList) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from automod_lists")
+		return 0, errors.WrapIf(err, "models: unable to delete from automod_lists")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for automod_lists")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for automod_lists")
 	}
 
 	return rowsAff, nil
@@ -663,12 +663,12 @@ func (q automodListQuery) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from automod_lists")
+		return 0, errors.WrapIf(err, "models: unable to delete all from automod_lists")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for automod_lists")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_lists")
 	}
 
 	return rowsAff, nil
@@ -681,10 +681,6 @@ func (o AutomodListSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o AutomodListSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no AutomodList slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -705,12 +701,12 @@ func (o AutomodListSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from automodList slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from automodList slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for automod_lists")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_lists")
 	}
 
 	return rowsAff, nil
@@ -768,7 +764,7 @@ func (o *AutomodListSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in AutomodListSlice")
+		return errors.WrapIf(err, "models: unable to reload all in AutomodListSlice")
 	}
 
 	*o = slice
@@ -795,7 +791,7 @@ func AutomodListExists(ctx context.Context, exec boil.ContextExecutor, iD int64)
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if automod_lists exists")
+		return false, errors.WrapIf(err, "models: unable to check if automod_lists exists")
 	}
 
 	return exists, nil

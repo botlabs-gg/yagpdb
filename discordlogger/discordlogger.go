@@ -1,27 +1,25 @@
 package discordlogger
 
 import (
+	"emperror.dev/errors"
 	"fmt"
+
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
-	"os"
-	"strconv"
+	"github.com/jonas747/yagpdb/common/config"
 )
 
 var (
 	// Send bot leaves joins to this disocrd channel
-	BotLeavesJoins int64
+	confBotLeavesJoins = config.RegisterOption("yagpdb.botleavesjoins", "Channel to log added/left servers to", 0)
+
+	logger = common.GetPluginLogger(&Plugin{})
 )
 
-func init() {
-	BotLeavesJoins, _ = strconv.ParseInt(os.Getenv("YAGPDB_BOTLEAVESJOINS"), 10, 64)
-}
-
 func Register() {
-	if BotLeavesJoins != 0 {
-		logrus.Info("Listening for bot leaves and join")
+	if confBotLeavesJoins.GetInt() != 0 {
+		logger.Info("Listening for bot leaves and join")
 		common.RegisterPlugin(&Plugin{})
 	}
 }
@@ -39,13 +37,13 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
+	eventsystem.AddHandlerAsyncLast(p, EventHandler, eventsystem.EventNewGuild, eventsystem.EventGuildDelete)
 }
 
-func EventHandler(evt *eventsystem.EventData) {
+func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 	count, err := common.GetJoinedServerCount()
 	if err != nil {
-		logrus.WithError(err).Error("failed checking server count")
+		return false, errors.WithStackIf(err)
 	}
 
 	msg := ""
@@ -61,5 +59,6 @@ func EventHandler(evt *eventsystem.EventData) {
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
-	common.BotSession.ChannelMessageSend(BotLeavesJoins, common.EscapeSpecialMentions(msg))
+	_, err = common.BotSession.ChannelMessageSend(int64(confBotLeavesJoins.GetInt()), common.EscapeSpecialMentions(msg))
+	return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 }

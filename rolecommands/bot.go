@@ -6,7 +6,6 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -117,6 +116,20 @@ func (p *Plugin) AddCommands() {
 		RunFunc: cmdFuncRoleMenuEditOption,
 	}
 
+	cmdFinishSetup := &commands.YAGCommand{
+		Name:                "Complete",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"finish"},
+		Description:         "Marks the menu as done.",
+		LongDescription:     "\n\n" + msgIDDocs,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequiredArgs:        1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+		},
+		RunFunc: cmdFuncRoleMenuComplete,
+	}
+
 	menuContainer := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
 
 	const notFoundMessage = "Unknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu update ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
@@ -127,6 +140,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdUpdate, cmdUpdate.GetTrigger())
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
+	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
 }
 
 type ScheduledMemberRoleRemoveData struct {
@@ -137,8 +151,8 @@ type ScheduledMemberRoleRemoveData struct {
 }
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
-	eventsystem.AddHandler(handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
 }
@@ -148,11 +162,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return CmdFuncListCommands(parsed)
 	}
 
-	member, err := bot.GetMember(parsed.GS.ID, parsed.Msg.Author.ID)
-	if err != nil {
-		return nil, err
-	}
-
+	member := commands.ContextMS(parsed.Context())
 	given, err := FindToggleRole(parsed.Context(), member, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {

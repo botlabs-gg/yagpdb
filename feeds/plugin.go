@@ -1,10 +1,10 @@
 package feeds
 
 import (
-	"github.com/jonas747/yagpdb/common"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
+
+	"github.com/jonas747/yagpdb/common"
 )
 
 type Plugin interface {
@@ -16,6 +16,7 @@ type Plugin interface {
 
 var (
 	runningPlugins = make([]Plugin, 0)
+	logger         = common.GetFixedPrefixLogger("feeds")
 )
 
 // Run runs the specified feeds
@@ -37,12 +38,12 @@ func Run(which []string) {
 			}
 
 			if !found {
-				logrus.Info("Ignoring feed", plugin.PluginInfo().Name)
+				logger.Info("Ignoring feed", plugin.PluginInfo().Name)
 				continue
 			}
 		}
 
-		logrus.Info("Starting feed ", plugin.PluginInfo().Name)
+		logger.Info("Starting feed ", plugin.PluginInfo().Name)
 		go fp.StartFeed()
 		runningPlugins = append(runningPlugins, fp)
 	}
@@ -50,7 +51,7 @@ func Run(which []string) {
 
 func Stop(wg *sync.WaitGroup) {
 	for _, plugin := range runningPlugins {
-		logrus.Info("Stopping feed ", plugin.PluginInfo().Name)
+		logger.Info("Stopping feed ", plugin.PluginInfo().Name)
 		wg.Add(1)
 		go plugin.StopFeed(wg)
 	}

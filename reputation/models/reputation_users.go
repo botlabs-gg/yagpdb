@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -52,10 +52,10 @@ var ReputationUserWhere = struct {
 	CreatedAt whereHelpertime_Time
 	Points    whereHelperint64
 }{
-	UserID:    whereHelperint64{field: `user_id`},
-	GuildID:   whereHelperint64{field: `guild_id`},
-	CreatedAt: whereHelpertime_Time{field: `created_at`},
-	Points:    whereHelperint64{field: `points`},
+	UserID:    whereHelperint64{field: "\"reputation_users\".\"user_id\""},
+	GuildID:   whereHelperint64{field: "\"reputation_users\".\"guild_id\""},
+	CreatedAt: whereHelpertime_Time{field: "\"reputation_users\".\"created_at\""},
+	Points:    whereHelperint64{field: "\"reputation_users\".\"points\""},
 }
 
 // ReputationUserRels is where relationship names are stored.
@@ -75,7 +75,7 @@ func (*reputationUserR) NewStruct() *reputationUserR {
 type reputationUserL struct{}
 
 var (
-	reputationUserColumns               = []string{"user_id", "guild_id", "created_at", "points"}
+	reputationUserAllColumns            = []string{"user_id", "guild_id", "created_at", "points"}
 	reputationUserColumnsWithoutDefault = []string{"user_id", "guild_id", "created_at", "points"}
 	reputationUserColumnsWithDefault    = []string{}
 	reputationUserPrimaryKeyColumns     = []string{"guild_id", "user_id"}
@@ -128,7 +128,7 @@ func (q reputationUserQuery) One(ctx context.Context, exec boil.ContextExecutor)
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for reputation_users")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for reputation_users")
 	}
 
 	return o, nil
@@ -145,7 +145,7 @@ func (q reputationUserQuery) All(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to ReputationUser slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to ReputationUser slice")
 	}
 
 	return o, nil
@@ -165,7 +165,7 @@ func (q reputationUserQuery) Count(ctx context.Context, exec boil.ContextExecuto
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count reputation_users rows")
+		return 0, errors.WrapIf(err, "models: failed to count reputation_users rows")
 	}
 
 	return count, nil
@@ -186,7 +186,7 @@ func (q reputationUserQuery) Exists(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if reputation_users exists")
+		return false, errors.WrapIf(err, "models: failed to check if reputation_users exists")
 	}
 
 	return count > 0, nil
@@ -223,7 +223,7 @@ func FindReputationUser(ctx context.Context, exec boil.ContextExecutor, guildID 
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from reputation_users")
+		return nil, errors.WrapIf(err, "models: unable to select from reputation_users")
 	}
 
 	return reputationUserObj, nil
@@ -259,7 +259,7 @@ func (o *ReputationUser) Insert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserColumnsWithDefault,
 			reputationUserColumnsWithoutDefault,
 			nzDefaults,
@@ -303,7 +303,7 @@ func (o *ReputationUser) Insert(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into reputation_users")
+		return errors.WrapIf(err, "models: unable to insert into reputation_users")
 	}
 
 	if !cached {
@@ -333,7 +333,7 @@ func (o *ReputationUser) Update(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserPrimaryKeyColumns,
 		)
 
@@ -364,12 +364,12 @@ func (o *ReputationUser) Update(ctx context.Context, exec boil.ContextExecutor, 
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update reputation_users row")
+		return 0, errors.WrapIf(err, "models: unable to update reputation_users row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for reputation_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for reputation_users")
 	}
 
 	if !cached {
@@ -392,12 +392,12 @@ func (q reputationUserQuery) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for reputation_users")
+		return 0, errors.WrapIf(err, "models: unable to update all for reputation_users")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for reputation_users")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for reputation_users")
 	}
 
 	return rowsAff, nil
@@ -446,12 +446,12 @@ func (o ReputationUserSlice) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in reputationUser slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in reputationUser slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all reputationUser")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all reputationUser")
 	}
 	return rowsAff, nil
 }
@@ -513,13 +513,13 @@ func (o *ReputationUser) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserColumnsWithDefault,
 			reputationUserColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			reputationUserColumns,
+			reputationUserAllColumns,
 			reputationUserPrimaryKeyColumns,
 		)
 
@@ -567,7 +567,7 @@ func (o *ReputationUser) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert reputation_users")
+		return errors.WrapIf(err, "models: unable to upsert reputation_users")
 	}
 
 	if !cached {
@@ -602,12 +602,12 @@ func (o *ReputationUser) Delete(ctx context.Context, exec boil.ContextExecutor) 
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from reputation_users")
+		return 0, errors.WrapIf(err, "models: unable to delete from reputation_users")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for reputation_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for reputation_users")
 	}
 
 	return rowsAff, nil
@@ -623,12 +623,12 @@ func (q reputationUserQuery) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from reputation_users")
+		return 0, errors.WrapIf(err, "models: unable to delete all from reputation_users")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reputation_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for reputation_users")
 	}
 
 	return rowsAff, nil
@@ -641,10 +641,6 @@ func (o ReputationUserSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ReputationUserSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ReputationUser slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -665,12 +661,12 @@ func (o ReputationUserSlice) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from reputationUser slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from reputationUser slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reputation_users")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for reputation_users")
 	}
 
 	return rowsAff, nil
@@ -728,7 +724,7 @@ func (o *ReputationUserSlice) ReloadAll(ctx context.Context, exec boil.ContextEx
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in ReputationUserSlice")
+		return errors.WrapIf(err, "models: unable to reload all in ReputationUserSlice")
 	}
 
 	*o = slice
@@ -755,7 +751,7 @@ func ReputationUserExists(ctx context.Context, exec boil.ContextExecutor, guildI
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if reputation_users exists")
+		return false, errors.WrapIf(err, "models: unable to check if reputation_users exists")
 	}
 
 	return exists, nil

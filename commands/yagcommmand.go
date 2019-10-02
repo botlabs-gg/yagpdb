@@ -3,20 +3,21 @@ package commands
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/commands/models"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type ContextKey int
@@ -105,6 +106,8 @@ type YAGCommand struct {
 
 	RequireDiscordPerms []int64 // Require users to have one of these permission sets to run the command
 
+	Middlewares []dcmd.MiddleWareFunc
+
 	// Run is ran the the command has sucessfully been parsed
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
@@ -134,7 +137,9 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send typing to indicate the bot's working
-	common.BotSession.ChannelTyping(data.Msg.ChannelID)
+	if confSetTyping.GetBool() {
+		common.BotSession.ChannelTyping(data.Msg.ChannelID)
+	}
 
 	logger := yc.Logger(data)
 
@@ -329,7 +334,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 		}
 
 		if !settings.Enabled {
-			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", yc.Name, common.Conf.Host)
+			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", yc.Name, common.ConfHost.GetString())
 			return
 		}
 
@@ -389,7 +394,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 	cdLeft, err := yc.CooldownLeft(data.Msg.Author.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
-		log.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
+		logger.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
@@ -415,7 +420,7 @@ func (yc *YAGCommand) humanizedRequiredPerms() string {
 }
 
 func (cs *YAGCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
-	log.Infof("Handled Command [%4dms] %s: %s", int(dur.Seconds()*1000), sender, raw)
+	logger.Infof("Handled Command [%4dms] %s: %s", int(dur.Seconds()*1000), sender, raw)
 }
 
 func (cs *YAGCommand) deleteResponse(msgs []*discordgo.Message) {
@@ -452,7 +457,7 @@ func (cs *YAGCommand) customEnabled(guildID int64) (bool, error) {
 
 	// Check redis for settings
 	var enabled bool
-	err := common.RedisPool.Do(radix.Cmd(&enabled, "GET", cs.Key+discordgo.StrID(guildID)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&enabled, "GET", cs.Key+discordgo.StrID(guildID)))
 	if err != nil {
 		return false, err
 	}
@@ -597,7 +602,7 @@ func (cs *YAGCommand) CooldownLeft(userID int64) (int, error) {
 	}
 
 	var ttl int
-	err := common.RedisPool.Do(radix.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.Name)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.Name)))
 	if ttl < 1 {
 		return 0, nil
 	}
@@ -612,12 +617,12 @@ func (cs *YAGCommand) SetCooldown(userID int64) error {
 	}
 	now := time.Now().Unix()
 
-	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown))
+	err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown))
 	return err
 }
 
-func (yc *YAGCommand) Logger(data *dcmd.Data) *log.Entry {
-	l := log.WithField("cmd", yc.Name)
+func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
+	l := logger.WithField("cmd", yc.Name)
 	if data != nil {
 		if data.Msg != nil {
 			l = l.WithField("user_n", data.Msg.Author.Username)
@@ -635,6 +640,9 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *log.Entry {
 func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
 	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetDisableInDM(!yc.RunInDM)
 	trigger = trigger.SetHideFromHelp(yc.HideFromHelp)
+	if len(yc.Middlewares) > 0 {
+		trigger = trigger.SetMiddlewares(yc.Middlewares...)
+	}
 	return trigger
 }
 
@@ -642,7 +650,7 @@ func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
 func CensorError(err error) string {
 	toCensor := []string{
 		common.BotSession.Token,
-		common.Conf.ClientSecret,
+		common.ConfClientSecret.GetString(),
 	}
 
 	out := err.Error()

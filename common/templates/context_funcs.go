@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/jonas747/dstate"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -516,7 +518,7 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.BotSession.GuildMemberRoleAdd(c.GS.ID, c.MS.ID, rid)
+	err := common.AddRoleDS(c.MS, rid)
 	if err != nil {
 		return "", err
 	}
@@ -546,7 +548,7 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 	if delay > 0 {
 		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
-		common.BotSession.GuildMemberRoleRemove(c.GS.ID, c.MS.ID, rid)
+		common.RemoveRoleDS(c.MS, rid)
 	}
 
 	return "", nil
@@ -594,6 +596,23 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	MaybeScheduledDeleteMessage(c.GS.ID, cID, mID, dur)
 
 	return ""
+}
+
+func (c *Context) tmplDelAllMessageReactions(channel, msgID interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return "", nil
+	}
+
+	mID := ToInt64(msgID)
+
+	common.BotSession.MessageReactionsRemoveAll(cID, mID)
+
+	return "", nil
 }
 
 func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message, error) {
@@ -793,4 +812,39 @@ func (c *Context) reReplace(r string, s string, repl string) (string, error) {
 	}
 
 	return compiled.ReplaceAllString(s, repl), nil
+}
+
+func (c *Context) tmplEditChannelName(channel interface{}, newName string) (string, error) {
+	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return "", errors.New("Unknown channel")
+	}
+
+	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+		return "", ErrTooManyCalls
+	}
+
+	_, err := common.BotSession.ChannelEdit(cID, newName)
+	return "", err
+}
+
+func (c *Context) tmplOnlineCount() (int, error) {
+	if c.IncreaseCheckCallCounter("online_users", 1) {
+		return 0, ErrTooManyCalls
+	}
+
+	online := 0
+	c.GS.RLock()
+	for _, v := range c.GS.Members {
+		if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
+			online++
+		}
+	}
+	c.GS.RUnlock()
+
+	return online, nil
 }

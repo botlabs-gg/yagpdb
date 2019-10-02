@@ -3,20 +3,22 @@ package reddit
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/go-reddit"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/reddit/models"
-	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	"golang.org/x/oauth2"
 	"html"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/go-reddit"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/reddit/models"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -25,10 +27,10 @@ const (
 )
 
 var (
-	ClientID     = os.Getenv("YAGPDB_REDDIT_CLIENTID")
-	ClientSecret = os.Getenv("YAGPDB_REDDIT_CLIENTSECRET")
-	RedirectURI  = os.Getenv("YAGPDB_REDDIT_REDIRECT")
-	RefreshToken = os.Getenv("YAGPDB_REDDIT_REFRESHTOKEN")
+	confClientID     = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
+	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
+	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
+	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
 
 	feedLock sync.Mutex
 	fastFeed *PostFetcher
@@ -68,12 +70,13 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 }
 
 func UserAgent() string {
-	return fmt.Sprintf("YAGPDB:%s:%s (by /u/jonas747)", ClientID, common.VERSIONNUMBER)
+	return fmt.Sprintf("YAGPDB:%s:%s (by /u/jonas747)", confClientID.GetString(), common.VERSIONNUMBER)
 }
 
 func setupClient() *reddit.Client {
-	authenticator := reddit.NewAuthenticator(UserAgent(), ClientID, ClientSecret, RedirectURI, "a", reddit.ScopeEdit+" "+reddit.ScopeRead)
-	redditClient := authenticator.GetAuthClient(&oauth2.Token{RefreshToken: RefreshToken}, UserAgent())
+	authenticator := reddit.NewAuthenticator(UserAgent(), confClientID.GetString(), confClientSecret.GetString(), confRedirectURI.GetString(),
+		"a", reddit.ScopeEdit+" "+reddit.ScopeRead)
+	redditClient := authenticator.GetAuthClient(&oauth2.Token{RefreshToken: confRefreshToken.GetString()}, UserAgent())
 	return redditClient
 }
 
@@ -117,7 +120,7 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 		}
 
 		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-		// logrus.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		// logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
 		p.handlePost(v, 0)
 	}
 }
@@ -125,7 +128,7 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
 
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
-	// logrus.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
+	// logger.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
 	qms := []qm.QueryMod{
 		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
@@ -139,7 +142,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 
 	config, err := models.RedditFeeds(qms...).AllG(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("failed retrieving reddit feeds for subreddit")
+		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
 	}
 
@@ -151,7 +154,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		return nil
 	}
 
-	logrus.WithFields(logrus.Fields{
+	logger.WithFields(logrus.Fields{
 		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
 	}).Debug("Found matched reddit post")
@@ -290,10 +293,10 @@ func (r RedditIdSlice) Less(i, j int) bool {
 	a, err1 := strconv.ParseInt(r[i], 36, 64)
 	b, err2 := strconv.ParseInt(r[j], 36, 64)
 	if err1 != nil {
-		logrus.WithError(err1).Error("Failed parsing id")
+		logger.WithError(err1).Error("Failed parsing id")
 	}
 	if err2 != nil {
-		logrus.WithError(err2).Error("Failed parsing id")
+		logger.WithError(err2).Error("Failed parsing id")
 	}
 
 	return a > b

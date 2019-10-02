@@ -2,15 +2,17 @@ package templates
 
 import (
 	"encoding/json"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/pkg/errors"
+	"math"
 	"math/rand"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common"
 )
 
 // dictionary creates a map[string]interface{} from the given parameters by
@@ -255,6 +257,14 @@ func tmplDiv(args ...interface{}) interface{} {
 	}
 }
 
+func tmplMod(args ...interface{}) interface{} {
+	if len(args) != 2 {
+		return 0
+	}
+
+	return math.Mod(ToFloat64(args[0]), ToFloat64(args[1]))
+}
+
 func tmplFDiv(args ...interface{}) interface{} {
 	if len(args) < 1 {
 		return 0
@@ -288,6 +298,34 @@ func randInt(args ...interface{}) int {
 
 	r := rand.Int63n(max - min)
 	return int(r + min)
+}
+
+func tmplRound(args ...interface{}) float64 {
+	if len(args) < 1 {
+		return 0
+	}
+	return math.Round(ToFloat64(args[0]))
+}
+
+func tmplRoundCeil(args ...interface{}) float64 {
+	if len(args) < 1 {
+		return 0
+	}
+	return math.Ceil(ToFloat64(args[0]))
+}
+
+func tmplRoundFloor(args ...interface{}) float64 {
+	if len(args) < 1 {
+		return 0
+	}
+	return math.Floor(ToFloat64(args[0]))
+}
+
+func tmplRoundEven(args ...interface{}) float64 {
+	if len(args) < 1 {
+		return 0
+	}
+	return math.RoundToEven(ToFloat64(args[0]))
 }
 
 func joinStrings(sep string, args ...interface{}) string {
@@ -325,7 +363,7 @@ func sequence(start, stop int) ([]int, error) {
 	}
 
 	if stop-start > 10000 {
-		return nil, errors.New("Sequence max length is 1000")
+		return nil, errors.New("Sequence max length is 10000")
 	}
 
 	out := make([]int, stop-start)
@@ -382,6 +420,8 @@ func tmplToInt(from interface{}) int {
 	case float64:
 		return int(t)
 	case uint:
+		return int(t)
+	case uint8:
 		return int(t)
 	case uint32:
 		return int(t)
@@ -614,6 +654,12 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 
 func tmplCurrentTime() time.Time {
 	return time.Now()
+}
+
+func tmplNewDate(year, monthInt, day, hour, min, sec int) time.Time {
+	var month time.Month
+	month = time.Month(monthInt)
+	return time.Date(year, month, day, hour, min, sec, 0, time.UTC)
 }
 
 func tmplEscapeHere(in string) string {

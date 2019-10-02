@@ -1,10 +1,11 @@
 package bot
 
 import (
+	"sort"
+	"time"
+
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
-	log "github.com/sirupsen/logrus"
-	"sort"
 )
 
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api
@@ -25,6 +26,10 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 
 	n := len(msgBuf) - 1
 	for i := len(cs.Messages) - 1; i >= 0; i-- {
+		if cs.Messages[i] == nil {
+			continue
+		}
+
 		if !deleted {
 			if cs.Messages[i].Deleted {
 				continue
@@ -42,12 +47,12 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 	cs.Owner.RUnlock()
 
 	// Check if the state was full
-	if n >= limit {
+	if n < 0 {
 		return msgBuf, nil
 	}
 
 	// Not enough messages in state, retrieve them from the api
-	// Initialize the before id
+	// Initialize the before id to the oldest message we have
 	var before int64
 	if n+1 < len(msgBuf) {
 		if msgBuf[n+1] != nil {
@@ -66,7 +71,7 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 			return nil, err
 		}
 
-		log.WithField("num_msgs", len(msgs)).Info("API history req finished")
+		logger.WithField("num_msgs", len(msgs)).Info("API history req finished")
 
 		if len(msgs) < 1 { // Nothing more
 			break
@@ -92,6 +97,11 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 		msgBuf = msgBuf[n+1:]
 	}
 
+	maxChannelMessages, maxMessageAge := State.MaxChannelMessages, State.MaxMessageAge
+	if State.CustomLimitProvider != nil {
+		maxChannelMessages, maxMessageAge = State.CustomLimitProvider.MessageLimits(cs)
+	}
+
 	// merge the current state with this new one and sort
 	cs.Owner.Lock()
 	defer cs.Owner.Unlock()
@@ -107,12 +117,7 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 
 	sort.Sort(DiscordMessages(cs.Messages))
 
-	maxChannelMessages, maxMessageAge := State.MaxChannelMessages, State.MaxMessageAge
-	if State.CustomLimitProvider != nil {
-		maxChannelMessages, maxMessageAge = State.CustomLimitProvider.MessageLimits(cs)
-	}
-
-	cs.UpdateMessages(false, maxChannelMessages, maxMessageAge)
+	cs.UpdateMessages(false, maxChannelMessages, time.Now().Add(-maxMessageAge))
 
 	// Return at most limit results
 	if limit < len(msgBuf) {

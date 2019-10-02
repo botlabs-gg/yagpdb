@@ -2,10 +2,11 @@ package moderation
 
 import (
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
 	"regexp"
 	"strings"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common"
 )
 
 type ModlogAction struct {

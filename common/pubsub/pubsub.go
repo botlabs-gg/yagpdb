@@ -7,15 +7,16 @@ package pubsub
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/sirupsen/logrus"
 	"reflect"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix/v3"
 )
 
 type Event struct {
@@ -37,6 +38,8 @@ var (
 
 	// if set, return true to handle the event, false to ignore it
 	FilterFunc func(guildID int64) (handle bool)
+
+	logger = common.GetFixedPrefixLogger("pubsub")
 )
 
 // AddEventHandler adds a event handler
@@ -55,7 +58,7 @@ func AddHandler(evt string, cb func(*Event), t interface{}) {
 	}
 
 	eventHandlers = append(eventHandlers, handler)
-	logrus.WithField("evt", evt).Debug("Added event handler")
+	logger.WithField("evt", evt).Debug("Added event handler")
 }
 
 // PublishEvent publishes the specified event
@@ -71,21 +74,21 @@ func Publish(evt string, target int64, data interface{}) error {
 	}
 
 	value := fmt.Sprintf("%d,%s,%s", target, evt, dataStr)
-	return common.RedisPool.Do(radix.Cmd(nil, "PUBLISH", "events", value))
+	return common.RedisPool.Do(retryableredis.Cmd(nil, "PUBLISH", "events", value))
 }
 
 func PollEvents() {
 	for {
 		err := runPollEvents()
-		logrus.WithError(err).Error("[pubsub] subscription for events ended, starting a new one...")
+		logger.WithError(err).Error("subscription for events ended, starting a new one...")
 		time.Sleep(time.Second)
 	}
 }
 
 func runPollEvents() error {
-	logrus.Info("[pubsub] Listening for pubsub events")
+	logger.Info("Listening for pubsub events")
 
-	client, err := radix.Dial("tcp", common.Conf.Redis)
+	client, err := radix.Dial("tcp", common.ConfRedis.GetString())
 	if err != nil {
 		return err
 	}
@@ -105,12 +108,12 @@ func runPollEvents() error {
 		}
 
 		handlersMU.RLock()
-		logrus.WithField("evt", string(msg.Message)).Debug("Handling PubSub event")
+		logger.WithField("evt", string(msg.Message)).Debug("Handling PubSub event")
 		handleEvent(string(msg.Message))
 		handlersMU.RUnlock()
 	}
 
-	logrus.Info("[pubsub] Stopped listening for pubsub events")
+	logger.Info("Stopped listening for pubsub events")
 	return nil
 }
 
@@ -118,7 +121,7 @@ func handleEvent(evt string) {
 	split := strings.SplitN(evt, ",", 3)
 
 	if len(split) < 3 {
-		logrus.WithField("evt", evt).Error("Invalid event")
+		logger.WithField("evt", evt).Error("Invalid event")
 		return
 	}
 
@@ -136,7 +139,7 @@ func handleEvent(evt string) {
 	t, ok := eventTypes[name]
 	if !ok && data != "" {
 		// No handler for this event
-		logrus.WithField("evt", name).Debug("No handler for pubsub event")
+		logger.WithField("evt", name).Debug("No handler for pubsub event")
 		return
 	}
 
@@ -145,11 +148,11 @@ func handleEvent(evt string) {
 		decoded = reflect.New(t).Interface()
 		err := json.Unmarshal([]byte(data), decoded)
 		if err != nil {
-			logrus.WithError(err).Error("Failed unmarshaling event")
+			logger.WithError(err).Error("Failed unmarshaling event")
 			return
 		}
 	} else if t != nil {
-		logrus.Error("No data provided for event that requires data")
+		logger.Error("No data provided for event that requires data")
 		return
 	}
 
@@ -164,7 +167,7 @@ func handleEvent(evt string) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
-			logrus.Error("Recovered from panic in pubsub event handler", r, "\n", stack)
+			logger.Error("Recovered from panic in pubsub event handler", r, "\n", stack)
 		}
 	}()
 

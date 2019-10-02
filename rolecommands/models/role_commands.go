@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -163,16 +163,16 @@ var RoleCommandWhere = struct {
 	IgnoreRoles  whereHelpertypes_Int64Array
 	Position     whereHelperint64
 }{
-	ID:           whereHelperint64{field: `id`},
-	CreatedAt:    whereHelpertime_Time{field: `created_at`},
-	UpdatedAt:    whereHelpertime_Time{field: `updated_at`},
-	GuildID:      whereHelperint64{field: `guild_id`},
-	Name:         whereHelperstring{field: `name`},
-	RoleGroupID:  whereHelpernull_Int64{field: `role_group_id`},
-	Role:         whereHelperint64{field: `role`},
-	RequireRoles: whereHelpertypes_Int64Array{field: `require_roles`},
-	IgnoreRoles:  whereHelpertypes_Int64Array{field: `ignore_roles`},
-	Position:     whereHelperint64{field: `position`},
+	ID:           whereHelperint64{field: "\"role_commands\".\"id\""},
+	CreatedAt:    whereHelpertime_Time{field: "\"role_commands\".\"created_at\""},
+	UpdatedAt:    whereHelpertime_Time{field: "\"role_commands\".\"updated_at\""},
+	GuildID:      whereHelperint64{field: "\"role_commands\".\"guild_id\""},
+	Name:         whereHelperstring{field: "\"role_commands\".\"name\""},
+	RoleGroupID:  whereHelpernull_Int64{field: "\"role_commands\".\"role_group_id\""},
+	Role:         whereHelperint64{field: "\"role_commands\".\"role\""},
+	RequireRoles: whereHelpertypes_Int64Array{field: "\"role_commands\".\"require_roles\""},
+	IgnoreRoles:  whereHelpertypes_Int64Array{field: "\"role_commands\".\"ignore_roles\""},
+	Position:     whereHelperint64{field: "\"role_commands\".\"position\""},
 }
 
 // RoleCommandRels is where relationship names are stored.
@@ -202,7 +202,7 @@ func (*roleCommandR) NewStruct() *roleCommandR {
 type roleCommandL struct{}
 
 var (
-	roleCommandColumns               = []string{"id", "created_at", "updated_at", "guild_id", "name", "role_group_id", "role", "require_roles", "ignore_roles", "position"}
+	roleCommandAllColumns            = []string{"id", "created_at", "updated_at", "guild_id", "name", "role_group_id", "role", "require_roles", "ignore_roles", "position"}
 	roleCommandColumnsWithoutDefault = []string{"created_at", "updated_at", "guild_id", "name", "role_group_id", "role", "require_roles", "ignore_roles", "position"}
 	roleCommandColumnsWithDefault    = []string{"id"}
 	roleCommandPrimaryKeyColumns     = []string{"id"}
@@ -255,7 +255,7 @@ func (q roleCommandQuery) One(ctx context.Context, exec boil.ContextExecutor) (*
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for role_commands")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for role_commands")
 	}
 
 	return o, nil
@@ -272,7 +272,7 @@ func (q roleCommandQuery) All(ctx context.Context, exec boil.ContextExecutor) (R
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to RoleCommand slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to RoleCommand slice")
 	}
 
 	return o, nil
@@ -292,7 +292,7 @@ func (q roleCommandQuery) Count(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count role_commands rows")
+		return 0, errors.WrapIf(err, "models: failed to count role_commands rows")
 	}
 
 	return count, nil
@@ -313,7 +313,7 @@ func (q roleCommandQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if role_commands exists")
+		return false, errors.WrapIf(err, "models: failed to check if role_commands exists")
 	}
 
 	return count > 0, nil
@@ -427,19 +427,19 @@ func (roleCommandL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, s
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load RoleGroup")
+		return errors.WrapIf(err, "failed to eager load RoleGroup")
 	}
 
 	var resultSlice []*RoleGroup
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice RoleGroup")
+		return errors.WrapIf(err, "failed to bind eager loaded slice RoleGroup")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for role_groups")
+		return errors.WrapIf(err, "failed to close results of eager load for role_groups")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_groups")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for role_groups")
 	}
 
 	if len(resultSlice) == 0 {
@@ -518,19 +518,19 @@ func (roleCommandL) LoadRoleMenuOptions(ctx context.Context, e boil.ContextExecu
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load role_menu_options")
+		return errors.WrapIf(err, "failed to eager load role_menu_options")
 	}
 
 	var resultSlice []*RoleMenuOption
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice role_menu_options")
+		return errors.WrapIf(err, "failed to bind eager loaded slice role_menu_options")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on role_menu_options")
+		return errors.WrapIf(err, "failed to close results in eager load on role_menu_options")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menu_options")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for role_menu_options")
 	}
 
 	if singular {
@@ -606,19 +606,19 @@ func (roleCommandL) LoadNextRoleCommandRoleMenus(ctx context.Context, e boil.Con
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load role_menus")
+		return errors.WrapIf(err, "failed to eager load role_menus")
 	}
 
 	var resultSlice []*RoleMenu
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice role_menus")
+		return errors.WrapIf(err, "failed to bind eager loaded slice role_menus")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on role_menus")
+		return errors.WrapIf(err, "failed to close results in eager load on role_menus")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menus")
+		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for role_menus")
 	}
 
 	if singular {
@@ -663,7 +663,7 @@ func (o *RoleCommand) SetRoleGroup(ctx context.Context, exec boil.ContextExecuto
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+			return errors.WrapIf(err, "failed to insert into foreign table")
 		}
 	}
 
@@ -680,7 +680,7 @@ func (o *RoleCommand) SetRoleGroup(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	queries.Assign(&o.RoleGroupID, related.ID)
@@ -719,7 +719,7 @@ func (o *RoleCommand) RemoveRoleGroup(ctx context.Context, exec boil.ContextExec
 
 	queries.SetScanner(&o.RoleGroupID, nil)
 	if _, err = o.Update(ctx, exec, boil.Whitelist("role_group_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+		return errors.WrapIf(err, "failed to update local table")
 	}
 
 	o.R.RoleGroup = nil
@@ -761,7 +761,7 @@ func (o *RoleCommand) AddRoleMenuOptions(ctx context.Context, exec boil.ContextE
 		if insert {
 			queries.Assign(&rel.RoleCommandID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -777,7 +777,7 @@ func (o *RoleCommand) AddRoleMenuOptions(ctx context.Context, exec boil.ContextE
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			queries.Assign(&rel.RoleCommandID, o.ID)
@@ -831,7 +831,7 @@ func (o *RoleCommand) SetRoleMenuOptions(ctx context.Context, exec boil.ContextE
 
 	_, err := exec.ExecContext(ctx, query, values...)
 	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
+		return errors.WrapIf(err, "failed to remove relationships before set")
 	}
 
 	if o.R != nil {
@@ -912,7 +912,7 @@ func (o *RoleCommand) AddNextRoleCommandRoleMenus(ctx context.Context, exec boil
 		if insert {
 			queries.Assign(&rel.NextRoleCommandID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
+				return errors.WrapIf(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
@@ -928,7 +928,7 @@ func (o *RoleCommand) AddNextRoleCommandRoleMenus(ctx context.Context, exec boil
 			}
 
 			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
+				return errors.WrapIf(err, "failed to update foreign table")
 			}
 
 			queries.Assign(&rel.NextRoleCommandID, o.ID)
@@ -982,7 +982,7 @@ func (o *RoleCommand) SetNextRoleCommandRoleMenus(ctx context.Context, exec boil
 
 	_, err := exec.ExecContext(ctx, query, values...)
 	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
+		return errors.WrapIf(err, "failed to remove relationships before set")
 	}
 
 	if o.R != nil {
@@ -1075,7 +1075,7 @@ func FindRoleCommand(ctx context.Context, exec boil.ContextExecutor, iD int64, s
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from role_commands")
+		return nil, errors.WrapIf(err, "models: unable to select from role_commands")
 	}
 
 	return roleCommandObj, nil
@@ -1114,7 +1114,7 @@ func (o *RoleCommand) Insert(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandColumnsWithDefault,
 			roleCommandColumnsWithoutDefault,
 			nzDefaults,
@@ -1158,7 +1158,7 @@ func (o *RoleCommand) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into role_commands")
+		return errors.WrapIf(err, "models: unable to insert into role_commands")
 	}
 
 	if !cached {
@@ -1194,7 +1194,7 @@ func (o *RoleCommand) Update(ctx context.Context, exec boil.ContextExecutor, col
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandPrimaryKeyColumns,
 		)
 
@@ -1225,12 +1225,12 @@ func (o *RoleCommand) Update(ctx context.Context, exec boil.ContextExecutor, col
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update role_commands row")
+		return 0, errors.WrapIf(err, "models: unable to update role_commands row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for role_commands")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for role_commands")
 	}
 
 	if !cached {
@@ -1253,12 +1253,12 @@ func (q roleCommandQuery) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for role_commands")
+		return 0, errors.WrapIf(err, "models: unable to update all for role_commands")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for role_commands")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for role_commands")
 	}
 
 	return rowsAff, nil
@@ -1307,12 +1307,12 @@ func (o RoleCommandSlice) UpdateAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in roleCommand slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in roleCommand slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all roleCommand")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all roleCommand")
 	}
 	return rowsAff, nil
 }
@@ -1375,13 +1375,13 @@ func (o *RoleCommand) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandColumnsWithDefault,
 			roleCommandColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			roleCommandColumns,
+			roleCommandAllColumns,
 			roleCommandPrimaryKeyColumns,
 		)
 
@@ -1429,7 +1429,7 @@ func (o *RoleCommand) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert role_commands")
+		return errors.WrapIf(err, "models: unable to upsert role_commands")
 	}
 
 	if !cached {
@@ -1464,12 +1464,12 @@ func (o *RoleCommand) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from role_commands")
+		return 0, errors.WrapIf(err, "models: unable to delete from role_commands")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for role_commands")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for role_commands")
 	}
 
 	return rowsAff, nil
@@ -1485,12 +1485,12 @@ func (q roleCommandQuery) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from role_commands")
+		return 0, errors.WrapIf(err, "models: unable to delete all from role_commands")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for role_commands")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for role_commands")
 	}
 
 	return rowsAff, nil
@@ -1503,10 +1503,6 @@ func (o RoleCommandSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RoleCommandSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RoleCommand slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -1527,12 +1523,12 @@ func (o RoleCommandSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from roleCommand slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from roleCommand slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for role_commands")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for role_commands")
 	}
 
 	return rowsAff, nil
@@ -1590,7 +1586,7 @@ func (o *RoleCommandSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in RoleCommandSlice")
+		return errors.WrapIf(err, "models: unable to reload all in RoleCommandSlice")
 	}
 
 	*o = slice
@@ -1617,7 +1613,7 @@ func RoleCommandExists(ctx context.Context, exec boil.ContextExecutor, iD int64)
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if role_commands exists")
+		return false, errors.WrapIf(err, "models: unable to check if role_commands exists")
 	}
 
 	return exists, nil

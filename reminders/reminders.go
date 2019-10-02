@@ -55,10 +55,10 @@ func (r *Reminder) Trigger() error {
 	// remove the actual reminder
 	rows := common.GORM.Delete(r).RowsAffected
 	if rows < 1 {
-		logrus.Info("Tried to execute multiple reminders at once")
+		logger.Info("Tried to execute multiple reminders at once")
 	}
 
-	logrus.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
+	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
 
 	mqueue.QueueMessageString("reminder", "", r.GuildID, r.ChannelIDInt(), common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
 	return nil
@@ -103,7 +103,7 @@ func NewReminder(userID int64, guildID int64, channelID int64, message string, w
 func checkUserEvtHandlerLegacy(evt string) error {
 	split := strings.Split(evt, ":")
 	if len(split) < 2 {
-		logrus.Error("Handled invalid check user scheduled event: ", evt)
+		logger.Error("Handled invalid check user scheduled event: ", evt)
 		return nil
 	}
 

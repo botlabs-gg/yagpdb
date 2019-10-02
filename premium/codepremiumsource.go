@@ -8,6 +8,9 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"fmt"
+	"time"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -15,12 +18,9 @@ import (
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"time"
 )
 
 var (
@@ -35,10 +35,6 @@ func init() {
 type CodePremiumSource struct{}
 
 func (ps *CodePremiumSource) Init() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		logrus.WithError(err).Error("Failed initilizing premium code source")
-	}
 }
 
 func (ps *CodePremiumSource) Names() (human string, idname string) {
@@ -102,7 +98,7 @@ func TryRetryGenerateCode(ctx context.Context, message string, duration time.Dur
 	for {
 		code, err := GenerateCode(ctx, message, duration)
 		if err != nil && err == ErrCodeCollision {
-			logrus.WithError(err).Error("Code collision!")
+			logger.WithError(err).Error("Code collision!")
 			continue
 		}
 

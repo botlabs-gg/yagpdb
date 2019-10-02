@@ -6,22 +6,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
-	"sort"
-	"strings"
 )
 
 var (
 	RegexCache = *ccache.New(ccache.Configure())
+	logger     = common.GetPluginLogger(&Plugin{})
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -29,11 +30,7 @@ func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.S
 type Plugin struct{}
 
 func RegisterPlugin() {
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		log.WithError(err).Error("failed initializing custom commands schema, not enabling")
-		return
-	}
+	common.InitSchemas("customcommands", DBSchemas...)
 
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
@@ -55,6 +52,7 @@ const (
 	CommandTriggerContains   CommandTriggerType = 2
 	CommandTriggerRegex      CommandTriggerType = 3
 	CommandTriggerExact      CommandTriggerType = 4
+	CommandTriggerReaction   CommandTriggerType = 6
 
 	CommandTriggerInterval CommandTriggerType = 5
 )
@@ -67,6 +65,7 @@ var (
 		CommandTriggerRegex,
 		CommandTriggerExact,
 		CommandTriggerInterval,
+		CommandTriggerReaction,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -76,7 +75,14 @@ var (
 		CommandTriggerRegex:      "Regex",
 		CommandTriggerExact:      "Exact",
 		CommandTriggerInterval:   "Interval",
+		CommandTriggerReaction:   "Reaction",
 	}
+)
+
+const (
+	ReactionModeBoth       = 0
+	ReactionModeAddOnly    = 1
+	ReactionModeRemoveOnly = 2
 )
 
 func (t CommandTriggerType) String() string {
@@ -98,6 +104,8 @@ type CustomCommand struct {
 	TimeTriggerInterval       int     `schema:"time_trigger_interval"`
 	TimeTriggerExcludingDays  []int64 `schema:"time_trigger_excluding_days"`
 	TimeTriggerExcludingHours []int64 `schema:"time_trigger_excluding_hours"`
+
+	ReactionTriggerMode int `schema:"reaction_trigger_mode"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -158,6 +166,8 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		TimeTriggerExcludingDays:  cc.TimeTriggerExcludingDays,
 		TimeTriggerExcludingHours: cc.TimeTriggerExcludingHours,
 		ContextChannel:            cc.ContextChannel,
+
+		ReactionTriggerMode: int16(cc.ReactionTriggerMode),
 
 		Responses: cc.Responses,
 	}
@@ -270,7 +280,7 @@ func (cc *CustomCommand) Migrate() *CustomCommand {
 func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 	var hashMap map[string]string
 
-	err := common.RedisPool.Do(radix.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -284,7 +294,7 @@ func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 		var decoded *CustomCommand
 		err = json.Unmarshal([]byte(raw), &decoded)
 		if err != nil {
-			log.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
+			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
 			result[i] = &CustomCommand{}
 		} else {
 			result[i] = decoded.Migrate()

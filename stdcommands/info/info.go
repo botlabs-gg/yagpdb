@@ -2,6 +2,7 @@ package info
 
 import (
 	"fmt"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -20,7 +21,7 @@ I'm currently being run and developed by Jonas747#0001 (105487308693757952) but 
 Control panel: <https://%s/manage>
 
 Note: this bot has a lot of rough edges so to speak.
-				`, common.Conf.Host)
+				`, common.ConfHost.GetString())
 
 		return info, nil
 	},

@@ -5,22 +5,28 @@ package common
 import (
 	"database/sql"
 	"fmt"
+	stdlog "log"
+	"math/rand"
+	"net"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/mediocregopher/radix"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/common/basicredispool"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
-	stdlog "log"
-	"os"
-	"strconv"
 )
 
 const (
 	VERSIONMAJOR = 1
-	VERSIONMINOR = 17
-	VERSIONPATCH = 2
+	VERSIONMINOR = 20
+	VERSIONPATCH = 10
 )
 
 var (
@@ -30,13 +36,12 @@ var (
 	GORM *gorm.DB
 	PQ   *sql.DB
 
-	RedisPool *radix.Pool
+	RedisPool *basicredispool.Pool
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
-	Conf       *CoreConfig
 
-	RedisPoolSize = 25
+	RedisPoolSize = 10
 
 	Statsd *statsd.Client
 
@@ -45,11 +50,17 @@ var (
 	CurrentRunCounter int64
 
 	NodeID string
-	_      interface{} = ensure64bit
+
+	// if your compile failed at this line, you're likely not compiling for 64bit, which is unsupported.
+	_ interface{} = ensure64bit
+
+	logger = GetFixedPrefixLogger("common")
 )
 
 // Initalizes all database connections, config loading and so on
 func Init() error {
+	rand.Seed(time.Now().UnixNano())
+
 	stdlog.SetOutput(&STDLogProxy{})
 	stdlog.SetFlags(0)
 
@@ -57,11 +68,10 @@ func Init() error {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	config, err := LoadConfig()
+	err := LoadConfig()
 	if err != nil {
 		return err
 	}
-	Conf = config
 
 	err = setupGlobalDGoSession()
 	if err != nil {
@@ -70,16 +80,22 @@ func Init() error {
 
 	ConnectDatadog()
 
-	err = connectRedis(config.Redis)
+	err = connectRedis(ConfRedis.GetString())
 	if err != nil {
 		return err
 	}
 
-	err = connectDB(config.PQHost, config.PQUsername, config.PQPassword, "yagpdb")
+	db := "yagpdb"
+	if ConfPQDB.GetString() != "" {
+		db = ConfPQDB.GetString()
+	}
+
+	err = connectDB(ConfPQHost.GetString(), ConfPQUsername.GetString(), ConfPQPassword.GetString(), db)
 	if err != nil {
 		panic(err)
 	}
 
+	logger.Info("Retrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
 		panic(err)
@@ -88,46 +104,75 @@ func Init() error {
 		User: BotUser,
 	}
 
-	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
+	err = RedisPool.Do(retryableredis.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
 		panic(err)
 	}
 
-	if !InitSchema(CoreServerConfDBSchema, "core configs") {
-		logrus.Fatal("error initializing schema")
-	}
+	logger.Info("Initializing core schema")
+	InitSchemas("core_configs", CoreServerConfDBSchema)
 
 	return err
 }
 
+func GetBotToken() string {
+	token := ConfBotToken.GetString()
+	if !strings.HasPrefix(token, "Bot ") {
+		token = "Bot " + token
+	}
+	return token
+}
+
 func setupGlobalDGoSession() (err error) {
-	BotSession, err = discordgo.New(Conf.BotToken)
+
+	BotSession, err = discordgo.New(GetBotToken())
 	if err != nil {
 		return err
 	}
 
-	maxCCReqs, _ := strconv.Atoi(os.Getenv("YAGPDB_MAX_CCR"))
+	maxCCReqs := ConfMaxCCR.GetInt()
 	if maxCCReqs < 1 {
 		maxCCReqs = 25
 	}
 
-	logrus.Info("max ccr set to: ", maxCCReqs)
+	logger.Info("max ccr set to: ", maxCCReqs)
 
-	BotSession.MaxRestRetries = 5
+	BotSession.MaxRestRetries = 10
 	BotSession.Ratelimiter.MaxConcurrentRequests = maxCCReqs
+
+	innerTransport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 10 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConnsPerHost:   maxCCReqs,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	if ConfDisableKeepalives.GetBool() {
+		innerTransport.DisableKeepAlives = true
+		logger.Info("Keep alive connections to REST api for discord is disabled, may cause overhead")
+	}
+
+	BotSession.Client.Transport = &LoggingTransport{Inner: innerTransport}
 
 	return nil
 }
 
 func ConnectDatadog() {
-	if Conf.DogStatsdAddress == "" {
-		logrus.Warn("No datadog info provided, not connecting to datadog aggregator")
+	if ConfDogStatsdAddress.GetString() == "" {
+		logger.Warn("No datadog info provided, not connecting to datadog aggregator")
 		return
 	}
 
-	client, err := statsd.New(Conf.DogStatsdAddress)
+	client, err := statsd.New(ConfDogStatsdAddress.GetString())
 	if err != nil {
-		logrus.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
+		logger.WithError(err).Error("Failed connecting to dogstatsd, datadog integration disabled")
 		return
 	}
 
@@ -137,8 +182,6 @@ func ConnectDatadog() {
 
 	Statsd = client
 
-	currentTransport := BotSession.Client.HTTPClient.Transport
-	BotSession.Client.HTTPClient.Transport = &LoggingTransport{Inner: currentTransport}
 }
 
 func InitTest() {
@@ -154,10 +197,26 @@ func InitTest() {
 }
 
 func connectRedis(addr string) (err error) {
-	RedisPool, err = radix.NewPool("tcp", addr, RedisPoolSize, radix.PoolOnEmptyWait())
-	if err != nil {
-		logrus.WithError(err).Fatal("Failed intitializing redis pool")
-	}
+	RedisPool, err = basicredispool.NewPool(RedisPoolSize, &retryableredis.DialConfig{
+		Network: "tcp",
+		Addr:    addr,
+		OnReconnect: func(err error) {
+			if err == nil {
+				return
+			}
+
+			logrus.WithError(err).Warn("[core] redis reconnect triggered")
+			if Statsd != nil {
+				Statsd.Incr("yagpdb.redis.reconnects", nil, 1)
+			}
+		},
+		OnRetry: func(err error) {
+			logrus.WithError(err).Warn("[core] redis retrying failed action")
+			if Statsd != nil {
+				Statsd.Incr("yagpdb.redis.retries", nil, 1)
+			}
+		},
+	})
 
 	return
 }
@@ -172,19 +231,9 @@ func connectDB(host, user, pass, dbName string) error {
 	PQ = db.DB()
 	boil.SetDB(PQ)
 	if err == nil {
-		PQ.SetMaxOpenConns(5)
+		PQ.SetMaxOpenConns(3)
 	}
 	GORM.SetLogger(&GORMLogger{})
 
 	return err
-}
-
-func InitSchema(schema string, name string) bool {
-	_, err := PQ.Exec(schema)
-	if err != nil {
-		logrus.WithError(err).Error("failed initializing postgres db schema for ", name)
-		return false
-	}
-
-	return true
 }

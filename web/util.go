@@ -6,14 +6,15 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	log "github.com/sirupsen/logrus"
-	"goji.io/pattern"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/sirupsen/logrus"
+	"goji.io/pattern"
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
@@ -65,7 +66,7 @@ func GenSessionCookie() *http.Cookie {
 
 func LogIgnoreErr(err error) {
 	if err != nil {
-		log.Error("Error:", err)
+		logger.Error("Error:", err)
 	}
 }
 
@@ -215,7 +216,7 @@ func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 		// there is a active session, but they're not on the related guild (if any)
 
 		cast := user.(*discordgo.User)
-		if cast.ID == common.Conf.Owner {
+		if common.IsOwner(cast.ID) {
 			return true
 		}
 
@@ -252,12 +253,12 @@ type APIError struct {
 }
 
 // CtxLogger Returns an always non nil entry either from the context or standard logger
-func CtxLogger(ctx context.Context) *log.Entry {
+func CtxLogger(ctx context.Context) *logrus.Entry {
 	if inter := ctx.Value(common.ContextKeyLogger); inter != nil {
-		return inter.(*log.Entry)
+		return inter.(*logrus.Entry)
 	}
 
-	return log.NewEntry(log.StandardLogger())
+	return logrus.NewEntry(logger)
 }
 
 func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, statusCode int) {
@@ -333,4 +334,18 @@ func EnabledDisabledSpanStatus(enabled bool) (str string) {
 	}
 
 	return fmt.Sprintf("<span class=\"text-%s\">%s</span>%s", enabledClass, enabledStr, indicator)
+}
+
+func GetRequestIP(r *http.Request) string {
+	headerField := confReverseProxyClientIPHeader.GetString()
+	if headerField == "" {
+		li := strings.LastIndex(r.RemoteAddr, ":")
+		if li < 0 {
+			return r.RemoteAddr
+		}
+
+		return r.RemoteAddr[:li]
+	}
+
+	return r.Header.Get(headerField)
 }

@@ -1,16 +1,16 @@
 package autorole
 
 import (
+	"net/http"
+	"strconv"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"goji.io"
 	"goji.io/pat"
-	"net/http"
-	"strconv"
 )
 
 var _ botrest.BotRestPlugin = (*Plugin)(nil)
@@ -29,7 +29,7 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logrus.WithField("guild", parsedGID).Info("autorole doing a full scan")
+	logger.WithField("guild", parsedGID).Info("autorole doing a full scan")
 	session := bot.ShardManager.SessionForGuild(parsedGID)
 	session.GatewayManager.RequestGuildMembers(parsedGID, "", 0)
 
@@ -38,7 +38,7 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 
 func botRestPostFullScan(guildID int64) error {
 	var resp string
-	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", RedisKeyGuildChunkProecssing(guildID), "1", "EX", "10", "NX"))
+	err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", RedisKeyGuildChunkProecssing(guildID), "1", "EX", "10", "NX"))
 	if err != nil {
 		return errors.WithMessage(err, "r.SET")
 	}

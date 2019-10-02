@@ -3,18 +3,18 @@ package commands
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/dcmd"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/common"
 )
 
 var (
@@ -25,8 +25,8 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandler(HandleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandler(handleMsgCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
 
 	CommandSystem.State = bot.State
 }
@@ -46,15 +46,17 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 
 		if time.Since(startedWaiting) > time.Second*60 {
 			// timeout
-			log.Infof("[commands] timeout waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+			logger.Infof("[commands] timeout waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
 			wg.Done()
 			return
 		}
 
-		log.Infof("[commands] waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+		logger.Infof("[commands] waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
 		time.Sleep(time.Millisecond * 500)
 	}
 }
+
+var helpFormatter = &dcmd.StdHelpFormatter{}
 
 func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
@@ -112,6 +114,29 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
 
+		err = dcmd.ParseCmdArgs(data)
+		if err != nil {
+			if dcmd.IsUserError(err) {
+
+				args := helpFormatter.ArgDefs(data.Cmd, data)
+				switches := helpFormatter.Switches(data.Cmd.Command)
+
+				resp := ""
+				if args != "" {
+					resp += "```\n" + args + "\n```"
+				}
+				if switches != "" {
+					resp += "```\n" + switches + "\n```"
+				}
+
+				resp = resp + "\nInvalid arguments provided: " + err.Error()
+				yc.PostCommandExecuted(settings, data, resp, nil)
+				return nil, nil
+			}
+
+			return nil, err
+		}
+
 		innerResp, err := inner(data)
 
 		// Send the response
@@ -135,6 +160,11 @@ func FilterResp(in interface{}, guildID int64) interface{} {
 func AddRootCommands(cmds ...*YAGCommand) {
 	for _, v := range cmds {
 		CommandSystem.Root.AddCommand(v, v.GetTrigger())
+	}
+}
+func AddRootCommandsWithMiddlewares(middlewares []dcmd.MiddleWareFunc, cmds ...*YAGCommand) {
+	for _, v := range cmds {
+		CommandSystem.Root.AddCommand(v, v.GetTrigger().SetMiddlewares(middlewares...))
 	}
 }
 
@@ -162,7 +192,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 func (p *Plugin) Prefix(data *dcmd.Data) string {
 	prefix, err := GetCommandPrefix(data.GS.ID)
 	if err != nil {
-		log.WithError(err).Error("Failed retrieving commands prefix")
+		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
 
 	return prefix
@@ -193,11 +223,13 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 
 	// Send the targetted help in the channel it was requested in
 	resp = dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
-	if len(resp) < 1 {
-		return CmdNotFound(target), nil
-	}
 
-	if len(resp) == 1 {
+	if target != "" {
+		if len(resp) != 1 {
+			// Send command not found in same channel
+			return CmdNotFound(target), nil
+		}
+
 		// Send short help in same channel
 		return resp, nil
 	}
@@ -222,9 +254,9 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	g := evt.GuildCreate()
 
 	var prefixExists bool
-	err := common.RedisPool.Do(radix.Cmd(&prefixExists, "EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&prefixExists, "EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
 	if err != nil {
-		log.WithError(err).Error("Failed checking if prefix exists")
+		logger.WithError(err).Error("Failed checking if prefix exists")
 		return
 	}
 
@@ -234,8 +266,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 			defaultPrefix = "("
 		}
 
-		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
-		log.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
+		common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
+		logger.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
 }
 

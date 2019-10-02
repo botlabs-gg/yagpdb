@@ -4,26 +4,27 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/schema"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/miolini/datacounter"
-	log "github.com/sirupsen/logrus"
-	"goji.io/pat"
 	"io"
 	"net/http"
-	"os"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gorilla/schema"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/bot/botrest"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
+	"github.com/miolini/datacounter"
+	"github.com/sirupsen/logrus"
+	"goji.io/pat"
 )
 
 var (
-	GAID = os.Getenv("YAGPDB_GA_ID")
+	confGAID = config.RegisterOption("yagpdb.ga_id", "Google analytics id", "")
 )
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
@@ -46,12 +47,11 @@ func MiscMiddleware(inner http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, common.ContextKeyIsPartial, true)
 		}
 
-		entry := log.WithFields(log.Fields{
-			"ip":  r.RemoteAddr,
+		entry := logger.WithFields(logrus.Fields{
+			"ip":  GetRequestIP(r),
 			"url": r.URL.Path,
 		})
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
-
 		// force https for a year
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
 		inner.ServeHTTP(w, r.WithContext(ctx))
@@ -86,7 +86,8 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"CurrentAd":        CurrentAd,
 			"LightTheme":       lightTheme,
 			"SidebarCollapsed": collapseSidebar,
-			"GAID":             GAID,
+			"SidebarItems":     sideBarItems,
+			"GAID":             confGAID.GetString(),
 		}
 
 		baseData["BaseURL"] = BaseURL()
@@ -158,7 +159,7 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			split := strings.SplitN(origin, ":", 3)
-			hostSplit := strings.SplitN(common.Conf.Host, ":", 2)
+			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
 
 			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
 				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
@@ -202,7 +203,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 
 		templateData := map[string]interface{}{
 			"User":       user,
-			"IsBotOwner": user.ID == common.Conf.Owner,
+			"IsBotOwner": common.IsOwner(user.ID),
 		}
 
 		// update the logger with the user and update the context with all the new info
@@ -363,7 +364,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 		member, err := botrest.GetBotMember(parsedGuildID)
 		if err != nil {
 			CtxLogger(r.Context()).WithError(err).Warn("Failed contacting bot about bot member information, falling back to discord api for retrieving bot member")
-			member, err = common.BotSession.GuildMember(parsedGuildID, common.Conf.BotID)
+			member, err = common.BotSession.GuildMember(parsedGuildID, common.BotUser.ID)
 			if err != nil {
 				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
 				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
@@ -617,7 +618,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) ht
 		}
 
 		err := form.Save(g.ID)
-		if !CheckErr(templateData, err, "Failed saving config", log.Error) {
+		if !CheckErr(templateData, err, "Failed saving config", CtxLogger(ctx).Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
 			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 			if ok {
@@ -739,7 +740,7 @@ func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
 			permsInterface := ctx.Value(common.ContextKeyBotPermissions)
 			currentPerms := 0
 			if permsInterface == nil {
-				log.Warn("Requires perms but no permsinterface available")
+				logger.Warn("Requires perms but no permsinterface available")
 			} else {
 				currentPerms = permsInterface.(int)
 			}

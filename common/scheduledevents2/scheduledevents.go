@@ -5,19 +5,19 @@ package scheduledevents2
 import (
 	"context"
 	"encoding/json"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"math/rand"
 	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type ScheduledEvents struct {
@@ -43,17 +43,9 @@ func (p *ScheduledEvents) PluginInfo() *common.PluginInfo {
 }
 
 func RegisterPlugin() {
-	err := InitSchema()
-	if err != nil {
-		logrus.WithError(err).Fatal("scheduledevents failed initializing db schema")
-	}
+	common.InitSchemas("scheduledevents2", DBSchemas...)
 
 	common.RegisterPlugin(newScheduledEventsPlugin())
-}
-
-func InitSchema() error {
-	_, err := common.PQ.Exec(DBSchema)
-	return err
 }
 
 type HandlerFunc func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error)
@@ -67,6 +59,7 @@ type RegisteredHandler struct {
 var (
 	registeredHandlers = make(map[string]*RegisteredHandler)
 	running            bool
+	logger             = common.GetPluginLogger(&ScheduledEvents{})
 )
 
 // RegisterHandler registers a handler for the scpecified event name
@@ -82,7 +75,7 @@ func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFu
 		Handler:    handler,
 	}
 
-	logrus.Debug("[scheduledEvents2] Registered handler for ", eventName)
+	logger.Debug("Registered handler for ", eventName)
 }
 
 func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interface{}) error {
@@ -139,7 +132,7 @@ func (se *ScheduledEvents) check() {
 
 	toProcess, err := models.ScheduledEvents(qm.Where("triggers_at < now() AND processed=false")).AllG(context.Background())
 	if err != nil {
-		logrus.WithError(err).Error("[scheduledevents2] failed checking for events to process")
+		logger.WithError(err).Error("failed checking for events to process")
 		return
 	}
 
@@ -147,6 +140,32 @@ func (se *ScheduledEvents) check() {
 	numHandling := 0
 	for _, p := range toProcess {
 		if !bot.IsGuildOnCurrentProcess(p.GuildID) {
+			numSkipped++
+			continue
+		}
+
+		// make sure the guild is available
+		gs := bot.State.Guild(true, p.GuildID)
+		if gs == nil {
+			onGuild, err := common.BotIsOnGuild(p.GuildID)
+			if err != nil {
+				logger.WithError(err).WithField("guild", p.GuildID).Error("failed checking if bot is on guild")
+			} else if !onGuild {
+				logger.WithField("guild", p.GuildID).Info("completely skipping event from guild not joined")
+				go se.markDone(p)
+				continue
+			}
+
+			numSkipped++
+			continue
+		}
+
+		gs.RLock()
+		unavailable := gs.Guild.Unavailable
+		gs.RUnlock()
+
+		if unavailable {
+			// wait until the guild is available before handling this event
 			numSkipped++
 			continue
 		}
@@ -162,16 +181,16 @@ func (se *ScheduledEvents) check() {
 	}
 
 	if numHandling > 0 {
-		logrus.Info("[scheduledevents2] triggered ", numHandling, " scheduled events (skipped ", numSkipped, ")")
+		logger.Info("triggered ", numHandling, " scheduled events (skipped ", numSkipped, ")")
 	}
 }
 
 func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
-	l := logrus.WithField("id", item.ID).WithField("evt", item.EventName)
+	l := logger.WithField("id", item.ID).WithField("evt", item.EventName)
 
 	handler, ok := registeredHandlers[item.EventName]
 	if !ok {
-		l.Error("[scheduledevents2] unknown event: ", item.EventName)
+		l.Error("unknown event: ", item.EventName)
 		se.markDone(item)
 		return
 	}
@@ -184,7 +203,7 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 		decodedData = reflect.New(typ).Interface()
 		err := json.Unmarshal(item.Data, decodedData)
 		if err != nil {
-			l.WithError(err).Error("[scheduledevents2] failed decoding event data")
+			l.WithError(err).Error("failed decoding event data")
 			se.markDone(item)
 			return
 		}
@@ -193,18 +212,18 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
-			l.Errorf("[scheduledevents2] recovered from panic in scheduled event handler \n%v\n%v", r, stack)
+			l.Errorf("recovered from panic in scheduled event handler \n%v\n%v", r, stack)
 		}
 	}()
 
 	for {
 		retry, err := handler.Handler(item, decodedData)
 		if err != nil {
-			l.WithError(err).Error("[scheduledevents2] handler returned an error")
+			l.WithError(err).Error("handler returned an error")
 		}
 
 		if retry {
-			l.WithError(err).Warn("[scheduledevents2] retrying handling event")
+			l.WithError(err).Warn("retrying handling event")
 			time.Sleep(time.Second * time.Duration(rand.Intn(10)+5))
 			continue
 		}
@@ -223,7 +242,7 @@ func (se *ScheduledEvents) markDone(item *models.ScheduledEvent) {
 	se.currentlyProcessingMU.Unlock()
 
 	if err != nil {
-		logrus.WithError(err).Error("[scheduledevents2] failed marking item as processed")
+		logger.WithError(err).Error("failed marking item as processed")
 	}
 }
 

@@ -6,10 +6,12 @@ package commands
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix"
-	log "github.com/sirupsen/logrus"
+	"github.com/jonas747/yagpdb/common/config"
 )
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 type CtxKey int
 
@@ -20,6 +22,10 @@ const (
 )
 
 type MessageFilterFunc func(msg *discordgo.Message) bool
+
+var (
+	confSetTyping = config.RegisterOption("yagpdb.commands.typing", "Wether to set typing or not when running commands", true)
+)
 
 // These functions are called on every message, and should return true if the message should be checked for commands, false otherwise
 var MessageFilterFuncs []MessageFilterFunc
@@ -39,14 +45,10 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
 	if err != nil {
-		log.WithError(err).Fatal("Failed migrating logged commands database")
+		logger.WithError(err).Fatal("Failed migrating logged commands database")
 	}
 
-	common.ValidateSQLSchema(DBSchema)
-	_, err = common.PQ.Exec(DBSchema)
-	if err != nil {
-		log.WithError(err).Fatal("Failed setting up commands settings tables")
-	}
+	common.InitSchemas("commands", DBSchemas...)
 }
 
 type CommandProvider interface {
@@ -82,6 +84,6 @@ func InitCommands() {
 
 func GetCommandPrefix(guild int64) (string, error) {
 	var prefix string
-	err := common.RedisPool.Do(radix.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
+	err := common.RedisPool.Do(retryableredis.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
 	return prefix, err
 }

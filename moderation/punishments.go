@@ -2,21 +2,21 @@ package moderation
 
 import (
 	"context"
+	"strconv"
+	"time"
+
+	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/logs"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strconv"
-	"time"
 )
 
 type Punishment int
@@ -35,7 +35,7 @@ func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) (ms *dst
 	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
 		// Fallback
-		logrus.WithError(err).WithField("guild", gs.ID).Info("Failed retrieving member")
+		logger.WithError(err).WithField("guild", gs.ID).Info("Failed retrieving member")
 		ms = &dstate.MemberState{
 			ID:       user.ID,
 			Guild:    gs,
@@ -87,18 +87,23 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 		logLink = CreateLogs(guildID, channelID, author)
 	}
 
+	fullReason := reason
+	if author.ID != common.BotUser.ID {
+		fullReason = author.Username + "#" + author.Discriminator + ": " + reason
+	}
+
 	switch p {
 	case PunishmentKick:
-		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason)
+		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, fullReason)
 	case PunishmentBan:
-		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, author.Username+"#"+author.Discriminator+": "+reason, 1)
+		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, 1)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	logrus.Println("MODERATION:", author.Username, action.Prefix, user.Username, "cause", reason)
+	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
 
 	if memberNotFound {
 		// Wait a tiny bit to make sure the audit log is updated
@@ -151,7 +156,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 
 	executed, err := ctx.Execute(dmMsg)
 	if err != nil {
-		logrus.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
+		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
 		executed = "Failed executing template."
 	}
 
@@ -220,7 +225,7 @@ func DeleteMessages(channelID int64, filterUser int64, deleteNum, fetchNum int) 
 
 func BanUserWithDuration(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
+	common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
 	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration)
 	if err != nil {
 		return err
@@ -245,8 +250,8 @@ func BanUser(config *Config, guildID, channelID int64, author *discordgo.User, r
 	return BanUserWithDuration(config, guildID, channelID, author, reason, user, 0)
 }
 
-var (
-	ErrNoMuteRole = errors.New("No mute role")
+const (
+	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
 
 // Unmut or mute a user, ignore duration if unmuting
@@ -326,7 +331,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 			UserID: member.ID,
 		})
 
-		common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1))
+		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1))
 		if err != nil {
 			return errors.WithMessage(err, "failed scheduling unmute")
 		}
@@ -339,7 +344,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID, channelID int64, author 
 
 		if alreadyMuted {
 			common.GORM.Delete(&currentMute)
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.ID)))
+			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.ID)))
 		}
 	}
 
@@ -470,7 +475,7 @@ func CreateLogs(guildID, channelID int64, user *discordgo.User) string {
 		if err == logs.ErrChannelBlacklisted {
 			return ""
 		}
-		logrus.WithError(err).Error("Log Creation Failed")
+		logger.WithError(err).Error("Log Creation Failed")
 		return "Log Creation Failed"
 	}
 	return logs.CreateLink(guildID, lgs.ID)

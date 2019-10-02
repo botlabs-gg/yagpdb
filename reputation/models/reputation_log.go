@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -93,15 +93,15 @@ var ReputationLogWhere = struct {
 	ReceiverUsername whereHelperstring
 	SenderUsername   whereHelperstring
 }{
-	ID:               whereHelperint64{field: `id`},
-	CreatedAt:        whereHelpertime_Time{field: `created_at`},
-	GuildID:          whereHelperint64{field: `guild_id`},
-	SenderID:         whereHelperint64{field: `sender_id`},
-	ReceiverID:       whereHelperint64{field: `receiver_id`},
-	SetFixedAmount:   whereHelperbool{field: `set_fixed_amount`},
-	Amount:           whereHelperint64{field: `amount`},
-	ReceiverUsername: whereHelperstring{field: `receiver_username`},
-	SenderUsername:   whereHelperstring{field: `sender_username`},
+	ID:               whereHelperint64{field: "\"reputation_log\".\"id\""},
+	CreatedAt:        whereHelpertime_Time{field: "\"reputation_log\".\"created_at\""},
+	GuildID:          whereHelperint64{field: "\"reputation_log\".\"guild_id\""},
+	SenderID:         whereHelperint64{field: "\"reputation_log\".\"sender_id\""},
+	ReceiverID:       whereHelperint64{field: "\"reputation_log\".\"receiver_id\""},
+	SetFixedAmount:   whereHelperbool{field: "\"reputation_log\".\"set_fixed_amount\""},
+	Amount:           whereHelperint64{field: "\"reputation_log\".\"amount\""},
+	ReceiverUsername: whereHelperstring{field: "\"reputation_log\".\"receiver_username\""},
+	SenderUsername:   whereHelperstring{field: "\"reputation_log\".\"sender_username\""},
 }
 
 // ReputationLogRels is where relationship names are stored.
@@ -121,7 +121,7 @@ func (*reputationLogR) NewStruct() *reputationLogR {
 type reputationLogL struct{}
 
 var (
-	reputationLogColumns               = []string{"id", "created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount", "receiver_username", "sender_username"}
+	reputationLogAllColumns            = []string{"id", "created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount", "receiver_username", "sender_username"}
 	reputationLogColumnsWithoutDefault = []string{"created_at", "guild_id", "sender_id", "receiver_id", "set_fixed_amount", "amount"}
 	reputationLogColumnsWithDefault    = []string{"id", "receiver_username", "sender_username"}
 	reputationLogPrimaryKeyColumns     = []string{"id"}
@@ -174,7 +174,7 @@ func (q reputationLogQuery) One(ctx context.Context, exec boil.ContextExecutor) 
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for reputation_log")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for reputation_log")
 	}
 
 	return o, nil
@@ -191,7 +191,7 @@ func (q reputationLogQuery) All(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to ReputationLog slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to ReputationLog slice")
 	}
 
 	return o, nil
@@ -211,7 +211,7 @@ func (q reputationLogQuery) Count(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count reputation_log rows")
+		return 0, errors.WrapIf(err, "models: failed to count reputation_log rows")
 	}
 
 	return count, nil
@@ -232,7 +232,7 @@ func (q reputationLogQuery) Exists(ctx context.Context, exec boil.ContextExecuto
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if reputation_log exists")
+		return false, errors.WrapIf(err, "models: failed to check if reputation_log exists")
 	}
 
 	return count > 0, nil
@@ -269,7 +269,7 @@ func FindReputationLog(ctx context.Context, exec boil.ContextExecutor, iD int64,
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from reputation_log")
+		return nil, errors.WrapIf(err, "models: unable to select from reputation_log")
 	}
 
 	return reputationLogObj, nil
@@ -305,7 +305,7 @@ func (o *ReputationLog) Insert(ctx context.Context, exec boil.ContextExecutor, c
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogColumnsWithDefault,
 			reputationLogColumnsWithoutDefault,
 			nzDefaults,
@@ -349,7 +349,7 @@ func (o *ReputationLog) Insert(ctx context.Context, exec boil.ContextExecutor, c
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into reputation_log")
+		return errors.WrapIf(err, "models: unable to insert into reputation_log")
 	}
 
 	if !cached {
@@ -379,7 +379,7 @@ func (o *ReputationLog) Update(ctx context.Context, exec boil.ContextExecutor, c
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogPrimaryKeyColumns,
 		)
 
@@ -410,12 +410,12 @@ func (o *ReputationLog) Update(ctx context.Context, exec boil.ContextExecutor, c
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update reputation_log row")
+		return 0, errors.WrapIf(err, "models: unable to update reputation_log row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for reputation_log")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for reputation_log")
 	}
 
 	if !cached {
@@ -438,12 +438,12 @@ func (q reputationLogQuery) UpdateAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for reputation_log")
+		return 0, errors.WrapIf(err, "models: unable to update all for reputation_log")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for reputation_log")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for reputation_log")
 	}
 
 	return rowsAff, nil
@@ -492,12 +492,12 @@ func (o ReputationLogSlice) UpdateAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in reputationLog slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in reputationLog slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all reputationLog")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all reputationLog")
 	}
 	return rowsAff, nil
 }
@@ -559,13 +559,13 @@ func (o *ReputationLog) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogColumnsWithDefault,
 			reputationLogColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			reputationLogColumns,
+			reputationLogAllColumns,
 			reputationLogPrimaryKeyColumns,
 		)
 
@@ -613,7 +613,7 @@ func (o *ReputationLog) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert reputation_log")
+		return errors.WrapIf(err, "models: unable to upsert reputation_log")
 	}
 
 	if !cached {
@@ -648,12 +648,12 @@ func (o *ReputationLog) Delete(ctx context.Context, exec boil.ContextExecutor) (
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from reputation_log")
+		return 0, errors.WrapIf(err, "models: unable to delete from reputation_log")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for reputation_log")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for reputation_log")
 	}
 
 	return rowsAff, nil
@@ -669,12 +669,12 @@ func (q reputationLogQuery) DeleteAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from reputation_log")
+		return 0, errors.WrapIf(err, "models: unable to delete all from reputation_log")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reputation_log")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for reputation_log")
 	}
 
 	return rowsAff, nil
@@ -687,10 +687,6 @@ func (o ReputationLogSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ReputationLogSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ReputationLog slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -711,12 +707,12 @@ func (o ReputationLogSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from reputationLog slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from reputationLog slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reputation_log")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for reputation_log")
 	}
 
 	return rowsAff, nil
@@ -774,7 +770,7 @@ func (o *ReputationLogSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in ReputationLogSlice")
+		return errors.WrapIf(err, "models: unable to reload all in ReputationLogSlice")
 	}
 
 	*o = slice
@@ -801,7 +797,7 @@ func ReputationLogExists(ctx context.Context, exec boil.ContextExecutor, iD int6
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if reputation_log exists")
+		return false, errors.WrapIf(err, "models: unable to check if reputation_log exists")
 	}
 
 	return exists, nil

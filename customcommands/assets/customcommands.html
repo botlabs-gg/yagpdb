@@ -98,6 +98,7 @@
                             <option value="contains">Contains</option>
                             <option value="regex">Regex</option>
                             <option value="exact">Exact match</option>
+                            <option value="reaction">Reaction</option>
                             <option value="interval_hours">Hourly interval</option>
                             <option value="interval_minutes">Minute interval</option>
                         </select>
@@ -114,6 +115,30 @@
                                         <input type="checkbox" name="case_sensitive"> Case sensitive
                                     </label>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="new-cc-reaction-trigger-details" class="hidden col-sm-8">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reaction_trigger_mode" id="reaction-mode-both-new" value="0" checked>
+                                <label class="form-check-label" for="reaction-mode-both-new">
+                                Added + Removed reactions
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reaction_trigger_mode" id="reaction-mode-added-new" value="1">
+                                <label class="form-check-label" for="reaction-mode-added-new">
+                                Added reactions only
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reaction_trigger_mode" id="reaction-mode-removed-new" value="2">
+                                <label class="form-check-label" for="reaction-mode-removed-new">
+                                Removed reactions only
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -235,7 +260,7 @@
                 <h2 class="card-title">
 
                     <a data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}">
-                        #{{.LocalID}} - {{if ne .TriggerType 5}}{{.TextTrigger}}{{else}}Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}{{end}}
+                        #{{.LocalID}} - {{index $dot.CCTriggerTypes .TriggerType}} {{if and (ne .TriggerType 5) (ne .TriggerType 6)}}: <span class="cc-text-trigger-span">{{.TextTrigger}}</span>{{else if ne .TriggerType 6}}Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}{{end}}
                     </a>
                 </h2>
             </div>
@@ -252,12 +277,13 @@
                                     <option value="contains" {{if eq .TriggerType 2}} selected{{end}}>Contains</option>
                                     <option value="regex" {{if eq .TriggerType 3}} selected{{end}}>Regex</option>
                                     <option value="exact"{{if eq .TriggerType 4}} selected{{end}}>Exact match</option>
+                                    <option value="reaction"{{if eq .TriggerType 6}} selected{{end}}>Reaction</option>
                                     <option value="interval_hours" {{if eq (call $dot.GetCCIntervalType .) 1}}selected{{end}}>Hourly interval</option>
                                     <option value="interval_minutes" {{if eq (call $dot.GetCCIntervalType .) 0}}selected{{end}}>Minute interval</option>
                                 </select>
                             </div>
                         </div>
-                        <div id="{{.LocalID}}-cc-text-trigger-details" class="{{if eq .TriggerType 5}}hidden{{end}} col-sm-8">
+                        <div id="{{.LocalID}}-cc-text-trigger-details" class="{{if or (eq .TriggerType 5) (eq .TriggerType 6)}}hidden{{end}} col-sm-8">
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="form-group">
@@ -268,6 +294,30 @@
                                                 <input type="checkbox" name="case_sensitive"> Case sensitive
                                             </label>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="{{.LocalID}}-cc-reaction-trigger-details" class="{{if ne .TriggerType 6}}hidden{{end}} col-sm-8">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="reaction_trigger_mode" id="reaction-mode-both-{{.LocalID}}" value="0" {{if eq .ReactionTriggerMode 0}}checked{{end}}>
+                                        <label class="form-check-label" for="reaction-mode-both-{{.LocalID}}">
+                                        Added + Removed reactions
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="reaction_trigger_mode" id="reaction-mode-added-{{.LocalID}}" value="1" {{if eq .ReactionTriggerMode 1}}checked{{end}}>
+                                        <label class="form-check-label" for="reaction-mode-added-{{.LocalID}}">
+                                        Added reactions only
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="reaction_trigger_mode" id="reaction-mode-removed-{{.LocalID}}" value="2" {{if eq .ReactionTriggerMode 2}}checked{{end}}>
+                                        <label class="form-check-label" for="reaction-mode-removed-{{.LocalID}}">
+                                        Removed reactions only
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -413,7 +463,7 @@
 			<div class="modal-wrapper">
 				<div class="modal-text">
 					<p class="help-block">Available template data is {{template "template_helper_user"}} (and much more)</p>
-					<p class="help-block">Execute bot commands using <code>{{"{{exec \"command\" \"arg1\" \"arg2\"}}"}}</code>, Example: <code>{{"{{exec \"role\" \"yagpdb\""}}"}}</code> will be the same as the user typing <code>(mention or prefix) role yagpdb</code></p>
+					<p class="help-block">Execute bot commands using <code>{{"{{exec \"command\" \"arg1\" \"arg2\"}}"}}</code>, Example: <code>{{"{{exec \"role\" \"yagpdb\"}}"}}</code> will be the same as the user typing <code>(mention or prefix) role yagpdb</code></p>
 					<p class="help-block">Arguments are available in a string array: <code>.CmdArgs</code><br> Access single arguments by index using <code>{{"{{index .CmdArgs 0}}"}}</code><br>Get the number of arguments using <code>{{"{{len .CmdArgs}}"}}</code><br>Loop over them with <br><code>{{"{{range .CmdArgs}}{{.}}"}} <- that dot will be replaced by the current argument we're looping over{{"{{end}}"}}</code><br>"end" marks the end of the for loop.</p>
 					<!-- {{/* .IgnoreMe */}} -->
 					<p>See the <a href="https://docs.yagpdb.xyz/templates" target="_blank">templating</a> and <a href="https://docs.yagpdb.xyz/commands/custom-commands" target="_blank">custom command</a> docs for more info and join the support server if you have further questions. Custom commands for yagpdb are rather complicated for the time being.<p>
@@ -433,13 +483,28 @@
 <script type="text/javascript">
     function triggerTypeChanged(trigID, dropdown){
         if(dropdown.value === "interval_hours" || dropdown.value === "interval_minutes"){
+            // Interval triggers
+            
             $("#"+trigID+"-cc-time-trigger-details").removeClass("hidden");
+            
             $("#"+trigID+"-cc-text-trigger-details").addClass("hidden");
             $("#"+trigID+"-cc-extra-settings").addClass("hidden");
-        }else{
+            $("#" + trigID + "-cc-reaction-trigger-details").addClass("hidden")
+        }else if(dropdown.value === "reaction"){
+            // Reaction triggers
+
+            $("#" + trigID + "-cc-reaction-trigger-details").removeClass("hidden")
+            $("#"+trigID+"-cc-extra-settings").removeClass("hidden");
+            
             $("#"+trigID+"-cc-time-trigger-details").addClass("hidden");
+            $("#"+trigID+"-cc-text-trigger-details").addClass("hidden");
+        }else{
+            // Other message triggers
             $("#"+trigID+"-cc-text-trigger-details").removeClass("hidden");
             $("#"+trigID+"-cc-extra-settings").removeClass("hidden");
+
+            $("#" + trigID + "-cc-reaction-trigger-details").addClass("hidden")
+            $("#"+trigID+"-cc-time-trigger-details").addClass("hidden");
         }
     }
 

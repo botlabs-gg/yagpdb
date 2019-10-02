@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -138,14 +138,14 @@ var ScheduledEventWhere = struct {
 	Data         whereHelpertypes_JSON
 	Processed    whereHelperbool
 }{
-	ID:           whereHelperint64{field: `id`},
-	CreatedAt:    whereHelpertime_Time{field: `created_at`},
-	TriggersAt:   whereHelpertime_Time{field: `triggers_at`},
-	RetryOnError: whereHelperbool{field: `retry_on_error`},
-	GuildID:      whereHelperint64{field: `guild_id`},
-	EventName:    whereHelperstring{field: `event_name`},
-	Data:         whereHelpertypes_JSON{field: `data`},
-	Processed:    whereHelperbool{field: `processed`},
+	ID:           whereHelperint64{field: "\"scheduled_events\".\"id\""},
+	CreatedAt:    whereHelpertime_Time{field: "\"scheduled_events\".\"created_at\""},
+	TriggersAt:   whereHelpertime_Time{field: "\"scheduled_events\".\"triggers_at\""},
+	RetryOnError: whereHelperbool{field: "\"scheduled_events\".\"retry_on_error\""},
+	GuildID:      whereHelperint64{field: "\"scheduled_events\".\"guild_id\""},
+	EventName:    whereHelperstring{field: "\"scheduled_events\".\"event_name\""},
+	Data:         whereHelpertypes_JSON{field: "\"scheduled_events\".\"data\""},
+	Processed:    whereHelperbool{field: "\"scheduled_events\".\"processed\""},
 }
 
 // ScheduledEventRels is where relationship names are stored.
@@ -165,7 +165,7 @@ func (*scheduledEventR) NewStruct() *scheduledEventR {
 type scheduledEventL struct{}
 
 var (
-	scheduledEventColumns               = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
+	scheduledEventAllColumns            = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
 	scheduledEventColumnsWithoutDefault = []string{"created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
 	scheduledEventColumnsWithDefault    = []string{"id"}
 	scheduledEventPrimaryKeyColumns     = []string{"id"}
@@ -218,7 +218,7 @@ func (q scheduledEventQuery) One(ctx context.Context, exec boil.ContextExecutor)
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for scheduled_events")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for scheduled_events")
 	}
 
 	return o, nil
@@ -235,7 +235,7 @@ func (q scheduledEventQuery) All(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to ScheduledEvent slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to ScheduledEvent slice")
 	}
 
 	return o, nil
@@ -255,7 +255,7 @@ func (q scheduledEventQuery) Count(ctx context.Context, exec boil.ContextExecuto
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count scheduled_events rows")
+		return 0, errors.WrapIf(err, "models: failed to count scheduled_events rows")
 	}
 
 	return count, nil
@@ -276,7 +276,7 @@ func (q scheduledEventQuery) Exists(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if scheduled_events exists")
+		return false, errors.WrapIf(err, "models: failed to check if scheduled_events exists")
 	}
 
 	return count > 0, nil
@@ -313,7 +313,7 @@ func FindScheduledEvent(ctx context.Context, exec boil.ContextExecutor, iD int64
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from scheduled_events")
+		return nil, errors.WrapIf(err, "models: unable to select from scheduled_events")
 	}
 
 	return scheduledEventObj, nil
@@ -349,7 +349,7 @@ func (o *ScheduledEvent) Insert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventColumnsWithDefault,
 			scheduledEventColumnsWithoutDefault,
 			nzDefaults,
@@ -393,7 +393,7 @@ func (o *ScheduledEvent) Insert(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into scheduled_events")
+		return errors.WrapIf(err, "models: unable to insert into scheduled_events")
 	}
 
 	if !cached {
@@ -423,7 +423,7 @@ func (o *ScheduledEvent) Update(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventPrimaryKeyColumns,
 		)
 
@@ -454,12 +454,12 @@ func (o *ScheduledEvent) Update(ctx context.Context, exec boil.ContextExecutor, 
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update scheduled_events row")
+		return 0, errors.WrapIf(err, "models: unable to update scheduled_events row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for scheduled_events")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for scheduled_events")
 	}
 
 	if !cached {
@@ -482,12 +482,12 @@ func (q scheduledEventQuery) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for scheduled_events")
+		return 0, errors.WrapIf(err, "models: unable to update all for scheduled_events")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for scheduled_events")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -536,12 +536,12 @@ func (o ScheduledEventSlice) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in scheduledEvent slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in scheduledEvent slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all scheduledEvent")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all scheduledEvent")
 	}
 	return rowsAff, nil
 }
@@ -603,13 +603,13 @@ func (o *ScheduledEvent) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventColumnsWithDefault,
 			scheduledEventColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			scheduledEventColumns,
+			scheduledEventAllColumns,
 			scheduledEventPrimaryKeyColumns,
 		)
 
@@ -657,7 +657,7 @@ func (o *ScheduledEvent) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert scheduled_events")
+		return errors.WrapIf(err, "models: unable to upsert scheduled_events")
 	}
 
 	if !cached {
@@ -692,12 +692,12 @@ func (o *ScheduledEvent) Delete(ctx context.Context, exec boil.ContextExecutor) 
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from scheduled_events")
+		return 0, errors.WrapIf(err, "models: unable to delete from scheduled_events")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for scheduled_events")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -713,12 +713,12 @@ func (q scheduledEventQuery) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from scheduled_events")
+		return 0, errors.WrapIf(err, "models: unable to delete all from scheduled_events")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for scheduled_events")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -731,10 +731,6 @@ func (o ScheduledEventSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ScheduledEventSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ScheduledEvent slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -755,12 +751,12 @@ func (o ScheduledEventSlice) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from scheduledEvent slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from scheduledEvent slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for scheduled_events")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -818,7 +814,7 @@ func (o *ScheduledEventSlice) ReloadAll(ctx context.Context, exec boil.ContextEx
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in ScheduledEventSlice")
+		return errors.WrapIf(err, "models: unable to reload all in ScheduledEventSlice")
 	}
 
 	*o = slice
@@ -845,7 +841,7 @@ func ScheduledEventExists(ctx context.Context, exec boil.ContextExecutor, iD int
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if scheduled_events exists")
+		return false, errors.WrapIf(err, "models: unable to check if scheduled_events exists")
 	}
 
 	return exists, nil

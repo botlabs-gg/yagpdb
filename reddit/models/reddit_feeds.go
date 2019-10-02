@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -108,15 +108,15 @@ var RedditFeedWhere = struct {
 	Slow       whereHelperbool
 	Disabled   whereHelperbool
 }{
-	ID:         whereHelperint64{field: `id`},
-	GuildID:    whereHelperint64{field: `guild_id`},
-	ChannelID:  whereHelperint64{field: `channel_id`},
-	Subreddit:  whereHelperstring{field: `subreddit`},
-	FilterNSFW: whereHelperint{field: `filter_nsfw`},
-	MinUpvotes: whereHelperint{field: `min_upvotes`},
-	UseEmbeds:  whereHelperbool{field: `use_embeds`},
-	Slow:       whereHelperbool{field: `slow`},
-	Disabled:   whereHelperbool{field: `disabled`},
+	ID:         whereHelperint64{field: "\"reddit_feeds\".\"id\""},
+	GuildID:    whereHelperint64{field: "\"reddit_feeds\".\"guild_id\""},
+	ChannelID:  whereHelperint64{field: "\"reddit_feeds\".\"channel_id\""},
+	Subreddit:  whereHelperstring{field: "\"reddit_feeds\".\"subreddit\""},
+	FilterNSFW: whereHelperint{field: "\"reddit_feeds\".\"filter_nsfw\""},
+	MinUpvotes: whereHelperint{field: "\"reddit_feeds\".\"min_upvotes\""},
+	UseEmbeds:  whereHelperbool{field: "\"reddit_feeds\".\"use_embeds\""},
+	Slow:       whereHelperbool{field: "\"reddit_feeds\".\"slow\""},
+	Disabled:   whereHelperbool{field: "\"reddit_feeds\".\"disabled\""},
 }
 
 // RedditFeedRels is where relationship names are stored.
@@ -136,7 +136,7 @@ func (*redditFeedR) NewStruct() *redditFeedR {
 type redditFeedL struct{}
 
 var (
-	redditFeedColumns               = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow", "disabled"}
+	redditFeedAllColumns            = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow", "disabled"}
 	redditFeedColumnsWithoutDefault = []string{"guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow"}
 	redditFeedColumnsWithDefault    = []string{"id", "disabled"}
 	redditFeedPrimaryKeyColumns     = []string{"id"}
@@ -189,7 +189,7 @@ func (q redditFeedQuery) One(ctx context.Context, exec boil.ContextExecutor) (*R
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for reddit_feeds")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for reddit_feeds")
 	}
 
 	return o, nil
@@ -206,7 +206,7 @@ func (q redditFeedQuery) All(ctx context.Context, exec boil.ContextExecutor) (Re
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to RedditFeed slice")
+		return nil, errors.WrapIf(err, "models: failed to assign all query results to RedditFeed slice")
 	}
 
 	return o, nil
@@ -226,7 +226,7 @@ func (q redditFeedQuery) Count(ctx context.Context, exec boil.ContextExecutor) (
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count reddit_feeds rows")
+		return 0, errors.WrapIf(err, "models: failed to count reddit_feeds rows")
 	}
 
 	return count, nil
@@ -247,7 +247,7 @@ func (q redditFeedQuery) Exists(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if reddit_feeds exists")
+		return false, errors.WrapIf(err, "models: failed to check if reddit_feeds exists")
 	}
 
 	return count > 0, nil
@@ -284,7 +284,7 @@ func FindRedditFeed(ctx context.Context, exec boil.ContextExecutor, iD int64, se
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from reddit_feeds")
+		return nil, errors.WrapIf(err, "models: unable to select from reddit_feeds")
 	}
 
 	return redditFeedObj, nil
@@ -313,7 +313,7 @@ func (o *RedditFeed) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedColumnsWithDefault,
 			redditFeedColumnsWithoutDefault,
 			nzDefaults,
@@ -357,7 +357,7 @@ func (o *RedditFeed) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into reddit_feeds")
+		return errors.WrapIf(err, "models: unable to insert into reddit_feeds")
 	}
 
 	if !cached {
@@ -387,7 +387,7 @@ func (o *RedditFeed) Update(ctx context.Context, exec boil.ContextExecutor, colu
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedPrimaryKeyColumns,
 		)
 
@@ -418,12 +418,12 @@ func (o *RedditFeed) Update(ctx context.Context, exec boil.ContextExecutor, colu
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update reddit_feeds row")
+		return 0, errors.WrapIf(err, "models: unable to update reddit_feeds row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for reddit_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for reddit_feeds")
 	}
 
 	if !cached {
@@ -446,12 +446,12 @@ func (q redditFeedQuery) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for reddit_feeds")
+		return 0, errors.WrapIf(err, "models: unable to update all for reddit_feeds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for reddit_feeds")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for reddit_feeds")
 	}
 
 	return rowsAff, nil
@@ -500,12 +500,12 @@ func (o RedditFeedSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in redditFeed slice")
+		return 0, errors.WrapIf(err, "models: unable to update all in redditFeed slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all redditFeed")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all redditFeed")
 	}
 	return rowsAff, nil
 }
@@ -560,13 +560,13 @@ func (o *RedditFeed) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedColumnsWithDefault,
 			redditFeedColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			redditFeedColumns,
+			redditFeedAllColumns,
 			redditFeedPrimaryKeyColumns,
 		)
 
@@ -614,7 +614,7 @@ func (o *RedditFeed) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert reddit_feeds")
+		return errors.WrapIf(err, "models: unable to upsert reddit_feeds")
 	}
 
 	if !cached {
@@ -649,12 +649,12 @@ func (o *RedditFeed) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from reddit_feeds")
+		return 0, errors.WrapIf(err, "models: unable to delete from reddit_feeds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for reddit_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for reddit_feeds")
 	}
 
 	return rowsAff, nil
@@ -670,12 +670,12 @@ func (q redditFeedQuery) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from reddit_feeds")
+		return 0, errors.WrapIf(err, "models: unable to delete all from reddit_feeds")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reddit_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for reddit_feeds")
 	}
 
 	return rowsAff, nil
@@ -688,10 +688,6 @@ func (o RedditFeedSlice) DeleteAllG(ctx context.Context) (int64, error) {
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o RedditFeedSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no RedditFeed slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
@@ -712,12 +708,12 @@ func (o RedditFeedSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from redditFeed slice")
+		return 0, errors.WrapIf(err, "models: unable to delete all from redditFeed slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for reddit_feeds")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for reddit_feeds")
 	}
 
 	return rowsAff, nil
@@ -775,7 +771,7 @@ func (o *RedditFeedSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in RedditFeedSlice")
+		return errors.WrapIf(err, "models: unable to reload all in RedditFeedSlice")
 	}
 
 	*o = slice
@@ -802,7 +798,7 @@ func RedditFeedExists(ctx context.Context, exec boil.ContextExecutor, iD int64) 
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if reddit_feeds exists")
+		return false, errors.WrapIf(err, "models: unable to check if reddit_feeds exists")
 	}
 
 	return exists, nil

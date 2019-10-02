@@ -1,34 +1,34 @@
 #!/bin/bash
 
 # General discord stuff
-export YAGPDB_OWNER="Insert owner id here"
-export YAGPDB_BOTID="Insert bot ID here"
-export YAGPDB_CLIENTID="Insert client id here"
-export YAGPDB_CLIENTSECRET="Insert client secret here"
-export YAGPDB_BOTTOKEN="Bot token_here"
+YAGPDB_OWNER="Insert owner id here"
+YAGPDB_CLIENTID="Insert client id here"
+YAGPDB_CLIENTSECRET="Insert client secret here"
+YAGPDB_BOTTOKEN="Bot token_here"
 
 # Used for the website, required for https and csrf protection
-export YAGPDB_HOST="somehost.com"   
-export YAGPDB_EMAIL="insert@email.here"      
+YAGPDB_HOST="somehost.com"   
+YAGPDB_EMAIL="insert@email.here"      
 
 # Postgres and redis
-export YAGPDB_PQHOST="localhost"
-export YAGPDB_PQUSERNAME="postgres username"
-export YAGPDB_PQPASSWORD="postgres password"
-export YAGPDB_REDIS="redis address"
+YAGPDB_PQHOST="localhost"
+YAGPDB_PQUSERNAME="postgres username"
+YAGPDB_PQPASSWORD="postgres password"
+YAGPDB_PQDB="yagpdb"
+YAGPDB_REDIS="redis address"
 
 # Set to yes or anything really to run in testing mode (cooldowns, verbose logging, laod templates from plugin folders etc..)
-export YAGPDB_TESTING=""
+YAGPDB_TESTING=""
 
 # This is the max amount of concurrent requests the bot can send to discord
 # If you're running a lot of shards and guilds in the same process (25k+ guilds), and/or have a higher latency, you might need to increase this
 # Recommended setup for a clustered setup of 10 shards per node is around 10 max ccr
 # Defaults to 25
-# export YAGPDB_MAX_CCR="25"
+# YAGPDB_MAX_CCR="25"
 
 # specify the listen address for the bot's internal REST api, defaults to 127.0.0.1
 # only needs to be changed if you're running the webserver on a different machine than the bot itself
-# export YAGPDB_BOTREST_LISTEN_ADDRESS="127.0.0.1"
+# YAGPDB_BOTREST_LISTEN_ADDRESS="127.0.0.1"
 
 # Set to enable the memory monitor on the bot, this will attempt to free memory when the system is getting low on memory
 # This is mainly an issue when stuff like large spikes of reconnects with full re-identify flow happening, this will try to mitigate that slightly
@@ -38,11 +38,11 @@ export YAGPDB_TESTING=""
 # Clustering / Shard orchestrator mode
 #######################################
 # Uncomment to enable cluster/shard orchestrator mode, dont do this unless you know what that is
-# export YAGPDB_ORCHESTRATOR_ADDRESS="127.0.0.1:7447"
-# export YAGPDB_SHARDING_TOTAL_SHARDS="required for clustered mode"
+# YAGPDB_ORCHESTRATOR_ADDRESS="127.0.0.1:7447"
+# YAGPDB_SHARDING_TOTAL_SHARDS="required for clustered mode"
 #
 # For running in multiple host mode, how that works is you run 1 shard orchestrator per host, then have that orchestrator be responsible for a subset of the shards
-# export YAGPDB_SHARDING_ACTIVE_SHARDS
+# YAGPDB_SHARDING_ACTIVE_SHARDS
 
 ###################################################################
 # Plugins and various other optional features below, not required #
@@ -50,67 +50,79 @@ export YAGPDB_TESTING=""
 
 # Administration
 # Used for YAGPDB_ADMINROLE and readonlyaccesrole
-export YAGPDB_MAIN_SERVER=""
+YAGPDB_MAIN_SERVER=""
 # Admins have access to things like shard reconnects, and full access to admin only commands 
-export YAGPDB_ADMIN_ROLE=""
+YAGPDB_ADMIN_ROLE=""
 # Users in the main server with this role can access the control panel page of any server, but they can't modify any settings
-export YAGPDB_READONLY_ACCESS_ROLE=""
+YAGPDB_READONLY_ACCESS_ROLE=""
 
 # Send discord gateway connection events to a discord channel
-export YAGPDB_CONNEVT_CHANNEL=""
+YAGPDB_CONNEVT_CHANNEL=""
 # Send connection status to a discord channel
-export YAGPDB_CONNSTATUS_CHANNEL=""
+YAGPDB_CONNSTATUS_CHANNEL=""
 
 # Bot leaves joins to this channel
-export YAGPDB_BOTLEAVESJOINS=""
+YAGPDB_BOTLEAVESJOINS=""
 	
 # Set to anything to disable the request logging of the webserver
-export YAGPDB_DISABLE_REQUEST_LOGGING=""
+YAGPDB_DISABLE_REQUEST_LOGGING=""
 
 # Aylien
-export YAGPDB_AYLIENAPPID="aylien app id here"
-export YAGPDB_AYLIENAPPKEY="aylien app key here"
+YAGPDB_AYLIENAPPID="aylien app id here"
+YAGPDB_AYLIENAPPKEY="aylien app key here"
 
 # Reddit
 # You'll need to get a permanent refresh token using a script or something, i should probably make a easy way to do it but eh...
-export YAGPDB_REDDIT_CLIENTID="Reddit application clientid here"
-export YAGPDB_REDDIT_CLIENTSECRET="Reddit application client secret here"
-export YAGPDB_REDDIT_REDIRECT="Reddit redirect uri here"
-export YAGPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (duration=permanent)"
+YAGPDB_REDDIT_CLIENTID="Reddit application clientid here"
+YAGPDB_REDDIT_CLIENTSECRET="Reddit application client secret here"
+YAGPDB_REDDIT_REDIRECT="Reddit redirect uri here"
+YAGPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (duration=permanent)"
 
 # Youtube and other google apis credentials json file
-export GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"
-export YAGPDB_GOOGLE_SAFEBROWSING_API_KEY=""
+GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"
+YAGPDB_GOOGLE_SAFEBROWSING_API_KEY=""
+YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY=""
+YAGPDB_GOOGLE_RECAPTCHA_SECRET=""
 
 # This will be used as the pubsubhubbub (websub) verify token when receiving callbacks on new video uploads
 # if this gets leaked, people could spam shit
-export YAGPDB_YOUTUBE_VERIFY_TOKEN="some_secret_shit"
+YAGPDB_YOUTUBE_VERIFY_TOKEN="some_secret_shit"
 
 ## These variables are for displaying an ad in the sidebar
 # Leave empty for nothing
 # Path to ad image (it's automatically prefixed with / because msys64 kept messing with my path in my dev env)
-export YAGPDB_AD_IMG_PATH=
+YAGPDB_AD_IMG_PATH=
 # Alternative, comma seperated list of paths
-export YAGPDB_AD_VIDEO_PATHS=
+YAGPDB_AD_VIDEO_PATHS=
 
 # Where clicking on the image sends you
-export YAGPDB_AD_LINK=
+YAGPDB_AD_LINK=
 #Dimensions
-export YAGPDB_AD_H=
-export YAGPDB_AD_W=
+YAGPDB_AD_H=
+YAGPDB_AD_W=
 
 # Google analytics ID
-export YAGPDB_GA_ID=""
+YAGPDB_GA_ID=""
 
 # The feed on /managed
-export YAGPDB_ANNOUNCEMENTS_CHANNEL=""
+YAGPDB_ANNOUNCEMENTS_CHANNEL=""
  
 # Datadog integration
-export YAGPDB_DOGSTATSDADDRESS="127.0.0.1:8125"
+YAGPDB_DOGSTATSDADDRESS="127.0.0.1:8125"
 
 # Pass a api key to list pledges on your patreon on the website
 # This refresh token will only work and will only be used once, the api returns a new token which we store in redis
 # under the patreon_refresh_token key, therefor if you wipe redis you will have to update this refresh token again
-export YAGPDB_PATREON_API_REFRESH_TOKEN=""
-export YAGPDB_PATREON_API_CLIENT_ID=""
-export YAGPDB_PATREON_API_CLIENT_SECRET=""
+YAGPDB_PATREON_API_REFRESH_TOKEN=""
+YAGPDB_PATREON_API_CLIENT_ID=""
+YAGPDB_PATREON_API_CLIENT_SECRET=""
+
+
+YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY=""
+YAGPDB_GOOGLE_RECAPTCHA_SECRET=""
+
+# Twitter API credentials for twitter feeds
+# YAGPDB_TWITTER_ACCESS_TOKEN=
+# YAGPDB_TWITTER_ACCESS_TOKEN_SECRET=
+# YAGPDB_TWITTER_CONSUMER_KEY=
+# YAGPDB_TWITTER_CONSUMER_SECRET=

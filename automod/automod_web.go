@@ -4,23 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/fatih/structs"
-	"github.com/gorilla/schema"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	"goji.io"
-	"goji.io/pat"
 	"html/template"
 	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/fatih/structs"
+	"github.com/gorilla/schema"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/automod/models"
+	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/web"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"goji.io"
+	"goji.io/pat"
 )
 
 type CtxKey int
@@ -33,6 +34,10 @@ var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../automod/assets/automod.html", "templates/plugins/automod.html")
+	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+		Name: "Automoderator v2",
+		URL:  "automod",
+	})
 
 	muxer := goji.SubMux()
 
@@ -139,7 +144,7 @@ func (p *Plugin) handlePostAutomodCreateRuleset(w http.ResponseWriter, r *http.R
 		return tmpl, err
 	}
 
-	if currentCount >= MaxRulesets {
+	if currentCount >= int64(GuildMaxRulesets(g.ID)) {
 		tmpl.AddAlerts(web.ErrorAlert("Reached max number of rulesets, ", MaxRulesets))
 		return tmpl, nil
 	}
@@ -182,7 +187,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 
 	err = list.InsertG(r.Context(), boil.Infer())
 	if err == nil {
-		pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+		bot.EvictGSCache(g.ID, CacheKeyLists)
 	}
 	return tmpl, err
 }
@@ -204,7 +209,7 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 	list.Content = strings.Fields(data.Content)
 	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
 	if err == nil {
-		pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+		bot.EvictGSCache(g.ID, CacheKeyLists)
 	}
 	return tmpl, err
 }
@@ -220,7 +225,7 @@ func (p *Plugin) handlePostAutomodDeleteList(w http.ResponseWriter, r *http.Requ
 
 	_, err = list.DeleteG(r.Context())
 	if err == nil {
-		pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+		bot.EvictGSCache(g.ID, CacheKeyLists)
 	}
 	return tmpl, err
 }
@@ -363,7 +368,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 		return tmpl, err
 	}
 
-	pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+	bot.EvictGSCache(g.ID, CacheKeyRulesets)
 
 	// Reload the conditions now
 	ruleset.R.RulesetAutomodRulesetConditions = properConditions
@@ -383,7 +388,7 @@ func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.R
 
 	delete(tmpl, "CurrentRuleset")
 
-	pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+	bot.EvictGSCache(g.ID, CacheKeyRulesets)
 	return tmpl, err
 }
 
@@ -489,7 +494,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 
 	WebLoadRuleSettings(r, tmpl, ruleSet)
 
-	pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+	bot.EvictGSCache(g.ID, CacheKeyRulesets)
 
 	return tmpl, err
 }
@@ -688,7 +693,7 @@ func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Requ
 			_, err := v.DeleteG(r.Context())
 			if err == nil {
 				ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules[:k], ruleset.R.RulesetAutomodRules[k+1:]...)
-				pubsub.Publish(PubSubEvtCleaCache, g.ID, nil)
+				bot.EvictGSCache(g.ID, CacheKeyRulesets)
 			}
 
 			return nil, err

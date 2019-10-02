@@ -1,11 +1,12 @@
 package bot
 
 import (
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/common"
 )
 
 const EventLoggerPeriodDuration = time.Second * 10

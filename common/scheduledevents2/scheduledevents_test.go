@@ -1,13 +1,12 @@
 package scheduledevents2
 
 import (
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"log"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
 )
 
 var SchemaInit = false
@@ -15,15 +14,15 @@ var SchemaInit = false
 func init() {
 	common.InitTest()
 
-	err := InitSchema()
-	if err != nil {
-		log.Println("Unable to initialize schema: ", err)
-	} else {
-		SchemaInit = true
-	}
+	// err := InitSchema()
+	// if err != nil {
+	// 	log.Println("Unable to initialize schema: ", err)
+	// } else {
+	// 	SchemaInit = true
+	// }
 
-	bot.TotalShardCount = 1
-	bot.ProcessShardCount = 1
+	// bot.TotalShardCount = 1
+	// bot.ProcessShardCount = 1
 }
 
 func testStopPlugin(p *ScheduledEvents) {
@@ -35,18 +34,18 @@ func testStopPlugin(p *ScheduledEvents) {
 	registeredHandlers = make(map[string]*RegisteredHandler)
 }
 
-func TestSchema(t *testing.T) {
-	_, err := common.PQ.Exec("DROP TABLE IF EXISTS scheduled_events;")
-	if err != nil {
-		t.Error("failed dropping table: ", err)
-		return
-	}
+// func TestSchema(t *testing.T) {
+// 	_, err := common.PQ.Exec("DROP TABLE IF EXISTS scheduled_events;")
+// 	if err != nil {
+// 		t.Error("failed dropping table: ", err)
+// 		return
+// 	}
 
-	err = InitSchema()
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	err = InitSchema()
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
 func TestScheduleHandle(t *testing.T) {
 	if !SchemaInit {

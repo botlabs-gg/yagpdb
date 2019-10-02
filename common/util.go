@@ -1,15 +1,9 @@
 package common
 
 import (
-	"bufio"
 	"bytes"
+	"database/sql"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/lib/pq"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"path/filepath"
 	"regexp"
@@ -17,12 +11,19 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
+	"github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 )
 
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
+var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/)?(www\.)?[-a-zA-Z0-9@:%_\+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
 
 type GuildWithConnected struct {
 	*discordgo.UserGuild
@@ -37,19 +38,16 @@ func GetGuildsWithConnected(in []*discordgo.UserGuild) ([]*GuildWithConnected, e
 
 	out := make([]*GuildWithConnected, len(in))
 
-	actions := make([]radix.CmdAction, len(in))
 	for i, g := range in {
 		out[i] = &GuildWithConnected{
 			UserGuild: g,
 			Connected: false,
 		}
 
-		actions[i] = radix.Cmd(&out[i].Connected, "SISMEMBER", "connected_guilds", strconv.FormatInt(g.ID, 10))
-	}
-
-	err := RedisPool.Do(radix.Pipeline(actions...))
-	if err != nil {
-		return nil, err
+		err := RedisPool.Do(retryableredis.Cmd(&out[i].Connected, "SISMEMBER", "connected_guilds", strconv.FormatInt(g.ID, 10)))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return out, nil
@@ -60,7 +58,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
 	if err != nil {
-		log.WithError(err).Error("Failed deleting message")
+		logger.WithError(err).Error("Failed deleting message")
 	}
 }
 
@@ -441,23 +439,6 @@ func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
 	return err
 }
 
-// ValidateSQLSchema does some simple security checks on a sql schema file
-// At the moment it only checks for drop table/index statements accidentally left in the schema file
-func ValidateSQLSchema(input string) {
-	scanner := bufio.NewScanner(strings.NewReader(input))
-	lineCount := 0
-	for scanner.Scan() {
-		lineCount++
-		trimmed := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(strings.ToLower(trimmed), "drop table") || strings.HasPrefix(strings.ToLower(trimmed), "drop index") {
-			panic(fmt.Errorf("Schema file L%d: starts with drop table/index.\n%s", lineCount, trimmed))
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("reading standard input:", err)
-	}
-}
-
 // DiscordError extracts the errorcode discord sent us
 func DiscordError(err error) (code int, msg string) {
 	err = errors.Cause(err)
@@ -599,12 +580,12 @@ func HumanizePermissions(perms int64) (res []string) {
 	return
 }
 
-func LogIgnoreError(err error, msg string, data log.Fields) {
+func LogIgnoreError(err error, msg string, data logrus.Fields) {
 	if err == nil {
 		return
 	}
 
-	l := log.WithError(err)
+	l := logger.WithError(err)
 	if data != nil {
 		l = l.WithFields(data)
 	}
@@ -628,18 +609,58 @@ func ErrPQIsUniqueViolation(err error) bool {
 
 func GetJoinedServerCount() (int64, error) {
 	var count int64
-	err := RedisPool.Do(radix.Cmd(&count, "SCARD", "connected_guilds"))
+	err := RedisPool.Do(retryableredis.Cmd(&count, "SCARD", "connected_guilds"))
 	return count, err
 }
 
 func BotIsOnGuild(guildID int64) (bool, error) {
 	isOnGuild := false
-	err := RedisPool.Do(radix.FlatCmd(&isOnGuild, "SISMEMBER", "connected_guilds", guildID))
+	err := RedisPool.Do(retryableredis.FlatCmd(&isOnGuild, "SISMEMBER", "connected_guilds", guildID))
 	return isOnGuild, err
 }
 
 func GetActiveNodes() ([]string, error) {
 	var nodes []string
-	err := RedisPool.Do(radix.FlatCmd(&nodes, "ZRANGEBYSCORE", "dshardorchestrator_nodes_z", time.Now().Add(-time.Minute).Unix(), "+inf"))
+	err := RedisPool.Do(retryableredis.FlatCmd(&nodes, "ZRANGEBYSCORE", "dshardorchestrator_nodes_z", time.Now().Add(-time.Minute).Unix(), "+inf"))
 	return nodes, err
+}
+
+// helper for creating transactions
+func SqlTX(f func(tx *sql.Tx) error) error {
+	tx, err := PQ.Begin()
+	if err != nil {
+		return err
+	}
+
+	err = f(tx)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func SendOwnerAlert(msgf string, args ...interface{}) {
+	mainOwner := int64(0)
+	if len(BotOwners) > 0 {
+		mainOwner = BotOwners[0]
+	}
+	ch, err := BotSession.UserChannelCreate(int64(mainOwner))
+	if err != nil {
+		return
+	}
+
+	BotSession.ChannelMessageSend(ch.ID, fmt.Sprintf(msgf, args...))
+}
+
+func IsOwner(userID int64) bool {
+	for _, v := range BotOwners {
+		if v == userID {
+			return true
+		}
+	}
+
+	return false
 }

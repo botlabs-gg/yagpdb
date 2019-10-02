@@ -2,15 +2,15 @@ package commands
 
 import (
 	"context"
+	"strconv"
+	"strings"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
 )
 
 func init() {
@@ -166,7 +166,7 @@ func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cm
 		cmdLine += " "
 	}
 
-	logrus.Info("Custom template is executing a command:", cmdLine)
+	logger.Info("Custom template is executing a command:", cmdLine)
 
 	fakeMsg.Content = cmdLine
 
@@ -197,7 +197,22 @@ func execCmd(ctx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cm
 		return "", errors.WithMessage(err, "exec/execadmin, parseArgs")
 	}
 
-	resp, err := cast.RunFunc(data)
+	runFunc := cast.RunFunc
+
+	for i := range foundCmd.Trigger.Middlewares {
+		runFunc = foundCmd.Trigger.Middlewares[len(foundCmd.Trigger.Middlewares)-1-i](runFunc)
+	}
+
+	for i := range data.ContainerChain {
+		if i == len(data.ContainerChain)-1 {
+			// skip middlewares in original container to bypass cooldowns and shit
+			continue
+		}
+		runFunc = data.ContainerChain[len(data.ContainerChain)-1-i].BuildMiddlewareChain(runFunc, foundCmd)
+	}
+	// foundCmd.Trigger.
+
+	resp, err := runFunc(data)
 	if err != nil {
 		return "", errors.WithMessage(err, "exec/execadmin, run")
 	}

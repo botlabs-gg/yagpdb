@@ -6,27 +6,28 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"time"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reputation/models"
-	"github.com/mediocregopher/radix"
-	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strconv"
-	"time"
 )
 
+var logger = common.GetPluginLogger(&Plugin{})
+
 func RegisterPlugin() {
+
 	plugin := &Plugin{}
-	common.ValidateSQLSchema(DBSchema)
-	_, err := common.PQ.Exec(DBSchema)
-	if err != nil {
-		panic(errors.WithMessage(err, "Failed upating reputation schema"))
-	}
+
+	common.InitSchemas("reputation", DBSchemas...)
 
 	common.RegisterPlugin(plugin)
 }
@@ -292,7 +293,7 @@ func CheckSetCooldown(conf *models.ReputationConfig, senderID int64) (bool, erro
 	}
 
 	var resp string
-	err := common.RedisPool.Do(radix.FlatCmd(&resp, "SET", KeyCooldown(conf.GuildID, senderID), true, "EX", conf.Cooldown, "NX"))
+	err := common.RedisPool.Do(retryableredis.FlatCmd(&resp, "SET", KeyCooldown(conf.GuildID, senderID), true, "EX", conf.Cooldown, "NX"))
 	if resp != "OK" {
 		return false, err
 	}
@@ -301,7 +302,7 @@ func CheckSetCooldown(conf *models.ReputationConfig, senderID int64) (bool, erro
 }
 
 func ClearCooldown(guildID, senderID int64) error {
-	return common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyCooldown(guildID, senderID)))
+	return common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", KeyCooldown(guildID, senderID)))
 }
 
 func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, error) {
@@ -310,7 +311,7 @@ func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, er
 		if err == sql.ErrNoRows {
 			return DefaultConfig(guildID), nil
 		}
-		return nil, errors.Wrap(err, "Reputation.GetConfig")
+		return nil, errors.WrapIf(err, "Reputation.GetConfig")
 	}
 
 	return conf, nil

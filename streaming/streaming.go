@@ -2,9 +2,10 @@ package streaming
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"strconv"
 )
 
 type Plugin struct{}
@@ -16,6 +17,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 		Category: common.PluginCategoryMisc,
 	}
 }
+
+var logger = common.GetPluginLogger(&Plugin{})
 
 func RegisterPlugin() {
 	plugin := &Plugin{}

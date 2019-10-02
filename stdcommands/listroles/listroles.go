@@ -2,11 +2,12 @@ package listroles
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/commands"
-	"sort"
 )
 
 var Command = &commands.YAGCommand{
