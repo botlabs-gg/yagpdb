@@ -142,7 +142,14 @@
 {{define "cp_alerts"}}
 <script>
 $(function(){
-    showAlerts("{{json .Alerts}}")
+    showAlerts("{{json .Alerts}}");
+    $.getJSON("https://srhpyqt94yxb.statuspage.io/api/v2/incidents/unresolved.json", function(data) {
+        if (data.incidents) {
+            data.incidents.forEach(function(incident) {
+                addAlert("warning", "Discord's " + incident.status + " an incident: " + incident.name + ". Functionality may be limited.");
+            })
+        }
+    });
 })
 </script>
 <div id="alerts">
