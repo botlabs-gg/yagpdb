@@ -17,4 +17,7 @@ CREATE TABLE IF NOT EXISTS scheduled_events (
 );
 `, `
 CREATE INDEX IF NOT EXISTS scheduled_events_triggers_at_idx ON scheduled_events(triggers_at);
-`}
+`, `
+ALTER TABLE scheduled_events ADD COLUMN IF NOT EXISTS  error TEXT
+`,
+}

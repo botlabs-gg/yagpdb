@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -24,14 +25,15 @@ import (
 
 // ScheduledEvent is an object representing the database table.
 type ScheduledEvent struct {
-	ID           int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CreatedAt    time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	TriggersAt   time.Time  `boil:"triggers_at" json:"triggers_at" toml:"triggers_at" yaml:"triggers_at"`
-	RetryOnError bool       `boil:"retry_on_error" json:"retry_on_error" toml:"retry_on_error" yaml:"retry_on_error"`
-	GuildID      int64      `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	EventName    string     `boil:"event_name" json:"event_name" toml:"event_name" yaml:"event_name"`
-	Data         types.JSON `boil:"data" json:"data" toml:"data" yaml:"data"`
-	Processed    bool       `boil:"processed" json:"processed" toml:"processed" yaml:"processed"`
+	ID           int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt    time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	TriggersAt   time.Time   `boil:"triggers_at" json:"triggers_at" toml:"triggers_at" yaml:"triggers_at"`
+	RetryOnError bool        `boil:"retry_on_error" json:"retry_on_error" toml:"retry_on_error" yaml:"retry_on_error"`
+	GuildID      int64       `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	EventName    string      `boil:"event_name" json:"event_name" toml:"event_name" yaml:"event_name"`
+	Data         types.JSON  `boil:"data" json:"data" toml:"data" yaml:"data"`
+	Processed    bool        `boil:"processed" json:"processed" toml:"processed" yaml:"processed"`
+	Error        null.String `boil:"error" json:"error,omitempty" toml:"error" yaml:"error,omitempty"`
 
 	R *scheduledEventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L scheduledEventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -46,6 +48,7 @@ var ScheduledEventColumns = struct {
 	EventName    string
 	Data         string
 	Processed    string
+	Error        string
 }{
 	ID:           "id",
 	CreatedAt:    "created_at",
@@ -55,6 +58,7 @@ var ScheduledEventColumns = struct {
 	EventName:    "event_name",
 	Data:         "data",
 	Processed:    "processed",
+	Error:        "error",
 }
 
 // Generated where
@@ -128,6 +132,29 @@ func (w whereHelpertypes_JSON) GTE(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var ScheduledEventWhere = struct {
 	ID           whereHelperint64
 	CreatedAt    whereHelpertime_Time
@@ -137,6 +164,7 @@ var ScheduledEventWhere = struct {
 	EventName    whereHelperstring
 	Data         whereHelpertypes_JSON
 	Processed    whereHelperbool
+	Error        whereHelpernull_String
 }{
 	ID:           whereHelperint64{field: "\"scheduled_events\".\"id\""},
 	CreatedAt:    whereHelpertime_Time{field: "\"scheduled_events\".\"created_at\""},
@@ -146,6 +174,7 @@ var ScheduledEventWhere = struct {
 	EventName:    whereHelperstring{field: "\"scheduled_events\".\"event_name\""},
 	Data:         whereHelpertypes_JSON{field: "\"scheduled_events\".\"data\""},
 	Processed:    whereHelperbool{field: "\"scheduled_events\".\"processed\""},
+	Error:        whereHelpernull_String{field: "\"scheduled_events\".\"error\""},
 }
 
 // ScheduledEventRels is where relationship names are stored.
@@ -165,8 +194,8 @@ func (*scheduledEventR) NewStruct() *scheduledEventR {
 type scheduledEventL struct{}
 
 var (
-	scheduledEventAllColumns            = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
-	scheduledEventColumnsWithoutDefault = []string{"created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed"}
+	scheduledEventAllColumns            = []string{"id", "created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed", "error"}
+	scheduledEventColumnsWithoutDefault = []string{"created_at", "triggers_at", "retry_on_error", "guild_id", "event_name", "data", "processed", "error"}
 	scheduledEventColumnsWithDefault    = []string{"id"}
 	scheduledEventPrimaryKeyColumns     = []string{"id"}
 )
@@ -218,7 +247,7 @@ func (q scheduledEventQuery) One(ctx context.Context, exec boil.ContextExecutor)
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.WrapIf(err, "models: failed to execute a one query for scheduled_events")
+		return nil, errors.Wrap(err, "models: failed to execute a one query for scheduled_events")
 	}
 
 	return o, nil
@@ -235,7 +264,7 @@ func (q scheduledEventQuery) All(ctx context.Context, exec boil.ContextExecutor)
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.WrapIf(err, "models: failed to assign all query results to ScheduledEvent slice")
+		return nil, errors.Wrap(err, "models: failed to assign all query results to ScheduledEvent slice")
 	}
 
 	return o, nil
@@ -255,7 +284,7 @@ func (q scheduledEventQuery) Count(ctx context.Context, exec boil.ContextExecuto
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to count scheduled_events rows")
+		return 0, errors.Wrap(err, "models: failed to count scheduled_events rows")
 	}
 
 	return count, nil
@@ -276,7 +305,7 @@ func (q scheduledEventQuery) Exists(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.WrapIf(err, "models: failed to check if scheduled_events exists")
+		return false, errors.Wrap(err, "models: failed to check if scheduled_events exists")
 	}
 
 	return count > 0, nil
@@ -313,7 +342,7 @@ func FindScheduledEvent(ctx context.Context, exec boil.ContextExecutor, iD int64
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.WrapIf(err, "models: unable to select from scheduled_events")
+		return nil, errors.Wrap(err, "models: unable to select from scheduled_events")
 	}
 
 	return scheduledEventObj, nil
@@ -393,7 +422,7 @@ func (o *ScheduledEvent) Insert(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to insert into scheduled_events")
+		return errors.Wrap(err, "models: unable to insert into scheduled_events")
 	}
 
 	if !cached {
@@ -454,12 +483,12 @@ func (o *ScheduledEvent) Update(ctx context.Context, exec boil.ContextExecutor, 
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update scheduled_events row")
+		return 0, errors.Wrap(err, "models: unable to update scheduled_events row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for scheduled_events")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by update for scheduled_events")
 	}
 
 	if !cached {
@@ -482,12 +511,12 @@ func (q scheduledEventQuery) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update all for scheduled_events")
+		return 0, errors.Wrap(err, "models: unable to update all for scheduled_events")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for scheduled_events")
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -536,12 +565,12 @@ func (o ScheduledEventSlice) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update all in scheduledEvent slice")
+		return 0, errors.Wrap(err, "models: unable to update all in scheduledEvent slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all scheduledEvent")
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all scheduledEvent")
 	}
 	return rowsAff, nil
 }
@@ -657,7 +686,7 @@ func (o *ScheduledEvent) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to upsert scheduled_events")
+		return errors.Wrap(err, "models: unable to upsert scheduled_events")
 	}
 
 	if !cached {
@@ -692,12 +721,12 @@ func (o *ScheduledEvent) Delete(ctx context.Context, exec boil.ContextExecutor) 
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete from scheduled_events")
+		return 0, errors.Wrap(err, "models: unable to delete from scheduled_events")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for scheduled_events")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -713,12 +742,12 @@ func (q scheduledEventQuery) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete all from scheduled_events")
+		return 0, errors.Wrap(err, "models: unable to delete all from scheduled_events")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for scheduled_events")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -751,12 +780,12 @@ func (o ScheduledEventSlice) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete all from scheduledEvent slice")
+		return 0, errors.Wrap(err, "models: unable to delete all from scheduledEvent slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for scheduled_events")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for scheduled_events")
 	}
 
 	return rowsAff, nil
@@ -814,7 +843,7 @@ func (o *ScheduledEventSlice) ReloadAll(ctx context.Context, exec boil.ContextEx
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to reload all in ScheduledEventSlice")
+		return errors.Wrap(err, "models: unable to reload all in ScheduledEventSlice")
 	}
 
 	*o = slice
@@ -841,7 +870,7 @@ func ScheduledEventExists(ctx context.Context, exec boil.ContextExecutor, iD int
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.WrapIf(err, "models: unable to check if scheduled_events exists")
+		return false, errors.Wrap(err, "models: unable to check if scheduled_events exists")
 	}
 
 	return exists, nil
