@@ -121,7 +121,7 @@ func (p *Plugin) AddCommands() {
 	}, &commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
-		Aliases:             []string{"toggletconv"},
+		Aliases:             []string{"toggletconv", "ttc"},
 		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
