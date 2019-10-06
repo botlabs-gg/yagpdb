@@ -238,6 +238,30 @@ func setupState() {
 	go State.RunGCWorker()
 
 	eventsystem.DiscordState = State
+
+	// track cache hits/misses to statsd
+	go func() {
+		lastHits := int64(0)
+		lastMisses := int64(0)
+
+		ticker := time.NewTicker(time.Minute)
+		for {
+			<-ticker.C
+
+			hits, misses := State.CacheStats()
+			deltaHits := hits - lastHits
+			deltaMisses := misses - lastMisses
+			lastHits = hits
+			lastMisses = misses
+
+			if common.Statsd != nil {
+				common.Statsd.Count("yagpdb.state.cache_hits", deltaHits, nil, 1)
+				common.Statsd.Count("yagpdb.state.cache_misses", deltaMisses, nil, 1)
+			}
+
+			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
+		}
+	}()
 }
 
 func setupShardManager() {

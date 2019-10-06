@@ -527,7 +527,12 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 
 	gs := bot.State.Guild(true, elem.Guild)
 	if gs == nil {
-		return ErrGuildNotFound
+		// another check just in case
+		if onGuild, err := common.BotIsOnGuild(elem.Guild); err == nil && !onGuild {
+			return ErrGuildNotFound
+		} else if err != nil {
+			return err
+		}
 	}
 
 	wh, err := gs.UserCacheFetch(CacheKeyWebhook(elem.Channel), func() (interface{}, error) {

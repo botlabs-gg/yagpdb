@@ -1,11 +1,12 @@
 package bot
 
 import (
-	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"os"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 
 	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dshardorchestrator/node"
@@ -220,6 +221,8 @@ func (n *NodeImpl) LoadGuildState(gs *dstate.GuildState) {
 	for _, m := range gs.Members {
 		m.Guild = gs
 	}
+
+	gs.InitCache(State)
 
 	State.Lock()
 	State.Guilds[gs.ID] = gs

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"sort"
 	"strconv"
 	"sync"
@@ -61,7 +62,7 @@ func (p *Plugin) BotInit() {
 	muxer.HandleFunc(pat.Get("/:guild/membercolors"), HandleGetMemberColors)
 	muxer.HandleFunc(pat.Get("/:guild/onlinecount"), HandleGetOnlineCount)
 	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
-	muxer.HandleFunc(pat.Get("/gw_status"), HandleGWStatus)
+	muxer.HandleFunc(pat.Get("/node_status"), HandleNodeStatus)
 	muxer.HandleFunc(pat.Post("/shard/:shard/reconnect"), HandleReconnectShard)
 	muxer.HandleFunc(pat.Get("/ping"), HandlePing)
 
@@ -378,9 +379,12 @@ type ShardStatus struct {
 
 	LastHeartbeatSend time.Time `json:"last_heartbeat_send"`
 	LastHeartbeatAck  time.Time `json:"last_heartbeat_ack"`
+
+	NumGuilds         int
+	UnavailableGuilds int
 }
 
-func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
+func HandleNodeStatus(w http.ResponseWriter, r *http.Request) {
 
 	totalEventStats, periodEventStats := bot.EventLogger.GetStats()
 
@@ -389,6 +393,7 @@ func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
 
 	processShards := bot.GetProcessShards()
 
+	// get general shard stats
 	for _, shardID := range processShards {
 		shard := bot.ShardManager.Sessions[shardID]
 
@@ -417,7 +422,30 @@ func HandleGWStatus(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	ServeJson(w, r, result)
+	// Guild guild stats
+	gSlice := bot.State.GuildsSlice(true)
+	for _, g := range gSlice {
+		shardID := bot.GuildShardID(g.ID)
+		available := g.IsAvailable(true)
+		for _, v := range result {
+			if v.ShardID == shardID {
+				v.NumGuilds++
+				if !available {
+					v.UnavailableGuilds++
+				}
+				break
+			}
+		}
+	}
+
+	hostname, _ := os.Hostname()
+
+	ServeJson(w, r, &NodeStatus{
+		Host:   hostname,
+		Shards: result,
+		ID:     common.NodeID,
+		Uptime: time.Since(bot.Started),
+	})
 }
 
 func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {

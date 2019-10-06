@@ -276,8 +276,9 @@ func setupRoutes() *goji.Mux {
 	// Server selection has its own handler
 	RootMux.Handle(pat.Get("/manage"), RenderHandler(HandleSelectServer, "cp_selectserver"))
 	RootMux.Handle(pat.Get("/manage/"), RenderHandler(HandleSelectServer, "cp_selectserver"))
-	RootMux.Handle(pat.Get("/status"), ControllerHandler(HandleStatus, "cp_status"))
-	RootMux.Handle(pat.Get("/status/"), ControllerHandler(HandleStatus, "cp_status"))
+	RootMux.Handle(pat.Get("/status"), ControllerHandler(HandleStatusHTML, "cp_status"))
+	RootMux.Handle(pat.Get("/status/"), ControllerHandler(HandleStatusHTML, "cp_status"))
+	RootMux.Handle(pat.Get("/status.json"), APIHandler(HandleStatusJSON))
 	RootMux.Handle(pat.Post("/shard/:shard/reconnect"), ControllerHandler(HandleReconnectShard, "cp_status"))
 	RootMux.Handle(pat.Post("/shard/:shard/reconnect/"), ControllerHandler(HandleReconnectShard, "cp_status"))
 

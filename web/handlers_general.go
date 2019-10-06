@@ -7,9 +7,11 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"sort"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -149,17 +151,189 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	return tmpl, nil
 }
 
-func HandleStatus(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
+// BotStatus represents the bot's full status
+type BotStatus struct {
+	// Invidual statuses
+	HostStatuses []*HostStatus `json:"host_statuses"`
+	NumNodes     int           `json:"num_nodes"`
+	TotalShards  int           `json:"total_shards"`
+
+	UnavailableGuilds int   `json:"unavailable_guilds"`
+	OfflineShards     []int `json:"offline_shards"`
+
+	EventsPerSecondAverage float64 `json:"events_per_second_average"`
+	EventsPerSecondMin     float64 `json:"events_per_second_min"`
+	EventsPerSecondMax     float64 `json:"events_per_second_max"`
+
+	UptimeMax time.Duration `json:"uptim_emax"`
+	UptimeMin time.Duration `json:"uptime_min"`
+}
+
+var (
+	// cached the status for a couple seconds to prevent DOS vector since this is a heavy endpoint
+	cachedBotStatus *BotStatus
+	botStatusCacheT time.Time
+	botStatusCacheL sync.Mutex
+)
+
+func getFullBotStatus() (*BotStatus, error) {
+	botStatusCacheL.Lock()
+	defer botStatusCacheL.Unlock()
+	if time.Since(botStatusCacheT) < time.Second*5 {
+		return cachedBotStatus, nil
+	}
+
+	fullStatus, err := botrest.GetNodeStatuses()
+	if err != nil {
+		return nil, err
+	}
+
+	status := &BotStatus{
+		NumNodes:    len(fullStatus.Nodes),
+		TotalShards: fullStatus.TotalShards,
+
+		EventsPerSecondMin: -1,
+		EventsPerSecondMax: -1,
+
+		UptimeMax: -1,
+		UptimeMin: -1,
+
+		OfflineShards: fullStatus.MissingShards,
+	}
+
+	totalEventsPerSecond := float64(-1)
+
+	sort.Slice(fullStatus.Nodes, func(i, j int) bool {
+		return fullStatus.Nodes[i].Uptime > fullStatus.Nodes[j].Uptime
+	})
+
+	// group by hosts and calculate stats
+	for _, node := range fullStatus.Nodes {
+		var host *HostStatus
+
+		for _, v := range status.HostStatuses {
+			if v.Name == node.Host {
+				host = v
+				break
+			}
+		}
+
+		if host == nil {
+			host = &HostStatus{
+				Name: node.Host,
+			}
+			status.HostStatuses = append(status.HostStatuses, host)
+		}
+
+		host.Nodes = append(host.Nodes, node)
+
+		// update stats
+		for _, v := range node.Shards {
+			if v.EventsPerSecond < status.EventsPerSecondMin || status.EventsPerSecondMin == -1 {
+				status.EventsPerSecondMin = v.EventsPerSecond
+			}
+
+			if v.EventsPerSecond > status.EventsPerSecondMax || status.EventsPerSecondMax == -1 {
+				status.EventsPerSecondMax = v.EventsPerSecond
+			}
+
+			totalEventsPerSecond += v.EventsPerSecond
+
+			if v.ConnStatus != discordgo.GatewayStatusReady {
+				status.OfflineShards = append(status.OfflineShards, v.ShardID)
+			}
+
+			status.UnavailableGuilds += v.UnavailableGuilds
+		}
+
+		if status.UptimeMin == -1 || node.Uptime < status.UptimeMin {
+			status.UptimeMin = node.Uptime
+		}
+		if status.UptimeMax == -1 || node.Uptime > status.UptimeMax {
+			status.UptimeMax = node.Uptime
+		}
+	}
+
+	status.EventsPerSecondAverage = totalEventsPerSecond / float64(fullStatus.TotalShards)
+
+	cachedBotStatus = status
+	botStatusCacheT = time.Now()
+
+	return status, nil
+}
+
+// HandleStatusHTML handles GET /status
+func HandleStatusHTML(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	_, tmpl := GetCreateTemplateData(r.Context())
 
-	nodes, err := botrest.GetNodeStatuses()
+	status, err := getFullBotStatus()
 	if err != nil {
 		return tmpl, err
 	}
 
-	tmpl["Nodes"] = nodes
+	tmpl["BotStatus"] = status
 
 	return tmpl, nil
+}
+
+// HandleStatusJSON handles GET /status.json
+func HandleStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
+	status, err := getFullBotStatus()
+	if err != nil {
+		return err
+	}
+
+	return status
+}
+
+type HostStatus struct {
+	Name string
+
+	EventsPerSecond float64
+	TotalEvents     int64
+
+	Nodes []*botrest.NodeStatus
+}
+
+func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
+	result := make([]*HostStatus, 0, hosts)
+
+	for hostI := 0; hostI < hosts; hostI++ {
+		host := &HostStatus{
+			Name: "yagpdb-" + strconv.Itoa(hostI),
+		}
+		for nodeI := 0; nodeI < nodes; nodeI++ {
+
+			nodeID := (hostI * nodes) + nodeI
+
+			ns := &botrest.NodeStatus{
+				ID: strconv.Itoa(nodeID),
+			}
+
+			for shardI := 0; shardI < shards; shardI++ {
+				shard := &botrest.ShardStatus{
+					ShardID:         (nodeID * shards) + shardI,
+					TotalEvents:     999999,
+					EventsPerSecond: rand.Float64() * 100,
+
+					ConnStatus: discordgo.GatewayStatus(rand.Intn(5)),
+
+					LastHeartbeatSend: time.Now().Add(-time.Second * 10),
+					LastHeartbeatAck:  time.Now(),
+				}
+				ns.Shards = append(ns.Shards, shard)
+
+				host.EventsPerSecond += shard.EventsPerSecond
+				host.TotalEvents += shard.TotalEvents
+			}
+
+			host.Nodes = append(host.Nodes, ns)
+		}
+
+		result = append(result, host)
+	}
+
+	return result
 }
 
 func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
@@ -169,10 +343,10 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	if user := ctx.Value(common.ContextKeyUser); user != nil {
 		cast := user.(*discordgo.User)
 		if !common.IsOwner(cast.ID) {
-			return HandleStatus(w, r)
+			return HandleStatusHTML(w, r)
 		}
 	} else {
-		return HandleStatus(w, r)
+		return HandleStatusHTML(w, r)
 	}
 
 	CtxLogger(ctx).Info("Triggering reconnect...", r.FormValue("reidentify"))
@@ -190,7 +364,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	if err != nil {
 		tmpl.AddAlerts(ErrorAlert(err.Error()))
 	}
-	return HandleStatus(w, r)
+	return HandleStatusHTML(w, r)
 }
 
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {

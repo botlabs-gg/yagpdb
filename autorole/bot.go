@@ -1,13 +1,12 @@
 package autorole
 
 import (
-	"emperror.dev/errors"
 	"fmt"
-	"github.com/jonas747/yagpdb/premium"
 	"strconv"
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -17,6 +16,7 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/premium"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -268,6 +268,10 @@ OUTER:
 		}
 
 		cntSinceLastRedisUpdate++
+
+		if gs.Member(true, userID) == nil {
+			continue
+		}
 
 		err := common.BotSession.GuildMemberRoleAdd(gs.ID, userID, config.Role)
 		if err != nil {
