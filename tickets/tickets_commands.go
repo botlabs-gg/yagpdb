@@ -7,6 +7,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"sync"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -16,10 +21,6 @@ import (
 	"github.com/jonas747/yagpdb/tickets/models"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"io"
-	"net/http"
-	"sync"
-	"time"
 )
 
 const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionReadMessages
@@ -50,9 +51,19 @@ func (p *Plugin) AddCommands() {
 				return "Ticket system is disabled in this server, the server admins can enable it in the control panel.", nil
 			}
 
-			inCurrentTickets, err := models.Tickets(qm.Where("closed_at IS NULL"), qm.Where("guild_id = ?", parsed.GS.ID), qm.Where("author_id = ?", parsed.Msg.Author.ID)).CountG(parsed.Context())
+			inCurrentTickets, err := models.Tickets(
+				qm.Where("closed_at IS NULL"),
+				qm.Where("guild_id = ?", parsed.GS.ID),
+				qm.Where("author_id = ?", parsed.Msg.Author.ID)).AllG(parsed.Context())
 
-			if inCurrentTickets > 10 {
+			count := 0
+			for _, v := range inCurrentTickets {
+				if parsed.GS.Channel(true, v.ChannelID) != nil {
+					count++
+				}
+			}
+
+			if count >= 10 {
 				return "You're currently in over 10 open tickets on this server, please close some of the ones you're in.", nil
 			}
 
