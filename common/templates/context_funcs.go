@@ -855,14 +855,16 @@ func (c *Context) tmplOnlineCountBots() (int, error) {
 	}
 
 	botCount := 0
+	
 	c.GS.RLock()
+	defer c.GS.RUnlock()
+	
 	for _, v := range c.GS.Members {
 		if v.Bot && v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
 			botCount++
 		}
 	}
-	c.GS.RUnlock()
-
+	
 	return botCount, nil
 }
 
