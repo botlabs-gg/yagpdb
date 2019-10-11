@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jonas747/yagpdb/serverstats/messagestatscollector"
+
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -24,11 +26,14 @@ func MarkGuildAsToBeChecked(guildID int64) {
 }
 
 var (
-	_ bot.BotInitHandler       = (*Plugin)(nil)
-	_ commands.CommandProvider = (*Plugin)(nil)
+	_                 bot.BotInitHandler       = (*Plugin)(nil)
+	_                 commands.CommandProvider = (*Plugin)(nil)
+	msgStatsCollector *messagestatscollector.Collector
 )
 
 func (p *Plugin) BotInit() {
+	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute)
+
 	eventsystem.AddHandlerAsyncLastLegacy(p, HandleMemberAdd, eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandlerAsyncLastLegacy(p, HandleMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
@@ -86,7 +91,6 @@ func (p *Plugin) AddCommands() {
 			return embed, nil
 		},
 	})
-
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
@@ -169,13 +173,14 @@ func HandleMessageCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		return false, nil
 	}
 
-	val := channel.StrID() + ":" + discordgo.StrID(m.ID) + ":" + discordgo.StrID(m.Author.ID)
-	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), val))
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
+	msgStatsCollector.MsgEvtChan <- m.Message
+	// val := channel.StrID() + ":" + discordgo.StrID(m.ID) + ":" + discordgo.StrID(m.Author.ID)
+	// err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "ZADD", "guild_stats_msg_channel_day:"+channel.Guild.StrID(), time.Now().Unix(), val))
+	// if err != nil {
+	// 	return true, errors.WithStackIf(err)
+	// }
 
-	MarkGuildAsToBeChecked(channel.Guild.ID)
+	// MarkGuildAsToBeChecked(channel.Guild.ID)
 
 	return false, nil
 }
