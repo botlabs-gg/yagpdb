@@ -34,7 +34,7 @@ require (
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.1.0
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.1.2
+	github.com/jonas747/discordgo v1.1.4
 	github.com/jonas747/dshardorchestrator v0.0.0-20190717204625-752c847fa039
 	github.com/jonas747/dstate v1.0.3
 	github.com/jonas747/dutil v0.0.2
@@ -56,7 +56,6 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/olebedev/when v0.0.0-20190311101825-c3b538a97254
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pkg/errors v0.8.1
 	github.com/russross/blackfriday v1.5.2
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
