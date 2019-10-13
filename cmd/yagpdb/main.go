@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
@@ -76,6 +77,8 @@ var (
 	flagLogAppName string
 
 	flagNodeID string
+
+	flagVersion bool
 )
 
 var confSentryDSN = config.RegisterOption("yagpdb.sentry_dsn", "Sentry credentials for sentry logging hook", nil)
@@ -95,10 +98,17 @@ func init() {
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 
 	flag.StringVar(&flagNodeID, "nodeid", "", "The id of this node, used when running with a sharding orchestrator")
+	flag.BoolVar(&flagVersion, "version", false, "Print the version and exit")
 }
 
 func main() {
 	flag.Parse()
+
+	if flagVersion {
+		fmt.Println(common.VERSION)
+		return
+	}
+
 	common.NodeID = flagNodeID
 
 	common.AddLogHook(common.ContextHook{})
