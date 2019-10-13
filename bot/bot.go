@@ -120,6 +120,7 @@ func InitPlugins() {
 	}, nil)
 
 	pubsub.AddHandler("global_ratelimit", handleGlobalRatelimtPusub, GlobalRatelimitTriggeredEventData{})
+	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 
 	// Initialize all plugins
 	for _, plugin := range common.Plugins {

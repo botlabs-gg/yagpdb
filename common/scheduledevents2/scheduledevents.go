@@ -5,11 +5,12 @@ package scheduledevents2
 import (
 	"context"
 	"encoding/json"
-	"github.com/volatiletech/null"
 	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
@@ -104,6 +105,7 @@ var _ bot.LateBotInitHandler = (*ScheduledEvents)(nil)
 var _ bot.BotStopperHandler = (*ScheduledEvents)(nil)
 
 func (se *ScheduledEvents) LateBotInit() {
+	registerBuiltinEvents()
 	running = true
 	go se.runCheckLoop()
 	go se.MigrateLegacyEvents()

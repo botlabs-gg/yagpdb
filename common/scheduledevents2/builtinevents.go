@@ -16,7 +16,7 @@ type DeleteMessagesEvent struct {
 	Messages  []int64
 }
 
-func init() {
+func registerBuiltinEvents() {
 	RegisterHandler("delete_messages", DeleteMessagesEvent{}, handleDeleteMessagesEvent)
 	RegisterHandler("std_remove_member_role", RmoveRoleData{}, handleRemoveMemberRole)
 }

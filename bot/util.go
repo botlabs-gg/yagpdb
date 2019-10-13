@@ -2,12 +2,13 @@ package bot
 
 import (
 	"context"
-	"emperror.dev/errors"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"emperror.dev/errors"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
@@ -34,8 +35,6 @@ func init() {
 
 		return false
 	}
-
-	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 }
 
 func ContextSession(ctx context.Context) *discordgo.Session {
