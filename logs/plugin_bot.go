@@ -271,6 +271,9 @@ var cmdNicknames = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
+	ArgSwitches: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Switch: "d", Name: "Delete all nickname records"},
+	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
 		if err != nil {
@@ -278,6 +281,23 @@ var cmdNicknames = &commands.YAGCommand{
 		}
 
 		target := parsed.Msg.Author
+		
+		if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) && parsed.Args[0].Value == nil {
+			memberNick := (commands.ContextMS(parsed.Context())).Nick
+			count, err := DeleteNicknames(context.Background(), parsed.GS.ID, target.ID, memberNick)
+			if err != nil {
+				return nil, err
+			}
+
+			if count < 1 {
+				return "No nicknames deletable.", nil
+			} else if memberNick != "" {
+				return fmt.Sprintf("Doneso, deleted all - count: %d nickname(s), except your latest: `%s`.", count, memberNick), nil
+			} else {
+				return fmt.Sprintf("Doneso, deleted all - count: %d nickname(s).", count), nil
+			}
+		}
+		
 		if parsed.Args[0].Value != nil {
 			target = parsed.Args[0].Value.(*discordgo.User)
 		}
