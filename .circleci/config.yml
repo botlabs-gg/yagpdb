@@ -18,7 +18,13 @@ jobs: # basic units of work in a run
           keys:
             - v1-pkg-cache
      
-      - run: cd cmd/yagpdb && go install -i && cd -
+      - run: 
+          name: main yagpdb binary build
+          command: |
+            VERSION=$(git describe --tags)
+            cd cmd/yagpdb
+            go install -i -ldflags "-X github.com/jonas747/yagpdb/common.VERSION=${VERSION}"
+            cd -
       - run: cd cmd/shardorchestrator && go install -i && cd -
       - run: cd cmd/capturepanics && go install -i && cd -
 

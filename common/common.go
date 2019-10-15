@@ -23,15 +23,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-const (
-	VERSIONMAJOR = 1
-	VERSIONMINOR = 20
-	VERSIONPATCH = 10
-)
-
 var (
-	VERSIONNUMBER = fmt.Sprintf("%d.%d.%d", VERSIONMAJOR, VERSIONMINOR, VERSIONPATCH)
-	VERSION       = VERSIONNUMBER
+	VERSION = "unknown"
 
 	GORM *gorm.DB
 	PQ   *sql.DB
