@@ -270,3 +270,21 @@ func GetNicknames(ctx context.Context, userID, guildID int64, limit, offset int)
 		qm.Limit(limit),
 		qm.Offset(offset)).AllG(ctx)
 }
+
+func DeleteNicknames(ctx context.Context, guildID, userID int64, nickname string) (int64, error) {
+	dbQueryForID, err := models.NicknameListings(qm.Select("id"), qm.Where("guild_id = ? AND user_id = ?",
+		guildID, userID), qm.OrderBy("id DESC")).One(context.Background(), common.PQ)
+
+	if err == sql.ErrNoRows {
+		return 0, nil
+	} else if err != nil {
+		return 0, err
+	}
+
+	dbEntryID := dbQueryForID.ID
+
+	return models.NicknameListings(
+		qm.Where("guild_id = ? AND user_id = ? AND (id <> ? OR nickname = '')", guildID, userID, dbEntryID),
+	).DeleteAll(context.Background(), common.PQ)
+}
+
