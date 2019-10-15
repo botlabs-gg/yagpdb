@@ -114,29 +114,28 @@
 		<h2 class="card-title">Host {{.Name}}</h2>
 	</header>
 	<div class="card-body host-status">
-			{{range .Nodes}}
-			<div class="row node-row">
-				<div class="col-3">
-					<b>Node {{.ID}}</b> - <small>{{humanizeDurationMinutes .Uptime}}</small>
-				</div>
-				<div class="col-9">	
-					<div class="shardcluster d-flex">
-						{{range $i, $v := .Shards}}
-						<div class="shard shard-status-{{lower (.ConnStatus.String)}} {{if lt .EventsPerSecond 1.0}}shard-low-events{{end}}" data-toggle="tooltip" data-html="true" title='{{template "cp_status_tooltip" .}}'>
-							<div class="shard-quick-details">
-								<p class="shard-id"><b>{{.ShardID}}</b></p>
-								<p>
-									{{printf "%.1f" .EventsPerSecond}}/s
-								</p>
-							</div>
+		{{range .Nodes}}
+		<div class="row node-row">
+			<div class="col-3">
+				<b>Node {{.ID}}</b> - <small>{{humanizeDurationMinutes .Uptime}}</small>
+			</div>
+			<div class="col-9">	
+				<div class="shardcluster d-flex">
+					{{range $i, $v := .Shards}}
+					<div class="shard shard-status-{{lower (.ConnStatus.String)}} {{if lt .EventsPerSecond 1.0}}shard-low-events{{end}}" data-toggle="tooltip" data-html="true" title='{{template "cp_status_tooltip" .}}'>
+						<div class="shard-quick-details">
+							<p class="shard-id"><b>{{.ShardID}}</b></p>
+							<p>
+								{{printf "%.1f" .EventsPerSecond}}/s
+							</p>
 						</div>
-						{{end}}
 					</div>
+					{{end}}
 				</div>
 			</div>
-			{{end}}
-			<!-- /.row -->
 		</div>
+		{{end}}
+		<!-- /.row -->
 	</div>
 </section>
 {{end}}{{end}}
@@ -148,7 +147,7 @@
 {{define "cp_status_tooltip"}}
 Events/s: {{printf "%.1f" .EventsPerSecond}} <br/>
 TotalEvents: {{.TotalEvents}} <br/>
-Last Hearbeat: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatSend)}} ago <br/>
-Last Hearbeat Ack: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatAck)}} ago <br/>
+Last Heartbeat: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatSend)}} ago <br/>
+Last Heartbeat Ack: {{humanizeDurationSeconds (currentTime.Sub .LastHeartbeatAck)}} ago <br/>
 Unavailable Guilds: {{.UnavailableGuilds}}/{{.NumGuilds}}<br/>
 {{end}}

@@ -535,10 +535,17 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		}
 	}
 
-	wh, err := gs.UserCacheFetch(CacheKeyWebhook(elem.Channel), func() (interface{}, error) {
-		return FindCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
-		// return weho
-	})
+	var wh interface{}
+	// in some cases guild state may not be available (starting up and the like)
+	if gs != nil {
+		wh, err = gs.UserCacheFetch(CacheKeyWebhook(elem.Channel), func() (interface{}, error) {
+			return FindCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
+		})
+	} else {
+		// fallback if no gs is available
+		wh, err = FindCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
+		logger.WithField("guild", elem.Guild).Warn("Guild state not available, ignoring cache")
+	}
 
 	if err != nil {
 		return err
@@ -563,7 +570,9 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 			return errors.WrapIf(err, "sql.delete")
 		}
 
-		gs.UserCacheDel(CacheKeyWebhook(elem.Channel))
+		if gs != nil {
+			gs.UserCacheDel(CacheKeyWebhook(elem.Channel))
+		}
 
 		return errors.New("deleted webhook")
 	}
