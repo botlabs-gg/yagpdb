@@ -143,7 +143,7 @@ func main() {
 		return
 	}
 
-	log.Info("YAGPDB is initializing...")
+	log.Info("Starting YAGPDB version " + common.VERSION)
 
 	err := common.Init()
 	if err != nil {
