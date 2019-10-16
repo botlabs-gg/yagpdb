@@ -34,7 +34,7 @@ require (
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.1.0
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.1.5
+	github.com/jonas747/discordgo v1.1.6
 	github.com/jonas747/dshardorchestrator v0.0.0-20190717204625-752c847fa039
 	github.com/jonas747/dstate v1.0.3
 	github.com/jonas747/dutil v0.0.2
