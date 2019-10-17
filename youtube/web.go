@@ -129,7 +129,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 
 		id := pat.Param(r, "item")
 
-		// Get tha actual watch item from the config
+		// Get the actual watch item from the config
 		var sub ChannelSubscription
 		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", id).First(&sub).Error
 		if err != nil {
