@@ -652,7 +652,7 @@ func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	err := common.AddRoleDS(ctxData.MS, settingsCast.Role)
 	if err != nil {
 		if code, _ := common.DiscordError(err); code != 0 {
-			return nil // discord responded with a proper error, we know that shit didn't happen
+			return nil // discord responded with a proper error, we know that it didn't break
 		}
 
 		// discord was not the cause of the error, in some cases even if the gateway times out the action is performed so just in case, scehdule the role removal
