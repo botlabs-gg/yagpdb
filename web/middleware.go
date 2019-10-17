@@ -347,7 +347,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		// SORT THESE MOTHERFUCKERS
+		// Sort them
 		sort.Sort(dutil.Channels(channels))
 		guild.Channels = channels
 
