@@ -101,7 +101,7 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		if joinedAtDurStr == "" {
-			joinedAtDurStr = "Lesss than an hour ago"
+			joinedAtDurStr = "Less than an hour ago"
 		}
 
 		t := bot.SnowflakeToTime(member.ID)
@@ -123,7 +123,7 @@ var cmdWhois = &commands.YAGCommand{
 					Inline: true,
 				},
 				&discordgo.MessageEmbedField{
-					Name:   "Account created",
+					Name:   "Account Created",
 					Value:  t.UTC().Format(time.RFC822),
 					Inline: true,
 				},
@@ -133,11 +133,11 @@ var cmdWhois = &commands.YAGCommand{
 					Inline: true,
 				},
 				&discordgo.MessageEmbedField{
-					Name:   "Joined server at",
+					Name:   "Joined Server At",
 					Value:  joinedAtStr,
 					Inline: true,
 				}, &discordgo.MessageEmbedField{
-					Name:   "Join server Age",
+					Name:   "Join Server Age",
 					Value:  joinedAtDurStr,
 					Inline: true,
 				},
