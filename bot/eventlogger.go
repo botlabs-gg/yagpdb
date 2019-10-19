@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,10 +19,16 @@ var (
 type eventLogger struct {
 	sync.Mutex
 
+	// these slices are 2d of shard id and event type
+
+	// total stats is the cumulative number of events produced
 	totalStats [][]*int64
 
+	// lastPeriod is a snapshot of totalstats at the last logging period
 	lastPeriod [][]int64
-	perPeriod  [][]int64
+
+	// perPeriod is the number of events proccessed the last period alone (the rate of events)
+	perPeriod [][]int64
 
 	numShards int
 }
@@ -76,7 +83,7 @@ func (e *eventLogger) GetStats() (total [][]int64, perPeriod [][]int64) {
 }
 
 func (e *eventLogger) flushStats() {
-	totalPerPeriod := int64(0)
+	shardTotals := make([]int64, len(e.totalStats))
 
 	e.Lock()
 	for i := 0; i < len(e.totalStats); i++ {
@@ -85,13 +92,16 @@ func (e *eventLogger) flushStats() {
 			e.perPeriod[i][j] = currentVal - e.lastPeriod[i][j]
 			e.lastPeriod[i][j] = currentVal
 
-			totalPerPeriod += e.perPeriod[i][j]
+			shardTotals[i] += e.perPeriod[i][j]
+			// totalPerPeriod += e.perPeriod[i][j]
 		}
 	}
 	e.Unlock()
 
-	if common.Statsd != nil {
-		common.Statsd.Count("discord.processed.events", totalPerPeriod, nil, EventLoggerPeriodDuration.Seconds())
+	pShards := GetProcessShards()
+
+	for _, shard := range pShards {
+		common.Statsd.Count("discord.processed.events", shardTotals[shard], []string{"shard:" + strconv.Itoa(shard)}, EventLoggerPeriodDuration.Seconds())
 	}
 }
 
