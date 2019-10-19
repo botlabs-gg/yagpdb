@@ -25,9 +25,9 @@
 			<li>Hosts: <code>{{len .BotStatus.HostStatuses}}</code></li>
 			<li>Nodes: <code>{{.BotStatus.NumNodes}}</code></li>
 			<li>Shards: <code>{{.BotStatus.TotalShards}}</code></li>
-			<li>Offline shards: <code>{{len .BotStatus.OfflineShards}}</code></li>
+			<li>Offline Shards: <code>{{len .BotStatus.OfflineShards}}</code></li>
 			<li>Min, Max, Avg Events/s: <code>{{printf "%.1f" .BotStatus.EventsPerSecondMin}}</code>/<code>{{printf "%.1f" .BotStatus.EventsPerSecondMax}}</code>/<code>{{printf "%.1f" .BotStatus.EventsPerSecondAverage}}</code></li>
-			<li>Unavailable guilds: <code>{{.BotStatus.UnavailableGuilds}}</code></li>
+			<li>Unavailable Guilds: <code>{{.BotStatus.UnavailableGuilds}}</code></li>
 			<li>Min Uptime: <code>{{.BotStatus.UptimeMin}}</code></li>
 			<li>Max Uptime: <code>{{.BotStatus.UptimeMax}}</code></li>
 		</ul>
@@ -55,24 +55,24 @@
 }
 
 .shard-status-ready{
-	background-color: rgb(47, 255, 47);
+	background-color: rgb(71, 164, 71);
 }
 
 .shard-status-disconnected {
-	background-color: rgb(255, 126, 126);
+	background-color: rgb(210, 50, 45);
 }
 
 .shard-status-connecting {
 	/* background-color: rgb(156, 249, 241); */
-	background-color:rgb(223, 255, 41);
+	background-color:rgb(241, 196, 15);
 }
 
 .shard-status-identifying {
-	background-color:rgb(223, 255, 41);
+	background-color:rgb(241, 196, 15);
 }
 
 .shard-status-resuming {
-	background-color:rgb(223, 255, 41);
+	background-color:rgb(241, 196, 15);
 	/* background-color: rgb(134, 134, 255); */
 }
 
