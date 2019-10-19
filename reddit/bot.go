@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
 )
@@ -17,7 +16,9 @@ import (
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
 
 func (p *Plugin) RemoveGuild(g int64) error {
-	_, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(g)).DeleteAll(context.Background(), common.PQ)
+	_, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(g)).UpdateAllG(context.Background(), models.M{
+		"disabled": true,
+	})
 	if err != nil {
 		return errors.WrapIf(err, "failed removing reddit feeds")
 	}
