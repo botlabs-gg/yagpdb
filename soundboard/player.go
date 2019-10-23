@@ -1,14 +1,15 @@
 package soundboard
 
 import (
+	"io"
+	"sync"
+	"time"
+
 	"emperror.dev/errors"
 	"github.com/jonas747/dca"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"io"
-	"sync"
-	"time"
 )
 
 type PlayRequest struct {
@@ -22,6 +23,9 @@ var (
 	playQueues      = make(map[int64][]*PlayRequest)
 	playQueuesMutex sync.Mutex
 	Silence         = []byte{0xF8, 0xFF, 0xFE}
+
+	players   = make(map[int64]*Player)
+	playersmu = sync.NewCond(&sync.Mutex{})
 )
 
 // RequestPlaySound either queues up a sound to be played in an existing player or creates a new one
@@ -33,61 +37,129 @@ func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID in
 		CommandRanFrom: channelRanFrom,
 	}
 
-	// If there is a queue setup there is alaso a player running, so just add it to the queue then
-	playQueuesMutex.Lock()
-	if queue, ok := playQueues[guildID]; ok {
-		playQueues[guildID] = append(queue, item)
+	playersmu.L.Lock()
+	if p, ok := players[guildID]; ok {
+		// add to existing player queue
+		p.queue = append(p.queue, item)
 		queued = true
 	} else {
-		playQueues[guildID] = []*PlayRequest{item}
-		go runPlayer(guildID)
+		// create new player
+		p = &Player{
+			ChannelID: channelID,
+			GuildID:   guildID,
+			queue:     []*PlayRequest{item},
+		}
+		players[guildID] = p
+		go p.Run()
 	}
-	playQueuesMutex.Unlock()
+
+	playersmu.L.Unlock()
+
+	// wake up all players to recheck their queues
+	playersmu.Broadcast()
+
 	return
 }
 
-func runPlayer(guildID int64) {
-	var lastChannel int64
-	var vc *discordgo.VoiceConnection
-	for {
-		playQueuesMutex.Lock()
-		var item *PlayRequest
+// Player represends a voice connection playing a soundbaord file (or waiting for one)
+type Player struct {
+	GuildID int64
 
-		// Get the next item in the queue or quit life
-		if queue, ok := playQueues[guildID]; ok && len(queue) > 0 {
-			item = queue[0]
-			playQueues[guildID] = queue[1:]
-		} else {
-			break
+	// below fields are safe to access with playersmu
+	ChannelID    int64
+	queue        []*PlayRequest
+	timeLastPlay time.Time
+	playing      bool
+	stop         bool
+
+	// below fields are only safe to deal with in the main run goroutine
+	vc *discordgo.VoiceConnection
+}
+
+// Run runs the main player goroutine
+func (p *Player) Run() {
+	go p.checkIdleTooLong()
+
+	for {
+		p.waitForNextElement()
+		if p.stop {
+			playersmu.L.Unlock()
+			return
 		}
 
-		playQueuesMutex.Unlock()
-		// Should probably to changechannel but eh..
-		if lastChannel != item.ChannelID && vc != nil {
-			vc.Disconnect()
-			vc.Close()
-			vc = nil
+		item := p.queue[0]
+		p.queue = p.queue[1:]
+
+		// check if we need to change voice channel
+		changeChannel := false
+		if p.ChannelID != item.ChannelID {
+			changeChannel = true
+			p.ChannelID = item.ChannelID
+		}
+
+		p.playing = true
+		p.timeLastPlay = time.Now()
+		playersmu.L.Unlock()
+
+		// do a changechannel if we are in another channel and also voice is connected
+		if changeChannel && p.vc != nil {
+			p.vc.ChangeChannel(item.ChannelID, false, true)
 		}
 
 		var err error
-		vc, err = playSound(vc, bot.ShardManager.SessionForGuild(guildID), item)
+		p.vc, err = playSound(p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Failed playing sound")
+			logger.WithError(err).WithField("guild", p.GuildID).Error("Failed playing sound")
 			if item.CommandRanFrom != 0 {
 				common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Failed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
 			}
 		}
-		lastChannel = item.ChannelID
 	}
-	if vc != nil {
-		vc.Disconnect()
-		vc.Close()
+}
+
+// cond.L is locked when this returns
+func (p *Player) waitForNextElement() {
+	playersmu.L.Lock()
+	p.playing = false
+	for {
+		if p.stop {
+			p.exit()
+			return
+		}
+
+		if len(p.queue) < 1 {
+			playersmu.Wait()
+			continue
+		}
+
+		break
+	}
+}
+
+func (p *Player) exit() {
+	if p.vc != nil {
+		p.vc.Disconnect()
 	}
 
-	logger.Info("Done playing")
-	// When we break out, playqueuemutex is locked
-	delete(playQueues, guildID)
-	playQueuesMutex.Unlock()
+	delete(players, p.GuildID)
+}
+
+func (p *Player) checkIdleTooLong() {
+	t := time.NewTicker(time.Second * 10)
+	defer t.Stop()
+	for {
+		<-t.C
+
+		playersmu.L.Lock()
+		if time.Since(p.timeLastPlay) > time.Minute && len(p.queue) < 1 && !p.playing {
+			p.stop = true
+			playersmu.Broadcast()
+			playersmu.L.Unlock()
+			return
+		}
+
+		playersmu.L.Unlock()
+	}
 }
 
 func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest) (*discordgo.VoiceConnection, error) {
@@ -116,7 +188,7 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 	}
 
 	// Start by sending some frames of silence
-	err = sendSilence(vc, 10)
+	err = sendSilence(vc, 3)
 	if err != nil {
 		return vc, common.ErrWithCaller(err)
 	}
