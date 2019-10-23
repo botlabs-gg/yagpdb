@@ -586,6 +586,11 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
 	}
 
+	if !bot.BotProbablyHasPermissionGS(true, tmplCtx.GS, tmplCtx.CS.ID, discordgo.PermissionSendMessages) {
+		// don't bother sending the response if we dont have perms
+		return nil
+	}
+
 	for _, v := range tmplCtx.EmebdsToSend {
 		common.BotSession.ChannelMessageSendEmbed(tmplCtx.CS.ID, v)
 	}
