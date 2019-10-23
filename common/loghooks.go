@@ -2,7 +2,6 @@ package common
 
 import (
 	"bytes"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jonas747/discordgo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -119,6 +119,12 @@ var numberRemover = strings.NewReplacer(
 
 func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 
+	bucketI := request.Context().Value(discordgo.CtxKeyRatelimitBucket)
+	var rlBucket *discordgo.Bucket
+	if bucketI != nil {
+		rlBucket = bucketI.(*discordgo.Bucket)
+	}
+
 	inner := t.Inner
 	if inner == nil {
 		inner = http.DefaultTransport
@@ -132,14 +138,17 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 		code = resp.StatusCode
 	}
 
-	floored := int(math.Floor(float64(code) / 100))
-
 	since := time.Since(started).Seconds() * 1000
 	go func() {
-		path := numberRemover.Replace(request.URL.Path)
+		path := request.URL.Path
+		if rlBucket != nil {
+			path = rlBucket.Key
+		}
+
+		path = numberRemover.Replace(path)
 
 		if Statsd != nil {
-			Statsd.Incr("discord.num_requsts", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(floored), "path:" + request.Method + "-" + path}, 1)
+			Statsd.Incr("discord.num_requests", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(code), "path:" + request.Method + "-" + path}, 1)
 			Statsd.Gauge("discord.http_latency", since, nil, 1)
 			if code == 429 {
 				Statsd.Incr("discord.requests.429", []string{"method:" + request.Method, "path:" + request.Method + "-" + path}, 1)
