@@ -207,7 +207,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 
 	for i := range data.ContainerChain {
 		if i == len(data.ContainerChain)-1 {
-			// skip middlewares in original container to bypass cooldowns and shit
+			// skip middlewares in original container to bypass cooldowns and stuff
 			continue
 		}
 		runFunc = data.ContainerChain[len(data.ContainerChain)-1-i].BuildMiddlewareChain(runFunc, foundCmd)

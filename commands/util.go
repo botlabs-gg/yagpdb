@@ -201,7 +201,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 
 			enabled := false
 
-			// make sure that atleast 1 command in the container is enabled
+			// make sure that at least 1 command in the container is enabled
 			for _, v := range container.Commands {
 				cast := v.Command.(*YAGCommand)
 				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GS.ID, channelOverrides)

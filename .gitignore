@@ -1,4 +1,4 @@
-# Just some shit
+# Just some stuff
 cmd/yagpdb/static/bower_components
 cmd/yagpdb/static/pages
 cmd/yagpdb/static/index.html
@@ -14,6 +14,6 @@ cmd/yagpdb/safebrowsing_db
 cmd/yagpdb/static/video/*
 
 # We don't want filthy pre-configured config files here ! >:O
-# THe graw agent file
+# The graw agent file
 *.agent
 *.exe

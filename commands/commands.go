@@ -1,7 +1,7 @@
 package commands
 
 //go:generate sqlboiler --no-hooks psql
-//REMOVED: generate easyjson  commands.go
+//REMOVED: generate easyjson commands.go
 
 import (
 	"github.com/jonas747/dcmd"
@@ -70,7 +70,7 @@ func InitCommands() {
 		Prefix:         &Plugin{},
 	}
 
-	// We have our own middleware before the argument parsing, this is to check for things such as wether the command is enabled at all
+	// We have our own middleware before the argument parsing, this is to check for things such as whether or not the command is enabled at all
 	CommandSystem.Root.AddMidlewares(YAGCommandMiddleware, dcmd.ArgParserMW)
 	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
 	CommandSystem.Root.AddCommand(cmdPrefix, cmdPrefix.GetTrigger())
