@@ -124,7 +124,7 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		token, err := AuthTokenFromB64(cookie.Value)
 		if err != nil {
 			if err != ErrNotLoggedIn {
-				// this could really only happen if the user messes with the session token, or some other bullshit happens (like bad ram i guess)
+				// this could really only happen if the user messes with the session token, or some other BS happens (like bad ram i guess)
 				CtxLogger(r.Context()).WithError(err).Error("invalid session")
 			}
 
@@ -347,7 +347,7 @@ func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		// SORT THESE MOTHERFUCKERS
+		// Sort them
 		sort.Sort(dutil.Channels(channels))
 		guild.Channels = channels
 

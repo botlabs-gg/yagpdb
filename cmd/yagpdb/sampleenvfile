@@ -7,8 +7,8 @@ YAGPDB_CLIENTSECRET="Insert client secret here"
 YAGPDB_BOTTOKEN="Bot token_here"
 
 # Used for the website, required for https and csrf protection
-YAGPDB_HOST="somehost.com"   
-YAGPDB_EMAIL="insert@email.here"      
+YAGPDB_HOST="somehost.com"
+YAGPDB_EMAIL="insert@email.here"
 
 # Postgres and redis
 YAGPDB_PQHOST="localhost"
@@ -51,7 +51,7 @@ YAGPDB_TESTING=""
 # Administration
 # Used for YAGPDB_ADMINROLE and readonlyaccesrole
 YAGPDB_MAIN_SERVER=""
-# Admins have access to things like shard reconnects, and full access to admin only commands 
+# Admins have access to things like shard reconnects, and full access to admin only commands
 YAGPDB_ADMIN_ROLE=""
 # Users in the main server with this role can access the control panel page of any server, but they can't modify any settings
 YAGPDB_READONLY_ACCESS_ROLE=""
@@ -63,7 +63,7 @@ YAGPDB_CONNSTATUS_CHANNEL=""
 
 # Bot leaves joins to this channel
 YAGPDB_BOTLEAVESJOINS=""
-	
+
 # Set to anything to disable the request logging of the webserver
 YAGPDB_DISABLE_REQUEST_LOGGING=""
 
@@ -85,8 +85,8 @@ YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY=""
 YAGPDB_GOOGLE_RECAPTCHA_SECRET=""
 
 # This will be used as the pubsubhubbub (websub) verify token when receiving callbacks on new video uploads
-# if this gets leaked, people could spam shit
-YAGPDB_YOUTUBE_VERIFY_TOKEN="some_secret_shit"
+# if this gets leaked, people could spam stuff
+YAGPDB_YOUTUBE_VERIFY_TOKEN="token_goes_here"
 
 ## These variables are for displaying an ad in the sidebar
 # Leave empty for nothing
@@ -106,7 +106,7 @@ YAGPDB_GA_ID=""
 
 # The feed on /managed
 YAGPDB_ANNOUNCEMENTS_CHANNEL=""
- 
+
 # Datadog integration
 YAGPDB_DOGSTATSDADDRESS="127.0.0.1:8125"
 

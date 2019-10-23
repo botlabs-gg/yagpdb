@@ -1960,7 +1960,7 @@ exports.arrayBuffer2Blob = function(buffer, mimeType) {
         }
         catch (e) {
 
-            // well, fuck ?!
+            // it did an oopsie
             throw new Error("Bug : can't construct the Blob.");
         }
     }
@@ -5727,7 +5727,7 @@ function GZheader() {
                        // but leave for few code modifications
 
   //
-  // Setup limits is not necessary because in js we should not preallocate memory 
+  // Setup limits is not necessary because in js we should not preallocate memory
   // for inflate use constant limit in 65536 bytes
   //
 
