@@ -293,7 +293,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 	fetchedMembers, _ := bot.GetMembers(m.GuildID, usersToFetch...)
 
-	author := findUserWithNickname(fetchedMembers, m.AuthorID)
+	author := findUser(fetchedMembers, m.AuthorID)
 
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
@@ -350,7 +350,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 			continue
 		}
 
-		user := findUserWithNickname(fetchedMembers, v.UserID)
+		user := findUser(fetchedMembers, v.UserID)
 		if (addedParticipants >= m.MaxParticipants && m.MaxParticipants > 0) || v.JoinState == int16(ParticipantStateWaitlist) {
 			// we hit the max limit so add them to the waiting list instead
 			waitingListField.Value += user.Username + "#" + user.Discriminator + "\n"
@@ -390,14 +390,11 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	return err
 }
 
-func findUserWithNickname(members []*dstate.MemberState, target int64) *discordgo.User {
+func findUser(members []*dstate.MemberState, target int64) *discordgo.User {
 
 	for _, v := range members {
 		if v.ID == target {
 			dgoUser := v.DGoUser()
-			if v.Nick != "" {
-				dgoUser.Username = v.Nick
-			}
 			return dgoUser
 		}
 	}
@@ -417,7 +414,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 
 	count := 0
 	for _, v := range participants {
-		user := findUserWithNickname(users, v.UserID)
+		user := findUser(users, v.UserID)
 
 		if v.JoinState == int16(state) {
 			field.Value += user.Username + "#" + user.Discriminator + "\n"
