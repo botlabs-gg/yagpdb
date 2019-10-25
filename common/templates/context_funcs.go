@@ -832,6 +832,28 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 	return "", err
 }
 
+func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (string, error) {
+        if c.IncreaseCheckCallCounter("edit_channel", 10) {
+                return "", ErrTooManyCalls
+        }
+
+        cID := c.ChannelArg(channel)
+        if cID == 0 {
+                return "", errors.New("Unknown channel")
+        }
+
+        if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+                return "", ErrTooManyCalls
+        }
+
+	edit := &discordgo.ChannelEdit{
+		Topic: newTopic,
+	}
+
+        _, err := common.BotSession.ChannelEditComplex(cID, edit)
+        return "", err
+}
+
 func (c *Context) tmplOnlineCount() (int, error) {
 	if c.IncreaseCheckCallCounter("online_users", 1) {
 		return 0, ErrTooManyCalls
