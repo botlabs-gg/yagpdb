@@ -36,7 +36,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
-var _ mqueue.PluginWithErrorHandler = (*Plugin)(nil)
+var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {

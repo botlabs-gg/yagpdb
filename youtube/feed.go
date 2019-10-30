@@ -340,9 +340,17 @@ func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle st
 		content += " @everyone"
 	}
 
-	parsedCChannel, _ := strconv.ParseInt(discordChannel, 10, 64)
+	parsedChannel, _ := strconv.ParseInt(discordChannel, 10, 64)
 	parsedGuild, _ := strconv.ParseInt(guild, 10, 64)
-	mqueue.QueueMessageString("youtube", "", parsedGuild, parsedCChannel, content)
+
+	mqueue.QueueMessage(&mqueue.QueuedElement{
+		Guild:      parsedGuild,
+		Channel:    parsedChannel,
+		Source:     "youtube",
+		SourceID:   "",
+		MessageStr: content,
+		Priority:   2,
+	})
 }
 
 var (

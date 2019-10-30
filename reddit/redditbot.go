@@ -165,11 +165,23 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		idStr := strconv.FormatInt(item.ID, 10)
 
 		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
-		if item.UseEmbeds {
-			mqueue.QueueMessageWebhook("reddit", idStr, item.GuildID, item.ChannelID, "", embed, true, webhookUsername)
-		} else {
-			mqueue.QueueMessageWebhook("reddit", idStr, item.GuildID, item.ChannelID, message, nil, true, webhookUsername)
+
+		qm := &mqueue.QueuedElement{
+			Guild:           item.GuildID,
+			Channel:         item.ChannelID,
+			Source:          "reddit",
+			SourceID:        idStr,
+			UseWebhook:      true,
+			WebhookUsername: webhookUsername,
 		}
+
+		if item.UseEmbeds {
+			qm.MessageEmbed = embed
+		} else {
+			qm.MessageStr = message
+		}
+
+		mqueue.QueueMessage(qm)
 
 		if common.Statsd != nil {
 			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + strconv.FormatInt(item.GuildID, 10)}, 1)
