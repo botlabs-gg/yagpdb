@@ -1,15 +1,16 @@
 package reminders
 
 import (
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Plugin struct{}
@@ -60,7 +61,17 @@ func (r *Reminder) Trigger() error {
 
 	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
 
-	mqueue.QueueMessageString("reminder", "", r.GuildID, r.ChannelIDInt(), common.EscapeSpecialMentions("**Reminder** <@"+r.UserID+">: "+r.Message))
+	mqueue.QueueMessage(&mqueue.QueuedElement{
+		Source:   "reminder",
+		SourceID: "",
+
+		Guild:   r.GuildID,
+		Channel: r.ChannelIDInt(),
+
+		MessageStr: common.EscapeSpecialMentions("**Reminder** <@" + r.UserID + ">: " + r.Message),
+
+		Priority: 10, // above all feeds
+	})
 	return nil
 }
 

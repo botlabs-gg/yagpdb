@@ -3,9 +3,10 @@ package twitter
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/twitter/models"
-	"strconv"
 )
 
 func (p *Plugin) Status() (string, string) {
@@ -18,7 +19,7 @@ func (p *Plugin) Status() (string, string) {
 	return "Twitter feeds", fmt.Sprintf("%d", numFeeds)
 }
 
-var _ mqueue.PluginWithErrorHandler = (*Plugin)(nil)
+var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 

@@ -7,7 +7,9 @@ import (
 	"github.com/jonas747/yagpdb/common"
 )
 
+// QueuedElement represents a queued message
 type QueuedElement struct {
+	// The channel to send the message in
 	Channel int64
 	Guild   int64
 
@@ -19,17 +21,21 @@ type QueuedElement struct {
 	SourceID string
 
 	// The actual message as a simple string
+	// specify only one of MessageStr or MessageEmbed
 	MessageStr string `json:",omitempty"`
 
 	// The actual message as an embed
+	// specify only one of MessageStr or MessageEmbed
 	MessageEmbed *discordgo.MessageEmbed `json:",omitempty"`
-	// The channel to send the message in
 
 	UseWebhook      bool
 	WebhookUsername string
+
+	// When the queue grows, the feeds with the highest priority gets sent first
+	Priority int
 }
 
-type Webhook struct {
+type webhook struct {
 	ID    int64
 	Token string
 
@@ -39,7 +45,7 @@ type Webhook struct {
 	Plugin string
 }
 
-func FindCreateWebhook(guildID int64, channelID int64, plugin string, avatar string) (*Webhook, error) {
+func findCreateWebhook(guildID int64, channelID int64, plugin string, avatar string) (*webhook, error) {
 	const query = `
 SELECT id, guild_id, channel_id, token, plugin FROM mqueue_webhooks
 WHERE guild_id=$1 AND channel_id=$2 AND plugin=$3;
@@ -47,11 +53,11 @@ WHERE guild_id=$1 AND channel_id=$2 AND plugin=$3;
 
 	row := common.PQ.QueryRow(query, guildID, channelID, plugin)
 
-	var hook Webhook
+	var hook webhook
 	err := row.Scan(&hook.ID, &hook.GuildID, &hook.ChannelID, &hook.Token, &hook.Plugin)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return CreateWebhook(guildID, channelID, plugin, avatar)
+			return createWebhook(guildID, channelID, plugin, avatar)
 		}
 
 		return nil, err
@@ -60,7 +66,7 @@ WHERE guild_id=$1 AND channel_id=$2 AND plugin=$3;
 	return &hook, nil
 }
 
-func CreateWebhook(guildID int64, channelID int64, plugin string, avatar string) (*Webhook, error) {
+func createWebhook(guildID int64, channelID int64, plugin string, avatar string) (*webhook, error) {
 	discordHook, err := common.BotSession.WebhookCreate(channelID, plugin, avatar)
 	if err != nil {
 		return nil, err
@@ -76,7 +82,7 @@ VALUES ($1, $2, $3, $4, $5);
 		return nil, err
 	}
 
-	return &Webhook{
+	return &webhook{
 		ID:        discordHook.ID,
 		Token:     discordHook.Token,
 		GuildID:   guildID,

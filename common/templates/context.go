@@ -453,3 +453,9 @@ func (d SDict) Set(key string, value interface{}) string {
 func (d SDict) Get(key string) interface{} {
 	return d[key]
 }
+
+func (d SDict) Del(key string) string {
+	delete(d,key)
+	return ""
+}
+

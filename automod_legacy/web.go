@@ -30,7 +30,7 @@ func (p *Plugin) InitWeb() {
 	}
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
-		Name: "Legacy Automoderator",
+		Name: "Basic Automoderator",
 		URL:  "automod_legacy",
 	})
 
