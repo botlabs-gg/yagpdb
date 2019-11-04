@@ -877,20 +877,14 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 		if c.MS == nil {
 		return "", nil
 	}
-
-	c.GS.RLock()
-	gID := c.GS.ID
-	memberNick := c.MS.Nick
-	memberID := c.MS.ID
-	c.GS.RUnlock()
 	
-	if strings.Compare(memberNick, Nickname) == 0 {
+	if strings.Compare(c.MS.Nick, Nickname) == 0 {
 	
 		return "", nil
 	
 	}
 	
-	err := common.BotSession.GuildMemberNickname(gID, memberID, Nickname)
+	err := common.BotSession.GuildMemberNickname(c.GS.ID, c.MS.ID, Nickname)
 	if err != nil {
 		return "", err
 	}
