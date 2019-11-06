@@ -5,6 +5,7 @@ package serverstats
 import (
 	"context"
 	"database/sql"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -57,6 +58,10 @@ type DailyStats struct {
 }
 
 func RetrieveDailyStats(guildID int64) (*DailyStats, error) {
+	if os.Getenv("YAGPDB_SERVERSTATS_DISABLE_DAILY_POLL") != "" {
+		return &DailyStats{}, nil
+	}
+
 	// Query the short term stats and the long term stats
 	// TODO: If we start moving them over in between we will get somehwat incorrect stats
 	// not sure how to fix other than locking
