@@ -40,6 +40,7 @@ var (
 
 		// math
 		"add":        add,
+		"sub":        tmplSub,
 		"mult":       tmplMult,
 		"div":        tmplDiv,
 		"mod":        tmplMod,
