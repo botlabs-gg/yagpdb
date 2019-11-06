@@ -58,7 +58,7 @@ type DailyStats struct {
 }
 
 func RetrieveDailyStats(guildID int64) (*DailyStats, error) {
-	if os.Getenv("YAGPDB_SERVERSTATS_DISABLE_DAILY_POLL") != "" {
+	if os.Getenv("YAGPDB_SERVERSTATS_DISABLE_SERVERSTATS") != "" {
 		return &DailyStats{}, nil
 	}
 

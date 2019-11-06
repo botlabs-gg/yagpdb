@@ -1,9 +1,11 @@
 package serverstats
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -206,11 +208,18 @@ func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bo
 		numDays = 7
 	}
 
-	stats := CacheGetCharts(activeGuild.ID, numDays)
+	stats := CacheGetCharts(activeGuild.ID, numDays, r.Context())
 	return stats
 }
 
-func CacheGetCharts(guildID int64, days int) *ChartResponse {
+func CacheGetCharts(guildID int64, days int, ctx context.Context) *ChartResponse {
+	if os.Getenv("YAGPDB_SERVERSTATS_DISABLE_SERVERSTATS") != "" {
+		return &ChartResponse{
+			MemberData:  make([]*MemberChartDataPeriod, 0),
+			MessageData: make([]*MessageChartDataPeriod, 0),
+		}
+	}
+
 	fetchDays := days
 	if days < 7 {
 		fetchDays = 7
