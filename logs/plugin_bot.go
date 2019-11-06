@@ -3,10 +3,12 @@ package logs
 import (
 	"context"
 	"database/sql"
-	"emperror.dev/errors"
 	"fmt"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
+	"os"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -203,11 +205,11 @@ var cmdWhois = &commands.YAGCommand{
 }
 
 var cmdUsernames = &commands.YAGCommand{
-	CmdCategory:     commands.CategoryTool,
-	Name:            "Usernames",
-	Description:     "Shows past usernames of a user.",
-	Aliases:         []string{"unames", "un"},
-	RunInDM:         true,
+	CmdCategory: commands.CategoryTool,
+	Name:        "Usernames",
+	Description: "Shows past usernames of a user.",
+	Aliases:     []string{"unames", "un"},
+	RunInDM:     true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
@@ -263,11 +265,11 @@ var cmdUsernames = &commands.YAGCommand{
 }
 
 var cmdNicknames = &commands.YAGCommand{
-	CmdCategory:     commands.CategoryTool,
-	Name:            "Nicknames",
-	Description:     "Shows past nicknames of a user.",
-	Aliases: []string{"nn"},
-	RunInDM: false,
+	CmdCategory: commands.CategoryTool,
+	Name:        "Nicknames",
+	Description: "Shows past nicknames of a user.",
+	Aliases:     []string{"nn"},
+	RunInDM:     false,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
@@ -380,6 +382,10 @@ func HandleQueueEvt(evt *eventsystem.EventData) {
 }
 
 func queueEvt(evt interface{}) {
+	if os.Getenv("YAGPDB_LOGS_DISABLE_USERNAME_TRACKING") != "" {
+		return
+	}
+
 	select {
 	case evtChan <- evt:
 		return
