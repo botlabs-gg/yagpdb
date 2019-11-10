@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"time"
+	"strings"
 
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
@@ -160,7 +161,9 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 		executed = "Failed executing template."
 	}
 
-	go bot.SendDM(member.ID, "**"+bot.GuildName(gs.ID)+":** "+executed)
+	if strings.TrimSpace(executed) != "" {
+		go bot.SendDM(member.ID, "**"+bot.GuildName(gs.ID)+":** "+executed)
+	}
 }
 
 func KickUser(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User) error {
