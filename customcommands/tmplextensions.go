@@ -550,7 +550,6 @@ func tmplAppend(ctx *templates.Context) interface{} {
 	
 }
 
-
 func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 	orderBy := "value_num DESC"
 	if bottom {
