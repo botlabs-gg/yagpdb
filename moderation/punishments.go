@@ -54,7 +54,7 @@ func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) (ms *dst
 }
 
 // Kick or bans someone, uploading a hasebin log, and sending the report message in the action channel
-func punish(config *Config, p Punishment, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
+func punish(config *Config, p Punishment, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, variadicBanDeleteDays ...int) error {
 
 	config, err := getConfigIfNotSet(guildID, config)
 	if err != nil {
@@ -96,7 +96,11 @@ func punish(config *Config, p Punishment, guildID, channelID int64, author *disc
 	case PunishmentKick:
 		err = common.BotSession.GuildMemberDeleteWithReason(guildID, user.ID, fullReason)
 	case PunishmentBan:
-		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, 1)
+		banDeleteDays := 1
+		if len(variadicBanDeleteDays) > 0 {
+			banDeleteDays = variadicBanDeleteDays[0]
+		}
+		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, banDeleteDays)
 	}
 
 	if err != nil {
@@ -223,10 +227,17 @@ func DeleteMessages(channelID int64, filterUser int64, deleteNum, fetchNum int) 
 	return len(toDelete), err
 }
 
-func BanUserWithDuration(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
+func BanUserWithDuration(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, deleteMessageDays int) error {
 	// Set a key in redis that marks that this user has appeared in the modlog already
 	common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
-	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration)
+	if deleteMessageDays > 7 {
+		deleteMessageDays = 7
+	}
+	if deleteMessageDays < 0 {
+		deleteMessageDays = 0
+	}
+	
+	err := punish(config, PunishmentBan, guildID, channelID, author, reason, user, duration, deleteMessageDays)
 	if err != nil {
 		return err
 	}
@@ -247,7 +258,7 @@ func BanUserWithDuration(config *Config, guildID, channelID int64, author *disco
 }
 
 func BanUser(config *Config, guildID, channelID int64, author *discordgo.User, reason string, user *discordgo.User) error {
-	return BanUserWithDuration(config, guildID, channelID, author, reason, user, 0)
+	return BanUserWithDuration(config, guildID, channelID, author, reason, user, 0, 1)
 }
 
 const (
