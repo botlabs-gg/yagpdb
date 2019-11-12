@@ -199,6 +199,33 @@ func add(args ...interface{}) interface{} {
 	}
 }
 
+func tmplSub(args ...interface{}) interface{} {
+	if len(args) < 1 {
+		return 0
+	}
+
+	switch args[0].(type) {
+	case float32, float64:
+		subF := ToFloat64(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+			subF -= ToFloat64(v)
+		}
+		return subF
+	default:
+		subI := tmplToInt(args[0])
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+			subI -= tmplToInt(v)
+		}
+		return subI
+	}
+}
+
 func tmplMult(args ...interface{}) interface{} {
 	if len(args) < 1 {
 		return 0
