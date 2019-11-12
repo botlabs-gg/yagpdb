@@ -6,11 +6,15 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"unicode/utf8"
+
+	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	yagtemplate "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -19,6 +23,7 @@ import (
 	"goji.io/pat"
 )
 
+// GroupForm is the form bindings used when creating or updating groups
 type GroupForm struct {
 	ID                int64
 	Name              string  `valid:",100"`
@@ -29,16 +34,14 @@ type GroupForm struct {
 	BlacklistRoles []int64 `valid:"role,true"`
 }
 
+// InitWeb implements web.Plugin
 func (p *Plugin) InitWeb() {
-	tmplPathSettings := "templates/plugins/customcommands.html"
-	if common.Testing {
-		tmplPathSettings = "../../customcommands/assets/customcommands.html"
-	}
+	web.LoadHTMLTemplate("../../customcommands/assets/customcommands.html", "templates/plugins/customcommands.html")
+	web.LoadHTMLTemplate("../../customcommands/assets/customcommands-editcmd.html", "templates/plugins/customcommands-editcmd.html")
 
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
-
-	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
-	getGroupHandler := web.ControllerHandler(HandleGetCommandsGroup, "cp_custom_commands")
+	getHandler := web.ControllerHandler(handleCommands, "cp_custom_commands")
+	getCmdHandler := web.ControllerHandler(handleGetCommand, "cp_custom_commands_edit_cmd")
+	getGroupHandler := web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands")
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/customcommands"), subMux)
@@ -62,20 +65,22 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
 
-	subMux.Handle(pat.Get("/groups/:group/"), web.ControllerHandler(HandleGetCommandsGroup, "cp_custom_commands"))
-	subMux.Handle(pat.Get("/groups/:group"), web.ControllerHandler(HandleGetCommandsGroup, "cp_custom_commands"))
+	subMux.Handle(pat.Get("/commands/:cmd/"), getCmdHandler)
 
-	newCommandHandler := web.ControllerPostHandler(HandleNewCommand, getHandler, CustomCommand{}, "Created a new custom command")
-	subMux.Handle(pat.Post("/createcommand"), newCommandHandler)
-	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(HandleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
-	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(HandleDeleteCommand, getHandler, nil, "Deleted a custom command"))
+	subMux.Handle(pat.Get("/groups/:group/"), web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands"))
+	subMux.Handle(pat.Get("/groups/:group"), web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands"))
 
-	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(HandleNewGroup, getHandler, GroupForm{}, "Created a new custom command group"))
-	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(HandleUpdateGroup, getGroupHandler, GroupForm{}, "Updated a custom command group"))
-	subMux.Handle(pat.Post("/groups/:group/delete"), web.ControllerPostHandler(HandleDeleteGroup, getHandler, nil, "Deleted a custom command group"))
+	newCommandHandler := web.ControllerPostHandler(handleNewCommand, nil, nil, "Created a new custom command")
+	subMux.Handle(pat.Post("/commands/new"), newCommandHandler)
+	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(handleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
+	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil, "Deleted a custom command"))
+
+	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}, "Created a new custom command group"))
+	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}, "Updated a custom command group"))
+	subMux.Handle(pat.Post("/groups/:group/delete"), web.ControllerPostHandler(handleDeleteGroup, getHandler, nil, "Deleted a custom command group"))
 }
 
-func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	groupID := int64(0)
@@ -83,16 +88,44 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		groupID = v.(int64)
 	}
 
-	return ServeGroupSelected(r, templateData, groupID, activeGuild.ID)
+	var langBuiltins strings.Builder
+	for k := range yagtemplate.StandardFuncMap {
+		langBuiltins.WriteString(" " + k)
+	}
+
+	templateData["HLJSBuiltins"] = langBuiltins.String()
+
+	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
 
-func HandleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+
+	ccID, err := strconv.ParseInt(pat.Param(r, "cmd"), 10, 64)
+	if err != nil {
+		return templateData, errors.WithStackIf(err)
+	}
+
+	cc, err := models.CustomCommands(
+		models.CustomCommandWhere.GuildID.EQ(activeGuild.ID),
+		models.CustomCommandWhere.LocalID.EQ(ccID)).OneG(r.Context())
+	if err != nil {
+		return templateData, errors.WithStackIf(err)
+	}
+
+	templateData["CC"] = cc
+	templateData["Commands"] = true
+
+	return serveGroupSelected(r, templateData, cc.GroupID.Int64, activeGuild.ID)
+}
+
+func handleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 	groupID, _ := strconv.ParseInt(pat.Param(r, "group"), 10, 64)
-	return ServeGroupSelected(r, templateData, groupID, activeGuild.ID)
+	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
 
-func ServeGroupSelected(r *http.Request, templateData web.TemplateData, groupID int64, guildID int64) (web.TemplateData, error) {
+func serveGroupSelected(r *http.Request, templateData web.TemplateData, groupID int64, guildID int64) (web.TemplateData, error) {
 	templateData["GetCCIntervalType"] = tmplGetCCIntervalTriggerType
 	templateData["GetCCInterval"] = tmplGetCCInterval
 
@@ -129,11 +162,24 @@ func ServeGroupSelected(r *http.Request, templateData web.TemplateData, groupID 
 	return templateData, nil
 }
 
-func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	newCmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
+	groupID, _ := strconv.ParseInt(r.FormValue("GroupID"), 10, 64)
+	if groupID != 0 {
+		// make sure we aren't trying to pull any tricks with the group id
+		c, err := models.CustomCommandGroups(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, groupID)).CountG(ctx)
+		if err != nil {
+			return templateData, err
+		}
+
+		if c < 1 {
+			return templateData.AddAlerts(web.ErrorAlert("Unknown group")), nil
+		}
+
+		templateData["CurrentGroupID"] = groupID
+	}
 
 	c, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
 	if err != nil {
@@ -144,36 +190,25 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
 	}
 
-	// ensure that the group specified is owned by this guild
-	if newCmd.GroupID != 0 {
-		c, err := models.CustomCommandGroups(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, newCmd.GroupID)).CountG(ctx)
-		if err != nil {
-			return templateData, err
-		}
-
-		if c < 1 {
-			return templateData.AddAlerts(web.ErrorAlert("Unknown group")), nil
-		}
-
-		templateData["CurrentGroupID"] = newCmd.GroupID
-	}
-
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
 	if err != nil {
 		return templateData, errors.WrapIf(err, "error generating local id")
 	}
 
-	dbModel := newCmd.ToDBModel()
-	dbModel.GuildID = activeGuild.ID
-	dbModel.LocalID = localID
-	dbModel.TriggerType = int(TriggerTypeFromForm(newCmd.TriggerTypeForm))
+	dbModel := &models.CustomCommand{
+		GuildID: activeGuild.ID,
+		LocalID: localID,
 
-	// check low interval limits
-	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval < 10 {
-		ok, err := CheckIntervalLimits(ctx, activeGuild.ID, -1, templateData)
-		if err != nil || !ok {
-			return templateData, err
-		}
+		Disabled: true,
+
+		TimeTriggerExcludingDays:  []int64{},
+		TimeTriggerExcludingHours: []int64{},
+
+		Responses: []string{"Edit this to change the output of the command!"},
+	}
+
+	if groupID != 0 {
+		dbModel.GroupID = null.Int64From(groupID)
 	}
 
 	err = dbModel.InsertG(ctx, boil.Infer())
@@ -181,19 +216,13 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, err
 	}
 
-	if dbModel.TriggerType == int(CommandTriggerInterval) {
-		// create, update or remove the next run time and scheduled event
-		err = UpdateCommandNextRunTime(dbModel, true)
-		if err != nil {
-			web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("failed updating next custom command run time")
-		}
-	}
+	http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands/commands/%d/", activeGuild.ID, localID), http.StatusSeeOther)
 
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, nil
 }
 
-func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
@@ -217,11 +246,11 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	dbModel.GuildID = activeGuild.ID
 	dbModel.LocalID = cmd.ID
-	dbModel.TriggerType = int(TriggerTypeFromForm(cmd.TriggerTypeForm))
+	dbModel.TriggerType = int(triggerTypeFromForm(cmd.TriggerTypeForm))
 
 	// check low interval limits
 	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval < 10 {
-		ok, err := CheckIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
+		ok, err := checkIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
 		if err != nil || !ok {
 			return templateData, err
 		}
@@ -253,7 +282,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	return templateData, err
 }
 
-func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
@@ -283,7 +312,7 @@ func HandleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 }
 
 // allow for max 5 triggers with intervals of less than 10 minutes
-func CheckIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templateData web.TemplateData) (ok bool, err error) {
+func checkIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templateData web.TemplateData) (ok bool, err error) {
 	num, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id != ? AND trigger_type = 5 AND time_trigger_interval < 10", guildID, cmdID)).CountG(ctx)
 	if err != nil {
 		return false, err
@@ -297,7 +326,7 @@ func CheckIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templa
 	return false, nil
 }
 
-func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
@@ -328,7 +357,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	return templateData, nil
 }
 
-func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
@@ -352,7 +381,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	return templateData, err
 }
 
-func HandleDeleteGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleDeleteGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
@@ -370,7 +399,7 @@ func HandleDeleteGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	return templateData, err
 }
 
-func TriggerTypeFromForm(str string) CommandTriggerType {
+func triggerTypeFromForm(str string) CommandTriggerType {
 	switch str {
 	case "prefix":
 		return CommandTriggerStartsWith

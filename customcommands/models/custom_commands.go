@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"emperror.dev/errors"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -43,6 +43,11 @@ type CustomCommand struct {
 	RolesWhitelistMode        bool              `boil:"roles_whitelist_mode" json:"roles_whitelist_mode" toml:"roles_whitelist_mode" yaml:"roles_whitelist_mode"`
 	ContextChannel            int64             `boil:"context_channel" json:"context_channel" toml:"context_channel" yaml:"context_channel"`
 	ReactionTriggerMode       int16             `boil:"reaction_trigger_mode" json:"reaction_trigger_mode" toml:"reaction_trigger_mode" yaml:"reaction_trigger_mode"`
+	Disabled                  bool              `boil:"disabled" json:"disabled" toml:"disabled" yaml:"disabled"`
+	LastError                 string            `boil:"last_error" json:"last_error" toml:"last_error" yaml:"last_error"`
+	LastErrorTime             null.Time         `boil:"last_error_time" json:"last_error_time,omitempty" toml:"last_error_time" yaml:"last_error_time,omitempty"`
+	RunCount                  int               `boil:"run_count" json:"run_count" toml:"run_count" yaml:"run_count"`
+	ShowErrors                bool              `boil:"show_errors" json:"show_errors" toml:"show_errors" yaml:"show_errors"`
 
 	R *customCommandR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customCommandL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -67,6 +72,11 @@ var CustomCommandColumns = struct {
 	RolesWhitelistMode        string
 	ContextChannel            string
 	ReactionTriggerMode       string
+	Disabled                  string
+	LastError                 string
+	LastErrorTime             string
+	RunCount                  string
+	ShowErrors                string
 }{
 	LocalID:                   "local_id",
 	GuildID:                   "guild_id",
@@ -86,6 +96,11 @@ var CustomCommandColumns = struct {
 	RolesWhitelistMode:        "roles_whitelist_mode",
 	ContextChannel:            "context_channel",
 	ReactionTriggerMode:       "reaction_trigger_mode",
+	Disabled:                  "disabled",
+	LastError:                 "last_error",
+	LastErrorTime:             "last_error_time",
+	RunCount:                  "run_count",
+	ShowErrors:                "show_errors",
 }
 
 // Generated where
@@ -203,6 +218,11 @@ var CustomCommandWhere = struct {
 	RolesWhitelistMode        whereHelperbool
 	ContextChannel            whereHelperint64
 	ReactionTriggerMode       whereHelperint16
+	Disabled                  whereHelperbool
+	LastError                 whereHelperstring
+	LastErrorTime             whereHelpernull_Time
+	RunCount                  whereHelperint
+	ShowErrors                whereHelperbool
 }{
 	LocalID:                   whereHelperint64{field: "\"custom_commands\".\"local_id\""},
 	GuildID:                   whereHelperint64{field: "\"custom_commands\".\"guild_id\""},
@@ -222,6 +242,11 @@ var CustomCommandWhere = struct {
 	RolesWhitelistMode:        whereHelperbool{field: "\"custom_commands\".\"roles_whitelist_mode\""},
 	ContextChannel:            whereHelperint64{field: "\"custom_commands\".\"context_channel\""},
 	ReactionTriggerMode:       whereHelperint16{field: "\"custom_commands\".\"reaction_trigger_mode\""},
+	Disabled:                  whereHelperbool{field: "\"custom_commands\".\"disabled\""},
+	LastError:                 whereHelperstring{field: "\"custom_commands\".\"last_error\""},
+	LastErrorTime:             whereHelpernull_Time{field: "\"custom_commands\".\"last_error_time\""},
+	RunCount:                  whereHelperint{field: "\"custom_commands\".\"run_count\""},
+	ShowErrors:                whereHelperbool{field: "\"custom_commands\".\"show_errors\""},
 }
 
 // CustomCommandRels is where relationship names are stored.
@@ -245,10 +270,10 @@ func (*customCommandR) NewStruct() *customCommandR {
 type customCommandL struct{}
 
 var (
-	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "reaction_trigger_mode"}
-	customCommandColumnsWithoutDefault = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode"}
-	customCommandColumnsWithDefault    = []string{"context_channel", "reaction_trigger_mode"}
-	customCommandPrimaryKeyColumns     = []string{"local_id", "guild_id"}
+	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "reaction_trigger_mode", "disabled", "last_error", "last_error_time", "run_count", "show_errors"}
+	customCommandColumnsWithoutDefault = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "last_error_time"}
+	customCommandColumnsWithDefault    = []string{"context_channel", "reaction_trigger_mode", "disabled", "last_error", "run_count", "show_errors"}
+	customCommandPrimaryKeyColumns     = []string{"guild_id", "local_id"}
 )
 
 type (
@@ -298,7 +323,7 @@ func (q customCommandQuery) One(ctx context.Context, exec boil.ContextExecutor) 
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.WrapIf(err, "models: failed to execute a one query for custom_commands")
+		return nil, errors.Wrap(err, "models: failed to execute a one query for custom_commands")
 	}
 
 	return o, nil
@@ -315,7 +340,7 @@ func (q customCommandQuery) All(ctx context.Context, exec boil.ContextExecutor) 
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.WrapIf(err, "models: failed to assign all query results to CustomCommand slice")
+		return nil, errors.Wrap(err, "models: failed to assign all query results to CustomCommand slice")
 	}
 
 	return o, nil
@@ -335,7 +360,7 @@ func (q customCommandQuery) Count(ctx context.Context, exec boil.ContextExecutor
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to count custom_commands rows")
+		return 0, errors.Wrap(err, "models: failed to count custom_commands rows")
 	}
 
 	return count, nil
@@ -356,7 +381,7 @@ func (q customCommandQuery) Exists(ctx context.Context, exec boil.ContextExecuto
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.WrapIf(err, "models: failed to check if custom_commands exists")
+		return false, errors.Wrap(err, "models: failed to check if custom_commands exists")
 	}
 
 	return count > 0, nil
@@ -428,19 +453,19 @@ func (customCommandL) LoadGroup(ctx context.Context, e boil.ContextExecutor, sin
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.WrapIf(err, "failed to eager load CustomCommandGroup")
+		return errors.Wrap(err, "failed to eager load CustomCommandGroup")
 	}
 
 	var resultSlice []*CustomCommandGroup
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.WrapIf(err, "failed to bind eager loaded slice CustomCommandGroup")
+		return errors.Wrap(err, "failed to bind eager loaded slice CustomCommandGroup")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.WrapIf(err, "failed to close results of eager load for custom_command_groups")
+		return errors.Wrap(err, "failed to close results of eager load for custom_command_groups")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for custom_command_groups")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for custom_command_groups")
 	}
 
 	if len(resultSlice) == 0 {
@@ -488,7 +513,7 @@ func (o *CustomCommand) SetGroup(ctx context.Context, exec boil.ContextExecutor,
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.WrapIf(err, "failed to insert into foreign table")
+			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
 
@@ -497,7 +522,7 @@ func (o *CustomCommand) SetGroup(ctx context.Context, exec boil.ContextExecutor,
 		strmangle.SetParamNames("\"", "\"", 1, []string{"group_id"}),
 		strmangle.WhereClause("\"", "\"", 2, customCommandPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.LocalID, o.GuildID}
+	values := []interface{}{related.ID, o.GuildID, o.LocalID}
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, updateQuery)
@@ -505,7 +530,7 @@ func (o *CustomCommand) SetGroup(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.WrapIf(err, "failed to update local table")
+		return errors.Wrap(err, "failed to update local table")
 	}
 
 	queries.Assign(&o.GroupID, related.ID)
@@ -544,7 +569,7 @@ func (o *CustomCommand) RemoveGroup(ctx context.Context, exec boil.ContextExecut
 
 	queries.SetScanner(&o.GroupID, nil)
 	if _, err = o.Update(ctx, exec, boil.Whitelist("group_id")); err != nil {
-		return errors.WrapIf(err, "failed to update local table")
+		return errors.Wrap(err, "failed to update local table")
 	}
 
 	o.R.Group = nil
@@ -574,13 +599,13 @@ func CustomCommands(mods ...qm.QueryMod) customCommandQuery {
 }
 
 // FindCustomCommandG retrieves a single record by ID.
-func FindCustomCommandG(ctx context.Context, localID int64, guildID int64, selectCols ...string) (*CustomCommand, error) {
-	return FindCustomCommand(ctx, boil.GetContextDB(), localID, guildID, selectCols...)
+func FindCustomCommandG(ctx context.Context, guildID int64, localID int64, selectCols ...string) (*CustomCommand, error) {
+	return FindCustomCommand(ctx, boil.GetContextDB(), guildID, localID, selectCols...)
 }
 
 // FindCustomCommand retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindCustomCommand(ctx context.Context, exec boil.ContextExecutor, localID int64, guildID int64, selectCols ...string) (*CustomCommand, error) {
+func FindCustomCommand(ctx context.Context, exec boil.ContextExecutor, guildID int64, localID int64, selectCols ...string) (*CustomCommand, error) {
 	customCommandObj := &CustomCommand{}
 
 	sel := "*"
@@ -588,17 +613,17 @@ func FindCustomCommand(ctx context.Context, exec boil.ContextExecutor, localID i
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"custom_commands\" where \"local_id\"=$1 AND \"guild_id\"=$2", sel,
+		"select %s from \"custom_commands\" where \"guild_id\"=$1 AND \"local_id\"=$2", sel,
 	)
 
-	q := queries.Raw(query, localID, guildID)
+	q := queries.Raw(query, guildID, localID)
 
 	err := q.Bind(ctx, exec, customCommandObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.WrapIf(err, "models: unable to select from custom_commands")
+		return nil, errors.Wrap(err, "models: unable to select from custom_commands")
 	}
 
 	return customCommandObj, nil
@@ -671,7 +696,7 @@ func (o *CustomCommand) Insert(ctx context.Context, exec boil.ContextExecutor, c
 	}
 
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to insert into custom_commands")
+		return errors.Wrap(err, "models: unable to insert into custom_commands")
 	}
 
 	if !cached {
@@ -732,12 +757,12 @@ func (o *CustomCommand) Update(ctx context.Context, exec boil.ContextExecutor, c
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update custom_commands row")
+		return 0, errors.Wrap(err, "models: unable to update custom_commands row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for custom_commands")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by update for custom_commands")
 	}
 
 	if !cached {
@@ -760,12 +785,12 @@ func (q customCommandQuery) UpdateAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update all for custom_commands")
+		return 0, errors.Wrap(err, "models: unable to update all for custom_commands")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for custom_commands")
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for custom_commands")
 	}
 
 	return rowsAff, nil
@@ -814,12 +839,12 @@ func (o CustomCommandSlice) UpdateAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update all in customCommand slice")
+		return 0, errors.Wrap(err, "models: unable to update all in customCommand slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected all in update all customCommand")
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all customCommand")
 	}
 	return rowsAff, nil
 }
@@ -928,7 +953,7 @@ func (o *CustomCommand) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to upsert custom_commands")
+		return errors.Wrap(err, "models: unable to upsert custom_commands")
 	}
 
 	if !cached {
@@ -954,7 +979,7 @@ func (o *CustomCommand) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), customCommandPrimaryKeyMapping)
-	sql := "DELETE FROM \"custom_commands\" WHERE \"local_id\"=$1 AND \"guild_id\"=$2"
+	sql := "DELETE FROM \"custom_commands\" WHERE \"guild_id\"=$1 AND \"local_id\"=$2"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -963,12 +988,12 @@ func (o *CustomCommand) Delete(ctx context.Context, exec boil.ContextExecutor) (
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete from custom_commands")
+		return 0, errors.Wrap(err, "models: unable to delete from custom_commands")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for custom_commands")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for custom_commands")
 	}
 
 	return rowsAff, nil
@@ -984,12 +1009,12 @@ func (q customCommandQuery) DeleteAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete all from custom_commands")
+		return 0, errors.Wrap(err, "models: unable to delete all from custom_commands")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for custom_commands")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for custom_commands")
 	}
 
 	return rowsAff, nil
@@ -1022,12 +1047,12 @@ func (o CustomCommandSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete all from customCommand slice")
+		return 0, errors.Wrap(err, "models: unable to delete all from customCommand slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for custom_commands")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for custom_commands")
 	}
 
 	return rowsAff, nil
@@ -1045,7 +1070,7 @@ func (o *CustomCommand) ReloadG(ctx context.Context) error {
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *CustomCommand) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindCustomCommand(ctx, exec, o.LocalID, o.GuildID)
+	ret, err := FindCustomCommand(ctx, exec, o.GuildID, o.LocalID)
 	if err != nil {
 		return err
 	}
@@ -1085,7 +1110,7 @@ func (o *CustomCommandSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to reload all in CustomCommandSlice")
+		return errors.Wrap(err, "models: unable to reload all in CustomCommandSlice")
 	}
 
 	*o = slice
@@ -1094,25 +1119,25 @@ func (o *CustomCommandSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 }
 
 // CustomCommandExistsG checks if the CustomCommand row exists.
-func CustomCommandExistsG(ctx context.Context, localID int64, guildID int64) (bool, error) {
-	return CustomCommandExists(ctx, boil.GetContextDB(), localID, guildID)
+func CustomCommandExistsG(ctx context.Context, guildID int64, localID int64) (bool, error) {
+	return CustomCommandExists(ctx, boil.GetContextDB(), guildID, localID)
 }
 
 // CustomCommandExists checks if the CustomCommand row exists.
-func CustomCommandExists(ctx context.Context, exec boil.ContextExecutor, localID int64, guildID int64) (bool, error) {
+func CustomCommandExists(ctx context.Context, exec boil.ContextExecutor, guildID int64, localID int64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"custom_commands\" where \"local_id\"=$1 AND \"guild_id\"=$2 limit 1)"
+	sql := "select exists(select 1 from \"custom_commands\" where \"guild_id\"=$1 AND \"local_id\"=$2 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, localID, guildID)
+		fmt.Fprintln(boil.DebugWriter, guildID, localID)
 	}
 
-	row := exec.QueryRowContext(ctx, sql, localID, guildID)
+	row := exec.QueryRowContext(ctx, sql, guildID, localID)
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.WrapIf(err, "models: unable to check if custom_commands exists")
+		return false, errors.Wrap(err, "models: unable to check if custom_commands exists")
 	}
 
 	return exists, nil

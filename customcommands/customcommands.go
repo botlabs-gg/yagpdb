@@ -47,6 +47,11 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 type CommandTriggerType int
 
 const (
+	// The ordering of these might seem weird, but they're used in a database so changes would require migrations of a lot of data
+	// yeah... i wish i was smarter when i made this originally
+
+	CommandTriggerNone CommandTriggerType = 10
+
 	CommandTriggerCommand    CommandTriggerType = 0
 	CommandTriggerStartsWith CommandTriggerType = 1
 	CommandTriggerContains   CommandTriggerType = 2
