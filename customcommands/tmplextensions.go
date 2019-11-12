@@ -519,28 +519,35 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 func tmplAppend(ctx *templates.Context) interface{} {
 
 	return func(slice []interface{}, item interface{}) (interface{}, error) {
+		
 		limitMultiplier := 1
 
 		if isPremium, _ := premium.IsGuildPremium(ctx.GS.ID); isPremium {
-			limitMultiplier = 10
+			
+			limitMultiplier = 10	
+			
 		}
 
 		if len(slice)+1 > limitMultiplier*1000 {
-			return nil, errors.New("resulting slice exceeds slice limit")		
+			
+			return nil, errors.New("resulting slice exceeds slice limit")
+			
 		}
 		
 		switch v := item.(type) {
 			
 			case nil:
-			result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
- 			return result.Interface(), nil
+				result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
+ 				return result.Interface(), nil
 	
 			default:
-			result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.ValueOf(v))
- 			return result.Interface(), nil
+				result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.ValueOf(v))
+ 				return result.Interface(), nil
 		
 		}
+		
 	}
+	
 }
 
 
