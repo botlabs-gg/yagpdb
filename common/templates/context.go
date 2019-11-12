@@ -392,7 +392,8 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["reFindAll"] = c.reFindAll
 	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
 	c.ContextFuncs["reReplace"] = c.reReplace
-
+	
+	c.ContextFuncs["editChannelTopic"] = c.tmplEditChannelTopic
 	c.ContextFuncs["editChannelName"] = c.tmplEditChannelName
 	c.ContextFuncs["onlineCount"] = c.tmplOnlineCount
 	c.ContextFuncs["onlineCountBots"] = c.tmplOnlineCountBots
