@@ -393,7 +393,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	format := `<ul>
 	<li>Username logging: %s</li>
-	<li>Nickname loggin: %s</li>
+	<li>Nickname logging: %s</li>
 	<li>Blacklisted channels from creating message logs: <code>%d</code></li>
 </ul>`
 
