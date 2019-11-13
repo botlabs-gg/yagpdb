@@ -14,8 +14,10 @@ CREATE TABLE IF NOT EXISTS server_stats_periods (
 	count     bigint
 );`,
 
-	`CREATE INDEX IF NOT EXISTS serverstats_periods_guild_idx on server_stats_periods(guild_id);`,
+	// This index is no longer used, should be dropped
+	// `CREATE INDEX IF NOT EXISTS serverstats_periods_guild_idx on server_stats_periods(guild_id);`,
 	`CREATE INDEX IF NOT EXISTS started_x on server_stats_periods(started);`,
+	`CREATE INDEX IF NOT EXISTS server_stats_periods_guild_id_started_idx on server_stats_periods(guild_id, started);`,
 
 	`
 CREATE TABLE IF NOT EXISTS server_stats_configs (
