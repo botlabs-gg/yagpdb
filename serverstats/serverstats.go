@@ -5,6 +5,7 @@ package serverstats
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -95,7 +96,7 @@ func RetrieveDailyStats(guildID int64) (*DailyStats, error) {
 	t := RoundHour(time.Now())
 	memberStatsRows, err := models.ServerStatsMemberPeriods(
 		models.ServerStatsMemberPeriodWhere.GuildID.EQ(guildID),
-		qm.OrderBy("id desc"), qm.Limit(25)).AllG(context.Background())
+		qm.Where("started > ?", time.Now().Add(time.Hour*-25))).AllG(context.Background())
 
 	// Sum the stats
 	for i, v := range memberStatsRows {
@@ -249,19 +250,21 @@ type MemberChartDataPeriod struct {
 }
 
 func RetrieveMemberChartStats(guildID int64, days int) ([]*MemberChartDataPeriod, error) {
-	query := `select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members), max(max_online)
+	queryFirstHalf := `select date_trunc('day', created_at), sum(joins), sum(leaves), max(num_members), max(max_online)
 FROM server_stats_member_periods
-WHERE guild_id=$1 
+WHERE guild_id=$1`
+	querySecondHalf := `
 GROUP BY 1 
 ORDER BY 1 DESC`
 
-	args := []interface{}{guildID}
+	whereTimeClause := ""
+
 	if days > 0 {
-		query += " LIMIT $2;"
-		args = append(args, days)
+		whereTimeClause = fmt.Sprintf("\nAND created_at > now() - INTERVAL '(%d days)'\n", days)
 	}
 
-	rows, err := common.PQ.Query(query, args...)
+	fullQuery := queryFirstHalf + whereTimeClause + querySecondHalf
+	rows, err := common.PQ.Query(fullQuery, guildID)
 
 	if err != nil {
 		return nil, errors.WrapIf(err, "pq.query")
