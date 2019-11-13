@@ -312,7 +312,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled:   true,
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
-		Description:     "Delete the last number of messages from chat, optionally filtering by user, max age and regex.",
+		Description:     "Delete the last number of messages from chat, optionally filtering by user, max age and regex or ignoring pinned messages.",
 		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nNote: Will only look in the last 1k messages",
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
@@ -324,6 +324,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "r", Name: "Regex", Type: dcmd.String},
 			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
+			&dcmd.ArgDef{Switch: "pin", Name: "Ignore pinned messages"},
 		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -376,7 +377,14 @@ var ModerationCommands = []*commands.YAGCommand{
 			if ma != 0 {
 				filtered = true
 			}
-
+			
+			// Check if we should ignore pinned messages
+			pe := false
+			if parsed.Switches["pin"].Value != nil && parsed.Switches["pin"].Value.(bool) {
+				pe = true
+				filtered = true
+			}
+			
 			limitFetch := num
 			if userFilter != 0 || filtered {
 				limitFetch = num * 50 // Maybe just change to full fetch?
@@ -389,7 +397,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, ma, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, ma, pe, num, limitFetch)
 
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
@@ -738,7 +746,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, maxAge time.Duration, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, maxAge time.Duration, pinFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -749,6 +757,19 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 		}
 	}
 
+	var pinnedMessages map[int64]struct{}
+	if pinFilterEnable {
+		//Fetch pinned messages from channel and make a map with ids as keys which will make it easy to verify if a message with a given ID is pinned message
+		messageSlice, err := common.BotSession.ChannelMessagesPinned(channelID)
+		if err != nil {
+			return 0, err
+		}
+		pinnedMessages = make(map[int64]struct{}, len(messageSlice))
+		for _, msg := range messageSlice {
+			pinnedMessages[msg.ID] = struct{}{} //empty struct works because we are not really interested in value
+		}
+	}
+	
 	msgs, err := bot.GetMessages(channelID, fetchNum, false)
 	if err != nil {
 		return 0, err
@@ -778,6 +799,11 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			continue
 		}
 
+		// Check if pinned message to ignore ; no need to check if pinEnableFilter bool is true because if false , map will be empty.
+		if _, found := pinnedMessages[msgs[i].ID]; found {
+			continue
+		}
+		
 		toDelete = append(toDelete, msgs[i].ID)
 		//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
 		if len(toDelete) >= deleteNum || len(toDelete) >= 100 {
