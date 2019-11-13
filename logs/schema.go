@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS guild_logging_configs (
 	`DROP INDEX IF EXISTS idx_nickname_listings_user_id;`,
 	`DROP INDEX IF EXISTS nickname_listings_user_id_guild_idx;`,
 
-	// better index that has results sorted by id
+	// better indexes that has results sorted by id
 	`CREATE INDEX IF NOT EXISTS nickname_listings_user_id_guild_id_id_idx ON nickname_listings(user_id, guild_id, id);`,
+	`CREATE INDEX IF NOT EXISTS username_listings_user_id_id_idx ON username_listings(user_id, id);`,
 }
