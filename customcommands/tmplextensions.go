@@ -491,7 +491,7 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 }
 
 func tmplDBCount(ctx *templates.Context) interface{} {
-	return func(variadicUserID ...int64) (interface{}, error) {
+	return func(variadicArg ...interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -501,15 +501,30 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 		}
 
 		var userID null.Int64
-		if len(variadicUserID) > 0 {
-			userID.Int64 = variadicUserID[0]
-			userID.Valid = true
+		var key null.String
+		if len(variadicArg) > 0 {
+			
+			switch arg := variadicArg[0].(type) {
+			case int64:
+				userID.Int64 = arg
+				userID.Valid = true
+			case int:
+				userID.Int64 = int64(arg)
+				userID.Valid = true
+			case string:
+				keyStr := limitString(arg, 256)
+				key.String = keyStr
+				key.Valid = true
+			default :
+                                return "", errors.New("Invalid Argument Data Type")
+			}
+
 		}
 
-		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND (expires_at IS NULL or expires_at > now())`
+		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND ($3::text IS NULL OR key = $3) AND (expires_at IS NULL or expires_at > now())`
 
 		var count int64
-		err := common.PQ.QueryRow(q, ctx.GS.ID, userID).Scan(&count)
+		err := common.PQ.QueryRow(q, ctx.GS.ID, userID, key).Scan(&count)
 		return count, err
 	}
 }
