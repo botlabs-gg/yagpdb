@@ -96,7 +96,7 @@ func RetrieveDailyStats(guildID int64) (*DailyStats, error) {
 	t := RoundHour(time.Now())
 	memberStatsRows, err := models.ServerStatsMemberPeriods(
 		models.ServerStatsMemberPeriodWhere.GuildID.EQ(guildID),
-		qm.Where("started > ?", time.Now().Add(time.Hour*-25))).AllG(context.Background())
+		qm.Where("created_at > ?", time.Now().Add(time.Hour*-25))).AllG(context.Background())
 
 	// Sum the stats
 	for i, v := range memberStatsRows {
