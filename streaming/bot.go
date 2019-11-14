@@ -247,7 +247,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if ms.PresenceStatus != dstate.StatusOffline && ms.PresenceGame != nil && ms.PresenceGame.URL != "" {
+	if ms.PresenceStatus != dstate.StatusOffline && ms.PresenceGame != nil && ms.PresenceGame.URL != "" && ms.PresenceGame.Type == 1 {
 		// Streaming
 
 		if !config.MeetsRequirements(ms) {
@@ -371,8 +371,9 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	ctx := templates.NewContext(guild, nil, ms)
 	ctx.Data["URL"] = common.EscapeSpecialMentions(ms.PresenceGame.URL)
 	ctx.Data["url"] = common.EscapeSpecialMentions(ms.PresenceGame.URL)
-	ctx.Data["Game"] = ms.PresenceGame.Details
-	ctx.Data["StreamTitle"] = ms.PresenceGame.Name
+	ctx.Data["Game"] = ms.PresenceGame.State
+	ctx.Data["StreamTitle"] = ms.PresenceGame.Details
+	ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
 
 	guild.RUnlock()
 	out, err := ctx.Execute(config.AnnounceMessage)
