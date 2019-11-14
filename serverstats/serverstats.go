@@ -263,7 +263,7 @@ ORDER BY 1 DESC`
 	whereTimeClause := ""
 
 	if days > 0 {
-		whereTimeClause = fmt.Sprintf("\nAND created_at > now() - INTERVAL '(%d days)'\n", days)
+		whereTimeClause = fmt.Sprintf("\nAND created_at > now() - INTERVAL '(%d days)'\n", days+1)
 	}
 
 	fullQuery := queryFirstHalf + whereTimeClause + querySecondHalf
