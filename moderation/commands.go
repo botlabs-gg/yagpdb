@@ -324,7 +324,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "r", Name: "Regex", Type: dcmd.String},
 			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
-			&dcmd.ArgDef{Switch: "pin", Name: "Ignore pinned messages"},
+			&dcmd.ArgDef{Switch: "nopin", Name: "Ignore pinned messages"},
 		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -380,7 +380,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			
 			// Check if we should ignore pinned messages
 			pe := false
-			if parsed.Switches["pin"].Value != nil && parsed.Switches["pin"].Value.(bool) {
+			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
 				pe = true
 				filtered = true
 			}
@@ -799,9 +799,11 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			continue
 		}
 
-		// Check if pinned message to ignore ; no need to check if pinEnableFilter bool is true because if false , map will be empty.
-		if _, found := pinnedMessages[msgs[i].ID]; found {
-			continue
+		// Check if pinned message to ignore 
+		if pinFilterEnable {
+			if _, found := pinnedMessages[msgs[i].ID]; found {
+				continue
+			}
 		}
 		
 		toDelete = append(toDelete, msgs[i].ID)
