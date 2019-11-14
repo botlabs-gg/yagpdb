@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"time"
+	"reflect"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
@@ -44,6 +45,7 @@ func init() {
 		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
 		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
+		ctx.ContextFuncs["append"] = tmplAppend(ctx)
 	})
 }
 
@@ -491,7 +493,7 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 }
 
 func tmplDBCount(ctx *templates.Context) interface{} {
-	return func(variadicUserID ...int64) (interface{}, error) {
+	return func(variadicArg ...interface{}) (interface{}, error) {
 		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
 			return "", templates.ErrTooManyCalls
 		}
@@ -501,17 +503,66 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 		}
 
 		var userID null.Int64
-		if len(variadicUserID) > 0 {
-			userID.Int64 = variadicUserID[0]
-			userID.Valid = true
+		var key null.String
+		if len(variadicArg) > 0 {
+			
+			switch arg := variadicArg[0].(type) {
+			case int64:
+				userID.Int64 = arg
+				userID.Valid = true
+			case int:
+				userID.Int64 = int64(arg)
+				userID.Valid = true
+			case string:
+				keyStr := limitString(arg, 256)
+				key.String = keyStr
+				key.Valid = true
+			default :
+                                return "", errors.New("Invalid Argument Data Type")
+			}
+
 		}
 
-		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND (expires_at IS NULL or expires_at > now())`
+		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND ($3::text IS NULL OR key = $3) AND (expires_at IS NULL or expires_at > now())`
 
 		var count int64
-		err := common.PQ.QueryRow(q, ctx.GS.ID, userID).Scan(&count)
+		err := common.PQ.QueryRow(q, ctx.GS.ID, userID, key).Scan(&count)
 		return count, err
 	}
+}
+
+func tmplAppend(ctx *templates.Context) interface{} {
+
+	return func(slice []interface{}, item interface{}) (interface{}, error) {
+		
+		limitMultiplier := 1
+
+		if isPremium, _ := premium.IsGuildPremium(ctx.GS.ID); isPremium {
+			
+			limitMultiplier = 10	
+			
+		}
+
+		if len(slice)+1 > limitMultiplier*1000 {
+			
+			return nil, errors.New("resulting slice exceeds slice limit")
+			
+		}
+		
+		switch v := item.(type) {
+			
+			case nil:
+				result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
+ 				return result.Interface(), nil
+	
+			default:
+				result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.ValueOf(v))
+ 				return result.Interface(), nil
+		
+		}
+		
+	}
+	
 }
 
 func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
