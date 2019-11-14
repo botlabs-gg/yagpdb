@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"time"
 	"reflect"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
@@ -45,7 +45,7 @@ func init() {
 		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
 		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
-		ctx.ContextFuncs["append"] = tmplAppend(ctx)
+		// ctx.ContextFuncs["append"] = tmplAppend(ctx)
 	})
 }
 
@@ -505,7 +505,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 		var userID null.Int64
 		var key null.String
 		if len(variadicArg) > 0 {
-			
+
 			switch arg := variadicArg[0].(type) {
 			case int64:
 				userID.Int64 = arg
@@ -517,8 +517,8 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 				keyStr := limitString(arg, 256)
 				key.String = keyStr
 				key.Valid = true
-			default :
-                                return "", errors.New("Invalid Argument Data Type")
+			default:
+				return "", errors.New("Invalid Argument Data Type")
 			}
 
 		}
@@ -534,35 +534,35 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 func tmplAppend(ctx *templates.Context) interface{} {
 
 	return func(slice []interface{}, item interface{}) (interface{}, error) {
-		
+
 		limitMultiplier := 1
 
 		if isPremium, _ := premium.IsGuildPremium(ctx.GS.ID); isPremium {
-			
-			limitMultiplier = 10	
-			
+
+			limitMultiplier = 10
+
 		}
 
 		if len(slice)+1 > limitMultiplier*1000 {
-			
+
 			return nil, errors.New("resulting slice exceeds slice limit")
-			
+
 		}
-		
+
 		switch v := item.(type) {
-			
-			case nil:
-				result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
- 				return result.Interface(), nil
-	
-			default:
-				result := reflect.Append(reflect.ValueOf(&slice).Elem() , reflect.ValueOf(v))
- 				return result.Interface(), nil
-		
+
+		case nil:
+			result := reflect.Append(reflect.ValueOf(&slice).Elem(), reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
+			return result.Interface(), nil
+
+		default:
+			result := reflect.Append(reflect.ValueOf(&slice).Elem(), reflect.ValueOf(v))
+			return result.Interface(), nil
+
 		}
-		
+
 	}
-	
+
 }
 
 func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
