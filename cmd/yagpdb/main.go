@@ -122,22 +122,6 @@ func main() {
 		AddSyslogHooks()
 	}
 
-	config.Load()
-	if confSentryDSN.GetString() != "" {
-		hook, err := logrus_sentry.NewSentryHook(confSentryDSN.GetString(), []log.Level{
-			log.PanicLevel,
-			log.FatalLevel,
-			log.ErrorLevel,
-		})
-
-		if err == nil {
-			common.AddLogHook(hook)
-			log.Info("Added Sentry Hook")
-		} else {
-			log.WithError(err).Error("Failed adding sentry hook")
-		}
-	}
-
 	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && !flagGenConfigDocs {
 		log.Error("Didnt specify what to run, see -h for more info")
 		return
@@ -145,7 +129,16 @@ func main() {
 
 	log.Info("Starting YAGPDB version " + common.VERSION)
 
-	err := common.Init()
+	err := common.LoadConfig()
+	if err != nil {
+		log.WithError(err).Fatal("Failed loading run config")
+	}
+
+	if confSentryDSN.GetString() != "" {
+		addSentryHook()
+	}
+
+	err = common.Init()
 	if err != nil {
 		log.WithError(err).Fatal("Failed intializing")
 	}
@@ -280,4 +273,19 @@ func listenSignal() {
 
 	log.Info("Bye..")
 	os.Exit(0)
+}
+
+func addSentryHook() {
+	hook, err := logrus_sentry.NewSentryHook(confSentryDSN.GetString(), []log.Level{
+		log.PanicLevel,
+		log.FatalLevel,
+		log.ErrorLevel,
+	})
+
+	if err == nil {
+		common.AddLogHook(hook)
+		log.Info("Added Sentry Hook")
+	} else {
+		log.WithError(err).Error("Failed adding sentry hook")
+	}
 }
