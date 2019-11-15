@@ -3,12 +3,10 @@ package common
 import (
 	"bytes"
 	"net/http"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/jonas747/discordgo"
@@ -166,86 +164,23 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 	return resp, err
 }
 
-type PrefixedLogFormatter struct {
-	Inner  logrus.Formatter
-	Prefix string
-}
-
-func (p *PrefixedLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	entryCop := *entry
-	entryCop.Message = p.Prefix + entryCop.Message
-
-	return p.Inner.Format(&entryCop)
-}
-
-// We pretty the logging up a bit here, adding a prefix for plugins
-var loggers = []*logrus.Logger{logrus.StandardLogger()}
-var loggersmu sync.Mutex
-
 func AddLogHook(hook logrus.Hook) {
-	loggersmu.Lock()
-
-	for _, v := range loggers {
-		v.AddHook(hook)
-	}
-
-	loggersmu.Unlock()
+	logrus.AddHook(hook)
 }
 
 func SetLoggingLevel(level logrus.Level) {
-	loggersmu.Lock()
-	defer loggersmu.Unlock()
-
-	for _, v := range loggers {
-		v.SetLevel(level)
-	}
-
 	logrus.SetLevel(level)
 }
 
 func SetLogFormatter(formatter logrus.Formatter) {
-	loggersmu.Lock()
-
-	for _, v := range loggers {
-		if cast, ok := v.Formatter.(*PrefixedLogFormatter); ok {
-			cast.Inner = formatter
-		} else {
-			v.SetFormatter(formatter)
-		}
-	}
-
-	loggersmu.Unlock()
+	logrus.SetFormatter(formatter)
 }
 
-func GetPluginLogger(plugin Plugin) *logrus.Logger {
+func GetPluginLogger(plugin Plugin) *logrus.Entry {
 	info := plugin.PluginInfo()
-	return GetFixedPrefixLogger(info.SysName)
+	return logrus.WithField("p", info.SysName)
 }
 
-func GetFixedPrefixLogger(prefix string) *logrus.Logger {
-
-	l := logrus.New()
-	stdLogger := logrus.StandardLogger()
-	cop := make(logrus.LevelHooks)
-	for k, v := range stdLogger.Hooks {
-		cop[k] = make([]logrus.Hook, len(v))
-		copy(cop[k], v)
-	}
-
-	l.Level = logrus.InfoLevel
-	if os.Getenv("YAGPDB_TESTING") != "" || os.Getenv("YAGPDB_DEBUG_LOG") != "" {
-		l.Level = logrus.DebugLevel
-	}
-
-	l.Hooks = cop
-	l.Formatter = &PrefixedLogFormatter{
-		Inner:  stdLogger.Formatter,
-		Prefix: "[" + prefix + "] ",
-	}
-
-	loggersmu.Lock()
-	loggers = append(loggers, l)
-	loggersmu.Unlock()
-
-	return l
+func GetFixedPrefixLogger(prefix string) *logrus.Entry {
+	return logrus.WithField("p", prefix)
 }

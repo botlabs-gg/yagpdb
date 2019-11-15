@@ -21,11 +21,11 @@ type Collector struct {
 
 	buf      []*discordgo.Message
 	channels []int64
-	l        *logrus.Logger
+	l        *logrus.Entry
 }
 
 // NewCollector creates a new Collector
-func NewCollector(l *logrus.Logger, updateInterval time.Duration) *Collector {
+func NewCollector(l *logrus.Entry, updateInterval time.Duration) *Collector {
 	col := &Collector{
 		MsgEvtChan: make(chan *discordgo.Message, 1000),
 		interval:   updateInterval,
