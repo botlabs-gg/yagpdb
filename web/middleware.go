@@ -257,7 +257,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		guildID, err := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("GuilID is not a number")
+			CtxLogger(ctx).WithError(err).Warn("GuilID is not a number")
 			return
 		}
 
