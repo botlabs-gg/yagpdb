@@ -10,7 +10,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -102,7 +101,7 @@ func Run() {
 }
 
 func PatreonDisabled(err error, reason string) {
-	l := logrus.NewEntry(logger)
+	l := logger
 
 	if err != nil {
 		l = l.WithError(err)

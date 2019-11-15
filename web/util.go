@@ -258,7 +258,7 @@ func CtxLogger(ctx context.Context) *logrus.Entry {
 		return inter.(*logrus.Entry)
 	}
 
-	return logrus.NewEntry(logger)
+	return logger
 }
 
 func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, statusCode int) {

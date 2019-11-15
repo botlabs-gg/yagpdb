@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -116,6 +117,7 @@ func main() {
 	common.SetLogFormatter(&log.TextFormatter{
 		DisableTimestamp: !common.Testing,
 		ForceColors:      common.Testing,
+		SortingFunc:      logrusSortingFunc,
 	})
 
 	if flagSysLog {
@@ -288,4 +290,41 @@ func addSentryHook() {
 	} else {
 		log.WithError(err).Error("Failed adding sentry hook")
 	}
+}
+
+var logSortPriority = []string{
+	"time",
+	"level",
+	"p",
+	"msg",
+	"stck",
+}
+
+func logrusSortingFunc(fields []string) {
+	sort.Slice(fields, func(i, j int) bool {
+
+		iPriority := findStringIndex(logSortPriority, fields[i])
+		jPriority := findStringIndex(logSortPriority, fields[j])
+
+		if iPriority != -1 && jPriority == -1 {
+			return true
+		} else if jPriority != -1 && iPriority == -1 {
+			return false
+		} else if iPriority == -1 && jPriority == -1 {
+			return strings.Compare(fields[i], fields[j]) > 1
+		}
+
+		// both has priority
+		return iPriority < jPriority
+	})
+}
+
+func findStringIndex(slice []string, s string) int {
+	for i, v := range slice {
+		if v == s {
+			return i
+		}
+	}
+
+	return -1
 }

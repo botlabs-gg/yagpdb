@@ -234,11 +234,11 @@ func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
 func getGuild(guildID int64, ctx context.Context) (*discordgo.Guild, error) {
 	guild, err := botrest.GetGuild(guildID)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("[web] failed getting guild from bot, querying discord api")
+		CtxLogger(ctx).WithError(err).Warn("failed getting guild from bot, querying discord api")
 
 		guild, err = common.BotSession.Guild(guildID)
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("[web] failed getting guild from discord fallback, nothing more we can do...")
+			CtxLogger(ctx).WithError(err).Warn("failed getting guild from discord fallback, nothing more we can do...")
 			return nil, err
 		}
 	}
@@ -257,7 +257,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		guildID, err := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("GuilID is not a number")
+			CtxLogger(ctx).WithError(err).Warn("GuilID is not a number")
 			return
 		}
 
@@ -466,7 +466,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 		if !alertsOnly {
 			err := Templates.ExecuteTemplate(w, tmpl, out)
 			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Warn("Failed executing template")
+				CtxLogger(r.Context()).WithError(err).Error("Failed executing template")
 				return
 			}
 		} else {
@@ -479,7 +479,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 
 				encoded, err := json.Marshal(alerts)
 				if err != nil {
-					CtxLogger(r.Context()).WithError(err).Warn("Failed encoding alerts")
+					CtxLogger(r.Context()).WithError(err).Error("Failed encoding alerts")
 					return
 				}
 

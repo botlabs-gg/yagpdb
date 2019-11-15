@@ -325,6 +325,10 @@ type LeaderboardEntry struct {
 }
 
 func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*LeaderboardEntry, error) {
+	if len(ranks) < 1 {
+		return []*LeaderboardEntry{}, nil
+	}
+
 	var members []*discordgo.Member
 	var err error
 
