@@ -318,6 +318,10 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 		return templateData, web.NewPublicError("Max 250 command overrides")
 	}
 
+	if len(formData.Commands) < 1 {
+		return templateData, web.NewPublicError("No commands specified")
+	}
+
 	model := &models.CommandsCommandOverride{
 		GuildID:                     activeGuild.ID,
 		CommandsChannelsOverridesID: channelOverride.ID,
