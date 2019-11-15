@@ -609,12 +609,12 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ListViolations",
-		Description:   "Lists Violations of a user optionally filtered by max violation age.\n Has a summary mode flag as well (-s) ; max entries fetched 500",
+		Description:   "Lists Violations of a user optionally filtered by max violation age.\n Has a summary mode flag as well (-s) ; max entries fetched 200",
 		Aliases:       []string{"Violations"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Skip", Help: "Entries to skip" , Type: dcmd.Int , Default: 0},
+			&dcmd.ArgDef{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int , Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max Violation Age", Type: &commands.DurationArg{}},
@@ -625,7 +625,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-
+			//Roles with warn permissions can also list Violations.
 			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
 			if err != nil {
 				return nil, err
@@ -634,7 +634,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			userID := parsed.Args[0].Int64()
 			skip := parsed.Args[1].Int()
 			order:= "id desc"
-			limit:= 500
+			limit:= 200
 
 			//Check Flags
 			maxAge := parsed.Switches["ma"].Value.(time.Duration)
@@ -644,9 +644,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			// retrieve users violations in descending order of id 
-			userViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? ", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit) , qm.Offset(skip)).AllG(context.Background())
+			userViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? ", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)).AllG(context.Background())
 			if err != nil {	
-				return nil , err
+				return nil, err
 			}
 
 			if len(userViolations) < 1 {
@@ -656,22 +656,22 @@ var ModerationCommands = []*commands.YAGCommand{
 			out := ""
 			violations := make(map[string]int)
 			for _, entry := range userViolations {
-
+				// check if max age
 				if maxAge != 0 && time.Now().Sub(entry.CreatedAt) > maxAge {
 					continue
 				}
+				// check if summary mode then update map and dont upate out
 				if summary {
 					violations[entry.Name] = violations[entry.Name] + 1
 					continue
 				}
 
-				out += fmt.Sprintf("#%-4d: `%20s` **Violation Name:** %s\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.Name)
-				
+				out += fmt.Sprintf("#%-4d: `%20s` **Violation Name:** %s\n", entry.ID, entry.CreatedAt.Format(time.RFC822), entry.Name)	
 			}
 			
 			if summary {			
-				for name , count := range violations {
-					out += fmt.Sprintf("Violation: %-20s count: %d\n" , name , count )
+				for name, count := range violations {
+					out += fmt.Sprintf("Violation: %-20s count: %d\n", name, count)
 				}
 				
 				out = "```" + out + "```"
