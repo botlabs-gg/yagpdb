@@ -234,11 +234,11 @@ func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
 func getGuild(guildID int64, ctx context.Context) (*discordgo.Guild, error) {
 	guild, err := botrest.GetGuild(guildID)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("[web] failed getting guild from bot, querying discord api")
+		CtxLogger(ctx).WithError(err).Warn("[web] failed getting guild from bot, querying discord api")
 
 		guild, err = common.BotSession.Guild(guildID)
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("[web] failed getting guild from discord fallback, nothing more we can do...")
+			CtxLogger(ctx).WithError(err).Warn("[web] failed getting guild from discord fallback, nothing more we can do...")
 			return nil, err
 		}
 	}
