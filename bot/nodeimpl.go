@@ -2,6 +2,7 @@ package bot
 
 import (
 	"os"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -195,7 +196,14 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 		wg.Done()
 	}
 
-	for i := 0; i < 10; i++ {
+	// spawn runtime.NumCPU - 2 workers
+	numCpu := runtime.NumCPU()
+	numWorkers := numCpu - 2
+	if numWorkers < 2 {
+		numWorkers = 2
+	}
+
+	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go worker()
 	}
