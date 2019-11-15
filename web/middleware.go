@@ -466,7 +466,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 		if !alertsOnly {
 			err := Templates.ExecuteTemplate(w, tmpl, out)
 			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Warn("Failed executing template")
+				CtxLogger(r.Context()).WithError(err).Error("Failed executing template")
 				return
 			}
 		} else {
@@ -479,7 +479,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 
 				encoded, err := json.Marshal(alerts)
 				if err != nil {
-					CtxLogger(r.Context()).WithError(err).Warn("Failed encoding alerts")
+					CtxLogger(r.Context()).WithError(err).Error("Failed encoding alerts")
 					return
 				}
 
