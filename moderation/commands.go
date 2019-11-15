@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -12,10 +13,12 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
@@ -600,6 +603,85 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, userID).Delete(WarningModel{}).RowsAffected
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil
+		},
+	},
+	&commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "ListViolations",
+		Description:   "Lists Violations of a user optionally filtered by max violation age.\n Has a summary mode flag as well (-s) ; max entries fetched 500",
+		Aliases:       []string{"Violations"},
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "Skip", Help: "Entries to skip" , Type: dcmd.Int , Default: 0},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max Violation Age", Type: &commands.DurationArg{}},
+			&dcmd.ArgDef{Switch: "s", Name: "Summary Mode"},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			config, _, err := MBaseCmd(parsed, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
+			if err != nil {
+				return nil, err
+			}
+
+			userID := parsed.Args[0].Int64()
+			skip := parsed.Args[1].Int()
+			order:= "id desc"
+			limit:= 500
+
+			//Check Flags
+			maxAge := parsed.Switches["ma"].Value.(time.Duration)
+			summary := false
+			if parsed.Switches["s"].Value != nil && parsed.Switches["s"].Value.(bool) {
+				summary = true
+			}
+
+			// retrieve users violations in descending order of id 
+			userViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? ", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit) , qm.Offset(skip)).AllG(context.Background())
+			if err != nil {	
+				return nil , err
+			}
+
+			if len(userViolations) < 1 {
+				return "This user does not have any Active Violations or No Violations fetched with specified offset", nil
+			}
+
+			out := ""
+			violations := make(map[string]int)
+			for _, entry := range userViolations {
+
+				if maxAge != 0 && time.Now().Sub(entry.CreatedAt) > maxAge {
+					continue
+				}
+				if summary {
+					violations[entry.Name] = violations[entry.Name] + 1
+					continue
+				}
+
+				out += fmt.Sprintf("#%-4d: `%20s` **Violation Name:** %s\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.Name)
+				
+			}
+			
+			if summary {			
+				for name , count := range violations {
+					out += fmt.Sprintf("Violation: %-20s count: %d\n" , name , count )
+				}
+				
+				out = "```" + out + "```"
+			}
+
+			if out == "" || out == "``````" {
+				return "No Violations found with given conditions", nil
+			} 
+
+			return out, nil
 		},
 	},
 	&commands.YAGCommand{
