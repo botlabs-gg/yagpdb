@@ -643,7 +643,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				summary = true
 			}
 
-			// retrieve users violations in descending order of id 
+			// retrieve user's violations in descending order of id 
 			userViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? ", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)).AllG(context.Background())
 			if err != nil {	
 				return nil, err
@@ -660,7 +660,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				if maxAge != 0 && time.Now().Sub(entry.CreatedAt) > maxAge {
 					continue
 				}
-				// check if summary mode then update map and dont upate out
+				// check if summary mode then update map and dont update out
 				if summary {
 					violations[entry.Name] = violations[entry.Name] + 1
 					continue
