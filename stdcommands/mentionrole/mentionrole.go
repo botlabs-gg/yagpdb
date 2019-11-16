@@ -98,7 +98,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if role == nil {
-		return "No role with the name or ID`" + data.Args[0].Str() + "` found", nil
+		return "No role with the name or ID`" + roleS + "` found", nil
 	}
 	
 	cID := data.CS.ID
