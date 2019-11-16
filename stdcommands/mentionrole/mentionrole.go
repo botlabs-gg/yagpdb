@@ -2,11 +2,13 @@ package mentionrole
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -74,19 +76,44 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 	} else if !ok {
 		return "You need manage server perms to use this command", nil
 	}
-
+	
+	roleS := data.Args[0].Str()
 	var role *discordgo.Role
 	data.GS.RLock()
 	defer data.GS.RUnlock()
 	for _, r := range data.GS.Guild.Roles {
-		if strings.EqualFold(r.Name, data.Args[0].Str()) {
+		if strings.EqualFold(r.Name, roleS) {
 			role = r
 			break
 		}
 	}
+	
+	//if we did not find a match yet try to match ID
+	if role == nil {
+		parsedNumber, parseErr := strconv.ParseInt(roleS, 10, 64)
+		if parseErr == nil {
+			// was a number, try looking by id
+			role = data.GS.RoleCopy(false, parsedNumber)
+		}
+	}
 
 	if role == nil {
-		return "No role with the name `" + data.Args[0].Str() + "` found", nil
+		return "No role with the name or ID`" + data.Args[0].Str() + "` found", nil
+	}
+	
+	cID := data.CS.ID
+	c := data.Switch("channel")
+	if c.Value != nil {
+		cID = c.Value.(*dstate.ChannelState).ID
+		
+		perms, err := data.GS.MemberPermissions(true, cID, data.Msg.Author.ID)
+		if err != nil {
+			return nil, err
+		}
+		
+		if perms&discordgo.PermissionSendMessages != discordgo.PermissionSendMessages || perms&discordgo.PermissionReadMessages != discordgo.PermissionReadMessages {
+			return "You do not have permissions to send messages there", nil
+		}
 	}
 
 	_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
@@ -94,7 +121,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = common.BotSession.ChannelMessageSend(data.CS.ID, "<@&"+discordgo.StrID(role.ID)+"> "+data.Args[1].Str())
+	_, err = common.BotSession.ChannelMessageSend(cID, "<@&"+discordgo.StrID(role.ID)+"> "+data.Args[1].Str())
 	if err != nil {
 		return nil, err
 	}
