@@ -1,11 +1,12 @@
 package discordlogger
 
 import (
-	"emperror.dev/errors"
 	"fmt"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 )
@@ -53,7 +54,18 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 			// Just a guild outage
 			return
 		}
-		msg = fmt.Sprintf(":x: Left guild **%s** :(", evt.GuildDelete().Guild.Name)
+
+		guildData, err := models.FindJoinedGuildG(evt.Context(), evt.GuildDelete().ID)
+		if err != nil {
+			guildData = &models.JoinedGuild{
+				ID:   evt.GuildDelete().ID,
+				Name: "unknown",
+			}
+
+			logger.WithError(err).Error("failed fetching guild data")
+		}
+
+		msg = fmt.Sprintf(":x: Left guild **%s** :(", guildData.Name)
 	case eventsystem.EventNewGuild:
 		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", evt.GuildCreate().Guild.Name)
 	}
