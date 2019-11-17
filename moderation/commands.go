@@ -633,6 +633,9 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			userID := parsed.Args[0].Int64()
 			skip := parsed.Args[1].Int()
+			if skip < 0 { 
+				skip = 0
+			}
 			order:= "id desc"
 			limit:= 200
 
