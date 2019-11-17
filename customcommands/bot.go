@@ -317,6 +317,12 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 
 	ms, err := bot.GetMember(reaction.GuildID, reaction.UserID)
 	if err != nil {
+		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
+			// example scenario: removing reactions of a user that's not on the server
+			// (reactions aren't cleared automatically when a user leaves)
+			return
+		}
+
 		logger.WithError(err).WithField("guild", reaction.GuildID).Error("failed fetching guild member")
 		return
 	}
