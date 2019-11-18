@@ -106,7 +106,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 	if c.Value != nil {
 		cID = c.Value.(*dstate.ChannelState).ID
 		
-		perms, err := data.GS.MemberPermissions(true, cID, data.Msg.Author.ID)
+		perms, err := data.GS.MemberPermissions(false, cID, data.Msg.Author.ID)
 		if err != nil {
 			return nil, err
 		}
