@@ -608,83 +608,84 @@ var ModerationCommands = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
-		Name:          "ListViolations",
-		Description:   "Lists Violations of a user optionally filtered by max violation age.\n Has a summary mode flag as well (-s) ; max entries fetched 200",
-		Aliases:       []string{"Violations"},
-		RequiredArgs:  1,
+		Name:          "ListViolationsCount",
+		Description:   "Lists Violations summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of violations to skip while fetching using -skip flag ; max entries fetched 500",
+		Aliases:       []string{"ViolationsCount", "VCount"},
+		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int , Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max Violation Age", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "s", Name: "Summary Mode"},
+			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Type: dcmd.Int, Default: 0},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
 				return nil, err
 			}
+			
 			//Roles with warn permissions can also list Violations.
 			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
 			if err != nil {
 				return nil, err
 			}
 
-			userID := parsed.Args[0].Int64()
-			skip := parsed.Args[1].Int()
-			if skip < 0 { 
-				skip = 0
-			}
+			userID := parsed.Args[0].Int64()			
 			order:= "id desc"
-			limit:= 200
+			limit:= 500
 
 			//Check Flags
 			maxAge := parsed.Switches["ma"].Value.(time.Duration)
-			summary := false
-			if parsed.Switches["s"].Value != nil && parsed.Switches["s"].Value.(bool) {
-				summary = true
+			skip := parsed.Switches["skip"].Int()
+			if skip < 0 {
+				skip = 0
+			}
+			
+			// retrieve Violations
+			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GS.ID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)}
+			
+			if userID != 0 {
+				qms = append(qms, qm.Where("user_id = ?", userID))
 			}
 
-			// retrieve user's violations in descending order of id 
-			userViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? ", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)).AllG(context.Background())
-			if err != nil {	
+			listViolations, err := models.AutomodViolations(qms...).AllG(context.Background())
+			
+
+			if err != nil {
 				return nil, err
 			}
 
-			if len(userViolations) < 1 {
-				return "This user does not have any Active Violations or No Violations fetched with specified offset", nil
+			if len(listViolations) < 1 {
+				return "No Active Violations or No Violations fetched with specified conditions", nil
 			}
 
 			out := ""
+			
 			violations := make(map[string]int)
-			for _, entry := range userViolations {
+			for _, entry := range listViolations {
 				// check if max age
 				if maxAge != 0 && time.Now().Sub(entry.CreatedAt) > maxAge {
 					continue
 				}
-				// check if summary mode then update map and dont update out
-				if summary {
-					violations[entry.Name] = violations[entry.Name] + 1
-					continue
-				}
-
-				out += fmt.Sprintf("#%-4d: `%20s` **Violation Name:** %s\n", entry.ID, entry.CreatedAt.Format(time.RFC822), entry.Name)	
+				
+				violations[entry.Name] = violations[entry.Name] + 1
+				
+			}
+						
+			for name, count := range violations {
+				out += fmt.Sprintf("Violation: %-20s count: %d\n", name, count)
 			}
 			
-			if summary {			
-				for name, count := range violations {
-					out += fmt.Sprintf("Violation: %-20s count: %d\n", name, count)
-				}
-				
-				out = "```" + out + "```"
-			}
-
-			if out == "" || out == "``````" {
-				return "No Violations found with given conditions", nil
+			if out == "" {
+				return "No Violations found with specified conditions", nil
 			} 
-
-			return out, nil
+			
+			out = "```" + out + "```"
+			return &discordgo.MessageEmbed{
+				Title: "Violations Summary",
+				Description: out,
+			}, nil
 		},
 	},
 	&commands.YAGCommand{
