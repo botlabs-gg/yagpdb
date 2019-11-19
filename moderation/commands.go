@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -687,6 +688,67 @@ var ModerationCommands = []*commands.YAGCommand{
 				Description: out,
 			}, nil
 		},
+	},
+	&commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "ListViolations",
+		Description:   "Lists Violations of specified user /n old flag posts oldest violations in first page ( from oldest to newest ).",
+		Aliases:       []string{"Violations", "ViolationLogs", "VLogs", "VLog" },
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "Page Number", Type: dcmd.Int, Default: 0},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "old", Name : "Oldest First"},
+		},
+		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+
+			config, _, err := MBaseCmd(parsed, 0)
+			if err != nil {
+				return nil, err
+			}
+			
+			//Roles with warn permissions can also list Violations.
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
+			if err != nil {
+				return nil, err
+			}
+			
+			skip := (page - 1)*15
+			userID := parsed.Args[0].Int64()
+			limit:= 15
+
+			//Check Flags
+			order := "id desc"
+			if parsed.Switches["old"].Value != nil && parsed.Switches["old"].Value.(bool) {
+				order = "id asc"
+			}
+
+			// retrieve Violations
+			listViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit) , qm.Offset(skip)).AllG(context.Background())
+			if err != nil {	
+				return nil , err
+			}
+
+			if len(listViolations) < 1 && page > 1 {
+				return nil, paginatedmessages.ErrNoResults
+			}
+
+			out := ""
+			for _, entry := range listViolations {
+
+				out += fmt.Sprintf("#%-4d: [%-19s] Rule ID: %d \nViolation Name: %s\n\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.RuleID.Int64, entry.Name)				
+			}
+						
+			out = "```" + out +"```" 
+
+			return &discordgo.MessageEmbed{
+				Title:       "Violation Logs",
+				Description: out,
+			}, nil
+		}),
 	},
 	&commands.YAGCommand{
 		CustomEnabled: true,
