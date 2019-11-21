@@ -50,7 +50,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 		if err != nil {
 			panic("failed initializing discord sessions: " + err.Error())
 		}
-		InitPlugins()
+		botReady()
 	}
 }
 
@@ -160,7 +160,7 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	guildsToSend := make([]*dstate.GuildState, 0)
 	State.RLock()
 	for _, v := range State.Guilds {
-		shardID := GuildShardID(v.ID)
+		shardID := guildShardID(v.ID)
 		if int(shardID) == shard {
 			guildsToSend = append(guildsToSend, v)
 		}

@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS server_stats_member_periods (
 
 	UNIQUE(guild_id, created_at)
 );`,
-
 	`CREATE INDEX IF NOT EXISTS server_stats_member_periods_guild_idx on server_stats_member_periods(guild_id);`,
 	`CREATE INDEX IF NOT EXISTS server_stats_member_periods_created_at_idx on server_stats_member_periods(created_at);`,
 }

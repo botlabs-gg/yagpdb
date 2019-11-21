@@ -51,6 +51,7 @@ var (
 	processShardsLock sync.RWMutex
 )
 
+// Run intializes and starts the discord bot component of yagpdb
 func Run(nodeID string) {
 	setup()
 
@@ -63,7 +64,7 @@ func Run(nodeID string) {
 		logger.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)
 	} else {
 		logger.Info("Running standalone without any orchestrator")
-		SetupStandalone()
+		setupStandalone()
 	}
 
 	go MemberFetcher.Run()
@@ -76,7 +77,7 @@ func Run(nodeID string) {
 		NodeConn.Run()
 	} else {
 		go ShardManager.Start()
-		InitPlugins()
+		botReady()
 	}
 }
 
@@ -92,7 +93,7 @@ func setup() {
 	common.BotSession.AddHandler(eventsystem.HandleEvent)
 }
 
-func SetupStandalone() {
+func setupStandalone() {
 	shardCount, err := ShardManager.GetRecommendedCount()
 	if err != nil {
 		panic("Failed getting shard count: " + err.Error())
@@ -114,13 +115,22 @@ func SetupStandalone() {
 	}
 }
 
-func InitPlugins() {
+// called when the bot is ready and the shards have started connecting
+func botReady() {
 	pubsub.AddHandler("bot_status_changed", func(evt *pubsub.Event) {
 		updateAllShardStatuses()
 	}, nil)
 
 	pubsub.AddHandler("global_ratelimit", handleGlobalRatelimtPusub, GlobalRatelimitTriggeredEventData{})
 	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
+
+	serviceDetails := "Not using orchestrator"
+	if UsingOrchestrator {
+		serviceDetails = "Using orchestrator, NodeID: " + common.NodeID
+	}
+
+	// register us with the service discovery
+	common.ServiceTracker.RegisterService(common.ServiceTypeBot, "Bot", serviceDetails, botServiceDetailsF)
 
 	// Initialize all plugins
 	for _, plugin := range common.Plugins {
@@ -298,4 +308,30 @@ func setupShardManager() {
 
 	// Only handler
 	ShardManager.AddHandler(eventsystem.HandleEvent)
+}
+
+func botServiceDetailsF() (details *common.BotServiceDetails, err error) {
+	if !UsingOrchestrator {
+		totalShards := ShardManager.GetNumShards()
+		shards := make([]int, totalShards)
+		for i := 0; i < totalShards; i++ {
+			shards[i] = i
+		}
+
+		return &common.BotServiceDetails{
+			OrchestratorMode: false,
+			TotalShards:      totalShards,
+			RunningShards:    shards,
+		}, nil
+	}
+
+	totalShards := getTotalShards()
+	running := GetProcessShards()
+
+	return &common.BotServiceDetails{
+		TotalShards:      int(totalShards),
+		RunningShards:    running,
+		NodeID:           common.NodeID,
+		OrchestratorMode: true,
+	}, nil
 }

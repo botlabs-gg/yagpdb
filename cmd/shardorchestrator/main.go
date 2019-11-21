@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -45,11 +47,20 @@ func main() {
 	orch.FixedTotalShardCount = totalShards
 	orch.ResponsibleForShards = activeShards
 	orch.NodeLauncher = &orchestrator.StdNodeLauncher{
-		CmdName: "./capturepanics",
-		Args:    []string{"./yagpdb", "-bot", "-syslog"},
+		LaunchCmdName: "./capturepanics",
+		LaunchArgs:    []string{"./yagpdb", "-bot", "-syslog"},
+
+		VersionCmdName: "./yagpdb",
+		VersionArgs:    []string{"-version"},
 	}
 	orch.Logger = &dshardorchestrator.StdLogger{
 		Level: dshardorchestrator.LogWarning,
+	}
+
+	updateScript := "updateversion.sh"
+	orch.VersionUpdater = &Updater{
+		ScriptLocation: updateScript,
+		orchestrator:   orch,
 	}
 
 	orch.MaxShardsPerNode = 10
@@ -63,7 +74,15 @@ func main() {
 
 	go UpdateRedisNodes(orch)
 
-	api := rest.NewRESTAPI(orch, "127.0.0.1:7448")
+	restAPIAddr := os.Getenv("YAGPDB_BOTREST_LISTEN_ADDRESS")
+	if restAPIAddr == "" {
+		restAPIAddr = "127.0.0.1"
+	}
+
+	api := rest.NewRESTAPI(orch, restAPIAddr+":7448")
+	common.ServiceTracker.SetAPIAddress(restAPIAddr + ":7448")
+	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestator, "Shard orchestrator", "", nil)
+
 	err = api.Run()
 	if err != nil {
 		log.Fatal("failed starting rest api: ", err)
@@ -131,4 +150,28 @@ func ReadActiveShards() []int {
 	}
 
 	return shards
+}
+
+type Updater struct {
+	ScriptLocation string
+	orchestrator   *orchestrator.Orchestrator
+}
+
+func (u *Updater) PullNewVersion() (string, error) {
+	err := os.Mkdir("updating", 770)
+	if err != nil && err != os.ErrExist {
+		return "", err
+	}
+
+	logrus.Println("Updatig version")
+	cmd := exec.Command("/bin/bash", u.ScriptLocation)
+	cmd.Dir = "updating/"
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	logrus.Println("Update output: ", output)
+	return u.orchestrator.NodeLauncher.LaunchVersion()
 }

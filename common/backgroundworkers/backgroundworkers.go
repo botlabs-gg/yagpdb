@@ -23,6 +23,8 @@ type BackgroundWorkerPlugin interface {
 }
 
 func RunWorkers() {
+	common.ServiceTracker.RegisterService(common.ServiceTypeBGWorker, "Background worker", "", nil)
+
 	RESTServerMuxer = goji.NewMux()
 
 	for _, p := range common.Plugins {

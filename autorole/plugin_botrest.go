@@ -7,16 +7,16 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/internalapi"
 	"goji.io"
 	"goji.io/pat"
 )
 
-var _ botrest.BotRestPlugin = (*Plugin)(nil)
+var _ internalapi.InternalAPIPlugin = (*Plugin)(nil)
 var ErrAlreadyProcessingFullGuild = errors.New("Already processing users on this guild")
 
-func (p *Plugin) InitBotRestServer(mux *goji.Mux) {
+func (p *Plugin) InitInternalAPIRoutes(mux *goji.Mux) {
 	mux.Handle(pat.Post("/:guild/autorole/fullscan"), http.HandlerFunc(botRestHandleScanFullServer))
 }
 
@@ -25,7 +25,7 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 	parsedGID, _ := strconv.ParseInt(guildID, 10, 64)
 
 	if parsedGID == 0 {
-		botrest.ServerError(w, r, errors.New("unknown server"))
+		internalapi.ServerError(w, r, errors.New("unknown server"))
 		return
 	}
 
@@ -33,7 +33,7 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 	session := bot.ShardManager.SessionForGuild(parsedGID)
 	session.GatewayManager.RequestGuildMembers(parsedGID, "", 0)
 
-	botrest.ServeJson(w, r, "ok")
+	internalapi.ServeJson(w, r, "ok")
 }
 
 func botRestPostFullScan(guildID int64) error {
@@ -47,6 +47,6 @@ func botRestPostFullScan(guildID int64) error {
 		return ErrAlreadyProcessingFullGuild
 	}
 
-	err = botrest.Post(bot.GuildShardID(guildID), strconv.FormatInt(guildID, 10)+"/autorole/fullscan", nil, nil)
+	err = internalapi.PostWithGuild(guildID, strconv.FormatInt(guildID, 10)+"/autorole/fullscan", nil, nil)
 	return err
 }
