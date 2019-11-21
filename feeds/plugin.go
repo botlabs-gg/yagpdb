@@ -47,6 +47,9 @@ func Run(which []string) {
 		go fp.StartFeed()
 		runningPlugins = append(runningPlugins, fp)
 	}
+
+	joined := strings.Join(which, ",")
+	common.ServiceTracker.RegisterService(common.ServiceTypeFeed, "Feeds", joined, nil)
 }
 
 func Stop(wg *sync.WaitGroup) {

@@ -80,7 +80,6 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 
 		// set up the base template data
 		baseData := map[string]interface{}{
-			"BotRunning":       botrest.BotIsRunning(),
 			"RequestURI":       r.RequestURI,
 			"StartedAtUnix":    StartedAt.Unix(),
 			"CurrentAd":        CurrentAd,
@@ -862,4 +861,19 @@ func SkipStaticMW(maybeSkip func(http.Handler) http.Handler, alwaysRunSuffixes .
 
 		return http.HandlerFunc(mw)
 	}
+}
+
+// RequireBotOwnerMW requires the user to be logged in and that they're a bot owner
+func RequireBotOwnerMW(inner http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if user := r.Context().Value(common.ContextKeyUser); user != nil {
+			cast := user.(*discordgo.User)
+			if common.IsOwner(cast.ID) {
+				inner.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		w.WriteHeader(http.StatusUnauthorized)
+	})
 }

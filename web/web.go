@@ -11,7 +11,6 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/patreon"
@@ -119,6 +118,8 @@ func BaseURL() string {
 }
 
 func Run() {
+	common.ServiceTracker.RegisterService(common.ServiceTypeFrontend, "Webserver", "", nil)
+
 	common.RegisterPlugin(&ControlPanelPlugin{})
 
 	loadTemplates()
@@ -139,7 +140,6 @@ func Run() {
 	mux := setupRoutes()
 
 	// Start monitoring the bot
-	go botrest.RunPinger()
 	go pollCommandsRan()
 
 	blogChannel := confAnnouncementsChannel.GetInt()
@@ -147,13 +147,13 @@ func Run() {
 		go discordblog.RunPoller(common.BotSession, int64(blogChannel), time.Minute)
 	}
 
-	LoadAd()
+	loadAd()
 
 	logger.Info("Running webservers")
 	runServers(mux)
 }
 
-func LoadAd() {
+func loadAd() {
 	path := confAdPath.GetString()
 	linkurl := confAdLinkurl.GetString()
 

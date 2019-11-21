@@ -16,6 +16,7 @@ var (
 	PluginCategoryFeeds      = &PluginCategory{Name: "Feeds", Order: 30}
 )
 
+// PluginInfo represents basic plugin information
 type PluginInfo struct {
 	Name     string // Human readable name of the plugin
 	SysName  string // snake_case version of the name in lower case
@@ -31,4 +32,18 @@ type Plugin interface {
 func RegisterPlugin(plugin Plugin) {
 	Plugins = append(Plugins, plugin)
 	logger.Info("Registered plugin: " + plugin.PluginInfo().Name)
+}
+
+// PluginWithCommonRun is for plugins that include a function that's always run, no matter if its the webserver frontend, bot or whatever
+type PluginWithCommonRun interface {
+	CommonRun()
+}
+
+// RunCommonRunPlugins runs plugins that implement PluginWithCommonRun
+func RunCommonRunPlugins() {
+	for _, v := range Plugins {
+		if cast, ok := v.(PluginWithCommonRun); ok {
+			go cast.CommonRun()
+		}
+	}
 }

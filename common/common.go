@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
@@ -229,4 +230,32 @@ func connectDB(host, user, pass, dbName string) error {
 	GORM.SetLogger(&GORMLogger{})
 
 	return err
+}
+
+var (
+	shutdownFunc   func()
+	shutdownCalled bool
+	shutdownMU     sync.Mutex
+)
+
+func Shutdown() {
+	shutdownMU.Lock()
+	f := shutdownFunc
+	if f == nil || shutdownCalled {
+		shutdownMU.Unlock()
+		return
+	}
+
+	shutdownCalled = true
+	shutdownMU.Unlock()
+
+	if f != nil {
+		f()
+	}
+}
+
+func SetShutdownFunc(f func()) {
+	shutdownMU.Lock()
+	shutdownFunc = f
+	shutdownMU.Unlock()
 }

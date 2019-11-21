@@ -135,9 +135,7 @@ func RetrieveRedisStats(guildID int64) (*DailyStats, error) {
 
 	online, err := botrest.GetOnlineCount(guildID)
 	if err != nil {
-		if botrest.BotIsRunning() {
-			logger.WithError(err).Error("Failed fetching online count")
-		}
+		logger.WithError(err).Error("Failed fetching online count")
 	}
 
 	channelResult, err := parseMessageStats(messageStatsRaw, guildID)

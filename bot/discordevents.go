@@ -1,10 +1,10 @@
 package bot
 
 import (
-	"emperror.dev/errors"
 	"runtime/debug"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -143,7 +143,7 @@ func HandleGuildDelete(evt *eventsystem.EventData) (retry bool, err error) {
 	}
 
 	logger.WithFields(logrus.Fields{
-		"g_name": evt.GuildDelete().Name,
+		"guild": evt.GuildDelete().ID,
 	}).Info("Left guild")
 
 	go guildRemoved(evt.GuildDelete().ID)

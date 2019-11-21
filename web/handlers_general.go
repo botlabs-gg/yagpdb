@@ -15,7 +15,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/botrest"
@@ -368,10 +367,6 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 }
 
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
-	if !botrest.BotIsRunning() {
-		return errors.New("Bot is not responding")
-	}
-
 	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)

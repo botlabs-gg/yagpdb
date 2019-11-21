@@ -23,9 +23,9 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/getsentry/raven-go v0.2.0 // indirect
-	github.com/gin-gonic/gin v1.4.0 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
+	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/safebrowsing v0.0.0-20190624211811-bbf0d20d26b3
 	github.com/gorilla/schema v1.1.0
 	github.com/jarcoal/httpmock v1.0.4 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/jonas747/dcmd v1.1.0
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
 	github.com/jonas747/discordgo v1.1.7
-	github.com/jonas747/dshardorchestrator v0.0.0-20190717204625-752c847fa039
+	github.com/jonas747/dshardorchestrator v0.1.0
 	github.com/jonas747/dstate v1.0.3
 	github.com/jonas747/dutil v0.0.2
 	github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846
@@ -76,12 +76,13 @@ require (
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20190909091759-094676da4a83
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
-	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c
+	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20190910064555-bbd175535a8b // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 // indirect
 	google.golang.org/api v0.3.1
+	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
