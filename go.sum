@@ -210,6 +210,8 @@ github.com/jonas747/retryableredis v1.0.2 h1:K6JxEqW4JrZUQqlRjp6+l9urQD0Hu++Avlq
 github.com/jonas747/retryableredis v1.0.2/go.mod h1:2cmsM+Ipi0IDpdq3lHPmgedpfHXwMSA14V7+uFb4zeU=
 github.com/jonas747/template v0.0.0-20190826212002-f0fa841287d7 h1:Qy/2kmSSb48wrQOyPFgCWkufpYJEw8iELb4YFbeDkBk=
 github.com/jonas747/template v0.0.0-20190826212002-f0fa841287d7/go.mod h1:uh4OTJv2hiDAA5vwpdI5D1fYdmXFZ7pReNMOad/yNes=
+github.com/jonas747/template v1.0.0 h1:eqCCg2KekEWPXjK2n8dyVTx7cI25tkvpuaPbGtrivMQ=
+github.com/jonas747/template v1.0.0/go.mod h1:uh4OTJv2hiDAA5vwpdI5D1fYdmXFZ7pReNMOad/yNes=
 github.com/json-iterator/go v1.1.6 h1:MrUvLMLTMxbqFJ9kzlvat/rYZqZnW3u4wkLzWTaFwKs=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
