@@ -649,7 +649,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			if userID != 0 {
 				qms = append(qms, qm.Where("user_id = ?", userID))
 			}
-
+			
+			if maxAge != 0 {
+				qms = append (qms, qm.Where("created_at > ?", time.Now().Add(-maxAge)))
+			}
+			
 			listViolations, err := models.AutomodViolations(qms...).AllG(context.Background())
 			
 
@@ -665,13 +669,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			
 			violations := make(map[string]int)
 			for _, entry := range listViolations {
-				// check if max age
-				if maxAge != 0 && time.Now().Sub(entry.CreatedAt) > maxAge {
-					continue
-				}
-				
-				violations[entry.Name] = violations[entry.Name] + 1
-				
+				violations[entry.Name] = violations[entry.Name] + 1	
 			}
 						
 			for name, count := range violations {
