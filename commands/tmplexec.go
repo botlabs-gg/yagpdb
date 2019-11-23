@@ -83,7 +83,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 				messageCopy.ChannelID = ctx.CS.ID
 			}
 		}
-		mc := &discordgo.MessageCreate{ctx.Msg}
+		mc := &discordgo.MessageCreate{&messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
