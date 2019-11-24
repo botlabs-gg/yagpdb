@@ -54,11 +54,12 @@ var (
 	confAnnouncementsChannel       = config.RegisterOption("yagpdb.announcements_channel", "Channel to pull announcements from and display on the control panel homepage", 0)
 	confReverseProxyClientIPHeader = config.RegisterOption("yagpdb.web.reverse_proxy_client_ip_header", "If were behind a reverse proxy, this is the header field with the real ip that the proxy passes along", "")
 
-	confAdPath    = config.RegisterOption("yagpdb.ad.img_path", "The ad image ", "")
-	confAdLinkurl = config.RegisterOption("yagpdb.ad.link", "Link to follow when clicking on the ad", "")
-	confAdWidth   = config.RegisterOption("yagpdb.ad.w", "Ad width", 0)
-	confAdHeight  = config.RegisterOption("yagpdb.ad.h", "Ad Height", 0)
-	ConfAdVideos  = config.RegisterOption("yagpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
+	confAdPath       = config.RegisterOption("yagpdb.ad.img_path", "The ad image ", "")
+	confAdLinkurl    = config.RegisterOption("yagpdb.ad.link", "Link to follow when clicking on the ad", "")
+	confAdWidth      = config.RegisterOption("yagpdb.ad.w", "Ad width", 0)
+	confAdHeight     = config.RegisterOption("yagpdb.ad.h", "Ad Height", 0)
+	ConfAdVideos     = config.RegisterOption("yagpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
+	confDemoServerID = config.RegisterOption("yagpdb.web.demo_server_id", "Server ID for live demo links", 0)
 
 	ConfAdsTxt = config.RegisterOption("yagpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
 
