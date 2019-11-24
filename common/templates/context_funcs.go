@@ -646,6 +646,27 @@ func (c *Context) tmplGetMember(id interface{}) (*discordgo.Member, error) {
 	return member.DGoCopy(), nil
 }
 
+func (c *Context) tmplGetChannel ( channel interface {}) (*dstate.ChannelState, error) {
+	
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+                return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+        }
+
+	cstate := c.GS.ChannelCopy(true, cID)
+
+	if cstate == nil {
+		return nil, errors.New("Channel not in state")
+	}
+	
+	return cstate, nil
+
+}
+
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if c.Msg == nil {

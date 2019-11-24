@@ -143,6 +143,7 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	common.RedisPool.Do(retryableredis.Cmd(&joinedServers, "SCARD", "connected_guilds"))
 
 	tmpl["JoinedServers"] = joinedServers
+	tmpl["DemoServerID"] = confDemoServerID.GetString()
 
 	// Command stats
 	tmpl["Commands"] = atomic.LoadInt64(commandsRanToday)

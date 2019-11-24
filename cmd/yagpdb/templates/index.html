@@ -79,6 +79,11 @@
               <p class="intro_headline">Yet Another General Purpose Discord Bot</p>
             </div>
           </div>
+          {{if ne .DemoServerID "0"}}<div class="row justify-content-md-center">
+            <div class="col col-md-10">
+              <p class="intro-text poppins"><a href="/manage/{{.DemoServerID}}/home">Click here for a live demo of the control panel</a></p>
+            </div>
+          </div>{{end}}
           <div class="row justify-content-md-center">
             <div class="col col-md-5">
               <div class="numberbutton">
@@ -277,7 +282,8 @@
       var scene = document.getElementById('tscene');
       var parallaxInstance = new Parallax(tscene, {
         relativeInput: true,
-        hoverOnly: true
+        hoverOnly: true,
+        pointerEvents: true
       });
     </script>
     {{template "googleAnalytics" .}}
