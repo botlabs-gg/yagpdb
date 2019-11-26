@@ -133,9 +133,9 @@ func main() {
 
 	log.Info("Starting YAGPDB version " + common.VERSION)
 
-	err := common.LoadConfig()
+	err := common.CoreInit()
 	if err != nil {
-		log.WithError(err).Fatal("Failed loading run config")
+		log.WithError(err).Fatal("Failed running core init ")
 	}
 
 	if confSentryDSN.GetString() != "" {

@@ -7,6 +7,7 @@ import (
 
 type ConfigSource interface {
 	GetValue(key string) interface{}
+	Name() string
 }
 
 type ConfigOption struct {
@@ -15,10 +16,13 @@ type ConfigOption struct {
 	DefaultValue interface{}
 	LoadedValue  interface{}
 	Manager      *ConfigManager
+
+	ConfigSource ConfigSource
 }
 
 func (opt *ConfigOption) LoadValue() {
 	newVal := opt.DefaultValue
+	opt.ConfigSource = nil
 
 	for i := len(opt.Manager.sources) - 1; i >= 0; i-- {
 		source := opt.Manager.sources[i]
@@ -26,6 +30,7 @@ func (opt *ConfigOption) LoadValue() {
 		v := source.GetValue(opt.Name)
 		if v != nil {
 			newVal = v
+			opt.ConfigSource = source
 			break
 		}
 	}

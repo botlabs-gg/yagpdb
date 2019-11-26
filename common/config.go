@@ -1,10 +1,11 @@
 package common
 
 import (
-	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common/config"
 	"strconv"
 	"strings"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/yagpdb/common/config"
 )
 
 var (
@@ -42,8 +43,9 @@ func LoadConfig() (err error) {
 	configLoaded = true
 
 	config.AddSource(&config.EnvSource{})
+	config.AddSource(&config.RedisConfigStore{Pool: RedisPool})
 	config.Load()
-
+ 
 	requiredConf := []*config.ConfigOption{
 		ConfClientID,
 		ConfClientSecret,
