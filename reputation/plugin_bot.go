@@ -127,7 +127,7 @@ var cmds = []*commands.YAGCommand{
 
 			member := commands.ContextMS(parsed.Context())
 			if !IsAdmin(parsed.GS, member, conf) {
-				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
+				return "You're not a reputation admin. (no manage server perms and no rep admin role)", nil
 			}
 
 			targetID := parsed.Args[0].Int64()
