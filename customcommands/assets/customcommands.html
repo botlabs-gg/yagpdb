@@ -189,7 +189,7 @@
             </div>
             <div class="row mb-2">
                 <div class="col-lg-12">
-                    <label for="responses">Response (<span class="cc-character-length-counter">x</span> chars/<span class="cc-byte-length-counter">x</span> bytes/10000 total)</label>
+                    <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
                     <div class="entry input-group input-group-sm">
                         <textarea class="form-control" name="responses" placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)"></textarea>
                         <span class="input-group-append">
@@ -383,7 +383,7 @@
                     <div class="row mb-2">
                         <div class="col-lg-12">
                             <div class="form-group">
-                                <label for="responses">Response (<span class="cc-character-length-counter">x</span> chars/<span class="cc-byte-length-counter">x</span> bytes/10000 total)</label>
+                                <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
                                 <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                 {{range .Responses}}
                                 <div class="entry input-group  input-group-sm">
@@ -511,32 +511,18 @@
     function onCCChanged(textArea){
         var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
 
-        var characterLength = 0;
-        var byteLength = 0;
+        var combinedLength = 0;
         textAreas.forEach(function(elem){
-		//based on https://dev.to/coolgoose/quick-and-easy-way-of-counting-utf-8-characters-in-javascript-23ce
-		characterLength += [...elem.value].length;
-		
-		//using counter from https://gist.github.com/mathiasbynens/1010324
-		byteLength += encodeURIComponent([elem.value]).split(/%..|./).length - 1;
+            combinedLength += elem.value.length;
         })
 
-	var displayCharacter = textArea.parentElement.parentElement.querySelector(".cc-character-length-counter")
-	displayCharacter.textContent = characterLength
-	
-	var displayByte = textArea.parentElement.parentElement.querySelector(".cc-byte-length-counter")
-	displayByte.textContent = byteLength
-						
-        if(characterLength > 10000){
-            displayCharacter.classList.add("text-danger");
-        }else{
-            displayCharacter.classList.remove("text-danger");
-        }
+        var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
+        display.textContent = combinedLength
 
-        if(byteLength > 10000){
-            displayByte.classList.add("text-danger");
+        if(combinedLength > 10000){
+            display.classList.add("text-danger");
         }else{
-            displayByte.classList.remove("text-danger");
+            display.classList.remove("text-danger");
         }
     }
 
