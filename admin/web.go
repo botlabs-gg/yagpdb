@@ -3,6 +3,7 @@ package admin
 import (
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -53,15 +54,51 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Post("/config/edit/:key"), web.ControllerPostHandler(p.handleEditConfig, getConfigHandler, nil, ""))
 }
 
+type Host struct {
+	Name         string
+	ServiceHosts []*common.ServiceHost
+}
+
 func (p *Plugin) handleGetPanel(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	_, tmpl := web.GetBaseCPContextData(r.Context())
 
-	hosts, err := common.ServicePoller.GetActiveServiceHosts()
+	servicehosts, err := common.ServicePoller.GetActiveServiceHosts()
 	if err != nil {
 		return tmpl, errors.WithStackIf(err)
 	}
 
-	tmpl["ServiceHosts"] = hosts
+	sort.Slice(servicehosts, func(i, j int) bool {
+		for _, v := range servicehosts[i].Services {
+			if v.Type == common.ServiceTypeBot {
+				return false
+			} else if v.Type == common.ServiceTypeOrchestator {
+				return true
+			}
+		}
+
+		for _, v := range servicehosts[j].Services {
+			if v.Type == common.ServiceTypeBot {
+				return true
+			}
+		}
+
+		return false
+	})
+
+	hosts := make(map[string]*Host)
+	for _, v := range servicehosts {
+		if h, ok := hosts[v.Host]; ok {
+			h.ServiceHosts = append(h.ServiceHosts, v)
+			continue
+		}
+
+		hosts[v.Host] = &Host{
+			Name:         v.Host,
+			ServiceHosts: []*common.ServiceHost{v},
+		}
+	}
+
+	tmpl["Hosts"] = hosts
 
 	return tmpl, nil
 }
