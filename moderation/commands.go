@@ -377,14 +377,14 @@ var ModerationCommands = []*commands.YAGCommand{
 			if ma != 0 {
 				filtered = true
 			}
-			
+
 			// Check if we should ignore pinned messages
 			pe := false
 			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
 				pe = true
 				filtered = true
 			}
-			
+
 			limitFetch := num
 			if userFilter != 0 || filtered {
 				limitFetch = num * 50 // Maybe just change to full fetch?
@@ -769,7 +769,7 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			pinnedMessages[msg.ID] = struct{}{} //empty struct works because we are not really interested in value
 		}
 	}
-	
+
 	msgs, err := bot.GetMessages(channelID, fetchNum, false)
 	if err != nil {
 		return 0, err
@@ -799,13 +799,13 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			continue
 		}
 
-		// Check if pinned message to ignore 
+		// Check if pinned message to ignore
 		if pinFilterEnable {
 			if _, found := pinnedMessages[msgs[i].ID]; found {
 				continue
 			}
 		}
-		
+
 		toDelete = append(toDelete, msgs[i].ID)
 		//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
 		if len(toDelete) >= deleteNum || len(toDelete) >= 100 {

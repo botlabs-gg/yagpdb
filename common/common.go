@@ -51,8 +51,9 @@ var (
 	logger = GetFixedPrefixLogger("common")
 )
 
-// Initalizes all database connections, config loading and so on
-func Init() error {
+// CoreInit initializes the essential parts
+func CoreInit() error {
+
 	rand.Seed(time.Now().UnixNano())
 
 	stdlog.SetOutput(&STDLogProxy{})
@@ -62,22 +63,28 @@ func Init() error {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	err := LoadConfig()
+	err := connectRedis()
 	if err != nil {
 		return err
 	}
 
-	err = setupGlobalDGoSession()
+	err = LoadConfig()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Init initializes the rest of the bot
+func Init() error {
+
+	err := setupGlobalDGoSession()
 	if err != nil {
 		return err
 	}
 
 	ConnectDatadog()
-
-	err = connectRedis(ConfRedis.GetString())
-	if err != nil {
-		return err
-	}
 
 	db := "yagpdb"
 	if ConfPQDB.GetString() != "" {
@@ -190,7 +197,14 @@ func InitTest() {
 	}
 }
 
-func connectRedis(addr string) (err error) {
+func connectRedis() (err error) {
+	// we kinda bypass the config system because the config system also relies on redis
+	// this way the only required env var is the redis address, and per-host specific things
+	addr := os.Getenv("YAGPDB_REDIS")
+	if addr == "" {
+		addr = "localhost:6379"
+	}
+
 	RedisPool, err = basicredispool.NewPool(RedisPoolSize, &retryableredis.DialConfig{
 		Network: "tcp",
 		Addr:    addr,

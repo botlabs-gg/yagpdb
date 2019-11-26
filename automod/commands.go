@@ -3,8 +3,10 @@ package automod
 import (
 	"context"
 	"fmt"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"strings"
+	"time"
+
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -133,10 +135,138 @@ func (p *Plugin) AddCommands() {
 		}),
 	}
 
+	cmdListVLC := &commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "ListViolationsCount",
+		Description:   "Lists Violations summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of violations to skip while fetching using -skip flag ; max entries fetched 500",
+		Aliases:       []string{"ViolationsCount", "VCount"},
+		RequiredArgs:  0,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Type: dcmd.Int, Default: 0},
+		},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			userID := parsed.Args[0].Int64()
+			order := "id desc"
+			limit := 500
+
+			//Check Flags
+			maxAge := parsed.Switches["ma"].Value.(time.Duration)
+			skip := parsed.Switches["skip"].Int()
+			if skip < 0 {
+				skip = 0
+			}
+
+			// retrieve Violations
+			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GS.ID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)}
+
+			if userID != 0 {
+				qms = append(qms, qm.Where("user_id = ?", userID))
+			}
+
+			if maxAge != 0 {
+				qms = append(qms, qm.Where("created_at > ?", time.Now().Add(-maxAge)))
+			}
+
+			listViolations, err := models.AutomodViolations(qms...).AllG(context.Background())
+
+			if err != nil {
+				return nil, err
+			}
+
+			if len(listViolations) < 1 {
+				return "No Active Violations or No Violations fetched with specified conditions", nil
+			}
+
+			out := ""
+
+			violations := make(map[string]int)
+			for _, entry := range listViolations {
+				violations[entry.Name] = violations[entry.Name] + 1
+			}
+
+			for name, count := range violations {
+				out += fmt.Sprintf("Violation: %-20s count: %d\n", name, count)
+			}
+
+			if out == "" {
+				return "No Violations found with specified conditions", nil
+			}
+
+			out = "```" + out + "```"
+			return &discordgo.MessageEmbed{
+				Title:       "Violations Summary",
+				Description: out,
+			}, nil
+		},
+	}
+
+	cmdListV := &commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "ListViolations",
+		Description:   "Lists Violations of specified user /n old flag posts oldest violations in first page ( from oldest to newest ).",
+		Aliases:       []string{"Violations", "ViolationLogs", "VLogs", "VLog"},
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "Page Number", Type: dcmd.Int, Default: 0},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "old", Name: "Oldest First"},
+		},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
+		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			skip := (page - 1) * 15
+			userID := parsed.Args[0].Int64()
+			limit := 15
+
+			//Check Flags
+			order := "id desc"
+			if parsed.Switches["old"].Value != nil && parsed.Switches["old"].Value.(bool) {
+				order = "id asc"
+			}
+
+			// retrieve Violations
+			listViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)).AllG(context.Background())
+			if err != nil {
+				return nil, err
+			}
+
+			if len(listViolations) < 1 && page > 1 {
+				return nil, paginatedmessages.ErrNoResults
+			}
+
+			out := ""
+			if len(listViolations) > 0 {
+				for _, entry := range listViolations {
+
+					out += fmt.Sprintf("#%-4d: [%-19s] Rule ID: %d \nViolation Name: %s\n\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.RuleID.Int64, entry.Name)
+				}
+
+				out = "```" + out + "```"
+			} else {
+				out = "No violations"
+			}
+
+			return &discordgo.MessageEmbed{
+				Title:       "Violation Logs",
+				Description: out,
+			}, nil
+		}),
+	}
+
 	container := commands.CommandSystem.Root.Sub("automod", "amod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
 	container.AddCommand(cmdViewRulesets, cmdViewRulesets.GetTrigger())
 	container.AddCommand(cmdToggleRuleset, cmdToggleRuleset.GetTrigger())
 	container.AddCommand(cmdLogs, cmdLogs.GetTrigger())
+	container.AddCommand(cmdListV, cmdListV.GetTrigger())
+	container.AddCommand(cmdListVLC, cmdListVLC.GetTrigger())
 }

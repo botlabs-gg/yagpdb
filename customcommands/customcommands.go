@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -141,8 +142,9 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 
 	combinedSize := 0
 	for _, v := range cc.Responses {
-		combinedSize += len(v)
+		combinedSize += utf8.RuneCountInString(v)
 	}
+
 	if combinedSize > 10000 {
 		tmpl.AddAlerts(web.ErrorAlert("Max combined command size can be 10k"))
 		return false

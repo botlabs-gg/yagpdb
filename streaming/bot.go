@@ -298,7 +298,7 @@ func (config *Config) MeetsRequirements(ms *dstate.MemberState) bool {
 	}
 
 	if strings.TrimSpace(config.GameRegex) != "" {
-		gameName := ms.PresenceGame.Details
+		gameName := ms.PresenceGame.State
 		compiledRegex, err := regexp.Compile(strings.TrimSpace(config.GameRegex))
 		if err == nil {
 			// It should be verified before this that its valid
@@ -309,7 +309,7 @@ func (config *Config) MeetsRequirements(ms *dstate.MemberState) bool {
 	}
 
 	if strings.TrimSpace(config.TitleRegex) != "" {
-		streamTitle := ms.PresenceGame.Name
+		streamTitle := ms.PresenceGame.Details
 		compiledRegex, err := regexp.Compile(strings.TrimSpace(config.TitleRegex))
 		if err == nil {
 			// It should be verified before this that its valid

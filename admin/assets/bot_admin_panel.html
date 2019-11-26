@@ -7,6 +7,10 @@
 
 {{template "cp_alerts" .}}
 
+<a href="/admin/config" class="btn btn-sm btn-primary">Internal bot config</a>
+
+{{range .Hosts}}
+<h3>{{.Name}}</h3>
 <div class="row">
     {{range .ServiceHosts}}
     <div class="col-lg-4">
@@ -39,6 +43,7 @@
                         </form>
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/deployedversion" class="btn btn-primary"
                             target="_blank">New node version</a>
+                        <br>
                         {{end}}
                         {{end}}
 
@@ -60,6 +65,8 @@
     </div>
     {{end}}
 </div>
+<hr>
+{{end}}
 
 <!-- Modal -->
 <div class="modal fade" id="remote-modal" tabindex="-1" role="dialog" aria-hidden="true">
