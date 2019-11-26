@@ -1,7 +1,6 @@
 package moderation
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -13,13 +12,10 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
@@ -381,14 +377,14 @@ var ModerationCommands = []*commands.YAGCommand{
 			if ma != 0 {
 				filtered = true
 			}
-			
+
 			// Check if we should ignore pinned messages
 			pe := false
 			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
 				pe = true
 				filtered = true
 			}
-			
+
 			limitFetch := num
 			if userFilter != 0 || filtered {
 				limitFetch = num * 50 // Maybe just change to full fetch?
@@ -617,148 +613,6 @@ var ModerationCommands = []*commands.YAGCommand{
 	&commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
-		Name:          "ListViolationsCount",
-		Description:   "Lists Violations summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of violations to skip while fetching using -skip flag ; max entries fetched 500",
-		Aliases:       []string{"ViolationsCount", "VCount"},
-		RequiredArgs:  0,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-		},
-		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Type: dcmd.Int, Default: 0},
-		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			config, _, err := MBaseCmd(parsed, 0)
-			if err != nil {
-				return nil, err
-			}
-			
-			//Roles with warn permissions can also list Violations.
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
-			if err != nil {
-				return nil, err
-			}
-
-			userID := parsed.Args[0].Int64()			
-			order:= "id desc"
-			limit:= 500
-
-			//Check Flags
-			maxAge := parsed.Switches["ma"].Value.(time.Duration)
-			skip := parsed.Switches["skip"].Int()
-			if skip < 0 {
-				skip = 0
-			}
-			
-			// retrieve Violations
-			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GS.ID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)}
-			
-			if userID != 0 {
-				qms = append(qms, qm.Where("user_id = ?", userID))
-			}
-			
-			if maxAge != 0 {
-				qms = append(qms, qm.Where("created_at > ?", time.Now().Add(-maxAge)))
-			}
-			
-			listViolations, err := models.AutomodViolations(qms...).AllG(context.Background())
-			
-
-			if err != nil {
-				return nil, err
-			}
-
-			if len(listViolations) < 1 {
-				return "No Active Violations or No Violations fetched with specified conditions", nil
-			}
-
-			out := ""
-			
-			violations := make(map[string]int)
-			for _, entry := range listViolations {
-				violations[entry.Name] = violations[entry.Name] + 1	
-			}
-						
-			for name, count := range violations {
-				out += fmt.Sprintf("Violation: %-20s count: %d\n", name, count)
-			}
-			
-			if out == "" {
-				return "No Violations found with specified conditions", nil
-			} 
-			
-			out = "```" + out + "```"
-			return &discordgo.MessageEmbed{
-				Title: "Violations Summary",
-				Description: out,
-			}, nil
-		},
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "ListViolations",
-		Description:   "Lists Violations of specified user /n old flag posts oldest violations in first page ( from oldest to newest ).",
-		Aliases:       []string{"Violations", "ViolationLogs", "VLogs", "VLog" },
-		RequiredArgs:  1,
-		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Page Number", Type: dcmd.Int, Default: 0},
-		},
-		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "old", Name : "Oldest First"},
-		},
-		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-
-			config, _, err := MBaseCmd(parsed, 0)
-			if err != nil {
-				return nil, err
-			}
-			
-			//Roles with warn permissions can also list Violations.
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
-			if err != nil {
-				return nil, err
-			}
-			
-			skip := (page - 1)*15
-			userID := parsed.Args[0].Int64()
-			limit:= 15
-
-			//Check Flags
-			order := "id desc"
-			if parsed.Switches["old"].Value != nil && parsed.Switches["old"].Value.(bool) {
-				order = "id asc"
-			}
-
-			// retrieve Violations
-			listViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit) , qm.Offset(skip)).AllG(context.Background())
-			if err != nil {	
-				return nil , err
-			}
-
-			if len(listViolations) < 1 && page > 1 {
-				return nil, paginatedmessages.ErrNoResults
-			}
-
-			out := ""
-			for _, entry := range listViolations {
-
-				out += fmt.Sprintf("#%-4d: [%-19s] Rule ID: %d \nViolation Name: %s\n\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.RuleID.Int64, entry.Name)				
-			}
-						
-			out = "```" + out +"```" 
-
-			return &discordgo.MessageEmbed{
-				Title:       "Violation Logs",
-				Description: out,
-			}, nil
-		}),
-	},
-	&commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
 		Name:          "GiveRole",
 		Aliases:       []string{"grole", "arole", "addrole"},
 		Description:   "Gives a role to the specified member, with optional expiry",
@@ -915,7 +769,7 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			pinnedMessages[msg.ID] = struct{}{} //empty struct works because we are not really interested in value
 		}
 	}
-	
+
 	msgs, err := bot.GetMessages(channelID, fetchNum, false)
 	if err != nil {
 		return 0, err
@@ -945,13 +799,13 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			continue
 		}
 
-		// Check if pinned message to ignore 
+		// Check if pinned message to ignore
 		if pinFilterEnable {
 			if _, found := pinnedMessages[msgs[i].ID]; found {
 				continue
 			}
 		}
-		
+
 		toDelete = append(toDelete, msgs[i].ID)
 		//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
 		if len(toDelete) >= deleteNum || len(toDelete) >= 100 {
