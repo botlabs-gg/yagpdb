@@ -16,3 +16,7 @@ func (e *EnvSource) GetValue(key string) interface{} {
 	}
 	return v
 }
+
+func (e *EnvSource) Name() string {
+	return "env"
+}

@@ -1,14 +1,16 @@
 package admin
 
 import (
-	"github.com/jonas747/dshardorchestrator/orchestrator/rest"
-	"github.com/jonas747/yagpdb/common/internalapi"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"emperror.dev/errors"
+	"github.com/jonas747/dshardorchestrator/orchestrator/rest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/internalapi"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
@@ -17,6 +19,7 @@ import (
 // InitWeb implements web.Plugin
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../admin/assets/bot_admin_panel.html", "templates/plugins/bot_admin_panel.html")
+	web.LoadHTMLTemplate("../../admin/assets/bot_admin_config.html", "templates/plugins/bot_admin_config.html")
 
 	mux := goji.SubMux()
 	web.RootMux.Handle(pat.New("/admin/*"), mux)
@@ -44,6 +47,10 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Post("/host/:host/pid/:pid/updateversion"), web.ControllerPostHandler(p.handleUpgrade, panelHandler, nil, ""))
 	mux.Handle(pat.Post("/host/:host/pid/:pid/migratenodes"), web.ControllerPostHandler(p.handleMigrateNodes, panelHandler, nil, ""))
 	mux.Handle(pat.Get("/host/:host/pid/:pid/deployedversion"), http.HandlerFunc(p.handleLaunchNodeVersion))
+
+	getConfigHandler := web.ControllerHandler(p.handleGetConfig, "bot_admin_config")
+	mux.Handle(pat.Get("/config"), getConfigHandler)
+	mux.Handle(pat.Post("/config/edit/:key"), web.ControllerPostHandler(p.handleEditConfig, getConfigHandler, nil, ""))
 }
 
 func (p *Plugin) handleGetPanel(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -194,4 +201,60 @@ func findServicehost(r *http.Request) (*common.ServiceHost, error) {
 	}
 
 	return nil, common.ErrNotFound
+}
+
+func (p *Plugin) handleGetConfig(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, tmpl := web.GetBaseCPContextData(r.Context())
+
+	tmpl["ConfigOptions"] = config.Singleton.Options
+
+	return tmpl, nil
+}
+
+func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, tmpl := web.GetBaseCPContextData(r.Context())
+
+	key := pat.Param(r, "key")
+	value := r.FormValue("value")
+
+	opt, ok := config.Singleton.Options[key]
+	if !ok {
+		return tmpl.AddAlerts(web.ErrorAlert("Unknown option")), nil
+	}
+
+	if opt.DefaultValue != nil {
+		switch opt.DefaultValue.(type) {
+		case int, int64:
+			_, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return tmpl.AddAlerts(web.ErrorAlert("Value is not an integer")), nil
+			}
+		case bool:
+			possibleChoices := []string{
+				"true",
+				"false",
+				"yes",
+				"no",
+				"on",
+				"off",
+				"enabled",
+				"disabled",
+				"1",
+				"0",
+			}
+
+			lower := strings.ToLower(value)
+			if !common.ContainsStringSlice(possibleChoices, lower) {
+				return tmpl.AddAlerts(web.ErrorAlert("Value is not a boolean")), nil
+			}
+		}
+	}
+
+	cs := config.RedisConfigStore{Pool: common.RedisPool}
+	err := cs.SaveValue(key, value)
+	if err != nil {
+		return tmpl, err
+	}
+
+	return tmpl, nil
 }
