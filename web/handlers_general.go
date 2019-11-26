@@ -165,8 +165,8 @@ type BotStatus struct {
 	EventsPerSecondMin     float64 `json:"events_per_second_min"`
 	EventsPerSecondMax     float64 `json:"events_per_second_max"`
 
-	UptimeMax time.Duration `json:"uptim_emax"`
-	UptimeMin time.Duration `json:"uptime_min"`
+	UptimeMax time.Duration `time.Duration(json:"uptim_emax") * time.Second`
+	UptimeMin time.Duration `time.Duration(json:"uptime_min") * time.Second`
 }
 
 var (
