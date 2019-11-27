@@ -198,7 +198,7 @@ func (p *Plugin) AddCommands() {
 				return "No Violations found with specified conditions", nil
 			}
 
-			out = "```" + out + "```"
+			out = "```" + out + fmt.Sprintf("%-31s Count: %d\n", "Total", len(listViolations)) + "```"
 			return &discordgo.MessageEmbed{
 				Title:       "Violations Summary",
 				Description: out,
@@ -210,7 +210,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ListViolations",
-		Description:   "Lists Violations of specified user /n old flag posts oldest violations in first page ( from oldest to newest ).",
+		Description:   "Lists Violations of specified user \n old flag posts oldest violations in first page ( from oldest to newest ).",
 		Aliases:       []string{"Violations", "ViolationLogs", "VLogs", "VLog"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -238,7 +238,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			if len(listViolations) < 1 && page > 1 {
+			if len(listViolations) < 1 && p.LastResponse != nil { //Dont send No Results error on first execution
 				return nil, paginatedmessages.ErrNoResults
 			}
 
