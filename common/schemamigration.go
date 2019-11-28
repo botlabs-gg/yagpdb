@@ -45,7 +45,7 @@ func checkSkipSchemaInit(schema string, name string) (exists bool, err error) {
 	trimmed := strings.TrimSpace(schema)
 
 	if matches := createTableRegex.FindAllStringSubmatch(trimmed, -1); len(matches) > 0 {
-		return checkTableExists(matches[0][1])
+		return TableExists(matches[0][1])
 	}
 
 	if matches := addIndexRegex.FindAllStringSubmatch(trimmed, -1); len(matches) > 0 {
@@ -59,7 +59,7 @@ func checkSkipSchemaInit(schema string, name string) (exists bool, err error) {
 	return false, nil
 }
 
-func checkTableExists(table string) (b bool, err error) {
+func TableExists(table string) (b bool, err error) {
 	const query = `	
 SELECT EXISTS 
 (
