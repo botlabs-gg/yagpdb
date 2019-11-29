@@ -183,7 +183,6 @@ func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 
 	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
 		// accessing a server page
-
 		g := v.(*discordgo.Guild)
 
 		gWithConnected := &common.GuildWithConnected{
