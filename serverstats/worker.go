@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/lib/pq"
@@ -25,11 +26,21 @@ const (
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
+var confDisableStatsWorker = config.RegisterOption("yagpdb.serverstats.disable_cleanup_worker", "Disables the serverstats cleanup worker", false)
+
 func (p *Plugin) RunBackgroundWorker() {
+	if confDisableStatsWorker.GetBool() {
+		return
+	}
+
 	p.UpdateStatsLoop()
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
+	if confDisableStatsWorker.GetBool() {
+		return
+	}
+
 	p.stopStatsLoop <- wg
 }
 
