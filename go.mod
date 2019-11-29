@@ -74,7 +74,7 @@ require (
 	github.com/volatiletech/sqlboiler v3.5.0+incompatible
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20190909091759-094676da4a83
+	golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
