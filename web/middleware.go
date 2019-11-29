@@ -792,37 +792,35 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		userI := r.Context().Value(common.ContextKeyUser)
-		if userI == nil {
-			return
-		}
-
-		user := userI.(*discordgo.User)
-		results, err := botrest.GetMembers(guild.ID, user.ID)
-
-		var m *discordgo.Member
-		if len(results) > 0 {
-			m = results[0]
-		}
-
-		if err != nil || m == nil {
-			CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from bot, falling back to discord api")
-
-			// fallback to discord api
-			m, err = common.BotSession.GuildMember(guild.ID, user.ID)
-			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
-			}
-		}
-
 		ctx := r.Context()
 
-		if m != nil {
-			// calculate permissions
-			perms := discordgo.MemberPermissions(guild, nil, m)
+		userI := r.Context().Value(common.ContextKeyUser)
+		if userI != nil {
+			user := userI.(*discordgo.User)
+			results, err := botrest.GetMembers(guild.ID, user.ID)
 
-			ctx = context.WithValue(r.Context(), common.ContextKeyUserMember, m)
-			ctx = context.WithValue(ctx, common.ContextKeyMemberPermissions, perms)
+			var m *discordgo.Member
+			if len(results) > 0 {
+				m = results[0]
+			}
+
+			if err != nil || m == nil {
+				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from bot, falling back to discord api")
+
+				// fallback to discord api
+				m, err = common.BotSession.GuildMember(guild.ID, user.ID)
+				if err != nil {
+					CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
+				}
+			}
+
+			if m != nil {
+				// calculate permissions
+				perms := discordgo.MemberPermissions(guild, nil, m)
+
+				ctx = context.WithValue(r.Context(), common.ContextKeyUserMember, m)
+				ctx = context.WithValue(ctx, common.ContextKeyMemberPermissions, perms)
+			}
 		}
 
 		isAdmin := IsAdminRequest(ctx, r)

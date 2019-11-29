@@ -288,7 +288,6 @@ func setupRoutes() *goji.Mux {
 
 	// Server control panel, requires you to be an admin for the server (owner or have server management role)
 	CPMux = goji.SubMux()
-	CPMux.Use(RequireSessionMiddleware)
 	CPMux.Use(ActiveServerMW)
 	CPMux.Use(RequireActiveServer)
 	CPMux.Use(LoadCoreConfigMiddleware)
