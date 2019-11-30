@@ -573,8 +573,8 @@ func ToDuration(from interface{}) time.Duration {
 	case uint64:
 		return time.Duration(int64(t))
 	case string:
-		parsed, _ := strconv.ParseInt(t, 10, 64)
-		return time.Duration(parsed)
+		parsed, _ := common.ParseDuration(t)
+		return parsed
 	case time.Duration:
 		return time.Duration(t)
 	default:
