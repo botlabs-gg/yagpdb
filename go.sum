@@ -46,6 +46,8 @@ github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBT
 github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
 github.com/bwmarrin/discordgo v0.19.0 h1:kMED/DB0NR1QhRcalb85w0Cu3Ep2OrGAqZH1R5awQiY=
 github.com/bwmarrin/discordgo v0.19.0/go.mod h1:O9S4p+ofTFwB02em7jkpkV8M3R0/PUVOwN61zSZ0r4Q=
+github.com/bwmarrin/discordgo v0.20.1 h1:Ihh3/mVoRwy3otmaoPDUioILBJq4fdWkpsi83oj2Lmk=
+github.com/bwmarrin/discordgo v0.20.1/go.mod h1:O9S4p+ofTFwB02em7jkpkV8M3R0/PUVOwN61zSZ0r4Q=
 github.com/bwmarrin/snowflake v0.3.0 h1:xm67bEhkKh6ij1790JB83OujPR5CzNe8QuQqAgISZN0=
 github.com/bwmarrin/snowflake v0.3.0/go.mod h1:NdZxfVWX+oR6y2K0o6qAYv6gIOP9rjG0/E9WsDpxqwE=
 github.com/cenkalti/backoff v2.1.1+incompatible h1:tKJnvO2kl0zmb/jA5UKAt4VoEVw1qxKWjE/Bpp46npY=
@@ -187,8 +189,8 @@ github.com/jonas747/discordgo v1.1.6 h1:4JwNrIzDKF58eSsUUYwmfYfToCS0MgM8YJBvx9bA
 github.com/jonas747/discordgo v1.1.6/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
 github.com/jonas747/discordgo v1.1.7 h1:If1IF6nvL2swzxGznVzsiUwORyu3mlf/UT0HW1GbFzU=
 github.com/jonas747/discordgo v1.1.7/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
-github.com/jonas747/discordgo v1.1.8 h1:aTapaM96x/ld3MSODM7Wn34tXQy1DKCAL9Tt1rwEj6w=
-github.com/jonas747/discordgo v1.1.8/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
+github.com/jonas747/discordgo v1.1.9 h1:zgI5nmgIhoMsHFL4XbEY7j45B0NO697V9TwHPEdVjFU=
+github.com/jonas747/discordgo v1.1.9/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
 github.com/jonas747/dshardorchestrator v0.0.0-20190717204625-752c847fa039 h1:stgj6F7w3gCDnni7qs4chZdeNyo8TNSJJg0gADdpMsE=
 github.com/jonas747/dshardorchestrator v0.0.0-20190717204625-752c847fa039/go.mod h1:Cs2ax5vvTtpgy2n8wp5zpBhd6A19ThLykp21XXSsrU0=
 github.com/jonas747/dshardorchestrator v0.1.0 h1:3/v+lx0gLupm7/VZr7wbfvUGhpxvuNC5JHaS+OnWjCc=
@@ -196,6 +198,8 @@ github.com/jonas747/dshardorchestrator v0.1.0/go.mod h1:ZlA6h9kj2H5q2aQkZgBiROp8
 github.com/jonas747/dstate v0.0.0-20190905110424-f2ed8c6c957d/go.mod h1:5xeu+zy7jwCfnCA+A9CaWOV4UhQzGHvBVZ381l+jarM=
 github.com/jonas747/dstate v1.0.3 h1:5uJe8xbHNBJp1Fxqy7hoenmEnxNhIdG19QXlMurK8Ok=
 github.com/jonas747/dstate v1.0.3/go.mod h1:cs2apI7cGl8py1ibSN0Ha6iqHEw5k62kwPpGBZFgHUE=
+github.com/jonas747/dstate v1.0.4 h1:TS1YcPJelsVOqgU8u+SKkQevEMi0klG9Agugj+TE8+0=
+github.com/jonas747/dstate v1.0.4/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
 github.com/jonas747/dutil v0.0.2 h1:GV4b5tb0l/Qq11GS7g4m5hlxDkKGhZ8hXRefS4dKMMQ=
 github.com/jonas747/dutil v0.0.2/go.mod h1:FwfIRC0ShAEHhwUJ6JppfciiFrfOA/cAoyCECsfib8c=
 github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846 h1:qIj0ZTvzN3W4QFmf3Xw7vBwbLfXnqoepH6ma8hOEWD0=
@@ -401,6 +405,8 @@ golang.org/x/crypto v0.0.0-20190909091759-094676da4a83 h1:mgAKeshyNqWKdENOnQsg+8
 golang.org/x/crypto v0.0.0-20190909091759-094676da4a83/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1 h1:anGSYQpPhQwXlwsu5wmfq0nWkCNaMEMUwAv13Y92hd8=
 golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
+golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e h1:egKlR8l7Nu9vHGWbcUV8lqR4987UfUbBd7GbhqGzNYU=
+golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/image v0.0.0-20190902063713-cb417be4ba39 h1:4dQcAORh9oYBwVSBVIkP489LUPC+f1HBkTYXgmqfR+o=
 golang.org/x/image v0.0.0-20190902063713-cb417be4ba39/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
@@ -453,8 +459,8 @@ golang.org/x/sys v0.0.0-20190422165155-953cdadca894 h1:Cz4ceDQGXuKRnVBDTS23GTn/p
 golang.org/x/sys v0.0.0-20190422165155-953cdadca894/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190910064555-bbd175535a8b h1:3S2h5FadpNr0zUUCVZjlKIEYF+KaX/OBplTGo89CYHI=
 golang.org/x/sys v0.0.0-20190910064555-bbd175535a8b/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e h1:N7DeIrjYszNmSW409R3frPPwglRwMkXSBzwVbkOjLLA=
-golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20191204072324-ce4227a45e2e h1:9vRrk9YW2BTzLP0VCB9ZDjU4cPqkg+IDWL7XgxA1yxQ=
+golang.org/x/sys v0.0.0-20191204072324-ce4227a45e2e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 h1:z99zHgr7hKfrUcX/KsoJk5FJfjTceCKIp96+biqP4To=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

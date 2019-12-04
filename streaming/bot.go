@@ -9,7 +9,6 @@ import (
 	"emperror.dev/errors"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
@@ -23,23 +22,12 @@ import (
 func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + discordgo.StrID(gID) }
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
-var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
-}
-
-func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
-	if evt != bot.EvtGuildState {
-		return
-	}
-
-	gs := data.(*dstate.GuildState)
-
-	go CheckGuildFull(gs, false)
 }
 
 // YAGPDB event
