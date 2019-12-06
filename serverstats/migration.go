@@ -93,7 +93,7 @@ func migrateV2Chunk(name string, lastID int64, f func(lastID int64, premiumGuild
 func migrateChunkV2Messages(lastID int64, premiumGuilds map[int64]time.Time) (newLastID int64, err error) {
 
 	const qGetOld = `SELECT id, started, guild_id, count FROM server_stats_periods
-	WHERE id > $1 AND started < date_trunc('day', now()) ORDER BY ID ASC LIMIT 1000;`
+	WHERE id > $1 AND started < date_trunc('day', now()) ORDER BY ID ASC LIMIT 5000;`
 
 	const qSetNew = `INSERT INTO server_stats_periods_compressed 
 	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice) 
