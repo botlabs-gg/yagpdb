@@ -156,7 +156,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 		return nil
 	}
 
-	stats, err := RetrieveDailyStats(activeGuild.ID)
+	stats, err := RetrieveDailyStats(time.Now(), activeGuild.ID)
 	if err != nil {
 		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -177,9 +177,8 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 }
 
 type ChartResponse struct {
-	Days        int                       `json:"days"`
-	MemberData  []*MemberChartDataPeriod  `json:"member_chart_data"`
-	MessageData []*MessageChartDataPeriod `json:"message_chart_data"`
+	Days int                `json:"days"`
+	Data []*ChartDataPeriod `json:"data"`
 }
 
 func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
@@ -212,12 +211,16 @@ func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bo
 	return stats
 }
 
+func emptyChartData() *ChartResponse {
+	return &ChartResponse{
+		Days: 0,
+		Data: []*ChartDataPeriod{},
+	}
+}
+
 func CacheGetCharts(guildID int64, days int, ctx context.Context) *ChartResponse {
 	if os.Getenv("YAGPDB_SERVERSTATS_DISABLE_SERVERSTATS") != "" {
-		return &ChartResponse{
-			MemberData:  make([]*MemberChartDataPeriod, 0),
-			MessageData: make([]*MessageChartDataPeriod, 0),
-		}
+		return emptyChartData()
 	}
 
 	fetchDays := days
@@ -237,18 +240,13 @@ func CacheGetCharts(guildID int64, days int, ctx context.Context) *ChartResponse
 	key := "charts:" + strconv.FormatInt(guildID, 10) + ":" + strconv.FormatInt(int64(fetchDays), 10)
 	statsInterface := WebStatsCache.Get(key)
 	if statsInterface == nil {
-		return &ChartResponse{
-			MemberData:  make([]*MemberChartDataPeriod, 0),
-			MessageData: make([]*MessageChartDataPeriod, 0),
-		}
+		return emptyChartData()
 	}
 
 	stats := statsInterface.(*ChartResponse)
 	cop := *stats
-	if fetchDays != days && days != -1 && len(cop.MemberData) > days {
-
-		cop.MemberData = cop.MemberData[:days]
-		cop.MessageData = cop.MessageData[:days]
+	if fetchDays != days && days != -1 && len(cop.Data) > days {
+		cop.Data = cop.Data[:days]
 		cop.Days = days
 	}
 
@@ -265,22 +263,15 @@ func cacheChartFetcher(key string) interface{} {
 	guildID, _ := strconv.ParseInt(split[1], 10, 64)
 	days, _ := strconv.Atoi(split[2])
 
-	memberData, err := RetrieveMemberChartStats(guildID, days)
+	periods, err := RetrieveChartDataPeriods(context.Background(), guildID, time.Now(), days)
 	if err != nil {
-		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving member chart data")
-		return nil
-	}
-
-	messageData, err := RetrieveMessageChartData(guildID, days)
-	if err != nil {
-		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving message chart data")
+		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving chart data")
 		return nil
 	}
 
 	return &ChartResponse{
-		Days:        days,
-		MemberData:  memberData,
-		MessageData: messageData,
+		Days: days,
+		Data: periods,
 	}
 }
 

@@ -7,10 +7,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/serverstats/models"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
 )
 
 // Collector is a message stats collector which will preiodically update the serberstats messages table with stats
@@ -19,9 +16,16 @@ type Collector struct {
 
 	interval time.Duration
 
-	buf      []*discordgo.Message
-	channels []int64
-	l        *logrus.Entry
+	channels map[int64]*entry
+	// buf      []*discordgo.Message
+	// channels []int64
+	l *logrus.Entry
+}
+
+type entry struct {
+	GuildID   int64
+	ChannelID int64
+	Count     int64
 }
 
 // NewCollector creates a new Collector
@@ -30,6 +34,7 @@ func NewCollector(l *logrus.Entry, updateInterval time.Duration) *Collector {
 		MsgEvtChan: make(chan *discordgo.Message, 1000),
 		interval:   updateInterval,
 		l:          l,
+		channels:   make(map[int64]*entry),
 	}
 
 	go col.run()
@@ -55,57 +60,37 @@ func (c *Collector) run() {
 }
 
 func (c *Collector) handleIncMessage(msg *discordgo.Message) {
-	c.buf = append(c.buf, msg)
-	for _, v := range c.channels {
-		if v == msg.ChannelID {
-			return
-		}
+	if c, ok := c.channels[msg.ChannelID]; ok {
+		c.Count++
+		return
 	}
 
-	c.channels = append(c.channels, msg.ChannelID)
+	c.channels[msg.ChannelID] = &entry{
+		GuildID:   msg.GuildID,
+		ChannelID: msg.ChannelID,
+		Count:     1,
+	}
 }
 
 func (c *Collector) flush() error {
-	c.l.Debugf("message stats collector is flushing: l:%d, lc: %d", len(c.buf), len(c.channels))
-	if len(c.buf) < 1 {
+	c.l.Debugf("message stats collector is flushing: lc: %d", len(c.channels))
+	if len(c.channels) < 1 {
 		return nil
 	}
 
-	channelStats := make([]*models.ServerStatsPeriod, 0, len(c.channels))
-
-OUTER:
-	for _, v := range c.buf {
-
-		for _, cm := range channelStats {
-			if cm.ChannelID.Int64 == v.ChannelID {
-				cm.Count.Int64++
-				continue OUTER
-			}
-		}
-
-		created, err := v.Timestamp.Parse()
-		if err != nil {
-			c.l.WithError(err).Errorf("Message has invalid timestamp: %s (%d/%d/%d)", v.Timestamp, v.GuildID, v.ChannelID, v.ID)
-			created = time.Now()
-		}
-
-		channelModel := &models.ServerStatsPeriod{
-			GuildID:   null.Int64From(v.GuildID),
-			ChannelID: null.Int64From(v.ChannelID),
-			Started:   null.TimeFrom(created), // TODO: we should calculate these from the min max snowflake ids
-			Duration:  null.Int64From(int64(time.Minute)),
-			Count:     null.Int64From(1),
-		}
-		channelStats = append(channelStats, channelModel)
-	}
+	const updateQuery = `
+	INSERT INTO server_stats_hourly_periods_messages (guild_id, t, channel_id, count) 
+	VALUES ($1, $2, $3, $4)
+	ON CONFLICT (guild_id, channel_id, t) DO UPDATE
+	SET count = server_stats_hourly_periods_messages.count + $4`
 
 	tx, err := common.PQ.BeginTx(context.Background(), nil)
 	if err != nil {
 		return errors.WithStackIf(err)
 	}
 
-	for _, model := range channelStats {
-		err = model.Insert(context.Background(), tx, boil.Infer())
+	for _, v := range c.channels {
+		_, err := tx.Exec(updateQuery, v.GuildID, RoundHour(time.Now()), v.ChannelID, v.Count)
 		if err != nil {
 			tx.Rollback()
 			return errors.WithStackIf(err)
@@ -118,14 +103,12 @@ OUTER:
 	}
 
 	// reset buffers
-	if len(c.buf) > 100000 {
-		// don't hog memory, above 100k is spikes, normal operation is around 2-8k/minute
-		c.buf = nil
-		c.channels = nil
-	} else {
-		c.buf = c.buf[:0]
-		c.channels = c.channels[:0]
-	}
+	c.channels = make(map[int64]*entry)
 
 	return nil
+}
+
+func RoundHour(t time.Time) time.Time {
+	t = t.UTC()
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 }

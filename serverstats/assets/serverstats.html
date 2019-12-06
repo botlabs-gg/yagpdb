@@ -7,7 +7,7 @@
 
 <header class="page-header">
     <h2>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h2>
-    
+
 </header>
 
 <div class="row">
@@ -16,22 +16,26 @@
         <h1>Public access has been disabled by the server admins.</h1>
         {{end}}
         {{if not .Public}}
-        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse" aria-expanded="false" aria-controls="stats-settings-collapse">
-        Stats Settings
+        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse"
+            aria-expanded="false" aria-controls="stats-settings-collapse">
+            Stats Settings
         </button>
-        <a class="btn btn-primary {{if not .Config.Public}}disabled{{end}}" {{if .Config.Public}} href="/public/{{.ActiveGuild.ID}}/stats" {{end}}>Public link (only works if stats are set to public)</a>
+        <a class="btn btn-primary {{if not .Config.Public}}disabled{{end}}" {{if .Config.Public}}
+            href="/public/{{.ActiveGuild.ID}}/stats" {{end}}>Public link (only works if stats are set to public)</a>
         <div class="collapse" id="stats-settings-collapse">
             <section class="card">
                 <div class="card-body">
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/stats/settings" data-async-form>
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="Public" {{if .Config.Public}} checked{{end}}> Publicly accessible
+                                <input type="checkbox" name="Public" {{if .Config.Public}} checked{{end}}> Publicly
+                                accessible
                             </label>
                         </div>
                         <label>Ignore channels</label>
                         <div class="form-group mb-4">
-                            <select data-plugin-multiselect class="form-control populate" name="IgnoreChannels" id="IgnoreChannels" multiple="multiple">
+                            <select data-plugin-multiselect class="form-control populate" name="IgnoreChannels"
+                                id="IgnoreChannels" multiple="multiple">
                                 {{textChannelOptionsMulti .ActiveGuild.Channels .Config.ParsedChannels}}
                             </select>
                         </div>
@@ -48,7 +52,7 @@
 <div class="row">
     <!-- Stats widgets -->
     {{mTemplate "serverstats_stats_widget" "Icon" "comments" "BG" "primary" "Content" "New messages last 24h" "ValueID" "messages-24h"}}
-    {{mTemplate "serverstats_stats_widget" "Icon" "user-plus" "BG" "success" "Content" "Members joined/left last 24h" "ValueID" "members-changed-24h"}}    
+    {{mTemplate "serverstats_stats_widget" "Icon" "user-plus" "BG" "success" "Content" "Members joined/left last 24h" "ValueID" "members-changed-24h"}}
     {{mTemplate "serverstats_stats_widget" "Icon" "user" "BG" "tertiary" "Content" "Online members" "ValueID" "online-members"}}
     {{mTemplate "serverstats_stats_widget" "Icon" "users" "BG" "quaternary" "Content" "Total members" "ValueID" "total-members"}}
 </div>
@@ -69,17 +73,20 @@
 
 <div class="row">
     <div class="col">
-        <h2>Charts<small><span id="serverstats-status">  Loading...</span></small></h2>
+        <h2>Charts<small><span id="serverstats-status"> Loading...</span></small></h2>
     </div>
     <div class="col">
         <!-- <div class="form-group"> -->
-            <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
-                <option value="2"> Past 2 days (testing)</option>
-                <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Past 7 days</option>
-                <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Past 30 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
-                <option value="365" {{if not .IsGuildPremium}} disabled{{end}} > Past 365 days {{if not .IsGuildPremium}}(premium only){{end}}</option>
-                <option value="-1" {{if not .IsGuildPremium}} disabled{{end}} > All time {{if not .IsGuildPremium}}(premium only){{end}}</option>
-            </select>
+        <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
+            <option value="2"> Past 2 days (testing)</option>
+            <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Past 7 days</option>
+            <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Past 30 days
+                {{if not .IsGuildPremium}}(premium only){{end}}</option>
+            <option value="365" {{if not .IsGuildPremium}} disabled{{end}}> Past 365 days
+                {{if not .IsGuildPremium}}(premium only){{end}}</option>
+            <option value="-1" {{if not .IsGuildPremium}} disabled{{end}}> All time {{if not .IsGuildPremium}}(premium
+                only){{end}}</option>
+        </select>
         <!-- </div> -->
     </div>
 </div>
@@ -97,7 +104,7 @@
             </div>
         </section>
     </div>
-    
+
     <!-- Graph -->
     <div class="col-lg-6">
         <section class="card bg-default">
@@ -134,19 +141,19 @@
     var statsInterval;
     if (!firstStatsView) {
         firstStatsView = true;
-        window.addEventListener("customnavigate", function(e){
+        window.addEventListener("customnavigate", function (e) {
             console.log("cleared interval");
             window.clearInterval(statsInterval);
         })
     }
 
     var fetchCharts = null;
-    $(function(){        
+    $(function () {
         var channelMessagesBarChart = null;
-        function dailyStatsCB(){
-            try{
+        function dailyStatsCB() {
+            try {
                 var parsedStats = JSON.parse(this.responseText);
-            }catch(e){
+            } catch (e) {
                 return
             }
 
@@ -161,10 +168,10 @@
                     y: channelMessages[key].count,
                 })
             }
-            if(channelMessagesBarChart){
+            if (channelMessagesBarChart) {
                 channelMessagesBarChart.setData(chartData);
-            }else{
-                channelMessagesBarChart  = Morris.Bar({
+            } else {
+                channelMessagesBarChart = Morris.Bar({
                     element: 'channels-chart-24h',
                     data: chartData,
                     xkey: 'x',
@@ -181,13 +188,9 @@
             $("#online-members").text(parsedStats.online_now)
         }
 
-        function fetchDailyStats(){
+        function fetchDailyStats() {
             console.log("Fetching stats...");
-            {{if .Public}}
-            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
-            {{else}}
-            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
-            {{end}}
+            createRequest("GET", "/{{if .Public}}public{{else}}manage{{end}}/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
         }
         statsInterval = setInterval(fetchDailyStats, 10000);
         fetchDailyStats(); // Fetch the initial stats
@@ -195,21 +198,22 @@
         var joinsLeavesChart = null;
         var totalMembersChart = null;
         var messagesChart = null;
-        function chartStatsCB(){
-            try{
+        function chartStatsCB() {
+            try {
                 var parsedStats = JSON.parse(this.responseText);
-            }catch(e){
+            } catch (e) {
                 return
             }
 
-            var memberStats = parsedStats.member_chart_data
+            var stats = parsedStats.data
+            // var memberStats = parsedStats.member_chart_data
 
-            if(joinsLeavesChart){
-                joinsLeavesChart.setData(memberStats);
-            }else{
-                joinsLeavesChart  = Morris.Area({
+            if (joinsLeavesChart) {
+                joinsLeavesChart.setData(stats);
+            } else {
+                joinsLeavesChart = Morris.Area({
                     element: 'chart-joins-leaves',
-                    data: memberStats,
+                    data: stats,
                     xkey: 't',
                     ykeys: ['joins', 'leaves'],
                     labels: ['Joins', 'Leaves'],
@@ -221,12 +225,12 @@
                 });
             }
 
-            if(totalMembersChart){
-                totalMembersChart.setData(memberStats);
-            }else{
-                totalMembersChart  = Morris.Area({
+            if (totalMembersChart) {
+                totalMembersChart.setData(stats);
+            } else {
+                totalMembersChart = Morris.Area({
                     element: 'chart-total-members',
-                    data: memberStats,
+                    data: stats,
                     xkey: 't',
                     ykeys: ['num_members', 'max_online'],
                     labels: ['Total members', 'Online members'],
@@ -238,65 +242,59 @@
                 });
             }
 
-            var messageStats = parsedStats.message_chart_data
-            if(messagesChart){
-                messagesChart.setData(messageStats);
-            }else{
-                messagesChart  = Morris.Area({
+            if (messagesChart) {
+                messagesChart.setData(stats);
+            } else {
+                messagesChart = Morris.Area({
                     element: 'chart-message-counts',
-                    data: messageStats,
+                    data: stats,
                     xkey: 't',
-                    ykeys: ['message_count'],
+                    ykeys: ['num_messages'],
                     labels: ['Messages'],
                     hideHover: 'auto',
                     resize: true,
                     dateFormat: chartDateFormatter,
                     pointSize: 1,
                 });
-            } 
+            }
 
             var nDays = parsedStats.days
-            if(nDays <= 0){
+            if (nDays <= 0) {
                 nDays = "infinite"
             }
             $("#serverstats-status").text(" over the last  " + nDays + " days")
         }
 
-        fetchCharts = function(days){
+        fetchCharts = function (days) {
             $("#serverstats-status").text("  Loading...")
-            {{if .Public}}
-            createRequest("GET", "/public/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
-            {{else}}
-            createRequest("GET", "/manage/{{.ActiveGuild.ID}}/stats/charts?days="+days, null, chartStatsCB);
-            {{end}}
+            createRequest("GET", "/{{if .Public}}public{{else}}manage{{end}}/{{.ActiveGuild.ID}}/stats/charts?days=" + days, null, chartStatsCB);
         }
         fetchCharts(30);
     })
 
 
-    function chartDateFormatter(t){
+    function chartDateFormatter(t) {
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
         return new Date(t).toLocaleDateString(options);
     }
 
-    function timespanDropdownChanged(){
+    function timespanDropdownChanged() {
         var dropdown = document.getElementById("timespan-dropdown");
         fetchCharts(dropdown.value)
-   }
+    }
 </script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
 <!-- /#wrapper -->
 <style>
-.stats-widget{
-    min-width: 250px !important;
-    word-break: normal !important;
-}
+    .stats-widget {
+        min-width: 250px !important;
+        word-break: normal !important;
+    }
 
-.stats-widget h4{
-    word-break: normal !important;
-}
-
+    .stats-widget h4 {
+        word-break: normal !important;
+    }
 </style>
 {{template "cp_footer" .}}
 {{end}}

@@ -3,18 +3,19 @@ package premium
 import (
 	"context"
 	"database/sql"
-	"github.com/jonas747/yagpdb/common/config"
-	"time"
-
 	"emperror.dev/errors"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
+	"time"
 )
 
 const (
@@ -45,8 +46,10 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func RegisterPlugin() {
 	common.InitSchemas("premium", DBSchemas...)
-
 	common.RegisterPlugin(&Plugin{})
+
+	scheduledevents2.RegisterHandler("premium_guild_added", nil, handleNewPremiumGuild)
+	scheduledevents2.RegisterHandler("premium_guild_removed", nil, handleRemovedPremiumGuild)
 
 	for _, v := range PremiumSources {
 		v.Init()
@@ -55,10 +58,22 @@ func RegisterPlugin() {
 	templates.GuildPremiumFunc = IsGuildPremium
 }
 
+type NewPremiumGuildListener interface {
+	OnNewPremiumGuild(guildID int64) error
+}
+type RemovedPremiumGuildListener interface {
+	OnRemovedPremiumGuild(guildID int64) error
+}
+
 // IsGuildPremium return true if the provided guild has the premium status provided to it by a user
 func IsGuildPremium(guildID int64) (bool, error) {
 	if confAllGuildsPremium.GetBool() {
 		return true, nil
+	}
+
+	// for testing for example
+	if common.RedisPool == nil {
+		return false, nil
 	}
 
 	var premium bool
@@ -360,7 +375,28 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 	}
 
 	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, guildID, userID))
-	return errors.WithMessage(err, "Hset.RedisKeyPremiumGuilds")
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	err = scheduledevents2.ScheduleEvent("premium_guild_added", guildID, time.Now(), nil)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+	return err
+}
+
+func handleNewPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	for _, v := range common.Plugins {
+		if cast, ok := v.(NewPremiumGuildListener); ok {
+			err := cast.OnNewPremiumGuild(evt.GuildID)
+			if err != nil {
+				return scheduledevents2.CheckDiscordErrRetry(err), err
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error {
@@ -399,5 +435,27 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 	}
 
 	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, oldGuildID))
-	return errors.WithMessage(err, "HDEL.RedisKeyPremiumGuilds")
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	err = scheduledevents2.ScheduleEvent("premium_guild_removed", oldGuildID, time.Now(), nil)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	return nil
+}
+
+func handleRemovedPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	for _, v := range common.Plugins {
+		if cast, ok := v.(RemovedPremiumGuildListener); ok {
+			err := cast.OnRemovedPremiumGuild(evt.GuildID)
+			if err != nil {
+				return scheduledevents2.CheckDiscordErrRetry(err), err
+			}
+		}
+	}
+
+	return false, nil
 }

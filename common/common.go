@@ -234,7 +234,12 @@ func connectDB(host, user, pass, dbName string) error {
 		host = "localhost"
 	}
 
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password='%s'", host, user, dbName, pass))
+	passwordPart := ""
+	if pass != "" {
+		passwordPart = " password='" + pass + "'"
+	}
+
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable%s", host, user, dbName, passwordPart))
 	GORM = db
 	PQ = db.DB()
 	boil.SetDB(PQ)

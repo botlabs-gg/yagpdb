@@ -73,3 +73,14 @@ func InitPQ(dropTables []string, initQueries []string) (*sql.DB, error) {
 	err = InitTables(db, dropTables, initQueries)
 	return db, err
 }
+
+// ClearTables deletes all rows from a table, and panics if an error occurs
+// usefull for defers for test cleanup
+func ClearTables(db *sql.DB, tables ...string) {
+	for _, v := range tables {
+		_, err := db.Exec("DELETE FROM " + v + ";")
+		if err != nil {
+			panic(err)
+		}
+	}
+}
