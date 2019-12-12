@@ -163,3 +163,4 @@ Expect web, bot and feed instances to be run separately.
 For basic utility/fun commands, you can just jam them in stdcommands. Use the existing commands there as an example of how to add one.
 
 **If you need any help finding things in the source or have any other questions, don't be afraid of messaging me.**
+# bluestacksproj
