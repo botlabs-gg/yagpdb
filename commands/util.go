@@ -152,7 +152,7 @@ func (o *DurationOutOfRangeError) Error() string {
 	} else if o.Max == 0 {
 		return fmt.Sprintf("%s is %s, has to be bigger than %s", o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min))
 	} else {
-		format := "%s is %s (has to be within `%d` and `%d`)"
+		format := "%s is %s (has to be within `%s` and `%s`)"
 		return fmt.Sprintf(format, o.ArgName, preStr, common.HumanizeDuration(common.DurationPrecisionMinutes, o.Min), common.HumanizeDuration(common.DurationPrecisionMinutes, o.Max))
 	}
 }
