@@ -77,7 +77,11 @@ type cmdExecFunc func(cmd string, args ...interface{}) (interface{}, error)
 // Returns 2 functions to execute commands in user or bot context with limited about of commands executed
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
 	execUser := func(cmd string, args ...interface{}) (interface{}, error) {
-		mc := &discordgo.MessageCreate{ctx.Msg}
+		messageCopy := *ctx.Msg
+		if ctx.CS != nil { //Check if CS is not a nil pointer 
+			messageCopy.ChannelID = ctx.CS.ID
+		}
+		mc := &discordgo.MessageCreate{&messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
@@ -92,6 +96,9 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 
 		messageCopy := *ctx.Msg
 		messageCopy.Author = &botUserCopy
+		if ctx.CS != nil { //Check if CS is not a nil pointer 
+			messageCopy.ChannelID = ctx.CS.ID
+		}
 
 		mc := &discordgo.MessageCreate{&messageCopy}
 		if maxExec < 1 {
