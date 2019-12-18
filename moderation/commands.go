@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -609,6 +610,64 @@ var ModerationCommands = []*commands.YAGCommand{
 			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, userID).Delete(WarningModel{}).RowsAffected
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil
 		},
+	},
+	&commands.YAGCommand{
+		CmdCategory: commands.CategoryModeration,
+		Name:        "TopWarnings",
+		Aliases:     []string{"topwarns"},
+		Description: "Shows ranked list of warnings on the server",
+		Arguments: []*dcmd.ArgDef{
+			{Name: "Page", Type: dcmd.Int, Default: 0},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "id", Name: "List userIDs"},
+		},
+		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+
+			showUserIDs := false
+			config, _, err := MBaseCmd(parsed, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
+			if err != nil {
+				return nil, err
+			}
+
+			if parsed.Switches["id"].Value != nil && parsed.Switches["id"].Value.(bool) {
+				showUserIDs = true
+			}
+
+			offset := (page - 1) * 15
+			entries, err := TopWarns(parsed.GS.ID, offset, 15)
+			if err != nil {
+				return nil, err
+			}
+
+			embed := &discordgo.MessageEmbed{
+				Title: "Ranked list of warnings",
+			}
+
+			out := "```\n# - Warns - User\n"
+			for _, v := range entries {
+				if !showUserIDs {
+					user := v.Username
+					if user == "" {
+						user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
+					}
+					out += fmt.Sprintf("#%02d: %4d - %s\n", v.Rank, v.WarnCount, user)
+				} else {
+					out += fmt.Sprintf("#%02d: %4d - %d\n", v.Rank, v.WarnCount, v.UserID)
+				}
+			}
+			out += "```\n"
+
+			embed.Description = out
+
+			return embed, nil
+
+		}),
 	},
 	&commands.YAGCommand{
 		CustomEnabled: true,
