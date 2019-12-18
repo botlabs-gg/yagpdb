@@ -13,11 +13,7 @@ import (
 )
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/moderation.html"
-	if common.Testing {
-		tmplPath = "../../moderation/assets/moderation.html"
-	}
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+	web.LoadHTMLTemplate("../../moderation/assets/moderation.html", "templates/plugins/moderation.html")
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Moderation",

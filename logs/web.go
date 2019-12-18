@@ -45,19 +45,13 @@ type ConfigFormData struct {
 }
 
 func (lp *Plugin) InitWeb() {
-	tmplPathSettings := "templates/plugins/logs_control_panel.html"
-	tmplPathView := "templates/plugins/logs_view.html"
-	if common.Testing {
-		tmplPathSettings = "../../logs/assets/logs_control_panel.html"
-		tmplPathView = "../../logs/assets/logs_view.html"
-	}
+	web.LoadHTMLTemplate("../../logs/assets/logs_control_panel.html", "templates/plugins/logs_control_panel.html")
+	web.LoadHTMLTemplate("../../logs/assets/logs_view.html", "templates/plugins/logs_view.html")
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Logging",
 		URL:  "logging/",
 	})
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings, tmplPathView))
 
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id"), web.RenderHandler(LogFetchMW(HandleLogsHTML, true), "public_server_logs"))
 	web.ServerPublicMux.Handle(pat.Get("/logs/:id/"), web.RenderHandler(LogFetchMW(HandleLogsHTML, true), "public_server_logs"))

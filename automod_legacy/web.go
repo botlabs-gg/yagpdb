@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -24,17 +23,12 @@ type GeneralForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/automod_legacy.html"
-	if common.Testing {
-		tmplPath = "../../automod_legacy/assets/automod_legacy.html"
-	}
+	web.LoadHTMLTemplate("../../automod_legacy/assets/automod_legacy.html", "templates/plugins/automod_legacy.html")
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Basic Automoderator",
 		URL:  "automod_legacy",
 	})
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
 
 	autmodMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/automod_legacy/*"), autmodMux)

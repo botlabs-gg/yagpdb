@@ -44,12 +44,7 @@ type UpdateForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPathSettings := "templates/plugins/reddit.html"
-	if common.Testing {
-		tmplPathSettings = "../../reddit/assets/reddit.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
+	web.LoadHTMLTemplate("../../reddit/assets/reddit.html", "templates/plugins/reddit.html")
 
 	redditMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)

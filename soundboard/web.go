@@ -38,12 +38,7 @@ func (pf *PostForm) ToDBModel() *models.SoundboardSound {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/soundboard.html"
-	if common.Testing {
-		tmplPath = "../../soundboard/assets/soundboard.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+	web.LoadHTMLTemplate("../../soundboard/assets/soundboard.html", "templates/plugins/soundboard.html")
 
 	cpMux := goji.SubMux()
 
