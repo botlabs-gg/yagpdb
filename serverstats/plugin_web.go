@@ -31,11 +31,7 @@ type FormData struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/serverstats.html"
-	if common.Testing {
-		tmplPath = "../../serverstats/assets/serverstats.html"
-	}
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+	web.LoadHTMLTemplate("../../serverstats/assets/serverstats.html", "templates/plugins/serverstats.html")
 
 	statsCPMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/stats"), statsCPMux)

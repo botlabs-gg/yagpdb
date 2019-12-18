@@ -384,6 +384,9 @@ func LoadHTMLTemplate(pathTesting, pathProd string) {
 	path := pathProd
 	if common.Testing {
 		path = pathTesting
+		if TestingTemplatePathResolver != nil {
+			path = TestingTemplatePathResolver(path)
+		}
 	}
 
 	Templates = template.Must(Templates.ParseFiles(path))
@@ -406,3 +409,6 @@ var sideBarItems = make(map[string][]*SidebarItem)
 func AddSidebarItem(category string, sItem *SidebarItem) {
 	sideBarItems[category] = append(sideBarItems[category], sItem)
 }
+
+// Resolves the path to template files in testing mode
+var TestingTemplatePathResolver func(in string) string

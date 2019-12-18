@@ -30,12 +30,7 @@ type GroupForm struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPathSettings := "templates/plugins/customcommands.html"
-	if common.Testing {
-		tmplPathSettings = "../../customcommands/assets/customcommands.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPathSettings))
+	web.LoadHTMLTemplate("../../customcommands/assets/customcommands.html", "templates/plugins/customcommands.html")
 
 	getHandler := web.ControllerHandler(HandleCommands, "cp_custom_commands")
 	getGroupHandler := web.ControllerHandler(HandleGetCommandsGroup, "cp_custom_commands")

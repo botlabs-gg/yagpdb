@@ -38,12 +38,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	tmplPath := "templates/plugins/youtube.html"
-	if common.Testing {
-		tmplPath = "../../youtube/assets/youtube.html"
-	}
-
-	web.Templates = template.Must(web.Templates.ParseFiles(tmplPath))
+	web.LoadHTMLTemplate("../../youtube/assets/youtube.html", "templates/plugins/youtube.html")
 
 	ytMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/youtube/*"), ytMux)
