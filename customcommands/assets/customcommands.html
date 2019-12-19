@@ -129,7 +129,8 @@
 
                         {{else if ne .TriggerType 6}}: Every
                         {{call $dot.GetCCInterval .}}
-                        {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}{{end}}
+                        {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}, next: in
+                        {{humanizeDurationMinutes (.NextRun.Time.UTC.Sub currentTime)}}{{end}}
                         <small><i class="fas fa-edit"></i></small>
                     </a>
                 </h2>
