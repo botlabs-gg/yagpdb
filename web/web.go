@@ -105,9 +105,16 @@ func init() {
 }
 
 func loadTemplates() {
-	Templates = template.Must(Templates.ParseFiles("templates/index.html", "templates/cp_main.html",
+
+	coreTemplates := []string{
+		"templates/index.html", "templates/cp_main.html",
 		"templates/cp_nav.html", "templates/cp_selectserver.html", "templates/cp_logs.html",
-		"templates/status.html", "templates/cp_server_home.html", "templates/cp_core_settings.html"))
+		"templates/status.html", "templates/cp_server_home.html", "templates/cp_core_settings.html",
+	}
+
+	for _, v := range coreTemplates {
+		LoadHTMLTemplate(v, v)
+	}
 }
 
 func BaseURL() string {
