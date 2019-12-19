@@ -58,10 +58,7 @@
                                 class="cc-text-trigger-span">{{.CC.TextTrigger}}</span>{{else if ne .CC.TriggerType 6}}:
                             Every
                             {{call .GetCCInterval .CC}}
-                            {{if eq (call .GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}{{end}}
-
-                            <button type="submit" title="#{{.CC.LocalID}} - {{.CC.TextTrigger}}" class="btn btn-danger"
-                                formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Delete</button>
+                            {{if eq (call .GetCCIntervalType .CC) 1}}hour(s){{else}}minute(s){{end}}{{end}}
                         </h2>
                         <input type="text" class="hidden form-control" name="id" value="{{.CC.LocalID}}">
                         <div class="row">
@@ -248,21 +245,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col">
-                                <div class="form-group">
-                                    <label>Custom command group</label>
-                                    {{$selectedGroup := .CC.GroupID.Int64}}
-                                    <select Name="GroupID" class="form-control">
-                                        <option {{if eq $selectedGroup 0}}selected{{end}} value="0">None
-                                        </option>
-                                        {{range $dot.CommandGroups}}<option value="{{.ID}}"
-                                            {{if eq $selectedGroup .ID}}selected{{end}}>{{.Name}}</option>
-                                        {{end}}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
                         <div class="row mb-2">
                             <div class="col-lg-12">
                                 <div class="form-group">
@@ -296,22 +278,37 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row hidden" id="cc-extra-settings">
+                        <div class="row">
                             <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>Custom command group</label>
+                                    {{$selectedGroup := .CC.GroupID.Int64}}
+                                    <select Name="GroupID" class="form-control">
+                                        <option {{if eq $selectedGroup 0}}selected{{end}} value="0">None
+                                        </option>
+                                        {{range $dot.CommandGroups}}<option value="{{.ID}}"
+                                            {{if eq $selectedGroup .ID}}selected{{end}}>{{.Name}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+
                                 <h4>Last error</h4>
-                                <p>{{if .CC.LastError}}{{.CC.LastError}}{{else}}None{{end}}</p>
+                                <p>{{if .CC.LastError}}<b>{{formatTime .CC.LastErrorTime.Time.UTC}}</b> - <code>
+                                    {{.CC.LastError}}</code>{{else}}None{{end}}</p>
+
                                 <h4>Run count</h4>
-                                <p>{{.CC.RunCount}}</p>
+                                <p><code>{{.CC.RunCount}}</code></p>
+
                                 <h4>Output errors as command reponse</h4>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="show_erors" id="show-errors"
+                                    <input class="form-check-input" type="checkbox" name="show_errors" id="show-errors"
                                         {{if .CC.ShowErrors}}checked{{end}}>
                                     <label class="form-check-label" for="show-errors">
                                         Output errors as command response
                                     </label>
                                 </div>
                             </div>
-                            <div class="col-sm-6">
+                            <div id="cc-extra-settings" class="col-sm-6">
                                 <h3>Channel/User role restrictions</h3>
                                 <div class="radio">
                                     <label>
@@ -354,9 +351,18 @@
                                 </select>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success btn-block mt-2"
-                            formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update"
-                            data-async-form-alertsonly>Save</button>
+
+                        <div class="row mt-4">
+                            <div class="col">
+                                <button type="submit" class="btn btn-success btn-block"
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update"
+                                    data-async-form-alertsonly>Save</button>
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-danger btn-block"
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Delete</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -502,24 +508,6 @@
     }
 
     var idGen = 0
-
-    $(function () {
-
-        document.querySelectorAll("textarea").forEach(function (element) {
-            onCCChanged(element);
-            idGen++;
-            element.id = "cc-response-" + idGen
-            TLN.append_line_numbers("cc-response-" + idGen)
-        });
-
-        $('textarea').each(function () {
-            this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
-        }).on('input', function () {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
-
-    })
 </script>
 
 

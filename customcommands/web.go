@@ -199,7 +199,8 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		GuildID: activeGuild.ID,
 		LocalID: localID,
 
-		Disabled: true,
+		Disabled:   true,
+		ShowErrors: true,
 
 		TimeTriggerExcludingDays:  []int64{},
 		TimeTriggerExcludingHours: []int64{},
@@ -256,7 +257,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 	}
 
-	_, err := dbModel.UpdateG(ctx, boil.Blacklist("last_run", "next_run", "local_id", "guild_id"))
+	_, err := dbModel.UpdateG(ctx, boil.Blacklist("last_run", "next_run", "local_id", "guild_id", "last_error", "last_error_time", "run_count"))
 	if err != nil {
 		return templateData, nil
 	}

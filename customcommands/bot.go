@@ -540,7 +540,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 			case string:
 				actualErr = t
 			}
-			onExecError(errors.New(actualErr), tmplCtx, true)
+			onExecPanic(cmd, errors.New(actualErr), tmplCtx, true)
 		}
 	}()
 
@@ -579,11 +579,15 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		out = "Custom command response was longer than 2k (contact an admin on the server...)"
 	}
 
+	go updatePostCommandRan(cmd, err)
+
 	// deal with the results
 	if err != nil {
 		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
-		out += "\nAn error caused the execution of the custom command template to stop:\n"
-		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+		if cmd.ShowErrors {
+			out += "\nAn error caused the execution of the custom command template to stop:\n"
+			out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+		}
 	}
 
 	if !bot.BotProbablyHasPermissionGS(true, tmplCtx.GS, tmplCtx.CS.ID, discordgo.PermissionSendMessages) {
@@ -614,10 +618,12 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		}
 	}
 
+	// update stats
+
 	return nil
 }
 
-func onExecError(err error, tmplCtx *templates.Context, logStack bool) {
+func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Context, logStack bool) {
 	l := logger.WithField("guild", tmplCtx.GS.ID).WithError(err)
 	if logStack {
 		stack := string(debug.Stack())
@@ -625,10 +631,38 @@ func onExecError(err error, tmplCtx *templates.Context, logStack bool) {
 	}
 
 	l.Error("Error executing custom command")
-	out := "\nAn error caused the execution of the custom command template to stop:\n"
-	out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
 
-	common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
+	if cmd.ShowErrors {
+		out := "\nAn error caused the execution of the custom command template to stop:\n"
+		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+
+		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
+	}
+
+	updatePostCommandRan(cmd, err)
+}
+
+func updatePostCommandRan(cmd *models.CustomCommand, runErr error) {
+	const qNoErr = "UPDATE custom_commands SET run_count = run_count + 1 WHERE guild_id=$1 AND local_id=$2"
+	const qErr = "UPDATE custom_commands SET run_count = run_count + 1, last_error=$3, last_error_time=now() WHERE guild_id=$1 AND local_id=$2"
+
+	var err error
+	if runErr == nil {
+		_, err = common.PQ.Exec(qNoErr, cmd.GuildID, cmd.LocalID)
+	} else {
+		_, err = common.PQ.Exec(qErr, cmd.GuildID, cmd.LocalID, runErr.Error())
+	}
+
+	if err != nil {
+		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command executed query")
+	}
+
+	if runErr != nil {
+		err := pubsub.Publish("custom_commands_clear_cache", cmd.GuildID, nil)
+		if err != nil {
+			logger.WithError(err).Error("failed creating cache eviction pubsub event in updatePostCommandRan")
+		}
+	}
 }
 
 // CheckMatch returns true if the given cmd matches, as well as the arguments

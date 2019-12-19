@@ -121,6 +121,8 @@ type CustomCommand struct {
 	Roles        []int64 `json:"roles" schema:"roles"`
 
 	GroupID int64
+
+	ShowErrors bool `schema:"show_errors"`
 }
 
 var _ web.CustomValidator = (*CustomCommand)(nil)
@@ -175,6 +177,8 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		ReactionTriggerMode: int16(cc.ReactionTriggerMode),
 
 		Responses: cc.Responses,
+
+		ShowErrors: cc.ShowErrors,
 	}
 
 	if cc.TimeTriggerExcludingDays == nil {

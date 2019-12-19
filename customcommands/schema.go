@@ -57,6 +57,8 @@ ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS run_count INT NOT NULL DEFA
 `, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS show_errors BOOLEAN NOT NULL DEFAULT true;
 `, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT false;
+`, `
 CREATE TABLE IF NOT EXISTS templates_user_database (
 	id BIGSERIAL PRIMARY KEY,
 
