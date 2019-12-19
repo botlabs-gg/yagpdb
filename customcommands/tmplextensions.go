@@ -168,7 +168,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), int64(ccID), ctx.GS.ID)
+		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
 		}
@@ -245,7 +245,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), int64(ccID), ctx.GS.ID)
+		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
 		}
