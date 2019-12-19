@@ -75,7 +75,7 @@ func Init() {
 
 	if flagVersion {
 		fmt.Println(common.VERSION)
-		return
+		os.Exit(0)
 	}
 
 	common.NodeID = flagNodeID
@@ -94,7 +94,7 @@ func Init() {
 
 	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && !flagGenConfigDocs {
 		log.Error("Didnt specify what to run, see -h for more info")
-		return
+		os.Exit(1)
 	}
 
 	log.Info("Starting YAGPDB version " + common.VERSION)
