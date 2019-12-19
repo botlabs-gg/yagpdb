@@ -48,6 +48,11 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 type CommandTriggerType int
 
 const (
+	// The ordering of these might seem weird, but they're used in a database so changes would require migrations of a lot of data
+	// yeah... i wish i was smarter when i made this originally
+
+	CommandTriggerNone CommandTriggerType = 10
+
 	CommandTriggerCommand    CommandTriggerType = 0
 	CommandTriggerStartsWith CommandTriggerType = 1
 	CommandTriggerContains   CommandTriggerType = 2
@@ -117,6 +122,8 @@ type CustomCommand struct {
 	Roles        []int64 `json:"roles" schema:"roles"`
 
 	GroupID int64
+
+	ShowErrors bool `schema:"show_errors"`
 }
 
 var _ web.CustomValidator = (*CustomCommand)(nil)
@@ -172,6 +179,8 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		ReactionTriggerMode: int16(cc.ReactionTriggerMode),
 
 		Responses: cc.Responses,
+
+		ShowErrors: cc.ShowErrors,
 	}
 
 	if cc.TimeTriggerExcludingDays == nil {

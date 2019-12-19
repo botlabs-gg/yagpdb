@@ -1,0 +1,516 @@
+{{define "cp_custom_commands_edit_cmd"}}
+{{template "cp_head" .}}
+<header class="page-header">
+    <h2>Custom commands</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<!-- Nav -->
+<div class="row">
+    <div class="col">
+        <!-- Nav tabs -->
+        <div class="tabs">
+            <ul class="nav nav-tabs">
+                <li class="nav-item {{if and (not .CurrentCommandGroup)}}active{{end}}">
+                    <a data-partial-load="true" class="nav-link show {{if not .CurrentCommandGroup}}active{{end}}"
+                        href="/manage/{{.ActiveGuild.ID}}/customcommands/">Ungrouped</a>
+                </li>
+                {{$dot := .}}
+                {{range .CommandGroups}}
+                <li
+                    class="nav-item {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}">
+                    <a data-partial-load="true"
+                        class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}"
+                        href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}</a>
+                </li>
+                {{end}}
+                <li class="nav-item">
+                    <form class="form-horizontal" method="post"
+                        action="/manage/{{.ActiveGuild.ID}}/customcommands/creategroup" data-async-form>
+                        <input type="text" class="hidden" name="Name" value="Unnamed group">
+                        <input clasS="nav-link show" type="submit" value="+"></input>
+                    </form>
+                </li>
+            </ul>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div class="tab-pane active">
+
+                    <ul id="cc-feedback-top">
+                        <li class="text-danger" hidden id="trigger-warning"></li>
+                    </ul>
+
+
+                    {{$guild := .ActiveGuild.ID}}
+                    {{$g := .ActiveGuild}}
+                    {{$dot := .}}
+                    <form class="form-horizontal" method="post"
+                        action="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update" data-async-form>
+                        <button type="submit" class="hidden"
+                            formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update"
+                            data-async-form-alertsonly></button>
+
+                        <h2 class="card-title">
+                            #{{.CC.LocalID}} -
+                            {{index .CCTriggerTypes .CC.TriggerType}}{{if and (ne .CC.TriggerType 5) (ne .CC.TriggerType 6)}}:
+                            <span
+                                class="cc-text-trigger-span">{{.CC.TextTrigger}}</span>{{else if ne .CC.TriggerType 6}}:
+                            Every
+                            {{call .GetCCInterval .CC}}
+                            {{if eq (call .GetCCIntervalType .CC) 1}}hour(s){{else}}minute(s){{end}}{{end}}
+                        </h2>
+                        <input type="text" class="hidden form-control" name="id" value="{{.CC.LocalID}}">
+                        <div class="row">
+                            <!-- Trigger -->
+                            <div class="col-sm-4">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <label>Trigger type</label>
+                                            <select class="form-control" id="trigger-type-dropdown" name="type"
+                                                onchange="triggerTypeChanged(this)">
+
+                                                <option value="none" {{if eq .CC.TriggerType 10}}selected{{end}}>None
+                                                </option>
+                                                <option value="cmd" {{if eq .CC.TriggerType 0}} selected{{end}}>Command
+                                                    (mention/cmd
+                                                    prefix)</option>
+                                                <option value="prefix" {{if eq .CC.TriggerType 1}} selected{{end}}>
+                                                    Starts with</option>
+                                                <option value="contains" {{if eq .CC.TriggerType 2}} selected{{end}}>
+                                                    Contains</option>
+                                                <option value="regex" {{if eq .CC.TriggerType 3}} selected{{end}}>Regex
+                                                </option>
+                                                <option value="exact" {{if eq .CC.TriggerType 4}} selected{{end}}>Exact
+                                                    match</option>
+                                                <option value="reaction" {{if eq .CC.TriggerType 6}} selected{{end}}>
+                                                    Reaction</option>
+                                                <option value="interval_hours"
+                                                    {{if eq (call .GetCCIntervalType .CC) 1}}selected{{end}}>
+                                                    Hourly interval
+                                                </option>
+                                                <option value="interval_minutes"
+                                                    {{if eq (call .GetCCIntervalType .CC) 0}}selected{{end}}>
+                                                    Minute interval
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col" id="trigger-help">
+                                        <p id="trigger-desc-none" class="text-danger">
+                                            No trigger: can only be triggered manually by other custom
+                                            commands
+                                        </p>
+                                        <p id="trigger-desc-cmd">
+                                            <b>Command Trigger</b>: Works the same way as normal commands by using the
+                                            command
+                                            prefix or bot mention followed by the trigger.<br />
+                                            For example: If you set the trigger to <code>hello</code> then you can type
+                                            <code>-hello</code> or <code>@yagpdb hello</code> to trigger it (assuming
+                                            default default settings)
+                                        </p>
+                                        <p id="trigger-desc-prefix">
+                                            Any message that starts with the trigger will run the command.
+                                        </p>
+                                        <p id="trigger-desc-contains">
+                                            Any message that contains the trigger will run the command.
+                                        </p>
+                                        <p id="trigger-desc-regex">
+                                            Any message that matches the provided regex will trigger the command.
+                                        </p>
+                                        <p id="trigger-desc-exact">
+                                            Any message that is equal to the trigger will run the command.
+                                        </p>
+                                        <p id="trigger-desc-reaction">
+                                            The command will trigger on the specified reaction events.
+                                        </p>
+                                        <p id="trigger-desc-interval_hours">
+                                            The command will run at a hourly interval, for example every 5 hours.
+                                        </p>
+                                        <p id="trigger-desc-interval_minutes">
+                                            The command will run at a minute interval, for example every 10 minutes.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="cc-text-trigger-details" class="hidden col-sm-8">
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <label>Trigger</label>
+                                            <input type="text" class="form-control" name="trigger" placeholder="!fun"
+                                                value="{{.CC.TextTrigger}}">
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="case_sensitive"> Case sensitive
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="cc-reaction-trigger-details" class="hidden col-sm-8">
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                                id="reaction-mode-both-{{.CC.LocalID}}" value="0"
+                                                {{if eq .CC.ReactionTriggerMode 0}}checked{{end}}>
+                                            <label class="form-check-label" for="reaction-mode-both-{{.CC.LocalID}}">
+                                                Added + Removed reactions
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                                id="reaction-mode-added-{{.CC.LocalID}}" value="1"
+                                                {{if eq .CC.ReactionTriggerMode 1}}checked{{end}}>
+                                            <label class="form-check-label" for="reaction-mode-added-{{.CC.LocalID}}">
+                                                Added reactions only
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                                id="reaction-mode-removed-{{.CC.LocalID}}" value="2"
+                                                {{if eq .CC.ReactionTriggerMode 2}}checked{{end}}>
+                                            <label class="form-check-label" for="reaction-mode-removed-{{.CC.LocalID}}">
+                                                Removed reactions only
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="cc-time-trigger-details" class="hidden col-sm-8">
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <div class="form-group">
+                                            <label>Interval</label>
+                                            <input type="number" class="form-control" name="time_trigger_interval"
+                                                placeholder="" value="{{call $dot.GetCCInterval .CC}}">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="form-group">
+                                            <label>Channel</label>
+                                            <select name="context_channel" class="form-control">
+                                                {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label for="trigger">Excluding hours (UTC)</label><br>
+                                            <select name="time_trigger_excluding_hours" class="multiselect form-control"
+                                                multiple="multiple" data-plugin-multiselect>
+                                                {{$selectedExclHours := .CC.TimeTriggerExcludingHours}}
+                                                {{range seq 0 24}}<option value="{{.}}"
+                                                    {{if in $selectedExclHours .}}selected{{end}}>{{.}}</option>
+                                                {{end}}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="form-group">
+                                            <label for="trigger">Excluding weekdays (UTC)</label><br>
+                                            <select name="time_trigger_excluding_days" class="multiselect form-control"
+                                                multiple="multiple" data-plugin-multiselect>
+                                                <option value="1"
+                                                    {{if in .CC.TimeTriggerExcludingDays 1}}selected{{end}}>
+                                                    Monday</option>
+                                                <option value="2"
+                                                    {{if in .CC.TimeTriggerExcludingDays 2}}selected{{end}}>
+                                                    Tuesday</option>
+                                                <option value="3"
+                                                    {{if in .CC.TimeTriggerExcludingDays 3}}selected{{end}}>
+                                                    Wednesday</option>
+                                                <option value="4"
+                                                    {{if in .CC.TimeTriggerExcludingDays 4}}selected{{end}}>
+                                                    Thursday</option>
+                                                <option value="5"
+                                                    {{if in .CC.TimeTriggerExcludingDays 5}}selected{{end}}>
+                                                    Friday</option>
+                                                <option value="6"
+                                                    {{if in .CC.TimeTriggerExcludingDays 6}}selected{{end}}>
+                                                    Saturday</option>
+                                                <option value="0"
+                                                    {{if in .CC.TimeTriggerExcludingDays 0}}selected{{end}}>
+                                                    Sunday</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <label for="responses">Response (<span
+                                            class="cc-length-counter">x</span>/10000)</label>
+                                    <!-- Use .btn-add for simplicity and let the page loader adjust. -->
+                                    {{range .CC.Responses}}
+                                    <div class="entry input-group  input-group-sm">
+                                        <textarea class="form-control response-text-area" name="responses"
+                                            placeholder="^ Smells!" rows="5"
+                                            oninput="onCCChanged(this)">{{.}}</textarea>
+                                        <span class="input-group-append">
+                                            <button class="btn btn-success btn-add btn-circle" type="button">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </span>
+                                    </div>
+                                    {{else}}
+                                    <div class="entry input-group  input-group-sm">
+                                        <textarea class="form-control response-text-area" name="responses"
+                                            placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)"></textarea>
+                                        <span class="input-group-append">
+                                            <button class="btn btn-success btn-add btn-circle" type="button">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </span>
+                                    </div>
+                                    {{end}}
+                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm"
+                                        href="#cc-help-modal">Info</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>Custom command group</label>
+                                    {{$selectedGroup := .CC.GroupID.Int64}}
+                                    <select Name="GroupID" class="form-control">
+                                        <option {{if eq $selectedGroup 0}}selected{{end}} value="0">None
+                                        </option>
+                                        {{range $dot.CommandGroups}}<option value="{{.ID}}"
+                                            {{if eq $selectedGroup .ID}}selected{{end}}>{{.Name}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+
+                                <h4>Last error</h4>
+                                <p>{{if .CC.LastError}}<b>{{formatTime .CC.LastErrorTime.Time.UTC}}</b> - <code>
+                                    {{.CC.LastError}}</code>{{else}}None{{end}}</p>
+
+                                <h4>Run count</h4>
+                                <p><code>{{.CC.RunCount}}</code></p>
+
+                                <h4>Output errors as command reponse</h4>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="show_errors" id="show-errors"
+                                        {{if .CC.ShowErrors}}checked{{end}}>
+                                    <label class="form-check-label" for="show-errors">
+                                        Output errors as command response
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="cc-extra-settings" class="col-sm-6">
+                                <h3>Channel/User role restrictions</h3>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="require_roles" value="on"
+                                            {{if .CC.RolesWhitelistMode}}checked{{end}}>
+                                        Require at least one of the roles in the following lists
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="require_roles" value=""
+                                            {{if not .CC.RolesWhitelistMode}}checked{{end}}>
+                                        Ignore the roles in the following list
+                                    </label>
+                                </div>
+                                <select name="roles" class="multiselect form-control" multiple="multiple"
+                                    id="command-roles" data-plugin-multiselect>
+                                    {{roleOptionsMulti $g.Roles nil .CC.Roles}}
+                                </select>
+
+                                <hr>
+
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="require_channels" value="on"
+                                            {{if .CC.ChannelsWhitelistMode}}checked{{end}}>
+                                        Only run in the following channels
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="require_channels" value=""
+                                            {{if not .CC.ChannelsWhitelistMode}}checked{{end}}>
+                                        Ignore the channels in the following list
+                                    </label>
+                                </div>
+                                <select name="channels" class="multiselect form-control" multiple="multiple"
+                                    id="command-channels" data-plugin-multiselect>
+                                    {{textChannelOptionsMulti $g.Channels .CC.Channels}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col">
+                                <button type="submit" class="btn btn-success btn-block"
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update"
+                                    data-async-form-alertsonly>Save</button>
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-danger btn-block"
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Delete</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="cc-help-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title">Custom Command Information</h2>
+        </header>
+        <div class="card-body">
+            <div class="modal-wrapper">
+                <div class="modal-text">
+                    <p class="help-block">Available template data is {{template "template_helper_user"}} (and much
+                        more)
+                    </p>
+                    <p class="help-block">Execute bot commands using
+                        <code>{{`{{exec "command" "arg1" "arg2"}}`}}</code>, Example:
+                        <code>{{"{{exec \"role\" \"yagpdb\"}}"}}</code> will be the same as the user typing
+                        <code>(mention or prefix) role yagpdb</code></p>
+                    <p class="help-block">Arguments are available in a string array: <code>.CmdArgs</code><br>
+                        Access
+                        single arguments by index using <code>{{"{{index .CmdArgs 0}}"}}</code><br>Get the number of
+                        arguments using <code>{{"{{len .CmdArgs}}"}}</code><br>Loop over them with
+                        <br><code>{{"{{range .CmdArgs}}{{.}}"}} <- that dot will be replaced by the current argument we're looping over{{"{{end}}"}}</code><br>"end"
+                        marks the end of the for loop.</p>
+                    <!-- {{/* .IgnoreMe */}} -->
+                    <p>
+                        See the <a href="https://docs.yagpdb.xyz/templates" target="_blank">templating</a> and <a
+                            href="https://docs.yagpdb.xyz/commands/custom-commands" target="_blank">custom
+                            command</a>
+                        docs for more info and join the support server if you have further questions. Custom
+                        commands
+                        for yagpdb are rather complicated for the time being.</p>
+                    <p class="help-block">
+                        YAGPDB will pick one message at random from all configured responses.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <footer class="card-footer">
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <button class="btn btn-info modal-dismiss">OK</button>
+                </div>
+            </div>
+        </footer>
+    </section>
+</div>
+
+<script src="/static/vendor/tln/tln.min.js"></script>
+<link rel="stylesheet" href="/static/vendor/tln/tln.min.css">
+
+<script type="text/javascript">
+    function isTextTrigger(t) {
+        return t === "cmd" ||
+            t === "prefix" ||
+            t === "contains" ||
+            t === "regex" ||
+            t === "exact";
+    }
+
+    function triggerTypeChanged() {
+        var dropdown = $("#trigger-type-dropdown")
+        console.log("wewwooewewooo", dropdown.val());
+        if (dropdown.val() === "interval_hours" || dropdown.val() === "interval_minutes") {
+            // Interval triggers
+
+            $("#cc-time-trigger-details").removeClass("hidden");
+
+            $("#cc-text-trigger-details").addClass("hidden");
+            $("#cc-extra-settings").addClass("hidden");
+            $("#cc-reaction-trigger-details").addClass("hidden")
+
+            $("#trigger-warning").attr("hidden", true);
+
+        } else if (dropdown.val() === "reaction") {
+            // Reaction triggers
+
+            $("#cc-reaction-trigger-details").removeClass("hidden")
+            $("#cc-extra-settings").removeClass("hidden");
+
+            $("#cc-time-trigger-details").addClass("hidden");
+            $("#cc-text-trigger-details").addClass("hidden");
+
+            $("#trigger-warning").attr("hidden", true);
+
+        } else if (isTextTrigger(dropdown.val())) {
+            // Other message triggers
+
+            $("#cc-text-trigger-details").removeClass("hidden");
+            $("#cc-extra-settings").removeClass("hidden");
+
+            $("#cc-reaction-trigger-details").addClass("hidden")
+            $("#cc-time-trigger-details").addClass("hidden");
+
+            $("#trigger-warning").attr("hidden", true);
+            // $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
+
+        } else {
+            // No automatic trigger
+
+            $("#cc-text-trigger-details").addClass("hidden");
+            $("#cc-extra-settings").addClass("hidden");
+            $("#cc-reaction-trigger-details").addClass("hidden")
+            $("#cc-time-trigger-details").addClass("hidden");
+
+
+            $("#trigger-warning").removeAttr("hidden");
+            $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
+        };
+
+
+        $("#trigger-help").children().each(function (i, v) {
+            $(v).attr("hidden", true);
+        });
+
+        $("#trigger-desc-" + dropdown.val()).removeAttr("hidden");
+    }
+
+    $(function () {
+        triggerTypeChanged();
+    })
+
+    function onCCChanged(textArea) {
+        var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
+
+        var combinedLength = 0;
+        textAreas.forEach(function (elem) {
+            combinedLength += elem.value.length;
+        })
+
+        var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
+        display.textContent = combinedLength
+
+        if (combinedLength > 10000) {
+            display.classList.add("text-danger");
+        } else {
+            display.classList.remove("text-danger");
+        }
+    }
+
+    var idGen = 0
+</script>
+
+
+{{template "cp_footer" .}}
+
+{{end}}
