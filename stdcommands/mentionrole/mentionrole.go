@@ -79,41 +79,33 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 	} else if !ok {
 		return "You need manage server perms to use this command", nil
 	}
-	
+
 	roleS := data.Args[0].Str()
-	var role *discordgo.Role
-	data.GS.RLock()
-	defer data.GS.RUnlock()
-	for _, r := range data.GS.Guild.Roles {
-		if strings.EqualFold(r.Name, roleS) {
-			role = r
-			break
-		}
-	}
-	
+	role := findRoleByName(data.GS, roleS)
+
 	//if we did not find a match yet try to match ID
 	if role == nil {
 		parsedNumber, parseErr := strconv.ParseInt(roleS, 10, 64)
 		if parseErr == nil {
 			// was a number, try looking by id
-			role = data.GS.RoleCopy(false, parsedNumber)
+			role = data.GS.RoleCopy(true, parsedNumber)
 		}
 	}
 
 	if role == nil {
 		return "No role with the name or ID`" + roleS + "` found", nil
 	}
-	
+
 	cID := data.CS.ID
 	c := data.Switch("channel")
 	if c.Value != nil {
 		cID = c.Value.(*dstate.ChannelState).ID
-		
-		perms, err := data.GS.MemberPermissions(false, cID, data.Msg.Author.ID)
+
+		perms, err := data.GS.MemberPermissions(true, cID, data.Msg.Author.ID)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if perms&discordgo.PermissionSendMessages != discordgo.PermissionSendMessages || perms&discordgo.PermissionReadMessages != discordgo.PermissionReadMessages {
 			return "You do not have permissions to send messages there", nil
 		}
@@ -134,4 +126,19 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		RoleID:  role.ID,
 	})
 	return nil, err
+}
+
+func findRoleByName(gs *dstate.GuildState, name string) *discordgo.Role {
+	var role *discordgo.Role
+
+	gs.RLock()
+	defer gs.RUnlock()
+	for _, r := range gs.Guild.Roles {
+		if strings.EqualFold(r.Name, name) {
+			role = r
+			break
+		}
+	}
+
+	return role
 }
