@@ -115,16 +115,21 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			if len(entries) < 1 && page > 1 {
+			if len(entries) < 1 && p.LastResponse != nil { //Dont send No Results error on first execution
 				return nil, paginatedmessages.ErrNoResults
 			}
 
 			out := &strings.Builder{}
 			out.WriteString("```\n")
 
-			for _, v := range entries {
-				t := v.CreatedAt.UTC().Format("02 Jan 2006 15:04")
-				out.WriteString(fmt.Sprintf("[%-17s] - %s\nRS:%s - R:%s - TR:%s\n\n", t, v.UserName, v.RulesetName, v.RuleName, RulePartMap[v.TriggerTypeid].Name()))
+			
+			if len(entries) > 0 {
+				for _, v := range entries {
+					t := v.CreatedAt.UTC().Format("02 Jan 2006 15:04")
+					out.WriteString(fmt.Sprintf("[%-17s] - %s\nRS:%s - R:%s - TR:%s\n\n", t, v.UserName, v.RulesetName, v.RuleName, RulePartMap[v.TriggerTypeid].Name()))
+				}
+			} else {
+				out.WriteString("No Entries")
 			}
 			out.WriteString("``` **RS** = ruleset, **R** = rule, **TR** = trigger")
 
