@@ -60,8 +60,9 @@ var (
 )
 
 var (
-	RKeyCommandCooldown = func(uID int64, cmd string) string { return "cmd_cd:" + discordgo.StrID(uID) + ":" + cmd }
-	RKeyCommandLock     = func(uID int64, cmd string) string { return "cmd_lock:" + discordgo.StrID(uID) + ":" + cmd }
+	RKeyCommandCooldown      = func(uID int64, cmd string) string { return "cmd_cd:" + discordgo.StrID(uID) + ":" + cmd }
+	RKeyCommandCooldownGuild = func(gID int64, cmd string) string { return "cmd_guild_cd:" + discordgo.StrID(gID) + ":" + cmd }
+	RKeyCommandLock          = func(uID int64, cmd string) string { return "cmd_lock:" + discordgo.StrID(uID) + ":" + cmd }
 
 	CommandExecTimeout = time.Minute
 
@@ -98,8 +99,9 @@ type YAGCommand struct {
 	CustomEnabled        bool   // Set to true to handle the enable check itself
 	Default              bool   // The default enabled state of this command
 
-	Cooldown    int // Cooldown in seconds before user can use it again
-	CmdCategory *dcmd.Category
+	Cooldown           int // Cooldown in seconds before user can use it again
+	CmdCategory        *dcmd.Category
+	GuildScopeCooldown int
 
 	RunInDM      bool // Set to enable this commmand in DM's
 	HideFromHelp bool // Set to hide from help
@@ -190,7 +192,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Log errors
 	if cmdErr == nil {
-		err := yc.SetCooldown(data.Msg.Author.ID)
+		err := yc.SetCooldowns(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
 		}
@@ -305,6 +307,15 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	return
 }
 
+const (
+	ReasonError                    = "An error occured"
+	ReasonCommandDisabaledSettings = "Command is disabled in the settings"
+	ReasonMissingRole              = "Missing a required role for this command"
+	ReasonIgnoredRole              = "Has a ignored role for this command"
+	ReasonUserMissingPerms         = "User is missing one or more permissions to run this command"
+	ReasonCooldown                 = "This command is on cooldown"
+)
+
 // checks if the specified user can execute the command, and if so returns the settings for said command
 func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.ChannelState) (canExecute bool, resp string, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
@@ -316,7 +327,8 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 		guild = cState.Guild
 
 		if guild == nil {
-			resp = "You're not on a server?"
+			err = errors.NewPlain("Not on a guild")
+			resp = ReasonError
 			return
 		}
 
@@ -329,12 +341,12 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 		settings, err = yc.GetSettings(data.ContainerChain, cState.ID, cop.ParentID, guild.ID)
 		if err != nil {
 			err = errors.WithMessage(err, "cs.GetSettings")
-			resp = "Bot is having isssues, contact the bot owner."
+			resp = ReasonError
 			return
 		}
 
 		if !settings.Enabled {
-			resp = fmt.Sprintf("The %q command is currently disabled on this server or channel. *(Control panel to enable/disable <https://%s>)*", yc.Name, common.ConfHost.GetString())
+			resp = ReasonCommandDisabaledSettings
 			return
 		}
 
@@ -350,14 +362,14 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			}
 
 			if !found {
-				resp = "Missing a required role set up by the server admins for this command."
+				resp = ReasonMissingRole
 				return
 			}
 		}
 
 		for _, ignored := range settings.IgnoreRoles {
 			if common.ContainsInt64Slice(member.Roles, ignored) {
-				resp = "One of your roles is set up to be ignored by the server admins."
+				resp = ReasonIgnoredRole
 				return
 			}
 		}
@@ -367,7 +379,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			var perms int
 			perms, err = cState.Guild.MemberPermissionsMS(true, cState.ID, member)
 			if err != nil {
-				resp = "Unable to check permissions"
+				resp = ReasonError
 				return
 			}
 
@@ -380,7 +392,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			}
 
 			if !foundMatch {
-				resp = "Missing required permissions to use this command (" + yc.humanizedRequiredPerms() + ")"
+				resp = ReasonUserMissingPerms
 				return
 			}
 		}
@@ -391,14 +403,14 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 	}
 
 	// Check the command cooldown
-	cdLeft, err := yc.CooldownLeft(data.Msg.Author.ID)
+	cdLeft, err := yc.LongestCooldownLeft(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
 	if err != nil {
 		// Just pretend the cooldown is off...
-		logger.WithError(err).WithField("author", data.Msg.Author.ID).Error("Failed checking command cooldown")
+		yc.Logger(data).Error("Failed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
-		resp = fmt.Sprintf("**%q:** You need to wait %d seconds before you can use the %q command again", common.EscapeSpecialMentions(data.Msg.Author.Username), cdLeft, yc.Name)
+		resp = ReasonCooldown
 		return
 	}
 
@@ -595,34 +607,94 @@ OUTER:
 	}
 }
 
-// CooldownLeft returns the number of seconds before a command can be used again
-func (cs *YAGCommand) CooldownLeft(userID int64) (int, error) {
-	if cs.Cooldown < 1 || common.Testing {
+// LongestCooldownLeft returns the longest cooldown for this command, either user scoped or guild scoped
+func (cs *YAGCommand) LongestCooldownLeft(cc []*dcmd.Container, userID int64, guildID int64) (int, error) {
+	cdUser, err := cs.UserScopeCooldownLeft(cc, userID)
+	if err != nil {
+		return 0, err
+	}
+
+	cdGuild, err := cs.GuildScopeCooldownLeft(cc, guildID)
+	if err != nil {
+		return 0, err
+	}
+
+	if cdUser > cdGuild {
+		return cdUser, nil
+	}
+
+	return cdGuild, nil
+}
+
+// UserScopeCooldownLeft returns the number of seconds before a command can be used again by this user
+func (cs *YAGCommand) UserScopeCooldownLeft(cc []*dcmd.Container, userID int64) (int, error) {
+	if cs.Cooldown < 1 {
 		return 0, nil
 	}
 
 	var ttl int
-	err := common.RedisPool.Do(retryableredis.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.Name)))
-	if ttl < 1 {
+	err := common.RedisPool.Do(retryableredis.Cmd(&ttl, "TTL", RKeyCommandCooldown(userID, cs.FindNameFromContainerChain(cc))))
+	if err != nil {
+		return 0, errors.WithStackIf(err)
+	}
+
+	return ttl, nil
+}
+
+// GuildScopeCooldownLeft returns the number of seconds before a command can be used again on this server
+func (cs *YAGCommand) GuildScopeCooldownLeft(cc []*dcmd.Container, guildID int64) (int, error) {
+	if cs.GuildScopeCooldown < 1 {
 		return 0, nil
 	}
 
-	return ttl, err
+	var ttl int
+	err := common.RedisPool.Do(retryableredis.Cmd(&ttl, "TTL", RKeyCommandCooldownGuild(guildID, cs.FindNameFromContainerChain(cc))))
+	if err != nil {
+		return 0, errors.WithStackIf(err)
+	}
+
+	return ttl, nil
 }
 
-// SetCooldown sets the cooldown of the command as it's defined in the struct
-func (cs *YAGCommand) SetCooldown(userID int64) error {
+// SetCooldowns is a helper that serts both User and Guild cooldown
+func (cs *YAGCommand) SetCooldowns(cc []*dcmd.Container, userID int64, guildID int64) error {
+	err := cs.SetCooldownUser(cc, userID)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	err = cs.SetCooldownGuild(cc, guildID)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	return nil
+}
+
+// SetCooldownUser sets the user scoped cooldown of the command as it's defined in the struct
+func (cs *YAGCommand) SetCooldownUser(cc []*dcmd.Container, userID int64) error {
 	if cs.Cooldown < 1 {
 		return nil
 	}
 	now := time.Now().Unix()
 
-	err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.Name), now, "EX", cs.Cooldown))
-	return err
+	err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", RKeyCommandCooldown(userID, cs.FindNameFromContainerChain(cc)), now, "EX", cs.Cooldown))
+	return errors.WithStackIf(err)
+}
+
+// SetCooldownGuild sets the guild scoped cooldown of the command as it's defined in the struct
+func (cs *YAGCommand) SetCooldownGuild(cc []*dcmd.Container, guildID int64) error {
+	if cs.GuildScopeCooldown < 1 {
+		return nil
+	}
+
+	now := time.Now().Unix()
+	err := common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", RKeyCommandCooldownGuild(guildID, cs.FindNameFromContainerChain(cc)), now, "EX", cs.GuildScopeCooldown))
+	return errors.WithStackIf(err)
 }
 
 func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
-	l := logger.WithField("cmd", yc.Name)
+	l := logger.WithField("cmd", yc.FindNameFromContainerChain(data.ContainerChain))
 	if data != nil {
 		if data.Msg != nil {
 			l = l.WithField("user_n", data.Msg.Author.Username)
@@ -631,6 +703,10 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 
 		if data.CS != nil {
 			l = l.WithField("channel", data.CS.ID)
+		}
+
+		if data.GS != nil {
+			l = l.WithField("guild", data.GS.ID)
 		}
 	}
 
@@ -719,4 +795,25 @@ func removeRunningCommand(guildID, channelID, authorID int64, cmd *YAGCommand) {
 	runningcommandsLock.Unlock()
 
 	return
+}
+
+func (yc *YAGCommand) FindNameFromContainerChain(cc []*dcmd.Container) string {
+	name := ""
+	for _, v := range cc {
+		if len(v.Names) < 1 {
+			continue
+		}
+
+		if name != "" {
+			name += " "
+		}
+
+		name += v.Names[0]
+	}
+
+	if name != "" {
+		name += " "
+	}
+
+	return name + yc.Name
 }

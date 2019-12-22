@@ -70,7 +70,8 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
 	},
-	RunFunc: cmdFuncMentionRole,
+	RunFunc:            cmdFuncMentionRole,
+	GuildScopeCooldown: 10,
 }
 
 func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {

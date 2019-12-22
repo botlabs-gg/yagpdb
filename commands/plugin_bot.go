@@ -84,9 +84,29 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ms))
 		}
 
+		// Lock the command for execution
+		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
+			if atomic.LoadInt32(shuttingDown) == 1 {
+				return yc.Name + ": Bot is restarting, please try again in a couple seconds...", nil
+			}
+
+			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
+		}
+
+		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
+
 		// Check if the user can execute the command
 		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, data.CS)
+		if err != nil {
+			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+		}
+
 		if resp != "" {
+			if resp == ReasonCooldown {
+				cdLeft, _ := yc.LongestCooldownLeft(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
+				return fmt.Sprintf("This command is on cooldown for another %d seconds", cdLeft), nil
+			}
+
 			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
 			// m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
 			// go yc.deleteResponse([]*discordgo.Message{m})
@@ -102,17 +122,6 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		}
 
 		data = data.WithContext(context.WithValue(data.Context(), CtxKeyCmdSettings, settings))
-
-		// Lock the command for execution
-		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
-			if atomic.LoadInt32(shuttingDown) == 1 {
-				return yc.Name + ": Bot is shutting down or restarting, please try again in a couple seconds...", nil
-			}
-
-			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
-		}
-
-		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
 
 		err = dcmd.ParseCmdArgs(data)
 		if err != nil {

@@ -78,7 +78,7 @@ type cmdExecFunc func(cmd string, args ...interface{}) (interface{}, error)
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
 	execUser := func(cmd string, args ...interface{}) (interface{}, error) {
 		messageCopy := *ctx.Msg
-		if ctx.CS != nil { //Check if CS is not a nil pointer 
+		if ctx.CS != nil { //Check if CS is not a nil pointer
 			messageCopy.ChannelID = ctx.CS.ID
 		}
 		mc := &discordgo.MessageCreate{&messageCopy}
@@ -96,7 +96,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 
 		messageCopy := *ctx.Msg
 		messageCopy.Author = &botUserCopy
-		if ctx.CS != nil { //Check if CS is not a nil pointer 
+		if ctx.CS != nil { //Check if CS is not a nil pointer
 			messageCopy.ChannelID = ctx.CS.ID
 		}
 
@@ -219,12 +219,23 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 		}
 		runFunc = data.ContainerChain[len(data.ContainerChain)-1-i].BuildMiddlewareChain(runFunc, foundCmd)
 	}
-	// foundCmd.Trigger.
+
+	// Check guild scope cooldown
+	cd, err := cast.GuildScopeCooldownLeft(data.ContainerChain, tmplCtx.GS.ID)
+	if err != nil {
+		return "", errors.WithStackIf(err)
+	}
+
+	if cd > 0 {
+		return "", errors.NewPlain("this command is on guild scope cooldown")
+	}
 
 	resp, err := runFunc(data)
 	if err != nil {
 		return "", errors.WithMessage(err, "exec/execadmin, run")
 	}
+
+	cast.SetCooldownGuild(data.ContainerChain, tmplCtx.GS.ID)
 
 	switch v := resp.(type) {
 	case error:
