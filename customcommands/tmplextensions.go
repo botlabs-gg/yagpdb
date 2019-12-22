@@ -288,7 +288,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		// since this is a unique, remove existing ones
 		_, err = scheduledmodels.ScheduledEvents(
-			qm.Where("event_name='cc_delayed_run' AND  guild_id = ? AND (data->>'user_key')::bigint = ? AND (data->>'cmd_id')::bigint = ? AND processed = false",
+			qm.Where("event_name='cc_delayed_run' AND  guild_id = ? AND (data->>'user_key')::text = ? AND (data->>'cmd_id')::bigint = ? AND processed = false",
 				ctx.GS.ID, stringedKey, cmd.LocalID)).DeleteAll(context.Background(), common.PQ)
 		if err != nil {
 			return "", err
@@ -314,7 +314,7 @@ func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 
 		// since this is a unique, remove existing ones
 		_, err := scheduledmodels.ScheduledEvents(
-			qm.Where("event_name='cc_delayed_run' AND  guild_id = ? AND (data->>'user_key')::bigint = ? AND (data->>'cmd_id')::bigint = ? AND processed = false",
+			qm.Where("event_name='cc_delayed_run' AND  guild_id = ? AND (data->>'user_key')::text = ? AND (data->>'cmd_id')::bigint = ? AND processed = false",
 				ctx.GS.ID, stringedKey, ccID)).DeleteAll(context.Background(), common.PQ)
 		if err != nil {
 			return "", err
