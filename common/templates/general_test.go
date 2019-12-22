@@ -3,23 +3,45 @@ package templates
 import (
 	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 )
 
+func buildLongStr(length int) string {
+	var b strings.Builder
+
+	for i := 0; i < length; i++ {
+		b.WriteString("A")
+	}
+
+	return b.String()
+}
+
 func TestJoinStrings(t *testing.T) {
+
+	longString := buildLongStr(1000000)
+
 	cases := []struct {
 		sep            string
 		args           []interface{}
 		expectedResult string
+		shouldError    bool
 	}{
-		{" ", []interface{}{"hello", "world"}, "hello world"},
-		{",", []interface{}{"hello", []string{"world", "!"}}, "hello,world,!"},
-		{" ", []interface{}{[]string{"hello", "world", "!"}}, "hello world !"},
+		{" ", []interface{}{"hello", "world"}, "hello world", false},
+		{" ", []interface{}{"hello", "world", longString}, "", true},
+		{",", []interface{}{"hello", []string{"world", "!"}}, "hello,world,!", false},
+		{" ", []interface{}{[]string{"hello", "world", "!"}}, "hello world !", false},
+		{" ", []interface{}{[]string{"hello", "world", "!", longString}}, "", true},
 	}
 
 	for i, c := range cases {
 		t.Run("case #"+strconv.Itoa(i), func(t *testing.T) {
-			joined := joinStrings(c.sep, c.args...)
+			joined, err := joinStrings(c.sep, c.args...)
+			if err != nil && !c.shouldError {
+				t.Errorf("Should not have errored out")
+			} else if err == nil && c.shouldError {
+				t.Errorf("Should have errored out")
+			}
 			if joined != c.expectedResult {
 				t.Error("Unexpected result, got ", joined, ", expected ", c.expectedResult)
 			}

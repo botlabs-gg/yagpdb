@@ -364,32 +364,48 @@ func tmplRoundEven(args ...interface{}) float64 {
 	return math.RoundToEven(ToFloat64(args[0]))
 }
 
-func joinStrings(sep string, args ...interface{}) string {
+var ErrStringTooLong = errors.NewPlain("String is too long (max 1MB)")
 
-	out := ""
+const MaxStringLength = 1000000
+
+func joinStrings(sep string, args ...interface{}) (string, error) {
+
+	var builder strings.Builder
 
 	for _, v := range args {
-		switch t := v.(type) {
-		case string:
-			if out != "" {
-				out += sep
-			}
+		if builder.Len() != 0 {
+			builder.WriteString(sep)
+		}
 
-			out += t
+		switch t := v.(type) {
+
+		case string:
+			builder.WriteString(t)
+
 		case []string:
-			for _, s := range t {
-				if out != "" {
-					out += sep
+			for j, s := range t {
+				if j != 0 {
+					builder.WriteString(sep)
 				}
 
-				out += s
+				builder.WriteString(s)
+				if builder.Len() > MaxStringLength {
+					return "", ErrStringTooLong
+				}
 			}
+
 		case int, int32, uint32, int64, uint64:
-			out += ToString(v)
+			builder.WriteString(ToString(v))
+
 		}
+
+		if builder.Len() > MaxStringLength {
+			return "", ErrStringTooLong
+		}
+
 	}
 
-	return out
+	return builder.String(), nil
 }
 
 func sequence(start, stop int) ([]int, error) {
