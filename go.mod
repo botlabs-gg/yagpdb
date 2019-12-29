@@ -28,7 +28,7 @@ require (
 	github.com/gorilla/schema v1.1.0
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
-	github.com/jonas747/cardsagainstdiscord v0.0.0-20181204220910-23e761a8e774
+	github.com/jonas747/cardsagainstdiscord v0.0.0-20191229232941-a4f1eab155fe
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.1.0
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
@@ -73,10 +73,11 @@ require (
 	github.com/volatiletech/sqlboiler v3.5.0+incompatible
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e
+	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/sys v0.0.0-20191228213918-04cbcbbfeed8 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 // indirect
 	google.golang.org/api v0.3.1
