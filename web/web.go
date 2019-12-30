@@ -341,6 +341,8 @@ func setupRoutes() *goji.Mux {
 	return RootMux
 }
 
+var StaticFileserverDir = "."
+
 func setupRootMux() {
 	mux := goji.NewMux()
 	RootMux = mux
@@ -355,7 +357,7 @@ func setupRootMux() {
 	}
 
 	// Setup fileserver
-	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(".")))
+	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(StaticFileserverDir)))
 	mux.Handle(pat.Get("/robots.txt"), http.HandlerFunc(handleRobotsTXT))
 	mux.Handle(pat.Get("/ads.txt"), http.HandlerFunc(handleAdsTXT))
 
