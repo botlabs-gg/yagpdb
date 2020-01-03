@@ -275,10 +275,13 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ID := parsed.Args[0].Int()
-			_, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
+			rows, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
 			
 			if err != nil {
 				return nil , err
+			}
+			if rows < 1 {
+				return "Failed deleting, most likely no active violation with specified id", nil
 			}
 
 			return "👌", nil
