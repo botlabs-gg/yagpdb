@@ -21,6 +21,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -345,6 +346,12 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 	addedParticipants := 0
 	numWaitingList := 0
+
+	numParticipantsShown := 0
+	numWaitingListShown := 0
+
+	waitingListHitMax := false
+	participantsHitMax := false
 	for _, v := range participants {
 		if v.JoinState != int16(ParticipantStateJoining) && v.JoinState != int16(ParticipantStateWaitlist) {
 			continue
@@ -352,25 +359,50 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 		user := findUser(fetchedMembers, v.UserID)
 		if (addedParticipants >= m.MaxParticipants && m.MaxParticipants > 0) || v.JoinState == int16(ParticipantStateWaitlist) {
-			// we hit the max limit so add them to the waiting list instead
-			waitingListField.Value += user.Username + "#" + user.Discriminator + "\n"
+			// On the waiting list
+			if !waitingListHitMax {
+
+				// we hit the max limit so add them to the waiting list instead
+				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(waitingListField.Value) >= 990 {
+					waitingListHitMax = true
+				} else {
+					waitingListField.Value += toAdd
+					numWaitingListShown++
+				}
+			}
+
 			numWaitingList++
 			continue
 		}
 
-		participantsEmbed.Value += user.Username + "#" + user.Discriminator + "\n"
+		if !participantsHitMax {
+			toAdd := user.Username + "#" + user.Discriminator + "\n"
+			if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(participantsEmbed.Value) > 990 {
+				participantsHitMax = true
+			} else {
+				participantsEmbed.Value += toAdd
+				numParticipantsShown++
+			}
+		}
+
 		addedParticipants++
 	}
 
+	// Finalize the participants field
 	if participantsEmbed.Value == "```\n" {
 		participantsEmbed.Value += "None"
+	} else if participantsHitMax {
+		participantsEmbed.Value += fmt.Sprintf("+ %d users", addedParticipants-numParticipantsShown)
 	}
 	participantsEmbed.Value += "```"
 
+	// Finalize the waiting list field
 	waitingListField.Name += " (" + strconv.Itoa(numWaitingList) + ")"
-
 	if waitingListField.Value == "```\n" {
 		waitingListField.Value += "None"
+	} else if waitingListHitMax {
+		waitingListField.Value += fmt.Sprintf("+ %d users", numWaitingList-numWaitingListShown)
 	}
 	waitingListField.Value += "```"
 
@@ -413,23 +445,33 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 	}
 
 	count := 0
+	countShown := 0
+	reachedMax := false
+
 	for _, v := range participants {
 		user := findUser(users, v.UserID)
 
 		if v.JoinState == int16(state) {
-			field.Value += user.Username + "#" + user.Discriminator + "\n"
-			count++
-
-			if count >= 100 {
-				break
+			if !reachedMax {
+				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(field.Value) >= 25 {
+					reachedMax = true
+				} else {
+					field.Value += toAdd
+					countShown++
+				}
 			}
+			count++
 		}
 	}
 
 	if count == 0 {
-		field.Value += "No-one\n"
+		field.Value += "None\n"
 	} else {
 		field.Name += " (" + strconv.Itoa(count) + ")"
+		if reachedMax {
+			field.Value += fmt.Sprintf("+ %d users", count-countShown)
+		}
 	}
 
 	field.Value += "```"
