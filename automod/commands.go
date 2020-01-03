@@ -278,7 +278,7 @@ func (p *Plugin) AddCommands() {
 			rows, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
 			
 			if err != nil {
-				return nil , err
+				return nil, err
 			}
 			if rows < 1 {
 				return "Failed deleting, most likely no active violation with specified id", nil
