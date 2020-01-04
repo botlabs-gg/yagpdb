@@ -269,6 +269,17 @@ func targetUserID(input interface{}) int64 {
 	switch t := input.(type) {
 	case *discordgo.User:
 		return t.ID
+	case string:
+		str := strings.TrimSpace(t)
+		if strings.HasPrefix(str, "<@") && strings.HasSuffix(str, ">") && (len(str) > 4) {
+			trimmed := str[2 : len(str)-1]
+			if trimmed[0] == '!' {
+				trimmed = trimmed[1:]
+			}
+			str = trimmed
+		}
+
+		return ToInt64(str)
 	default:
 		return ToInt64(input)
 	}
@@ -631,12 +642,12 @@ func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message
 	return message, nil
 }
 
-func (c *Context) tmplGetMember(id interface{}) (*discordgo.Member, error) {
+func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
 	}
 
-	mID := ToInt64(id)
+	mID := targetUserID(target)
 
 	member, _ := bot.GetMember(c.GS.ID, mID)
 	if member == nil {
