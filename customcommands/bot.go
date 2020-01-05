@@ -100,10 +100,21 @@ var cmdListCommands = &commands.YAGCommand{
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
-
+		
+		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GS.ID)).AllG(data.Context())
+		if err != nil {
+			return "Failed retrieving custom command groups", err
+		}
+		
+		groupMap := make(map[int64]string)
+		groupMap[0] = "Ungrouped"
+		for _, group := range groups {
+			groupMap[group.ID] = group.Name
+		}
+		
 		foundCCS, provided := FindCommands(ccs, data)
 		if len(foundCCS) < 1 {
-			list := StringCommands(ccs)
+			list := StringCommands(ccs, groupMap)
 			if len(list) == 0 {
 				return "This server has no custom commands, sry.", nil
 			}
@@ -115,13 +126,14 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		if len(foundCCS) > 1 {
-			return "More than 1 matched command\n" + StringCommands(foundCCS), nil
+			return "More than 1 matched command\n" + StringCommands(foundCCS, groupMap), nil
 		}
 
 		cc := foundCCS[0]
+		
+		return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```\n%s\n```",
+			cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
 
-		return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` \n```\n%s\n```",
-			cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, strings.Join(cc.Responses, "```\n```")), nil
 	},
 }
 
@@ -152,14 +164,14 @@ func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*mod
 	return
 }
 
-func StringCommands(ccs []*models.CustomCommand) string {
+func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 	out := ""
 	for _, cc := range ccs {
 		switch cc.TextTrigger {
 		case "":
-			out += fmt.Sprintf("`#%3d: `%s\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String())
+			out += fmt.Sprintf("`#%3d: `%s - `Group`: %s\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
 		default:
-			out += fmt.Sprintf("`#%3d:` `%s`: %s\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String())
+			out += fmt.Sprintf("`#%3d:` `%s`: %s - `Group`: %s\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
 		}
 	}
 
