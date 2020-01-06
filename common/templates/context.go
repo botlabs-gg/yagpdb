@@ -463,3 +463,20 @@ func (d SDict) Del(key string) string {
 	return ""
 }
 
+type Slice []interface{}
+
+func (s Slice) Append (item interface{}) (interface{}, error) {
+		if len(s)+1 > 10000 {
+			return nil, errors.New("resulting slice exceeds slice limit")
+		}
+
+		switch v := item.(type) {
+		case nil:
+			result := reflect.Append(reflect.ValueOf(&s).Elem(), reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
+			return result.Interface(), nil
+		default:
+			result := reflect.Append(reflect.ValueOf(&s).Elem(), reflect.ValueOf(v))
+			return result.Interface(), nil
+		}
+
+}
