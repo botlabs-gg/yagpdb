@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"reflect"
 	"time"
 
 	"emperror.dev/errors"
