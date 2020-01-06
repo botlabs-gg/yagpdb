@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
