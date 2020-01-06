@@ -42,8 +42,7 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 			for key, value := range t {
 				mapCopy[key] = value
 			}
-			return SDict(mapCopy), nil
-			
+			return SDict(mapCopy), nil		
 		default:
 			return nil, errors.New("invalid dict call")		
 		}	
