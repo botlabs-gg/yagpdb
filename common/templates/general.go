@@ -33,6 +33,22 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 }
 
 func StringKeyDictionary(values ...interface{}) (SDict, error) {
+	if len(values) == 1 {
+		switch t := values[0].(type) {
+		case SDict:
+			return t, nil
+		case map[string]interface{}:
+			mapCopy := make(map[string]interface{})
+			for key, value := range t {
+				mapCopy[key] = value
+			}
+			return SDict(mapCopy), nil
+			
+		default:
+			return nil, errors.New("invalid dict call")		
+		}	
+	}
+	
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
