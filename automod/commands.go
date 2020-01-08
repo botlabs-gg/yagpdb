@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -266,6 +267,32 @@ func (p *Plugin) AddCommands() {
 		}),
 	}
 
+	cmdDelV := &commands.YAGCommand{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "DeleteViolation",
+		Description:   "Deletes a Violation with the specified ID. ID is the first number of each Violation in the ListViolations command.",
+		Aliases:       []string{"DelViolation", "DelV", "DV"},
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+		},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			ID := parsed.Args[0].Int()
+			rows, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
+			
+			if err != nil {
+				return nil, err
+			}
+			if rows < 1 {
+				return "Failed deleting, most likely no active violation with specified id", nil
+			}
+
+			return "👌", nil
+		},
+	}
+
 	container := commands.CommandSystem.Root.Sub("automod", "amod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
@@ -274,4 +301,5 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdLogs, cmdLogs.GetTrigger())
 	container.AddCommand(cmdListV, cmdListV.GetTrigger())
 	container.AddCommand(cmdListVLC, cmdListVLC.GetTrigger())
+	container.AddCommand(cmdDelV, cmdDelV.GetTrigger())
 }
