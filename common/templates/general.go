@@ -56,7 +56,7 @@ func CreateSlice(values ...interface{}) ([]interface{}, error) {
 		slice[i] = values[i]
 	}
 
-	return slice, nil
+	return Slice(slice), nil
 }
 
 func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
