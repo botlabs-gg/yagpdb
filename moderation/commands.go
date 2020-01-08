@@ -341,8 +341,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			userFilter := parsed.Args[1].Int64()
 
 			num := parsed.Args[0].Int()
-			if userFilter == 0 || userFilter == parsed.Msg.Author.ID {
-				num++ // Automatically include our own message
+			if (userFilter == 0 || userFilter == parsed.Msg.Author.ID) && parsed.Source != 0 {
+				num++ // Automatically include our own message if not triggeded by exec/execAdmin
 			}
 
 			if num > 100 {
