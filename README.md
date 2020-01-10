@@ -7,7 +7,7 @@ YAGPDB is a multifunctional, modular Discord bot. It's modular in that plugins e
 
 **Links**
  - [YAGPDB.xyz](http://yagpdb.xyz)
- - [For updates and support join my discord server](https://discord.gg/4udtcA5)
+ - [For updates and support join my discord server](https://discord.gg/vdJrtB4)
  - [The documentation of YAGPDB](https://docs.yagpdb.xyz/)
 
 ### Running YAGPDB yourself
