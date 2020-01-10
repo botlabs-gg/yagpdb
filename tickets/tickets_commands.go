@@ -338,7 +338,7 @@ func (p *Plugin) AddCommands() {
 			isAdminsOnly := ticketIsAdminOnly(conf, parsed.CS)
 
 			// create the logs, download the attachments
-			err := createLogs(conf, currentTicket.Ticket, isAdminsOnly)
+			err := createLogs(parsed.GS, conf, currentTicket.Ticket, isAdminsOnly)
 			if err != nil {
 				return nil, err
 			}
@@ -511,7 +511,7 @@ type Ticket struct {
 	Participants []*models.TicketParticipant
 }
 
-func createLogs(conf *models.TicketConfig, ticket *models.Ticket, adminOnly bool) error {
+func createLogs(gs *dstate.GuildState, conf *models.TicketConfig, ticket *models.Ticket, adminOnly bool) error {
 
 	if !conf.TicketsUseTXTTranscripts && !conf.DownloadAttachments {
 		return nil // nothing to do here
@@ -581,7 +581,7 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket, adminOnly bool
 		}
 	}
 
-	if conf.TicketsUseTXTTranscripts {
+	if conf.TicketsUseTXTTranscripts && gs.Channel(true, transcriptChannel(conf, adminOnly)) != nil {
 		formattedTranscript := createTXTTranscript(ticket, msgs)
 
 		channel := transcriptChannel(conf, adminOnly)
@@ -592,7 +592,7 @@ func createLogs(conf *models.TicketConfig, ticket *models.Ticket, adminOnly bool
 	}
 
 	// compress and send the attachments
-	if conf.DownloadAttachments {
+	if conf.DownloadAttachments && gs.Channel(true, transcriptChannel(conf, adminOnly)) != nil {
 		archiveAttachments(conf, ticket, attachments, adminOnly)
 	}
 
