@@ -51,6 +51,10 @@ func (p *Plugin) AddCommands() {
 				return "Ticket system is disabled in this server, the server admins can enable it in the control panel.", nil
 			}
 
+			if parsed.GS.Channel(true, conf.TicketsChannelCategory) == nil {
+				return "No category for ticket channels set", nil
+			}
+
 			inCurrentTickets, err := models.Tickets(
 				qm.Where("closed_at IS NULL"),
 				qm.Where("guild_id = ?", parsed.GS.ID),
