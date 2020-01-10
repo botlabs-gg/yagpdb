@@ -180,7 +180,8 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 		registeredTimezone = time.UTC
 	}
 
-	t, err := dateParser.Parse(m.Content, time.Now().In(registeredTimezone))
+	now := time.Now().In(registeredTimezone)
+	t, err := dateParser.Parse(m.Content, now)
 	// t, err := dateparse.ParseAny(m.Content)
 	if err != nil || t == nil {
 		s.sendMessage("Couldn't understand that date, Please try changing the format a little bit and try again\n||Error: %v||", err)
@@ -190,7 +191,9 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 	s.When = t.Time
 	s.State = SetupStateWhenConfirm
 
-	s.sendMessage("Set the starting time of the event to **%s**, is this correct? (`yes/no`)", t.Time.Format("02 Jan 2006 15:04 MST"))
+	in := common.HumanizeDuration(common.DurationPrecisionMinutes, t.Time.Sub(now))
+
+	s.sendMessage("Set the starting time of the event to **%s** (in **%s**), is this correct? (`yes/no`)", t.Time.Format("02 Jan 2006 15:04 MST"), in)
 }
 
 func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) {
