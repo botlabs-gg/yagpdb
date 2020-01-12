@@ -467,7 +467,7 @@ func (d SDict) Del(key string) string {
 type Slice []interface{}
 
 func (s Slice) Append (item interface{}) (interface{}, error) {
-		if len(s)+1 > 10000 {
+		if len(s) + 1 > 10000 {
 			return nil, errors.New("resulting slice exceeds slice size limit")
 		}
 
@@ -483,7 +483,6 @@ func (s Slice) Append (item interface{}) (interface{}, error) {
 }
 
 func (s Slice) Set (index int, item interface{}) (string, error) {
-
 	if (index >= len(s)) {
 		return "", errors.New("Index out of bounds")
 	}
@@ -499,7 +498,7 @@ func (s Slice) AppendSlice (slice interface{}) (interface{}, error) {
 			// this is valid
 			
 			default:
-				return nil, errors.New("Value passed is not an array or slice")
+				return nil, errors.New("value passed is not an array or slice")
 		}
 	
 		if len(s) + val.Len() > 10000 {
