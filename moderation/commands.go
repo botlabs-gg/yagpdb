@@ -323,7 +323,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "r", Name: "Regex", Type: dcmd.String},
 			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max age", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "mina", Default: time.Duration(0), Name: "Min age", Type: &commands.DurationArg{}},
+			&dcmd.ArgDef{Switch: "minage", Default: time.Duration(0), Name: "Min age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
 			&dcmd.ArgDef{Switch: "nopin", Name: "Ignore pinned messages"},
 		},
@@ -380,8 +380,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			// Check if we have a min age
-			mina := parsed.Switches["mina"].Value.(time.Duration)
-			if mina != 0 {
+			minAge := parsed.Switches["minage"].Value.(time.Duration)
+			if minAge != 0 {
 				filtered = true
 			}
 			
@@ -404,7 +404,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, ma, mina, pe, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, ma, minAge, pe, num, limitFetch)
 
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
