@@ -141,7 +141,7 @@
                                     <div class="col-sm-12">
                                         <div class="form-group">
                                             <label>Trigger</label>
-                                            <input type="text" class="form-control" name="trigger" placeholder="!fun"
+                                            <input type="text" class="form-control" name="trigger" placeholder="fun"
                                                 value="{{.CC.TextTrigger}}">
                                             <div class="checkbox">
                                                 <label>
@@ -254,7 +254,7 @@
                                     {{range .CC.Responses}}
                                     <div class="entry input-group  input-group-sm">
                                         <textarea class="form-control response-text-area" name="responses"
-                                            placeholder="^ Smells!" rows="5"
+                                            placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)">{{.}}</textarea>
                                         <span class="input-group-append">
                                             <button class="btn btn-success btn-add btn-circle" type="button">
@@ -265,7 +265,7 @@
                                     {{else}}
                                     <div class="entry input-group  input-group-sm">
                                         <textarea class="form-control response-text-area" name="responses"
-                                            placeholder="^ Smells!" rows="5" oninput="onCCChanged(this)"></textarea>
+                                            placeholder="Command body here" rows="5" oninput="onCCChanged(this)"></textarea>
                                         <span class="input-group-append">
                                             <button class="btn btn-success btn-add btn-circle" type="button">
                                                 <i class="fas fa-plus"></i>
