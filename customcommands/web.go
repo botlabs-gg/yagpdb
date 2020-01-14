@@ -205,7 +205,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		TimeTriggerExcludingDays:  []int64{},
 		TimeTriggerExcludingHours: []int64{},
 
-		Responses: []string{"Edit this to change the output of the command!"},
+		Responses: []string{"{{/*Edit this to change the output of the command!*/}}"},
 	}
 
 	if groupID != 0 {
