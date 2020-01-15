@@ -14,12 +14,9 @@ import (
 	"github.com/jonas747/yagpdb/common/models"
 )
 
-const (
-	SessionCookieName = "yagpdb-session"
-)
-
 var (
-	OauthConf *oauth2.Config
+	SessionCookieName = "yagpdb-session"
+	OauthConf         *oauth2.Config
 )
 
 func InitOauth() {
