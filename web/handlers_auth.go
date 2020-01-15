@@ -14,16 +14,13 @@ import (
 	"github.com/jonas747/yagpdb/common/models"
 )
 
-const (
-	SessionCookieName = "yagpdb-session"
-)
-
 var (
-	oauthConf *oauth2.Config
+	SessionCookieName = "yagpdb-session"
+	OauthConf         *oauth2.Config
 )
 
 func InitOauth() {
-	oauthConf = &oauth2.Config{
+	OauthConf = &oauth2.Config{
 		ClientID:     common.ConfClientID.GetString(),
 		ClientSecret: common.ConfClientSecret.GetString(),
 		Scopes:       []string{"identify", "guilds"},
@@ -34,9 +31,9 @@ func InitOauth() {
 	}
 
 	if https || exthttps {
-		oauthConf.RedirectURL = "https://" + common.ConfHost.GetString() + "/confirm_login"
+		OauthConf.RedirectURL = "https://" + common.ConfHost.GetString() + "/confirm_login"
 	} else {
-		oauthConf.RedirectURL = "http://" + common.ConfHost.GetString() + "/confirm_login"
+		OauthConf.RedirectURL = "http://" + common.ConfHost.GetString() + "/confirm_login"
 	}
 }
 
@@ -53,7 +50,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
 	}
 
-	url := oauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
+	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -72,7 +69,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	token, err := oauthConf.Exchange(ctx, code)
+	token, err := OauthConf.Exchange(ctx, code)
 	if err != nil {
 		CtxLogger(ctx).WithError(err).Error("oauthConf.Exchange() failed")
 		http.Redirect(w, r, "/?error=oauth2failure", http.StatusTemporaryRedirect)
