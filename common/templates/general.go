@@ -50,7 +50,7 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	return SDict(dict), nil
 }
 
-func CreateSlice(values ...interface{}) ([]interface{}, error) {
+func CreateSlice(values ...interface{}) (Slice, error) {
 	slice := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {
 		slice[i] = values[i]
