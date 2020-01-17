@@ -192,32 +192,10 @@
                     {{end}}
                     <li class="nav-parent">
                         <a class="nav-link" href="#">
-                            <i class="fas fa-terminal" aria-hidden="true"></i>
+                            <i class="fas fa-cogs" aria-hidden="true"></i>
                             <span>Core</span>
                         </a>
                         <ul class="nav nav-children">
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/core">
-                                    Core settings
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true"
-                                    href="/manage/{{.ActiveGuild.ID}}/commands/settings">
-                                    Command settings
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true"
-                                    href="/manage/{{.ActiveGuild.ID}}/customcommands">
-                                    Custom commands
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/cplogs">
-                                    Control Panel Logs
-                                </a>
-                            </li>
                             {{range (index .SidebarItems "Core")}}
                              <li>
                                 <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
@@ -226,37 +204,15 @@
                                     <span>{{.Name}}</span>
                                 </a>
                             </li>
-                            {{end}}
+                            {{end}}                            
                         </ul>
                     </li>
                     <li class="nav-parent   ">
                         <a class="nav-link" href="#">
-                            <i class="fas fa-exclamation" aria-hidden="true"></i>
+                            <i class="fas fa-rss" aria-hidden="true"></i>
                             <span>Notifications & Feeds</span>
                         </a>
                         <ul class="nav nav-children">
-                            <li>
-                                <a class="nav-link" data-partial-load="true"
-                                    href="/manage/{{.ActiveGuild.ID}}/notifications/general">
-                                    General
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/reddit">
-                                    Reddit
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/youtube">
-                                    Youtube
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true"
-                                    href="/manage/{{.ActiveGuild.ID}}/streaming">
-                                    Streaming
-                                </a>
-                            </li>
                             {{range (index .SidebarItems "Feeds")}}
                              <li>
                                 <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
@@ -291,18 +247,6 @@
                             <span>Fun</span>
                         </a>
                         <ul class="nav nav-children">
-                            <li>
-                                <a class="nav-link" data-partial-load="true"
-                                    href="/manage/{{.ActiveGuild.ID}}/reputation">
-                                    Reputation
-                                </a>
-                            </li>
-                            <li>
-                                <a class="nav-link" data-partial-load="true"
-                                    href="/manage/{{.ActiveGuild.ID}}/soundboard/">
-                                    Soundboard
-                                </a>
-                            </li>
                             {{range (index .SidebarItems "Fun")}}
                              <li>
                                 <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
@@ -315,13 +259,13 @@
                         </ul>
                     </li>
                     {{end}}
-                    <li>
+                    <li class="mt-5">
                         <a class="nav-link" href="https://docs.yagpdb.xyz/" target="_blank">
                             <i class="fas fa-question" aria-hidden="true"></i>
                             <span>Documentation</span>
                         </a>
                     </li>
-                </ul>
+                </ul> 
             </nav>
         </div>
     </div>

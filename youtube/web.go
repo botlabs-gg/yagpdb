@@ -39,6 +39,11 @@ type Form struct {
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../youtube/assets/youtube.html", "templates/plugins/youtube.html")
+	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
+		Name: "Youtube",
+		URL:  "youtube",
+		Icon: "fab fa-youtube",
+	})
 
 	ytMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/youtube/*"), ytMux)

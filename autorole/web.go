@@ -43,6 +43,7 @@ func (p *Plugin) InitWeb() {
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Autorole",
 		URL:  "autorole",
+		Icon: "fas fa-user-plus",
 	})
 
 	muxer := goji.SubMux()

@@ -38,6 +38,11 @@ type GroupForm struct {
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../customcommands/assets/customcommands.html", "templates/plugins/customcommands.html")
 	web.LoadHTMLTemplate("../../customcommands/assets/customcommands-editcmd.html", "templates/plugins/customcommands-editcmd.html")
+	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
+		Name: "Custom commands",
+		URL:  "customcommands",
+		Icon: "fas fa-exclamation",
+	})
 
 	getHandler := web.ControllerHandler(handleCommands, "cp_custom_commands")
 	getCmdHandler := web.ControllerHandler(handleGetCommand, "cp_custom_commands_edit_cmd")

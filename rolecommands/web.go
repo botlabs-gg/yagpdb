@@ -51,6 +51,7 @@ func (p *Plugin) InitWeb() {
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Role Commands",
 		URL:  "rolecommands/",
+		Icon: "fas fa-tags",
 	})
 
 	// Setup SubMuxer

@@ -45,6 +45,11 @@ type UpdateForm struct {
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../reddit/assets/reddit.html", "templates/plugins/reddit.html")
+	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
+		Name: "Reddit",
+		URL:  "reddit",
+		Icon: "fab fa-reddit",
+	})
 
 	redditMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)

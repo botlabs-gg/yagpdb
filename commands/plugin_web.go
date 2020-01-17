@@ -48,6 +48,11 @@ type CommandOverrideForm struct {
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../commands/assets/commands.html", "templates/plugins/commands.html")
+	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
+		Name: "Command settings",
+		URL:  "commands/settings",
+		Icon: "fas fa-terminal",
+	})
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/commands/settings"), subMux)

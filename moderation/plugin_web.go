@@ -18,6 +18,7 @@ func (p *Plugin) InitWeb() {
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Moderation",
 		URL:  "moderation",
+		Icon: "fas fa-gavel",
 	})
 
 	subMux := goji.SubMux()
