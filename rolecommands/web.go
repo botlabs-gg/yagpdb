@@ -96,6 +96,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, getIndexpPostHandler, FormCommand{}, "Updated a role command"))
 	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, getIndexpPostHandler, nil, "Removed a role command"))
 	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HandleMoveCommand, getIndexpPostHandler, nil, "Moved a role command"))
+	subMux.Handle(pat.Post("/delete_rolecmds"), web.ControllerPostHandler(HandleDeleteRoleCommands, getIndexpPostHandler, nil, "Deleted all role commands in group"))
 
 	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, getIndexpPostHandler, FormGroup{}, "Added a new role command group"))
 	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, getIndexpPostHandler, FormGroup{}, "Updated a role command group"))
@@ -321,6 +322,25 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	}
 
 	return tmpl, err
+}
+
+func HandleDeleteRoleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	idParsed, _ := strconv.ParseInt(r.FormValue("group"), 10, 64)
+
+	var qmRoleGroupID qm.QueryMod
+	if idParsed == -1 {
+		qmRoleGroupID = qm.Where("role_group_id IS NULL")
+	} else {
+		qmRoleGroupID = qm.Where("role_group_id=?", idParsed)
+	}
+	_, err := models.RoleCommands(qm.Where("guild_id=?", g.ID), qmRoleGroupID).DeleteAll(r.Context(), common.PQ)
+	if err != nil {
+		return nil, err
+	}
+
+	return tmpl, nil
 }
 
 func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
