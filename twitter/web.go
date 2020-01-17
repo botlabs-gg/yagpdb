@@ -39,6 +39,7 @@ func (p *Plugin) InitWeb() {
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Twitter Feeds",
 		URL:  "twitter",
+		Icon: "fab fa-twitter",
 	})
 
 	mux := goji.SubMux()
