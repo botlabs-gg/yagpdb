@@ -339,6 +339,21 @@ $(function(){
         </div>    
     </div>
 </div>
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card card-featured card-featured-danger">
+            <header class="card-header">
+                <h2 class="card-title">Delete all {{len .Commands}} role commands</h2>
+            </header>
+            <div class="card-body">
+                <p>Completely deletes all role commands in this group from the server, <b>CANNOT BE UNDONE!!!</b></p>
+                <form data-async-form action="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds" method="post">
+                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds?group={{if .Group}}{{.Group.ID}}{{else}}-1{{end}}">Delete all roles from <b>{{if .Group}}{{.Group.Name}}{{else}}Ungrouped{{end}}</b>!</button>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
 {{end}}{{end}}
 
 {{define "rolecommands_groupopts"}}
