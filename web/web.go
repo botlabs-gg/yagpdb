@@ -406,11 +406,14 @@ const (
 	SidebarCategoryFeeds    = "Feeds"
 	SidebarCategoryTools    = "Tools"
 	SidebarCategoryFun      = "Fun"
+	SidebarCategoryCore     = "Core"
 )
 
 type SidebarItem struct {
 	Name string
 	URL  string
+	Icon string
+	New  bool
 }
 
 var sideBarItems = make(map[string][]*SidebarItem)
