@@ -50,6 +50,11 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../reputation/assets/reputation_settings.html", "templates/plugins/reputation_settings.html")
 	web.LoadHTMLTemplate("../../reputation/assets/reputation_leaderboard.html", "templates/plugins/reputation_leaderboard.html")
+	web.AddSidebarItem(web.SidebarCategoryFun, &web.SidebarItem{
+		Name: "Reputation",
+		URL:  "reputation",
+		Icon: "fas fa-angry",
+	})
 
 	subMux := goji.SubMux()
 

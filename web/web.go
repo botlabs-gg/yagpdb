@@ -331,6 +331,18 @@ func setupRoutes() *goji.Mux {
 		}
 	}
 
+	AddSidebarItem(SidebarCategoryCore, &SidebarItem{
+		Name: "Core",
+		URL:  "core",
+		Icon: "fas fa-cog",
+	})
+
+	AddSidebarItem(SidebarCategoryCore, &SidebarItem{
+		Name: "Control panel logs",
+		URL:  "cplogs",
+		Icon: "fas fa-cog",
+	})
+
 	for _, plugin := range common.Plugins {
 		if webPlugin, ok := plugin.(Plugin); ok {
 			webPlugin.InitWeb()
@@ -406,11 +418,14 @@ const (
 	SidebarCategoryFeeds    = "Feeds"
 	SidebarCategoryTools    = "Tools"
 	SidebarCategoryFun      = "Fun"
+	SidebarCategoryCore     = "Core"
 )
 
 type SidebarItem struct {
 	Name string
 	URL  string
+	Icon string
+	New  bool
 }
 
 var sideBarItems = make(map[string][]*SidebarItem)

@@ -13,6 +13,11 @@ import (
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../notifications/assets/notifications_general.html", "templates/plugins/notifications_general.html")
+	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
+		Name: "General",
+		URL:  "notifications/general",
+		Icon: "fas fa-bell",
+	})
 
 	getHandler := web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")
 	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifications config.")

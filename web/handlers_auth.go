@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jonas747/discordgo"
@@ -46,7 +47,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redir := r.FormValue("goto")
-	if redir != "" {
+	if redir != "" && strings.HasPrefix(redir, "/") {
 		common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
 	}
 

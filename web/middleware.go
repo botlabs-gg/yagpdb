@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
@@ -149,7 +150,7 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 		// Check if a session is present
 		session := DiscordSessionFromContext(r.Context())
 		if session == nil {
-			WriteErrorResponse(w, r, "No session or session expired", http.StatusUnauthorized)
+			http.Redirect(w, r, "/login?goto="+url.QueryEscape(r.RequestURI), http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -317,7 +318,13 @@ func RequireActiveServer(inner http.Handler) http.Handler {
 func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		if !ContextIsAdmin(r.Context()) {
-			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
+			if DiscordSessionFromContext(r.Context()) == nil {
+				// redirect them to log in and return here afterwards
+				http.Redirect(w, r, "/login?goto="+url.QueryEscape(r.RequestURI), http.StatusTemporaryRedirect)
+			} else {
+				// they didn't have access and were logged in
+				http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
+			}
 			return
 		}
 

@@ -39,6 +39,7 @@ func (p *Plugin) InitWeb() {
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Verification",
 		URL:  "verification",
+		Icon: "fas fa-address-card",
 	})
 
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_verification_settings")

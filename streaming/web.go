@@ -23,6 +23,11 @@ const (
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../streaming/assets/streaming.html", "templates/plugins/streaming.html")
+	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
+		Name: "Streaming",
+		URL:  "streaming",
+		Icon: "fas fa-video",
+	})
 
 	streamingMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/streaming/*"), streamingMux)

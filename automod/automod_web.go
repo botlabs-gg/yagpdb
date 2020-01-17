@@ -37,6 +37,7 @@ func (p *Plugin) InitWeb() {
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Automoderator v2",
 		URL:  "automod",
+		Icon: "fas fa-robot",
 	})
 
 	muxer := goji.SubMux()
