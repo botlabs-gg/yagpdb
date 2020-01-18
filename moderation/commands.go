@@ -145,7 +145,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), parsed.Switches["ddays"].Int())
+			err = BanUserWithDuration(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), parsed.Switches["ddays"].Int())
 			if err != nil {
 				return nil, err
 			}
@@ -175,7 +175,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = KickUser(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
+			err = KickUser(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target)
 			if err != nil {
 				return nil, err
 			}
@@ -217,7 +217,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
+			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, muteDuration)
 			if err != nil {
 				return nil, err
 			}
@@ -256,7 +256,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, false, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
+			err = MuteUnmuteUser(config, false, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -478,7 +478,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = WarnUser(config, parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author, target, parsed.Args[1].Str())
+			err = WarnUser(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, target, parsed.Args[1].Str())
 			if err != nil {
 				return nil, err
 			}
