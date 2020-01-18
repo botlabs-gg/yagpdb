@@ -287,12 +287,6 @@ func (kick *KickUserEffect) UserSettings() []*SettingDef {
 func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*KickUserEffectData)
 
-	var cID int64
-
-	if ctxData.CS != nil {
-		cID = ctxData.CS.ID
-	}
-
 	reason := "Automoderator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
@@ -300,7 +294,7 @@ func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.KickUser(nil, ctxData.GS.ID, cID, common.BotUser, reason, ctxData.MS.DGoUser())
+	err := moderation.KickUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser())
 	return err
 }
 
@@ -354,11 +348,6 @@ func (ban *BanUserEffect) UserSettings() []*SettingDef {
 func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*BanUserEffectData)
 
-	var cID int64
-	if ctxData.CS != nil {
-		cID = ctxData.CS.ID
-	}
-
 	reason := "Automoderator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
@@ -367,7 +356,7 @@ func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	}
 
 	duration := time.Duration(settingsCast.Duration) * time.Minute
-	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, cID, common.BotUser, reason, ctxData.MS.DGoUser(), duration, 1)
+	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser(), duration, 1)
 	return err
 }
 
@@ -423,11 +412,6 @@ func (mute *MuteUserEffect) Description() (description string) {
 func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*MuteUserEffectData)
 
-	var cID int64
-	if ctxData.CS != nil {
-		cID = ctxData.CS.ID
-	}
-
 	reason := "Automoderator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
@@ -435,7 +419,7 @@ func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.MuteUnmuteUser(nil, true, ctxData.GS.ID, cID, common.BotUser, reason, ctxData.MS, settingsCast.Duration)
+	err := moderation.MuteUnmuteUser(nil, true, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS, settingsCast.Duration)
 	return err
 }
 
@@ -482,11 +466,6 @@ func (warn *WarnUserEffect) Description() (description string) {
 func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*WarnUserEffectData)
 
-	var cID int64
-	if ctxData.CS != nil {
-		cID = ctxData.CS.ID
-	}
-
 	reason := "Automoderator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
@@ -494,7 +473,7 @@ func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.WarnUser(nil, ctxData.GS.ID, cID, common.BotUser, ctxData.MS.DGoUser(), reason)
+	err := moderation.WarnUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, ctxData.MS.DGoUser(), reason)
 	return err
 }
 
