@@ -140,6 +140,10 @@ func RetrieveChartDataPeriods(ctx context.Context, guildID int64, t time.Time, d
 	WHERE t > $2 AND guild_id = $1 and t < $3
 	ORDER BY t DESC;`
 
+	if days <= 0 {
+		days = 1000
+	}
+
 	rows, err := common.PQ.QueryContext(ctx, q, guildID, t.Add(time.Hour*-24*time.Duration(days+1)), t.Truncate(time.Hour*24))
 	if err != nil {
 		return nil, errors.WithStackIf(err)
