@@ -24,6 +24,7 @@ import (
 )
 
 var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
+var WebConfigCache = rcache.NewInt(cacheConfigFetcher, time.Minute)
 
 type FormData struct {
 	Public         bool
@@ -125,6 +126,8 @@ OUTER:
 		go pubsub.Publish("server_stats_invalidate_cache", ag.ID, nil)
 	}
 
+	WebConfigCache.Delete(int(ag.ID))
+
 	return templateData, err
 }
 
@@ -141,9 +144,8 @@ func publicHandlerJson(inner publicHandlerFuncJson, public bool) web.CustomHandl
 func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
 	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
-	conf, err := GetConfig(r.Context(), activeGuild.ID)
-	if err != nil {
-		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats config")
+	conf := GetConfigWeb(activeGuild.ID)
+	if conf == nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}
@@ -180,9 +182,8 @@ type ChartResponse struct {
 func HandleStatsCharts(w http.ResponseWriter, r *http.Request, isPublicAccess bool) interface{} {
 	activeGuild, _ := web.GetBaseCPContextData(r.Context())
 
-	conf, err := GetConfig(r.Context(), activeGuild.ID)
-	if err != nil {
-		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats config")
+	conf := GetConfigWeb(activeGuild.ID)
+	if conf == nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}
@@ -269,6 +270,25 @@ func cacheChartFetcher(key string) interface{} {
 		Days: days,
 		Data: periods,
 	}
+}
+
+func GetConfigWeb(guildID int64) *ServerStatsConfig {
+	config := WebConfigCache.Get(int(guildID))
+	if config == nil {
+		return nil
+	}
+
+	return config.(*ServerStatsConfig)
+}
+
+func cacheConfigFetcher(key int) interface{} {
+	config, err := GetConfig(context.Background(), int64(key))
+	if err != nil {
+		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving stats config")
+		return nil
+	}
+
+	return config
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
