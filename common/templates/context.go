@@ -57,6 +57,7 @@ var (
 		"sdict":  StringKeyDictionary,
 		"cembed": CreateEmbed,
 		"cslice": CreateSlice,
+		"cmessage": CreateMessage,
 
 		"formatTime":  tmplFormatTime,
 		"json":        tmplJson,
