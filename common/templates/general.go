@@ -1,7 +1,9 @@
 package templates
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"math"
 	"math/rand"
 	"reflect"
@@ -33,19 +35,38 @@ func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
 }
 
 func StringKeyDictionary(values ...interface{}) (SDict, error) {
+	
 	if len(values) == 1 {
-		switch t := values[0].(type) {
-		case SDict:
-			return t, nil
-		case map[string]interface{}:
-			mapCopy := make(map[string]interface{})
-			for key, value := range t {
-				mapCopy[key] = value
-			}
-			return SDict(mapCopy), nil		
-		default:
-			return nil, errors.New("invalid dict call")		
-		}	
+		val, isNil := indirect(reflect.ValueOf(values[0]))
+		if isNil || values[0] == nil {
+			return nil, errors.New("Sdict: nil value passed")
+		} 		
+
+		if val.Type().String() == "templates.SDict" {	
+			return val.Interface().(SDict), nil
+		}
+		
+		switch val.Kind() {		
+			case reflect.Map:
+				iter := val.MapRange()
+				mapCopy := make(map[string]interface{})
+				for iter.Next() {
+					
+					key, isNil := indirect(iter.Key())
+					if isNil {
+						return nil, errors.New("map with nil key encountered")
+					}
+					if key.Kind() == reflect.String {
+						mapCopy[key.String()] = iter.Value().Interface()
+					} else {
+						return nil, errors.New("map has non string key of type: " + key.Type().String())
+					}
+				}
+				return SDict(mapCopy), nil
+			default:
+				return nil, errors.New("cannot convert data of type: " + reflect.TypeOf(values[0]).String())		
+		}
+		
 	}
 	
 	if len(values)%2 != 0 {
@@ -85,6 +106,8 @@ func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 		m = t
 	case map[string]interface{}:
 		m = t
+	case *discordgo.MessageEmbed:
+	        return t, nil
 	default:
 		dict, err := StringKeyDictionary(values...)
 		if err != nil {
@@ -105,6 +128,58 @@ func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 	}
 
 	return embed, nil
+}
+
+func CreateMessage(values ...interface{}) (*discordgo.MessageSend, error) {
+	if len(values) < 1 {
+		return &discordgo.MessageSend{}, nil
+	}
+	
+	if m, ok := values[0].(*discordgo.MessageSend); len(values) == 1 && ok {
+		return m, nil
+	}
+	
+	messageSdict, err := StringKeyDictionary(values...)
+	if err != nil {
+		return nil, err
+	}
+	
+	msg := &discordgo.MessageSend{}
+	
+	for key, val := range messageSdict {
+	
+		switch key {
+			case "content":
+				msg.Content = fmt.Sprint(val)
+			case "embed":
+				if val == nil { 
+					continue
+				}
+				embed, err := CreateEmbed(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Embed = embed
+			case "file":
+				stringFile := fmt.Sprint(val) 
+				if len(stringFile) > 100000 {
+					return nil, errors.New("file length for send message builder exceeded size limit")
+				}
+				var buf bytes.Buffer
+				buf.WriteString(stringFile)
+				
+				msg.File = &discordgo.File {
+						Name: "Attachment.txt",
+						ContentType: "text/plain",
+						Reader: &buf,
+				}
+			default:
+				return nil, errors.New(`invalid key "` + key + `" passed to message builder`)
+		}
+
+	}
+			
+	return msg, nil
 }
 
 // indirect is taken from 'text/template/exec.go'
