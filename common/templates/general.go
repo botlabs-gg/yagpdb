@@ -301,7 +301,7 @@ func tmplDiv(args ...interface{}) interface{} {
 
 func tmplMod(args ...interface{}) interface{} {
 	if len(args) != 2 {
-		return 0
+		return "Requires two arguments"
 	}
 
 	return math.Mod(ToFloat64(args[0]), ToFloat64(args[1]))
@@ -331,6 +331,24 @@ func tmplSqrt(arg interface{}) float64 {
 	default:
 		return math.Sqrt(-1)
 	}
+}
+
+func tmplPow(argX, argY interface{}) float64 {
+	var xyValue float64
+	var xySlice []float64
+
+	switchSlice := []interface{}{argX, argY}
+
+	for _, v := range switchSlice {
+		switch v.(type) {
+		case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+			xyValue = ToFloat64(v)
+		default:
+			xyValue = math.NaN()
+		}
+		xySlice = append(xySlice, xyValue)
+	}
+	return math.Pow(xySlice[0], xySlice[1])
 }
 
 func roleIsAbove(a, b *discordgo.Role) bool {
