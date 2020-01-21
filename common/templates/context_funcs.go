@@ -114,7 +114,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		var m *discordgo.Message
-		var msgSend *discordgo.MessageSend
+		msgSend := &discordgo.MessageSend{}
 		var err error
 
 		switch typedMsg := msg.(type) {
