@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"emperror.dev/errors"
@@ -354,61 +353,6 @@ func ErrWithCaller(err error) error {
 
 	f := runtime.FuncForPC(pc)
 	return errors.WithMessage(err, filepath.Base(f.Name()))
-}
-
-const zeroWidthSpace = "​"
-
-var (
-	everyoneReplacer    = strings.NewReplacer("@everyone", "@"+zeroWidthSpace+"everyone")
-	hereReplacer        = strings.NewReplacer("@here", "@"+zeroWidthSpace+"here")
-	patternRoleMentions = regexp.MustCompile("<@&[0-9]*>")
-)
-
-// EscapeSpecialMentions Escapes an everyone mention, adding a zero width space between the '@' and rest
-func EscapeSpecialMentions(in string) string {
-	return EscapeSpecialMentionsConditional(in, false, false, nil)
-}
-
-// EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
-func EscapeEveryoneHere(s string, escapeEveryone, escapeHere bool) string {
-	if escapeEveryone {
-		s = everyoneReplacer.Replace(s)
-	}
-
-	if escapeHere {
-		s = hereReplacer.Replace(s)
-	}
-
-	return s
-}
-
-// EscapeSpecialMentionsConditional Escapes an everyone mention, adding a zero width space between the '@' and rest
-func EscapeSpecialMentionsConditional(s string, allowEveryone, allowHere bool, allowRoles []int64) string {
-	if !allowEveryone {
-		s = everyoneReplacer.Replace(s)
-	}
-
-	if !allowHere {
-		s = hereReplacer.Replace(s)
-	}
-
-	s = patternRoleMentions.ReplaceAllStringFunc(s, func(x string) string {
-		if len(x) < 4 {
-			return x
-		}
-
-		id := x[3 : len(x)-1]
-		parsed, _ := strconv.ParseInt(id, 10, 64)
-		if ContainsInt64Slice(allowRoles, parsed) {
-			// This role is allowed to be mentioned
-			return x
-		}
-
-		// Not allowed
-		return x[:2] + zeroWidthSpace + x[2:]
-	})
-
-	return s
 }
 
 func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
