@@ -42,8 +42,8 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 			return nil, errors.New("Sdict: nil value passed")
 		} 		
 
-		if val.Type().String() == "templates.SDict" {	
-			return val.Interface().(SDict), nil
+		if sdict, ok := val.(SDict); ok {	
+			return sdict, nil
 		}
 		
 		switch val.Kind() {		
@@ -130,7 +130,7 @@ func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
 	return embed, nil
 }
 
-func CreateMessage(values ...interface{}) (*discordgo.MessageSend, error) {
+func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 	if len(values) < 1 {
 		return &discordgo.MessageSend{}, nil
 	}
