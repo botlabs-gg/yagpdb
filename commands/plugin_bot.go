@@ -3,9 +3,11 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
@@ -232,6 +234,9 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 
 	// Send the targetted help in the channel it was requested in
 	resp = dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
+	for _, v := range resp {
+		ensureEmbedLimits(v)
+	}
 
 	if target != "" {
 		if len(resp) != 1 {
@@ -257,6 +262,33 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	}
 
 	return "You've got mail!", nil
+}
+
+func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
+	if utf8.RuneCountInString(embed.Description) < 2000 {
+		return
+	}
+
+	lines := strings.Split(embed.Description, "\n")
+
+	firstField := &discordgo.MessageEmbedField{
+		Name: "Commands",
+	}
+
+	currentField := firstField
+	for _, v := range lines {
+		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 2000 {
+			currentField = &discordgo.MessageEmbedField{
+				Name:  "...",
+				Value: v + "\n",
+			}
+			embed.Fields = append(embed.Fields, currentField)
+		} else {
+			currentField.Value += v + "\n"
+		}
+	}
+
+	embed.Description = firstField.Value
 }
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
