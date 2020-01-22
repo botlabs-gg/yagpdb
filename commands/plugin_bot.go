@@ -261,6 +261,10 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
+	if data.Source == dcmd.DMSource {
+		return nil, nil
+	}
+
 	return "You've got mail!", nil
 }
 
