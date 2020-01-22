@@ -648,7 +648,10 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	}
 
 	mID := targetUserID(target)
-
+	if mID == 0 {
+		return nil, nil
+	}
+	
 	member, _ := bot.GetMember(c.GS.ID, mID)
 	if member == nil {
 		return nil, nil
