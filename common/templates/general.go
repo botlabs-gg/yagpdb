@@ -42,7 +42,7 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 			return nil, errors.New("Sdict: nil value passed")
 		} 		
 
-		if sdict, ok := val.(SDict); ok {	
+		if sdict, ok := val.Interface().(SDict); ok {	
 			return sdict, nil
 		}
 		
