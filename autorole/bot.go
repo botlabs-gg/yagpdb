@@ -29,7 +29,7 @@ func (p *Plugin) AddCommands() {
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, OnMemberJoin, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
+	// eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildChunk, eventsystem.EventGuildMembersChunk)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
@@ -66,33 +66,33 @@ func HandleUpdateAutoroles(event *pubsub.Event) {
 
 // HandlePresenceUpdate makes sure the member with joined_at is available for the relevant guilds
 // TODO: Figure out a solution that scales better
-func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
-	p := evt.PresenceUpdate()
-	if p.Status == discordgo.StatusOffline {
-		return
-	}
+// func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
+// 	p := evt.PresenceUpdate()
+// 	if p.Status == discordgo.StatusOffline {
+// 		return
+// 	}
 
-	gs := evt.GS
+// 	gs := evt.GS
 
-	gs.RLock()
-	m := gs.Member(false, p.User.ID)
-	if m != nil && m.MemberSet {
-		gs.RUnlock()
-		return false, nil
-	}
-	gs.RUnlock()
+// 	gs.RLock()
+// 	m := gs.Member(false, p.User.ID)
+// 	if m != nil && m.MemberSet {
+// 		gs.RUnlock()
+// 		return false, nil
+// 	}
+// 	gs.RUnlock()
 
-	config, err := GuildCacheGetGeneralConfig(gs)
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
+// 	config, err := GuildCacheGetGeneralConfig(gs)
+// 	if err != nil {
+// 		return true, errors.WithStackIf(err)
+// 	}
 
-	if !config.OnlyOnJoin && config.Role != 0 {
-		go bot.GetMember(gs.ID, p.User.ID)
-	}
+// 	if !config.OnlyOnJoin && config.Role != 0 {
+// 		go bot.GetMember(gs.ID, p.User.ID)
+// 	}
 
-	return false, nil
-}
+// 	return false, nil
+// }
 
 var (
 	processingGuilds = make(map[int64]chan bool)
