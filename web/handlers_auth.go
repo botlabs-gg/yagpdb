@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/oauth2"
+	"golang.org/x/oauth2"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/models"
