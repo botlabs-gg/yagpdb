@@ -34,7 +34,7 @@ require (
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
 	github.com/jonas747/discordgo v1.1.9
 	github.com/jonas747/dshardorchestrator v0.1.0
-	github.com/jonas747/dstate v1.0.4
+	github.com/jonas747/dstate v1.0.5
 	github.com/jonas747/dutil v0.0.2
 	github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846
 	github.com/jonas747/jdshardmanager v1.0.1
@@ -54,7 +54,7 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/olebedev/when v0.0.0-20190311101825-c3b538a97254
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/russross/blackfriday v1.5.2
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
@@ -73,11 +73,11 @@ require (
 	github.com/volatiletech/sqlboiler v3.5.0+incompatible
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
+	golang.org/x/crypto v0.0.0-20200117160349-530e935923ad
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sys v0.0.0-20191228213918-04cbcbbfeed8 // indirect
+	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 // indirect
 	google.golang.org/api v0.3.1

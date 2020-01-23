@@ -448,3 +448,14 @@ func CheckDiscordErrRetry(err error) bool {
 	// an unknown error unrelated to the discord api occured (503's for example) attempt a retry
 	return true
 }
+
+func IsNormalUserMessage(msg *discordgo.Message) bool {
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 || msg.Author.Discriminator == "0000" {
+		// message edits can have a nil author, those are embed edits
+		// check against a discrim of 0000 to avoid some cases on webhook messages where webhook_id is 0, even tough its a webhook
+		// discrim is in those 0000 which is a invalid user discrim. (atleast when i was testing)
+		return false
+	}
+
+	return true
+}

@@ -91,10 +91,10 @@
                                 </div>
                                 <div class="form-group">
                                     <button type="submit"
-                                        title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}}"
+                                        title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}} &#013;Deleted grpup's commands become ungrouped."
                                         class="btn btn-danger"
                                         formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete
-                                        group (commands become ungrouped)</button>
+                                        group</button>
                                 </div>
                             </div>
                         </div>
@@ -112,29 +112,27 @@
     </div>
 </div>
 
-<div class="row">
-
+<div class="accordion accordion-primary" id="accordion" role="tablist">
     {{$guild := .ActiveGuild.ID}}
     {{$g := .ActiveGuild}}
     {{$dot := .}}
     {{range .CustomCommands}}
-    <div class="col-12">
-        <section class="card {{if .Disabled}}card-featured card-featured-danger{{end}}">
-            <header class="card-header">
-                <h2 class="card-title">
-                    <a href="/manage/{{$g.ID}}/customcommands/commands/{{.LocalID}}/" class="">
-                        #{{.LocalID}} -
-                        {{index $dot.CCTriggerTypes .TriggerType}}{{if and (ne .TriggerType 5) (ne .TriggerType 6)}}:
-                        <span class="cc-text-trigger-span">{{.TextTrigger}}</span>
-
-                        {{else if ne .TriggerType 6}}: Every
-                        {{call $dot.GetCCInterval .}}
-                        {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s){{else}}minute(s){{end}}, next: in
-                        {{humanizeDurationMinutes (.NextRun.Time.UTC.Sub currentTime)}}{{end}}
-                        <small><i class="fas fa-edit"></i></small>
-                    </a>
-                </h2>
-            </header>
+    <div class="card">
+        <div class="card-header clearfix">
+            <form class="form-horizontal" method="post" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
+                <div class="pull-right">
+                    <button type="button" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-success" onclick="window.location.href = '/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/';" style="margin: 5px 5px 5px 0px!important">Edit</button>
+                    <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete" style="margin: 5px 5px 5px 0px!important">Delete</button>
+                </div>
+            </form>
+            <h2 class="card-title">
+                <a style="padding:15px 20px 10px 20px!important" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}">
+                    #{{.LocalID}} - {{index $dot.CCTriggerTypes .TriggerType}}{{if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}: <span class="cc-text-trigger-span">{{.TextTrigger}}</span>{{else if (ne .TriggerType 10) (ne .TriggerType 6)}}: <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
+                </a>
+            </h2>
+        </div>
+        <div id="collapse_cmd{{.LocalID}}" class="collapse">
+            <input type="text" class="hidden form-control" name="id" value="{{.LocalID}}">
             <div class="card-body p-0 cc-panel">
                 {{range .Responses}}
                 <pre class="m-0"><div class="code gotmplmd">{{.}}</div></pre>
@@ -142,16 +140,10 @@
                 <p>No responses</p>
                 {{end}}
             </div>
-            <!-- <div class="card-footer">
-                <a href="/manage/{{$g.ID}}/customcommands/edit/{{.LocalID}}" class="">
-                    Edit <i class="fas fa-edit"></i></a>
-                </div> -->
-        </section>
+        </div>
     </div>
     {{end}}
-
 </div>
-
 
 <script src="/static/vendor/highlightjs/highlight.pack.js"></script>
 <script src="/static/vendor/highlightjs/line-numbers.js"></script>

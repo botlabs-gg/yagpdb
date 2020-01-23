@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -65,13 +66,12 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 }
 
 func CheckMessage(m *discordgo.Message) bool {
-
-	if m.Author == nil || m.Author.ID == common.BotUser.ID {
-		return false // Pls no panicerinos or banerinos self
+	if !bot.IsNormalUserMessage(m) {
+		return false
 	}
 
-	if m.Author.Bot || m.GuildID == 0 {
-		return false
+	if m.Author.ID == common.BotUser.ID || m.Author.Bot || m.GuildID == 0 {
+		return false // Pls no panicerinos or banerinos self
 	}
 
 	cs := bot.State.Channel(true, m.ChannelID)
@@ -94,11 +94,7 @@ func CheckMessage(m *discordgo.Message) bool {
 		return false
 	}
 
-	member, err := bot.GetMember(cs.Guild.ID, m.Author.ID)
-	if err != nil {
-		logger.WithError(err).WithField("guild", cs.Guild.ID).Warn("Member not found in state, automod ignoring")
-		return false
-	}
+	member := dstate.MSFromDGoMember(cs.Guild, m.Member)
 
 	locked := true
 	cs.Owner.RLock()

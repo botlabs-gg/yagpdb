@@ -246,6 +246,7 @@ func setupState() {
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
 	State.CacheExpirey = time.Minute * 10
+	State.RemoveOfflineMembers = true
 	go State.RunGCWorker()
 
 	eventsystem.DiscordState = State
@@ -259,15 +260,18 @@ func setupState() {
 		for {
 			<-ticker.C
 
-			hits, misses := State.CacheStats()
-			deltaHits := hits - lastHits
-			deltaMisses := misses - lastMisses
-			lastHits = hits
-			lastMisses = misses
+			stats := State.StateStats()
+			deltaHits := stats.CacheHits - lastHits
+			deltaMisses := stats.CacheMisses - lastMisses
+			lastHits = stats.CacheHits
+			lastMisses = stats.CacheMisses
 
 			if common.Statsd != nil {
 				common.Statsd.Count("yagpdb.state.cache_hits", deltaHits, nil, 1)
 				common.Statsd.Count("yagpdb.state.cache_misses", deltaMisses, nil, 1)
+
+				common.Statsd.Count("yagpdb.state.last_members_evicted", stats.MembersRemovedLastGC, nil, 1)
+				common.Statsd.Count("yagpdb.state.last_cache_evicted", stats.CacheMisses, nil, 1)
 			}
 
 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)

@@ -306,7 +306,7 @@ func (p *Plugin) AddCommands() {
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "mina", Name: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			&dcmd.ArgDef{Switch: "minage", Name: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "num", Name: "Max Violations Cleared", Default: 0, Type: dcmd.Int},
 			&dcmd.ArgDef{Switch: "old", Name: "Preferentially Clear Older Violations"},
 			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Default: 0, Type: dcmd.Int},		
@@ -320,7 +320,7 @@ func (p *Plugin) AddCommands() {
 
 			//Check Flags
 			maxAge := parsed.Switches["ma"].Value.(time.Duration)
-			minAge := parsed.Switches["mina"].Value.(time.Duration)
+			minAge := parsed.Switches["minage"].Value.(time.Duration)
 			skip := parsed.Switches["skip"].Int()
 			if skip < 0 {
 				skip = 0
