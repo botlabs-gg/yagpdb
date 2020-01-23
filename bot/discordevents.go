@@ -17,6 +17,7 @@ import (
 
 func addBotHandlers() {
 	eventsystem.AddHandlerFirstLegacy(BotPlugin, HandleReady, eventsystem.EventReady)
+	eventsystem.AddHandlerFirstLegacy(BotPlugin, HandleMessageCreateUpdateFirst, eventsystem.EventMessageCreate, eventsystem.EventMessageUpdate)
 	eventsystem.AddHandlerSecondLegacy(BotPlugin, StateHandler, eventsystem.EventAll)
 
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, EventLogger.handleEvent, eventsystem.EventAll)
@@ -279,6 +280,29 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	err := pubsub.Publish("dm_message", -1, mc)
 	if err != nil {
 		logger.WithError(err).Error("failed publishing dm message")
+	}
+}
+
+// HandleMessageCreateUpdateFirst transforms the message events a little to make them easier to deal with
+// Message.Member.User is null from the api, so we assign it to Message.Author
+func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
+	if evt.Type == eventsystem.EventMessageCreate {
+		msg := evt.MessageCreate()
+		if !IsNormalUserMessage(msg.Message) {
+			return
+		}
+
+		if msg.Member != nil {
+			msg.Member.User = msg.Author
+		}
+
+	} else {
+		edit := evt.MessageUpdate()
+		if !IsNormalUserMessage(edit.Message) {
+			return
+		}
+
+		edit.Member.User = edit.Author
 	}
 }
 
