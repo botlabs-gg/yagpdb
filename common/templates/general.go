@@ -299,9 +299,9 @@ func tmplDiv(args ...interface{}) interface{} {
 	}
 }
 
-func tmplMod(args ...interface{}) interface{} {
+func tmplMod(args ...interface{}) float64 {
 	if len(args) != 2 {
-		return 0
+		return math.NaN()
 	}
 
 	return math.Mod(ToFloat64(args[0]), ToFloat64(args[1]))
