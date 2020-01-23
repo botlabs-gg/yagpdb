@@ -21,6 +21,7 @@ var (
 	failedUsersCache = ccache.New(ccache.Configure())
 )
 
+// GetMember will either return a member from state or fetch one from the member fetcher and then put it in state
 func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 	gs := State.Guild(true, guildID)
 	if gs == nil {
@@ -32,10 +33,11 @@ func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 		return cop, nil
 	}
 
-	result := <-MemberFetcher.RequestMember(guildID, userID)
+	result := <-MemberFetcher.RequestMember(guildID, userID, false)
 	return result.Member, result.Err
 }
 
+// GetMembers is the same as GetMember but with multiple members
 func GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberState, error) {
 	resultChan := make(chan *dstate.MemberState)
 	for _, v := range userIDs {
@@ -54,6 +56,22 @@ func GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberState, error) 
 	}
 
 	return result, nil
+}
+
+// GetMemberJoinedAt is the same as GetMember but it ensures the JoinedAt field is present
+func GetMemberJoinedAt(guildID, userID int64) (*dstate.MemberState, error) {
+	gs := State.Guild(true, guildID)
+	if gs == nil {
+		return nil, ErrGuildNotFound
+	}
+
+	cop := gs.MemberCopy(true, userID)
+	if cop != nil && cop.MemberSet && !cop.JoinedAt.IsZero() {
+		return cop, nil
+	}
+
+	result := <-MemberFetcher.RequestMember(guildID, userID, true)
+	return result.Member, result.Err
 }
 
 // memberFetcher handles a per guild queue for fetching members
@@ -78,6 +96,7 @@ type MemberFetchGuildQueue struct {
 type MemberFetchRequest struct {
 	Member          int64
 	Guild           int64
+	NeedJoinedAt    bool
 	WaitingChannels []chan MemberFetchResult
 }
 
@@ -94,7 +113,7 @@ type MemberFetchResult struct {
 	Member *dstate.MemberState
 }
 
-func (m *memberFetcher) RequestMember(guildID, userID int64) <-chan MemberFetchResult {
+func (m *memberFetcher) RequestMember(guildID, userID int64, requireJoinedAt bool) <-chan MemberFetchResult {
 	m.Lock()
 
 	var req *MemberFetchRequest
@@ -109,7 +128,7 @@ func (m *memberFetcher) RequestMember(guildID, userID int64) <-chan MemberFetchR
 	if ok {
 		// The guild's queue already exist
 		for _, elem := range q.Queue {
-			if elem.Member == userID {
+			if elem.Member == userID && (!requireJoinedAt || elem.NeedJoinedAt) {
 				// The member is already queued up
 				req = elem
 				break
@@ -120,8 +139,9 @@ func (m *memberFetcher) RequestMember(guildID, userID int64) <-chan MemberFetchR
 	// Request is nil, member was not already requests before
 	if req == nil {
 		req = &MemberFetchRequest{
-			Member: userID,
-			Guild:  guildID,
+			Member:       userID,
+			Guild:        guildID,
+			NeedJoinedAt: requireJoinedAt,
 		}
 
 		if q == nil {
@@ -192,7 +212,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 	logger.WithField("guild", guildID).WithField("user", elem.Member).Debug("Requesting guild member")
 
 	if gs := State.Guild(true, guildID); gs != nil {
-		if member := gs.MemberCopy(true, elem.Member); member != nil && member.MemberSet {
+		if member := gs.MemberCopy(true, elem.Member); member != nil && member.MemberSet && (!elem.NeedJoinedAt || !member.JoinedAt.IsZero()) {
 			// Member is already in state, no need to request it
 			m.Lock()
 

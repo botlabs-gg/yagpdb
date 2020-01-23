@@ -406,7 +406,16 @@ func (mc *MemberAgecondition) UserSettings() []*SettingDef {
 func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	settingsCast := settings.(*MemberAgeConditionData)
 
-	minutes := int(time.Since(data.MS.JoinedAt).Minutes())
+	joinedAt := data.MS.JoinedAt
+	if joinedAt.IsZero() {
+		newMS, err := bot.GetMemberJoinedAt(data.GS.ID, data.MS.ID)
+		if err != nil {
+			return false, err
+		}
+		joinedAt = newMS.JoinedAt
+	}
+
+	minutes := int(time.Since(joinedAt).Minutes())
 
 	if minutes <= settingsCast.Treshold {
 		// joined within threshold
