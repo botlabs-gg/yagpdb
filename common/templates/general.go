@@ -301,7 +301,7 @@ func tmplDiv(args ...interface{}) interface{} {
 
 func tmplMod(args ...interface{}) interface{} {
 	if len(args) != 2 {
-		return "Requires two arguments"
+		return 0
 	}
 
 	return math.Mod(ToFloat64(args[0]), ToFloat64(args[1]))
