@@ -43,6 +43,8 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 		g.RUnlock()
 	}
 
+	stats := bot.State.StateStats()
+
 	embed := &discordgo.MessageEmbed{
 		Title: "State size",
 		Fields: []*discordgo.MessageEmbedField{
@@ -51,6 +53,9 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 			&discordgo.MessageEmbedField{Name: "Messages", Value: fmt.Sprintf("%d", totalMessages), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Guild Channels", Value: fmt.Sprintf("%d", guildChannel), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Total Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Cache Hits/Misses", Value: fmt.Sprintf("%d - %d", stats.CacheHits, stats.CacheMisses), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Last GC Members Evicted", Value: fmt.Sprintf("%d", stats.MembersRemovedLastGC), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Last GC Cache Evicted", Value: fmt.Sprintf("%d", stats.UserCachceEvictedLastGC), Inline: true},
 		},
 	}
 
