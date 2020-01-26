@@ -518,3 +518,25 @@ func (s Slice) AppendSlice (slice interface{}) (interface{}, error) {
 
 		return result.Interface(), nil
 }
+
+func (s Slice) StringSlice (flag ...bool) interface{} {
+	strict := false
+	if len(flag) > 0 {
+		strict = flag[0]
+	}
+
+	StringSlice := make([]string, 0, len(s))
+	
+	for _, Sliceval := range s {
+		switch t := Sliceval.(type) {
+			case string :
+				StringSlice = append(StringSlice, t)
+			default:
+				if strict {
+					return nil
+				}
+		}	
+	}
+
+	return StringSlice
+}
