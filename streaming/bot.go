@@ -207,24 +207,80 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 		return true, errors.WithStackIf(err)
 	}
 
-	if !config.Enabled {
+	if !config.Enabled || (config.GiveRole == 0 && (config.AnnounceMessage == "" || gs.Channel(true, config.AnnounceChannel) == nil)) {
+		// Don't bother trying to send anything, its not "fully" enabled
 		return
 	}
 
-	ms, err := bot.GetMember(p.GuildID, p.User.ID)
-	if ms == nil || err != nil {
-		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
-	}
-
-	gs.RLock()
-	defer gs.RUnlock()
-
-	err = CheckPresence(common.RedisPool, config, ms, gs)
+	err = CheckPresenceSparse(common.RedisPool, config, &p.Presence, gs)
 	if err != nil {
 		return bot.CheckDiscordErrRetry(err), errors.WrapIff(err, "failed checking presence for %d", p.User.ID)
 	}
 
 	return false, nil
+}
+
+func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Presence, gs *dstate.GuildState) error {
+	if !config.Enabled {
+		// RemoveStreaming(client, config, gs.ID, p.User.ID, member)
+		return nil
+	}
+
+	mainActivity := retrieveMainActivity(p)
+
+	// Now the real fun starts
+	// Either add or remove the stream
+	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 {
+
+		// Streaming
+
+		if !config.MeetsRequirements(p.Roles, mainActivity.State, mainActivity.Details) {
+			RemoveStreaming(client, config, gs.ID, p.User.ID, p.Roles)
+			return nil
+		}
+
+		if config.GiveRole != 0 {
+			go GiveStreamingRole(gs.ID, p.User.ID, config.GiveRole, p.Roles)
+		}
+
+		// if true, then we were marked now, and not before
+		var markedNow bool
+		client.Do(retryableredis.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), p.User.ID))
+		if !markedNow {
+			// Already marked
+			return nil
+		}
+
+		// Send the streaming announcement if enabled
+		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
+			ms, err := bot.GetMember(gs.ID, p.User.ID)
+			if err != nil {
+				return errors.WithStackIf(err)
+			}
+
+			SendStreamingAnnouncement(config, gs, ms)
+		}
+
+	} else {
+		// Not streaming
+		RemoveStreaming(client, config, gs.ID, p.User.ID, p.Roles)
+	}
+
+	return nil
+}
+
+func retrieveMainActivity(p *discordgo.Presence) *discordgo.Game {
+	for _, v := range p.Activities {
+		if v.Type == discordgo.GameTypeStreaming {
+			return v
+		}
+	}
+
+	if len(p.Activities) > 0 {
+		return p.Activities[0]
+	}
+
+	return nil
 }
 
 func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, gs *dstate.GuildState) error {
@@ -238,13 +294,13 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 	if ms.PresenceStatus != dstate.StatusOffline && ms.PresenceGame != nil && ms.PresenceGame.URL != "" && ms.PresenceGame.Type == 1 {
 		// Streaming
 
-		if !config.MeetsRequirements(ms) {
-			RemoveStreaming(client, config, gs.ID, ms)
+		if !config.MeetsRequirements(ms.Roles, ms.PresenceGame.State, ms.PresenceGame.Details) {
+			RemoveStreaming(client, config, gs.ID, ms.ID, ms.Roles)
 			return nil
 		}
 
 		if config.GiveRole != 0 {
-			go GiveStreamingRole(ms, config.GiveRole, gs.Guild)
+			go GiveStreamingRole(gs.Guild.ID, ms.ID, config.GiveRole, ms.Roles)
 		}
 
 		// if true, then we were marked now, and not before
@@ -262,16 +318,16 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 	} else {
 		// Not streaming
-		RemoveStreaming(client, config, gs.ID, ms)
+		RemoveStreaming(client, config, gs.ID, ms.ID, ms.Roles)
 	}
 
 	return nil
 }
 
-func (config *Config) MeetsRequirements(ms *dstate.MemberState) bool {
+func (config *Config) MeetsRequirements(roles []int64, activityState, activityDetails string) bool {
 	// Check if they have the required role
 	if config.RequireRole != 0 {
-		if !common.ContainsInt64Slice(ms.Roles, config.RequireRole) {
+		if !common.ContainsInt64Slice(roles, config.RequireRole) {
 			// Dosen't have required role
 			return false
 		}
@@ -279,14 +335,14 @@ func (config *Config) MeetsRequirements(ms *dstate.MemberState) bool {
 
 	// Check if they have a ignored role
 	if config.IgnoreRole != 0 {
-		if common.ContainsInt64Slice(ms.Roles, config.IgnoreRole) {
+		if common.ContainsInt64Slice(roles, config.IgnoreRole) {
 			// We ignore people with this role.. :'(
 			return false
 		}
 	}
 
 	if strings.TrimSpace(config.GameRegex) != "" {
-		gameName := ms.PresenceGame.State
+		gameName := activityState
 		compiledRegex, err := regexp.Compile(strings.TrimSpace(config.GameRegex))
 		if err == nil {
 			// It should be verified before this that its valid
@@ -297,7 +353,7 @@ func (config *Config) MeetsRequirements(ms *dstate.MemberState) bool {
 	}
 
 	if strings.TrimSpace(config.TitleRegex) != "" {
-		streamTitle := ms.PresenceGame.Details
+		streamTitle := activityDetails
 		compiledRegex, err := regexp.Compile(strings.TrimSpace(config.TitleRegex))
 		if err == nil {
 			// It should be verified before this that its valid
@@ -310,18 +366,16 @@ func (config *Config) MeetsRequirements(ms *dstate.MemberState) bool {
 	return true
 }
 
-func RemoveStreaming(client radix.Client, config *Config, guildID int64, ms *dstate.MemberState) {
-	if ms.MemberSet {
-		client.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), ms.ID))
-		go RemoveStreamingRole(ms, config.GiveRole, guildID)
-	} else {
-		// Was not streaming before if we removed 0 elements
-		var removed bool
-		client.Do(retryableredis.FlatCmd(&removed, "SREM", KeyCurrentlyStreaming(guildID), ms.ID))
-		if removed && config.GiveRole != 0 {
-			go common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, config.GiveRole)
-		}
-	}
+func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberID int64, currentRoles []int64) {
+	client.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
+	go RemoveStreamingRole(guildID, memberID, config.GiveRole, currentRoles)
+
+	// Was not streaming before if we removed 0 elements
+	// var removed bool
+	// client.Do(retryableredis.FlatCmd(&removed, "SREM", KeyCurrentlyStreaming(guildID), memberID))
+	// if removed && config.GiveRole != 0 {
+	// 	go common.BotSession.GuildMemberRoleRemove(guildID, memberID, config.GiveRole)
+	// }
 }
 
 func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dstate.MemberState) {
@@ -377,31 +431,39 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	}
 }
 
-func GiveStreamingRole(ms *dstate.MemberState, role int64, guild *discordgo.Guild) {
-	if role == 0 {
+func GiveStreamingRole(guildID, memberID, streamingRole int64, currentUserRoles []int64) {
+	if streamingRole == 0 {
 		return
 	}
 
-	err := common.AddRoleDS(ms, role)
+	var err error
+
+	if !common.ContainsInt64Slice(currentUserRoles, streamingRole) {
+		err = common.BotSession.GuildMemberRoleAdd(guildID, memberID, streamingRole)
+	}
 
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
-			DisableStreamingRole(guild.ID)
+			DisableStreamingRole(guildID)
 		}
 
-		logger.WithError(err).WithField("guild", guild.ID).WithField("user", ms.ID).Error("Failed adding streaming role")
-		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guild.ID), ms.ID))
+		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).Error("Failed adding streaming role")
+		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
 	}
 }
 
-func RemoveStreamingRole(ms *dstate.MemberState, role int64, guildID int64) {
-	if role == 0 {
+func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRoles []int64) {
+	if streamingRole == 0 {
 		return
 	}
 
-	err := common.RemoveRoleDS(ms, role)
+	if !common.ContainsInt64Slice(currentRoles, streamingRole) {
+		return
+	}
+
+	err := common.BotSession.GuildMemberRoleRemove(guildID, memberID, streamingRole)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("user", ms.ID).WithField("role", role).Error("Failed removing streaming role")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).WithField("role", streamingRole).Error("Failed removing streaming role")
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
 			DisableStreamingRole(guildID)
 		}
