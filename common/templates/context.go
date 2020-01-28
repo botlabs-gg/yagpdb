@@ -48,6 +48,7 @@ var (
 		"fdiv":       tmplFDiv,
 		"sqrt":       tmplSqrt,
 		"pow":        tmplPow,
+		"log":        tmplLog,
 		"round":      tmplRound,
 		"roundCeil":  tmplRoundCeil,
 		"roundFloor": tmplRoundFloor,
