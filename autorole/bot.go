@@ -16,6 +16,8 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	scheduledEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/premium"
 )
 
@@ -27,10 +29,18 @@ func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(roleCommands...)
 }
 
+type assignRoleEventdata struct {
+	UserID int64
+	RoleID int64 // currently unused
+}
+
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLast(p, OnMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLast(p, onMemberJoin, eventsystem.EventGuildMemberAdd)
 	// eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
-	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleGuildChunk, eventsystem.EventGuildMembersChunk)
+	eventsystem.AddHandlerAsyncLast(p, handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+
+	scheduledevents2.RegisterHandler("autorole_assign_role", assignRoleEventdata{}, handleAssignRole)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
 	go runDurationChecker()
@@ -300,22 +310,33 @@ func saveGeneral(guildID int64, config *GeneralConfig) {
 	}
 }
 
-func OnMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
+func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	addEvt := evt.GuildMemberAdd()
 
-	config, err := GetGeneralConfig(addEvt.GuildID)
+	config, err := GuildCacheGetGeneralConfig(evt.GS)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
 
-	ms := evt.GS.MemberCopy(true, addEvt.User.ID)
-	if ms == nil {
-		logger.Error("Member not found in add event")
+	if config.Role == 0 || evt.GS.Role(true, config.Role) == nil {
 		return
 	}
 
-	if config.Role != 0 && config.RequiredDuration < 1 && config.CanAssignTo(ms.Roles, ms.JoinedAt) {
-		common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
+	// ms := evt.GS.MemberCopy(true, addEvt.User.ID)
+	// if ms == nil {
+	// 	logger.Error("Member not found in add event")
+	// 	return
+	// }
+
+	if config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Roles, time.Now()) {
+		err = common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
+		return bot.CheckDiscordErrRetry(err), err
+	}
+
+	if config.RequiredDuration > 0 && !config.OnlyOnJoin {
+		err = scheduledevents2.ScheduleEvent("autorole_assign_role", addEvt.GuildID,
+			time.Now().Add(time.Minute*time.Duration(config.RequiredDuration)), &assignRoleEventdata{UserID: addEvt.User.ID})
+		return bot.CheckDiscordErrRetry(err), err
 	}
 
 	return false, nil
@@ -353,7 +374,7 @@ func RedisKeyGuildChunkProecssing(gID int64) string {
 	return "autorole_guild_chunk_processing:" + strconv.FormatInt(gID, 10)
 }
 
-func HandleGuildChunk(evt *eventsystem.EventData) {
+func handleGuildChunk(evt *eventsystem.EventData) {
 	chunk := evt.GuildMembersChunk()
 	err := common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
 	if err != nil {
@@ -468,4 +489,85 @@ func GuildCacheGetGeneralConfig(gs *dstate.GuildState) (*GeneralConfig, error) {
 	}
 
 	return v.(*GeneralConfig), nil
+}
+
+func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	config, err := GetGeneralConfig(evt.GuildID)
+	if err != nil {
+		return true, nil
+	}
+
+	if config.Role == 0 || config.OnlyOnJoin {
+		// settings changed after they joined
+		return false, nil
+	}
+
+	dataCast := data.(*assignRoleEventdata)
+
+	member, err := bot.GetMemberJoinedAt(evt.GuildID, dataCast.UserID)
+	if err != nil {
+		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
+			return false, nil
+		}
+
+		return bot.CheckDiscordErrRetry(err), err
+	}
+
+	memberDuration := time.Now().Sub(member.JoinedAt)
+	if memberDuration < time.Duration(config.RequiredDuration)*time.Minute {
+		// settings may have been changed, re-schedule
+
+		err = scheduledevents2.ScheduleEvent("autorole_assign_role", evt.GuildID,
+			time.Now().Add(time.Minute*time.Duration(config.RequiredDuration)), &assignRoleEventdata{UserID: dataCast.UserID})
+		return bot.CheckDiscordErrRetry(err), err
+	}
+
+	if !config.CanAssignTo(member.Roles, member.JoinedAt) {
+		// some other reason they can't get the role, such as whitelist or ignore roles
+		return false, nil
+	}
+
+	err = common.BotSession.GuildMemberRoleAdd(evt.GuildID, dataCast.UserID, config.Role)
+	return bot.CheckDiscordErrRetry(err), err
+}
+
+func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
+	update := evt.GuildMemberUpdate()
+	config, err := GuildCacheGetGeneralConfig(evt.GS)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	if config.Role == 0 || config.OnlyOnJoin || evt.GS.Role(true, config.Role) == nil {
+		return false, nil
+	}
+
+	if common.ContainsInt64Slice(update.Member.Roles, config.Role) {
+		return false, nil
+	}
+
+	if !config.CanAssignTo(update.Member.Roles, time.Time{}) {
+		return false, nil
+	}
+
+	if config.RequiredDuration > 0 {
+		// check the autorole duration
+		ms, err := bot.GetMemberJoinedAt(update.GuildID, update.User.ID)
+		if err != nil {
+			return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
+		}
+
+		if time.Since(ms.JoinedAt) < time.Duration(config.RequiredDuration)*time.Minute {
+			// haven't been a member long enough
+			return false, nil
+		}
+	}
+
+	// if we branched here then all the checks passed and they should be assigned the role
+	err = common.BotSession.GuildMemberRoleAdd(update.GuildID, update.User.ID, config.Role)
+	if err != nil {
+		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
+	}
+
+	return false, nil
 }
