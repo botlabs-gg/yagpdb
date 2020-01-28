@@ -78,11 +78,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		}
 
 		if data.GS != nil {
-			ms, err := bot.GetMember(data.GS.ID, data.Msg.Author.ID)
-			if err != nil {
-				return nil, errors.WithMessage(err, "failed fetching member")
-			}
-
+			ms := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
 			data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ms))
 		}
 
