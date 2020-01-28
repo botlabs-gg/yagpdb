@@ -652,6 +652,10 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
+			if len(entries) < 1 && p.LastResponse != nil { //Don't send No Results error on first execution.
+				return nil, paginatedmessages.ErrNoResults
+			}
+			
 			embed := &discordgo.MessageEmbed{
 				Title: "Ranked list of warnings",
 			}
