@@ -81,7 +81,10 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 				continue
 			}
 
+			gs.RUnlock()
 			err = CheckPresence(conn, config, ms, gs)
+			gs.RLock()
+
 			if err != nil {
 				logger.WithError(err).Error("Error checking presence")
 				continue
@@ -102,6 +105,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 	logger.WithField("guild", gs.ID).Info("Starting slowcheck")
 
 	gs.RLock()
+	defer gs.RUnlock()
 	err = common.RedisPool.Do(radix.WithConn(KeyCurrentlyStreaming(gs.ID), func(conn radix.Conn) error {
 		for _, ms := range slowCheck {
 
@@ -109,7 +113,9 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 				continue
 			}
 
+			gs.RUnlock()
 			err = CheckPresence(conn, config, ms, gs)
+			gs.RLock()
 			if err != nil {
 				logger.WithError(err).Error("Error checking presence")
 				continue
@@ -118,7 +124,6 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 
 		return nil
 	}))
-	gs.RUnlock()
 
 	logger.WithField("guild", gs.ID).Info("Done slowcheck")
 }
@@ -135,14 +140,11 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
-	ms := evt.GS.Member(true, m.User.ID)
+	ms := evt.GS.MemberCopy(true, m.User.ID)
 	if ms == nil {
 		logger.WithField("guild", m.GuildID).Error("Member not found in state")
 		return false, nil
 	}
-
-	evt.GS.RLock()
-	defer evt.GS.RUnlock()
 
 	if !ms.PresenceSet {
 		return // no presence tracked, no poing in continuing
@@ -186,7 +188,9 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 				continue
 			}
 
+			gs.RUnlock()
 			err = CheckPresence(conn, config, ms, gs)
+			gs.RLock()
 
 			if err != nil {
 				logger.WithError(err).Error("Failed checking presence")
@@ -417,9 +421,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	ctx.Data["StreamTitle"] = ms.PresenceGame.Details
 	ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
 
-	guild.RUnlock()
 	out, err := ctx.Execute(config.AnnounceMessage)
-	guild.RLock()
 	if err != nil {
 		logger.WithError(err).WithField("guild", guild.ID).Warn("Failed executing template")
 		return
