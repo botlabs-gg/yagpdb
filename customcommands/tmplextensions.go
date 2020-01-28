@@ -439,7 +439,7 @@ func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -496,7 +496,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
@@ -540,7 +540,7 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 1, 10) {
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
 			return "", templates.ErrTooManyCalls
 		}
 
