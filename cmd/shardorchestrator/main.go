@@ -63,7 +63,7 @@ func main() {
 		orchestrator:   orch,
 	}
 
-	orch.MaxShardsPerNode = 10
+	orch.MaxShardsPerNode = 16
 	orch.MaxNodeDowntimeBeforeRestart = time.Second * 10
 	orch.EnsureAllShardsRunning = true
 
