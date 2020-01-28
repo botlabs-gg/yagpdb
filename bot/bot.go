@@ -246,7 +246,7 @@ func setupState() {
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
 	State.CacheExpirey = time.Minute * 10
-	State.RemoveOfflineMembers = true
+	// State.RemoveOfflineMembers = true
 	go State.RunGCWorker()
 
 	eventsystem.DiscordState = State

@@ -49,6 +49,9 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Post("/host/:host/pid/:pid/migratenodes"), web.ControllerPostHandler(p.handleMigrateNodes, panelHandler, nil, ""))
 	mux.Handle(pat.Get("/host/:host/pid/:pid/deployedversion"), http.HandlerFunc(p.handleLaunchNodeVersion))
 
+	// Node routes
+	mux.Handle(pat.Get("/host/:host/pid/:pid/shard_sessions"), p.ProxyGetInternalAPI("/shard_sessions"))
+
 	getConfigHandler := web.ControllerHandler(p.handleGetConfig, "bot_admin_config")
 	mux.Handle(pat.Get("/config"), getConfigHandler)
 	mux.Handle(pat.Post("/config/edit/:key"), web.ControllerPostHandler(p.handleEditConfig, getConfigHandler, nil, ""))
@@ -294,4 +297,22 @@ func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.T
 	}
 
 	return tmpl, nil
+}
+
+func (p *Plugin) handleGetShardSessions(w http.ResponseWriter, r *http.Request) {
+	client, err := createOrhcestatorRESTClient(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		return
+	}
+
+	ver, err := client.GetDeployedVersion()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error getting deployed version: " + err.Error()))
+		return
+	}
+
+	w.Write([]byte(ver))
 }

@@ -59,6 +59,7 @@ func (p *Plugin) InitInternalAPIRoutes(muxer *goji.Mux) {
 	muxer.HandleFunc(pat.Get("/:guild/onlinecount"), HandleGetOnlineCount)
 	muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
 	muxer.HandleFunc(pat.Get("/node_status"), HandleNodeStatus)
+	muxer.HandleFunc(pat.Get("/shard_sessions"), HandleGetShardSessions)
 	muxer.HandleFunc(pat.Post("/shard/:shard/reconnect"), HandleReconnectShard)
 
 	// for _, p := range common.Plugins {
@@ -312,6 +313,33 @@ func HandleNodeStatus(w http.ResponseWriter, r *http.Request) {
 		ID:     common.NodeID,
 		Uptime: time.Since(bot.Started),
 	})
+}
+
+type shardSessionInfo struct {
+	ShardID   int
+	SessionID string
+}
+
+func HandleGetShardSessions(w http.ResponseWriter, r *http.Request) {
+
+	// numShards := bot.ShardManager.GetNumShards()
+	// result := make([]*ShardStatus, 0, numShards)
+
+	processShards := bot.GetProcessShards()
+
+	result := make([]*shardSessionInfo, 0)
+
+	// get general shard stats
+	for _, shardID := range processShards {
+		shard := bot.ShardManager.Sessions[shardID]
+		sessionID, _ := shard.GatewayManager.GetSessionInfo()
+		result = append(result, &shardSessionInfo{
+			ShardID:   shardID,
+			SessionID: sessionID,
+		})
+	}
+
+	internalapi.ServeJson(w, r, result)
 }
 
 func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
