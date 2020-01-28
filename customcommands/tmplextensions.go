@@ -532,7 +532,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 	orderBy := "value_num DESC, id DESC"
 	if bottom {
-		orderBy = "value_num ASC, id ASC"
+		orderBy = "value_num ASC, id DESC"
 	}
 
 	return func(pattern interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
