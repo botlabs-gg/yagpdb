@@ -76,6 +76,11 @@ func GetChannelPermissions(guildID, channelID int64) (perms int64, err error) {
 	return
 }
 
+func GetSessionInfo(addr string) (st []*shardSessionInfo, err error) {
+	err = internalapi.GetWithAddress(addr, "/shard_sessions", &st)
+	return
+}
+
 type NodeStatus struct {
 	ID     string         `json:"id"`
 	Shards []*ShardStatus `json:"shards"`

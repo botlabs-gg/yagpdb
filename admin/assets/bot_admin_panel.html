@@ -44,6 +44,10 @@
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/deployedversion" class="btn btn-primary"
                             target="_blank">New node version</a>
                         <br>
+                        {{else if eq .Type "bot"}}
+                        <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard_sessions" class="btn btn-primary"
+                            target="_blank">Shard session ID's (SENSITIVE INFO)</a>
+                        <br>
                         {{end}}
                         {{end}}
 
