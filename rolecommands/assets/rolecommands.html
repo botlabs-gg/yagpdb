@@ -86,7 +86,7 @@
                                     <div class="form-group col">
                                         <label for="new-group-mode">Mode</label><br>
                                         <select name="Mode" class="form-control" id="new-group-mode" onchange="ModeChanged(this,'new-')">
-                                            <option value="0">None</option>
+                                            <option value="0">Standard</option>
                                             <option value="1">Single</option>
                                             <option value="2">Multiple</option>
                                         </select>
@@ -224,7 +224,7 @@ $(function(){
                         <div class="col">
                             <label for="{{.Group.ID}}-group-mode">Mode</label><br>
                             <select name="Mode" class="form-control" id="{{.Group.ID}}-group-mode" onchange="ModeChanged(this,'{{.Group.ID}}-')">
-                                <option value="0" {{if eq .Group.Mode 0}} selected{{end}}>None</option>
+                                <option value="0" {{if eq .Group.Mode 0}} selected{{end}}>Standard</option>
                                 <option value="1" {{if eq .Group.Mode 1}} selected{{end}}>Single</option>
                                 <option value="2" {{if eq .Group.Mode 2}} selected{{end}}>Multiple</option>
                             </select>
