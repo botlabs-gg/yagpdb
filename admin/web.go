@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -51,6 +52,7 @@ func (p *Plugin) InitWeb() {
 
 	// Node routes
 	mux.Handle(pat.Get("/host/:host/pid/:pid/shard_sessions"), p.ProxyGetInternalAPI("/shard_sessions"))
+	mux.Handle(pat.Post("/host/:host/pid/:pid/shard/:shardid/reconnect"), http.HandlerFunc(p.handleReconnectShard))
 
 	getConfigHandler := web.ControllerHandler(p.handleGetConfig, "bot_admin_config")
 	mux.Handle(pat.Get("/config"), getConfigHandler)
@@ -315,4 +317,31 @@ func (p *Plugin) handleGetShardSessions(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Write([]byte(ver))
+}
+
+func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
+
+	forceReidentify := r.URL.Query().Get("identify") == "1"
+	shardID := pat.Param(r, "shardid")
+
+	sh, err := findServicehost(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		return
+	}
+
+	queryParams := ""
+	if forceReidentify {
+		queryParams = "?reidentify=1"
+	}
+
+	resp, err := http.Post(fmt.Sprintf("http://%s/shard/%s/reconnect%s", sh.InternalAPIAddress, shardID, queryParams), "", nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error querying internal api: " + err.Error()))
+		return
+	}
+
+	io.Copy(w, resp.Body)
 }
