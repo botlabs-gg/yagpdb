@@ -48,6 +48,24 @@
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard_sessions" class="btn btn-primary"
                             target="_blank">Shard session ID's (SENSITIVE INFO)</a>
                         <br>
+
+                        <!-- Reconnect dropdown -->
+                        <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/updateversion">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                    Re-identify shards
+                                </button>
+                                <div class="dropdown-menu">
+                                    {{range .BotDetails.RunningShards}}
+                                    <input class="dropdown-item" type="submit"
+                                        formaction="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard/{{.}}/reconnect?identify=1"
+                                        value="Shard
+                                        {{.}}">
+                                    {{end}}
+                                </div>
+                            </div>
+                        </form>
                         {{end}}
                         {{end}}
 
