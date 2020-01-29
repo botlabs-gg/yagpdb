@@ -2,6 +2,7 @@ package templates
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/url"
 	"reflect"
@@ -531,6 +532,13 @@ func (s Slice) StringSlice (flag ...bool) interface{} {
 		switch t := Sliceval.(type) {
 			case string :
 				StringSlice = append(StringSlice, t)
+			
+			case fmt.Stringer :
+				if strict {
+					return nil
+				}
+				StringSlice = append(StringSlice, t.String())
+			
 			default:
 				if strict {
 					return nil
