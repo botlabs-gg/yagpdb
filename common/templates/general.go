@@ -426,6 +426,33 @@ func tmplPow(argX, argY interface{}) float64 {
 	return math.Pow(xySlice[0], xySlice[1])
 }
 
+/*tmplLog is a function for templates using (log base of x = logarithm) as return value.
+It is using natural logarithm as default to change the base.*/
+func tmplLog(arguments ...interface{}) (float64, error) {
+	var x, base, logarithm float64
+
+	x = ToFloat64(arguments[0])
+
+	if len(arguments) < 1 || len(arguments) > 2 {
+		return 0, errors.New("wrong number of arguments")
+	} else if len(arguments) == 1 {
+		base = math.E
+	} else {
+		base = ToFloat64(arguments[1])
+	}
+	/*In an exponential function, the base is always defined to be positive,
+	but can't be equal to 1. Because of that also x can't be a negative.*/
+	if base == 1 || base <= 0 {
+		logarithm = math.NaN()
+	} else if base == math.E {
+		logarithm = math.Log(x)
+	} else {
+		logarithm = math.Log(x) / math.Log(base)
+	}
+
+	return logarithm, nil
+}
+
 func roleIsAbove(a, b *discordgo.Role) bool {
 	return dutil.IsRoleAbove(a, b)
 }
