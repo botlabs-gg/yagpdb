@@ -85,7 +85,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Name:        "SoundboardReset",
 		Aliases:     []string{"sbclose", "sbReset"},
-		Description: "Reset Soundboard",
+		Description: "Reset Soundboard Player",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			response :=  resetPlayerServer(data.GS.ID)
 			if response != "" {
