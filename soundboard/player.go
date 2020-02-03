@@ -168,6 +168,7 @@ func (p *Player) checkIdleTooLong() {
 		
 		playersmu.L.Lock()
 		if p.stop {
+			playersmu.L.Unlock()
 			return
 		}
 		if time.Since(p.timeLastPlay) > time.Minute && len(p.queue) < 1 && !p.playing {
