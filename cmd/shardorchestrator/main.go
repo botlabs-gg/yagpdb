@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dshardorchestrator"
-	"github.com/jonas747/dshardorchestrator/orchestrator"
-	"github.com/jonas747/dshardorchestrator/orchestrator/rest"
+	"github.com/jonas747/dshardorchestrator/v2"
+	"github.com/jonas747/dshardorchestrator/v2/orchestrator"
+	"github.com/jonas747/dshardorchestrator/v2/orchestrator/rest"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	confTotalShards  = config.RegisterOption("yagpdb.sharding.total_shards", "Total number shards", 0)
-	confActiveShards = config.RegisterOption("yagpdb.sharding.active_shards", "Shards active on this hoste, ex: '1-10,25'", "")
+	confTotalShards             = config.RegisterOption("yagpdb.sharding.total_shards", "Total number shards", 0)
+	confActiveShards            = config.RegisterOption("yagpdb.sharding.active_shards", "Shards active on this hoste, ex: '1-10,25'", "")
+	confLargeBotShardingEnabled = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
 )
 
 func main() {
@@ -55,6 +56,10 @@ func main() {
 	}
 	orch.Logger = &dshardorchestrator.StdLogger{
 		Level: dshardorchestrator.LogWarning,
+	}
+
+	if confLargeBotShardingEnabled.GetBool() {
+		orch.ShardBucketSize = 16
 	}
 
 	updateScript := "updateversion.sh"

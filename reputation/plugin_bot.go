@@ -2,10 +2,11 @@ package reputation
 
 import (
 	"fmt"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -328,11 +329,11 @@ var cmds = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			
+
 			if len(entries) < 1 && p.LastResponse != nil { //Dont send No Results error on first execution
 				return nil, paginatedmessages.ErrNoResults
 			}
-			
+
 			embed := &discordgo.MessageEmbed{
 				Title: "Reputation leaderboard",
 			}
