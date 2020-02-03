@@ -28,16 +28,17 @@ type Config struct {
 	BanMessage        string `valid:"template,5000"`
 
 	// Mute/unmute
-	MuteEnabled          bool
-	MuteCmdRoles         pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	MuteRole             string        `valid:"role,true"`
-	MuteReasonOptional   bool
-	UnmuteReasonOptional bool
-	MuteManageRole       bool
-	MuteRemoveRoles      pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	MuteIgnoreChannels   pq.Int64Array `gorm:"type:bigint[]" valid:"channel,true"`
-	MuteMessage          string        `valid:"template,5000"`
-	UnmuteMessage        string        `valid:"template,5000"`
+	MuteEnabled             bool
+	MuteCmdRoles            pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	MuteRole                string        `valid:"role,true"`
+	MuteDisallowReactionAdd bool
+	MuteReasonOptional      bool
+	UnmuteReasonOptional    bool
+	MuteManageRole          bool
+	MuteRemoveRoles         pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	MuteIgnoreChannels      pq.Int64Array `gorm:"type:bigint[]" valid:"channel,true"`
+	MuteMessage             string        `valid:"template,5000"`
+	UnmuteMessage           string        `valid:"template,5000"`
 
 	// Warn
 	WarnCommandsEnabled    bool
