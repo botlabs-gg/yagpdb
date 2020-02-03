@@ -9,15 +9,15 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dshardorchestrator/orchestrator/rest"
+	"github.com/jonas747/dshardorchestrator/v2/orchestrator/rest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/internalapi"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-)
-
+) 
+  
 // InitWeb implements web.Plugin
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../admin/assets/bot_admin_panel.html", "templates/plugins/bot_admin_panel.html")

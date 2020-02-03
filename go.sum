@@ -188,8 +188,12 @@ github.com/jonas747/discordgo v1.1.10-0.20200128175910-9b73c59d109d h1:XQggygLsH
 github.com/jonas747/discordgo v1.1.10-0.20200128175910-9b73c59d109d/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
 github.com/jonas747/discordgo v1.1.10-0.20200128180207-7f37b72135fb h1:7e0jqlNvmApcIk522eKulKu9eyc9d8zxtxinQ0/7FWo=
 github.com/jonas747/discordgo v1.1.10-0.20200128180207-7f37b72135fb/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
+github.com/jonas747/discordgo v1.2.0 h1:HMtcdFK81S8EPGtOp4SoPPO8lPltS7o4Cu4Kfg6kRx4=
+github.com/jonas747/discordgo v1.2.0/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
 github.com/jonas747/dshardorchestrator v0.1.0 h1:3/v+lx0gLupm7/VZr7wbfvUGhpxvuNC5JHaS+OnWjCc=
 github.com/jonas747/dshardorchestrator v0.1.0/go.mod h1:ZlA6h9kj2H5q2aQkZgBiROp8zpIjIUMJQ3SOpVdWYfQ=
+github.com/jonas747/dshardorchestrator/v2 v2.0.0 h1:C5ClxF9+A9yUBiRyqLG6s5fA/kI/iHL1Msrs0uXTLww=
+github.com/jonas747/dshardorchestrator/v2 v2.0.0/go.mod h1:wrqNpMI8eZ2mtiQU3ZL1mdPNt43demnxzR+uvbWQcTU=
 github.com/jonas747/dstate v0.0.0-20190905110424-f2ed8c6c957d/go.mod h1:5xeu+zy7jwCfnCA+A9CaWOV4UhQzGHvBVZ381l+jarM=
 github.com/jonas747/dstate v1.0.4 h1:TS1YcPJelsVOqgU8u+SKkQevEMi0klG9Agugj+TE8+0=
 github.com/jonas747/dstate v1.0.4/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
@@ -458,6 +462,8 @@ golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 h1:ywK/j/KkyTHcdyYSZNXGjMwgm
 golang.org/x/sys v0.0.0-20200122134326-e047566fdf82/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 h1:1/DFK4b7JH8DmkqhUk48onnSfrPzImPoVxuomtbT2nk=
 golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 h1:LfCXLvNmTYH9kEmVgqbnsWfruoXZIrh4YBgqVHtDvw0=
+golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 h1:z99zHgr7hKfrUcX/KsoJk5FJfjTceCKIp96+biqP4To=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

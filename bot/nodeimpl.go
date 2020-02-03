@@ -9,8 +9,8 @@ import (
 
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 
-	"github.com/jonas747/dshardorchestrator"
-	"github.com/jonas747/dshardorchestrator/node"
+	"github.com/jonas747/dshardorchestrator/v2"
+	"github.com/jonas747/dshardorchestrator/v2/node"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
@@ -90,7 +90,7 @@ func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64) {
 	return
 }
 
-func (n *NodeImpl) StartShard(shard int, sessionID string, sequence int64) {
+func (n *NodeImpl) ResumeShard(shard int, sessionID string, sequence int64) {
 	processShardsLock.Lock()
 	if common.ContainsIntSlice(processShards, shard) {
 		processShardsLock.Unlock()
@@ -104,6 +104,24 @@ func (n *NodeImpl) StartShard(shard int, sessionID string, sequence int64) {
 	if err != nil {
 		logger.WithError(err).Error("Failed migrating shard")
 	}
+}
+
+func (n *NodeImpl) AddNewShards(shards ...int) {
+	for _, shard := range shards {
+		processShardsLock.Lock()
+		if common.ContainsIntSlice(processShards, shard) {
+			processShardsLock.Unlock()
+			continue
+		}
+		processShards = append(processShards, shard)
+		processShardsLock.Unlock()
+
+		ShardManager.Sessions[shard].GatewayManager.SetSessionInfo("", 0)
+
+		go ShardManager.Sessions[shard].GatewayManager.Open()
+	}
+
+	logger.Infof("got assigned shards %v", shards)
 }
 
 // called when the bot should shut down, make sure to send EvtShutdown when completed

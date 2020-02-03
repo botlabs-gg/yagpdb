@@ -32,8 +32,9 @@ require (
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.1.0
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.1.10-0.20200128180207-7f37b72135fb
+	github.com/jonas747/discordgo v1.2.0
 	github.com/jonas747/dshardorchestrator v0.1.0
+	github.com/jonas747/dshardorchestrator/v2 v2.0.0
 	github.com/jonas747/dstate v1.0.5
 	github.com/jonas747/dutil v0.0.2
 	github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846
@@ -77,7 +78,7 @@ require (
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
+	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 // indirect
 	google.golang.org/api v0.3.1

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/node"
+	"github.com/jonas747/dshardorchestrator/v2/node"
 	"github.com/jonas747/dstate"
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/retryableredis"
@@ -37,6 +37,7 @@ var (
 	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
 	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
 	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
+	confLargeBotShardingEnabled  = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
 )
 
 var (
@@ -195,13 +196,25 @@ func GuildCountsFunc() []int {
 type identifyRatelimiter struct {
 	ch   chan bool
 	once sync.Once
+
+	mu                   sync.Mutex
+	lastShardRatelimited int
+	lastRatelimitAt      time.Time
 }
 
-func (rl *identifyRatelimiter) RatelimitIdentify() {
+func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 	const key = "yagpdb.gateway.identify.limit"
 	for {
+
+		if rl.checkSameBucket(shardID) {
+			return
+		}
+
+		// The ratelimit is 1 identify every 5 seconds, but with exactly that limit we will still encounter invalid session
+		// closes, probably due to small variances in networking and scheduling latencies
+		// Adding a extra 100ms fixes this completely, but to be on the safe side we add a extra 50ms
 		var resp string
-		err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", key, "1", "EX", "5", "NX"))
+		err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", key, "1", "PX", "5150", "NX"))
 		if err != nil {
 			logger.WithError(err).Error("failed ratelimiting gateway")
 			time.Sleep(time.Second)
@@ -209,12 +222,45 @@ func (rl *identifyRatelimiter) RatelimitIdentify() {
 		}
 
 		if resp == "OK" {
-			return // success
+			// We ackquired the lock, our turn to identify now
+			rl.mu.Lock()
+			rl.lastShardRatelimited = shardID
+			rl.lastRatelimitAt = time.Now()
+			rl.mu.Unlock()
+			return
 		}
 
 		// otherwise a identify was sent by someone else last 5 seconds
 		time.Sleep(time.Second)
 	}
+}
+
+func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
+	if !confLargeBotShardingEnabled.GetBool() {
+		// only works with large bot sharding enabled
+		return false
+	}
+
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	if rl.lastRatelimitAt.IsZero() {
+		return false
+	}
+
+	currentBucket := shardID / 16
+	lastBucket := rl.lastShardRatelimited / 16
+
+	if currentBucket != lastBucket {
+		return false
+	}
+
+	if time.Since(rl.lastRatelimitAt) > time.Second*5 {
+		return false
+	}
+
+	// same large bot sharding bucket
+	return true
 }
 
 func goroutineLogger() {

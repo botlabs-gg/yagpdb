@@ -5,7 +5,7 @@ import (
 
 	"github.com/jonas747/cardsagainstdiscord"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator"
+	"github.com/jonas747/dshardorchestrator/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
