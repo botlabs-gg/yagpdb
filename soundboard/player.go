@@ -154,7 +154,9 @@ func (p *Player) exit() {
 	if p.vc != nil {
 		p.vc.Disconnect()
 	}
-
+	if len(p.queue) > 0 {
+		p.queue = nil
+	}
 	delete(players, p.GuildID)
 }
 
@@ -163,8 +165,11 @@ func (p *Player) checkIdleTooLong() {
 	defer t.Stop()
 	for {
 		<-t.C
-
+		
 		playersmu.L.Lock()
+		if p.stop {
+			return
+		}
 		if time.Since(p.timeLastPlay) > time.Minute && len(p.queue) < 1 && !p.playing {
 			p.stop = true
 			playersmu.Broadcast()
