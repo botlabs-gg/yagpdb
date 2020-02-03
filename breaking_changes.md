@@ -2,8 +2,8 @@ This file will be updated with breaking changes, before you update you should ch
 
 **27th Jul 2019 (1.19.12-dev)**
 
- - You can't access old message logs unless you migrate them from the old format using the `migratelogs` owner only command. Be carefull and only run this once as otherwise youll have duplicate log entries.
- - Message log tables has been restructured, the ones used now are messages2 and message_logs2. 
+ - You can't access old message logs unless you migrate them from the old format using the `migratelogs` owner only command. Be careful and only run this once as otherwise you'll have duplicate log entries.
+ - Message log tables has been restructured, the ones used now are `messages2` and `message_logs2`. 
  - Note that this does not remove the old logs after migrating them, so you'll have to delete those tables (messages, message_logs) yourself if you want to save space.
 
  - If you somehow to manage to run it several times then use the following query to delete legacy imported duplicates:
@@ -44,11 +44,11 @@ This file will be updated with breaking changes, before you update you should ch
      + This is to support having multiple bot processes in the near future
 
 **24th october 2018 (1.9.2-dev)**
- - mqueue no longer supports the postgres queue, meaning if you're upgrading from a version earlier than v1.4.7 and there's still messages in the queue then those wont be processed. Versions after v1.4.7 queued new messages to the new queue but still continued to also poll the postgres queue, so to get around this you can run v1.9.1 until it's empty then upgrade to v1.9.2 or later.
+ - `mqueue` no longer supports the postgres queue, meaning if you're upgrading from a version earlier than v1.4.7 and there's still messages in the queue then those wont be processed. Versions after v1.4.7 queued new messages to the new queue but still continued to also poll the postgres queue, so to get around this you can run v1.9.1 until it's empty then upgrade to v1.9.2 or later.
      + Things that uses mqueue: reddit, youtube, and reminders when triggered
      + To find out if theres still messages in the queue run `select * from mqueue where processed=false;` on the yagpdb db
 
 **3rd aug 2018 (1.4-dev)**
  - dutil now only has one maintained branch, the master which was merged with dgofork.
- - my discordgo fork's default branch is now yagpdb
+ - my discordgo fork's default branch is now `yagpdb` instead of `master`
  - Updated build scripts (docker and circle) as a result, if your docker script isnt working in the future this is most likely the reason if you have a old version of the docker build script
