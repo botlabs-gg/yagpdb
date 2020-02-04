@@ -205,6 +205,12 @@ It is highly recommended to couple the moderation actions with the message logs,
                 You still need to create and assign a mute role above.
             </label>
         </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input" id="disallow-reaction" type="checkbox" name="MuteDisallowReactionAdd" {{if .ModConfig.MuteDisallowReactionAdd}} checked{{end}}>
+            <label class="form-check-label" for="disallow-reaction">
+                Disallow Adding Reactions
+            </label>
+        </div>
         <div class="form-group" id="mute-ignore-channels">
             <label>Have the auto management of the mute role ignore the following channels</label><br>
             <select class="multiselect" name="MuteIgnoreChannels" data-plugin-multiselect multiple="multiple">
