@@ -56,6 +56,9 @@
         <li class="nav-item active">
           <a class="nav-link" href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=bot&permissions=2146827775&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
         </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="/premium">Premium</a>
+        </li>
       </ul>
       <form class="form-inline my-2 my-lg-0 mr-2">
         <a class="btn btn-outline-danger my-2 my-sm-0" href="/manage">Control Panel</a>
@@ -198,7 +201,8 @@
       <div id="serverstats" class="feature_element_l">
         <div class="text-left redbox first">
           <h3>Server Stats (
-            <a href="http://yagpdb.xyz/public/140847179043569664/stats" target="_blank" rel="noopener" class="link">Example</a>)</h3>
+            <a href="http://yagpdb.xyz/public/140847179043
+                     9664/stats" target="_blank" rel="noopener" class="link">Example</a>)</h3>
           <ul>
             <li>Stats: Members joined / left, messages in the last 24h per channel, members online</li>
             <li>Optionally make stats public</li>
