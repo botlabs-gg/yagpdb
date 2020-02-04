@@ -248,8 +248,9 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 		return false
 	}
 
-	currentBucket := shardID / 16
-	lastBucket := rl.lastShardRatelimited / 16
+	// normally 16, but thats a bit too fast for us, so we use 4
+	currentBucket := shardID / 4
+	lastBucket := rl.lastShardRatelimited / 4
 
 	if currentBucket != lastBucket {
 		return false
