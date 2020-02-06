@@ -98,7 +98,7 @@ func (e *eventLogger) flushStats() {
 	}
 	e.Unlock()
 
-	pShards := GetProcessShards()
+	pShards := ReadyTracker.GetProcessShards()
 
 	for _, shard := range pShards {
 		common.Statsd.Count("discord.processed.events", shardTotals[shard], []string{"shard:" + strconv.Itoa(shard)}, EventLoggerPeriodDuration.Seconds())

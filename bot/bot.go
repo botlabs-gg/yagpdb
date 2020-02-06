@@ -41,15 +41,8 @@ var (
 )
 
 var (
-	// the variables below specify shard orchestrating info received from a shard orchestrator (see cmd/shardorchestrator)
-	// there are unused if were running standalone
-
 	// the total amount of shards this bot is set to use across all processes
 	totalShardCount int
-
-	// The shards running on this process, protected by the processShardsLock muted
-	processShards     []int
-	processShardsLock sync.RWMutex
 )
 
 // Run intializes and starts the discord bot component of yagpdb
@@ -103,11 +96,12 @@ func setupStandalone() {
 
 	EventLogger.init(shardCount)
 	eventsystem.InitWorkers(shardCount)
+	ReadyTracker.initTotalShardCount(totalShardCount)
+
 	go EventLogger.run()
 
-	processShards = make([]int, totalShardCount)
 	for i := 0; i < totalShardCount; i++ {
-		processShards[i] = i
+		ReadyTracker.shardsAdded(i)
 	}
 
 	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
@@ -377,7 +371,7 @@ func botServiceDetailsF() (details *common.BotServiceDetails, err error) {
 	}
 
 	totalShards := getTotalShards()
-	running := GetProcessShards()
+	running := ReadyTracker.GetProcessShards()
 
 	return &common.BotServiceDetails{
 		TotalShards:      int(totalShards),

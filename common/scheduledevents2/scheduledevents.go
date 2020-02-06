@@ -141,7 +141,7 @@ func (se *ScheduledEvents) check() {
 	numSkipped := 0
 	numHandling := 0
 	for _, p := range toProcess {
-		if !bot.IsGuildOnCurrentProcess(p.GuildID) {
+		if !bot.ReadyTracker.IsGuildShardReady(p.GuildID) {
 			numSkipped++
 			continue
 		}

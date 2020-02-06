@@ -37,6 +37,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 		totalShardCount = info.TotalShards
 		ShardManager.SetNumShards(totalShardCount)
 		eventsystem.InitWorkers(totalShardCount)
+		ReadyTracker.initTotalShardCount(totalShardCount)
 
 		EventLogger.init(info.TotalShards)
 		go EventLogger.run()
@@ -55,19 +56,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 }
 
 func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64) {
-	processShardsLock.Lock()
-	if !common.ContainsIntSlice(processShards, shard) {
-		processShardsLock.Unlock()
-		return "", 0
-	}
-
-	for i, v := range processShards {
-		if v == shard {
-			processShards = append(processShards[:i], processShards[i+1:]...)
-			break
-		}
-	}
-	processShardsLock.Unlock()
+	ReadyTracker.shardRemoved(shard)
 
 	n.lastTimeFreedMemorymu.Lock()
 	freeMem := false
@@ -91,13 +80,7 @@ func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64) {
 }
 
 func (n *NodeImpl) ResumeShard(shard int, sessionID string, sequence int64) {
-	processShardsLock.Lock()
-	if common.ContainsIntSlice(processShards, shard) {
-		processShardsLock.Unlock()
-		return
-	}
-	processShards = append(processShards, shard)
-	processShardsLock.Unlock()
+	ReadyTracker.shardsAdded(shard)
 
 	ShardManager.Sessions[shard].GatewayManager.SetSessionInfo(sessionID, sequence)
 	err := ShardManager.Sessions[shard].GatewayManager.Open()
@@ -107,15 +90,9 @@ func (n *NodeImpl) ResumeShard(shard int, sessionID string, sequence int64) {
 }
 
 func (n *NodeImpl) AddNewShards(shards ...int) {
-	for _, shard := range shards {
-		processShardsLock.Lock()
-		if common.ContainsIntSlice(processShards, shard) {
-			processShardsLock.Unlock()
-			continue
-		}
-		processShards = append(processShards, shard)
-		processShardsLock.Unlock()
+	ReadyTracker.shardsAdded(shards...)
 
+	for _, shard := range shards {
 		ShardManager.Sessions[shard].GatewayManager.SetSessionInfo("", 0)
 
 		go ShardManager.Sessions[shard].GatewayManager.Open()

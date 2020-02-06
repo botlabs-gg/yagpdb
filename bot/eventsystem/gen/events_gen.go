@@ -83,6 +83,12 @@ var NonStandardEvents = []Event{
 	Event{"AllPre", false},
 	Event{"AllPost", false},
 	Event{"MemberFetched", false},
+	// Sent once a shard either resumes or readies for the first time, signifying that its now ready
+	Event{"YagShardReady", false},
+	// Sent one or more shards is either migrated to this node or added freshly
+	Event{"YagShardsAdded", false},
+	// Sent once a shard has been either migrated away or removeotherwise
+	Event{"YagShardRemoved", false},
 }
 
 var (

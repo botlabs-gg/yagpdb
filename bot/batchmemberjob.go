@@ -2,10 +2,11 @@ package bot
 
 import (
 	"errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"sync"
 	"time"
+
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 )
 
 var (
@@ -67,7 +68,7 @@ var (
 )
 
 func (m *batchMemberJobManager) NewBatchMemberJob(guildID int64, f func(guildID int64, member []*discordgo.Member)) error {
-	if !IsGuildOnCurrentProcess(guildID) {
+	if !ReadyTracker.IsGuildShardReady(guildID) {
 		return ErrGuildNotOnProcess
 	}
 

@@ -27,7 +27,7 @@ var Command = &commands.YAGCommand{
 		shard := bot.GuildShardID(int64(totalShards), gID)
 
 		status := ""
-		if bot.IsGuildOnCurrentProcess(gID) {
+		if bot.ReadyTracker.IsGuildOnProcess(gID) {
 			session := bot.ShardManager.SessionForGuild(gID)
 			if session == nil {
 				return "Unknown shard...?", nil

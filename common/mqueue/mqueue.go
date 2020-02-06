@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common/config"
 
 	"emperror.dev/errors"
@@ -23,8 +24,9 @@ import (
 )
 
 var (
-	sources  = make(map[string]PluginWithSourceDisabler)
-	stopChan = make(chan *sync.WaitGroup)
+	sources    = make(map[string]PluginWithSourceDisabler)
+	stopChan   = make(chan *sync.WaitGroup)
+	resetFirst = make(chan bool)
 
 	currentlyProcessing     = make([]int64, 0)
 	currentlyProcessingLock sync.RWMutex
@@ -139,6 +141,17 @@ func QueueMessage(elem *QueuedElement) {
 	}
 }
 
+var _ bot.BotInitHandler = (*Plugin)(nil)
+
+func (p *Plugin) BotInit() {
+	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
+		resetFirst <- true
+		logger.Infof("Reset first")
+	}, eventsystem.EventYagShardReady)
+}
+
+var _ bot.LateBotInitHandler = (*Plugin)(nil)
+
 // LateBotInit implements bot.LateBotInitHandler
 func (p *Plugin) LateBotInit() {
 	go startPolling()
@@ -233,6 +246,8 @@ func startPolling() {
 		case wg := <-stopChan:
 			shutdown(wg)
 			return
+		case <-resetFirst:
+			first = true
 		case <-ticker.C:
 			pollRedis(first)
 			first = false
@@ -284,6 +299,7 @@ func pollRedis(first bool) {
 		workmu.Lock()
 		defer workmu.Unlock()
 
+	OUTER:
 		for _, elem := range results {
 
 			var parsed *QueuedElement
@@ -293,8 +309,15 @@ func pollRedis(first bool) {
 				continue
 			}
 
-			if !bot.IsGuildOnCurrentProcess(parsed.Guild) {
+			if !bot.ReadyTracker.IsGuildShardReady(parsed.Guild) {
 				continue
+			}
+
+			for _, v := range workSlice {
+				// already in the queue
+				if v.elem.ID == parsed.ID {
+					continue OUTER
+				}
 			}
 
 			// Mark it as being processed so it wont get caught in further polling, unless its a new process in which case it wasnt completed

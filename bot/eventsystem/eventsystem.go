@@ -4,13 +4,13 @@ package eventsystem
 
 import (
 	"context"
-	"github.com/jonas747/dstate"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/sirupsen/logrus"
 )
@@ -246,6 +246,31 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 		return
 	}
 
+	if s.ShardID >= len(workers) || workers[s.ShardID] == nil {
+		logrus.Errorf("bad shard event: sid: %d, len: %d", s.ShardID, len(workers))
+		return
+	}
+
+	select {
+	case workers[s.ShardID] <- evtData:
+		return
+	default:
+		// go common.SendOwnerAlert("Max events in queue!")
+		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
+		workers[s.ShardID] <- evtData // attempt to send it anyways for now
+	}
+}
+
+func QueueEventNonDiscord(evtData *EventData) {
+	if evtData.Session != nil {
+		ctx := context.WithValue(evtData.Context(), common.ContextKeyDiscordSession, evtData.Session)
+		evtData.ctx = ctx
+	} else {
+		handleEvent(evtData)
+		return
+	}
+
+	s := evtData.Session
 	if s.ShardID >= len(workers) || workers[s.ShardID] == nil {
 		logrus.Errorf("bad shard event: sid: %d, len: %d", s.ShardID, len(workers))
 		return
