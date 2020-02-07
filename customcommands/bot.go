@@ -700,16 +700,16 @@ func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (mat
 	switch CommandTriggerType(cmd.TriggerType) {
 	case CommandTriggerCommand:
 		// Regex is:
-		// ^(<@!?bot_id> ?|server_cmd_prefix)trigger($|[[:space:]])
-		cmdMatch += "^(<@!?" + discordgo.StrID(common.BotUser.ID) + "> ?|" + regexp.QuoteMeta(globalPrefix) + ")" + regexp.QuoteMeta(trigger) + "($|[[:space:]])"
+		// \A(<@!?bot_id> ?|server_cmd_prefix)trigger(\z|[[:space:]])
+		cmdMatch += `\A(<@!?` + discordgo.StrID(common.BotUser.ID) + "> ?|" + regexp.QuoteMeta(globalPrefix) + ")" + regexp.QuoteMeta(trigger) + `(\z|[[:space:]])`
 	case CommandTriggerStartsWith:
-		cmdMatch += "^" + regexp.QuoteMeta(trigger)
+		cmdMatch += `\A` + regexp.QuoteMeta(trigger)
 	case CommandTriggerContains:
-		cmdMatch += "^.*" + regexp.QuoteMeta(trigger)
+		cmdMatch += `\A.*` + regexp.QuoteMeta(trigger)
 	case CommandTriggerRegex:
 		cmdMatch += trigger
 	case CommandTriggerExact:
-		cmdMatch += "^" + regexp.QuoteMeta(trigger) + "$"
+		cmdMatch += `\A` + regexp.QuoteMeta(trigger) + `\z`
 	default:
 		return false, "", nil
 	}
