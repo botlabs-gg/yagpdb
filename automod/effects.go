@@ -2,10 +2,10 @@ package automod
 
 import (
 	"context"
-	"github.com/jonas747/discordgo"
 	"sync"
 	"time"
 
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
@@ -54,7 +54,7 @@ func (del *DeleteMessageEffect) Apply(ctxData *TriggeredRuleData, settings inter
 	go func(cID int64, messages []int64) {
 		// deleting messages too fast can sometimes make them still show in the discord client even after deleted
 		time.Sleep(500 * time.Millisecond)
-		bot.MessageDeleteQueue.DeleteMessages(cID, messages...)
+		bot.MessageDeleteQueue.DeleteMessages(ctxData.GS.ID, cID, messages...)
 	}(ctxData.Message.ChannelID, []int64{ctxData.Message.ID})
 
 	return nil
@@ -174,11 +174,11 @@ func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings inte
 		return nil
 	}
 
-	go func(cID int64, messages []int64) {
+	go func(cs *dstate.ChannelState, messages []int64) {
 		// deleting messages too fast can sometimes make them still show in the discord client even after deleted
 		time.Sleep(500 * time.Millisecond)
-		bot.MessageDeleteQueue.DeleteMessages(cID, messages...)
-	}(channel.ID, messages)
+		bot.MessageDeleteQueue.DeleteMessages(cs.Guild.ID, cs.ID, messages...)
+	}(channel, messages)
 
 	return nil
 }

@@ -1,4 +1,4 @@
-package deletequeue
+package bot
 
 import (
 	"sync"
@@ -7,7 +7,9 @@ import (
 )
 
 func TestDeleteQueue(t *testing.T) {
-	q := NewQueue()
+	q := &messageDeleteQueue{
+		channels: make(map[int64]*messageDeleteQueueChannel),
+	}
 
 	toDel := []int64{1, 2, 3, 4, 5}
 
@@ -21,7 +23,7 @@ func TestDeleteQueue(t *testing.T) {
 		return nil
 	}
 
-	q.DeleteMessages(1, toDel...)
+	q.DeleteMessages(0, 1, toDel...)
 
 	select {
 	case <-time.After(time.Second):
@@ -32,7 +34,9 @@ func TestDeleteQueue(t *testing.T) {
 }
 
 func TestDeleteQueueSplit(t *testing.T) {
-	q := NewQueue()
+	q := &messageDeleteQueue{
+		channels: make(map[int64]*messageDeleteQueueChannel),
+	}
 
 	toDel := make([]int64, 0, 1000)
 	for i := 0; i < 1000; i++ {
@@ -60,7 +64,7 @@ func TestDeleteQueueSplit(t *testing.T) {
 		return nil
 	}
 
-	q.DeleteMessages(1, toDel...)
+	q.DeleteMessages(0, 1, toDel...)
 
 	select {
 	case <-time.After(time.Second):

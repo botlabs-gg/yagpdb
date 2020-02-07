@@ -1,26 +1,23 @@
-package deletequeue
+package bot
 
 import (
 	"sync"
 
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 )
 
-type Queue struct {
+var MessageDeleteQueue = &messageDeleteQueue{
+	channels: make(map[int64]*messageDeleteQueueChannel),
+}
+
+type messageDeleteQueue struct {
 	sync.RWMutex
-	channels         map[int64]*ChannelQueue
+	channels         map[int64]*messageDeleteQueueChannel
 	customdeleteFunc func(channel int64, msg []int64) error // for testing
 }
 
-var logger = common.GetFixedPrefixLogger("delete_queue")
-
-func NewQueue() *Queue {
-	return &Queue{
-		channels: make(map[int64]*ChannelQueue),
-	}
-}
-
-func (q *Queue) DeleteMessages(channel int64, ids ...int64) {
+func (q *messageDeleteQueue) DeleteMessages(guildID int64, channel int64, ids ...int64) {
 	q.Lock()
 	if cq, ok := q.channels[channel]; ok {
 		cq.Lock()
@@ -38,8 +35,15 @@ func (q *Queue) DeleteMessages(channel int64, ids ...int64) {
 		}
 	}
 
+	if guildID != 0 {
+		if !BotProbablyHasPermission(guildID, channel, discordgo.PermissionManageMessages) {
+			q.Unlock()
+			return
+		}
+	}
+
 	// create a new channel queue
-	cq := &ChannelQueue{
+	cq := &messageDeleteQueueChannel{
 		Parent:  q,
 		Channel: channel,
 		Queued:  ids,
@@ -49,10 +53,10 @@ func (q *Queue) DeleteMessages(channel int64, ids ...int64) {
 	q.Unlock()
 }
 
-type ChannelQueue struct {
+type messageDeleteQueueChannel struct {
 	sync.RWMutex
 
-	Parent *Queue
+	Parent *messageDeleteQueue
 
 	Channel int64
 	Exiting bool
@@ -61,7 +65,7 @@ type ChannelQueue struct {
 	Processing []int64
 }
 
-func (cq *ChannelQueue) run() {
+func (cq *messageDeleteQueueChannel) run() {
 	for {
 		cq.Lock()
 		cq.Processing = nil
@@ -98,7 +102,7 @@ func (cq *ChannelQueue) run() {
 	}
 }
 
-func (cq *ChannelQueue) processBatch(ids []int64) {
+func (cq *messageDeleteQueueChannel) processBatch(ids []int64) {
 	var err error
 	if cq.Parent.customdeleteFunc != nil {
 		err = cq.Parent.customdeleteFunc(cq.Channel, ids)

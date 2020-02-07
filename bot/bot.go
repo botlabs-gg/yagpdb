@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/dstate"
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/retryableredis"
-	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
@@ -29,8 +28,6 @@ var (
 
 	NodeConn          *node.Conn
 	UsingOrchestrator bool
-
-	MessageDeleteQueue = deletequeue.NewQueue()
 )
 
 var (
