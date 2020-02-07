@@ -311,8 +311,8 @@ func setupState() {
 				common.Statsd.Count("yagpdb.state.cache_hits", deltaHits, nil, 1)
 				common.Statsd.Count("yagpdb.state.cache_misses", deltaMisses, nil, 1)
 
-				common.Statsd.Count("yagpdb.state.last_members_evicted", stats.MembersRemovedLastGC, nil, 1)
-				common.Statsd.Count("yagpdb.state.last_cache_evicted", stats.CacheMisses, nil, 1)
+				common.Statsd.Gauge("yagpdb.state.last_members_evicted", float64(stats.MembersRemovedLastGC), nil, 1)
+				common.Statsd.Gauge("yagpdb.state.last_cache_evicted", float64(stats.CacheMisses), nil, 1)
 			}
 
 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
