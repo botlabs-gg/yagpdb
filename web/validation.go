@@ -265,7 +265,7 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (kee
 		logger.WithField("kind", kind).Error("UNKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
 	}
 
-	if err != nil && allowEmpty {
+	if (err != nil || i == 0) && allowEmpty {
 		return false, nil
 	}
 
