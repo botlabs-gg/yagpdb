@@ -1,16 +1,17 @@
 package notifications
 
 import (
-	"emperror.dev/errors"
 	"fmt"
+	"math/rand"
+	"strings"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
-	"math/rand"
-	"strings"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -151,7 +152,12 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 	}
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed sending " + name)
+		l := logger.WithError(err).WithField("guild", cs.Guild.ID)
+		if common.IsDiscordErr(err, discordgo.ErrCodeCannotSendMessagesToThisUser) {
+			l.Warn("Failed sending " + name)
+		} else {
+			l.Error("Failed sending " + name)
+		}
 	}
 
 	return bot.CheckDiscordErrRetry(err)

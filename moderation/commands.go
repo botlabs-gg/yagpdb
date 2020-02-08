@@ -36,7 +36,7 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 			gs.RUnlock()
 
 			if !above {
-				return config, targetMember.DGoUser(), commands.NewPublicError("Can't use moderation commands on users ranked the same or higher than you")
+				return config, targetMember.DGoUser(), commands.NewUserError("Can't use moderation commands on users ranked the same or higher than you")
 			}
 
 			return config, targetMember.DGoUser(), nil
@@ -55,12 +55,12 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 	cmdName := cmdData.Cmd.Trigger.Names[0]
 	oreason = reason
 	if !enabled {
-		return oreason, commands.NewPublicErrorF("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName)
+		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName)
 	}
 
 	if strings.TrimSpace(reason) == "" {
 		if !reasonArgOptional {
-			return oreason, commands.NewPublicError("A reason has been set to be required for this command by the server admins, see help for more info.")
+			return oreason, commands.NewUserError("A reason has been set to be required for this command by the server admins, see help for more info.")
 		}
 
 		oreason = "(No reason specified)"
@@ -83,7 +83,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		// Fallback to legacy permissions
 		hasPerms, err := bot.AdminOrPermMS(commands.ContextMS(cmdData.Context()), cmdData.CS.ID, neededPerm)
 		if err != nil || !hasPerms {
-			return oreason, commands.NewPublicErrorF("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
+			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
 
 		permsMet = true
@@ -145,7 +145,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = BanUserWithDuration(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), parsed.Switches["ddays"].Int())
+			err = BanUserWithDuration(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), parsed.Switches["ddays"].Int())
 			if err != nil {
 				return nil, err
 			}
@@ -175,7 +175,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = KickUser(config, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, target)
+			err = KickUser(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target)
 			if err != nil {
 				return nil, err
 			}
@@ -217,7 +217,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, muteDuration)
+			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, muteDuration)
 			if err != nil {
 				return nil, err
 			}
@@ -256,7 +256,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, false, parsed.GS.ID, parsed.Msg.ChannelID, parsed.Msg.Author, reason, member, 0)
+			err = MuteUnmuteUser(config, false, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -385,7 +385,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if minAge != 0 {
 				filtered = true
 			}
-			
+
 			// Check if we should ignore pinned messages
 			pe := false
 			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
@@ -478,7 +478,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = WarnUser(config, parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author, target, parsed.Args[1].Str())
+			err = WarnUser(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, target, parsed.Args[1].Str())
 			if err != nil {
 				return nil, err
 			}
@@ -655,7 +655,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if len(entries) < 1 && p.LastResponse != nil { //Don't send No Results error on first execution.
 				return nil, paginatedmessages.ErrNoResults
 			}
-			
+
 			embed := &discordgo.MessageEmbed{
 				Title: "Ranked list of warnings",
 			}
@@ -873,7 +873,7 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 		if minAge != 0 && now.Sub(msgs[i].ParsedCreated) < minAge {
 			continue
 		}
-		
+
 		// Check if pinned message to ignore
 		if pinFilterEnable {
 			if _, found := pinnedMessages[msgs[i].ID]; found {

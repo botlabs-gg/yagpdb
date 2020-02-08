@@ -154,13 +154,13 @@ func CheckMessage(m *discordgo.Message) bool {
 	go func() {
 		switch highestPunish {
 		case PunishNone:
-			err = moderation.WarnUser(nil, cs.Guild.ID, cs.ID, common.BotUser, member.DGoUser(), "Automoderator: "+punishMsg)
+			err = moderation.WarnUser(nil, cs.Guild.ID, cs, m, common.BotUser, member.DGoUser(), "Automoderator: "+punishMsg)
 		case PunishMute:
-			err = moderation.MuteUnmuteUser(nil, true, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
+			err = moderation.MuteUnmuteUser(nil, true, cs.Guild.ID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
 		case PunishKick:
-			err = moderation.KickUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
+			err = moderation.KickUser(nil, cs.Guild.ID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
 		case PunishBan:
-			err = moderation.BanUser(nil, cs.Guild.ID, cs.ID, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
+			err = moderation.BanUser(nil, cs.Guild.ID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
 		}
 
 		// Execute the punishment before removing the message to make sure it's included in logs

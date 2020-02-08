@@ -177,7 +177,7 @@ func AddRootCommandsWithMiddlewares(middlewares []dcmd.MiddleWareFunc, cmds ...*
 
 func handleMsgCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate()
-	if m.Author == nil || m.Author.ID == common.BotUser.ID || m.WebhookID != 0 {
+	if !bot.IsNormalUserMessage(m.Message) {
 		// Pls no panicerinos or banerinos self, also ignore webhooks
 		return
 	}

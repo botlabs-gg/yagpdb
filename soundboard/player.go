@@ -61,6 +61,20 @@ func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID in
 	return
 }
 
+func resetPlayerServer(guildID int64) string{
+	playersmu.L.Lock()
+
+	if p, ok := players[guildID]; ok {
+		p.stop = true
+		playersmu.L.Unlock()
+		playersmu.Broadcast()
+		return ""
+	}
+	playersmu.L.Unlock()
+	
+	return "No active Player, nothing to reset."
+}
+
 // Player represends a voice connection playing a soundbaord file (or waiting for one)
 type Player struct {
 	GuildID int64
@@ -107,7 +121,7 @@ func (p *Player) Run() {
 		}
 
 		var err error
-		p.vc, err = playSound(p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item)
+		p.vc, err = playSound(p, p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item)
 		if err != nil {
 			logger.WithError(err).WithField("guild", p.GuildID).Error("Failed playing sound")
 			if item.CommandRanFrom != 0 {
@@ -140,7 +154,9 @@ func (p *Player) exit() {
 	if p.vc != nil {
 		p.vc.Disconnect()
 	}
-
+	if len(p.queue) > 0 {
+		p.queue = nil
+	}
 	delete(players, p.GuildID)
 }
 
@@ -149,8 +165,12 @@ func (p *Player) checkIdleTooLong() {
 	defer t.Stop()
 	for {
 		<-t.C
-
+		
 		playersmu.L.Lock()
+		if p.stop {
+			playersmu.L.Unlock()
+			return
+		}
 		if time.Since(p.timeLastPlay) > time.Minute && len(p.queue) < 1 && !p.playing {
 			p.stop = true
 			playersmu.Broadcast()
@@ -162,7 +182,7 @@ func (p *Player) checkIdleTooLong() {
 	}
 }
 
-func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest) (*discordgo.VoiceConnection, error) {
+func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest) (*discordgo.VoiceConnection, error) {
 	logger.Info("Playing sound ", req.Sound)
 
 	// Open the sound and create a new decoder
@@ -195,6 +215,13 @@ func playSound(vc *discordgo.VoiceConnection, session *discordgo.Session, req *P
 
 	// Then play the actual sound
 	for {
+		playersmu.L.Lock()
+		if p.stop {
+			playersmu.L.Unlock()
+			return vc, nil
+		}
+		playersmu.L.Unlock()
+		
 		frame, err := decoder.OpusFrame()
 		if err != nil {
 			if err != io.EOF {

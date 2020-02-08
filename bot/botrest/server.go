@@ -258,7 +258,7 @@ func HandleNodeStatus(w http.ResponseWriter, r *http.Request) {
 	numShards := bot.ShardManager.GetNumShards()
 	result := make([]*ShardStatus, 0, numShards)
 
-	processShards := bot.GetProcessShards()
+	processShards := bot.ReadyTracker.GetProcessShards()
 
 	// get general shard stats
 	for _, shardID := range processShards {
@@ -325,7 +325,7 @@ func HandleGetShardSessions(w http.ResponseWriter, r *http.Request) {
 	// numShards := bot.ShardManager.GetNumShards()
 	// result := make([]*ShardStatus, 0, numShards)
 
-	processShards := bot.GetProcessShards()
+	processShards := bot.ReadyTracker.GetProcessShards()
 
 	result := make([]*shardSessionInfo, 0)
 

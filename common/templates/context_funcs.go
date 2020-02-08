@@ -114,18 +114,25 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		var m *discordgo.Message
+		msgSend := &discordgo.MessageSend{}
 		var err error
-		if embed, ok := msg.(*discordgo.MessageEmbed); ok {
-			m, err = common.BotSession.ChannelMessageSendEmbed(cid, embed)
-		} else {
-			strMsg := fmt.Sprint(msg)
 
-			if filterSpecialMentions {
-				strMsg = common.EscapeSpecialMentions(strMsg)
-			}
+		switch typedMsg := msg.(type) {
 
-			m, err = common.BotSession.ChannelMessageSend(cid, strMsg)
+			case *discordgo.MessageEmbed:
+				msgSend.Embed = typedMsg
+			case *discordgo.MessageSend:
+				msgSend = typedMsg
+			default:
+				msgSend.Content = fmt.Sprint(msg)
 		}
+
+		if filterSpecialMentions && msgSend.Content != "" {
+			msgSend.Content = common.EscapeSpecialMentions(msgSend.Content)
+		}
+
+		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)
+		
 
 		if err == nil && returnID {
 			return m.ID

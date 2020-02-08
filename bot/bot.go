@@ -12,7 +12,6 @@ import (
 	"github.com/jonas747/dstate"
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/retryableredis"
-	"github.com/jonas747/yagpdb/bot/deletequeue"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
@@ -29,8 +28,6 @@ var (
 
 	NodeConn          *node.Conn
 	UsingOrchestrator bool
-
-	MessageDeleteQueue = deletequeue.NewQueue()
 )
 
 var (
@@ -41,15 +38,8 @@ var (
 )
 
 var (
-	// the variables below specify shard orchestrating info received from a shard orchestrator (see cmd/shardorchestrator)
-	// there are unused if were running standalone
-
 	// the total amount of shards this bot is set to use across all processes
 	totalShardCount int
-
-	// The shards running on this process, protected by the processShardsLock muted
-	processShards     []int
-	processShardsLock sync.RWMutex
 )
 
 // Run intializes and starts the discord bot component of yagpdb
@@ -103,11 +93,12 @@ func setupStandalone() {
 
 	EventLogger.init(shardCount)
 	eventsystem.InitWorkers(shardCount)
+	ReadyTracker.initTotalShardCount(totalShardCount)
+
 	go EventLogger.run()
 
-	processShards = make([]int, totalShardCount)
 	for i := 0; i < totalShardCount; i++ {
-		processShards[i] = i
+		ReadyTracker.shardsAdded(i)
 	}
 
 	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
@@ -317,8 +308,8 @@ func setupState() {
 				common.Statsd.Count("yagpdb.state.cache_hits", deltaHits, nil, 1)
 				common.Statsd.Count("yagpdb.state.cache_misses", deltaMisses, nil, 1)
 
-				common.Statsd.Count("yagpdb.state.last_members_evicted", stats.MembersRemovedLastGC, nil, 1)
-				common.Statsd.Count("yagpdb.state.last_cache_evicted", stats.CacheMisses, nil, 1)
+				common.Statsd.Gauge("yagpdb.state.last_members_evicted", float64(stats.MembersRemovedLastGC), nil, 1)
+				common.Statsd.Gauge("yagpdb.state.last_cache_evicted", float64(stats.CacheMisses), nil, 1)
 			}
 
 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
@@ -377,7 +368,7 @@ func botServiceDetailsF() (details *common.BotServiceDetails, err error) {
 	}
 
 	totalShards := getTotalShards()
-	running := GetProcessShards()
+	running := ReadyTracker.GetProcessShards()
 
 	return &common.BotServiceDetails{
 		TotalShards:      int(totalShards),

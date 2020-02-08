@@ -53,7 +53,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
-	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
 
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 }
@@ -160,25 +160,29 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 			break
 		}
 	}
-
+	
+	MuteDeniedChannelPermsFinal := MuteDeniedChannelPerms
+	if config.MuteDisallowReactionAdd {
+	MuteDeniedChannelPermsFinal = MuteDeniedChannelPermsFinal | discordgo.PermissionAddReactions
+	}
 	allows := 0
-	denies := MuteDeniedChannelPerms
+	denies := MuteDeniedChannelPermsFinal
 	changed := true
-
+	
 	if override != nil {
 		allows = override.Allow
 		denies = override.Deny
 		changed = false
 
-		if (allows & MuteDeniedChannelPerms) != 0 {
+		if (allows & MuteDeniedChannelPermsFinal) != 0 {
 			// One of the mute permissions was in the allows, remove it
-			allows &= ^MuteDeniedChannelPerms
+			allows &= ^MuteDeniedChannelPermsFinal
 			changed = true
 		}
 
-		if (denies & MuteDeniedChannelPerms) != MuteDeniedChannelPerms {
+		if (denies & MuteDeniedChannelPermsFinal) != MuteDeniedChannelPermsFinal {
 			// Missing one of the mute permissions
-			denies |= MuteDeniedChannelPerms
+			denies |= MuteDeniedChannelPermsFinal
 			changed = true
 		}
 	}
@@ -483,7 +487,7 @@ func handleScheduledUnmute(evt *seventsmodels.ScheduledEvent, data interface{}) 
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	err = MuteUnmuteUser(nil, false, evt.GuildID, 0, common.BotUser, "Mute Duration Expired", member, 0)
+	err = MuteUnmuteUser(nil, false, evt.GuildID, nil, nil, common.BotUser, "Mute Duration Expired", member, 0)
 	if errors.Cause(err) != ErrNoMuteRole {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}

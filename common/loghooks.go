@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bytes"
 	"net/http"
 	"path/filepath"
 	"runtime"
@@ -12,6 +11,11 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	discordgo.Logger = discordLogger
+	discordgo.GatewayLogger = DiscordGatewayLogger
+}
 
 type ContextHook struct{}
 
@@ -44,52 +48,72 @@ func (hook ContextHook) Fire(entry *logrus.Entry) error {
 type STDLogProxy struct{}
 
 func (p *STDLogProxy) Write(b []byte) (n int, err error) {
-
-	// Check to see if this is from discordgo
-	isDiscord := bytes.HasPrefix(b, []byte("[DG"))
-	discordLogLevel := 2
-	if isDiscord && len(b) > 4 {
-
-		parsedLevel, err := strconv.Atoi(string(b[3]))
-		if err == nil {
-			discordLogLevel = parsedLevel
-		}
-	}
-
 	n = len(b)
 
-	data := make(logrus.Fields)
+	pc := make([]uintptr, 3)
+	runtime.Callers(4, pc)
 
-	if !isDiscord {
-		pc := make([]uintptr, 3)
-		runtime.Callers(4, pc)
+	fu := runtime.FuncForPC(pc[0] - 1)
+	name := fu.Name()
+	file, line := fu.FileLine(pc[0] - 1)
 
-		fu := runtime.FuncForPC(pc[0] - 1)
-		name := fu.Name()
-		file, line := fu.FileLine(pc[0] - 1)
-
-		data["stck"] = filepath.Base(name) + ":" + filepath.Base(file) + ":" + strconv.Itoa(line)
-	} else {
-		data["stck"] = "" // prevent upstream from adding it
-	}
+	stack := filepath.Base(name) + ":" + filepath.Base(file) + ":" + strconv.Itoa(line)
 
 	logLine := string(b)
 	if strings.HasSuffix(logLine, "\n") {
 		logLine = strings.TrimSuffix(logLine, "\n")
 	}
 
-	f := logrus.WithFields(data)
-
-	switch discordLogLevel {
-	case 0:
-		f.Error(logLine)
-	case 1:
-		f.Warn(logLine)
-	default:
-		f.Info(logLine)
+	l := logrus.WithField("stck", stack)
+	if strings.Contains(strings.ToLower(logLine), "error") {
+		l.Error(logLine)
+	} else {
+		l.Info(logLine)
 	}
 
 	return
+}
+
+func discordLogger(msgL, caller int, format string, a ...interface{}) {
+	pc := make([]uintptr, 3)
+	runtime.Callers(caller+1, pc)
+	fu := runtime.FuncForPC(pc[0] - 1)
+	name := fu.Name()
+	file, line := fu.FileLine(pc[0] - 1)
+
+	stack := filepath.Base(name) + ":" + filepath.Base(file) + ":" + strconv.Itoa(line)
+
+	f := logrus.WithField("stck", stack)
+
+	switch msgL {
+	case 0:
+		f.Errorf("[DG] "+format, a...)
+	case 1:
+		f.Warnf("[DG] "+format, a...)
+	default:
+		f.Infof("[DG] "+format, a...)
+	}
+}
+
+func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, args ...interface{}) {
+	pc := make([]uintptr, 3)
+	runtime.Callers(3, pc)
+	fu := runtime.FuncForPC(pc[0] - 1)
+	name := fu.Name()
+	file, line := fu.FileLine(pc[0] - 1)
+
+	stack := filepath.Base(name) + ":" + filepath.Base(file) + ":" + strconv.Itoa(line)
+
+	f := logrus.WithField("stck", stack).WithField("shard", shardID).WithField("connid", connectionID)
+
+	switch msgL {
+	case 0:
+		f.Errorf("[GATEWAY] "+msgf, args...)
+	case 1:
+		f.Warnf("[GATEWAY] "+msgf, args...)
+	default:
+		f.Infof("[GATEWAY] "+msgf, args...)
+	}
 }
 
 type GORMLogger struct {

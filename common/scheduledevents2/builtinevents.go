@@ -48,7 +48,7 @@ func ScheduleDeleteMessages(guildID, channelID int64, when time.Time, messages .
 func handleDeleteMessagesEvent(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
 	dataCast := data.(*DeleteMessagesEvent)
 
-	bot.MessageDeleteQueue.DeleteMessages(dataCast.ChannelID, dataCast.Messages...)
+	bot.MessageDeleteQueue.DeleteMessages(dataCast.GuildID, dataCast.ChannelID, dataCast.Messages...)
 	return false, nil
 }
 

@@ -157,6 +157,7 @@ func (o *DurationOutOfRangeError) Error() string {
 	}
 }
 
+// PublicError is a error that is both logged and returned as a response
 type PublicError string
 
 func (p PublicError) Error() string {
@@ -169,6 +170,27 @@ func NewPublicError(a ...interface{}) PublicError {
 
 func NewPublicErrorF(f string, a ...interface{}) PublicError {
 	return PublicError(fmt.Sprintf(f, a...))
+}
+
+// UserError is a special error type that is only sent as a response, and not logged
+type UserError string
+
+var _ dcmd.UserError = (UserError)("") // make sure it implements this interface
+
+func (ue UserError) Error() string {
+	return string(ue)
+}
+
+func (ue UserError) IsUserError() bool {
+	return true
+}
+
+func NewUserError(a ...interface{}) error {
+	return UserError(fmt.Sprint(a...))
+}
+
+func NewUserErrorf(f string, a ...interface{}) error {
+	return UserError(fmt.Sprintf(f, a...))
 }
 
 func FilterBadInvites(msg string, guildID int64, replacement string) string {

@@ -27,7 +27,7 @@ func init() {
 	snowflake.Epoch = 1420070400000
 
 	pubsub.FilterFunc = func(guildID int64) (handle bool) {
-		if guildID == -1 || IsGuildOnCurrentProcess(guildID) {
+		if guildID == -1 || ReadyTracker.IsGuildShardReady(guildID) {
 			return true
 		}
 
@@ -223,21 +223,6 @@ func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.M
 	return
 }
 
-// IsGuildOnCurrentProcess returns whether the guild is on one of the shards for this process
-func IsGuildOnCurrentProcess(guildID int64) bool {
-	if !Enabled {
-		return false
-	}
-
-	processShardsLock.RLock()
-
-	shardID := int((guildID >> 22) % int64(totalShardCount))
-	onProcess := common.ContainsIntSlice(processShards, shardID)
-	processShardsLock.RUnlock()
-
-	return onProcess
-}
-
 // GuildShardID returns the shard id for the provided guild id
 func guildShardID(guildID int64) int {
 	return GuildShardID(getTotalShards(), guildID)
@@ -253,17 +238,7 @@ func getTotalShards() int64 {
 	return int64(totalShardCount)
 }
 
-func GetProcessShards() []int {
-	processShardsLock.RLock()
-
-	cop := make([]int, len(processShards))
-	copy(cop, processShards)
-
-	processShardsLock.RUnlock()
-
-	return cop
-}
-
+// NodeID returns this node's ID if using the orchestrator system
 func NodeID() string {
 	if !UsingOrchestrator || NodeConn == nil {
 		return "none"
@@ -272,6 +247,7 @@ func NodeID() string {
 	return NodeConn.GetIDLock()
 }
 
+// RefreshStatus updates the provided sessions status according to the current status set
 func RefreshStatus(session *discordgo.Session) {
 	var streamingURL string
 	var status string

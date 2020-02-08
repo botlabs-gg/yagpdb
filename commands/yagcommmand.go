@@ -185,16 +185,23 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if (r == nil || r == "") && cmdErr != nil {
-		r = yc.HumanizeError(cmdErr)
+		r = yc.humanizeError(cmdErr)
 	}
 
 	logEntry.ResponseTime = int64(time.Since(started))
 
-	// Log errors
+	// set cooldowns
 	if cmdErr == nil {
 		err := yc.SetCooldowns(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
+		}
+	}
+
+	// set cmdErr to nil if this was a user error top stop it from being recorded and logged as an actual error
+	if cmdErr != nil {
+		if _, isUserErr := errors.Cause(cmdErr).(dcmd.UserError); isUserErr {
+			cmdErr = nil
 		}
 	}
 
@@ -207,19 +214,22 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	return r, cmdErr
 }
 
-func (yc *YAGCommand) HumanizeError(err error) string {
+func (yc *YAGCommand) humanizeError(err error) string {
 	cause := errors.Cause(err)
 
-	if pe, ok := cause.(PublicError); ok {
-		return "The command returned an error: " + pe.Error()
-	}
+	switch t := cause.(type) {
+	case PublicError:
+		return "The command returned an error: " + t.Error()
+	case UserError:
+		return "Unable to run the command: " + t.Error()
+	case *discordgo.RESTError:
+		if t.Message != nil && t.Message.Message != "" {
+			if t.Response != nil && t.Response.StatusCode == 403 {
+				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
+			}
 
-	if dErr, ok := cause.(*discordgo.RESTError); ok && dErr.Message != nil && dErr.Message.Message != "" {
-		if dErr.Response != nil && dErr.Response.StatusCode == 403 {
-			return "The bot permissions has been incorrectly set up on this server for it to run this command: " + dErr.Message.Message
+			return "The bot was not able to perform the action, discord responded with: " + t.Message.Message
 		}
-
-		return "The bot was not able to perform the action, discord responded with: " + dErr.Message.Message
 	}
 
 	return "Something went wrong when running this command, either discord or the bot may be having issues."

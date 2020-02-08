@@ -10,7 +10,8 @@ import (
 )
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(&commands.YAGCommand{
+	commands.AddRootCommands(
+	&commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Soundboard",
 		Aliases:     []string{"sb"},
@@ -77,6 +78,20 @@ func (p *Plugin) AddCommands() {
 			}
 
 			return "Playing it now", nil
+		},
+	},
+
+	&commands.YAGCommand{
+		CmdCategory: commands.CategoryFun,
+		Name:        "SoundboardReset",
+		Aliases:     []string{"sbclose", "sbReset"},
+		Description: "Reset Soundboard Player",
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			response :=  resetPlayerServer(data.GS.ID)
+			if response != "" {
+				return response, nil
+			}
+			return "Reset Complete!", nil		
 		},
 	})
 }

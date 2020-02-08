@@ -59,7 +59,7 @@ func loopCheckAdmins() {
 	for {
 		select {
 		case <-ticker.C:
-			if IsGuildOnCurrentProcess(mainServer) {
+			if ReadyTracker.IsGuildShardReady(mainServer) {
 				requestCheckBotAdmins(mainServer, adminRole, readOnlyAccessRole)
 			}
 		case <-stopRunCheckAdmins:
