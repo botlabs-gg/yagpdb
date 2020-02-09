@@ -616,6 +616,47 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	return ""
 }
 
+//Deletes reactions from a message either via reaction trigger or argument-set of emojis,
+//needs channelID, messageID, userID, list of emojis - up to twenty
+//can be run once per CC.
+func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value, error) {
+	if c.IncreaseCheckCallCounter("user_deletes_reaction_messages", 1) {
+		return reflect.Value{}, ErrTooManyCalls
+	}
+	f := func(args []reflect.Value) (reflect.Value, error) {
+		if len(args) < 4 {
+			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, userID, emoji)")
+		}
+
+		var cArg interface{}
+		if args[0].IsValid() {
+			cArg = args[0].Interface()
+		}
+
+		cID := c.ChannelArg(cArg)
+		if cID == 0 {
+			return reflect.ValueOf("non-existing channel"), nil
+		}
+
+		mID := ToInt64(args[1].Interface())
+		uID := targetUserID(args[2].Interface())
+
+		for _, reaction := range args[3:] {
+
+			if c.IncreaseCheckCallCounter("del_reaction_message", 20) {
+				return reflect.Value{}, ErrTooManyCalls
+			}
+
+			if err := common.BotSession.MessageReactionRemove(cID, mID, reaction.String(), uID); err != nil {
+				return reflect.Value{}, err
+			}
+		}
+		return reflect.ValueOf(""), nil
+	}
+
+	return callVariadic(f, false, values...)
+}
+
 func (c *Context) tmplDelAllMessageReactions(channel, msgID interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
