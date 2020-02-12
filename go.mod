@@ -33,13 +33,12 @@ require (
 	github.com/jonas747/dcmd v1.1.0
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
 	github.com/jonas747/discordgo v1.3.2
-	github.com/jonas747/dshardorchestrator v0.1.0
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600
 	github.com/jonas747/dstate v1.0.5
 	github.com/jonas747/dutil v0.0.2
 	github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846
 	github.com/jonas747/jdshardmanager v1.0.1
-	github.com/jonas747/oauth2 v0.0.0-20170602145728-e76dd8964a29
+	github.com/jonas747/oauth2 v0.0.0-20170602145728-e76dd8964a29 // indirect
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 // indirect
 	github.com/jonas747/retryableredis v1.0.2
 	github.com/jonas747/template v1.0.0

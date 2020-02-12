@@ -28,7 +28,6 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/mentionrole"
 	"github.com/jonas747/yagpdb/stdcommands/ping"
 	"github.com/jonas747/yagpdb/stdcommands/poll"
-	"github.com/jonas747/yagpdb/stdcommands/reverse"
 	"github.com/jonas747/yagpdb/stdcommands/roll"
 	"github.com/jonas747/yagpdb/stdcommands/setstatus"
 	"github.com/jonas747/yagpdb/stdcommands/simpleembed"
@@ -73,7 +72,6 @@ func (p *Plugin) AddCommands() {
 
 		// Standard
 		define.Command,
-		reverse.Command,
 		weather.Command,
 		calc.Command,
 		topic.Command,
