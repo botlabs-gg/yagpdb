@@ -38,10 +38,9 @@ require (
 	github.com/jonas747/dutil v0.0.2
 	github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846
 	github.com/jonas747/jdshardmanager v1.0.1
-	github.com/jonas747/oauth2 v0.0.0-20170602145728-e76dd8964a29 // indirect
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 // indirect
 	github.com/jonas747/retryableredis v1.0.2
-	github.com/jonas747/template v1.0.0
+	github.com/jonas747/template v1.1.2
 	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c // indirect
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/expect v1.0.1 // indirect
