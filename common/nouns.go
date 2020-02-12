@@ -14,6 +14,7 @@ var Nouns = []string{
 	"boy",
 	"car",
 	"case",
+	"central",
 	"century",
 	"charge",
 	"child",
@@ -26,6 +27,7 @@ var Nouns = []string{
 	"daughter",
 	"day",
 	"death",
+	"drums",
 	"enchantment",
 	"end",
 	"example",
@@ -109,7 +111,6 @@ var Nouns = []string{
 	"wife",
 	"woman",
 	"work",
-	"world",
 	"world",
 	"year",
 }
