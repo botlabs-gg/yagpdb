@@ -62,6 +62,7 @@ var Command = &commands.YAGCommand{
 	Aliases:         []string{"mrole"},
 	Description:     "Sets a role to mentionable, mentions the role, and then sets it back",
 	LongDescription: "Requires the manage roles permission and the bot being above the mentioned role",
+	HideFromHelp:    true,
 	RequiredArgs:    1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Role", Type: dcmd.String},
