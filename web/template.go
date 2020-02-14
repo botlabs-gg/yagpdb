@@ -273,3 +273,31 @@ func containsChannelType(s []discordgo.ChannelType, t discordgo.ChannelType) boo
 
 	return false
 }
+
+func tmplCheckbox(name, id, description string, checked bool, extraInputAttrs ...string) template.HTML {
+	// 	const code = `<div class="checkbox-custom checkbox-primary">
+	// 	<input type="checkbox" checked="" id="checkboxExample2">
+	// 	<label for="checkboxExample2">Checkbox Primary</label>
+	// </div>`
+
+	// <input class="tgl tgl-flat" id="cb4" type="checkbox"/>
+	// <label class="tgl-btn" for="cb4"></label>
+
+	var builder strings.Builder
+	builder.WriteString(`<div class="form-group d-flex align-items-center">`)
+	builder.WriteString(`<input type="checkbox" class="tgl tgl-flat"`)
+	builder.WriteString(` name="` + name + `" id="` + id + `"`)
+
+	if checked {
+		builder.WriteString(" checked")
+	}
+	if len(extraInputAttrs) > 0 {
+		builder.WriteString(" " + strings.Join(extraInputAttrs, " "))
+	}
+	builder.WriteString(`><label for="` + id + `" class="tgl-btn mb-2"></label>`)
+	// builder.WriteString(`><div class="switch"></div>`)
+	builder.WriteString(`<span class="ml-2 mb-2">` + description + `</span></div>`)
+	// builder.WriteString(`</div>`)
+
+	return template.HTML(builder.String())
+}

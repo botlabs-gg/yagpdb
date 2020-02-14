@@ -84,6 +84,7 @@ func init() {
 		"mTemplate":        mTemplate,
 		"hasPerm":          hasPerm,
 		"formatTime":       prettyTime,
+		"checkbox":         tmplCheckbox,
 		"roleOptions":      tmplRoleDropdown,
 		"roleOptionsMulti": tmplRoleDropdownMutli,
 
