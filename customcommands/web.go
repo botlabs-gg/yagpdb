@@ -41,7 +41,7 @@ func (p *Plugin) InitWeb() {
 	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
 		Name: "Custom commands",
 		URL:  "customcommands",
-		Icon: "fas fa-exclamation",
+		Icon: "fas fa-closed-captioning",
 	})
 
 	getHandler := web.ControllerHandler(handleCommands, "cp_custom_commands")
