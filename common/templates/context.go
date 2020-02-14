@@ -54,6 +54,7 @@ var (
 		"roundCeil":  tmplRoundCeil,
 		"roundFloor": tmplRoundFloor,
 		"roundEven":  tmplRoundEven,
+		"humanizeThousands": tmplHumanizeThousands,
 
 		// misc
 		"dict":           Dictionary,
