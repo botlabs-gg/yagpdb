@@ -103,6 +103,10 @@ func RandomAdjective() string {
 	return Adjectives[rand.Intn(len(Adjectives))]
 }
 
+func RandomNoun() string {
+	return Nouns[rand.Intn(len(Nouns))]
+}
+
 type DurationFormatPrecision int
 
 const (
