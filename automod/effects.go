@@ -307,8 +307,9 @@ func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
 type BanUserEffect struct{}
 
 type BanUserEffectData struct {
-	Duration     int
-	CustomReason string `valid:",0,150,trimspace"`
+	Duration     	  int
+	CustomReason      string `valid:",0,150,trimspace"`
+	MessageDeleteDays int
 }
 
 func (ban *BanUserEffect) Kind() RulePartType {
@@ -342,6 +343,14 @@ func (ban *BanUserEffect) UserSettings() []*SettingDef {
 			Max:  150,
 			Kind: SettingTypeString,
 		},
+		&SettingDef{
+			Name:    "Number of days of messages to delete (0 to 7)",
+			Key:     "MessageDeleteDays",
+			Kind:    SettingTypeInt,
+			Min:     0,
+			Max:     7,
+			Default: 1,
+		},
 	}
 }
 
@@ -356,7 +365,7 @@ func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	}
 
 	duration := time.Duration(settingsCast.Duration) * time.Minute
-	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser(), duration, 1)
+	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser(), duration, settingsCast.MessageDeleteDays)
 	return err
 }
 
