@@ -14,18 +14,14 @@
         <form role="form" method="post" data-async-form action="/manage/{{.ActiveGuild.ID}}/tickets/settings">
             <section class="card {{if .PluginSettings.Enabled}}card-featured card-featured-success{{end}}">
                 <header class="card-header">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="tickets-enabled-box" name="Enabled" {{if .PluginSettings.Enabled}} checked{{end}}>
-                        <label class="form-check-label" for="tickets-enabled-box">
-                            <h2 class="card-title">Tickets enabled</h2>
-                        </label>
-                    </div>
+                    {{checkbox "Enabled" "tickets-enabled-box" `<h2 class="card-title">Tickets enabled</h2>` .PluginSettings.Enabled}}
                 </header>
 
                 <div class="card-body">
                     <div class="row">
                         <div class="col">
-                            <p>Tickets is a plugin which gives the ability for users on your server to open tickets, which then only your staff and other ticket participants can interact with.</p>
+                            <p>Tickets is a plugin which gives the ability for users on your server to open tickets,
+                                which then only your staff and other ticket participants can interact with.</p>
                             <p>The flow goes like this:</p>
                             <ol>
                                 <li>User opens a ticket using <code>-ticket open (reason-here)</code></li>
@@ -34,32 +30,38 @@
                                 <li>User can also add more people to the ticket</li>
                                 <li>User talks with the staff, posts evidence in attachments or links</li>
                                 <li>When it's over, the ticket is closed</li>
-                                <li>All attachments and message history will then be downloaded and put in another channel (specified below)</li>
+                                <li>All attachments and message history will then be downloaded and put in another
+                                    channel (specified below)</li>
                                 <li>Channel gets deleted</li>
                             </ol>
-                            <p>There's more functionality here that's not mentioned, use <code>-help ticket</code> for all the commands.<br>
-                            More functionality is also planned, such as adding a interface on the website so that it can be used for things like ban appeals.</p>
+                            <p>There's more functionality here that's not mentioned, use <code>-help ticket</code> for
+                                all the commands.<br>
+                                More functionality is also planned, such as adding a interface on the website so that it
+                                can be used for things like ban appeals.</p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="form-group">
-								<label>Role(s) for people considered admins</label><br>
-                                <select name="AdminRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                <label>Role(s) for people considered admins</label><br>
+                                <select name="AdminRoles" class="multiselect form-control" multiple="multiple"
+                                    data-plugin-multiselect>
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .PluginSettings.AdminRoles}}
                                 </select>
                             </div>
                             <div class="form-group">
-								<label>Role(s) for people considered mods (tickets can be set to an admin only mode)</label><br>
-                                <select name="ModRoles" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
+                                <label>Role(s) for people considered mods (tickets can be set to an admin only
+                                    mode)</label><br>
+                                <select name="ModRoles" class="multiselect form-control" multiple="multiple"
+                                    data-plugin-multiselect>
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .PluginSettings.ModRoles}}
                                 </select>
                             </div>
                             <div class="form-group">
-                            	<label>Channel category to create ticket channels in</label>
-                            	<select class="form-control" name="TicketsChannelCategory">
-									{{catChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsChannelCategory true "None"}}
-								</select>
+                                <label>Channel category to create ticket channels in</label>
+                                <select class="form-control" name="TicketsChannelCategory">
+                                    {{catChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsChannelCategory true "None"}}
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Channel to send closed ticket transcripts and attachments in</label>
@@ -68,7 +70,8 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Channel to send closed ticket transcripts and attachments in for admin only tickets</label>
+                                <label>Channel to send closed ticket transcripts and attachments in for admin only
+                                    tickets</label>
                                 <select class="form-control" name="TicketsTranscriptsChannelAdminOnly">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannelAdminOnly true "None"}}
                                 </select>
@@ -79,21 +82,17 @@
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.StatusChannel true "None"}}
                                 </select>
                             </div>
-                            <div class="form-check mb-2">
-                                <input type="checkbox" class="form-check-input" id="tickets-create-transcripts-checkbox" {{if .PluginSettings.TicketsUseTXTTranscripts}}checked{{end}} name="TicketsUseTXTTranscripts"></input>
-                                <label class="form-check-label" for="tickets-create-transcripts-checkbox">Create .txt transcripts when tickets close</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input type="checkbox" class="form-check-input" id="tickets-download-att-checkbox" {{if .PluginSettings.DownloadAttachments}}checked{{end}} name="DownloadAttachments"></input>
-                                <label class="form-check-label" for="tickets-download-att-checkbox">Download and archive attachments when closing the ticket</label>
-                            </div>
+
+                            {{checkbox "TicketsUseTXTTranscripts" "tickets-create-transcripts-checkbox2" `Create .txt transcripts when tickets close` .PluginSettings.TicketsUseTXTTranscripts}}
+                            {{checkbox "DownloadAttachments" "tickets-download-att-checkbox2" `Download and archive attachments when closing the ticket` .PluginSettings.DownloadAttachments}}
                             <div class="form-group">
                                 <label>Opening message in new tickets</label>
-                                <textarea rows="5" class="form-control"  name="TicketOpenMSG" placeholder="{{.DefaultTicketMessage}}">{{or .PluginSettings.TicketOpenMSG .DefaultTicketMessage}}</textarea>
+                                <textarea rows="5" class="form-control" name="TicketOpenMSG"
+                                    placeholder="{{.DefaultTicketMessage}}">{{or .PluginSettings.TicketOpenMSG .DefaultTicketMessage}}</textarea>
                                 <p class="help-block">
-                                    Available template data:<br/>
-                                    {{template "template_helper_user"}} - The user opening the ticket<br/>
-                                    <code>{{"{{.Reason}}"}}</code> - The reason for opening the ticket<br/>
+                                    Available template data:<br />
+                                    {{template "template_helper_user"}} - The user opening the ticket<br />
+                                    <code>{{"{{.Reason}}"}}</code> - The reason for opening the ticket<br />
                                 </p>
                             </div>
                         </div>

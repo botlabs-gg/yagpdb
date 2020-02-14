@@ -12,13 +12,16 @@
         <div class="tabs">
             <ul class="nav nav-tabs">
                 <li class="nav-item {{if not .CurrentGroup}}active{{end}}">
-                    <a data-partial-load="true" class="nav-link show {{if not .CurrentGroup}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/rolecommands/">Ungrouped / Home</a>
+                    <a data-partial-load="true" class="nav-link show {{if not .CurrentGroup}}active{{end}}"
+                        href="/manage/{{.ActiveGuild.ID}}/rolecommands/">Ungrouped / Home</a>
                 </li>
 
                 {{$dot := .}}
                 {{range .Groups}}
                 <li class="nav-item {{if $dot.CurrentGroup}}{{if eq $dot.CurrentGroup.ID .ID}}active{{end}}{{end}}">
-                    <a data-partial-load="true" class="nav-link show {{if $dot.CurrentGroup}}{{if eq $dot.CurrentGroup.ID .ID}}active{{end}}{{end}}" href="/manage/{{$dot.ActiveGuild.ID}}/rolecommands/group/{{.ID}}">{{.Name}}</a>
+                    <a data-partial-load="true"
+                        class="nav-link show {{if $dot.CurrentGroup}}{{if eq $dot.CurrentGroup.ID .ID}}active{{end}}{{end}}"
+                        href="/manage/{{$dot.ActiveGuild.ID}}/rolecommands/group/{{.ID}}">{{.Name}}</a>
                 </li>
                 {{end}}
             </ul>
@@ -30,62 +33,71 @@
                         <div class="col-lg-6 border-right border-primary">
                             <!-- Add new role command -->
                             <h3>Create new role command</h2>
-                            <form data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_cmd" method="post">
-                                <div class="form-row">
-                                    <div class="form-group col">
-                                        <label for="new-role-command-name">Name</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-prepend">
-                                                <span class="input-group-text"><small>-role</small></span>
-                                            </span>
-                                            <input type="text" class="form-control" id="new-role-command-name" name="Name" oninput="rolecmdNameInputChanged()">
+                                <form data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_cmd"
+                                    method="post">
+                                    <div class="form-row">
+                                        <div class="form-group col">
+                                            <label for="new-role-command-name">Name</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-prepend">
+                                                    <span class="input-group-text"><small>-role</small></span>
+                                                </span>
+                                                <input type="text" class="form-control" id="new-role-command-name"
+                                                    name="Name" oninput="rolecmdNameInputChanged()">
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col">
-                                        <label for="new-role-command-group">Group</label><br>
-                                        <select name="Group" class="form-control" id="new-role-command-group">
-                                            {{mTemplate "rolecommands_groupopts" "Groups" .Groups "Selected" .CurrentGroup.ID}}
-                                        </select>
+                                    <div class="form-row">
+                                        <div class="form-group col">
+                                            <label for="new-role-command-group">Group</label><br>
+                                            <select name="Group" class="form-control" id="new-role-command-group">
+                                                {{mTemplate "rolecommands_groupopts" "Groups" .Groups "Selected" .CurrentGroup.ID}}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col">
+                                            <label for="new-role-command-role">Role</label>
+                                            <select class="form-control" name="Role" id="new-role-command-role"
+                                                onchange="rolecmdRoleDropdownChanged()">
+                                                {{roleOptions .ActiveGuild.Roles .HighestRole}}
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div class="form-group col">
-                                        <label for="new-role-command-role">Role</label>
-                                        <select class="form-control" name="Role" id="new-role-command-role" onchange="rolecmdRoleDropdownChanged()">
-                                            {{roleOptions .ActiveGuild.Roles .HighestRole}}
-                                        </select>
+                                    <div class="form-row">
+                                        <div class="form-group col">
+                                            <label for="new-role-command-require-roles">Requires roles</label><br>
+                                            <select name="RequireRoles" data-plugin-multiselect
+                                                class="multiselect form-control" multiple="multiple"
+                                                id="new-role-command-require-roles">
+                                                {{roleOptions .ActiveGuild.Roles nil}}
+                                            </select>
+                                        </div>
+                                        <div class="form-group col">
+                                            <label for="new-role-command-ignore-roles">Ignore roles</label><br>
+                                            <select name="IgnoreRoles" data-plugin-multiselect
+                                                class="multiselect form-control" multiple="multiple"
+                                                id="new-role-command-ignore-roles">
+                                                {{roleOptions .ActiveGuild.Roles nil}}
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col">
-                                        <label for="new-role-command-require-roles">Requires roles</label><br>
-                                        <select name="RequireRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="new-role-command-require-roles">
-                                            {{roleOptions .ActiveGuild.Roles nil}}
-                                        </select>
-                                    </div>
-                                    <div class="form-group col">
-                                        <label for="new-role-command-ignore-roles">Ignore roles</label><br>
-                                        <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="new-role-command-ignore-roles">
-                                            {{roleOptions .ActiveGuild.Roles nil}}
-                                        </select>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-success">Create new role command</button>
-                            </form>
+                                    <button type="submit" class="btn btn-success">Create new role command</button>
+                                </form>
                         </div>
                         <!-- /.col-lg-6 -->
                         <div class="col-lg-6">
-                    <!-- Add new role command group -->
+                            <!-- Add new role command group -->
                             <h3>Create new group</h3>
-                            <form data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_group" method="post">
-                                <div class="form-row" >
+                            <form data-async-form action="/manage/{{.ActiveGuild.ID}}/rolecommands/new_group"
+                                method="post">
+                                <div class="form-row">
                                     <div class="form-group col">
                                         <label for="new-group-name">Name</label>
                                         <input type="text" class="form-control" id="new-group-name" name="Name">
                                     </div>
                                     <div class="form-group col">
                                         <label for="new-group-mode">Mode</label><br>
-                                        <select name="Mode" class="form-control" id="new-group-mode" onchange="ModeChanged(this,'new-')">
+                                        <select name="Mode" class="form-control" id="new-group-mode"
+                                            onchange="ModeChanged(this,'new-')">
                                             <option value="0">Standard</option>
                                             <option value="1">Single</option>
                                             <option value="2">Multiple</option>
@@ -95,39 +107,39 @@
                                 <div class="form-row">
                                     <div class="form-group col">
                                         <label for="new-group-require-roles">Requires roles</label><br>
-                                        <select name="RequireRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="new-group-require-roles">
+                                        <select name="RequireRoles" data-plugin-multiselect
+                                            class="multiselect form-control" multiple="multiple"
+                                            id="new-group-require-roles">
                                             {{roleOptions .ActiveGuild.Roles nil}}
                                         </select>
                                     </div>
                                     <div class="form-group col">
                                         <label for="new-group-ignore-roles">Ignore roles</label><br>
-                                        <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="new-group-ignore-roles">
+                                        <select name="IgnoreRoles" data-plugin-multiselect
+                                            class="multiselect form-control" multiple="multiple"
+                                            id="new-group-ignore-roles">
                                             {{roleOptions .ActiveGuild.Roles nil}}
                                         </select>
                                     </div>
                                 </div>
                                 <div class="form-row hidden" id="new-group-single-opts">
-                                    <div class="form-group col">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" name="SingleRequireOne" id="new-single-require-1"> 
-                                            <label class="form-check-label" for="new-single-require-1">Require 1 role in group at all times (after initial assignment)</label>
-                                        </div>
+                                    <div class="col">
+                                        {{checkbox "SingleRequireOne" "new-single-require-1" "Require 1 role in group at all times (after initial assignment)" false}}
                                     </div>
-                                    <div class="form-group col">
-                                        <div class="form-check">
-                                            <input type="checkbox" name="SingleAutoToggleOff" class="form-check-input" id="new-single-auto-toggle"> 
-                                            <label class="form-check-label" for="new-single-auto-toggle">Remove existing role when assigning another role in group.</label>
-                                        </div>
+                                    <div class="col">
+                                        {{checkbox "SingleAutoToggleOff" "new-single-auto-toggle" "Remove existing role when assigning another role in group." false}}
                                     </div>
                                 </div>
                                 <div class="form-row hidden" id="new-group-multi-opts">
                                     <div class="form-group col">
                                         <label for="new-group-min-roles">Minimum number of roles</label><br>
-                                        <input type="number" class="form-control" id="new-group-min-roles" name="MultipleMin">
+                                        <input type="number" class="form-control" id="new-group-min-roles"
+                                            name="MultipleMin">
                                     </div>
                                     <div class="form-group col">
                                         <label for="new-group-max-roles">Maximum number of roles</label><br>
-                                        <input type="number" class="form-control" id="new-group-max-roles" name="MultipleMax">
+                                        <input type="number" class="form-control" id="new-group-max-roles"
+                                            name="MultipleMax">
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-success">Create new group</button>
@@ -140,56 +152,62 @@
         </div>
     </div>
 </div>
-<!-- /.row -->  
+<!-- /.row -->
 <!-- Group listings with commands -->
 {{if not  .CurrentGroup}}
-    {{mTemplate "rolecommands_group" "ActiveGuild" .ActiveGuild  "Commands" .LoneCommands "HighestRole" .HighestRole "Groups" .Groups}}
+{{mTemplate "rolecommands_group" "ActiveGuild" .ActiveGuild  "Commands" .LoneCommands "HighestRole" .HighestRole "Groups" .Groups}}
 {{else}}
-    {{mTemplate "rolecommands_group" "ActiveGuild" .ActiveGuild "Commands" .Commands "Group" .CurrentGroup "HighestRole" .HighestRole "Groups" .Groups}}
+{{mTemplate "rolecommands_group" "ActiveGuild" .ActiveGuild "Commands" .Commands "Group" .CurrentGroup "HighestRole" .HighestRole "Groups" .Groups}}
 {{end}}
 
 <script>
-function ModeChanged(dropdown, idPrefix){
-    var idMultiOpts = $("#" + idPrefix + "group-multi-opts");
-    var idSingleOpts = $("#" + idPrefix + "group-single-opts");
+    function ModeChanged(dropdown, idPrefix) {
+        var idMultiOpts = $("#" + idPrefix + "group-multi-opts");
+        var idSingleOpts = $("#" + idPrefix + "group-single-opts");
 
-    if(dropdown.value === "0"){
-        idMultiOpts.addClass("hidden");
-        idSingleOpts.addClass("hidden");
-    }else if(dropdown.value === "1"){
-        idMultiOpts.addClass("hidden");
-        idSingleOpts.removeClass("hidden");        
-    }else{
-        idMultiOpts.removeClass("hidden");
-        idSingleOpts.addClass("hidden");
-    }
-}
-    
-// simple thing to set the selected role to the one that matches the name, if the role dropdown hasn't been touched
-var rolecmdDropdownHasChanged = false
-function rolecmdNameInputChanged(){
-    if(rolecmdDropdownHasChanged) return;
-
-    var newVal = $("#new-role-command-name").val()
-    var opts = $("#new-role-command-role").find("option").each(function(i, v){
-        var $v = $(v)
-        if ($v.text().toLowerCase() == newVal.toLowerCase()){
-            $("#new-role-command-role").val($v.val());
+        if (dropdown.value === "0") {
+            idMultiOpts.addClass("hidden");
+            idSingleOpts.addClass("hidden");
+        } else if (dropdown.value === "1") {
+            idMultiOpts.addClass("hidden");
+            idSingleOpts.removeClass("hidden");
+        } else {
+            idMultiOpts.removeClass("hidden");
+            idSingleOpts.addClass("hidden");
         }
+    }
+
+    // simple thing to set the selected role to the one that matches the name, if the role dropdown hasn't been touched
+    var rolecmdDropdownHasChanged = false
+    function rolecmdNameInputChanged() {
+        if (rolecmdDropdownHasChanged) return;
+
+        var newVal = $("#new-role-command-name").val()
+        var opts = $("#new-role-command-role").find("option").each(function (i, v) {
+            var $v = $(v)
+            if ($v.text().toLowerCase() == newVal.toLowerCase()) {
+                $("#new-role-command-role").val($v.val());
+            }
+        })
+    }
+
+    function rolecmdRoleDropdownChanged() {
+        rolecmdDropdownHasChanged = true;
+    }
+
+    $(function () {
+        ModeChanged($("#new-group-mode")[0], "new-");
     })
-}
+</script>
 
-function rolecmdRoleDropdownChanged(){
-    rolecmdDropdownHasChanged = true;
-}
+{{if .CurrentGroup}}
+<script>
+    $(function () {
+        ModeChanged($("#{{.CurrentGroup.ID}}-group-mode")[0], "{{.CurrentGroup.ID}}-");
+    }); 
+</script>
+{{end}}
 
-$(function(){
-    ModeChanged($("#new-group-mode")[0], "new-");
-    {{if .CurrentGroup}}
-    ModeChanged($("#{{.CurrentGroup.ID}}-group-mode")[0], "{{.CurrentGroup.ID}}-");
-    {{end}}
-})
-</script>          
 {{template "cp_footer" .}}
 
 {{end}}
@@ -206,8 +224,12 @@ $(function(){
                 <header class="card-header">
                     <div class="pull-right">
                         <div class="btn-group flex-wrap">
-                            <button type="submit" class="btn btn-success" formaction="/manage/{{$ag.ID}}/rolecommands/update_group"><i class="fas fa-save"></i></button>
-                            <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/remove_group"><i class="fas fa-trash"></i></button>
+                            <button type="submit" class="btn btn-success"
+                                formaction="/manage/{{$ag.ID}}/rolecommands/update_group"><i
+                                    class="fas fa-save"></i></button>
+                            <button type="submit" class="btn btn-danger"
+                                formaction="/manage/{{$ag.ID}}/rolecommands/remove_group"><i
+                                    class="fas fa-trash"></i></button>
                         </div>
                         <!-- <button type="submit" class="btn btn-danger" formaction="/manage//automod/ruleset//rule//delete">Delete</button> -->
                     </div>
@@ -218,12 +240,14 @@ $(function(){
                     <div class="row">
                         <div class="form-group col">
                             <label for="{{.Group.ID}}-group-name">Name</label>
-                            <input type="text" class="form-control" id="{{.Group.ID}}-group-name" name="Name" value="{{.Group.Name}}">
+                            <input type="text" class="form-control" id="{{.Group.ID}}-group-name" name="Name"
+                                value="{{.Group.Name}}">
                         </div>
 
                         <div class="col">
                             <label for="{{.Group.ID}}-group-mode">Mode</label><br>
-                            <select name="Mode" class="form-control" id="{{.Group.ID}}-group-mode" onchange="ModeChanged(this,'{{.Group.ID}}-')">
+                            <select name="Mode" class="form-control" id="{{.Group.ID}}-group-mode"
+                                onchange="ModeChanged(this,'{{.Group.ID}}-')">
                                 <option value="0" {{if eq .Group.Mode 0}} selected{{end}}>Standard</option>
                                 <option value="1" {{if eq .Group.Mode 1}} selected{{end}}>Single</option>
                                 <option value="2" {{if eq .Group.Mode 2}} selected{{end}}>Multiple</option>
@@ -232,13 +256,15 @@ $(function(){
 
                         <div class="form-group col">
                             <label for="{{.Group.ID}}-group-require-roles">Requires roles</label><br>
-                            <select name="RequireRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="{{.Group.ID}}-group-require-roles">
+                            <select name="RequireRoles" data-plugin-multiselect class="multiselect form-control"
+                                multiple="multiple" id="{{.Group.ID}}-group-require-roles">
                                 {{roleOptionsMulti $ag.Roles nil .Group.RequireRoles}}
                             </select>
                         </div>
                         <div class="form-group col">
                             <label for="{{.Group.ID}}-group-ignore-roles">Ignore roles</label><br>
-                            <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="{{.Group.ID}}-group-ignore-roles">
+                            <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control"
+                                multiple="multiple" id="{{.Group.ID}}-group-ignore-roles">
                                 {{roleOptionsMulti $ag.Roles nil .Group.IgnoreRoles}}
                             </select>
                         </div>
@@ -246,33 +272,28 @@ $(function(){
                     <div class="row">
                         <div class="form-group col-lg-4">
                             <label for="group-temporary-role">Temporary roles (minutes)</label>
-                            <input type="number" min="0" max="1440" class="form-control" id="group-temporary-role" name="TemporaryRoleDuration" value="{{.Group.TemporaryRoleDuration}}">
-                            <p class="help-block">Remove roles in this group after a certain duration after assignment (0 to disable)</p>
+                            <input type="number" min="0" max="1440" class="form-control" id="group-temporary-role"
+                                name="TemporaryRoleDuration" value="{{.Group.TemporaryRoleDuration}}">
+                            <p class="help-block">Remove roles in this group after a certain duration after assignment
+                                (0 to disable)</p>
                         </div>
                         <div id="{{.Group.ID}}-group-single-opts" class="col-lg-4 {{if ne .Group.Mode 1}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="{{.Group.ID}}-single-require-one" name="SingleRequireOne" {{if .Group.SingleRequireOne}}checked{{end}}>
-                                    <label for="{{.Group.ID}}-single-require-one" class="form-check-label">Require 1 role in group at all times (after initial assignment). (Users won't be able to change roles unless the next box is checked).</label>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <input type="checkbox" id="{{.Group.ID}}-single-auto-toggle" class="form-check-input" name="SingleAutoToggleOff" {{if .Group.SingleAutoToggleOff}}checked{{end}}>
-                                    <label for="{{.Group.ID}}-single-auto-toggle" class="form-check-label">Remove existing role when assigning another role in group.</label>
-                                </div>
-                            </div>
+
+                            {{checkbox "SingleRequireOne" (joinStr "" .Group.ID "-single-require-one") "Require 1 role in group at all times (after initial assignment)" .Group.SingleRequireOne}}
+                            {{checkbox "SingleAutoToggleOff" (joinStr "" .Group.ID "-single-auto-toggle") "Remove existing role when assigning another role in group." .Group.SingleAutoToggleOff}}
                         </div>
                         <div id="{{.Group.ID}}-group-multi-opts" class="col-lg-4 {{if ne .Group.Mode 2}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>
                             <div class="form-group">
                                 <label for="{{.Group.ID}}-group-min-roles">Minimum number of roles</label><br>
-                                <input type="number" class="form-control" id="{{.Group.ID}}-group-min-roles" name="MultipleMin" value="{{.Group.MultipleMin}}">
+                                <input type="number" class="form-control" id="{{.Group.ID}}-group-min-roles"
+                                    name="MultipleMin" value="{{.Group.MultipleMin}}">
                             </div>
                             <div class="form-group">
                                 <label for="{{.Group.ID}}-group-max-roles">Maximum number of roles</label><br>
-                                <input type="number" class="form-control" id="{{.Group.ID}}-group-max-roles" name="MultipleMax" value="{{.Group.MultipleMax}}">
+                                <input type="number" class="form-control" id="{{.Group.ID}}-group-max-roles"
+                                    name="MultipleMax" value="{{.Group.MultipleMax}}">
                             </div>
                         </div>
                     </div>
@@ -296,7 +317,8 @@ $(function(){
                         <input type="number" name="ID" class="hidden" value="{{.ID}}">
                         <div class="form-group col">
                             <label for="{{.ID}}-role-command-name">Name</label>
-                            <input type="text" class="form-control" id="{{.ID}}-role-command-name" name="Name" value="{{.Name}}">
+                            <input type="text" class="form-control" id="{{.ID}}-role-command-name" name="Name"
+                                value="{{.Name}}">
                         </div>
                         <div class="form-group col">
                             <label for="{{.ID}}-role-command-group">Group</label><br>
@@ -314,29 +336,39 @@ $(function(){
                         </div>
                         <div class="form-group col">
                             <label for="{{.ID}}-role-command-require-roles">Requires roles</label><br>
-                            <select name="RequireRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="{{.ID}}-role-command-require-roles">
+                            <select name="RequireRoles" data-plugin-multiselect class="multiselect form-control"
+                                multiple="multiple" id="{{.ID}}-role-command-require-roles">
                                 {{roleOptionsMulti $ag.Roles nil .RequireRoles}}
                             </select>
                         </div>
                         <div class="form-group col">
                             <label for="{{.ID}}-role-command-ignore-roles">Ignore roles</label><br>
-                            <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control" multiple="multiple" id="{{.ID}}-role-command-ignore-roles">
+                            <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control"
+                                multiple="multiple" id="{{.ID}}-role-command-ignore-roles">
                                 {{roleOptionsMulti $ag.Roles nil .IgnoreRoles}}
                             </select>
                         </div>
                         <div class="col pt-4">
                             <div class="btn-group flex-wrap">
-                                <button type="submit" class="btn btn-success" formaction="/manage/{{$ag.ID}}/rolecommands/update_cmd" value="Save"><i class="fas fa-save"></i></button>
-                                <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/remove_cmd" value="Delete"><i class="fas fa-trash"></i></button>
-                                <button type="submit" class="btn btn-primary" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=1" value="Move Up"><i class="fas fa-chevron-up"></i></button>
-                                <button type="submit" class="btn btn-primary" formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=-1" value="Move Down"><i class="fas fa-chevron-down"></i></button>
+                                <button type="submit" class="btn btn-success"
+                                    formaction="/manage/{{$ag.ID}}/rolecommands/update_cmd" value="Save"><i
+                                        class="fas fa-save"></i></button>
+                                <button type="submit" class="btn btn-danger"
+                                    formaction="/manage/{{$ag.ID}}/rolecommands/remove_cmd" value="Delete"><i
+                                        class="fas fa-trash"></i></button>
+                                <button type="submit" class="btn btn-primary"
+                                    formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=1" value="Move Up"><i
+                                        class="fas fa-chevron-up"></i></button>
+                                <button type="submit" class="btn btn-primary"
+                                    formaction="/manage/{{$ag.ID}}/rolecommands/move_cmd?dir=-1" value="Move Down"><i
+                                        class="fas fa-chevron-down"></i></button>
                             </div>
                         </div>
                     </div>
                 </form>
                 {{end}}
             </div>
-        </div>    
+        </div>
     </div>
 </div>
 <div class="row">
@@ -348,7 +380,9 @@ $(function(){
             <div class="card-body">
                 <p>Completely deletes all role commands in this group from the server, <b>CANNOT BE UNDONE!!!</b></p>
                 <form data-async-form action="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds" method="post">
-                    <button type="submit" class="btn btn-danger" formaction="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds?group={{if .Group}}{{.Group.ID}}{{else}}-1{{end}}">Delete all roles from <b>{{if .Group}}{{.Group.Name}}{{else}}Ungrouped{{end}}</b>!</button>
+                    <button type="submit" class="btn btn-danger"
+                        formaction="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds?group={{if .Group}}{{.Group.ID}}{{else}}-1{{end}}">Delete
+                        all roles from <b>{{if .Group}}{{.Group.Name}}{{else}}Ungrouped{{end}}</b>!</button>
                 </form>
             </div>
         </section>
@@ -358,7 +392,7 @@ $(function(){
 
 {{define "rolecommands_groupopts"}}
 {{$selected := or .Selected -1}}
-<option value="-1">None</option> 
+<option value="-1">None</option>
 {{range .Groups}}
 <option value="{{.ID}}" {{if and ($selected) (eq $selected .ID)}} selected {{end}}>{{.Name}} </option>
 {{end}}

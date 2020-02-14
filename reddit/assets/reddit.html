@@ -8,25 +8,29 @@
 {{template "cp_alerts" .}}
 
 <style>
-.reddit-item-disabled {
-    background-color: #f003;
-}
+    .reddit-item-disabled {
+        background-color: #f003;
+    }
 </style>
 
 <div class="row">
     <div class="col">
         <div class="tabs">
             <ul class="nav nav-tabs">
-                <li class="nav-item active"><a class="nav-link show active" href="#fast-feeds" aria-controls="fast-feeds" role="tab" data-toggle="tab">
-                    Fast / Simple 
-                </a></li>
-                <li class="nav-item"><a class="nav-link" href="#slow-feeds" aria-controls="slow-feeds" role="tab" data-toggle="tab" >
-                    Slow / Advanced
-                </a></li>
+                <li class="nav-item active"><a class="nav-link show active" href="#fast-feeds"
+                        aria-controls="fast-feeds" role="tab" data-toggle="tab">
+                        Fast / Simple
+                    </a></li>
+                <li class="nav-item"><a class="nav-link" href="#slow-feeds" aria-controls="slow-feeds" role="tab"
+                        data-toggle="tab">
+                        Slow / Advanced
+                    </a></li>
             </ul>
             <div class="tab-content">
-                <div role="tabpanel" class="tab-pane active" id="fast-feeds">{{mTemplate "reddit_feed_tab_content" "Dot" . "Slow" false}}</div>
-                <div role="tabpanel" class="tab-pane" id="slow-feeds">{{mTemplate "reddit_feed_tab_content" "Dot" . "Slow" true}}</div>
+                <div role="tabpanel" class="tab-pane active" id="fast-feeds">
+                    {{mTemplate "reddit_feed_tab_content" "Dot" . "Slow" false}}</div>
+                <div role="tabpanel" class="tab-pane" id="slow-feeds">
+                    {{mTemplate "reddit_feed_tab_content" "Dot" . "Slow" true}}</div>
             </div>
         </div>
     </div>
@@ -41,19 +45,25 @@
 <div class="row mb-5 pb-2">
     <div class="col-md-6">
         <h3>{{if .Slow}}Slow{{else}}Fast{{end}} reddit feeds</h3>
-        <p>Reddit feeds will post posts from subreddits in your discord server, the fast feed is ratelimited at 300 posts per hour and the slow feed is 200.</p>
-        <p>{{if .Slow}}<b>Slow</b> feeds are 15 minutes behind so that you can apply score filters to them to only post popular posts in your discord. Useful for big subs. If you have it set to 10 it means that if the post has a score of above 10 after 15 minutes, it will be posted in your discord
-        {{else}}<b>Fast</b> feeds are 1 minute behind and you can't apply upvote filters to them, use the slow feed for that.{{end}}</p>
-        <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter"</p>
+        <p>Reddit feeds will post posts from subreddits in your discord server, the fast feed is ratelimited at 300
+            posts per hour and the slow feed is 200.</p>
+        <p>{{if .Slow}}<b>Slow</b> feeds are 15 minutes behind so that you can apply score filters to them to only post
+            popular posts in your discord. Useful for big subs. If you have it set to 10 it means that if the post has a
+            score of above 10 after 15 minutes, it will be posted in your discord
+            {{else}}<b>Fast</b> feeds are 1 minute behind and you can't apply upvote filters to them, use the slow feed
+            for that.{{end}}</p>
+        <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games",
+            "multicopter"</p>
     </div>
     <div class="col-md-6">
         <h3>New feed</h3>
         <form method="post" action="/manage/{{.Dot.ActiveGuild.ID}}/reddit" data-async-form>
             {{if .Slow}}<input type="text" class="hidden" name="slow" value="1">{{end}}
-            <div class ="form-row">
+            <div class="form-row">
                 <div class="form-group col">
                     <label for="new-subreddit-slow-{{.Slow}}">Subreddit</label>
-                    <input type="text" class="form-control" id="new-subreddit-slow-{{.Slow}}" name="subreddit" placeholder="discord_irl">
+                    <input type="text" class="form-control" id="new-subreddit-slow-{{.Slow}}" name="subreddit"
+                        placeholder="discord_irl">
                 </div>
                 <div class="form-group col">
                     <label for="new-channel-slow-{{.Slow}}">Server Channel</label>
@@ -62,7 +72,7 @@
                     </select>
                 </div>
             </div>
-            <div class="form-row">
+            <div class="form-row mb-3">
                 <div class="form-group col">
                     <label>NSFW Filtering</label>
                     <select name="nsfw_filter" class="form-control">
@@ -77,12 +87,7 @@
                 </div>{{end}}
             </div>
 
-            <div class="form-group">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="format-new-slow-{{.Slow}}" name="use_embeds">
-                    <label for="format-new-slow-{{.Slow}}" class="form-check-label">Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small></label>
-                </div>
-            </div>
+            {{checkbox "use_embeds" (joinStr "" "format-new-slow-" .Slow) `Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small>` true}}
 
             <button type="submit" class="btn btn-success">Add</button>
         </form>
@@ -129,22 +134,22 @@
         </div>
         <div class="col-lg">
             <div class="form-row">
-                <div class="form-group col">
-                    <label>Use embed</label>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="format-{{.ID}}" name="use_embeds" {{if .UseEmbeds}}checked{{end}}>
-                        <!-- <label for="format-{{.ID}}" class="form-check-label">Use embed</label> -->
-                    </div>
+                <div class="col d-flex flex-column">
+                    <Span class="mb-2">Use embed</span>
+                    {{checkbox "use_embeds" (joinStr "" "format-" .ID) `` .UseEmbeds}}
                 </div>
+
                 <div class="form-group col">
                     <div class="btn-group mt-4">
-                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$guild}}/reddit/{{.ID}}/update">Save</button>
-                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
+                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3"
+                            formaction="/manage/{{$guild}}/reddit/{{.ID}}/update">Save</button>
+                        <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger"
+                            formaction="/manage/{{$guild}}/reddit/{{.ID}}/delete">Delete</button>
                     </div>
                 </div>
             </div>
         </div>
-    <!-- /.col-lg-12 -->
+        <!-- /.col-lg-12 -->
     </div>
 </form>
 <!-- /.row -->

@@ -15,43 +15,37 @@
                 <header class="card-header">
                     <h2 class="card-title">Control panel access control</h2>
                 </header>
-                <div class="card-body">                    
+                <div class="card-body">
                     <div class="form-group">
-                        <label>Allow people with the following roles <code>read</code> access the control panel <b>(beta)</b></label><br> 
-                        <select class="multiselect" name="AllowedReadOnlyRoles" data-plugin-multiselect multiple="multiple">
+                        <label>Allow people with the following roles <code>read</code> access the control panel
+                            <b>(beta)</b></label><br>
+                        <select class="multiselect" name="AllowedReadOnlyRoles" data-plugin-multiselect
+                            multiple="multiple">
                             {{roleOptionsMulti .ActiveGuild.Roles nil .CoreConfig.AllowedReadOnlyRoles}}
                         </select>
-                        <p class="help-block">Members with <code>Manage Server</code> perms can always access the control panel</p>
+                        <p class="help-block">Members with <code>Manage Server</code> perms can always access the
+                            control panel</p>
                     </div>
 
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" id="all-members-ro-access" type="checkbox" name="AllowAllMembersReadOnly" {{if .CoreConfig.AllowAllMembersReadOnly}} checked{{end}}>
-                        <label class="form-check-label" for="all-members-ro-access">
-                            Allow all members of your server read only access <b>(beta)</b>
-                        </label>
-                    </div>
-
-
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" id="non-members-ro-access" type="checkbox" name="AllowNonMembersReadOnly" {{if .CoreConfig.AllowNonMembersReadOnly}} checked{{end}}>
-                        <label class="form-check-label" for="non-members-ro-access">
-                            Allow users not part of your server, including users not logged in, read only access <b>(beta)</b>
-                        </label>
-                    </div>
+                    {{checkbox "AllowAllMembersReadOnly" "AllowAllMembersReadOnly" "Allow all members of your server read only access" .CoreConfig.AllowAllMembersReadOnly}}
+                    {{checkbox "AllowNonMembersReadOnly" "AllowNonMembersReadOnly" "Allow users not part of your server, including users not logged in, read only access" .CoreConfig.AllowNonMembersReadOnly}}
 
                     <hr />
 
                     <div class="form-group">
-                        <label>Allow people with the following roles <code>write</code> access the control panel</label><br>
-                        <select class="multiselect" name="AllowedWriteRoles" data-plugin-multiselect multiple="multiple">
+                        <label>Allow people with the following roles <code>write</code> access the control
+                            panel</label><br>
+                        <select class="multiselect" name="AllowedWriteRoles" data-plugin-multiselect
+                            multiple="multiple">
                             {{roleOptionsMulti .ActiveGuild.Roles nil .CoreConfig.AllowedWriteRoles}}
                         </select>
-                        <p class="help-block">Members with <code>Manage Server</code> perms can always access the control panel</p>
+                        <p class="help-block">Members with <code>Manage Server</code> perms can always access the
+                            control panel</p>
                     </div>
 
                     <hr />
 
-                    <button type="submit" class="btn btn-success btn-lg btn-block" >Save</button>
+                    <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
                 </div>
             </div>
             <!-- /.panel -->
@@ -64,4 +58,3 @@
 {{template "cp_footer" .}}
 
 {{end}}
-

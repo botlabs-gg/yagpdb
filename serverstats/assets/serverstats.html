@@ -26,12 +26,9 @@
             <section class="card">
                 <div class="card-body">
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/stats/settings" data-async-form>
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="Public" {{if .Config.Public}} checked{{end}}> Publicly
-                                accessible
-                            </label>
-                        </div>
+
+                        {{checkbox "Public" "stats-public-check" `Make server stats publicly accessible` .Config.Public}}
+
                         <label>Ignore channels</label>
                         <div class="form-group mb-4">
                             <select data-plugin-multiselect class="form-control populate" name="IgnoreChannels"

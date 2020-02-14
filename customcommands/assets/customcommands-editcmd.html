@@ -143,11 +143,14 @@
                                             <label>Trigger</label>
                                             <input type="text" class="form-control" name="trigger" placeholder="fun"
                                                 value="{{.CC.TextTrigger}}">
-                                            <div class="checkbox">
+
+                                            {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
+
+                                            <!-- <div class="checkbox">
                                                 <label>
-                                                    <input type="checkbox" name="case_sensitive"> Case sensitive
+                                                    <input type="checkbox" name="case_sensitive"> Case sensitive?
                                                 </label>
-                                            </div>
+                                            </div> -->
                                         </div>
                                     </div>
                                 </div>
@@ -265,7 +268,8 @@
                                     {{else}}
                                     <div class="entry input-group  input-group-sm">
                                         <textarea class="form-control response-text-area tab-textbox" name="responses"
-                                            placeholder="Command body here" rows="5" oninput="onCCChanged(this)"></textarea>
+                                            placeholder="Command body here" rows="5"
+                                            oninput="onCCChanged(this)"></textarea>
                                         <span class="input-group-append">
                                             <button class="btn btn-success btn-add btn-circle" type="button">
                                                 <i class="fas fa-plus"></i>
@@ -300,13 +304,7 @@
                                 <p><code>{{.CC.RunCount}}</code></p>
 
                                 <h4>Output errors as command reponse</h4>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="show_errors" id="show-errors"
-                                        {{if .CC.ShowErrors}}checked{{end}}>
-                                    <label class="form-check-label" for="show-errors">
-                                        Output errors as command response
-                                    </label>
-                                </div>
+                                {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
                             </div>
                             <div id="cc-extra-settings" class="col-sm-6">
                                 <h3>Channel/User role restrictions</h3>

@@ -15,20 +15,24 @@
                 <!-- <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter" -->
                 <form class="" method="post" action="/manage/{{.ActiveGuild.ID}}/youtube">
                     <p><b>Provide either channel ID OR username.</b> Only one of them, not both.<br>
-                    When you go to the channel page, if the address bar has for example <code>youtube.com/user/h3h3Productions</code> then the username is h3h3Productions<br>
-                    if it's <code>youtube.com/channel/UCt-ERbX-2yA6cAqfdKOlUwQ</code> then the id is <code>UCt-ERbX-2yA6cAqfdKOlUwQ</code><br>
-                    For any questions join the support server above</p>
+                        When you go to the channel page, if the address bar has for example
+                        <code>youtube.com/user/h3h3Productions</code> then the username is h3h3Productions<br>
+                        if it's <code>youtube.com/channel/UCt-ERbX-2yA6cAqfdKOlUwQ</code> then the id is
+                        <code>UCt-ERbX-2yA6cAqfdKOlUwQ</code><br>
+                        For any questions join the support server above</p>
                     <div class="form-group">
                         <label for="yt-channel-id">Youtube Channel ID</label>
                         <div class="input-group input-group-sm">
-                            <span class="input-group-prepend"><span class="input-group-text">youtube.com/channel/</span></span>
+                            <span class="input-group-prepend"><span
+                                    class="input-group-text">youtube.com/channel/</span></span>
                             <input type="text" class="form-control" id="yt-channel-id" name="YoutubeChannelID">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="yt-channel-user">Youtube Username</label>
                         <div class="input-group input-group-sm">
-                            <span class="input-group-prepend"><span class="input-group-text">youtube.com/user/</span></span>
+                            <span class="input-group-prepend"><span
+                                    class="input-group-text">youtube.com/user/</span></span>
                             <input type="text" class="form-control" id="yt-channel-user" name="YoutubeChannelUser">
                         </div>
                     </div>
@@ -38,11 +42,9 @@
                             {{textChannelOptions .ActiveGuild.Channels nil false ""}}
                         </select>
                     </div>
-                    <div class="form-check">
-                        <input id="new-mention-everyone" class="form-check-input" type="checkbox" name="MentionEveryone">
-                        <label for="new-mention-everyone">Mention everyone</label>
-                    </div>
-                    <button type="submit" class="btn btn-default">Add</button>
+
+                    {{checkbox "MentionEveryone" "new-mention-everyone" `Mention everyone` false}}
+                    <button type="submit" class="btn btn-success">Add</button>
                 </form>
             </div>
         </section>
@@ -53,7 +55,9 @@
             <div class="card-body">
                 {{$dot := .}}
                 {{range .Subs}}
-                <form id="sub-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text" class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
+                <form id="sub-item-{{.ID}}" data-async-form method="post"
+                    action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text"
+                        class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
 
                 <table class="table table-responsive-md table-sm mb-0">
                     <thead>
@@ -68,21 +72,24 @@
                         {{range .Subs}}
                         <tr>
                             <td>
-                                <p class="form-control-static"><b>{{.YoutubeChannelName}}</b> - <code>{{.YoutubeChannelID}}</code></p>
+                                <p class="form-control-static"><b>{{.YoutubeChannelName}}</b> -
+                                    <code>{{.YoutubeChannelID}}</code></p>
                             </td>
                             <td>
-                                <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
+                                <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel"
+                                    data-requireperms-embed>
                                     {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                                 </select>
                             </td>
                             <td>
-                                <div class="form-check">
-                                    <input form="sub-item-{{.ID}}" type="checkbox" name="MentionEveryone" class="form-check-input position-static ml-auto" {{if .MentionEveryone}} checked {{end}}>
-                                </div>
+                                {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
                             </td>
                             <td>
-                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>
-                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success"
+                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"
+                                    data-async-form-alertsonly>Save</button>
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger"
+                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
                             </td>
                         </tr>
                         {{end}}
@@ -96,27 +103,27 @@
 </div>
 <!-- /.row -->
 <script>
-$(function(){
-    var idInput = $("#yt-channel-id");
-    var userInput = $("#yt-channel-user");
+    $(function () {
+        var idInput = $("#yt-channel-id");
+        var userInput = $("#yt-channel-user");
 
-    userInput.on("input", function(arg){
-        if (userInput.val().length > 0) {
-            idInput.attr("disabled", true);
-        }else{
-            idInput.attr("disabled", false);
-        }
+        userInput.on("input", function (arg) {
+            if (userInput.val().length > 0) {
+                idInput.attr("disabled", true);
+            } else {
+                idInput.attr("disabled", false);
+            }
+        })
+
+
+        idInput.on("input", function (arg) {
+            if (idInput.val().length > 0) {
+                userInput.attr("disabled", true);
+            } else {
+                userInput.attr("disabled", false);
+            }
+        })
     })
-
-
-    idInput.on("input", function(arg){
-        if (idInput.val().length > 0) {
-            userInput.attr("disabled", true);
-        }else{
-            userInput.attr("disabled", false);
-        }
-    })
-})
 </script>
 {{template "cp_footer" .}}
 {{end}}

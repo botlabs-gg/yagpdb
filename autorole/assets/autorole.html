@@ -20,32 +20,34 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="autorole-duration">Minutes of membership required for role (<b>Disclaimer:</b> Will not work if you have it set to only give roles on join)</label>
-                        <input type="number" class="form-control" id="autorole-duration" name="RequiredDuration" placeholder="" value="{{.Autorole.RequiredDuration}}">
+                        <label for="autorole-duration">Minutes of membership required for role (<b>Disclaimer:</b> Will
+                            not work if you have it set to only give roles on join)</label>
+                        <input type="number" class="form-control" id="autorole-duration" name="RequiredDuration"
+                            placeholder="" value="{{.Autorole.RequiredDuration}}">
                     </div>
                     <div class="form-group">
-                        <label>Require one of these roles to be present on the member</label><br/>
-                        <select name="RequiredRoles" class="multiselect form-control" multiple="multiple" id="require-roles" data-plugin-multiselect>
+                        <label>Require one of these roles to be present on the member</label><br />
+                        <select name="RequiredRoles" class="multiselect form-control" multiple="multiple"
+                            id="require-roles" data-plugin-multiselect>
                             {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.RequiredRoles}}
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Ignore people with the following roles</label><br/>
-                        <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple" id="ignore-roles" data-plugin-multiselect>
+                        <label>Ignore people with the following roles</label><br />
+                        <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple"
+                            id="ignore-roles" data-plugin-multiselect>
                             {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.IgnoreRoles}}
                         </select>
                     </div>
                     <div class="form-group">
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="OnlyOnJoin" {{if .Autorole.OnlyOnJoin}}checked{{end}}> Only assign role when they join, do not give it back if it's removed from them afterwards.
-                            </label>
-                        </div>
+                        {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards.` .Autorole.OnlyOnJoin}}
                     </div>
 
-                    <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA: <code>{{.ProcessingETA}}</code> minutes (May take up to a minute before the bot starts assigning roles).<br>
-                    <b>To stop, set the role to "None".</b></p>
-            <button type="submit" class="btn btn-success btn-lg btn-block" >Save</button>
+                    <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA:
+                        <code>{{.ProcessingETA}}</code> minutes (May take up to a minute before the bot starts assigning
+                        roles).<br>
+                        <b>To stop, set the role to "None".</b></p>
+                    <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
                 </div>
             </div>
             <!-- /.panel -->
@@ -63,12 +65,16 @@
                     <h4 class="card-title">Perform a retro-active full scan</h4>
                 </header>
                 <div class="card-body">
-                    <p>YAGPDB already performs a scan of your server every minute, but this only includes online/cached members, it would take up too many resources to keep absolutely all members in the state.</p>
-                    <p>Therefore you can use this to perform a full scan of your server, this may become an automatic premium option at some point.</p>
-                    <p>You will have to wait a couple minutes in-between each completed scan, to cancel this you can set the role to "None" and it should stop within a minute.</p>
+                    <p>YAGPDB already performs a scan of your server every minute, but this only includes online/cached
+                        members, it would take up too many resources to keep absolutely all members in the state.</p>
+                    <p>Therefore you can use this to perform a full scan of your server, this may become an automatic
+                        premium option at some point.</p>
+                    <p>You will have to wait a couple minutes in-between each completed scan, to cancel this you can set
+                        the role to "None" and it should stop within a minute.</p>
                     {{if .FullScanActive}}<p class="text-danger">Already performing a full scan</p>
                     {{else if eq .Autorole.Role 0}}<p class="text-danger">No active autorole role set</p>
-                    {{else}}<button type="submit" class="btn btn-warning btn-lg btn-block" data-async-form-alertsonly>Perform full scan.</button>{{end}}
+                    {{else}}<button type="submit" class="btn btn-warning btn-lg btn-block"
+                        data-async-form-alertsonly>Perform full scan.</button>{{end}}
                 </div>
             </div>
             <!-- /.panel -->

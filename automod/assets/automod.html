@@ -79,11 +79,10 @@ table{
                                     <label for="automod-rs-name">Name</label>
                                     <input type="text" class="form-control" id="automod-rs-name" name="Name" value="{{.CurrentRuleset.Name}}">
                                 </div>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="automod-rs-enable" name="Enabled" {{if .CurrentRuleset.Enabled}}checked{{end}}>
-                                    <label class="form-check-label" for="automod-rs-enable">Enable ruleset?</label>
-                                    <p class="help-block">Can also be toggled on/off using the <code>automod toggle {{.CurrentRuleset.Name}}</code> command.</p>
-                                </div>
+                                {{checkbox "Enabled" "automod-rs-enable" `Enable ruleset?` .CurrentRuleset.Enabled}}
+                                <p class="help-block">Can also be toggled on/off using the <code>automod toggle {{.CurrentRuleset.Name}}</code> command.</p>
+                                <hr />
+                                
                                 <div class="automod-rule-part-table" data-automod-part-type=1>
                                     <b>Ruleset scoped conditions</b>
                                     <table class="table table-sm mb-0">
@@ -111,6 +110,7 @@ table{
                         </div>
                         <!-- /.col-lg-12 -->
                     </div>
+                    <hr />
                     <!-- /.row -->
                     <div class="row">
                         <div class="col-lg-12">
@@ -121,7 +121,7 @@ table{
                                     <label for="am-new-ruleset-name">Name</label>
                                     <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
                                 </div>
-                                <button type="submit" class="btn btn-success">Create</button>
+                                <button type="submit" class="btn btn-primary">Create</button>
                             </form>
 
                         </div>
