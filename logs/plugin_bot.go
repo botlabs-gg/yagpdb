@@ -157,7 +157,7 @@ var cmdWhois = &commands.YAGCommand{
 					Inline: true,
 				},
 				&discordgo.MessageEmbedField{
-					Name:   "Member Status",
+					Name:   "Status",
 					Value:  memberStatus,
 					Inline: true,
 				},
