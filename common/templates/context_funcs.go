@@ -643,7 +643,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 
 		for _, reaction := range args[3:] {
 
-			if c.IncreaseCheckCallCounter("del_reaction_message", 20) {
+			if c.IncreaseCheckCallCounter("del_reaction_message", 10) {
 				return reflect.Value{}, ErrTooManyCalls
 			}
 
