@@ -57,11 +57,12 @@ var (
 		"humanizeThousands": tmplHumanizeThousands,
 
 		// misc
-		"dict":           Dictionary,
-		"sdict":          StringKeyDictionary,
-		"cembed":         CreateEmbed,
-		"cslice":         CreateSlice,
-		"complexMessage": CreateMessageSend,
+		"dict":               Dictionary,
+		"sdict":              StringKeyDictionary,
+		"cembed":             CreateEmbed,
+		"cslice":             CreateSlice,
+		"complexMessage":     CreateMessageSend,
+		"complexMessageEdit": CreateMessageEdit,
 
 		"formatTime":  tmplFormatTime,
 		"json":        tmplJson,
