@@ -165,6 +165,9 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			case *discordgo.MessageEmbed:
 				msgEdit.Embed = typedMsg
 			case *discordgo.MessageEdit:
+				if typedMsg.Content != nil && *typedMsg.Content == "" && typedMsg.Embed != nil && typedMsg.Embed.GetMarshalNil() {
+					return "", errors.New("both content and embed cannot be null")
+				}
 				msgEdit.Content = typedMsg.Content
 				msgEdit.Embed = typedMsg.Embed
 			default:
