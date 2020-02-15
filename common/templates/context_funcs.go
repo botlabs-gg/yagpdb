@@ -154,25 +154,36 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 		}
 
 		mID := ToInt64(msgID)
-
+		msgEdit := &discordgo.MessageEdit{
+				ID: mID,
+				Channel: cid,
+			   }
 		var err error
-		if embed, ok := msg.(*discordgo.MessageEmbed); ok {
-			_, err = common.BotSession.ChannelMessageEditEmbed(cid, mID, embed)
-		} else {
-			strMsg := fmt.Sprint(msg)
 
-			if filterSpecialMentions {
-				strMsg = common.EscapeSpecialMentions(strMsg)
-			}
+		switch typedMsg := msg.(type) {
 
-			_, err = common.BotSession.ChannelMessageEdit(cid, mID, strMsg)
+			case *discordgo.MessageEmbed:
+				msgEdit.Embed = typedMsg
+			case *discordgo.MessageEdit:
+				msgEdit.Content = typedMsg.Content
+				msgEdit.Embed = typedMsg.Embed
+			default:
+				temp := fmt.Sprint(msg)
+				msgEdit.Content = &temp
 		}
 
+		if filterSpecialMentions && msgEdit.Content != nil && *msgEdit.Content != "" {
+			temp := common.EscapeSpecialMentions(*msgEdit.Content)
+			msgEdit.Content = &temp
+		}
+
+		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
+		
 		if err != nil {
 			return "", err
 		}
 
-		return "", nil
+		return "", nil 
 	}
 }
 
