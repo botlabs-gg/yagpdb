@@ -182,6 +182,46 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 	return msg, nil
 }
 
+func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
+	if len(values) < 1 {
+		return &discordgo.MessageEdit{}, nil
+	}
+
+	if m, ok := values[0].(*discordgo.MessageEdit); len(values) == 1 && ok {
+		return m, nil
+	}
+	messageSdict, err := StringKeyDictionary(values...)
+	if err != nil {
+		return nil, err
+	}
+	msg := &discordgo.MessageEdit{}
+
+	for key, val := range messageSdict {
+
+		switch key {
+			case "content":
+				temp := fmt.Sprint(val)
+				msg.Content = &temp
+			case "embed":
+				if val == nil { 
+					msg.Embed = (&discordgo.MessageEmbed{}).MarshalNil(true)
+					continue
+				}
+				embed, err := CreateEmbed(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Embed = embed
+			default:
+				return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
+		}
+
+	}
+
+	return msg, nil
+
+}
+
 // indirect is taken from 'text/template/exec.go'
 func indirect(v reflect.Value) (rv reflect.Value, isNil bool) {
 	for ; v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface; v = v.Elem() {
