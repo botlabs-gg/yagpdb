@@ -521,7 +521,7 @@ func createLogs(gs *dstate.GuildState, conf *models.TicketConfig, ticket *models
 		formattedTranscript := createTXTTranscript(ticket, msgs)
 
 		channel := transcriptChannel(conf, adminOnly)
-		_, err := common.BotSession.ChannelFileSendWithMessage(channel, fmt.Sprintf("transcript-%d.txt", ticket.LocalID), fmt.Sprintf("transcript-%d.txt", ticket.LocalID), formattedTranscript)
+		_, err := common.BotSession.ChannelFileSendWithMessage(channel, fmt.Sprintf("transcript-%d-%s.txt", ticket.LocalID, ticket.Title), fmt.Sprintf("transcript-%d-%s.txt", ticket.LocalID, ticket.Title), formattedTranscript)
 		if err != nil {
 			return err
 		}
@@ -548,7 +548,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 				continue
 			}
 
-			fName := fmt.Sprintf("attachments-%d-%s", ticket.LocalID, ag[0].Filename)
+			fName := fmt.Sprintf("attachments-%d-%s-%s", ticket.LocalID, ticket.Title, ag[0].Filename)
 			_, err = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
 				fName, fName, resp.Body)
 			continue
@@ -581,7 +581,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 		}
 
 		zw.Close()
-		fname := fmt.Sprintf("attachments-%d.zip", ticket.LocalID)
+		fname := fmt.Sprintf("attachments-%d-%s.zip", ticket.LocalID, ticket.Title)
 		_, err := common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly), fname, fname, &buf)
 		buf.Reset()
 

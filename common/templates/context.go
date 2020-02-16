@@ -54,6 +54,7 @@ var (
 		"roundCeil":  tmplRoundCeil,
 		"roundFloor": tmplRoundFloor,
 		"roundEven":  tmplRoundEven,
+		"humanizeThousands": tmplHumanizeThousands,
 
 		// misc
 		"dict":           Dictionary,
@@ -383,6 +384,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
 	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
 	c.ContextFuncs["deleteMessage"] = c.tmplDelMessage
+	c.ContextFuncs["deleteMessageReaction"] = c.tmplDelMessageReaction
 	c.ContextFuncs["deleteAllMessageReactions"] = c.tmplDelAllMessageReactions
 	c.ContextFuncs["getMessage"] = c.tmplGetMessage
 	c.ContextFuncs["getMember"] = c.tmplGetMember

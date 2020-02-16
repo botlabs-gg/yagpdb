@@ -111,6 +111,19 @@ var cmdWhois = &commands.YAGCommand{
 		if createdDurStr == "" {
 			createdDurStr = "Less than an hour ago"
 		}
+		
+		var memberStatus string
+		state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
+		if !member.PresenceSet || member.PresenceGame == nil {
+			memberStatus = fmt.Sprintf("Has no active status or is invisible/offline.")
+		} else {
+			if member.PresenceGame.Type == 4 {
+				memberStatus = fmt.Sprintf("%s: %s", member.PresenceGame.Name, member.PresenceGame.State)
+			} else {
+				memberStatus = fmt.Sprintf("%s: %s", state[member.PresenceGame.Type], member.PresenceGame.Name)
+			}
+		}
+		
 		embed := &discordgo.MessageEmbed{
 			Title: fmt.Sprintf("%s#%04d%s", member.Username, member.Discriminator, nick),
 			Fields: []*discordgo.MessageEmbedField{
@@ -141,6 +154,11 @@ var cmdWhois = &commands.YAGCommand{
 				}, &discordgo.MessageEmbedField{
 					Name:   "Join Server Age",
 					Value:  joinedAtDurStr,
+					Inline: true,
+				},
+				&discordgo.MessageEmbedField{
+					Name:   "Status",
+					Value:  memberStatus,
 					Inline: true,
 				},
 			},
