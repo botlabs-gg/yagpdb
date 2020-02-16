@@ -504,12 +504,24 @@ func HandleGetManagedGuilds(w http.ResponseWriter, r *http.Request) (TemplateDat
 		return templateData, err
 	}
 
-	accessibleGuilds := make([]*common.GuildWithConnected, 0, len(wrapped))
+	retCh := make(chan *common.GuildWithConnected, 100)
 
 	// the servers the user is on and the user has manage server perms
 	for _, g := range wrapped {
-		conf := common.GetCoreServerConfCached(g.ID)
-		if HasAccesstoGuildSettings(user.ID, g, conf, basicRoleProvider, false) {
+		go func(gwc *common.GuildWithConnected) {
+			conf := common.GetCoreServerConfCached(gwc.ID)
+			if HasAccesstoGuildSettings(user.ID, gwc, conf, basicRoleProvider, false) {
+				retCh <- gwc
+			} else {
+				retCh <- nil
+			}
+		}(g)
+	}
+
+	accessibleGuilds := make([]*common.GuildWithConnected, 0, len(wrapped))
+	for i := 0; i < len(wrapped); i++ {
+		g := <-retCh
+		if g != nil {
 			accessibleGuilds = append(accessibleGuilds, g)
 		}
 	}
