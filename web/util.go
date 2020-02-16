@@ -177,7 +177,7 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 }
 
 // Checks the context if there is a logged in user and if so if he's and admin or not
-func IsAdminRequest(ctx context.Context, r *http.Request) bool {
+func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool) {
 
 	isReadOnlyReq := strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS")
 
@@ -206,8 +206,13 @@ func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 			gWithConnected.Owner = userID == g.OwnerID
 		}
 
-		if HasAccesstoGuildSettings(userID, gWithConnected, coreConf, StaticRoleProvider(roles), !isReadOnlyReq) {
-			return true
+		hasRead, hasWrite := GetUserAccessLevel(userID, gWithConnected, coreConf, StaticRoleProvider(roles))
+		if hasWrite {
+			return true, true
+		}
+
+		if hasRead && isReadOnlyReq {
+			return true, false
 		}
 	}
 
@@ -216,18 +221,18 @@ func IsAdminRequest(ctx context.Context, r *http.Request) bool {
 
 		cast := user.(*discordgo.User)
 		if common.IsOwner(cast.ID) {
-			return true
+			return true, true
 		}
 
 		if isReadOnlyReq {
 			// allow special read only acces for GET and OPTIONS requests, simple and works well
 			if hasAcces, err := bot.HasReadOnlyAccess(cast.ID); hasAcces && err == nil {
-				return true
+				return true, false
 			}
 		}
 	}
 
-	return false
+	return false, false
 }
 
 func StaticRoleProvider(roles []int64) func(guildID, userID int64) []int64 {

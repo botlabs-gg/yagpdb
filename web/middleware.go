@@ -830,9 +830,15 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 			}
 		}
 
-		isAdmin := IsAdminRequest(ctx, r)
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": isAdmin})
-		ctx = context.WithValue(ctx, common.ContextKeyIsAdmin, isAdmin)
+		read, write := IsAdminRequest(ctx, r)
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"IsAdmin": read || write})
+		ctx = context.WithValue(ctx, common.ContextKeyIsAdmin, read || write)
+
+		if read && !write {
+			var tmpl TemplateData
+			ctx, tmpl = GetCreateTemplateData(ctx)
+			tmpl.AddAlerts(WarningAlert("In read only mode, you can not change any settings."))
+		}
 
 		r = r.WithContext(ctx)
 	}
