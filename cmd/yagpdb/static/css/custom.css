@@ -228,7 +228,7 @@ html.sidebar-left-collapsed #nav-footer {
 
 @media only screen and (max-width: 768px) {
   .card-body {
-    padding: 0.25rem !important;
+    padding: 0.5rem !important;
   }  
 }
 
