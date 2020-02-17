@@ -302,6 +302,7 @@ html.dark select optgroup {
   display: block;
   width: 4em;
   height: 2em;
+  min-width: 3em;
   position: relative;
   cursor: pointer;
   -webkit-user-select: none;
