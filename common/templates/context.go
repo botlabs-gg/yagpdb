@@ -69,6 +69,7 @@ var (
 		"inFold":      inFold,
 		"roleAbove":   roleIsAbove,
 		"adjective":   common.RandomAdjective,
+		"noun":        common.RandomNoun,
 		"randInt":     randInt,
 		"shuffle":     shuffle,
 		"seq":         sequence,
