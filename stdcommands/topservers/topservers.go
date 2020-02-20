@@ -33,12 +33,12 @@ var Command = &commands.YAGCommand{
 			var serverID int64
 			var position serverIDQuery
 			serverID = data.Switch("id").Int64()
-			const q = `SELECT member_count, name, row_number FROM (SELECT id, member_count, name, row_number() OVER (ORDER BY member_count DESC) FROM joined_guilds) AS total WHERE id=$1;`
+			const q = `SELECT member_count, name, row_number FROM (SELECT id, member_count, name, left_at, row_number() OVER (ORDER BY member_count DESC) FROM joined_guilds WHERE left_at IS NULL) AS total WHERE id=$1 AND left_at IS NULL;`
 			err := common.PQ.QueryRow(q, serverID).Scan(&position.MemberCount, &position.Name, &position.Place)
 			return fmt.Sprintf("```Server with ID %d is placed:\n#%-2d: %-25s (%d members)\n```", serverID, position.Place, position.Name, position.MemberCount), err
 		}
-		
-		results, err := models.JoinedGuilds(qm.OrderBy("member_count desc"), qm.Limit(20), qm.Offset(skip)).AllG(data.Context())
+
+		results, err := models.JoinedGuilds(qm.Where("left_at is null"), qm.OrderBy("member_count desc"), qm.Limit(20), qm.Offset(skip)).AllG(data.Context())
 		if err != nil {
 			return nil, err
 		}
