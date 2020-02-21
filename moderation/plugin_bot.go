@@ -327,6 +327,9 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 			panic("Unknown event in lock memebr mute middleware")
 		}
 
+		LockMute(userID)
+		defer UnlockMute(userID)
+
 		guildID := evt.GS.ID
 
 		var currentMute MuteModel
@@ -339,15 +342,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 			return false, errors.WithStackIf(err)
 		}
 
-		// If there's less than 5 seconds of the mute left, don't bother doing anything
-		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
-			return false, nil
-		}
-
-		LockMute(userID)
-		defer UnlockMute(userID)
-
-		// The situation may have changed at this point, check again
+		// Don't bother doing anythign if this mute is almost up
 		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
 			return false, nil
 		}
