@@ -65,6 +65,7 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/moderation/"
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
+	newConfig.DefaultMuteDuration.Valid = true
 	templateData["ModConfig"] = newConfig
 
 	err := newConfig.Save(activeGuild.ID)

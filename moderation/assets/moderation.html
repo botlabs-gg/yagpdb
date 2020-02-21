@@ -221,8 +221,17 @@ the ban/kick{{end}}
             </select>
         </div>
         <hr />
+
         {{checkbox "MuteReasonOptional" "mute-reason-optional" "Mute Reason optional" .ModConfig.MuteReasonOptional}}
         {{checkbox "UnmuteReasonOptional" "unmute-reason-optional" "Unmute Reason optional" .ModConfig.UnmuteReasonOptional}}
+        <hr />
+
+        <div class="form-group">
+            <label>Default mute duration in minutes. Set to 0 for infinite</label>
+            <input type="number" name="DefaultMuteDuration.Int64" class="form-control"
+                value="{{.ModConfig.DefaultMuteDuration.Int64}}">
+        </div>
+        <hr />
     </div>
     <div class="col-sm">
         <div class="form-group">

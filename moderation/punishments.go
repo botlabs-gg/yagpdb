@@ -3,8 +3,8 @@ package moderation
 import (
 	"context"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
@@ -61,7 +61,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
-	
+
 	var action ModlogAction
 	if p == PunishmentKick {
 		action = MAKick
@@ -71,7 +71,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
 	}
-	
+
 	var channelID int64
 	if channel != nil {
 		channelID = channel.ID
@@ -155,8 +155,13 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	// Execute and send the DM message template
 	ctx := templates.NewContext(gs, channel, member)
 	ctx.Data["Reason"] = reason
-	ctx.Data["Duration"] = duration
-	ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
+	if duration > 0 {
+		ctx.Data["Duration"] = duration
+		ctx.Data["HumanDuration"] = common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
+	} else {
+		ctx.Data["Duration"] = 0
+		ctx.Data["HumanDuration"] = "never"
+	}
 	ctx.Data["Author"] = author
 	ctx.Data["ModAction"] = action
 	ctx.Data["Message"] = message
@@ -245,7 +250,7 @@ func BanUserWithDuration(config *Config, guildID int64, channel *dstate.ChannelS
 	if deleteMessageDays < 0 {
 		deleteMessageDays = 0
 	}
-	
+
 	err := punish(config, PunishmentBan, guildID, channel, message, author, reason, user, duration, deleteMessageDays)
 	if err != nil {
 		return err
@@ -285,7 +290,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	if config.MuteRole == "" {
 		return ErrNoMuteRole
 	}
-	
+
 	var channelID int64
 	if channel != nil {
 		channelID = channel.ID
@@ -316,7 +321,9 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	}
 
 	currentMute.Reason = reason
-	currentMute.ExpiresAt = time.Now().Add(time.Minute * time.Duration(duration))
+	if duration > 0 {
+		currentMute.ExpiresAt = time.Now().Add(time.Minute * time.Duration(duration))
+	}
 
 	// no matter what, if were unmuting or muting, we wanna make sure we dont have duplicated unmute events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, member.ID)).DeleteAll(context.Background(), common.PQ)
@@ -352,13 +359,13 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 			return errors.WithMessage(err, "failed inserting/updating mute")
 		}
 
-		err = scheduledevents2.ScheduleEvent("moderation_unmute", guildID, time.Now().Add(time.Minute*time.Duration(duration)), &ScheduledUnmuteData{
-			UserID: member.ID,
-		})
-
-		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SETEX", RedisKeyMutedUser(guildID, member.ID), duration*60, 1))
-		if err != nil {
-			return errors.WithMessage(err, "failed scheduling unmute")
+		if duration > 0 {
+			err = scheduledevents2.ScheduleEvent("moderation_unmute", guildID, time.Now().Add(time.Minute*time.Duration(duration)), &ScheduledUnmuteData{
+				UserID: member.ID,
+			})
+			if err != nil {
+				return errors.WithMessage(err, "failed scheduling unmute")
+			}
 		}
 	} else {
 		// Remove the mute role, and give back the role the bot took
@@ -383,7 +390,12 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	action := MAUnmute
 	if mute {
 		action = MAMute
-		action.Footer = "Expires after: " + strconv.Itoa(duration) + " minutes"
+		action.Footer = "Duration: "
+		if duration > 0 {
+			action.Footer += common.HumanizeDuration(common.DurationPrecisionMinutes, time.Duration(duration)*time.Minute)
+		} else {
+			action.Footer += "permanent"
+		}
 		dmMsg = config.MuteMessage
 	}
 
@@ -464,7 +476,7 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 	if channel != nil {
 		channelID = channel.ID
 	}
-	
+
 	config, err := getConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)

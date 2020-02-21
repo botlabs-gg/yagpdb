@@ -2,6 +2,7 @@ package moderation
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"time"
 
@@ -39,6 +40,7 @@ type Config struct {
 	MuteIgnoreChannels      pq.Int64Array `gorm:"type:bigint[]" valid:"channel,true"`
 	MuteMessage             string        `valid:"template,5000"`
 	UnmuteMessage           string        `valid:"template,5000"`
+	DefaultMuteDuration     sql.NullInt64 `gorm:"default:10"`
 
 	// Warn
 	WarnCommandsEnabled    bool
