@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2"
 	"github.com/jonas747/dstate"
@@ -160,15 +161,15 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 			break
 		}
 	}
-	
+
 	MuteDeniedChannelPermsFinal := MuteDeniedChannelPerms
 	if config.MuteDisallowReactionAdd {
-	MuteDeniedChannelPermsFinal = MuteDeniedChannelPermsFinal | discordgo.PermissionAddReactions
+		MuteDeniedChannelPermsFinal = MuteDeniedChannelPermsFinal | discordgo.PermissionAddReactions
 	}
 	allows := 0
 	denies := MuteDeniedChannelPermsFinal
 	changed := true
-	
+
 	if override != nil {
 		allows = override.Allow
 		denies = override.Deny
@@ -317,22 +318,29 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 	return func(evt *eventsystem.EventData) (retry bool, err error) {
 		var userID int64
-		var guild int64
 		// TODO: add utility functions to the eventdata struct for fetching things like these?
 		if evt.Type == eventsystem.EventGuildMemberAdd {
 			userID = evt.GuildMemberAdd().User.ID
-			guild = evt.GuildMemberAdd().GuildID
 		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
 			userID = evt.GuildMemberUpdate().User.ID
-			guild = evt.GuildMemberUpdate().GuildID
 		} else {
 			panic("Unknown event in lock memebr mute middleware")
 		}
 
+		guildID := evt.GS.ID
+
+		var currentMute MuteModel
+		err = common.GORM.Where(MuteModel{UserID: userID, GuildID: guildID}).First(&currentMute).Error
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return false, nil
+			}
+
+			return false, errors.WithStackIf(err)
+		}
+
 		// If there's less than 5 seconds of the mute left, don't bother doing anything
-		var muteLeft int
-		common.RedisPool.Do(retryableredis.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
-		if muteLeft < 5 {
+		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
 			return false, nil
 		}
 
@@ -340,8 +348,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 		defer UnlockMute(userID)
 
 		// The situation may have changed at this point, check again
-		common.RedisPool.Do(retryableredis.Cmd(&muteLeft, "TTL", RedisKeyMutedUser(guild, userID)))
-		if muteLeft < 5 {
+		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
 			return false, nil
 		}
 

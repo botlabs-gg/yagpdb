@@ -216,7 +216,7 @@ func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *mode
 
 	if userID == 0 {
 		// not a member of the guild
-		return false, false
+		return
 	}
 
 	roles := roleProvider(g.ID, userID)

@@ -190,7 +190,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Mutes a member",
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Duration", Default: time.Minute * 10, Type: &commands.DurationArg{Max: time.Hour * 24 * 7}},
+			&dcmd.ArgDef{Name: "Duration", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
 		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 2, 1}, []int{0, 1}, []int{0, 2}, []int{0}},
@@ -210,19 +210,24 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			muteDuration := int(parsed.Args[1].Value.(time.Duration).Minutes())
+			d := time.Duration(config.DefaultMuteDuration.Int64) * time.Minute
+			if parsed.Args[1].Value != nil {
+				d = parsed.Args[1].Value.(time.Duration)
+			}
+
+			logger.Info(d.Seconds())
 
 			member, err := bot.GetMember(parsed.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, muteDuration)
+			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, int(d.Minutes()))
 			if err != nil {
 				return nil, err
 			}
 
-			return GenericCmdResp(MAMute, target, time.Duration(muteDuration)*time.Minute, false, false), nil
+			return GenericCmdResp(MAMute, target, d, true, false), nil
 		},
 	},
 	&commands.YAGCommand{

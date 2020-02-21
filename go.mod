@@ -30,12 +30,12 @@ require (
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jonas747/cardsagainstdiscord v1.0.0
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
-	github.com/jonas747/dcmd v1.1.0
+	github.com/jonas747/dcmd v1.1.1
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
 	github.com/jonas747/discordgo v1.3.3
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600
 	github.com/jonas747/dstate v1.0.5
-	github.com/jonas747/dutil v0.0.2
+	github.com/jonas747/dutil v0.0.3
 	github.com/jonas747/go-reddit v0.0.0-20181219005523-28353ff8e846
 	github.com/jonas747/jdshardmanager v1.0.1
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 // indirect
@@ -72,11 +72,10 @@ require (
 	github.com/volatiletech/sqlboiler v3.5.0+incompatible
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20200214034016-1d94cc7ab1c6
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 // indirect
 	google.golang.org/api v0.3.1
