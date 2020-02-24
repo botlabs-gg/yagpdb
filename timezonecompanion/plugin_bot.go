@@ -300,7 +300,12 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	if m.GuildID == 0 {
 		return
 	}
-
+	
+	//Additional check to ensure not reacting to own message
+	if m.Author.ID == common.BotUser.ID {
+		return
+	}
+	
 	result, err := p.DateParser.Parse(m.Content, time.Now())
 	if err != nil || result == nil {
 		return
