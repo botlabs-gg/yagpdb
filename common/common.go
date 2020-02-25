@@ -92,7 +92,7 @@ func Init() error {
 		db = ConfPQDB.GetString()
 	}
 
-	err = connectDB(ConfPQHost.GetString(), ConfPQUsername.GetString(), ConfPQPassword.GetString(), db)
+	err = connectDB(ConfPQHost.GetString(), ConfPQUsername.GetString(), ConfPQPassword.GetString(), db, confMaxSQLConns.GetInt())
 	if err != nil {
 		panic(err)
 	}
@@ -192,7 +192,7 @@ func InitTest() {
 		return
 	}
 
-	err := connectDB("localhost", "postgres", "123", testDB)
+	err := connectDB("localhost", "postgres", "123", testDB, 3)
 	if err != nil {
 		panic(err)
 	}
@@ -240,7 +240,7 @@ func connectRedis() (err error) {
 	return
 }
 
-func connectDB(host, user, pass, dbName string) error {
+func connectDB(host, user, pass, dbName string, maxConns int) error {
 	if host == "" {
 		host = "localhost"
 	}
@@ -255,7 +255,6 @@ func connectDB(host, user, pass, dbName string) error {
 	PQ = db.DB()
 	boil.SetDB(PQ)
 	if err == nil {
-		maxConns := confMaxSQLConns.GetInt()
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)
 		logger.Infof("Set max PG connections to %d", maxConns)
