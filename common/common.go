@@ -245,6 +245,7 @@ func connectDB(host, user, pass, dbName string) error {
 	boil.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(3)
+		PQ.SetMaxIdleConns(3)
 	}
 	GORM.SetLogger(&GORMLogger{})
 
