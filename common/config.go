@@ -30,6 +30,8 @@ var (
 	ConfDogStatsdAddress = config.RegisterOption("yagpdb.dogstatsdaddress", "dogstatsd address", "")
 	confNoSchemaInit     = config.RegisterOption("yagpdb.no_schema_init", "Disable schema intiialization", false)
 
+	confMaxSQLConns = config.RegisterOption("yagdb.pq_max_conns", "Max connections to postgres", 3)
+
 	BotOwners []int64
 )
 
@@ -45,7 +47,7 @@ func LoadConfig() (err error) {
 	config.AddSource(&config.EnvSource{})
 	config.AddSource(&config.RedisConfigStore{Pool: RedisPool})
 	config.Load()
- 
+
 	requiredConf := []*config.ConfigOption{
 		ConfClientID,
 		ConfClientSecret,
