@@ -83,9 +83,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		member := commands.ContextMS(parsed.Context())
 		memberCPY := parsed.GS.MemberCopy(true, member.ID)
-		if memberCPY == nil {
-			memberCPY = member
-		} else {
+		if memberCPY != nil {
 			member = memberCPY
 		}
 		
