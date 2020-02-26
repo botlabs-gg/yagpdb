@@ -116,7 +116,7 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			err = ValidateIntMinMaxField(int64(cv), int64(min), int64(max))
 		case int64:
 			var keep bool
-			keep, err = ValidateIntField(cv, validationTag, guild)
+			keep, err = ValidateIntField(cv, validationTag, guild, false)
 			if err == nil && !keep {
 				vField.SetInt(0)
 			}
@@ -221,7 +221,7 @@ func readMinMax(valid *ValidationTag) (float64, float64) {
 func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Guild) (filtered []int64, err error) {
 	filtered = make([]int64, 0, len(is))
 	for _, integer := range is {
-		keep, err := ValidateIntField(integer, tags, guild)
+		keep, err := ValidateIntField(integer, tags, guild, true)
 		if err != nil {
 			return filtered, err
 		}
@@ -234,7 +234,7 @@ func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Gui
 	return filtered, nil
 }
 
-func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (keep bool, err error) {
+func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild, forceAllowEmpty bool) (keep bool, err error) {
 	kind, _ := tags.Str(0)
 
 	if kind != "role" && kind != "channel" {
@@ -248,10 +248,12 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild) (kee
 	}
 
 	// Treat any non empty and non-"false" true
-	allowEmpty := false
-	if allow, ok := tags.Str(1); ok {
-		if strings.ToLower(allow) != "false" && allow != "-" && allow != "" {
-			allowEmpty = true
+	allowEmpty := forceAllowEmpty
+	if !allowEmpty {
+		if allow, ok := tags.Str(1); ok {
+			if strings.ToLower(allow) != "false" && allow != "-" && allow != "" {
+				allowEmpty = true
+			}
 		}
 	}
 
