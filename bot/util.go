@@ -426,7 +426,7 @@ func CheckDiscordErrRetry(err error) bool {
 }
 
 func IsNormalUserMessage(msg *discordgo.Message) bool {
-	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 || msg.Author.Discriminator == "0000" {
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 || msg.Author.Discriminator == "0000" || (msg.Member == nil && msg.GuildID != 0) {
 		// message edits can have a nil author, those are embed edits
 		// check against a discrim of 0000 to avoid some cases on webhook messages where webhook_id is 0, even tough its a webhook
 		// discrim is in those 0000 which is a invalid user discrim. (atleast when i was testing)
