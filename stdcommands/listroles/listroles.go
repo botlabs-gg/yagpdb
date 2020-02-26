@@ -15,14 +15,14 @@ var Command = &commands.YAGCommand{
 	Name:        "ListRoles",
 	Description: "List roles, their id's, color hex code, and 'mention everyone' perms (useful if you wanna double check to make sure you didn't give anyone mention everyone perms that shouldn't have it)",
 	ArgSwitches: []*dcmd.ArgDef{
-		{Switch: "nomana", Name: "Don't list managed/bot roles"},
+		{Switch: "nomanaged", Name: "Don't list managed/bot roles"},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var out, outFinal string
 		var noMana bool
 		
-		if data.Switches["nomana"].Value != nil && data.Switches["nomana"].Value.(bool) {
+		if data.Switches["nomanaged"].Value != nil && data.Switches["nomanaged"].Value.(bool) {
 			noMana = true
 		}
 		
