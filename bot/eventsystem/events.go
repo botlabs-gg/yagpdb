@@ -40,29 +40,31 @@ const (
 	EventGuildRoleDelete          Event = 25
 	EventGuildRoleUpdate          Event = 26
 	EventGuildUpdate              Event = 27
-	EventMessageAck               Event = 28
-	EventMessageCreate            Event = 29
-	EventMessageDelete            Event = 30
-	EventMessageDeleteBulk        Event = 31
-	EventMessageReactionAdd       Event = 32
-	EventMessageReactionRemove    Event = 33
-	EventMessageReactionRemoveAll Event = 34
-	EventMessageUpdate            Event = 35
-	EventPresenceUpdate           Event = 36
-	EventPresencesReplace         Event = 37
-	EventRateLimit                Event = 38
-	EventReady                    Event = 39
-	EventRelationshipAdd          Event = 40
-	EventRelationshipRemove       Event = 41
-	EventResumed                  Event = 42
-	EventTypingStart              Event = 43
-	EventUserGuildSettingsUpdate  Event = 44
-	EventUserNoteUpdate           Event = 45
-	EventUserSettingsUpdate       Event = 46
-	EventUserUpdate               Event = 47
-	EventVoiceServerUpdate        Event = 48
-	EventVoiceStateUpdate         Event = 49
-	EventWebhooksUpdate           Event = 50
+	EventInviteCreate             Event = 28
+	EventInviteDelete             Event = 29
+	EventMessageAck               Event = 30
+	EventMessageCreate            Event = 31
+	EventMessageDelete            Event = 32
+	EventMessageDeleteBulk        Event = 33
+	EventMessageReactionAdd       Event = 34
+	EventMessageReactionRemove    Event = 35
+	EventMessageReactionRemoveAll Event = 36
+	EventMessageUpdate            Event = 37
+	EventPresenceUpdate           Event = 38
+	EventPresencesReplace         Event = 39
+	EventRateLimit                Event = 40
+	EventReady                    Event = 41
+	EventRelationshipAdd          Event = 42
+	EventRelationshipRemove       Event = 43
+	EventResumed                  Event = 44
+	EventTypingStart              Event = 45
+	EventUserGuildSettingsUpdate  Event = 46
+	EventUserNoteUpdate           Event = 47
+	EventUserSettingsUpdate       Event = 48
+	EventUserUpdate               Event = 49
+	EventVoiceServerUpdate        Event = 50
+	EventVoiceStateUpdate         Event = 51
+	EventWebhooksUpdate           Event = 52
 )
 
 var EventNames = []string{
@@ -94,6 +96,8 @@ var EventNames = []string{
 	"GuildRoleDelete",
 	"GuildRoleUpdate",
 	"GuildUpdate",
+	"InviteCreate",
+	"InviteDelete",
 	"MessageAck",
 	"MessageCreate",
 	"MessageDelete",
@@ -144,6 +148,8 @@ var AllDiscordEvents = []Event{
 	EventGuildRoleDelete,
 	EventGuildRoleUpdate,
 	EventGuildUpdate,
+	EventInviteCreate,
+	EventInviteDelete,
 	EventMessageAck,
 	EventMessageCreate,
 	EventMessageDelete,
@@ -198,6 +204,8 @@ var AllEvents = []Event{
 	EventGuildRoleDelete,
 	EventGuildRoleUpdate,
 	EventGuildUpdate,
+	EventInviteCreate,
+	EventInviteDelete,
 	EventMessageAck,
 	EventMessageCreate,
 	EventMessageDelete,
@@ -223,7 +231,7 @@ var AllEvents = []Event{
 	EventWebhooksUpdate,
 }
 
-var handlers = make([][][]*Handler, 51)
+var handlers = make([][][]*Handler, 53)
 
 func (data *EventData) ChannelCreate() *discordgo.ChannelCreate {
 	return data.EvtInterface.(*discordgo.ChannelCreate)
@@ -284,6 +292,12 @@ func (data *EventData) GuildRoleUpdate() *discordgo.GuildRoleUpdate {
 }
 func (data *EventData) GuildUpdate() *discordgo.GuildUpdate {
 	return data.EvtInterface.(*discordgo.GuildUpdate)
+}
+func (data *EventData) InviteCreate() *discordgo.InviteCreate {
+	return data.EvtInterface.(*discordgo.InviteCreate)
+}
+func (data *EventData) InviteDelete() *discordgo.InviteDelete {
+	return data.EvtInterface.(*discordgo.InviteDelete)
 }
 func (data *EventData) MessageAck() *discordgo.MessageAck {
 	return data.EvtInterface.(*discordgo.MessageAck)
@@ -398,52 +412,56 @@ func fillEvent(evtData *EventData) {
 		evtData.Type = Event(26)
 	case *discordgo.GuildUpdate:
 		evtData.Type = Event(27)
-	case *discordgo.MessageAck:
+	case *discordgo.InviteCreate:
 		evtData.Type = Event(28)
-	case *discordgo.MessageCreate:
+	case *discordgo.InviteDelete:
 		evtData.Type = Event(29)
-	case *discordgo.MessageDelete:
+	case *discordgo.MessageAck:
 		evtData.Type = Event(30)
-	case *discordgo.MessageDeleteBulk:
+	case *discordgo.MessageCreate:
 		evtData.Type = Event(31)
-	case *discordgo.MessageReactionAdd:
+	case *discordgo.MessageDelete:
 		evtData.Type = Event(32)
-	case *discordgo.MessageReactionRemove:
+	case *discordgo.MessageDeleteBulk:
 		evtData.Type = Event(33)
-	case *discordgo.MessageReactionRemoveAll:
+	case *discordgo.MessageReactionAdd:
 		evtData.Type = Event(34)
-	case *discordgo.MessageUpdate:
+	case *discordgo.MessageReactionRemove:
 		evtData.Type = Event(35)
-	case *discordgo.PresenceUpdate:
+	case *discordgo.MessageReactionRemoveAll:
 		evtData.Type = Event(36)
-	case *discordgo.PresencesReplace:
+	case *discordgo.MessageUpdate:
 		evtData.Type = Event(37)
-	case *discordgo.RateLimit:
+	case *discordgo.PresenceUpdate:
 		evtData.Type = Event(38)
-	case *discordgo.Ready:
+	case *discordgo.PresencesReplace:
 		evtData.Type = Event(39)
-	case *discordgo.RelationshipAdd:
+	case *discordgo.RateLimit:
 		evtData.Type = Event(40)
-	case *discordgo.RelationshipRemove:
+	case *discordgo.Ready:
 		evtData.Type = Event(41)
-	case *discordgo.Resumed:
+	case *discordgo.RelationshipAdd:
 		evtData.Type = Event(42)
-	case *discordgo.TypingStart:
+	case *discordgo.RelationshipRemove:
 		evtData.Type = Event(43)
-	case *discordgo.UserGuildSettingsUpdate:
+	case *discordgo.Resumed:
 		evtData.Type = Event(44)
-	case *discordgo.UserNoteUpdate:
+	case *discordgo.TypingStart:
 		evtData.Type = Event(45)
-	case *discordgo.UserSettingsUpdate:
+	case *discordgo.UserGuildSettingsUpdate:
 		evtData.Type = Event(46)
-	case *discordgo.UserUpdate:
+	case *discordgo.UserNoteUpdate:
 		evtData.Type = Event(47)
-	case *discordgo.VoiceServerUpdate:
+	case *discordgo.UserSettingsUpdate:
 		evtData.Type = Event(48)
-	case *discordgo.VoiceStateUpdate:
+	case *discordgo.UserUpdate:
 		evtData.Type = Event(49)
-	case *discordgo.WebhooksUpdate:
+	case *discordgo.VoiceServerUpdate:
 		evtData.Type = Event(50)
+	case *discordgo.VoiceStateUpdate:
+		evtData.Type = Event(51)
+	case *discordgo.WebhooksUpdate:
+		evtData.Type = Event(52)
 	default:
 		return
 	}
