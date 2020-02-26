@@ -395,6 +395,7 @@ func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 		&SettingDef{
 			Name:    "Duration (minutes, 0 for permanent)",
 			Key:     "Duration",
+			Min:  	 0,
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
