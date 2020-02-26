@@ -214,6 +214,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.Args[1].Value != nil {
 				d = parsed.Args[1].Value.(time.Duration)
 			}
+			if d > 0 && d < time.Minute {
+				d = time.Minute
+			}
 
 			logger.Info(d.Seconds())
 
