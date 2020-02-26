@@ -109,6 +109,9 @@ func (cq *messageDeleteQueueChannel) processBatch(ids []int64) {
 	} else {
 		if len(ids) == 1 {
 			err = common.BotSession.ChannelMessageDelete(cq.Channel, ids[0])
+			if err != nil && common.IsDiscordErr(err, discordgo.ErrCodeUnknownMessage) {
+				err = nil
+			}
 		} else {
 			err = common.BotSession.ChannelMessagesBulkDelete(cq.Channel, ids)
 		}
