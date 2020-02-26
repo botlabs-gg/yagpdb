@@ -82,7 +82,13 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		member := commands.ContextMS(parsed.Context())
-		member, _ = bot.GetMember(member.Guild.ID, member.ID)
+		memberCPY := parsed.GS.MemberCopy(true, member.ID)
+		if memberCPY == nil {
+			memberCPY = member
+		} else {
+			member = memberCPY
+		}
+		
 		if parsed.Args[0].Value != nil {
 			member = parsed.Args[0].Value.(*dstate.MemberState)
 		}
