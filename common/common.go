@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -35,7 +36,7 @@ var (
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
 
-	RedisPoolSize = 10
+	RedisPoolSize = 0
 
 	Statsd *statsd.Client
 
@@ -91,7 +92,7 @@ func Init() error {
 		db = ConfPQDB.GetString()
 	}
 
-	err = connectDB(ConfPQHost.GetString(), ConfPQUsername.GetString(), ConfPQPassword.GetString(), db)
+	err = connectDB(ConfPQHost.GetString(), ConfPQUsername.GetString(), ConfPQPassword.GetString(), db, confMaxSQLConns.GetInt())
 	if err != nil {
 		panic(err)
 	}
@@ -191,13 +192,23 @@ func InitTest() {
 		return
 	}
 
-	err := connectDB("localhost", "postgres", "123", testDB)
+	err := connectDB("localhost", "postgres", "123", testDB, 3)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func connectRedis() (err error) {
+	maxConns := RedisPoolSize
+	if maxConns == 0 {
+		maxConns, _ = strconv.Atoi(os.Getenv("YAGPDB_REDIS_POOL_SIZE"))
+		if maxConns == 0 {
+			maxConns = 10
+		}
+	}
+
+	logger.Infof("Set redis pool size to %d", maxConns)
+
 	// we kinda bypass the config system because the config system also relies on redis
 	// this way the only required env var is the redis address, and per-host specific things
 	addr := os.Getenv("YAGPDB_REDIS")
@@ -205,7 +216,7 @@ func connectRedis() (err error) {
 		addr = "localhost:6379"
 	}
 
-	RedisPool, err = basicredispool.NewPool(RedisPoolSize, &retryableredis.DialConfig{
+	RedisPool, err = basicredispool.NewPool(maxConns, &retryableredis.DialConfig{
 		Network: "tcp",
 		Addr:    addr,
 		OnReconnect: func(err error) {
@@ -229,7 +240,7 @@ func connectRedis() (err error) {
 	return
 }
 
-func connectDB(host, user, pass, dbName string) error {
+func connectDB(host, user, pass, dbName string, maxConns int) error {
 	if host == "" {
 		host = "localhost"
 	}
@@ -244,8 +255,9 @@ func connectDB(host, user, pass, dbName string) error {
 	PQ = db.DB()
 	boil.SetDB(PQ)
 	if err == nil {
-		PQ.SetMaxOpenConns(3)
-		PQ.SetMaxIdleConns(3)
+		PQ.SetMaxOpenConns(maxConns)
+		PQ.SetMaxIdleConns(maxConns)
+		logger.Infof("Set max PG connections to %d", maxConns)
 	}
 	GORM.SetLogger(&GORMLogger{})
 

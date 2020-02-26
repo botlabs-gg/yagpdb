@@ -188,6 +188,7 @@ func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*Ser
 }
 
 func (p *Plugin) runOnlineUpdater() {
+	time.Sleep(time.Minute * 10) // relieve startup preasure
 
 	ticker := time.NewTicker(time.Second * 10)
 	state := bot.State
