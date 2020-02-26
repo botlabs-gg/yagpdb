@@ -635,9 +635,7 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 //needs channelID, messageID, userID, list of emojis - up to twenty
 //can be run once per CC.
 func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value, error) {
-	if c.IncreaseCheckCallCounter("user_deletes_reaction_messages", 1) {
-		return reflect.Value{}, ErrTooManyCalls
-	}
+	
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 4 {
 			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, userID, emoji)")
