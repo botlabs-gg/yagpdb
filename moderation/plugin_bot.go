@@ -271,7 +271,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		reason = "Timed ban expired"
 	}
 
-	err = CreateModlogEmbed(config.IntActionChannel(), author, action, user, reason, "")
+	err = CreateModlogEmbed(config, author, action, user, reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
 	}
@@ -307,7 +307,7 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 		return
 	}
 
-	err := CreateModlogEmbed(config.IntActionChannel(), author, MAKick, data.User, entry.Reason, "")
+	err := CreateModlogEmbed(config, author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
 	}

@@ -758,7 +758,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				if dur > 0 {
 					action.Footer = "Duration: " + common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
 				}
-				CreateModlogEmbed(config.IntActionChannel(), parsed.Msg.Author, action, target, "", "")
+				CreateModlogEmbed(config, parsed.Msg.Author, action, target, "", "")
 			}
 
 			return GenericCmdResp(action, target, dur, true, dur <= 0), nil
@@ -816,7 +816,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			action := MARemoveRole
 			action.Prefix = "Removed the role " + role.Name + " from "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
-				CreateModlogEmbed(config.IntActionChannel(), parsed.Msg.Author, action, target, "", "")
+				CreateModlogEmbed(config, parsed.Msg.Author, action, target, "", "")
 			}
 
 			return GenericCmdResp(action, target, 0, true, true), nil

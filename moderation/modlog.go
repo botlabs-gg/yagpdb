@@ -37,7 +37,9 @@ var (
 	MARemoveRole = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
 )
 
-func CreateModlogEmbed(channelID int64, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {
+func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {
+	channelID := config.IntActionChannel()
+	config.GetGuildID()
 	if channelID == 0 {
 		return nil
 	}
@@ -81,6 +83,12 @@ func CreateModlogEmbed(channelID int64, author *discordgo.User, action ModlogAct
 
 	m, err := common.BotSession.ChannelMessageSendEmbed(channelID, embed)
 	if err != nil {
+		if common.IsDiscordErr(err, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownChannel) {
+			// disable the modlog
+			config.ActionChannel = ""
+			config.Save(config.GetGuildID())
+			return nil
+		}
 		return err
 	}
 

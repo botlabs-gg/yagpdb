@@ -142,8 +142,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		}
 	}
 
-	actionChannel := config.IntActionChannel()
-	err = CreateModlogEmbed(actionChannel, author, action, user, reason, logLink)
+	err = CreateModlogEmbed(config, author, action, user, reason, logLink)
 	return err
 }
 
@@ -405,12 +404,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	}
 
 	// Create the modlog entry
-	logChannel, _ := strconv.ParseInt(config.ActionChannel, 10, 64)
-	if logChannel != 0 {
-		return CreateModlogEmbed(logChannel, author, action, member.DGoUser(), reason, logLink)
-	}
-
-	return nil
+	return CreateModlogEmbed(config, author, action, member.DGoUser(), reason, logLink)
 }
 
 func AddMemberMuteRole(config *Config, id int64, currentRoles []int64) (removedRoles []int64, err error) {
@@ -501,8 +495,7 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 	// go bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", bot.GuildName(guildID), message))
 
 	if config.WarnSendToModlog && config.ActionChannel != "" {
-		parsedActionChannel, _ := strconv.ParseInt(config.ActionChannel, 10, 64)
-		err = CreateModlogEmbed(parsedActionChannel, author, MAWarned, target, message, warning.LogsLink)
+		err = CreateModlogEmbed(config, author, MAWarned, target, message, warning.LogsLink)
 		if err != nil {
 			return common.ErrWithCaller(err)
 		}
