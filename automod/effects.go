@@ -393,10 +393,9 @@ func (mute *MuteUserEffect) DataType() interface{} {
 func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
-			Name:    "Duration (minutes)",
+			Name:    "Duration (minutes, 0 for permanent)",
 			Key:     "Duration",
-			Min:     1,
-			Max:     10080, // 7 days
+			Min:  	 0,
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
