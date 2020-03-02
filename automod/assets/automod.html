@@ -184,7 +184,7 @@ table{
                                 {{$dot := .}}
                                 <tbody>{{range .AutomodLogEntries}}
                                     <tr>
-                                        <td>{{.CreatedAt.Format "2006 Jan 02 15:04"}}</td>
+                                        <td>{{.CreatedAt.UTC.Format "2006 Jan 02 15:04"}}</td>
                                         <td>{{.UserName}} <small><code>{{.UserID}}</code></small></td>
                                         <td>{{.RulesetName}}</td>
                                         <td>{{.RuleName}}</td>
