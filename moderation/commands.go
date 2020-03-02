@@ -503,40 +503,60 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
 		},
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			config, _, err := MBaseCmd(parsed, 0)
-			if err != nil {
-				return nil, err
-			}
+		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			
+			var err error
+			if p.LastResponse == nil {
+				config, _, err := MBaseCmd(parsed, 0)
+				if err != nil {
+					return nil, err
+				}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
-			if err != nil {
-				return nil, err
+				_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
+				if err != nil {
+					return nil, err
+				}
 			}
-
+			
+			skip := (page - 1) * 10
 			userID := parsed.Args[0].Int64()
+			limit := 10
 
 			var result []*WarningModel
-			err = common.GORM.Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Order("id desc").Find(&result).Error
+			var count int
+			err = common.GORM.Table("moderation_warnings").Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Count(&count).Error
+			if err != nil && err != gorm.ErrRecordNotFound {
+				return nil, err
+			}		
+			err = common.GORM.Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Order("id desc").Offset(skip).Limit(limit).Find(&result).Error
 			if err != nil && err != gorm.ErrRecordNotFound {
 				return nil, err
 			}
 
-			if len(result) < 1 {
-				return "This user has not received any warnings", nil
+			if len(result) < 1 && p.LastResponse != nil { //Dont send No Results error on first execution
+				return nil, paginatedmessages.ErrNoResults
 			}
 
-			out := ""
-			for _, entry := range result {
-				out += fmt.Sprintf("#%d: `%20s` **%s** (%13s) - **%s**\n", entry.ID, entry.CreatedAt.Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
-				if entry.LogsLink != "" {
-					out += "^logs: <" + entry.LogsLink + ">\n"
+			out := fmt.Sprintf("**Total :** `%d`\n\n", count)
+			if len(result) > 0 {	
+				for _, entry := range result {
+					out += fmt.Sprintf("#%d: `%20s` - By: **%s** (%13s) \n **Reason:** %s\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
+					if entry.LogsLink != "" {
+						out += fmt.Sprintf("> logs: [`link`](%s)\n", entry.LogsLink)
+					}
+					out +="\n"
 				}
+			} else { 	
+				out += "No Warnings"
 			}
 
-			return out, nil
-		},
+			return &discordgo.MessageEmbed{
+				Title:       "Warnings",
+				Description: out,
+			}, nil
+		}),
 	},
 	&commands.YAGCommand{
 		CustomEnabled: true,
