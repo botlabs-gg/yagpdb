@@ -86,7 +86,7 @@
             </div>
         </section>
     </div>
-    <section class="body">
+    <section class="body mb-6">
         {{template "cp_nav_header" .}}
 
         <div class="inner-wrapper">
@@ -99,6 +99,12 @@
             </section>
         </div>
     </section>
+    <div id="unsaved-changes-popup" hidden>
+        <div id="unsaved-changes-popup-container">
+            <p id="unsaved-changes-message" class="mb-0">blablablablabla</p>
+            <input id="unsaved-changes-save-button" type="button" class="btn btn-success ml-3" value="Save!" onclick="saveUnsavedChanges()">
+        </p>
+    </div>
 
     <script>
     var visibleURL;
