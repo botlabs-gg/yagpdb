@@ -337,7 +337,10 @@
                     class="fas fa-plus"></i>{{$element.Name}}</a>
         </li>
         {{end}}{{end}}
-
+        {{else}}
+        <li>
+             <a role="menuitem" tabindex="-1" href="#">You do not own or have access to any server's settings.</a>
+        </li>
         {{end}}
     </ul>
 </div>
