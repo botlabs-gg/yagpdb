@@ -52,7 +52,7 @@ var cmds = []*commands.YAGCommand{
 
 			durString := common.HumanizeDuration(common.DurationPrecisionSeconds, fromNow)
 			when := time.Now().Add(fromNow)
-			tStr := when.Format(time.RFC822)
+			tStr := when.UTC().Format(time.RFC822)
 
 			if when.After(time.Now().Add(time.Hour * 24 * 366)) {
 				return "Can be max 365 days from now...", nil
