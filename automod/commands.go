@@ -116,7 +116,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			if len(entries) < 1 && p.LastResponse != nil { //Dont send No Results error on first execution
+			if len(entries) < 1 && p!=nil && p.LastResponse != nil { //Dont send No Results error on first execution
 				return nil, paginatedmessages.ErrNoResults
 			}
 
@@ -244,7 +244,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			if len(listViolations) < 1 && p.LastResponse != nil { //Dont send No Results error on first execution
+			if len(listViolations) < 1 && p!=nil && p.LastResponse != nil { //Dont send No Results error on first execution
 				return nil, paginatedmessages.ErrNoResults
 			}
 
