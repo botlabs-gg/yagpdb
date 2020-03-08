@@ -83,6 +83,9 @@ func (p *Plugin) AddCommands() {
 
 			if len(zones) > 1 {
 				if len(zones) > 10 {
+					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
+						return paginatedTimezones(zones)(nil, 1)
+					}
 					_, err := paginatedmessages.CreatePaginatedMessage(
 						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
 					return nil, err
