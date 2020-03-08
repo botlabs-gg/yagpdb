@@ -500,10 +500,13 @@ var ModerationCommands = []*commands.YAGCommand{
 		Name:          "Warnings",
 		Description:   "Lists warning of a user.",
 		Aliases:       []string{"Warns"},
-		RequiredArgs:  1,
+		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID, Default: 0},
 			&dcmd.ArgDef{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "id", Name: "Warning ID", Type: dcmd.Int},
 		},
 		RunFunc: func (parsed *dcmd.Data) (interface{}, error) { 
 				var err error
@@ -967,7 +970,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 		desc := fmt.Sprintf("**Total :** `%d`", count)
 		var fields []*discordgo.MessageEmbedField
 		currentField := &discordgo.MessageEmbedField{
-					Name	: "⠀",
+					Name	: "⠀", //Use braille blank character for seamless transition between feilds
 					Value	: "",
 			        }
 		fields = append(fields, currentField)
