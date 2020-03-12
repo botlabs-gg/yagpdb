@@ -30,6 +30,8 @@ var (
 		"toInt64":    ToInt64,
 		"toFloat":    ToFloat64,
 		"toDuration": ToDuration,
+		"toRune":     ToRune,
+		"toByte":     ToByte,
 
 		// string manipulation
 		"joinStr":   joinStrings,
