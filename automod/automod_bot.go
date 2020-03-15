@@ -36,6 +36,11 @@ type ResetChannelRatelimitData struct {
 	ChannelID int64
 }
 
+type AddRoleData struct {
+	RoleID  int64
+	UserID  int64
+}
+
 func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
 	p.checkMessage(evt.MessageUpdate().Message)
 }
