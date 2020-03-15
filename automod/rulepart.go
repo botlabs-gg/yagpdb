@@ -73,6 +73,7 @@ var RulePartMap = map[int]RulePart{
 	307: &ResetViolationsEffect{},
 	308: &DeleteMessagesEffect{},
 	309: &GiveRoleEffect{},
+	310: &RemoveRoleEffect{},
 	311: &EnableChannelSlowmodeEffect{},
 }
 
