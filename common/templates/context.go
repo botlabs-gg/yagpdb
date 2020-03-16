@@ -41,19 +41,19 @@ var (
 		"title":     strings.Title,
 
 		// math
-		"add":        add,
-		"sub":        tmplSub,
-		"mult":       tmplMult,
-		"div":        tmplDiv,
-		"mod":        tmplMod,
-		"fdiv":       tmplFDiv,
-		"sqrt":       tmplSqrt,
-		"pow":        tmplPow,
-		"log":        tmplLog,
-		"round":      tmplRound,
-		"roundCeil":  tmplRoundCeil,
-		"roundFloor": tmplRoundFloor,
-		"roundEven":  tmplRoundEven,
+		"add":               add,
+		"sub":               tmplSub,
+		"mult":              tmplMult,
+		"div":               tmplDiv,
+		"mod":               tmplMod,
+		"fdiv":              tmplFDiv,
+		"sqrt":              tmplSqrt,
+		"pow":               tmplPow,
+		"log":               tmplLog,
+		"round":             tmplRound,
+		"roundCeil":         tmplRoundCeil,
+		"roundFloor":        tmplRoundFloor,
+		"roundEven":         tmplRoundEven,
 		"humanizeThousands": tmplHumanizeThousands,
 
 		// misc
@@ -77,9 +77,15 @@ var (
 		"currentTime": tmplCurrentTime,
 		"newDate":     tmplNewDate,
 
-		"escapeHere":         tmplEscapeHere,
-		"escapeEveryone":     tmplEscapeEveryone,
-		"escapeEveryoneHere": tmplEscapeEveryoneHere,
+		"escapeHere": func(s string) (string, error) {
+			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
+		},
+		"escapeEveryone": func(s string) (string, error) {
+			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
+		},
+		"escapeEveryoneHere": func(s string) (string, error) {
+			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
+		},
 
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
 		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
@@ -118,10 +124,9 @@ type Context struct {
 	ContextFuncs map[string]interface{}
 	Data         map[string]interface{}
 
-	MentionEveryone  bool
-	MentionHere      bool
-	MentionRoles     []int64
-	MentionRoleNames []string
+	MentionEveryone bool
+	MentionHere     bool
+	MentionRoles    []int64
 
 	DelResponse bool
 
@@ -140,6 +145,8 @@ type Context struct {
 	IsPremium bool
 
 	RegexCache map[string]*regexp.Regexp
+
+	parsed *template.Template
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -245,6 +252,7 @@ func (c *Context) Execute(source string) (string, error) {
 	if err != nil {
 		return "", errors.WithMessage(err, "Failed parsing template")
 	}
+	c.parsed = parsed
 
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
@@ -260,11 +268,10 @@ func (c *Context) Execute(source string) (string, error) {
 
 	dur := time.Since(started)
 	if c.FixedOutput != "" {
-		result := common.EscapeSpecialMentionsConditional(c.FixedOutput, c.MentionEveryone, c.MentionHere, c.MentionRoles)
-		return result, nil
+		return c.FixedOutput, nil
 	}
 
-	result := common.EscapeSpecialMentionsConditional(buf.String(), c.MentionEveryone, c.MentionHere, c.MentionRoles)
+	result := buf.String()
 	if err != nil {
 		if err == io.ErrShortWrite {
 			err = errors.New("response grew too big (>25k)")
@@ -287,7 +294,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 	if err != nil {
 		logger.WithField("guild", c.GS.ID).WithError(err).Error("Error executing template: " + c.Name)
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
-		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+		out += "`" + err.Error() + "`"
 	}
 
 	if strings.TrimSpace(out) != "" {
@@ -296,6 +303,21 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 	}
 
 	return nil
+}
+
+func (c *Context) MessageSend(content string) *discordgo.MessageSend {
+	parse := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if c.MentionEveryone || c.MentionHere {
+		parse = append(parse, discordgo.AllowedMentionTyeEveryone)
+	}
+
+	return &discordgo.MessageSend{
+		Content: content,
+		AllowedMentions: discordgo.AllowedMentions{
+			Parse: parse,
+			Roles: c.MentionRoles,
+		},
+	}
 }
 
 // IncreaseCheckCallCounter Returns true if key is above the limit

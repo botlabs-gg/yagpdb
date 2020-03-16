@@ -180,7 +180,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	r, cmdErr := yc.RunFunc(data.WithContext(runCtx))
 	if cmdErr != nil {
 		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
-			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + common.EscapeSpecialMentions(data.Msg.Content) + "`, Cancelled the command."
+			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + data.Msg.Content + "`, Cancelled the command."
 		}
 	}
 

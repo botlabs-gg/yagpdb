@@ -921,16 +921,6 @@ func tmplNewDate(year, monthInt, day, hour, min, sec int, location ...string) (t
 	return time.Date(year, month, day, hour, min, sec, 0, loc), nil
 }
 
-func tmplEscapeHere(in string) string {
-	return common.EscapeEveryoneHere(in, false, true)
-}
-func tmplEscapeEveryone(in string) string {
-	return common.EscapeEveryoneHere(in, true, false)
-}
-func tmplEscapeEveryoneHere(in string) string {
-	return common.EscapeEveryoneHere(in, true, true)
-}
-
 func tmplHumanizeDurationHours(in time.Duration) string {
 	return common.HumanizeDuration(common.DurationPrecisionHours, in)
 }

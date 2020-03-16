@@ -522,7 +522,10 @@ func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err 
 
 func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	if elem.MessageStr != "" {
-		_, err = common.BotSession.ChannelMessageSend(elem.Channel, elem.MessageStr)
+		_, err = common.BotSession.ChannelMessageSendComplex(elem.Channel, &discordgo.MessageSend{
+			Content:         elem.MessageStr,
+			AllowedMentions: elem.AllowedMentions,
+		})
 	} else if elem.MessageEmbed != nil {
 		_, err = common.BotSession.ChannelMessageSendEmbed(elem.Channel, elem.MessageEmbed)
 	} else {

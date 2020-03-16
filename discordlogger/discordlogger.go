@@ -71,6 +71,6 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
-	_, err = common.BotSession.ChannelMessageSend(int64(confBotLeavesJoins.GetInt()), common.EscapeSpecialMentions(msg))
+	_, err = common.BotSession.ChannelMessageSend(int64(confBotLeavesJoins.GetInt()), msg)
 	return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 }

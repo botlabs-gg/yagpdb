@@ -118,7 +118,13 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = common.BotSession.ChannelMessageSend(cID, "<@&"+discordgo.StrID(role.ID)+"> "+data.Args[1].Str())
+	_, err = common.BotSession.ChannelMessageSendComplex(cID, &discordgo.MessageSend{
+		Content: "<@&" + discordgo.StrID(role.ID) + "> " + data.Args[1].Str(),
+		AllowedMentions: discordgo.AllowedMentions{
+			Roles: []int64{role.ID},
+		},
+	})
+
 	if err != nil {
 		return nil, err
 	}
