@@ -796,6 +796,28 @@ func ToDuration(from interface{}) time.Duration {
 	}
 }
 
+func ToRune(from interface{}) []rune {
+	switch t := from.(type) {
+	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+		return []rune(ToString(t))
+	case string:
+		return []rune(t)
+	default:
+		return nil
+	}
+}
+
+func ToByte(from interface{}) []byte {
+	switch t := from.(type) {
+	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+		return []byte(ToString(t))
+	case string:
+		return []byte(t)
+	default:
+		return nil
+	}
+}
+
 func tmplJson(v interface{}) (string, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
