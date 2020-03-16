@@ -539,6 +539,9 @@ var ModerationCommands = []*commands.YAGCommand{
 				if page < 1 {
 					page = 1
 				}
+				if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
+					return PaginateWarnings(parsed)(nil, page)
+				}
 			 	_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, page, 0, PaginateWarnings(parsed))
 			 	return nil, err
 		},
@@ -665,7 +668,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			if len(entries) < 1 && p.LastResponse != nil { //Don't send No Results error on first execution.
+			if len(entries) < 1 && p!= nil && p.LastResponse != nil { //Don't send No Results error on first execution.
 				return nil, paginatedmessages.ErrNoResults
 			}
 
@@ -963,7 +966,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 			return nil, err
 		}
 
-		if len(result) < 1 && p.LastResponse != nil { //Dont send No Results error on first execution
+		if len(result) < 1 && p!= nil && p.LastResponse != nil { //Dont send No Results error on first execution
 			return nil, paginatedmessages.ErrNoResults
 		}
 
