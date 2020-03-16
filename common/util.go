@@ -63,7 +63,10 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 
 // SendTempMessage sends a message that gets deleted after duration
 func SendTempMessage(session *discordgo.Session, duration time.Duration, cID int64, msg string) {
-	m, err := BotSession.ChannelMessageSend(cID, EscapeSpecialMentions(msg))
+	m, err := BotSession.ChannelMessageSendComplex(cID, &discordgo.MessageSend{
+		Content:         msg,
+		AllowedMentions: AllowedMentionsParseUsers,
+	})
 	if err != nil {
 		return
 	}
@@ -210,19 +213,6 @@ func HumanizeTime(precision DurationFormatPrecision, in time.Time) string {
 	}
 }
 
-func SendEmbedWithFallback(s *discordgo.Session, channelID int64, embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
-	perms, err := s.State.UserChannelPermissions(s.State.User.ID, channelID)
-	if err != nil {
-		return nil, err
-	}
-
-	if perms&discordgo.PermissionEmbedLinks != 0 {
-		return s.ChannelMessageSendEmbed(channelID, embed)
-	}
-
-	return s.ChannelMessageSend(channelID, EscapeSpecialMentions(FallbackEmbed(embed)))
-}
-
 func FallbackEmbed(embed *discordgo.MessageEmbed) string {
 	body := ""
 
@@ -357,34 +347,6 @@ func ErrWithCaller(err error) error {
 
 	f := runtime.FuncForPC(pc)
 	return errors.WithMessage(err, filepath.Base(f.Name()))
-}
-
-func RetrySendMessage(channel int64, msg interface{}, maxTries int) error {
-	var err error
-	for currentTries := 0; currentTries < maxTries; currentTries++ {
-
-		switch t := msg.(type) {
-		case *discordgo.MessageEmbed:
-			_, err = BotSession.ChannelMessageSendEmbed(channel, t)
-		case string:
-			_, err = BotSession.ChannelMessageSend(channel, t)
-		default:
-			panic("Unknown message passed to RetrySendMessage")
-		}
-
-		if err == nil {
-			return nil
-		}
-
-		if e, ok := err.(*discordgo.RESTError); ok && e.Message != nil {
-			// Discord returned an actual error for us
-			return err
-		}
-
-		time.Sleep(time.Second * 5)
-	}
-
-	return err
 }
 
 // DiscordError extracts the errorcode discord sent us
@@ -611,4 +573,8 @@ func IsOwner(userID int64) bool {
 	}
 
 	return false
+}
+
+var AllowedMentionsParseUsers = discordgo.AllowedMentions{
+	Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 }

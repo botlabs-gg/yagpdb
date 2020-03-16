@@ -100,18 +100,18 @@ var cmdListCommands = &commands.YAGCommand{
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
-		
+
 		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GS.ID)).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom command groups", err
 		}
-		
+
 		groupMap := make(map[int64]string)
 		groupMap[0] = "Ungrouped"
 		for _, group := range groups {
 			groupMap[group.ID] = group.Name
 		}
-		
+
 		foundCCS, provided := FindCommands(ccs, data)
 		if len(foundCCS) < 1 {
 			list := StringCommands(ccs, groupMap)
@@ -130,7 +130,7 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		cc := foundCCS[0]
-		
+
 		if cc.TextTrigger != "" {
 			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
 		} else {
@@ -607,7 +607,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
 		if cmd.ShowErrors {
 			out += "\nAn error caused the execution of the custom command template to stop:\n"
-			out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+			out += "`" + err.Error() + "`"
 		}
 	}
 
@@ -621,7 +621,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	}
 
 	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
-		m, err := common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
+		m, err := common.BotSession.ChannelMessageSendComplex(tmplCtx.CS.ID, tmplCtx.MessageSend(out))
 		if err != nil {
 			logger.WithError(err).Error("Failed sending message")
 		} else {
@@ -655,7 +655,7 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 
 	if cmd.ShowErrors {
 		out := "\nAn error caused the execution of the custom command template to stop:\n"
-		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+		out += "`" + err.Error() + "`"
 
 		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
 	}

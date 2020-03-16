@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jonas747/dstate"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jonas747/dstate"
 
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 
@@ -103,6 +104,11 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
+	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if !filterSpecialMentions {
+		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTyeEveryone)
+	}
+
 	return func(channel interface{}, msg interface{}) interface{} {
 		if c.IncreaseCheckGenericAPICall() {
 			return ""
@@ -114,25 +120,24 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		var m *discordgo.Message
-		msgSend := &discordgo.MessageSend{}
+		msgSend := &discordgo.MessageSend{
+			AllowedMentions: discordgo.AllowedMentions{
+				Parse: parseMentions,
+			},
+		}
 		var err error
 
 		switch typedMsg := msg.(type) {
 
-			case *discordgo.MessageEmbed:
-				msgSend.Embed = typedMsg
-			case *discordgo.MessageSend:
-				msgSend = typedMsg
-			default:
-				msgSend.Content = fmt.Sprint(msg)
-		}
-
-		if filterSpecialMentions && msgSend.Content != "" {
-			msgSend.Content = common.EscapeSpecialMentions(msgSend.Content)
+		case *discordgo.MessageEmbed:
+			msgSend.Embed = typedMsg
+		case *discordgo.MessageSend:
+			msgSend = typedMsg
+		default:
+			msgSend.Content = fmt.Sprint(msg)
 		}
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)
-		
 
 		if err == nil && returnID {
 			return m.ID
@@ -155,39 +160,34 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 		mID := ToInt64(msgID)
 		msgEdit := &discordgo.MessageEdit{
-				ID: mID,
-				Channel: cid,
-			   }
+			ID:      mID,
+			Channel: cid,
+		}
 		var err error
 
 		switch typedMsg := msg.(type) {
 
-			case *discordgo.MessageEmbed:
-				msgEdit.Embed = typedMsg
-			case *discordgo.MessageEdit:
-				//If both Embed and string are explicitly set as null, give an error message.
-				if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" && typedMsg.Embed != nil && typedMsg.Embed.GetMarshalNil() {
-					return "", errors.New("both content and embed cannot be null")
-				}
-				msgEdit.Content = typedMsg.Content
-				msgEdit.Embed = typedMsg.Embed
-			default:
-				temp := fmt.Sprint(msg)
-				msgEdit.Content = &temp
-		}
-
-		if filterSpecialMentions && msgEdit.Content != nil && *msgEdit.Content != "" {
-			temp := common.EscapeSpecialMentions(*msgEdit.Content)
+		case *discordgo.MessageEmbed:
+			msgEdit.Embed = typedMsg
+		case *discordgo.MessageEdit:
+			//If both Embed and string are explicitly set as null, give an error message.
+			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" && typedMsg.Embed != nil && typedMsg.Embed.GetMarshalNil() {
+				return "", errors.New("both content and embed cannot be null")
+			}
+			msgEdit.Content = typedMsg.Content
+			msgEdit.Embed = typedMsg.Embed
+		default:
+			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
-		
+
 		if err != nil {
 			return "", err
 		}
 
-		return "", nil 
+		return "", nil
 	}
 }
 
@@ -635,7 +635,7 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 //needs channelID, messageID, userID, list of emojis - up to twenty
 //can be run once per CC.
 func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value, error) {
-	
+
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 4 {
 			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, userID, emoji)")
@@ -712,7 +712,7 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	if mID == 0 {
 		return nil, nil
 	}
-	
+
 	member, _ := bot.GetMember(c.GS.ID, mID)
 	if member == nil {
 		return nil, nil
@@ -721,23 +721,23 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	return member.DGoCopy(), nil
 }
 
-func (c *Context) tmplGetChannel ( channel interface {}) (*dstate.ChannelState, error) {
-	
+func (c *Context) tmplGetChannel(channel interface{}) (*dstate.ChannelState, error) {
+
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
 	}
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-                return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
-        }
+		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+	}
 
 	cstate := c.GS.ChannelCopy(true, cID)
 
 	if cstate == nil {
 		return nil, errors.New("Channel not in state")
 	}
-	
+
 	return cstate, nil
 
 }
@@ -929,25 +929,25 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 }
 
 func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (string, error) {
-        if c.IncreaseCheckCallCounter("edit_channel", 10) {
-                return "", ErrTooManyCalls
-        }
+	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+		return "", ErrTooManyCalls
+	}
 
-        cID := c.ChannelArg(channel)
-        if cID == 0 {
-                return "", errors.New("Unknown channel")
-        }
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return "", errors.New("Unknown channel")
+	}
 
-        if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
-                return "", ErrTooManyCalls
-        }
+	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+		return "", ErrTooManyCalls
+	}
 
 	edit := &discordgo.ChannelEdit{
 		Topic: newTopic,
 	}
 
-        _, err := common.BotSession.ChannelEditComplex(cID, edit)
-        return "", err
+	_, err := common.BotSession.ChannelEditComplex(cID, edit)
+	return "", err
 }
 
 func (c *Context) tmplOnlineCount() (int, error) {
@@ -973,16 +973,16 @@ func (c *Context) tmplOnlineCountBots() (int, error) {
 	}
 
 	botCount := 0
-	
+
 	c.GS.RLock()
 	defer c.GS.RUnlock()
-	
+
 	for _, v := range c.GS.Members {
 		if v.Bot && v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
 			botCount++
 		}
 	}
-	
+
 	return botCount, nil
 }
 
@@ -992,16 +992,16 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 		return "", ErrTooManyCalls
 	}
 
-		if c.MS == nil {
+	if c.MS == nil {
 		return "", nil
 	}
-	
+
 	if strings.Compare(c.MS.Nick, Nickname) == 0 {
-	
+
 		return "", nil
-	
+
 	}
-	
+
 	err := common.BotSession.GuildMemberNickname(c.GS.ID, c.MS.ID, Nickname)
 	if err != nil {
 		return "", err
