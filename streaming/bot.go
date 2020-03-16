@@ -428,8 +428,8 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	}
 
 	m, err := common.BotSession.ChannelMessageSendComplex(config.AnnounceChannel, ctx.MessageSend(out))
-	if err == nil && ctx.DelResponse {
-		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.DelResponseDelay)
+	if err == nil && ctx.CurrentFrame.DelResponse {
+		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.CurrentFrame.DelResponseDelay)
 	}
 }
 

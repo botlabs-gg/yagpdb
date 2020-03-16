@@ -568,7 +568,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	tmplCtx.Data["CCID"] = cmd.LocalID
 	tmplCtx.Data["CCRunCount"] = cmd.RunCount + 1
 
-	csCop := tmplCtx.CS.Copy(true)
+	csCop := tmplCtx.CurrentFrame.CS.Copy(true)
 	f := logger.WithFields(logrus.Fields{
 		"trigger":      cmd.TextTrigger,
 		"trigger_type": CommandTriggerType(cmd.TriggerType).String(),
@@ -584,7 +584,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 	if lockHandle == -1 {
 		f.Warn("Exceeded max lock attempts for cc")
-		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
 		return nil
 	}
 
@@ -611,22 +611,22 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		}
 	}
 
-	if !bot.BotProbablyHasPermissionGS(true, tmplCtx.GS, tmplCtx.CS.ID, discordgo.PermissionSendMessages) {
+	if !bot.BotProbablyHasPermissionGS(true, tmplCtx.GS, tmplCtx.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
 		// don't bother sending the response if we dont have perms
 		return nil
 	}
 
-	for _, v := range tmplCtx.EmebdsToSend {
-		common.BotSession.ChannelMessageSendEmbed(tmplCtx.CS.ID, v)
+	for _, v := range tmplCtx.CurrentFrame.EmebdsToSend {
+		common.BotSession.ChannelMessageSendEmbed(tmplCtx.CurrentFrame.CS.ID, v)
 	}
 
-	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
-		m, err := common.BotSession.ChannelMessageSendComplex(tmplCtx.CS.ID, tmplCtx.MessageSend(out))
+	if strings.TrimSpace(out) != "" && (!tmplCtx.CurrentFrame.DelResponse || tmplCtx.CurrentFrame.DelResponseDelay > 0) {
+		m, err := common.BotSession.ChannelMessageSendComplex(tmplCtx.CurrentFrame.CS.ID, tmplCtx.MessageSend(out))
 		if err != nil {
 			logger.WithError(err).Error("Failed sending message")
 		} else {
-			if tmplCtx.DelResponse {
-				templates.MaybeScheduledDeleteMessage(tmplCtx.GS.ID, tmplCtx.CS.ID, m.ID, tmplCtx.DelResponseDelay)
+			if tmplCtx.CurrentFrame.DelResponse {
+				templates.MaybeScheduledDeleteMessage(tmplCtx.GS.ID, tmplCtx.CurrentFrame.CS.ID, m.ID, tmplCtx.CurrentFrame.DelResponseDelay)
 			}
 
 			if len(tmplCtx.AddResponseReactionNames) > 0 {
@@ -657,7 +657,7 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 		out := "\nAn error caused the execution of the custom command template to stop:\n"
 		out += "`" + err.Error() + "`"
 
-		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
+		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, out)
 	}
 
 	updatePostCommandRan(cmd, err)

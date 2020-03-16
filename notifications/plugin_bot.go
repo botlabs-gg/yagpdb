@@ -141,14 +141,14 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 
 	if cs.Type == discordgo.ChannelTypeDM {
 		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
-	} else if !ctx.DelResponse {
+	} else if !ctx.CurrentFrame.DelResponse {
 		send := ctx.MessageSend("")
 		bot.QueueMergedMessage(cs.ID, msg, send.AllowedMentions)
 	} else {
 		var m *discordgo.Message
 		m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, ctx.MessageSend(msg))
-		if err == nil && ctx.DelResponse {
-			templates.MaybeScheduledDeleteMessage(cs.Guild.ID, cs.ID, m.ID, ctx.DelResponseDelay)
+		if err == nil && ctx.CurrentFrame.DelResponse {
+			templates.MaybeScheduledDeleteMessage(cs.Guild.ID, cs.ID, m.ID, ctx.CurrentFrame.DelResponseDelay)
 		}
 	}
 
