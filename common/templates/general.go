@@ -594,6 +594,9 @@ func joinStrings(sep string, args ...interface{}) (string, error) {
 
 		case int, uint, int32, uint32, int64, uint64:
 			builder.WriteString(ToString(v))
+			
+		case fmt.Stringer:
+			builder.WriteString(t.String())
 
 		}
 
