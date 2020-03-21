@@ -93,9 +93,7 @@ var (
 		"humanizeTimeSinceDays":   tmplHumanizeTimeSinceDays,
 	}
 
-	contextSetupFuncs = []ContextSetupFunc{
-		baseContextFuncs,
-	}
+	contextSetupFuncs = []ContextSetupFunc{}
 )
 
 var logger = common.GetFixedPrefixLogger("templates")
@@ -108,21 +106,39 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 	contextSetupFuncs = append(contextSetupFuncs, f)
 }
 
+func init() {
+	RegisterSetupFunc(baseContextFuncs)
+}
+
 // set by the premium package to return wether this guild is premium or not
 var GuildPremiumFunc func(guildID int64) (bool, error)
 
 type Context struct {
 	Name string
-	GS   *dstate.GuildState
-	CS   *dstate.ChannelState
 
-	MS  *dstate.MemberState
-	Msg *discordgo.Message
-
+	GS      *dstate.GuildState
+	MS      *dstate.MemberState
+	Msg     *discordgo.Message
 	BotUser *discordgo.User
 
 	ContextFuncs map[string]interface{}
 	Data         map[string]interface{}
+	Counters     map[string]int
+
+	AddResponseReactionNames []string
+
+	FixedOutput  string
+	secondsSlept int
+
+	IsPremium bool
+
+	RegexCache map[string]*regexp.Regexp
+
+	CurrentFrame *contextFrame
+}
+
+type contextFrame struct {
+	CS *dstate.ChannelState
 
 	MentionEveryone bool
 	MentionHere     bool
@@ -130,29 +146,17 @@ type Context struct {
 
 	DelResponse bool
 
-	DelResponseDelay int
-
-	Counters map[string]int
-
-	EmebdsToSend []*discordgo.MessageEmbed
-
+	DelResponseDelay         int
+	EmebdsToSend             []*discordgo.MessageEmbed
 	AddResponseReactionNames []string
 
-	FixedOutput string
-
-	secondsSlept int
-
-	IsPremium bool
-
-	RegexCache map[string]*regexp.Regexp
-
-	parsed *template.Template
+	isNestedTemplate bool
+	parsedTemplate   *template.Template
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
 	ctx := &Context{
 		GS: gs,
-		CS: cs,
 		MS: ms,
 
 		BotUser: common.BotUser,
@@ -160,6 +164,10 @@ func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.Membe
 		ContextFuncs: make(map[string]interface{}),
 		Data:         make(map[string]interface{}),
 		Counters:     make(map[string]int),
+
+		CurrentFrame: &contextFrame{
+			CS: cs,
+		},
 	}
 
 	if gs != nil && GuildPremiumFunc != nil {
@@ -186,8 +194,8 @@ func (c *Context) setupBaseData() {
 		c.Data["server"] = guild
 	}
 
-	if c.CS != nil {
-		channel := c.CS.Copy(false)
+	if c.CurrentFrame.CS != nil {
+		channel := c.CurrentFrame.CS.Copy(false)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
 	}
@@ -229,8 +237,8 @@ func (c *Context) Execute(source string) (string, error) {
 		// Construct a fake message
 		c.Msg = new(discordgo.Message)
 		c.Msg.Author = c.BotUser
-		if c.CS != nil {
-			c.Msg.ChannelID = c.CS.ID
+		if c.CurrentFrame.CS != nil {
+			c.Msg.ChannelID = c.CurrentFrame.CS.ID
 		} else {
 			// This may fail in some cases
 			c.Msg.ChannelID = c.GS.ID
@@ -252,8 +260,13 @@ func (c *Context) Execute(source string) (string, error) {
 	if err != nil {
 		return "", errors.WithMessage(err, "Failed parsing template")
 	}
-	c.parsed = parsed
+	c.CurrentFrame.parsedTemplate = parsed
 
+	return c.executeParsed()
+}
+
+func (c *Context) executeParsed() (string, error) {
+	parsed := c.CurrentFrame.parsedTemplate
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
 	} else {
@@ -264,7 +277,7 @@ func (c *Context) Execute(source string) (string, error) {
 	w := LimitWriter(&buf, 25000)
 
 	started := time.Now()
-	err = parsed.Execute(w, c.Data)
+	err := parsed.Execute(w, c.Data)
 
 	dur := time.Since(started)
 	if c.FixedOutput != "" {
@@ -281,6 +294,17 @@ func (c *Context) Execute(source string) (string, error) {
 	}
 
 	return result, nil
+}
+
+// creates a new context frame and returns the old one
+func (c *Context) newContextFrame(cs *dstate.ChannelState) *contextFrame {
+	old := c.CurrentFrame
+	c.CurrentFrame = &contextFrame{
+		CS:               cs,
+		isNestedTemplate: true,
+	}
+
+	return old
 }
 
 func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error {
@@ -307,7 +331,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 
 func (c *Context) MessageSend(content string) *discordgo.MessageSend {
 	parse := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-	if c.MentionEveryone || c.MentionHere {
+	if c.CurrentFrame.MentionEveryone || c.CurrentFrame.MentionHere {
 		parse = append(parse, discordgo.AllowedMentionTyeEveryone)
 	}
 
@@ -315,7 +339,7 @@ func (c *Context) MessageSend(content string) *discordgo.MessageSend {
 		Content: content,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parse,
-			Roles: c.MentionRoles,
+			Roles: c.CurrentFrame.MentionRoles,
 		},
 	}
 }
@@ -368,8 +392,8 @@ func (c *Context) LogEntry() *logrus.Entry {
 		f = f.WithField("user", c.MS.ID)
 	}
 
-	if c.CS != nil {
-		f = f.WithField("channel", c.CS.ID)
+	if c.CurrentFrame.CS != nil {
+		f = f.WithField("channel", c.CurrentFrame.CS.ID)
 	}
 
 	return f
@@ -379,6 +403,7 @@ func baseContextFuncs(c *Context) {
 	// message functions
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
 	c.ContextFuncs["sendMessage"] = c.tmplSendMessage(true, false)
+	c.ContextFuncs["sendTemplate"] = c.tmplSendTemplate
 	c.ContextFuncs["sendMessageRetID"] = c.tmplSendMessage(true, true)
 	c.ContextFuncs["sendMessageNoEscape"] = c.tmplSendMessage(false, false)
 	c.ContextFuncs["sendMessageNoEscapeRetID"] = c.tmplSendMessage(false, true)

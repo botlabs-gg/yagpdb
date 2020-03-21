@@ -15,8 +15,10 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/scheduledevents2"
 )
 
 var ErrTooManyCalls = errors.New("Too many calls to this function")
@@ -56,9 +58,9 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 	defer c.GS.RUnlock()
 
 	// Look for the channel
-	if v == nil && c.CS != nil {
+	if v == nil && c.CurrentFrame.CS != nil {
 		// No channel passed, assume current channel
-		return c.CS.ID
+		return c.CurrentFrame.CS.ID
 	}
 
 	verifiedExistence := false
@@ -101,6 +103,62 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 	}
 
 	return cid
+}
+
+func (c *Context) tmplSendTemplate(channel interface{}, name string, data ...interface{}) (interface{}, error) {
+	if c.IncreaseCheckCallCounter("exec_child", 10) {
+		return "", ErrTooManyCalls
+	}
+	if name == "" {
+		return "", errors.New("No template name passed")
+	}
+	if c.CurrentFrame.isNestedTemplate {
+		return "", errors.New("Can't call this in a nested template")
+	}
+
+	t := c.CurrentFrame.parsedTemplate.Lookup(name)
+	if t == nil {
+		return "", errors.New("Unknown template")
+	}
+
+	// find the new context channel
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		if c.CurrentFrame.CS != nil {
+			cID = c.CurrentFrame.CS.ID
+		}
+	}
+
+	var cs *dstate.ChannelState
+	if cID != 0 {
+		cs = c.GS.ChannelCopy(true, cID)
+	}
+
+	oldFrame := c.newContextFrame(cs)
+	defer func() {
+		c.CurrentFrame = oldFrame
+	}()
+
+	// pass some data
+	if len(data) > 1 {
+		c.Data["TemplateArgs"], _ = Dictionary(data...)
+	} else if len(data) == 1 {
+		c.Data["TemplateArgs"] = data[0]
+	}
+
+	// and finally execute the child template
+	c.CurrentFrame.parsedTemplate = t
+	resp, err := c.executeParsed()
+	if err != nil {
+		return "", err
+	}
+
+	send := c.MessageSend(resp)
+	m, err := common.BotSession.ChannelMessageSendComplex(cID, send)
+	if err != nil {
+		return "", err
+	}
+	return m.ID, err
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
@@ -192,12 +250,12 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 }
 
 func (c *Context) tmplMentionEveryone() string {
-	c.MentionEveryone = true
+	c.CurrentFrame.MentionEveryone = true
 	return " @everyone "
 }
 
 func (c *Context) tmplMentionHere() string {
-	c.MentionHere = true
+	c.CurrentFrame.MentionHere = true
 	return " @here "
 }
 
@@ -223,11 +281,11 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 		return "(role not found)"
 	}
 
-	if common.ContainsInt64Slice(c.MentionRoles, role) {
+	if common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, role) {
 		return "<@&" + discordgo.StrID(role) + ">"
 	}
 
-	c.MentionRoles = append(c.MentionRoles, role)
+	c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, role)
 	return " <@&" + discordgo.StrID(role) + "> "
 }
 
@@ -240,8 +298,8 @@ func (c *Context) tmplMentionRoleName(role string) string {
 	c.GS.RLock()
 	for _, r := range c.GS.Guild.Roles {
 		if r.Name == role {
-			if !common.ContainsInt64Slice(c.MentionRoles, r.ID) {
-				c.MentionRoles = append(c.MentionRoles, r.ID)
+			if !common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, r.ID) {
+				c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, r.ID)
 				found = r
 			}
 		}
@@ -596,8 +654,8 @@ func (c *Context) tmplDelResponse(args ...interface{}) string {
 		dur = 86400
 	}
 
-	c.DelResponseDelay = dur
-	c.DelResponse = true
+	c.CurrentFrame.DelResponseDelay = dur
+	c.CurrentFrame.DelResponse = true
 	return ""
 }
 
