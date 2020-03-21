@@ -611,36 +611,10 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		}
 	}
 
-	if !bot.BotProbablyHasPermissionGS(true, tmplCtx.GS, tmplCtx.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
-		// don't bother sending the response if we dont have perms
-		return nil
+	_, err = tmplCtx.SendResponse(out)
+	if err != nil {
+		return errors.WithStackIf(err)
 	}
-
-	for _, v := range tmplCtx.CurrentFrame.EmebdsToSend {
-		common.BotSession.ChannelMessageSendEmbed(tmplCtx.CurrentFrame.CS.ID, v)
-	}
-
-	if strings.TrimSpace(out) != "" && (!tmplCtx.CurrentFrame.DelResponse || tmplCtx.CurrentFrame.DelResponseDelay > 0) {
-		m, err := common.BotSession.ChannelMessageSendComplex(tmplCtx.CurrentFrame.CS.ID, tmplCtx.MessageSend(out))
-		if err != nil {
-			logger.WithError(err).Error("Failed sending message")
-		} else {
-			if tmplCtx.CurrentFrame.DelResponse {
-				templates.MaybeScheduledDeleteMessage(tmplCtx.GS.ID, tmplCtx.CurrentFrame.CS.ID, m.ID, tmplCtx.CurrentFrame.DelResponseDelay)
-			}
-
-			if len(tmplCtx.AddResponseReactionNames) > 0 {
-				go func() {
-					for _, v := range tmplCtx.AddResponseReactionNames {
-						common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
-					}
-				}()
-			}
-		}
-	}
-
-	// update stats
-
 	return nil
 }
 

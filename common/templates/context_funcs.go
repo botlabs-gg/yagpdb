@@ -10,10 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dstate"
-
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
@@ -105,8 +101,16 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 	return cid
 }
 
+func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
+	return c.sendNestedTemplate(nil, true, name, data...)
+}
+
 func (c *Context) tmplSendTemplate(channel interface{}, name string, data ...interface{}) (interface{}, error) {
-	if c.IncreaseCheckCallCounter("exec_child", 10) {
+	return c.sendNestedTemplate(channel, false, name, data...)
+}
+
+func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, data ...interface{}) (interface{}, error) {
+	if c.IncreaseCheckCallCounter("exec_child", 3) {
 		return "", ErrTooManyCalls
 	}
 	if name == "" {
@@ -121,23 +125,52 @@ func (c *Context) tmplSendTemplate(channel interface{}, name string, data ...int
 		return "", errors.New("Unknown template")
 	}
 
-	// find the new context channel
-	cID := c.ChannelArg(channel)
-	if cID == 0 {
-		if c.CurrentFrame.CS != nil {
-			cID = c.CurrentFrame.CS.ID
-		}
-	}
-
 	var cs *dstate.ChannelState
-	if cID != 0 {
-		cs = c.GS.ChannelCopy(true, cID)
+	// find the new context channel
+	if !dm {
+		if channel == nil {
+			cs = c.CurrentFrame.CS
+		} else {
+			cID := c.ChannelArg(channel)
+			if cID == 0 {
+				return "", errors.New("Unknown channel")
+			}
+
+			cs = c.GS.ChannelCopy(true, cID)
+			if cs == nil {
+				return "", errors.New("Unknown channel")
+			}
+		}
+	} else {
+		if c.CurrentFrame.SendResponseInDM {
+			cs = c.CurrentFrame.CS
+		} else {
+			ch, err := common.BotSession.UserChannelCreate(c.MS.ID)
+			if err != nil {
+				return "", err
+			}
+
+			cs = &dstate.ChannelState{
+				Owner: c.GS,
+				Guild: c.GS,
+				ID:    ch.ID,
+				Name:  c.MS.Username,
+				Type:  discordgo.ChannelTypeDM,
+			}
+		}
 	}
 
 	oldFrame := c.newContextFrame(cs)
 	defer func() {
 		c.CurrentFrame = oldFrame
 	}()
+
+	if dm {
+		c.CurrentFrame.SendResponseInDM = oldFrame.SendResponseInDM
+	} else if channel == nil {
+		// inherit
+		c.CurrentFrame.SendResponseInDM = oldFrame.SendResponseInDM
+	}
 
 	// pass some data
 	if len(data) > 1 {
@@ -153,8 +186,7 @@ func (c *Context) tmplSendTemplate(channel interface{}, name string, data ...int
 		return "", err
 	}
 
-	send := c.MessageSend(resp)
-	m, err := common.BotSession.ChannelMessageSendComplex(cID, send)
+	m, err := c.SendResponse(resp)
 	if err != nil {
 		return "", err
 	}
@@ -828,7 +860,7 @@ func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Val
 				return reflect.Value{}, ErrTooManyCalls
 			}
 
-			c.AddResponseReactionNames = append(c.AddResponseReactionNames, reaction.String())
+			c.CurrentFrame.AddResponseReactionNames = append(c.CurrentFrame.AddResponseReactionNames, reaction.String())
 		}
 		return reflect.ValueOf(""), nil
 	}

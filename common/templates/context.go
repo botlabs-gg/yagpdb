@@ -125,8 +125,6 @@ type Context struct {
 	Data         map[string]interface{}
 	Counters     map[string]int
 
-	AddResponseReactionNames []string
-
 	FixedOutput  string
 	secondsSlept int
 
@@ -152,6 +150,7 @@ type contextFrame struct {
 
 	isNestedTemplate bool
 	parsedTemplate   *template.Template
+	SendResponseInDM bool
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -321,10 +320,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 		out += "`" + err.Error() + "`"
 	}
 
-	if strings.TrimSpace(out) != "" {
-		_, err := common.BotSession.ChannelMessageSend(channelID, out)
-		return err
-	}
+	c.SendResponse(out)
 
 	return nil
 }
@@ -342,6 +338,62 @@ func (c *Context) MessageSend(content string) *discordgo.MessageSend {
 			Roles: c.CurrentFrame.MentionRoles,
 		},
 	}
+}
+
+// SendResponse sends the response and handles reactions and the like
+func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
+	channelID := int64(0)
+
+	if !c.CurrentFrame.SendResponseInDM {
+		if c.CurrentFrame.CS == nil {
+			return nil, nil
+		}
+
+		if !bot.BotProbablyHasPermissionGS(true, c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
+			// don't bother sending the response if we dont have perms
+			return nil, nil
+		}
+
+		channelID = c.CurrentFrame.CS.ID
+	} else {
+		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
+			channelID = c.CurrentFrame.CS.ID
+		} else {
+			privChannel, err := common.BotSession.UserChannelCreate(c.MS.ID)
+			if err != nil {
+				return nil, err
+			}
+			channelID = privChannel.ID
+		}
+	}
+
+	for _, v := range c.CurrentFrame.EmebdsToSend {
+		common.BotSession.ChannelMessageSendEmbed(channelID, v)
+	}
+
+	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
+		// no point in sending the response if it gets deleted immedietely
+		return nil, nil
+	}
+
+	m, err := common.BotSession.ChannelMessageSendComplex(channelID, c.MessageSend(content))
+	if err != nil {
+		logger.WithError(err).Error("Failed sending message")
+	} else {
+		if c.CurrentFrame.DelResponse {
+			MaybeScheduledDeleteMessage(c.GS.ID, channelID, m.ID, c.CurrentFrame.DelResponseDelay)
+		}
+
+		if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
+			go func(frame *contextFrame) {
+				for _, v := range frame.AddResponseReactionNames {
+					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
+				}
+			}(c.CurrentFrame)
+		}
+	}
+
+	return m, nil
 }
 
 // IncreaseCheckCallCounter Returns true if key is above the limit
@@ -404,6 +456,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
 	c.ContextFuncs["sendMessage"] = c.tmplSendMessage(true, false)
 	c.ContextFuncs["sendTemplate"] = c.tmplSendTemplate
+	c.ContextFuncs["sendTemplateDM"] = c.tmplSendTemplateDM
 	c.ContextFuncs["sendMessageRetID"] = c.tmplSendMessage(true, true)
 	c.ContextFuncs["sendMessageNoEscape"] = c.tmplSendMessage(false, false)
 	c.ContextFuncs["sendMessageNoEscapeRetID"] = c.tmplSendMessage(false, true)

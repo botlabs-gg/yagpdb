@@ -117,6 +117,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 // sendTemplate parses and executes the provided template, returns wether an error occured that we can retry from (temporary network failures and the like)
 func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool) bool {
 	ctx := templates.NewContext(cs.Guild, cs, ms)
+	ctx.CurrentFrame.SendResponseInDM = cs.Type == discordgo.ChannelTypeDM
 
 	ctx.Data["RealUsername"] = ms.Username
 	if censorInvites {
