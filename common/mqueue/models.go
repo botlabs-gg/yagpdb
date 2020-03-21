@@ -31,6 +31,8 @@ type QueuedElement struct {
 	UseWebhook      bool
 	WebhookUsername string
 
+	AllowedMentions discordgo.AllowedMentions `json:"allowed_mentions"`
+
 	// When the queue grows, the feeds with the highest priority gets sent first
 	Priority int
 }

@@ -117,6 +117,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 // sendTemplate parses and executes the provided template, returns wether an error occured that we can retry from (temporary network failures and the like)
 func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool) bool {
 	ctx := templates.NewContext(cs.Guild, cs, ms)
+	ctx.CurrentFrame.SendResponseInDM = cs.Type == discordgo.ChannelTypeDM
 
 	ctx.Data["RealUsername"] = ms.Username
 	if censorInvites {
@@ -141,13 +142,14 @@ func sendTemplate(cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, 
 
 	if cs.Type == discordgo.ChannelTypeDM {
 		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
-	} else if !ctx.DelResponse {
-		bot.QueueMergedMessage(cs.ID, msg)
+	} else if !ctx.CurrentFrame.DelResponse {
+		send := ctx.MessageSend("")
+		bot.QueueMergedMessage(cs.ID, msg, send.AllowedMentions)
 	} else {
 		var m *discordgo.Message
-		m, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
-		if err == nil && ctx.DelResponse {
-			templates.MaybeScheduledDeleteMessage(cs.Guild.ID, cs.ID, m.ID, ctx.DelResponseDelay)
+		m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, ctx.MessageSend(msg))
+		if err == nil && ctx.CurrentFrame.DelResponse {
+			templates.MaybeScheduledDeleteMessage(cs.Guild.ID, cs.ID, m.ID, ctx.CurrentFrame.DelResponseDelay)
 		}
 	}
 
@@ -195,7 +197,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	}
 
 	go func() {
-		_, err := common.BotSession.ChannelMessageSend(topicChannel, common.EscapeSpecialMentions(fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic)))
+		_, err := common.BotSession.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic))
 		if err != nil {
 			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
 		}

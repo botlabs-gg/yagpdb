@@ -415,8 +415,8 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	}
 
 	ctx := templates.NewContext(guild, nil, ms)
-	ctx.Data["URL"] = common.EscapeSpecialMentions(ms.PresenceGame.URL)
-	ctx.Data["url"] = common.EscapeSpecialMentions(ms.PresenceGame.URL)
+	ctx.Data["URL"] = ms.PresenceGame.URL
+	ctx.Data["url"] = ms.PresenceGame.URL
 	ctx.Data["Game"] = ms.PresenceGame.State
 	ctx.Data["StreamTitle"] = ms.PresenceGame.Details
 	ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
@@ -427,9 +427,9 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 		return
 	}
 
-	m, err := common.BotSession.ChannelMessageSend(config.AnnounceChannel, out)
-	if err == nil && ctx.DelResponse {
-		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.DelResponseDelay)
+	m, err := common.BotSession.ChannelMessageSendComplex(config.AnnounceChannel, ctx.MessageSend(out))
+	if err == nil && ctx.CurrentFrame.DelResponse {
+		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.CurrentFrame.DelResponseDelay)
 	}
 }
 

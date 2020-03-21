@@ -68,7 +68,10 @@ func (r *Reminder) Trigger() error {
 		Guild:   r.GuildID,
 		Channel: r.ChannelIDInt(),
 
-		MessageStr: common.EscapeSpecialMentions("**Reminder** <@" + r.UserID + ">: " + r.Message),
+		MessageStr: "**Reminder** <@" + r.UserID + ">: " + r.Message,
+		AllowedMentions: discordgo.AllowedMentions{
+			Users: []int64{r.UserIDInt()},
+		},
 
 		Priority: 10, // above all feeds
 	})

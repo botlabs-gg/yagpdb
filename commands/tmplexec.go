@@ -2,9 +2,10 @@ package commands
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"strconv"
 	"strings"
+
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
@@ -78,8 +79,8 @@ type cmdExecFunc func(cmd string, args ...interface{}) (interface{}, error)
 func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtxCommandExec cmdExecFunc, botCtxCommandExec cmdExecFunc) {
 	execUser := func(cmd string, args ...interface{}) (interface{}, error) {
 		messageCopy := *ctx.Msg
-		if ctx.CS != nil { //Check if CS is not a nil pointer
-			messageCopy.ChannelID = ctx.CS.ID
+		if ctx.CurrentFrame.CS != nil { //Check if CS is not a nil pointer
+			messageCopy.ChannelID = ctx.CurrentFrame.CS.ID
 		}
 		mc := &discordgo.MessageCreate{&messageCopy}
 		if maxExec < 1 {
@@ -96,8 +97,8 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 
 		messageCopy := *ctx.Msg
 		messageCopy.Author = &botUserCopy
-		if ctx.CS != nil { //Check if CS is not a nil pointer
-			messageCopy.ChannelID = ctx.CS.ID
+		if ctx.CurrentFrame.CS != nil { //Check if CS is not a nil pointer
+			messageCopy.ChannelID = ctx.CurrentFrame.CS.ID
 		}
 
 		mc := &discordgo.MessageCreate{&messageCopy}

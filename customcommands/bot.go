@@ -100,18 +100,18 @@ var cmdListCommands = &commands.YAGCommand{
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
-		
+
 		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GS.ID)).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom command groups", err
 		}
-		
+
 		groupMap := make(map[int64]string)
 		groupMap[0] = "Ungrouped"
 		for _, group := range groups {
 			groupMap[group.ID] = group.Name
 		}
-		
+
 		foundCCS, provided := FindCommands(ccs, data)
 		if len(foundCCS) < 1 {
 			list := StringCommands(ccs, groupMap)
@@ -130,7 +130,7 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		cc := foundCCS[0]
-		
+
 		if cc.TextTrigger != "" {
 			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
 		} else {
@@ -568,7 +568,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	tmplCtx.Data["CCID"] = cmd.LocalID
 	tmplCtx.Data["CCRunCount"] = cmd.RunCount + 1
 
-	csCop := tmplCtx.CS.Copy(true)
+	csCop := tmplCtx.CurrentFrame.CS.Copy(true)
 	f := logger.WithFields(logrus.Fields{
 		"trigger":      cmd.TextTrigger,
 		"trigger_type": CommandTriggerType(cmd.TriggerType).String(),
@@ -584,7 +584,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 	if lockHandle == -1 {
 		f.Warn("Exceeded max lock attempts for cc")
-		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
 		return nil
 	}
 
@@ -607,40 +607,14 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
 		if cmd.ShowErrors {
 			out += "\nAn error caused the execution of the custom command template to stop:\n"
-			out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+			out += "`" + err.Error() + "`"
 		}
 	}
 
-	if !bot.BotProbablyHasPermissionGS(true, tmplCtx.GS, tmplCtx.CS.ID, discordgo.PermissionSendMessages) {
-		// don't bother sending the response if we dont have perms
-		return nil
+	_, err = tmplCtx.SendResponse(out)
+	if err != nil {
+		return errors.WithStackIf(err)
 	}
-
-	for _, v := range tmplCtx.EmebdsToSend {
-		common.BotSession.ChannelMessageSendEmbed(tmplCtx.CS.ID, v)
-	}
-
-	if strings.TrimSpace(out) != "" && (!tmplCtx.DelResponse || tmplCtx.DelResponseDelay > 0) {
-		m, err := common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
-		if err != nil {
-			logger.WithError(err).Error("Failed sending message")
-		} else {
-			if tmplCtx.DelResponse {
-				templates.MaybeScheduledDeleteMessage(tmplCtx.GS.ID, tmplCtx.CS.ID, m.ID, tmplCtx.DelResponseDelay)
-			}
-
-			if len(tmplCtx.AddResponseReactionNames) > 0 {
-				go func() {
-					for _, v := range tmplCtx.AddResponseReactionNames {
-						common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
-					}
-				}()
-			}
-		}
-	}
-
-	// update stats
-
 	return nil
 }
 
@@ -655,9 +629,9 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 
 	if cmd.ShowErrors {
 		out := "\nAn error caused the execution of the custom command template to stop:\n"
-		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+		out += "`" + err.Error() + "`"
 
-		common.BotSession.ChannelMessageSend(tmplCtx.CS.ID, out)
+		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, out)
 	}
 
 	updatePostCommandRan(cmd, err)

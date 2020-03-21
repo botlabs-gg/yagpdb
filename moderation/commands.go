@@ -305,7 +305,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Msg.Author.ID, target, parsed.Msg.ChannelID, parsed.Args[1].Str(), logLink)
 
-			_, err = common.BotSession.ChannelMessageSend(channelID, common.EscapeSpecialMentions(reportBody))
+			_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
 			if err != nil {
 				return nil, err
 			}
@@ -508,42 +508,40 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "id", Name: "Warning ID", Type: dcmd.Int},
 		},
-		RunFunc: func (parsed *dcmd.Data) (interface{}, error) { 
-				var err error
-				config, _, err := MBaseCmd(parsed, 0)
-				if err != nil {
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			var err error
+			config, _, err := MBaseCmd(parsed, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
+			if err != nil {
+				return nil, err
+			}
+
+			if parsed.Switches["id"].Value != nil {
+				var warn []*WarningModel
+				err = common.GORM.Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Switches["id"].Int()).First(&warn).Error
+				if err != nil && err != gorm.ErrRecordNotFound {
 					return nil, err
+				}
+				if len(warn) == 0 {
+					return fmt.Sprintf("Warning with given id : `%d` does not exist.", parsed.Switches["id"].Int()), nil
 				}
 
-				_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
-				if err != nil {
-					return nil, err
-				}
-				
-				if parsed.Switches["id"].Value != nil {
-					var warn []*WarningModel
-					err = common.GORM.Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Switches["id"].Int()).First(&warn).Error
-					if err != nil && err != gorm.ErrRecordNotFound {
-						return nil, err
-					}
-					if (len(warn) == 0) {
-						return fmt.Sprintf("Warning with given id : `%d` does not exist.", parsed.Switches["id"].Int()), nil
-					}
-					return &discordgo.MessageEmbed{
-						Title:       fmt.Sprintf("Warning#%d - User : %s",warn[0].ID, warn[0].UserID),
-						Description: fmt.Sprintf("`%20s` - **Reason** : %s", warn[0].CreatedAt.UTC().Format(time.RFC822), warn[0].Message),
-						Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("By: %s (%13s)",  warn[0].AuthorUsernameDiscrim, warn[0].AuthorID),},
-					}, nil
-				}
-				page := parsed.Args[1].Int() 
-				if page < 1 {
-					page = 1
-				}
-				if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
-					return PaginateWarnings(parsed)(nil, page)
-				}
-			 	_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, page, 0, PaginateWarnings(parsed))
-			 	return nil, err
+				return &discordgo.MessageEmbed{
+					Title:       fmt.Sprintf("Warning#%d - User : %s", warn[0].ID, warn[0].UserID),
+					Description: fmt.Sprintf("`%20s` - **Reason** : %s", warn[0].CreatedAt.UTC().Format(time.RFC822), warn[0].Message),
+					Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("By: %s (%13s)", warn[0].AuthorUsernameDiscrim, warn[0].AuthorID)},
+				}, nil
+			}
+			page := parsed.Args[1].Int()
+			if page < 1 {
+				page = 1
+			}
+			_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, page, 0, PaginateWarnings(parsed))
+			return nil, err
 		},
 	},
 	&commands.YAGCommand{
@@ -668,7 +666,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			if len(entries) < 1 && p!= nil && p.LastResponse != nil { //Don't send No Results error on first execution.
+			if len(entries) < 1 && p != nil && p.LastResponse != nil { //Don't send No Results error on first execution.
 				return nil, paginatedmessages.ErrNoResults
 			}
 
@@ -946,11 +944,11 @@ func FindRole(gs *dstate.GuildState, roleS string) *discordgo.Role {
 	return nil
 }
 
-func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {  
-	
+func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+
 	return func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-			
-		var err error	
+
+		var err error
 		skip := (page - 1) * 6
 		userID := parsed.Args[0].Int64()
 		limit := 6
@@ -960,56 +958,55 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 		err = common.GORM.Table("moderation_warnings").Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Count(&count).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, err
-		}		
+		}
 		err = common.GORM.Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Order("id desc").Offset(skip).Limit(limit).Find(&result).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, err
 		}
 
-		if len(result) < 1 && p!= nil && p.LastResponse != nil { //Dont send No Results error on first execution
+		if len(result) < 1 && p != nil && p.LastResponse != nil { //Dont send No Results error on first execution
 			return nil, paginatedmessages.ErrNoResults
 		}
 
 		desc := fmt.Sprintf("**Total :** `%d`", count)
 		var fields []*discordgo.MessageEmbedField
 		currentField := &discordgo.MessageEmbedField{
-					Name	: "⠀", //Use braille blank character for seamless transition between feilds
-					Value	: "",
-			        }
+			Name:  "⠀", //Use braille blank character for seamless transition between feilds
+			Value: "",
+		}
 		fields = append(fields, currentField)
 		if len(result) > 0 {
-				
+
 			for _, entry := range result {
-					
+
 				entry_formatted := fmt.Sprintf("#%d: `%20s` - By: **%s** (%13s) \n **Reason:** %s", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
-				if (len ([]rune(entry_formatted)) > 900) {
+				if len([]rune(entry_formatted)) > 900 {
 					entry_formatted = common.CutStringShort(entry_formatted, 900)
 				}
 				entry_formatted += "\n"
 				if entry.LogsLink != "" {
 					entry_formatted += fmt.Sprintf("> logs: [`link`](%s)\n", entry.LogsLink)
 				}
-					
-					
-				if (len ([]rune(currentField.Value + entry_formatted)) > 1023) {
+
+				if len([]rune(currentField.Value+entry_formatted)) > 1023 {
 					currentField = &discordgo.MessageEmbedField{
-								Name	: "⠀",
-								Value	: entry_formatted + "\n",
-			 	     			}
+						Name:  "⠀",
+						Value: entry_formatted + "\n",
+					}
 					fields = append(fields, currentField)
 				} else {
 					currentField.Value += entry_formatted + "\n"
 				}
 			}
-				
-		} else { 	
+
+		} else {
 			currentField.Value = "No Warnings"
 		}
 
 		return &discordgo.MessageEmbed{
 			Title:       fmt.Sprintf("Warnings - User : %d", userID),
 			Description: desc,
-			Fields : fields,
+			Fields:      fields,
 		}, nil
 	}
 }

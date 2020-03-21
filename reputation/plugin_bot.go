@@ -78,8 +78,8 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	content := fmt.Sprintf("Gave +1 %s to **%s**", conf.PointsName, who.Username)
-	common.BotSession.ChannelMessageSend(msg.ChannelID, common.EscapeSpecialMentions(content))
+	content := fmt.Sprintf("Gave +1 %s to **%s**", conf.PointsName, who.Mention())
+	common.BotSession.ChannelMessageSend(msg.ChannelID, content)
 }
 
 var cmds = []*commands.YAGCommand{

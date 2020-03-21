@@ -43,19 +43,19 @@ var (
 		"title":     strings.Title,
 
 		// math
-		"add":        add,
-		"sub":        tmplSub,
-		"mult":       tmplMult,
-		"div":        tmplDiv,
-		"mod":        tmplMod,
-		"fdiv":       tmplFDiv,
-		"sqrt":       tmplSqrt,
-		"pow":        tmplPow,
-		"log":        tmplLog,
-		"round":      tmplRound,
-		"roundCeil":  tmplRoundCeil,
-		"roundFloor": tmplRoundFloor,
-		"roundEven":  tmplRoundEven,
+		"add":               add,
+		"sub":               tmplSub,
+		"mult":              tmplMult,
+		"div":               tmplDiv,
+		"mod":               tmplMod,
+		"fdiv":              tmplFDiv,
+		"sqrt":              tmplSqrt,
+		"pow":               tmplPow,
+		"log":               tmplLog,
+		"round":             tmplRound,
+		"roundCeil":         tmplRoundCeil,
+		"roundFloor":        tmplRoundFloor,
+		"roundEven":         tmplRoundEven,
 		"humanizeThousands": tmplHumanizeThousands,
 
 		// misc
@@ -79,9 +79,15 @@ var (
 		"currentTime": tmplCurrentTime,
 		"newDate":     tmplNewDate,
 
-		"escapeHere":         tmplEscapeHere,
-		"escapeEveryone":     tmplEscapeEveryone,
-		"escapeEveryoneHere": tmplEscapeEveryoneHere,
+		"escapeHere": func(s string) (string, error) {
+			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
+		},
+		"escapeEveryone": func(s string) (string, error) {
+			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
+		},
+		"escapeEveryoneHere": func(s string) (string, error) {
+			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
+		},
 
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
 		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
@@ -89,9 +95,7 @@ var (
 		"humanizeTimeSinceDays":   tmplHumanizeTimeSinceDays,
 	}
 
-	contextSetupFuncs = []ContextSetupFunc{
-		baseContextFuncs,
-	}
+	contextSetupFuncs = []ContextSetupFunc{}
 )
 
 var logger = common.GetFixedPrefixLogger("templates")
@@ -104,50 +108,56 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 	contextSetupFuncs = append(contextSetupFuncs, f)
 }
 
+func init() {
+	RegisterSetupFunc(baseContextFuncs)
+}
+
 // set by the premium package to return wether this guild is premium or not
 var GuildPremiumFunc func(guildID int64) (bool, error)
 
 type Context struct {
 	Name string
-	GS   *dstate.GuildState
-	CS   *dstate.ChannelState
 
-	MS  *dstate.MemberState
-	Msg *discordgo.Message
-
+	GS      *dstate.GuildState
+	MS      *dstate.MemberState
+	Msg     *discordgo.Message
 	BotUser *discordgo.User
 
 	ContextFuncs map[string]interface{}
 	Data         map[string]interface{}
+	Counters     map[string]int
 
-	MentionEveryone  bool
-	MentionHere      bool
-	MentionRoles     []int64
-	MentionRoleNames []string
-
-	DelResponse bool
-
-	DelResponseDelay int
-
-	Counters map[string]int
-
-	EmebdsToSend []*discordgo.MessageEmbed
-
-	AddResponseReactionNames []string
-
-	FixedOutput string
-
+	FixedOutput  string
 	secondsSlept int
 
 	IsPremium bool
 
 	RegexCache map[string]*regexp.Regexp
+
+	CurrentFrame *contextFrame
+}
+
+type contextFrame struct {
+	CS *dstate.ChannelState
+
+	MentionEveryone bool
+	MentionHere     bool
+	MentionRoles    []int64
+
+	DelResponse bool
+
+	DelResponseDelay         int
+	EmebdsToSend             []*discordgo.MessageEmbed
+	AddResponseReactionNames []string
+
+	isNestedTemplate bool
+	parsedTemplate   *template.Template
+	SendResponseInDM bool
 }
 
 func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
 	ctx := &Context{
 		GS: gs,
-		CS: cs,
 		MS: ms,
 
 		BotUser: common.BotUser,
@@ -155,6 +165,10 @@ func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.Membe
 		ContextFuncs: make(map[string]interface{}),
 		Data:         make(map[string]interface{}),
 		Counters:     make(map[string]int),
+
+		CurrentFrame: &contextFrame{
+			CS: cs,
+		},
 	}
 
 	if gs != nil && GuildPremiumFunc != nil {
@@ -181,8 +195,8 @@ func (c *Context) setupBaseData() {
 		c.Data["server"] = guild
 	}
 
-	if c.CS != nil {
-		channel := c.CS.Copy(false)
+	if c.CurrentFrame.CS != nil {
+		channel := c.CurrentFrame.CS.Copy(false)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
 	}
@@ -224,8 +238,8 @@ func (c *Context) Execute(source string) (string, error) {
 		// Construct a fake message
 		c.Msg = new(discordgo.Message)
 		c.Msg.Author = c.BotUser
-		if c.CS != nil {
-			c.Msg.ChannelID = c.CS.ID
+		if c.CurrentFrame.CS != nil {
+			c.Msg.ChannelID = c.CurrentFrame.CS.ID
 		} else {
 			// This may fail in some cases
 			c.Msg.ChannelID = c.GS.ID
@@ -247,7 +261,13 @@ func (c *Context) Execute(source string) (string, error) {
 	if err != nil {
 		return "", errors.WithMessage(err, "Failed parsing template")
 	}
+	c.CurrentFrame.parsedTemplate = parsed
 
+	return c.executeParsed()
+}
+
+func (c *Context) executeParsed() (string, error) {
+	parsed := c.CurrentFrame.parsedTemplate
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
 	} else {
@@ -258,15 +278,14 @@ func (c *Context) Execute(source string) (string, error) {
 	w := LimitWriter(&buf, 25000)
 
 	started := time.Now()
-	err = parsed.Execute(w, c.Data)
+	err := parsed.Execute(w, c.Data)
 
 	dur := time.Since(started)
 	if c.FixedOutput != "" {
-		result := common.EscapeSpecialMentionsConditional(c.FixedOutput, c.MentionEveryone, c.MentionHere, c.MentionRoles)
-		return result, nil
+		return c.FixedOutput, nil
 	}
 
-	result := common.EscapeSpecialMentionsConditional(buf.String(), c.MentionEveryone, c.MentionHere, c.MentionRoles)
+	result := buf.String()
 	if err != nil {
 		if err == io.ErrShortWrite {
 			err = errors.New("response grew too big (>25k)")
@@ -276,6 +295,17 @@ func (c *Context) Execute(source string) (string, error) {
 	}
 
 	return result, nil
+}
+
+// creates a new context frame and returns the old one
+func (c *Context) newContextFrame(cs *dstate.ChannelState) *contextFrame {
+	old := c.CurrentFrame
+	c.CurrentFrame = &contextFrame{
+		CS:               cs,
+		isNestedTemplate: true,
+	}
+
+	return old
 }
 
 func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error {
@@ -289,15 +319,83 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 	if err != nil {
 		logger.WithField("guild", c.GS.ID).WithError(err).Error("Error executing template: " + c.Name)
 		out += "\nAn error caused the execution of the custom command template to stop:\n"
-		out += "`" + common.EscapeSpecialMentions(err.Error()) + "`"
+		out += "`" + err.Error() + "`"
 	}
 
-	if strings.TrimSpace(out) != "" {
-		_, err := common.BotSession.ChannelMessageSend(channelID, out)
-		return err
-	}
+	c.SendResponse(out)
 
 	return nil
+}
+
+func (c *Context) MessageSend(content string) *discordgo.MessageSend {
+	parse := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if c.CurrentFrame.MentionEveryone || c.CurrentFrame.MentionHere {
+		parse = append(parse, discordgo.AllowedMentionTyeEveryone)
+	}
+
+	return &discordgo.MessageSend{
+		Content: content,
+		AllowedMentions: discordgo.AllowedMentions{
+			Parse: parse,
+			Roles: c.CurrentFrame.MentionRoles,
+		},
+	}
+}
+
+// SendResponse sends the response and handles reactions and the like
+func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
+	channelID := int64(0)
+
+	if !c.CurrentFrame.SendResponseInDM {
+		if c.CurrentFrame.CS == nil {
+			return nil, nil
+		}
+
+		if !bot.BotProbablyHasPermissionGS(true, c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
+			// don't bother sending the response if we dont have perms
+			return nil, nil
+		}
+
+		channelID = c.CurrentFrame.CS.ID
+	} else {
+		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
+			channelID = c.CurrentFrame.CS.ID
+		} else {
+			privChannel, err := common.BotSession.UserChannelCreate(c.MS.ID)
+			if err != nil {
+				return nil, err
+			}
+			channelID = privChannel.ID
+		}
+	}
+
+	for _, v := range c.CurrentFrame.EmebdsToSend {
+		common.BotSession.ChannelMessageSendEmbed(channelID, v)
+	}
+
+	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
+		// no point in sending the response if it gets deleted immedietely
+		return nil, nil
+	}
+
+	m, err := common.BotSession.ChannelMessageSendComplex(channelID, c.MessageSend(content))
+	if err != nil {
+		logger.WithError(err).Error("Failed sending message")
+	} else {
+		if c.CurrentFrame.DelResponse {
+			MaybeScheduledDeleteMessage(c.GS.ID, channelID, m.ID, c.CurrentFrame.DelResponseDelay)
+		}
+
+		if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
+			go func(frame *contextFrame) {
+				for _, v := range frame.AddResponseReactionNames {
+					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
+				}
+			}(c.CurrentFrame)
+		}
+	}
+
+	return m, nil
 }
 
 // IncreaseCheckCallCounter Returns true if key is above the limit
@@ -348,8 +446,8 @@ func (c *Context) LogEntry() *logrus.Entry {
 		f = f.WithField("user", c.MS.ID)
 	}
 
-	if c.CS != nil {
-		f = f.WithField("channel", c.CS.ID)
+	if c.CurrentFrame.CS != nil {
+		f = f.WithField("channel", c.CurrentFrame.CS.ID)
 	}
 
 	return f
@@ -359,6 +457,8 @@ func baseContextFuncs(c *Context) {
 	// message functions
 	c.ContextFuncs["sendDM"] = c.tmplSendDM
 	c.ContextFuncs["sendMessage"] = c.tmplSendMessage(true, false)
+	c.ContextFuncs["sendTemplate"] = c.tmplSendTemplate
+	c.ContextFuncs["sendTemplateDM"] = c.tmplSendTemplateDM
 	c.ContextFuncs["sendMessageRetID"] = c.tmplSendMessage(true, true)
 	c.ContextFuncs["sendMessageNoEscape"] = c.tmplSendMessage(false, false)
 	c.ContextFuncs["sendMessageNoEscapeRetID"] = c.tmplSendMessage(false, true)

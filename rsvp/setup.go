@@ -3,6 +3,13 @@ package rsvp
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -10,12 +17,6 @@ import (
 	"github.com/jonas747/yagpdb/rsvp/models"
 	"github.com/jonas747/yagpdb/timezonecompanion"
 	"github.com/volatiletech/sqlboiler/boil"
-	"regexp"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-	"unicode/utf8"
 )
 
 type SetupState int
@@ -345,7 +346,7 @@ func (s *SetupSession) remove() {
 }
 
 func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
-	m, err := common.BotSession.ChannelMessageSend(s.SetupChannel, "[RSVP Event Setup]: "+common.EscapeSpecialMentions(fmt.Sprintf(msgf, args...)))
+	m, err := common.BotSession.ChannelMessageSend(s.SetupChannel, "[RSVP Event Setup]: "+fmt.Sprintf(msgf, args...))
 	if err != nil {
 		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
 	} else {

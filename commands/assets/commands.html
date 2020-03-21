@@ -107,14 +107,13 @@
 
     <div class="form-row">
         <div class="form-group col-md-6">
-            <label>Require one of these roles (Users without one of these roles won't be able to use
-                commands)</label><br>
+            <label>Require one of these roles<br><b>Note: Users without one of these roles won't be able to use commands.</b></label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="RequireRoles">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .Override.RequireRoles}}
             </select>
         </div>
         <div class="form-group col-md-6">
-            <label>Ignore users with one of these roles (Takes priority over required roles)</label><br>
+            <label>Ignore users with one of these roles<br><b>Note: Takes priority over required roles.</b></label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="IgnoreRoles">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .Override.IgnoreRoles}}
             </select>
