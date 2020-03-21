@@ -77,7 +77,7 @@ func (p *Plugin) InitWeb() {
 
 	newCommandHandler := web.ControllerPostHandler(handleNewCommand, nil, nil, "Created a new custom command")
 	subMux.Handle(pat.Post("/commands/new"), newCommandHandler)
-	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(handleUpdateCommand, getHandler, CustomCommand{}, "Updated a custom command"))
+	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(handleUpdateCommand, getCmdHandler, CustomCommand{}, "Updated a custom command"))
 	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil, "Deleted a custom command"))
 
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}, "Created a new custom command group"))
