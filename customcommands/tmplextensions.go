@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"	
 	"time"
 
 	"emperror.dev/errors"
@@ -31,6 +33,7 @@ func init() {
 		ctx.ContextFuncs["execCC"] = tmplRunCC(ctx)
 		ctx.ContextFuncs["scheduleUniqueCC"] = tmplScheduleUniqueCC(ctx)
 		ctx.ContextFuncs["cancelScheduledUniqueCC"] = tmplCancelUniqueCC(ctx)
+		ctx.ContextFuncs["editCCTriggerType"] = tmplEditCCTriggerType(ctx)
 
 		ctx.ContextFuncs["dbSet"] = tmplDBSet(ctx)
 		ctx.ContextFuncs["dbSetExpire"] = tmplDBSetExpire(ctx)
@@ -319,6 +322,101 @@ func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 		}
 
 		return "", nil
+	}
+}
+
+//tmplEditCCTriggerType changes custom commands trigger type
+func tmplEditCCTriggerType(ctx *templates.Context) interface{} {
+	return func(ccID int, ccType string) (string, error) {
+		if ctx.IncreaseCheckCallCounterPremium("editCCTriggerType", 1, 5) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		if err != nil {
+			return "", errors.New("Couldn't find custom command")
+		}
+
+		update := true
+		switch strings.ToLower(ccType) {
+		case "none":
+			if cmd.TriggerType == 10 {
+				update = false
+			} else {
+				cmd.TriggerType = 10
+			}
+		case "command":
+			if cmd.TriggerType == 0 {
+				update = false
+			} else {
+				cmd.TriggerType = 0
+			}
+		case "prefix", "starts":
+			if cmd.TriggerType == 1 {
+				update = false
+			} else {
+				cmd.TriggerType = 1
+			}
+		case "contains":
+			if cmd.TriggerType == 2 {
+				update = false
+			} else {
+				cmd.TriggerType = 2
+			}
+		case "regex":
+			if cmd.TriggerType == 3 {
+				update = false
+			} else {
+				cmd.TriggerType = 3
+			}
+		case "exact":
+			if cmd.TriggerType == 4 {
+				update = false
+			} else {
+				cmd.TriggerType = 4
+			}
+		case "reaction":
+			if cmd.TriggerType == 6 {
+				update = false
+			} else {
+				cmd.TriggerType = 6
+			}
+		case "interval_m":
+			//Interval is counted as minutes in Postgres and this section takes care of calling too many interval triggers under 10 minutes.
+			num, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id != ? AND trigger_type = 5 AND time_trigger_interval < 10", ctx.GS.ID, int64(ccID))).CountG(context.Background())
+			if err != nil {
+				return "", err
+			}
+			if num > 4 {
+				return "", errors.New("You can have max 5 triggers on less than 10 minute intervals")
+			}
+			cmd.TriggerType = 5
+		case "interval_h":
+			//special case to convert to hourly interval
+			cmd.TriggerType = 5
+			cmd.TimeTriggerInterval *= 60
+		default:
+			update = false
+		}
+
+		if update {
+			_, err = cmd.UpdateG(context.Background(), boil.Whitelist("trigger_type", "time_trigger_interval"))
+			if err != nil {
+				return "", err
+			}
+			types := map[int]string{
+				10: "None",
+				0:  "Command",
+				1:  "Starts With",
+				2:  "Contains",
+				3:  "Regex",
+				4:  "Exact Match",
+				5:  "Interval",
+				6:  "Reaction",
+			}
+			return fmt.Sprintf("Doneso. Changed **CC#%d** trigger to type: **%s**.", ccID, types[cmd.TriggerType]), nil
+		}
+		return fmt.Sprintf("Did not change trigger type: **%s** mismatch or is the same.", ccType), nil
 	}
 }
 
