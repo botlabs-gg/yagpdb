@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common/run"
 
 	// Core yagpdb packages
@@ -50,6 +51,7 @@ func main() {
 	paginatedmessages.RegisterPlugin()
 
 	// Setup plugins
+	analytics.RegisterPlugin()
 	safebrowsing.RegisterPlugin()
 	discordlogger.Register()
 	commands.RegisterPlugin()

@@ -3,11 +3,16 @@ package rolecommands
 import (
 	"context"
 	"database/sql"
-	"emperror.dev/errors"
 	"fmt"
+	"sort"
+	"sync"
+	"time"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -17,9 +22,6 @@ import (
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"sort"
-	"sync"
-	"time"
 )
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
@@ -441,6 +443,8 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 			}
 		}
 	}
+
+	go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "user_interacted_menu")
 
 	if rm.DisableSendDM {
 		resp = ""

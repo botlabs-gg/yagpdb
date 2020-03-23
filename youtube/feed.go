@@ -11,6 +11,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/mediocregopher/radix/v3"
@@ -347,6 +348,8 @@ func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle st
 	if mentionEveryone {
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTyeEveryone}
 	}
+
+	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")
 
 	mqueue.QueueMessage(&mqueue.QueuedElement{
 		Guild:      parsedGuild,

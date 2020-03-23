@@ -16,7 +16,7 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(cmdGenerateCode)
+	commands.AddRootCommands(p, cmdGenerateCode)
 }
 
 const (

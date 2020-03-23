@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
+	"strings"
+	"time"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -13,9 +17,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/timezonecompanion/models"
 	"github.com/volatiletech/sqlboiler/boil"
-	"math"
-	"strings"
-	"time"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -26,7 +27,7 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(&commands.YAGCommand{
+	commands.AddRootCommands(p, &commands.YAGCommand{
 		CmdCategory: commands.CategoryTool,
 		Name:        "settimezone",
 		Aliases:     []string{"setz", "tzset"},
@@ -303,12 +304,12 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	if m.GuildID == 0 {
 		return
 	}
-	
+
 	//Additional check to ensure not reacting to own message
 	if m.Author.ID == common.BotUser.ID {
 		return
 	}
-	
+
 	result, err := p.DateParser.Parse(m.Content, time.Now())
 	if err != nil || result == nil {
 		return

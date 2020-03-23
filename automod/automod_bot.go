@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -386,6 +387,8 @@ func (p *Plugin) CheckConditions(ctxData *TriggeredRuleData, conditions []*Parse
 func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, triggeredRules []*ParsedRule, ctxData *TriggeredRuleData) {
 
 	loggedModels := make([]*models.AutomodTriggeredRule, len(triggeredRules))
+
+	go analytics.RecordActiveUnit(ruleset.RSModel.GuildID, p, "rule_triggered")
 
 	// apply the effects
 	for i, rule := range triggeredRules {

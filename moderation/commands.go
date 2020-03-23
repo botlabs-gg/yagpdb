@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
@@ -88,6 +89,8 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 
 		permsMet = true
 	}
+
+	go analytics.RecordActiveUnit(cmdData.GS.ID, &Plugin{}, "executed_cmd_"+cmdName)
 
 	return oreason, nil
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/premium"
 
 	"emperror.dev/errors"
@@ -53,7 +54,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(cmdListCommands)
+	commands.AddRootCommands(p, cmdListCommands)
 }
 
 func (p *Plugin) BotInit() {
@@ -589,6 +590,8 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	}
 
 	defer CCExecLock.Unlock(lockKey, lockHandle)
+
+	go analytics.RecordActiveUnit(cmd.GuildID, &Plugin{}, "executed_cc")
 
 	// pick a response and execute it
 	f.Info("Custom command triggered")

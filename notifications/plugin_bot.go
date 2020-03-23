@@ -8,6 +8,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -60,6 +61,8 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 				Type:  discordgo.ChannelTypeDM,
 			}
 
+			go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_msg")
+
 			if sendTemplate(thinCState, config.JoinDMMsg, ms, "join dm", false) {
 				return true, nil
 			}
@@ -71,6 +74,8 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 		if channel == nil {
 			return
 		}
+
+		go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_dm")
 
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
 		if sendTemplate(channel, chanMsg, ms, "join server msg", config.CensorInvites) {
@@ -106,6 +111,8 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 	ms := dstate.MSFromDGoMember(gs, memberRemove.Member)
 
 	chanMsg := config.LeaveMsgs[rand.Intn(len(config.LeaveMsgs))]
+
+	go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_leave_server_msg")
 
 	if sendTemplate(channel, chanMsg, ms, "leave", config.CensorInvites) {
 		return true, nil
@@ -195,6 +202,8 @@ func HandleChannelUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 			topicChannel = c.ID
 		}
 	}
+
+	go analytics.RecordActiveUnit(cu.GuildID, &Plugin{}, "posted_topic_change")
 
 	go func() {
 		_, err := common.BotSession.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in channel <#%d> changed to **%s**", cu.ID, cu.Topic))

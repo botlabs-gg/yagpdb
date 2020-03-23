@@ -12,6 +12,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/mqueue"
@@ -186,7 +187,10 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		if common.Statsd != nil {
 			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + strconv.FormatInt(item.GuildID, 10)}, 1)
 		}
+
+		go analytics.RecordActiveUnit(item.GuildID, &Plugin{}, "posted_reddit_message")
 	}
+
 	return nil
 }
 

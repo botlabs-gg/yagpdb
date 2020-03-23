@@ -164,13 +164,16 @@ func FilterResp(in interface{}, guildID int64) interface{} {
 	return in
 }
 
-func AddRootCommands(cmds ...*YAGCommand) {
+func AddRootCommands(p common.Plugin, cmds ...*YAGCommand) {
 	for _, v := range cmds {
+		v.Plugin = p
 		CommandSystem.Root.AddCommand(v, v.GetTrigger())
 	}
 }
-func AddRootCommandsWithMiddlewares(middlewares []dcmd.MiddleWareFunc, cmds ...*YAGCommand) {
+
+func AddRootCommandsWithMiddlewares(p common.Plugin, middlewares []dcmd.MiddleWareFunc, cmds ...*YAGCommand) {
 	for _, v := range cmds {
+		v.Plugin = p
 		CommandSystem.Root.AddCommand(v, v.GetTrigger().SetMiddlewares(middlewares...))
 	}
 }

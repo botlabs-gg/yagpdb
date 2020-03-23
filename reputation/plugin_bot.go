@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 
 	"github.com/jonas747/dcmd"
@@ -23,7 +24,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(cmds...)
+	commands.AddRootCommands(p, cmds...)
 }
 
 func (p *Plugin) BotInit() {
@@ -77,6 +78,8 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		logger.WithError(err).Error("Failed giving rep")
 		return
 	}
+
+	go analytics.RecordActiveUnit(msg.GuildID, &Plugin{}, "auto_add_rep")
 
 	content := fmt.Sprintf("Gave +1 %s to **%s**", conf.PointsName, who.Mention())
 	common.BotSession.ChannelMessageSend(msg.ChannelID, content)

@@ -4,6 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
@@ -17,11 +23,6 @@ import (
 	"github.com/jonas747/yagpdb/timezonecompanion"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-	"unicode/utf8"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -49,6 +50,7 @@ func (p *Plugin) AddCommands() {
 		Name:        "Create",
 		Aliases:     []string{"new", "make"},
 		Description: "Creates an event, You will be led through an interactive setup",
+		Plugin:      p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			count, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID)).CountG(parsed.Context())
@@ -96,6 +98,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "Edit",
 		Description:         "Edits an event",
+		Plugin:              p,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
@@ -174,6 +177,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"ls"},
 		Description:         "Lists all events in this server",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			events, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID), qm.OrderBy("starts_at asc")).AllG(parsed.Context())
 			if err != nil {
@@ -204,6 +208,7 @@ func (p *Plugin) AddCommands() {
 		Description:         "Deletes an event, specify the event ID of the event you wanna delete",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		RequiredArgs:        1,
+		Plugin:              p,
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
 		},
@@ -237,6 +242,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"cancelsetup"},
 		Description:         "Force cancels the current setup session in this channel",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			p.setupSessionsMU.Lock()

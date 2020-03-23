@@ -27,7 +27,7 @@ func (p *Plugin) RemoveGuild(g int64) error {
 }
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(&commands.YAGCommand{
+	commands.AddRootCommands(p, &commands.YAGCommand{
 		CmdCategory:          commands.CategoryDebug,
 		HideFromCommandsPage: true,
 		Name:                 "testreddit",

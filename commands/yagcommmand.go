@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
@@ -114,6 +115,8 @@ type YAGCommand struct {
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
 	RunFunc dcmd.RunFunc
+
+	Plugin common.Plugin
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -195,6 +198,10 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		err := yc.SetCooldowns(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
+		}
+
+		if yc.Plugin != nil {
+			go analytics.RecordActiveUnit(data.Msg.GuildID, yc.Plugin, "cmd_executed_"+strings.ToLower(yc.Name))
 		}
 	}
 

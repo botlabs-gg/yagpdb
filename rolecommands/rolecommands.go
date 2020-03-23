@@ -6,6 +6,10 @@ package rolecommands
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strconv"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
@@ -17,9 +21,6 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"github.com/tidwall/buntdb"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"sort"
-	"strconv"
-	"time"
 )
 
 type Plugin struct{}
