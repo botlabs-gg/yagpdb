@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -58,7 +57,6 @@ func (p *Plugin) saveTempStats() error {
 
 		var key string
 		for s.Next(&key) {
-			log.Printf("key: %q", key)
 
 			// copy it to a safe location first
 			err := c.Do(radix.Cmd(nil, "RENAME", key, "temp_"+key))
