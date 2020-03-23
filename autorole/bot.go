@@ -44,7 +44,7 @@ func (p *Plugin) BotInit() {
 	scheduledevents2.RegisterHandler("autorole_assign_role", assignRoleEventdata{}, handleAssignRole)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
-	go runDurationChecker()
+	// go runDurationChecker()
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
