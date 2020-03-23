@@ -283,7 +283,7 @@ func setupState() {
 	// State.Debug = true
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
-	State.CacheExpirey = time.Minute * 10
+	State.CacheExpirey = time.Minute * 30
 	// State.RemoveOfflineMembers = true
 	go State.RunGCWorker()
 
