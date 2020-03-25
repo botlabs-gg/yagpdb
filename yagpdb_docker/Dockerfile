@@ -1,13 +1,11 @@
 FROM golang:stretch as builder
 
-WORKDIR $GOPATH/src
-
-
 # Uncomment during development
-# COPY . github.com/jonas747/yagpdb
+COPY . /appbuild/yagpdb
 
-RUN CGO_ENABLED=0 GOOS=linux go get -v \
-  github.com/jonas747/yagpdb/cmd/yagpdb
+WORKDIR /appbuild/yagpdb/cmd/yagpdb
+
+RUN CGO_ENABLED=0 GOOS=linux go build -v
 
 FROM alpine:latest
 
@@ -23,13 +21,13 @@ RUN apk --no-cache add ca-certificates
 RUN apk --no-cache add ffmpeg
 
 # Handle templates for plugins automatically
-COPY --from=builder /go/src/github.com/jonas747/yagpdb/*/assets/*.html templates/plugins/
+COPY --from=builder /appbuild/yagpdb/*/assets/*.html templates/plugins/
 
-COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/templates templates/
-COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/posts posts/
-COPY --from=builder /go/src/github.com/jonas747/yagpdb/cmd/yagpdb/static static/
+COPY --from=builder /appbuild/yagpdb/cmd/yagpdb/templates templates/
+COPY --from=builder /appbuild/yagpdb/cmd/yagpdb/posts posts/
+COPY --from=builder /appbuild/yagpdb/cmd/yagpdb/static static/
 
-COPY --from=builder /go/bin/yagpdb .
+COPY --from=builder /appbuild/yagpdb/cmd/yagpdb .
 
 # add extra flags here when running YAGPDB
 # Set "-exthttps=true" if using a TLS-enabled proxy such as
@@ -39,4 +37,3 @@ ENV extra_flags ""
 
 # `exec` allows us to receive shutdown signals.
 CMD exec /app/yagpdb -all -pa $extra_flags
-
