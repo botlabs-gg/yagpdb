@@ -134,7 +134,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "ddays", Default: 1, Name: "Days", Type: dcmd.Int},
+			&dcmd.ArgDef{Switch: "ddays", Default: 0, Name: "Days", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
