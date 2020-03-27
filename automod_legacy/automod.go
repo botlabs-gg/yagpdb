@@ -27,7 +27,7 @@ func RegisterPlugin() {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Basic automod",
+		Name:     "Basic Automod",
 		SysName:  "legacy_automod",
 		Category: common.PluginCategoryModeration,
 	}
