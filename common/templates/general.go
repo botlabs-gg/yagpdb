@@ -192,8 +192,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		}
 
 	}
-	
-	
+		
 	return msg, nil
 }
 
@@ -238,9 +237,9 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 }
 
 func parseAllowedMentions (Data interface{}) (*discordgo.AllowedMentions, error) {
-	allowedM, ok := Data.(discordgo.AllowedMentions)
-	if ok {
-		return &allowedM, nil
+	
+	if m, ok := Data.(discordgo.AllowedMentions); ok {
+		return &m, nil
 	}
 
 	converted, err := StringKeyDictionary(Data)
@@ -276,7 +275,7 @@ func parseAllowedMentions (Data interface{}) (*discordgo.AllowedMentions, error)
 				}
 				for _, elem := range conv.(Slice) {
 					if (ToInt64(elem)) == 0 {
-							return nil, errors.New(`Allowed Mentions Parsing: "Users" IDSlice: invalid ID passed-` + ToString(elem))
+							return nil, errors.New(`Allowed Mentions Parsing: "Users" IDSlice: invalid ID passed -` + fmt.Sprint(elem))
 					}
 					newslice = append(newslice, ToInt64(elem)) 
 				}
@@ -293,7 +292,7 @@ func parseAllowedMentions (Data interface{}) (*discordgo.AllowedMentions, error)
 				}
 				for _, elem := range conv.(Slice) {
 				if (ToInt64(elem)) == 0 {
-					return nil, errors.New(`Allowed Mentions Parsing: "Roles" IDSlice: invalid ID passed-` + ToString(elem))
+					return nil, errors.New(`Allowed Mentions Parsing: "Roles" IDSlice: invalid ID passed -` + fmt.Sprint(elem))
 				}
 				newslice = append(newslice, ToInt64(elem)) 
 				}
