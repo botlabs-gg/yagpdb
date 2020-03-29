@@ -25,6 +25,7 @@ package web
 //
 // if the struct also implements CustomValidator then that will also be ran
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
@@ -120,6 +121,13 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			if err == nil && !keep {
 				vField.SetInt(0)
 			}
+		case sql.NullInt64:
+			var keep bool
+			var newNullInt sql.NullInt64
+			keep, err = ValidateIntField(cv.Int64, validationTag, guild, false)
+			if err == nil && !keep {
+				vField.Set(reflect.ValueOf(newNullInt))
+			} 
 		case float64:
 			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(cv, min, max)
