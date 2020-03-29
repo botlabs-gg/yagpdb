@@ -54,6 +54,7 @@ require (
 	github.com/olebedev/when v0.0.0-20190311101825-c3b538a97254
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.5.1
 	github.com/russross/blackfriday v1.5.2
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
@@ -77,7 +78,6 @@ require (
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
-	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 // indirect
 	google.golang.org/api v0.3.1
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
