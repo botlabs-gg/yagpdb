@@ -1090,6 +1090,139 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(ms *dstate.MemberState, data i
 
 /////////////////////////////////////////////////////////////
 
+var _ UserStatusListener = (*UserStatusRegexTrigger)(nil)
+
+type UserStatusRegexTrigger struct {
+	BaseRegexTrigger
+}
+
+func (r *UserStatusRegexTrigger) Name() string {
+	if r.BaseRegexTrigger.Inverse {
+		return "UserStatus not matching regex"
+	}
+
+	return "UserStatus matches regex"
+}
+
+func (r *UserStatusRegexTrigger) Description() string {
+	if r.BaseRegexTrigger.Inverse {
+		return "Triggers when a members UserStatus does not match the provided regex"
+	}
+
+	return "Triggers when a members UserStatus matches the provided regex"
+}
+
+func (r *UserStatusRegexTrigger) CheckUserStatus(ms *dstate.MemberState, data interface{}) (bool, error) {
+	dataCast := data.(*BaseRegexTriggerData)
+
+	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
+		re, err := regexp.Compile(dataCast.Regex)
+		if err != nil {
+			return nil, err
+		}
+
+		return re, nil
+	})
+
+	if err != nil {
+		return false, nil
+	}
+
+	re := item.Value().(*regexp.Regexp)
+	if re.MatchString(ms.PresenceGame.State) {
+		if r.BaseRegexTrigger.Inverse {
+			return false, nil
+		}
+		return true, nil
+	}
+
+	if r.BaseRegexTrigger.Inverse {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ UserStatusListener = (*UserStatusWordlistTrigger)(nil)
+
+type UserStatusWordlistTrigger struct {
+	Blacklist bool
+}
+type UserStatusWordlistTriggerData struct {
+	ListID int64
+}
+
+func (nwl *UserStatusWordlistTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (nwl *UserStatusWordlistTrigger) DataType() interface{} {
+	return &UserStatusWordlistTriggerData{}
+}
+
+func (nwl *UserStatusWordlistTrigger) Name() (name string) {
+	if nwl.Blacklist {
+		return "UserStatus word blacklist"
+	}
+
+	return "UserStatus word whitelist"
+}
+
+func (nwl *UserStatusWordlistTrigger) Description() (description string) {
+	if nwl.Blacklist {
+		return "Triggers when a member has a UserStatus containing words in the specified list, this is currently very easy to circumvent atm, and will likely be improved in the future."
+	}
+
+	return "Triggers when a member has a UserStatus containing words not in the specified list, this is currently very easy to circumvent atm, and will likely be improved in the future."
+}
+
+func (nwl *UserStatusWordlistTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name: "List",
+			Key:  "ListID",
+			Kind: SettingTypeList,
+		},
+	}
+}
+
+func (nwl *UserStatusWordlistTrigger) CheckUserStatus(ms *dstate.MemberState, data interface{}) (bool, error) {
+	dataCast := data.(*UserStatusWordlistTriggerData)
+
+	list, err := FindFetchGuildList(ms.Guild, dataCast.ListID)
+	if err != nil {
+		return false, nil
+	}
+
+	fields := strings.Fields(PrepareMessageForWordCheck(ms.PresenceGame.State))
+
+	for _, mf := range fields {
+		contained := false
+		for _, w := range list.Content {
+			if strings.EqualFold(mf, w) {
+				if nwl.Blacklist {
+					// contains a blacklisted word, trigger
+					return true, nil
+				} else {
+					contained = true
+					break
+				}
+			}
+		}
+
+		if !nwl.Blacklist && !contained {
+			// word not whitelisted, trigger
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+/////////////////////////////////////////////////////////////
+
 var _ UsernameListener = (*UsernameRegexTrigger)(nil)
 
 type UsernameRegexTrigger struct {
