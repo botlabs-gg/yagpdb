@@ -192,7 +192,7 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 
 		metricsHTTPLatency.Observe(since)
 		// metricsNumRequests.With(prometheus.Labels{"path": path})
-		metricsNumRequestsResponseCode.With(prometheus.Labels{"response_code": strconv.Itoa(code)})
+		metricsNumRequestsResponseCode.With(prometheus.Labels{"response_code": strconv.Itoa(code)}).Inc()
 
 		// if Statsd != nil {
 		// 	Statsd.Incr("discord.num_requests", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(code), "path:" + request.Method + "-" + path}, 1)
