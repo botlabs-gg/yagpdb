@@ -235,6 +235,17 @@ func (p *Plugin) checkNickname(ms *dstate.MemberState) {
 	})
 }
 
+func (p *Plugin) checkUserStatus(ms *dstate.MemberState) {
+	p.CheckTriggers(nil, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
+		cast, ok := trig.Part.(UserStatusListener)
+		if !ok {
+			return false, nil
+		}
+
+		return cast.CheckUserStatus(ms, trig.ParsedSettings)
+	})
+}
+
 func (p *Plugin) checkUsername(ms *dstate.MemberState) {
 	p.CheckTriggers(nil, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
 		cast, ok := trig.Part.(UsernameListener)
