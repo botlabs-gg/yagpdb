@@ -28,6 +28,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMsgUpdate, eventsystem.EventMessageUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handlePresenceUpdate, eventsystem.EventPresenceUpdate)
 
 	scheduledevents2.RegisterHandler("amod2_reset_channel_ratelimit", ResetChannelRatelimitData{}, handleResetChannelRatelimit)
 }
@@ -200,6 +201,18 @@ func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	}
 
 	p.checkNickname(ms)
+}
+
+func (p *Plugin) handlePresenceUpdate(evt *eventsystem.EventData) {
+	evtData := evt.PresenceUpdate()
+
+	presence := evtData.Presence
+	if presence.Game.State == "" {
+		return
+	}
+
+	ms := evt.GS.MemberCopy(true, presence.User.ID)
+	p.checkUserStatus(ms)
 }
 
 func (p *Plugin) handleGuildMemberJoin(evt *eventsystem.EventData) {
