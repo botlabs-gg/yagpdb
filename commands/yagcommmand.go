@@ -183,7 +183,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
 	}
 
-	metricsExcecutedCommands.With(prometheus.Labels{"name": cmdFullName}).Inc()
+	metricsExcecutedCommands.With(prometheus.Labels{"name": strings.ToLower(cmdFullName)}).Inc()
 
 	logger.Info("Handling command: " + data.Msg.Content)
 
