@@ -29,16 +29,10 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
 
 	scheduledevents2.RegisterHandler("amod2_reset_channel_ratelimit", ResetChannelRatelimitData{}, handleResetChannelRatelimit)
-	scheduledevents2.RegisterHandler("amod2_add_role", AddRoleData{}, handleAddRole)
 }
 
 type ResetChannelRatelimitData struct {
 	ChannelID int64
-}
-
-type AddRoleData struct {
-	RoleID  int64
-	UserID  int64
 }
 
 func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
@@ -551,17 +545,6 @@ func handleResetChannelRatelimit(evt *schEventsModels.ScheduledEvent, data inter
 	}
 
 	_, err = common.BotSession.ChannelEditComplex(dataCast.ChannelID, edit)
-	if err != nil {
-		return scheduledevents2.CheckDiscordErrRetry(err), err
-	}
-
-	return false, nil
-}
-
-func handleAddRole(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
-	dataCast := data.(*AddRoleData)
-	
-	err  = common.BotSession.GuildMemberRoleAdd(evt.GuildID, dataCast.UserID, dataCast.RoleID)
 	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
