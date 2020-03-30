@@ -15,7 +15,7 @@ import (
 
 var (
 	ConfPromListenAddr      = config.RegisterOption("yagpdb.prom_listen_addr", "Prometheus listen address", "")
-	ConfPromListenPortRange = config.RegisterOption("yagpdb.prom_listen_port_range", "Prometheus listen port range", "6000-6100")
+	ConfPromListenPortRange = config.RegisterOption("yagpdb.prom_listen_port_range", "Prometheus listen port range", "6001-6100")
 
 	parsedPortRange []int
 )

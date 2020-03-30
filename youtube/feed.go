@@ -14,7 +14,9 @@ import (
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/feeds"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/youtube/v3"
@@ -327,9 +329,7 @@ func (p *Plugin) handlePlaylistItemsResponse(resp *youtube.PlaylistItemListRespo
 			go p.sendNewVidMessage(sub.GuildID, sub.ChannelID, item.Snippet.ChannelTitle, item.Snippet.ResourceId.VideoId, sub.MentionEveryone)
 		}
 
-		if common.Statsd != nil {
-			go common.Statsd.Count("yagpdb.youtube.matches", int64(len(subs)), nil, 1)
-		}
+		feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Add(float64(len(subs)))
 	}
 
 	return

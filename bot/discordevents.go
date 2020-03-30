@@ -11,6 +11,8 @@ import (
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -86,6 +88,11 @@ OUTER:
 	}
 }
 
+var metricsJoinedGuilds = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "yagpdb_joined_guilds",
+	Help: "Guilds yagpdb newly joined",
+})
+
 func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	g := evt.GuildCreate()
 	logger.WithFields(logrus.Fields{
@@ -104,9 +111,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
 		go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
 
-		if common.Statsd != nil {
-			common.Statsd.Incr("yagpdb.joined_guilds", nil, 1)
-		}
+		metricsJoinedGuilds.Inc()
 	}
 
 	// check if the server is banned from using the bot

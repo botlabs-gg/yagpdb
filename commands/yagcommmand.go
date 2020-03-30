@@ -17,6 +17,8 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -136,6 +138,11 @@ func (yc *YAGCommand) Switches() []*dcmd.ArgDef {
 	return yc.ArgSwitches
 }
 
+var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "bot_commands_total",
+	Help: "Commands the bot executed",
+}, []string{"name"})
+
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	if !yc.RunInDM && data.Source == dcmd.DMSource {
 		return nil, nil
@@ -156,12 +163,18 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	cState := data.CS
 
+	cmdFullName := yc.Name
+	if len(data.ContainerChain) > 1 {
+		lastContainer := data.ContainerChain[len(data.ContainerChain)-1]
+		cmdFullName = lastContainer.Names[0] + " " + cmdFullName
+	}
+
 	// Set up log entry for later use
 	logEntry := &common.LoggedExecutedCommand{
 		UserID:    discordgo.StrID(data.Msg.Author.ID),
 		ChannelID: discordgo.StrID(data.Msg.ChannelID),
 
-		Command:    yc.Name,
+		Command:    cmdFullName,
 		RawCommand: data.Msg.Content,
 		TimeStamp:  time.Now(),
 	}
@@ -170,9 +183,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
 	}
 
-	if common.Statsd != nil {
-		go common.Statsd.Incr("yagpdb.cmd.executed", nil, 1)
-	}
+	metricsExcecutedCommands.With(prometheus.Labels{"name": cmdFullName}).Inc()
 
 	logger.Info("Handling command: " + data.Msg.Content)
 
@@ -201,7 +212,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		}
 
 		if yc.Plugin != nil {
-			go analytics.RecordActiveUnit(data.Msg.GuildID, yc.Plugin, "cmd_executed_"+strings.ToLower(yc.Name))
+			go analytics.RecordActiveUnit(data.Msg.GuildID, yc.Plugin, "cmd_executed_"+strings.ToLower(cmdFullName))
 		}
 	}
 

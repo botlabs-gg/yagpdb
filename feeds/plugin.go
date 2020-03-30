@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/jonas747/yagpdb/common"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Plugin interface {
@@ -59,3 +61,8 @@ func Stop(wg *sync.WaitGroup) {
 		go plugin.StopFeed(wg)
 	}
 }
+
+var MetricPostedMessages = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_feed_posted_total",
+	Help: "Feed messages posted",
+}, []string{"source"})

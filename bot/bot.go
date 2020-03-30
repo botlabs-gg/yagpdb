@@ -3,7 +3,6 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
-	"runtime"
 	"sync"
 	"time"
 
@@ -16,6 +15,8 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var (
@@ -138,10 +139,6 @@ func botReady() {
 		}
 	}
 
-	if common.Statsd != nil {
-		go goroutineLogger()
-	}
-
 	go loopCheckAdmins()
 	watchMemusage()
 }
@@ -255,16 +252,6 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	return true
 }
 
-func goroutineLogger() {
-	t := time.NewTicker(time.Second * 10)
-	for {
-		<-t.C
-
-		num := runtime.NumGoroutine()
-		common.Statsd.Gauge("yagpdb.numgoroutine", float64(num), nil, 1)
-	}
-}
-
 type GlobalRatelimitTriggeredEventData struct {
 	Reset  time.Time `json:"reset"`
 	Bucket string    `json:"bucket"`
@@ -274,6 +261,18 @@ func handleGlobalRatelimtPusub(evt *pubsub.Event) {
 	data := evt.Data.(*GlobalRatelimitTriggeredEventData)
 	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
 }
+
+var (
+	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_state_cache_hits",
+		Help: "Cache hits in the satte cache",
+	})
+
+	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_state_cache_misses",
+		Help: "Cache misses in the sate cache",
+	})
+)
 
 func setupState() {
 	// Things may rely on state being available at this point for initialization
@@ -289,7 +288,7 @@ func setupState() {
 
 	eventsystem.DiscordState = State
 
-	// track cache hits/misses to statsd
+	// track cache hits/misses
 	go func() {
 		lastHits := int64(0)
 		lastMisses := int64(0)
@@ -304,13 +303,8 @@ func setupState() {
 			lastHits = stats.CacheHits
 			lastMisses = stats.CacheMisses
 
-			if common.Statsd != nil {
-				common.Statsd.Count("yagpdb.state.cache_hits", deltaHits, nil, 1)
-				common.Statsd.Count("yagpdb.state.cache_misses", deltaMisses, nil, 1)
-
-				common.Statsd.Gauge("yagpdb.state.last_members_evicted", float64(stats.MembersRemovedLastGC), nil, 1)
-				common.Statsd.Gauge("yagpdb.state.last_cache_evicted", float64(stats.CacheMisses), nil, 1)
-			}
+			metricsCacheHits.Add(float64(deltaHits))
+			metricsCacheMisses.Add(float64(deltaMisses))
 
 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
 		}

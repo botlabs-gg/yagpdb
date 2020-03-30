@@ -26,7 +26,7 @@ func RegisterPlugin() {
 
 var (
 	confBotrestListenAddr = config.RegisterOption("yagpdb.botrest.listen_address", "botrest listening address, it will use any available port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
-	ConfListenPortRange   = config.RegisterOption("yagpdb.botrest.port_range", "botrest listen port range", "5000-5999")
+	ConfListenPortRange   = config.RegisterOption("yagpdb.botrest.port_range", "botrest listen port range", "5100-5999")
 	serverLogger          = common.GetFixedPrefixLogger("internalapi_server")
 )
 

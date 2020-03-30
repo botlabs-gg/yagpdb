@@ -107,9 +107,6 @@ YAGPDB_GA_ID=""
 # The feed on /managed
 YAGPDB_ANNOUNCEMENTS_CHANNEL=""
 
-# Datadog integration
-YAGPDB_DOGSTATSDADDRESS="127.0.0.1:8125"
-
 # Pass a api key to list pledges on your patreon on the website
 # This refresh token will only work and will only be used once, the api returns a new token which we store in redis
 # under the patreon_refresh_token key, therefor if you wipe redis you will have to update this refresh token again

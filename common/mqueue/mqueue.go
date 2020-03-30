@@ -13,6 +13,8 @@ import (
 
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
@@ -229,6 +231,23 @@ func calcListAverage(in *list.List) int {
 	return average
 }
 
+var (
+	metricsQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "yagpdb_mqueue_size_total",
+		Help: "The size of the send message queue",
+	})
+
+	metricsRatelimit = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_mqueue_ratelimits_total",
+		Help: "Ratelimits hit on the webhook session",
+	})
+
+	metricsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "yagpdb_mqueue_processed_total",
+		Help: "Total mqueue elements processed",
+	}, []string{"source"})
+)
+
 func startPolling() {
 	startedLock.Lock()
 	if started {
@@ -251,14 +270,11 @@ func startPolling() {
 		case <-ticker.C:
 			pollRedis(first)
 			first = false
-			if common.Statsd != nil {
-				workmu.Lock()
-				l := len(workSlice)
-				workmu.Unlock()
 
-				common.Statsd.Gauge("yagpdb.mqueue.size", float64(l), nil, 1)
-				common.Statsd.Gauge("yagpdb.mqueue.numworkers", float64(atomic.LoadInt32(numWorkers)), nil, 1)
-			}
+			workmu.Lock()
+			l := len(workSlice)
+			workmu.Unlock()
+			metricsQueueSize.Set(float64(l))
 		}
 	}
 }
@@ -493,6 +509,8 @@ func process(elem *QueuedElement, raw []byte) {
 		queueLogger.Warn("Non-discord related error when sending message, retrying. ", err)
 		time.Sleep(time.Second)
 	}
+
+	metricsProcessed.With(prometheus.Labels{"source": elem.Source}).Inc()
 }
 
 var disableOnError = []int{
@@ -613,7 +631,5 @@ func handleWebhookSessionRatelimit(s *discordgo.Session, r *discordgo.RateLimit)
 		return
 	}
 
-	if common.Statsd != nil {
-		common.Statsd.Incr("yagpdb.webhook_session_ratelimit", nil, 1)
-	}
+	metricsRatelimit.Inc()
 }

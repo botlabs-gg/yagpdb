@@ -125,18 +125,10 @@ func CheckToggleRole(ctx context.Context, ms *dstate.MemberState, cmd *models.Ro
 func ToggleRole(ms *dstate.MemberState, role int64) (gaveRole bool, err error) {
 	if common.ContainsInt64Slice(ms.Roles, role) {
 		err = common.BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, role)
-		if common.Statsd != nil {
-			common.Statsd.Incr("yagpdb.rolecommands.removed_role", nil, 1)
-		}
-
 		return false, err
 	}
 
 	err = common.BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, role)
-	if common.Statsd != nil {
-		common.Statsd.Incr("yagpdb.rolecommands.added_role", nil, 1)
-	}
-
 	return true, err
 }
 
@@ -260,9 +252,6 @@ func GroupToggleRole(ctx context.Context, ms *dstate.MemberState, targetRole *mo
 
 	// If user already has role it's attempting to give itself
 	if common.ContainsInt64Slice(ms.Roles, targetRole.Role) {
-		if common.Statsd != nil {
-			common.Statsd.Incr("yagpdb.rolecommands.removed_role", nil, 1)
-		}
 		err = common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, targetRole.Role)
 		return false, err
 	}
@@ -271,9 +260,6 @@ func GroupToggleRole(ctx context.Context, ms *dstate.MemberState, targetRole *mo
 	for _, v := range rg.R.RoleCommands {
 		if common.ContainsInt64Slice(ms.Roles, v.Role) {
 			if rg.SingleAutoToggleOff {
-				if common.Statsd != nil {
-					common.Statsd.Incr("yagpdb.rolecommands.removed_role", nil, 1)
-				}
 				common.BotSession.GuildMemberRoleRemove(guildID, ms.ID, v.Role)
 			} else {
 				return false, NewGroupError("Max 1 role in group **%s** is allowed", rg)
@@ -284,10 +270,6 @@ func GroupToggleRole(ctx context.Context, ms *dstate.MemberState, targetRole *mo
 	// Finally give the role
 	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, targetRole.Role)
 	if err == nil {
-		if common.Statsd != nil {
-			common.Statsd.Incr("yagpdb.rolecommands.added_role", nil, 1)
-		}
-
 		err = GroupMaybeScheduleRoleRemoval(ctx, ms, targetRole)
 	}
 	return true, err
