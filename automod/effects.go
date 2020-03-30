@@ -711,21 +711,7 @@ func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface
 	}
 
 	if settingsCast.Duration > 0 {
-		
-		// remove existing role add events for this member
-		_, err = schEventsModels.ScheduledEvents(
-		qm.Where("event_name='amod2_add_role'"),
-		qm.Where("guild_id = ?", ctxData.GS.ID),
-		qm.Where("(data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ?", ctxData.MS.ID, settingsCast.Role),
-		qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
-
-		if err != nil {
-			return err
-		}
-		err = scheduledevents2.ScheduleEvent("amod2_add_role", ctxData.GS.ID, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)), &AddRoleData{
-		      RoleID:  settingsCast.Role,
-		      UserID:  ctxData.MS.ID,
-		})
+		err := scheduledevents2.ScheduleAddRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
 		if err != nil {
 			return err
 		}
