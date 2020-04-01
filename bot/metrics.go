@@ -52,7 +52,11 @@ func runUpdateMetrics() {
 func runUpdateShardMetrics() {
 	processShards := ReadyTracker.GetProcessShards()
 
-	statuses := make(map[string]int)
+	statuses := map[string]int{
+		"LOADING":      0,
+		"READY":        0,
+		"DISCONNECTED": 0,
+	}
 
 	for _, shardID := range processShards {
 		shard := ShardManager.Sessions[shardID]
