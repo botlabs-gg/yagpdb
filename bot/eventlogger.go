@@ -90,7 +90,7 @@ var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.Counte
 
 var metricsHandledEventsHandledTypes = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "yagpdb_discord_events_types_total",
-	Help: "The total number of processed events, with a shard label",
+	Help: "The total number of processed events, with a type label",
 }, []string{"type"})
 
 func (e *eventLogger) flushStats() {

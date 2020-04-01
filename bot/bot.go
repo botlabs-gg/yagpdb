@@ -68,6 +68,7 @@ func Run(nodeID string) {
 		NodeConn = node.NewNodeConn(&NodeImpl{}, orcheStratorAddress, common.VERSION, nodeID, nil)
 		NodeConn.Run()
 	} else {
+		ShardManager.Init()
 		go ShardManager.Start()
 		botReady()
 	}
@@ -139,7 +140,9 @@ func botReady() {
 		}
 	}
 
+	go runUpdateMetrics()
 	go loopCheckAdmins()
+
 	watchMemusage()
 }
 

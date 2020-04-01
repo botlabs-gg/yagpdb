@@ -98,7 +98,7 @@ var metricsJoinedGuilds = promauto.NewCounter(prometheus.CounterOpts{
 var commonEventsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "bot_events_total",
 	Help: "Common bot events",
-}, []string{"name"})
+}, []string{"type"})
 
 func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	g := evt.GuildCreate()

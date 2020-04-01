@@ -51,6 +51,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 		if err != nil {
 			panic("failed initializing discord sessions: " + err.Error())
 		}
+
 		botReady()
 	}
 }
