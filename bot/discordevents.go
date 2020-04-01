@@ -45,11 +45,13 @@ func addBotHandlers() {
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleMessageCreate, eventsystem.EventMessageCreate)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, ReadyTracker.handleReadyOrResume, eventsystem.EventReady, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, handleResumed, eventsystem.EventResumed)
 }
 
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
 
+	commonEventsTotal.With(prometheus.Labels{"type": "Ready"}).Inc()
 	RefreshStatus(ContextSession(data.Context()))
 
 	// We pass the common.Session to the command system and that needs the user from the state
@@ -93,6 +95,11 @@ var metricsJoinedGuilds = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Guilds yagpdb newly joined",
 })
 
+var commonEventsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "bot_events_total",
+	Help: "Common bot events",
+}, []string{"name"})
+
 func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	g := evt.GuildCreate()
 	logger.WithFields(logrus.Fields{
@@ -112,6 +119,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
 
 		metricsJoinedGuilds.Inc()
+		commonEventsTotal.With(prometheus.Labels{"type": "Guild Create"}).Inc()
 	}
 
 	// check if the server is banned from using the bot
@@ -274,6 +282,8 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
+	commonEventsTotal.With(prometheus.Labels{"type": "Message Create"}).Inc()
+
 	mc := evt.MessageCreate()
 	if mc.GuildID != 0 {
 		return
@@ -328,4 +338,8 @@ func HandleRatelimit(evt *eventsystem.EventData) {
 	if err != nil {
 		logger.WithError(err).Error("failed publishing global ratelimit")
 	}
+}
+
+func handleResumed(evt *eventsystem.EventData) {
+	commonEventsTotal.With(prometheus.Labels{"type": "Resumed"}).Inc()
 }
