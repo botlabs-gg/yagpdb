@@ -223,6 +223,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			msgSend.Embed = typedMsg
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
+			msgSend.AllowedMentions = discordgo.AllowedMentions{
+				Parse: parseMentions,
+			}
 		default:
 			msgSend.Content = fmt.Sprint(msg)
 		}
