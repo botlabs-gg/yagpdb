@@ -56,6 +56,12 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 		} else {
 			def.Type = dcmd.Int
 		}
+	case "float":
+		if len(opts) >= 2 {
+			def.Type = &dcmd.FloatArg{Min: templates.ToFloat64(opts[0]), Max: templates.ToFloat64(opts[1])}
+		} else {
+			def.Type = dcmd.Float
+		}
 	case "duration":
 		if len(opts) >= 2 {
 			def.Type = &commands.DurationArg{Min: time.Duration(templates.ToInt64(opts[0])), Max: time.Duration(templates.ToInt64(opts[1]))}
