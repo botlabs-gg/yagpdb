@@ -13,9 +13,12 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -114,6 +117,8 @@ type YAGCommand struct {
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
 	RunFunc dcmd.RunFunc
+
+	Plugin common.Plugin
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -132,6 +137,11 @@ func (yc *YAGCommand) ArgDefs(data *dcmd.Data) (args []*dcmd.ArgDef, required in
 func (yc *YAGCommand) Switches() []*dcmd.ArgDef {
 	return yc.ArgSwitches
 }
+
+var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "bot_commands_total",
+	Help: "Commands the bot executed",
+}, []string{"name"})
 
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	if !yc.RunInDM && data.Source == dcmd.DMSource {
@@ -153,12 +163,18 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	cState := data.CS
 
+	cmdFullName := yc.Name
+	if len(data.ContainerChain) > 1 {
+		lastContainer := data.ContainerChain[len(data.ContainerChain)-1]
+		cmdFullName = lastContainer.Names[0] + " " + cmdFullName
+	}
+
 	// Set up log entry for later use
 	logEntry := &common.LoggedExecutedCommand{
 		UserID:    discordgo.StrID(data.Msg.Author.ID),
 		ChannelID: discordgo.StrID(data.Msg.ChannelID),
 
-		Command:    yc.Name,
+		Command:    cmdFullName,
 		RawCommand: data.Msg.Content,
 		TimeStamp:  time.Now(),
 	}
@@ -167,9 +183,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
 	}
 
-	if common.Statsd != nil {
-		go common.Statsd.Incr("yagpdb.cmd.executed", nil, 1)
-	}
+	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)"}).Inc()
 
 	logger.Info("Handling command: " + data.Msg.Content)
 
@@ -195,6 +209,10 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		err := yc.SetCooldowns(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
+		}
+
+		if yc.Plugin != nil {
+			go analytics.RecordActiveUnit(data.Msg.GuildID, yc.Plugin, "cmd_executed_"+strings.ToLower(cmdFullName))
 		}
 	}
 

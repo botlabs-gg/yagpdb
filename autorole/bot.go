@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -26,7 +27,7 @@ var _ bot.BotStopperHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(roleCommands...)
+	commands.AddRootCommands(p, roleCommands...)
 }
 
 type assignRoleEventdata struct {
@@ -43,7 +44,7 @@ func (p *Plugin) BotInit() {
 	scheduledevents2.RegisterHandler("autorole_assign_role", assignRoleEventdata{}, handleAssignRole)
 
 	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
-	go runDurationChecker()
+	// go runDurationChecker()
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -330,6 +331,7 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 
 	if config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Roles, time.Now()) {
 		err = common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
+		go analytics.RecordActiveUnit(addEvt.GuildID, &Plugin{}, "assigned_role")
 		return bot.CheckDiscordErrRetry(err), err
 	}
 
@@ -527,6 +529,8 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 		return false, nil
 	}
 
+	go analytics.RecordActiveUnit(evt.GuildID, &Plugin{}, "assigned_role")
+
 	err = common.BotSession.GuildMemberRoleAdd(evt.GuildID, dataCast.UserID, config.Role)
 	return bot.CheckDiscordErrRetry(err), err
 }
@@ -562,6 +566,8 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 			return false, nil
 		}
 	}
+
+	go analytics.RecordActiveUnit(update.GuildID, &Plugin{}, "assigned_role")
 
 	// if we branched here then all the checks passed and they should be assigned the role
 	err = common.BotSession.GuildMemberRoleAdd(update.GuildID, update.User.ID, config.Role)

@@ -48,7 +48,7 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(&commands.YAGCommand{
+	commands.AddRootCommands(p, &commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryTool,
 		Cooldown:      5,

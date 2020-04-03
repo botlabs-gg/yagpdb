@@ -12,7 +12,10 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/premium"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
@@ -53,7 +56,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(cmdListCommands)
+	commands.AddRootCommands(p, cmdListCommands)
 }
 
 func (p *Plugin) BotInit() {
@@ -239,6 +242,8 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		tmplCtx.Data["ExecData"] = i
 	}
 
+	metricsExecutedCommands.With(prometheus.Labels{"trigger": "timed"}).Inc()
+
 	err = ExecuteCustomCommand(cmd, tmplCtx)
 	return false, err
 }
@@ -269,6 +274,8 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 
 		return false, nil
 	}
+
+	metricsExecutedCommands.With(prometheus.Labels{"trigger": "timed"}).Inc()
 
 	tmplCtx := templates.NewContext(gs, cs, nil)
 	ExecuteCustomCommand(cmd, tmplCtx)
@@ -312,6 +319,11 @@ const (
 	CCMessageExecLimitPremium = 5
 )
 
+var metricsExecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_cc_triggered_total",
+	Help: "Number custom commands triggered",
+}, []string{"trigger"})
+
 func handleMessageReactions(evt *eventsystem.EventData) {
 	var reaction *discordgo.MessageReaction
 	var added bool
@@ -352,9 +364,8 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 	}
 
 	triggeredCmds, err := findReactionTriggerCustomCommands(evt.Context(), cState, ms, reaction, added)
-	if common.Statsd != nil {
-		go common.Statsd.Count("yagpdb.cc.executed", int64(len(triggeredCmds)), []string{"trigger:reaction"}, 1)
-	}
+
+	metricsExecutedCommands.With(prometheus.Labels{"trigger": "reaction"}).Inc()
 
 	if len(triggeredCmds) < 1 {
 		return
@@ -411,9 +422,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if common.Statsd != nil {
-		go common.Statsd.Count("yagpdb.cc.executed", int64(len(matchedCustomCommands)), []string{"trigger:message"}, 1)
-	}
+	metricsExecutedCommands.With(prometheus.Labels{"trigger": "message"}).Inc()
 
 	for _, matched := range matchedCustomCommands {
 		err = ExecuteCustomCommandFromMessage(matched.CC, member, cs, matched.Args, matched.Stripped, mc.Message)
@@ -589,6 +598,8 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	}
 
 	defer CCExecLock.Unlock(lockKey, lockHandle)
+
+	go analytics.RecordActiveUnit(cmd.GuildID, &Plugin{}, "executed_cc")
 
 	// pick a response and execute it
 	f.Info("Custom command triggered")

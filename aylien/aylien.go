@@ -58,7 +58,7 @@ func RegisterPlugin() {
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(&commands.YAGCommand{
+	commands.AddRootCommands(p, &commands.YAGCommand{
 		CmdCategory: commands.CategoryFun,
 		Cooldown:    5,
 		Name:        "Sentiment",

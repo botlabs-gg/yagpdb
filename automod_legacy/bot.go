@@ -5,6 +5,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -111,12 +112,14 @@ func CheckMessage(m *discordgo.Message) bool {
 
 	rules := []Rule{config.Spam, config.Invite, config.Mention, config.Links, config.Words, config.Sites}
 
+	didCheck := false
+
 	// We gonna need to have this locked while we check
 	for _, r := range rules {
 		if r.ShouldIgnore(m, member) {
 			continue
 		}
-
+		didCheck = true
 		d, punishment, msg, err := r.Check(m, cs)
 		if d {
 			del = true
@@ -140,8 +143,13 @@ func CheckMessage(m *discordgo.Message) bool {
 	}
 
 	if !del {
+		if didCheck {
+			go analytics.RecordActiveUnit(cs.Guild.ID, &Plugin{}, "checked")
+		}
 		return false
 	}
+
+	go analytics.RecordActiveUnit(cs.Guild.ID, &Plugin{}, "rule_triggered")
 
 	if punishMsg != "" {
 		// Strip last newline

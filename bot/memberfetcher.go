@@ -10,6 +10,8 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var (
@@ -186,6 +188,11 @@ func (m *memberFetcher) check() {
 	m.Unlock()
 }
 
+var metricsMemberFetcherRequests = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "yagpdb_memberfetcher_requests_total",
+	Help: "The total number of processed events",
+})
+
 func (m *memberFetcher) runGuild(guildID int64) {
 	for {
 		if !m.next(guildID) {
@@ -231,9 +238,7 @@ func (m *memberFetcher) next(guildID int64) (more bool) {
 	// Check if this was previously attempted and failed
 	failedCacheKey := discordgo.StrID(guildID) + ":" + discordgo.StrID(elem.Member)
 	if failedUsersCache.Get(failedCacheKey) == nil {
-		if common.Statsd != nil {
-			go common.Statsd.Incr("yagpdb.memfetch.requests", nil, 1)
-		}
+		metricsMemberFetcherRequests.Inc()
 
 		var member *discordgo.Member
 		member, err = common.BotSession.GuildMember(guildID, elem.Member)

@@ -65,7 +65,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(
+	commands.AddRootCommands(p,
 		// Info
 		info.Command,
 		invite.Command,

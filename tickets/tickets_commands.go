@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
@@ -391,6 +392,10 @@ func (p *Plugin) AddCommands() {
 					}
 
 					conf = &models.TicketConfig{}
+				}
+
+				if conf.Enabled {
+					go analytics.RecordActiveUnit(data.GS.ID, &Plugin{}, "cmd_used")
 				}
 
 				activeTicket, err := models.Tickets(qm.Where("channel_id = ? AND guild_id = ?", data.CS.ID, data.GS.ID)).OneG(data.Context())

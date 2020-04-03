@@ -6,9 +6,12 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"goji.io"
@@ -21,8 +24,11 @@ func RegisterPlugin() {
 	common.RegisterPlugin(&Plugin{})
 }
 
-var confBotrestListenAddr = config.RegisterOption("yagpdb.botrest.listen_address", "botrest listening address, it will use any available port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
-var serverLogger = common.GetFixedPrefixLogger("internalapi_server")
+var (
+	confBotrestListenAddr = config.RegisterOption("yagpdb.botrest.listen_address", "botrest listening address, it will use any available port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
+	ConfListenPortRange   = config.RegisterOption("yagpdb.botrest.port_range", "botrest listen port range", "5100-5999")
+	serverLogger          = common.GetFixedPrefixLogger("internalapi_server")
+)
 
 // InternalAPIPlugin represents a plugin that provides interactions with the internal apis
 type InternalAPIPlugin interface {
@@ -77,6 +83,10 @@ func (p *Plugin) CommonRun() {
 		}
 	}
 
+	p.run(muxer)
+}
+
+func (p *Plugin) run(muxer *goji.Mux) {
 	p.srv = &http.Server{
 		Handler: muxer,
 	}
@@ -112,14 +122,26 @@ func (p *Plugin) CommonRun() {
 }
 
 func (p *Plugin) createListener(addr string) (net.Listener, int, error) {
-	listener, err := net.Listen("tcp", addr+":0")
+	ports, err := parseRange(ConfListenPortRange.GetString())
 	if err != nil {
-		return nil, 0, err
+		panic(err)
 	}
 
-	port := listener.Addr().(*net.TCPAddr).Port
-	serverLogger.Infof("internalapi using port %d", port)
-	return listener, port, nil
+	for {
+
+		for _, port := range ports {
+			listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", addr, port))
+			if err != nil {
+				serverLogger.Infof("por %d used, trying another one...", port)
+				time.Sleep(time.Second)
+				continue
+			}
+
+			port := listener.Addr().(*net.TCPAddr).Port
+			serverLogger.Infof("internalapi using port %d", port)
+			return listener, port, nil
+		}
+	}
 }
 
 func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
@@ -153,4 +175,37 @@ func handleShutdown(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	ServeJson(w, r, "shutting down in 3 seconds")
+}
+
+func parseRange(in string) ([]int, error) {
+	if in == "" {
+		return nil, nil
+	}
+
+	if !strings.Contains(in, "-") {
+		n, err := strconv.Atoi(in)
+		if err != nil {
+			return nil, errors.WithStackIf(err)
+		}
+
+		return []int{n}, nil
+	}
+
+	split := strings.Split(in, "-")
+	parsedStart, err := strconv.Atoi(split[0])
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	parsedEnd, err := strconv.Atoi(split[1])
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	result := make([]int, 0)
+	for i := parsedStart; i <= parsedEnd; i++ {
+		result = append(result, i)
+	}
+
+	return result, nil
 }

@@ -77,7 +77,7 @@ var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, templateData := web.GetBaseCPContextData(r.Context())
 
-	templateData["WidgetTitle"] = "Legacy Automod"
+	templateData["WidgetTitle"] = "Basic Automod"
 	templateData["SettingsPath"] = "/automod_legacy"
 
 	config, err := GetConfig(g.ID)

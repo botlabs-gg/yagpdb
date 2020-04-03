@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -414,6 +415,8 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 		return
 	}
 
+	go analytics.RecordActiveUnit(guild.ID, &Plugin{}, "sent_streaming_announcement")
+
 	ctx := templates.NewContext(guild, nil, ms)
 	ctx.Data["URL"] = ms.PresenceGame.URL
 	ctx.Data["url"] = ms.PresenceGame.URL
@@ -442,6 +445,8 @@ func GiveStreamingRole(guildID, memberID, streamingRole int64, currentUserRoles 
 
 	if !common.ContainsInt64Slice(currentUserRoles, streamingRole) {
 		err = common.BotSession.GuildMemberRoleAdd(guildID, memberID, streamingRole)
+		go analytics.RecordActiveUnit(guildID, &Plugin{}, "assigned_streaming_role")
+
 	}
 
 	if err != nil {
@@ -462,6 +467,8 @@ func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRo
 	if !common.ContainsInt64Slice(currentRoles, streamingRole) {
 		return
 	}
+
+	go analytics.RecordActiveUnit(guildID, &Plugin{}, "removed_streaming_role")
 
 	err := common.BotSession.GuildMemberRoleRemove(guildID, memberID, streamingRole)
 	if err != nil {

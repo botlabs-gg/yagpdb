@@ -3,9 +3,11 @@ package rolecommands
 import (
 	"context"
 	"database/sql"
+
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -26,7 +28,7 @@ func (p *Plugin) AddCommands() {
 		EmbedColor:  0x42b9f4,
 	}
 
-	commands.AddRootCommands(
+	commands.AddRootCommands(p,
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
 			Name:        "Role",
@@ -176,6 +178,8 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 
 		return HumanizeAssignError(parsed.GS, err)
 	}
+
+	go analytics.RecordActiveUnit(parsed.GS.ID, &Plugin{}, "cmd_used")
 
 	if given {
 		return "Gave you the role!", nil

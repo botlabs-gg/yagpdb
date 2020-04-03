@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 )
 
@@ -139,6 +141,24 @@ var numberRemover = strings.NewReplacer(
 	"8", "",
 	"9", "")
 
+var (
+	metricsNumRequestsPath = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "yagpdb_discord_http_requests_path_total",
+		Help: "Number of http requests to the discord API",
+	}, []string{"path"})
+
+	metricsNumRequestsResponseCode = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "yagpdb_discord_http_requests_response_code_total",
+		Help: "Number of http requests to the discord API",
+	}, []string{"response_code"})
+
+	metricsHTTPLatency = promauto.NewSummary(prometheus.SummaryOpts{
+		Name:       "yagpdb_discord_http_latency_seconds",
+		Help:       "Latency do the discord API",
+		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+	})
+)
+
 func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 
 	bucketI := request.Context().Value(discordgo.CtxKeyRatelimitBucket)
@@ -160,22 +180,27 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 		code = resp.StatusCode
 	}
 
-	since := time.Since(started).Seconds() * 1000
+	since := time.Since(started).Seconds()
 	go func() {
-		path := request.URL.Path
+		path := "unknown"
 		if rlBucket != nil {
-			path = rlBucket.Key
+			// path = rlBucket.Key
+			path = strings.Replace(rlBucket.Key, "https://discordapp.com/api/v", "", 1)
 		}
 
 		path = numberRemover.Replace(path)
 
-		if Statsd != nil {
-			Statsd.Incr("discord.num_requests", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(code), "path:" + request.Method + "-" + path}, 1)
-			Statsd.Gauge("discord.http_latency", since, nil, 1)
-			if code == 429 {
-				Statsd.Incr("discord.requests.429", []string{"method:" + request.Method, "path:" + request.Method + "-" + path}, 1)
-			}
-		}
+		metricsHTTPLatency.Observe(since)
+		// metricsNumRequests.With(prometheus.Labels{"path": path})
+		metricsNumRequestsResponseCode.With(prometheus.Labels{"response_code": strconv.Itoa(code)}).Inc()
+
+		// if Statsd != nil {
+		// 	Statsd.Incr("discord.num_requests", []string{"method:" + request.Method, "resp_code:" + strconv.Itoa(code), "path:" + request.Method + "-" + path}, 1)
+		// 	Statsd.Gauge("discord.http_latency", since, nil, 1)
+		// 	if code == 429 {
+		// 		Statsd.Incr("discord.requests.429", []string{"method:" + request.Method, "path:" + request.Method + "-" + path}, 1)
+		// 	}
+		// }
 
 		if since > 5000 {
 			logrus.WithField("path", request.URL.Path).WithField("ms", since).WithField("method", request.Method).Warn("Request took longer than 5 seconds to complete!")

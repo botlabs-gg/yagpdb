@@ -37,7 +37,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(ModerationCommands...)
+	commands.AddRootCommands(p, ModerationCommands...)
 }
 
 func (p *Plugin) BotInit() {

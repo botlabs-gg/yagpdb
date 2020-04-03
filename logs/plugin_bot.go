@@ -26,7 +26,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdMigrate)
+	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdMigrate)
 }
 
 func (p *Plugin) BotInit() {
@@ -86,7 +86,7 @@ var cmdWhois = &commands.YAGCommand{
 		if memberCPY != nil {
 			member = memberCPY
 		}
-		
+
 		if parsed.Args[0].Value != nil {
 			member = parsed.Args[0].Value.(*dstate.MemberState)
 		}
@@ -116,7 +116,7 @@ var cmdWhois = &commands.YAGCommand{
 		if createdDurStr == "" {
 			createdDurStr = "Less than an hour ago"
 		}
-		
+
 		var memberStatus string
 		state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
 		if !member.PresenceSet || member.PresenceGame == nil {
@@ -128,7 +128,7 @@ var cmdWhois = &commands.YAGCommand{
 				memberStatus = fmt.Sprintf("%s: %s", state[member.PresenceGame.Type], member.PresenceGame.Name)
 			}
 		}
-		
+
 		embed := &discordgo.MessageEmbed{
 			Title: fmt.Sprintf("%s#%04d%s", member.Username, member.Discriminator, nick),
 			Fields: []*discordgo.MessageEmbedField{

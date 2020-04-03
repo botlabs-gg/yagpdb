@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const EventLoggerPeriodDuration = time.Second * 10
@@ -82,8 +83,19 @@ func (e *eventLogger) GetStats() (total [][]int64, perPeriod [][]int64) {
 	return
 }
 
+var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_discord_events_shards_total",
+	Help: "The total number of processed events, with a shard label",
+}, []string{"shard"})
+
+var metricsHandledEventsHandledTypes = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_discord_events_types_total",
+	Help: "The total number of processed events, with a type label",
+}, []string{"type"})
+
 func (e *eventLogger) flushStats() {
 	shardTotals := make([]int64, len(e.totalStats))
+	typeTotals := make([]int64, len(eventsystem.AllEvents))
 
 	e.Lock()
 	for i := 0; i < len(e.totalStats); i++ {
@@ -93,6 +105,7 @@ func (e *eventLogger) flushStats() {
 			e.lastPeriod[i][j] = currentVal
 
 			shardTotals[i] += e.perPeriod[i][j]
+			typeTotals[j] += e.perPeriod[i][j]
 			// totalPerPeriod += e.perPeriod[i][j]
 		}
 	}
@@ -101,8 +114,18 @@ func (e *eventLogger) flushStats() {
 	pShards := ReadyTracker.GetProcessShards()
 
 	for _, shard := range pShards {
-		common.Statsd.Count("discord.processed.events", shardTotals[shard], []string{"shard:" + strconv.Itoa(shard)}, EventLoggerPeriodDuration.Seconds())
+		metricsHandledEventsHandledShards.With(prometheus.Labels{"shard": strconv.Itoa(shard)}).Add(float64(shardTotals[shard]))
+		// common.Statsd.Count("discord.processed.events", shardTotals[shard], []string{"shard:" + strconv.Itoa(shard)}, EventLoggerPeriodDuration.Seconds())
 	}
+
+	for typ, count := range typeTotals {
+		if count < 1 {
+			continue
+		}
+
+		metricsHandledEventsHandledTypes.With(prometheus.Labels{"type": eventsystem.Event(typ).String()}).Add(float64(count))
+	}
+
 }
 
 func (e *eventLogger) handleEvent(evt *eventsystem.EventData) {

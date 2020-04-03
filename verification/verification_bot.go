@@ -13,6 +13,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -75,6 +76,8 @@ func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
 	if !conf.Enabled {
 		return
 	}
+
+	go analytics.RecordActiveUnit(m.GuildID, p, "process_started")
 
 	go p.startVerificationProcess(conf, m.GuildID, m.User)
 }

@@ -12,10 +12,13 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/go-reddit"
+	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/reddit/models"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/oauth2"
@@ -183,10 +186,10 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 
 		mqueue.QueueMessage(qm)
 
-		if common.Statsd != nil {
-			go common.Statsd.Count("yagpdb.reddit.matches", 1, []string{"subreddit:" + post.Subreddit, "guild:" + strconv.FormatInt(item.GuildID, 10)}, 1)
-		}
+		feeds.MetricPostedMessages.With(prometheus.Labels{"source": "reddit"}).Inc()
+		go analytics.RecordActiveUnit(item.GuildID, &Plugin{}, "posted_reddit_message")
 	}
+
 	return nil
 }
 
