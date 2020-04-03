@@ -543,6 +543,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			if page < 1 {
 				page = 1
 			}
+			if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
+					return PaginateWarnings(parsed)(nil, page)
+			}
 			_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, page, 0, PaginateWarnings(parsed))
 			return nil, err
 		},
