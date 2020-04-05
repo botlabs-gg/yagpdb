@@ -277,6 +277,8 @@ var (
 	})
 )
 
+var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Gateway connection logging channel", true)
+
 func setupState() {
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
@@ -286,7 +288,11 @@ func setupState() {
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
 	State.CacheExpirey = time.Minute * 30
-	// State.RemoveOfflineMembers = true
+
+	if confStateRemoveOfflineMembers.GetBool() {
+		State.RemoveOfflineMembers = true
+	}
+
 	go State.RunGCWorker()
 
 	eventsystem.DiscordState = State
