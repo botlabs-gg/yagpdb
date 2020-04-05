@@ -6,7 +6,6 @@ require (
 	emperror.dev/errors v0.4.3
 	github.com/AYLIEN/aylien_textapi_go v0.6.0
 	github.com/DATA-DOG/go-sqlmock v1.3.3 // indirect
-	github.com/DataDog/datadog-go v2.2.0+incompatible
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
