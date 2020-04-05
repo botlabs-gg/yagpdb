@@ -346,7 +346,7 @@ func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle st
 
 	parseMentions := []discordgo.AllowedMentionType{}
 	if mentionEveryone {
-		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTyeEveryone}
+		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
 	}
 
 	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")

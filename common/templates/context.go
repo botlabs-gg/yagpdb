@@ -330,7 +330,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 func (c *Context) MessageSend(content string) *discordgo.MessageSend {
 	parse := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 	if c.CurrentFrame.MentionEveryone || c.CurrentFrame.MentionHere {
-		parse = append(parse, discordgo.AllowedMentionTyeEveryone)
+		parse = append(parse, discordgo.AllowedMentionTypeEveryone)
 	}
 
 	return &discordgo.MessageSend{
