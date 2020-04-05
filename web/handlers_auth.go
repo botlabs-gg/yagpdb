@@ -52,6 +52,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
+	url += "&prompt=none"
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -173,8 +174,8 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 
 	b64 := base64.URLEncoding.EncodeToString(dataRaw)
 
-	// Either the cookie expires in 7 days, or however long the validity of the token is if that is smaller than 7 days
-	cookieExpirey := time.Hour * 24 * 7
+	// Either the cookie expires in 30 days, or however long the validity of the token is if that is smaller than 7 days
+	cookieExpirey := time.Hour * 24 * 30
 	expiresFromNow := time.Until(token.Expiry)
 	if expiresFromNow < time.Hour*24*7 {
 		cookieExpirey = expiresFromNow
