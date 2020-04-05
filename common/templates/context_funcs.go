@@ -190,7 +190,11 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 	if err != nil {
 		return "", err
 	}
-	return m.ID, err
+
+	if m != nil {
+		return m.ID, err
+	}
+	return "", err
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
@@ -223,6 +227,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			msgSend.Embed = typedMsg
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
+			msgSend.AllowedMentions = discordgo.AllowedMentions{
+				Parse: parseMentions,
+			}
 		default:
 			msgSend.Content = fmt.Sprint(msg)
 		}
