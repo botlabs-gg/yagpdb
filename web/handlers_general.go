@@ -16,12 +16,12 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/models"
 	"github.com/jonas747/yagpdb/common/patreon"
 	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
 	"goji.io/pat"
 )
@@ -140,7 +140,7 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	_, tmpl := GetCreateTemplateData(r.Context())
 
 	var joinedServers int
-	common.RedisPool.Do(retryableredis.Cmd(&joinedServers, "SCARD", "connected_guilds"))
+	common.RedisPool.Do(radix.Cmd(&joinedServers, "SCARD", "connected_guilds"))
 
 	tmpl["JoinedServers"] = joinedServers
 	tmpl["DemoServerID"] = confDemoServerID.GetString()

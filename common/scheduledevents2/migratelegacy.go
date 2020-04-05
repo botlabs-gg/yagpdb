@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +29,7 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 	skipScore := 0
 	for {
 		var result []string
-		err := common.RedisPool.Do(retryableredis.FlatCmd(&result, "ZREVRANGE", "scheduled_events", skipScore, skipScore, "WITHSCORES"))
+		err := common.RedisPool.Do(radix.FlatCmd(&result, "ZREVRANGE", "scheduled_events", skipScore, skipScore, "WITHSCORES"))
 		if err != nil {
 			logrus.WithError(err).Error("[scheduledevents2] failed migrating scheduledevents")
 			break
@@ -67,7 +67,7 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 		}
 
 		// remove it
-		common.RedisPool.Do(retryableredis.Cmd(nil, "ZREM", "scheduled_events", fullEvent))
+		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events", fullEvent))
 		logrus.Info("[scheduledevents2] successfully migrated ", fullEvent)
 		numSuccess++
 	}

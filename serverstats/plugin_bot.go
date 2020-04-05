@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -17,10 +16,11 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/serverstats/messagestatscollector"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix/v3"
 )
 
 func MarkGuildAsToBeChecked(guildID int64) {
-	common.RedisPool.Do(retryableredis.FlatCmd(nil, "SADD", "serverstats_active_guilds", guildID))
+	common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "serverstats_active_guilds", guildID))
 }
 
 var (

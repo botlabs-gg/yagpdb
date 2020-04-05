@@ -10,7 +10,6 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -20,6 +19,7 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	scheduledEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/premium"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -59,7 +59,7 @@ var roleCommands = []*commands.YAGCommand{
 		Description: "Debug debug debug autorole assignment",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
-			err := common.RedisPool.Do(retryableredis.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
+			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
 			return fmt.Sprintf("Processing %d users.", processing), err
 		},
 	},
@@ -236,7 +236,7 @@ func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
 		processingLock.Unlock()
 
 		if setProcessingRedis {
-			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", KeyProcessing(gs.ID)))
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyProcessing(gs.ID)))
 		}
 	}()
 
@@ -265,7 +265,7 @@ OUTER:
 
 	if len(membersToGiveRole) > 10 {
 		setProcessingRedis = true
-		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)))
+		common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)))
 	}
 
 	cntSinceLastRedisUpdate := 0
@@ -296,7 +296,7 @@ OUTER:
 			logger.WithError(err).WithField("guild", gs.ID).Error("Failed adding autorole role")
 		} else {
 			if setProcessingRedis && cntSinceLastRedisUpdate > 10 {
-				common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
+				common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
 				cntSinceLastRedisUpdate = 0
 			}
 		}
@@ -378,7 +378,7 @@ func RedisKeyGuildChunkProecssing(gID int64) string {
 
 func handleGuildChunk(evt *eventsystem.EventData) {
 	chunk := evt.GuildMembersChunk()
-	err := common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
+	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
 	if err != nil {
 		logger.WithError(err).Error("failed marking autorole chunk processing")
 	}
@@ -457,7 +457,7 @@ OUTER:
 		if time.Since(lastTimeUpdatedBlockingKey) > time.Second*10 {
 			lastTimeUpdatedBlockingKey = time.Now()
 
-			err := common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(guildID), "100", "1"))
+			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(guildID), "100", "1"))
 			if err != nil {
 				logger.WithError(err).Error("failed marking autorole chunk processing")
 			}
@@ -467,7 +467,7 @@ OUTER:
 
 func WorkingOnFullScan(guildID int64) bool {
 	var b bool
-	err := common.RedisPool.Do(retryableredis.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
+	err := common.RedisPool.Do(radix.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed checking WorkingOnFullScan")
 		return false

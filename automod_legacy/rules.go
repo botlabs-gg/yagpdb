@@ -9,9 +9,9 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/safebrowsing"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
@@ -70,12 +70,12 @@ func (r BaseRule) IgnoreChannelsParsed() []int64 {
 
 func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 	violations := 0
-	err = common.RedisPool.Do(retryableredis.Cmd(&violations, "INCR", key))
+	err = common.RedisPool.Do(radix.Cmd(&violations, "INCR", key))
 	if err != nil {
 		return
 	}
 
-	common.RedisPool.Do(retryableredis.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
+	common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
 
 	mute := r.MuteAfter > 0 && violations >= r.MuteAfter
 	kick := r.KickAfter > 0 && violations >= r.KickAfter

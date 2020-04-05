@@ -248,8 +248,6 @@ github.com/jonas747/jdshardmanager v1.0.1 h1:cO2Ivj5pReBCQc2iPaPIqdAr413Yq0Rj0O5
 github.com/jonas747/jdshardmanager v1.0.1/go.mod h1:iSw3N1gzbW3pvRmufNy+rNIo6zRgVbKNv/R7Tw6rQ5U=
 github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 h1:Kyv+zTfWIGRNaz/4+lS+CxvuKVZSKFz/6G8E3BKKBRs=
 github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757/go.mod h1:cZnNmdLiLpihzgIVqiaQppi9Ts3D4qF/M45//yW35nI=
-github.com/jonas747/retryableredis v1.0.2 h1:K6JxEqW4JrZUQqlRjp6+l9urQD0Hu++AvlqOiW3GEMA=
-github.com/jonas747/retryableredis v1.0.2/go.mod h1:2cmsM+Ipi0IDpdq3lHPmgedpfHXwMSA14V7+uFb4zeU=
 github.com/jonas747/template v1.1.2 h1:eCAU81MpcC0gij9NitXt+ECCf436OxklvJA+CHWjqxA=
 github.com/jonas747/template v1.1.2/go.mod h1:gAPqCURcbB4rsYIzAsvcZyyflNZHNG6FQcUZBtLUzXg=
 github.com/json-iterator/go v1.1.6 h1:MrUvLMLTMxbqFJ9kzlvat/rYZqZnW3u4wkLzWTaFwKs=

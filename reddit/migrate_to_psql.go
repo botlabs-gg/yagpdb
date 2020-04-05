@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/mediocregopher/radix/v3"
@@ -90,7 +89,7 @@ func migrateGuildConfig(guildID int64) error {
 		return errors.WrapIff(err, "[%d].commit", guildID)
 	}
 
-	err = common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", key, "backup_"+key))
+	err = common.RedisPool.Do(radix.Cmd(nil, "RENAME", key, "backup_"+key))
 	if err != nil {
 		return errors.WrapIff(err, "[%d].rename", guildID)
 	}
@@ -124,8 +123,8 @@ func (item *LegacySubredditWatchItem) Set() error {
 	guild := item.Guild
 
 	err = common.RedisPool.Do(radix.Pipeline(
-		retryableredis.FlatCmd(nil, "HSET", "guild_subreddit_watch:"+guild, item.ID, serialized),
-		retryableredis.FlatCmd(nil, "HSET", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID), serialized),
+		radix.FlatCmd(nil, "HSET", "guild_subreddit_watch:"+guild, item.ID, serialized),
+		radix.FlatCmd(nil, "HSET", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID), serialized),
 	))
 
 	return err
@@ -135,15 +134,15 @@ func (item *LegacySubredditWatchItem) Remove() error {
 	guild := item.Guild
 
 	err := common.RedisPool.Do(radix.Pipeline(
-		retryableredis.FlatCmd(nil, "HDEL", "guild_subreddit_watch:"+guild, item.ID),
-		retryableredis.FlatCmd(nil, "HDEL", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID)),
+		radix.FlatCmd(nil, "HDEL", "guild_subreddit_watch:"+guild, item.ID),
+		radix.FlatCmd(nil, "HDEL", "global_subreddit_watch:"+strings.ToLower(item.Sub), fmt.Sprintf("%s:%d", guild, item.ID)),
 	))
 	return err
 }
 
 func GetLegacyConfig(key string) ([]*LegacySubredditWatchItem, error) {
 	var rawItems map[string]string
-	err := common.RedisPool.Do(retryableredis.Cmd(&rawItems, "HGETALL", key))
+	err := common.RedisPool.Do(radix.Cmd(&rawItems, "HGETALL", key))
 	if err != nil {
 		return nil, err
 	}

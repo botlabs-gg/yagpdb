@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
 )
@@ -74,7 +73,7 @@ func Publish(evt string, target int64, data interface{}) error {
 	}
 
 	value := fmt.Sprintf("%d,%s,%s", target, evt, dataStr)
-	return common.RedisPool.Do(retryableredis.Cmd(nil, "PUBLISH", "events", value))
+	return common.RedisPool.Do(radix.Cmd(nil, "PUBLISH", "events", value))
 }
 
 func PollEvents() {

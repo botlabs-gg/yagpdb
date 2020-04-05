@@ -1,7 +1,6 @@
 package basicredispool
 
 import (
-	"github.com/jonas747/retryableredis"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -10,14 +9,14 @@ type Pool struct {
 	size int
 }
 
-func NewPool(size int, conf *retryableredis.DialConfig) (*Pool, error) {
+func NewPool(size int, addr string) (*Pool, error) {
 	p := &Pool{
 		pool: make(chan radix.Conn, size),
 		size: size,
 	}
 
 	for i := 0; i < size; i++ {
-		c, err := retryableredis.Dial(conf)
+		c, err := radix.Dial("tcp", addr)
 		if err != nil {
 			return nil, err
 		}

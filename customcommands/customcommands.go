@@ -12,12 +12,12 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/ccache"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
 )
 
@@ -291,7 +291,7 @@ func (cc *CustomCommand) Migrate() *CustomCommand {
 func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 	var hashMap map[string]string
 
-	err := common.RedisPool.Do(retryableredis.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
+	err := common.RedisPool.Do(radix.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
 	if err != nil {
 		return nil, 0, err
 	}

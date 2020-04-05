@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/models"
+	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
 
@@ -48,7 +48,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	redir := r.FormValue("goto")
 	if redir != "" && strings.HasPrefix(redir, "/") {
-		common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
+		common.RedisPool.Do(radix.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
@@ -89,11 +89,11 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, sessionCookie)
 
 	var redirUrl string
-	err = common.RedisPool.Do(retryableredis.Cmd(&redirUrl, "GET", "csrf_redir:"+state))
+	err = common.RedisPool.Do(radix.Cmd(&redirUrl, "GET", "csrf_redir:"+state))
 	if err != nil {
 		redirUrl = "/manage"
 	} else {
-		common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", "csrf_redir:"+state))
+		common.RedisPool.Do(radix.Cmd(nil, "DEL", "csrf_redir:"+state))
 	}
 
 	http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
@@ -118,8 +118,8 @@ func CreateCSRFToken() (string, error) {
 	str := RandBase64(32)
 
 	err := common.MultipleCmds(
-		retryableredis.Cmd(nil, "LPUSH", "csrf", str),
-		retryableredis.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
+		radix.Cmd(nil, "LPUSH", "csrf", str),
+		radix.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
 	)
 
 	return str, err
@@ -128,7 +128,7 @@ func CreateCSRFToken() (string, error) {
 // CheckCSRFToken returns true if it matched and false if not, an error if something bad happened
 func CheckCSRFToken(token string) (bool, error) {
 	var num int
-	err := common.RedisPool.Do(retryableredis.Cmd(&num, "LREM", "csrf", "1", token))
+	err := common.RedisPool.Do(radix.Cmd(&num, "LREM", "csrf", "1", token))
 	if err != nil {
 		return false, err
 	}

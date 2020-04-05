@@ -12,9 +12,9 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/dutil"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -133,8 +133,8 @@ func SetStatus(streaming, status string) {
 		status = "v" + common.VERSION + " :)"
 	}
 
-	err1 := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "status_streaming", streaming))
-	err2 := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "status_name", status))
+	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming", streaming))
+	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", status))
 	if err1 != nil {
 		logger.WithError(err1).Error("failed setting bot status in redis")
 	}
@@ -251,8 +251,8 @@ func NodeID() string {
 func RefreshStatus(session *discordgo.Session) {
 	var streamingURL string
 	var status string
-	err1 := common.RedisPool.Do(retryableredis.Cmd(&streamingURL, "GET", "status_streaming"))
-	err2 := common.RedisPool.Do(retryableredis.Cmd(&status, "GET", "status_name"))
+	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
+	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
 	if err1 != nil {
 		logger.WithError(err1).Error("failed retrieiving bot streaming status")
 	}

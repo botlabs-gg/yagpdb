@@ -6,9 +6,9 @@ package commands
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -84,6 +84,6 @@ func InitCommands() {
 
 func GetCommandPrefix(guild int64) (string, error) {
 	var prefix string
-	err := common.RedisPool.Do(retryableredis.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
+	err := common.RedisPool.Do(radix.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
 	return prefix, err
 }

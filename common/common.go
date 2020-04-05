@@ -18,8 +18,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common/basicredispool"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
@@ -103,7 +103,7 @@ func Init() error {
 		User: BotUser,
 	}
 
-	err = RedisPool.Do(retryableredis.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
+	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
 		panic(err)
 	}
@@ -204,22 +204,7 @@ func connectRedis() (err error) {
 		addr = "localhost:6379"
 	}
 
-	RedisPool, err = basicredispool.NewPool(maxConns, &retryableredis.DialConfig{
-		Network: "tcp",
-		Addr:    addr,
-		OnReconnect: func(err error) {
-			if err == nil {
-				return
-			}
-
-			logrus.WithError(err).Warn("[core] redis reconnect triggered")
-			metricsRedisReconnects.Inc()
-		},
-		OnRetry: func(err error) {
-			logrus.WithError(err).Warn("[core] redis retrying failed action")
-			metricsRedisRetries.Inc()
-		},
-	})
+	RedisPool, err = basicredispool.NewPool(maxConns, addr)
 
 	return
 }

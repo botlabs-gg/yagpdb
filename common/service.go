@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-
-	"github.com/jonas747/retryableredis"
+	"github.com/mediocregopher/radix/v3"
 )
 
 const ServicesRedisKey = "yag_services"
@@ -133,14 +132,14 @@ func (s *serviceTracker) update() {
 	}
 
 	if !bytes.Equal(serialized, s.lastUpdate) {
-		err = RedisPool.Do(retryableredis.FlatCmd(nil, "ZREM", ServicesRedisKey, s.lastUpdate))
+		err = RedisPool.Do(radix.FlatCmd(nil, "ZREM", ServicesRedisKey, s.lastUpdate))
 		if err != nil {
 			logger.WithError(err).Error("failed removing service host")
 			return
 		}
 	}
 
-	err = RedisPool.Do(retryableredis.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
+	err = RedisPool.Do(radix.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
 	if err != nil {
 		logger.WithError(err).Error("failed updating service host")
 		return
@@ -148,7 +147,7 @@ func (s *serviceTracker) update() {
 
 	s.lastUpdate = serialized
 
-	err = RedisPool.Do(retryableredis.FlatCmd(nil, "ZREMRANGEBYSCORE", ServicesRedisKey, 0, time.Now().Unix()-30))
+	err = RedisPool.Do(radix.FlatCmd(nil, "ZREMRANGEBYSCORE", ServicesRedisKey, 0, time.Now().Unix()-30))
 	if err != nil {
 		logger.WithError(err).Error("feailed clearing old service hosts")
 		return
@@ -170,7 +169,7 @@ func (sp *servicePoller) getActiveServiceHosts() ([]*ServiceHost, error) {
 
 	var hosts []string
 
-	err := RedisPool.Do(retryableredis.FlatCmd(&hosts, "ZRANGE", ServicesRedisKey, 0, -1))
+	err := RedisPool.Do(radix.FlatCmd(&hosts, "ZRANGE", ServicesRedisKey, 0, -1))
 	if err != nil {
 		return nil, errors.WithStackIf(err)
 	}
