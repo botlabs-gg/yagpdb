@@ -608,7 +608,10 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 	if lockHandle == -1 {
 		f.Warn("Exceeded max lock attempts for cc")
-		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+		if cmd.ShowErrors {
+			common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+		}
+		updatePostCommandRan(cmd, errors.New("Gave up trying to e xecute, already an existing instance executing"))
 		return nil
 	}
 
