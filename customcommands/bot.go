@@ -341,7 +341,12 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	ms, err := bot.GetMember(reaction.GuildID, reaction.UserID)
+	cState := evt.CS()
+	if cState == nil {
+		return
+	}
+
+	ms, triggeredCmds, err := findReactionTriggerCustomCommands(evt.Context(), cState, reaction.UserID, reaction, added)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
 			// example scenario: removing reactions of a user that's not on the server
@@ -349,12 +354,11 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 			return
 		}
 
-		logger.WithError(err).WithField("guild", reaction.GuildID).Error("failed fetching guild member")
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed finding reaction ccs")
 		return
 	}
 
-	cState := evt.CS()
-	if cState == nil {
+	if len(triggeredCmds) < 1 {
 		return
 	}
 
@@ -363,16 +367,11 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	triggeredCmds, err := findReactionTriggerCustomCommands(evt.Context(), cState, ms, reaction, added)
-
 	metricsExecutedCommands.With(prometheus.Labels{"trigger": "reaction"}).Inc()
-
-	if len(triggeredCmds) < 1 {
-		return
-	}
 
 	rMessage, err := common.BotSession.ChannelMessage(cState.ID, reaction.MessageID)
 	if err != nil {
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed finding reaction ccs")
 		return
 	}
 	rMessage.GuildID = cState.Guild.ID
@@ -407,11 +406,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	member, err := bot.GetMember(cs.Guild.ID, mc.Author.ID)
-	if err != nil {
-		return
-	}
-
+	member := dstate.MSFromDGoMember(evt.GS, mc.Member)
 	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, mc)
 	if err != nil {
 		logger.WithError(err).Error("Error mathching custom commands")
@@ -479,15 +474,15 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 	return matched, nil
 }
 
-func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, reaction *discordgo.MessageReaction, add bool) (matches []*TriggeredCC, err error) {
+func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, userID int64, reaction *discordgo.MessageReaction, add bool) (ms *dstate.MemberState, matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, ctx)
 	if err != nil {
-		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
+		return nil, nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
 	}
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, reaction.ChannelID) || !CmdRunsForUser(cmd, ms) {
+		if !CmdRunsInChannel(cmd, reaction.ChannelID) {
 			continue
 		}
 
@@ -499,18 +494,38 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 		}
 	}
 
-	sortTriggeredCCs(matched)
+	if len(matched) < 1 {
+		// no matches
+		return nil, matched, nil
+	}
+
+	ms, err = bot.GetMember(cs.Guild.ID, userID)
+	if err != nil {
+		return nil, nil, errors.WithStackIf(err)
+	}
+
+	// filter by roles
+	filtered := make([]*TriggeredCC, 0, len(matched))
+	for _, v := range matched {
+		if !CmdRunsForUser(v.CC, ms) {
+			continue
+		}
+
+		filtered = append(filtered, v)
+	}
+
+	sortTriggeredCCs(filtered)
 
 	limit := CCMessageExecLimitNormal
 	if isPremium, _ := premium.IsGuildPremiumCached(cs.Guild.ID); isPremium {
 		limit = CCMessageExecLimitPremium
 	}
 
-	if len(matched) > limit {
-		matched = matched[:limit]
+	if len(filtered) > limit {
+		filtered = filtered[:limit]
 	}
 
-	return matched, nil
+	return ms, filtered, nil
 }
 
 func sortTriggeredCCs(ccs []*TriggeredCC) {
