@@ -192,8 +192,16 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			// nothing in cache...
 			user, err = session.UserMe()
 			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Error("Failed getting user info from discord")
-				HandleLogout(w, r)
+				if !common.IsDiscordErr(err, discordgo.ErrCodeUnauthorized) {
+					CtxLogger(r.Context()).WithError(err).Error("Failed getting user info from discord")
+				}
+
+				if r.URL.Path == "/logout" {
+					inner.ServeHTTP(w, r)
+					return
+				}
+
+				http.Redirect(w, r, "/logout", http.StatusTemporaryRedirect)
 				return
 			}
 
