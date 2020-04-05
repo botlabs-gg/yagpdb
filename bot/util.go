@@ -112,6 +112,25 @@ func AdminOrPermMS(ms *dstate.MemberState, channelID int64, needed int) (bool, e
 	return false, nil
 }
 
+// AdminOrPermMember is the same as AdminOrPerm but with a provided member object
+func AdminOrPermMember(gs *dstate.GuildState, member *discordgo.Member, channelID int64, needed int) (bool, error) {
+	ms := dstate.MSFromDGoMember(gs, member)
+	perms, err := ms.Guild.MemberPermissionsMS(true, channelID, ms)
+	if err != nil {
+		return false, err
+	}
+
+	if perms&needed != 0 {
+		return true, nil
+	}
+
+	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // GuildName is a convenience function for getting the name of a guild
 func GuildName(gID int64) (name string) {
 	g := State.Guild(true, gID)
