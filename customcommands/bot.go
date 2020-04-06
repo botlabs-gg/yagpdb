@@ -346,6 +346,11 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
+	if !bot.BotProbablyHasPermissionGS(true, cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
+		// don't run in channel we don't have perms in
+		return
+	}
+
 	ms, triggeredCmds, err := findReactionTriggerCustomCommands(evt.Context(), cState, reaction.UserID, reaction, added)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
@@ -359,11 +364,6 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 	}
 
 	if len(triggeredCmds) < 1 {
-		return
-	}
-
-	if !bot.BotProbablyHasPermissionGS(true, cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
-		// don't run in channel we don't have perms in
 		return
 	}
 
