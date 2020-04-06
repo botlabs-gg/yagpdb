@@ -37,31 +37,14 @@ func (p *ScheduledEvents) RunBackgroundWorker() {
 			}
 		}
 	}
-
-	t := time.NewTicker(time.Hour)
-	for {
-		n, err := models.ScheduledEvents(qm.Where("processed=true")).DeleteAll(context.Background(), common.PQ)
-		if err != nil {
-			logger.WithError(err).Error("error running cleanup")
-		} else {
-			logger.Println("cleaned up ", n, " entries")
-		}
-
-		<-t.C
-	}
 }
 
 func runCleanup() {
-	t := time.NewTicker(time.Hour)
-	for {
-		n, err := models.ScheduledEvents(qm.Where("processed=true")).DeleteAll(context.Background(), common.PQ)
-		if err != nil {
-			logger.WithError(err).Error("error running cleanup")
-		} else {
-			logger.Println("cleaned up ", n, " entries")
-		}
-
-		<-t.C
+	n, err := models.ScheduledEvents(qm.Where("processed=true")).DeleteAll(context.Background(), common.PQ)
+	if err != nil {
+		logger.WithError(err).Error("error running cleanup")
+	} else {
+		logger.Println("cleaned up ", n, " entries")
 	}
 }
 
