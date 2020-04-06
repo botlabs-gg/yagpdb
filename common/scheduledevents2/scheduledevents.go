@@ -273,6 +273,11 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		return
 	}
 
+	if item.Processed {
+		se.markDoneID(id, guildID, nil)
+		return
+	}
+
 	// check if this event was changed after it was flushed
 	delta := item.TriggersAt.Sub(time.Now())
 	if delta > 5 {
