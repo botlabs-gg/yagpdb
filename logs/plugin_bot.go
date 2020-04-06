@@ -9,6 +9,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
+	"github.com/jonas747/yagpdb/common/config"
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -639,6 +640,8 @@ type UserGuildPair struct {
 	User    *discordgo.User
 }
 
+var confEnableUsernameTracking = config.RegisterOption("yagpdb.enable_username_tracking", "Enable username tracking", true)
+
 // Queue up all the events and process them one by one, because of limited connections
 func EvtProcesser() {
 
@@ -647,9 +650,15 @@ func EvtProcesser() {
 
 	ticker := time.NewTicker(time.Second * 10)
 
+	enabled := confEnableUsernameTracking.GetBool()
+
 	for {
 		select {
 		case e := <-evtChan:
+			if !enabled {
+				continue
+			}
+
 			switch t := e.(type) {
 			case *discordgo.PresenceUpdate:
 				if t.User.Username == "" {
@@ -665,6 +674,10 @@ func EvtProcesser() {
 				queuedMembers = append(queuedMembers, t)
 			}
 		case <-ticker.C:
+			if !enabled {
+				continue
+			}
+
 			started := time.Now()
 			err := ProcessBatch(queuedUsers, queuedMembers)
 			logger.Debugf("Updated %d members and %d users in %s", len(queuedMembers), len(queuedUsers), time.Since(started).String())
