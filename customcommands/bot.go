@@ -681,12 +681,12 @@ func updatePostCommandRan(cmd *models.CustomCommand, runErr error) {
 		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command executed query")
 	}
 
-	if runErr != nil {
-		err := pubsub.Publish("custom_commands_clear_cache", cmd.GuildID, nil)
-		if err != nil {
-			logger.WithError(err).Error("failed creating cache eviction pubsub event in updatePostCommandRan")
-		}
-	}
+	// if runErr != nil {
+	// 	err := pubsub.Publish("custom_commands_clear_cache", cmd.GuildID, nil)
+	// 	if err != nil {
+	// 		logger.WithError(err).Error("failed creating cache eviction pubsub event in updatePostCommandRan")
+	// 	}
+	// }
 }
 
 // CheckMatch returns true if the given cmd matches, as well as the arguments
