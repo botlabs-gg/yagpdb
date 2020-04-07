@@ -86,6 +86,29 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	return SDict(dict), nil
 }
 
+func StructToSdict (value interface{}) (SDict, error) {
+
+	val, isNil := indirect(reflect.ValueOf(value))
+	typeOfS := val.Type()
+	if isNil || value == nil {
+		return nil, errors.New("Expected - struct, got - Nil ")
+	}
+
+	if val.Kind() != reflect.Struct {
+		return nil, errors.New(fmt.Sprintf("Expected - struct, got - %s", val.Type().String()))
+	}
+
+	fields := make(map[string]interface{})
+	for i := 0 ; i < val.NumField() ; i++ {
+		curr := val.Field(i)
+		if curr.CanSet() {
+			fields[typeOfS.Field(i).Name] = curr.Interface()
+		}
+	}
+	return SDict(fields), nil		
+			
+}
+
 func CreateSlice(values ...interface{}) (Slice, error) {
 	slice := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {
