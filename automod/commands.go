@@ -297,7 +297,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ClearViolations",
-		Description:   "Clears Violations of specified user (or global if User ID = 0 or unspecified) optionally filtered by Name, Min/Max age and other conditions. By default, more recent violations are preferentially cleared. Maximum of 5000 can be cleared at a time.",
+		Description:   "Clears Violations of specified user (or global if User ID = 0 or unspecified) optionally filtered by Name, Min/Max age and other conditions. By default, more recent violations are preferentially cleared. Maximum of 2000 can be cleared at a time.",
 		Aliases:       []string{"ClearV", "ClrViolations", "ClrV"},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "User", Default: 0, Type: dcmd.UserID},
@@ -306,13 +306,13 @@ func (p *Plugin) AddCommands() {
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "minage", Name: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "num", Name: "Max Violations Cleared", Default: 5000, Type: &dcmd.IntArg{Min:0, Max: 5000}},
+			&dcmd.ArgDef{Switch: "num", Name: "Max Violations Cleared", Default: 2000, Type: &dcmd.IntArg{Min:0, Max: 2000}},
 			&dcmd.ArgDef{Switch: "old", Name: "Preferentially Clear Older Violations"},
 			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Default: 0, Type: dcmd.Int},		
 		},
 		ArgumentCombos: [][]int{[]int{0, 1}, []int{0}, []int{1}, []int{}},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
-		GuildScopeCooldown: 2,
+		GuildScopeCooldown: 5,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			UserID := parsed.Args[0].Int64()
 			VName := parsed.Args[1].Str()
@@ -326,7 +326,6 @@ func (p *Plugin) AddCommands() {
 				skip = 0
 			}
 			limit := parsed.Switches["num"].Int()
-
 			if parsed.Switches["old"].Value != nil && parsed.Switches["old"].Value.(bool) {
 				order = "id asc"
 			}
