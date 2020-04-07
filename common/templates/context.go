@@ -61,6 +61,7 @@ var (
 		// misc
 		"dict":               Dictionary,
 		"sdict":              StringKeyDictionary,
+		"structToSdict":      StructToSdict,
 		"cembed":             CreateEmbed,
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
