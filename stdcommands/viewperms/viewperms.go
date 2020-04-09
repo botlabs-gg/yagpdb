@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 )
@@ -14,15 +16,18 @@ var Command = &commands.YAGCommand{
 	Name:        "ViewPerms",
 	Description: "Shows you or the targets permissions in this channel",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "target", Type: dcmd.UserID, Default: int64(0)},
+		&dcmd.ArgDef{Name: "target", Type: &commands.MemberArg{}},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		target := data.Args[0].Int64()
-		if target == 0 {
-			target = data.Msg.Author.ID
+		member := commands.ContextMS(data.Context())
+
+		if data.Args[0].Value != nil {
+			member = data.Args[0].Value.(*dstate.MemberState)
+		} else {
+			member, _ = bot.GetMember(member.Guild.ID, member.ID)
 		}
 
-		perms, err := data.GS.MemberPermissions(true, data.CS.ID, target)
+		perms, err := member.Guild.MemberPermissionsMS(true, data.CS.ID, member)
 		if err != nil {
 			return "Unable to calculate perms (unknown user maybe?)", err
 		}
