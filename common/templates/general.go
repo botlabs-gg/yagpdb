@@ -20,18 +20,18 @@ import (
 // dictionary creates a map[string]interface{} from the given parameters by
 // walking the parameters and treating them as key-value pairs.  The number
 // of parameters must be even.
-func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
-	if len(values)%2 != 0 {
-		return nil, errors.New("invalid dict call")
-	}
+func Dictionary(values ...interface{}) (Dict, error) {
+    if len(values)%2 != 0 {
+        return nil, errors.New("invalid dict call")
+    }
 
-	dict := make(map[interface{}]interface{}, len(values)/2)
-	for i := 0; i < len(values); i += 2 {
-		key := values[i]
-		dict[key] = values[i+1]
-	}
+    dict := make(map[interface{}]interface{}, len(values)/2)
+    for i := 0; i < len(values); i += 2 {
+        key := values[i]
+        dict[key] = values[i+1]
+    }
 
-	return dict, nil
+    return Dict(dict), nil
 }
 
 func StringKeyDictionary(values ...interface{}) (SDict, error) {
