@@ -49,6 +49,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 	config, err := GetConfig(gs.ID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed retrieving streaming config")
+		return
 	}
 
 	if !config.Enabled {
