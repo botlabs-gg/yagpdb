@@ -302,6 +302,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 // HandleMessageCreateUpdateFirst transforms the message events a little to make them easier to deal with
 // Message.Member.User is null from the api, so we assign it to Message.Author
 func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
+	if evt.GS == nil {
+		return
+	}
+
 	if evt.Type == eventsystem.EventMessageCreate {
 		msg := evt.MessageCreate()
 		if !IsNormalUserMessage(msg.Message) {
