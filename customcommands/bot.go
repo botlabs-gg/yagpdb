@@ -304,6 +304,10 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 		return true
 	}
 
+	if evt.Message.Author.Bot {
+		return true
+	}
+
 	if !bot.BotProbablyHasPermissionGS(true, cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
 		return true
 	}
