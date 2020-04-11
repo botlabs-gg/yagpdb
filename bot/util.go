@@ -83,8 +83,10 @@ func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
 		return false, err
 	}
 
-	if perms&needed != 0 {
-		return true, nil
+	if needed != 0 {
+		if perms&needed == needed {
+			return true, nil
+		}
 	}
 
 	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
@@ -101,8 +103,10 @@ func AdminOrPermMS(ms *dstate.MemberState, channelID int64, needed int) (bool, e
 		return false, err
 	}
 
-	if perms&needed != 0 {
-		return true, nil
+	if needed != 0 {
+		if perms&needed == needed {
+			return true, nil
+		}
 	}
 
 	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
@@ -120,8 +124,10 @@ func AdminOrPermMember(gs *dstate.GuildState, member *discordgo.Member, channelI
 		return false, err
 	}
 
-	if perms&needed != 0 {
-		return true, nil
+	if needed != 0 {
+		if perms&needed == needed {
+			return true, nil
+		}
 	}
 
 	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
