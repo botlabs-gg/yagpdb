@@ -18,7 +18,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "EditRole",
-	Aliases:         []string{"erole"},
+	Aliases:         []string{"ERole"},
 	Description:     "Edits a role",
 	LongDescription: "Requires the manage roles permission and the bot and your highest role being above the edited role",
 	RequiredArgs:    1,
@@ -32,11 +32,11 @@ var Command = &commands.YAGCommand{
 				&dcmd.ArgDef{Switch: "hoist", Help: "Role Hoisted - 1 for true 0 for false", Type: &dcmd.IntArg{Min:0, Max:1}},
 
 	},
-	RunFunc:            cmdFuncMentionRole,
+	RunFunc: 	    cmdFuncEditRole,
 	GuildScopeCooldown: 15,
 }
 
-func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
+func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageRoles, data.Msg.Author.ID, data.CS.ID); err != nil {
 		return "Failed checking perms", err
 	} else if !ok {
