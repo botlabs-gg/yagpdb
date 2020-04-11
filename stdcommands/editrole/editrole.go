@@ -30,7 +30,6 @@ var Command = &commands.YAGCommand{
 				&dcmd.ArgDef{Switch: "color", Help: "Role color - Either hex code or name", Type: dcmd.String, Default: ""},
 				&dcmd.ArgDef{Switch: "mention", Help: "Role Mentionable - 1 for true 0 for false", Type: &dcmd.IntArg{Min:0, Max:1}},
 				&dcmd.ArgDef{Switch: "hoist", Help: "Role Hoisted - 1 for true 0 for false", Type: &dcmd.IntArg{Min:0, Max:1}},
-
 	},
 	RunFunc: 	    cmdFuncEditRole,
 	GuildScopeCooldown: 15,
