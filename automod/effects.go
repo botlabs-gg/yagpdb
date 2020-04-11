@@ -208,7 +208,7 @@ func (vio *AddViolationEffect) Name() (name string) {
 }
 
 func (vio *AddViolationEffect) Description() (description string) {
-	return "Adds a violation (use with violation tirggers)"
+	return "Adds a violation (use with violation triggers)"
 }
 
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
