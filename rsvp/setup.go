@@ -132,7 +132,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		return
 	}
 
-	hasPerms, err := bot.AdminOrPermMS(dstate.MSFromDGoMember(gs, m.Member), targetChannel, discordgo.PermissionSendMessages)
+	hasPerms, err := bot.AdminOrPermMS(targetChannel, dstate.MSFromDGoMember(gs, m.Member), discordgo.PermissionSendMessages)
 	if err != nil {
 		s.sendMessage("Failed retrieving your pems, check with bot owner")
 		logger.WithError(err).WithField("guild", gs.ID).Error("failed calculating permissions")
