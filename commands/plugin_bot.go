@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -31,7 +32,86 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
 
 	CommandSystem.State = bot.State
+	dcmd.CustomUsernameSearchFunc = p.customUsernameSearchFunc
 }
+
+func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
+	logger.Info("Searching by username: ", query)
+	logger.Info(string(debug.Stack()))
+	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
+	if err != nil {
+		if err == bot.ErrTimeoutWaitingForMember {
+			return nil, &dcmd.UserNotFound{query}
+		}
+
+		return nil, err
+	}
+
+	lowerIn := strings.ToLower(query)
+
+	partialMatches := make([]*discordgo.Member, 0, 5)
+	fullMatches := make([]*discordgo.Member, 0, 5)
+
+	// filter out the results
+	for _, v := range members {
+		if v == nil {
+			continue
+		}
+
+		if v.User.Username == "" {
+			continue
+		}
+
+		if strings.EqualFold(query, v.User.Username) || strings.EqualFold(query, v.Nick) {
+			fullMatches = append(fullMatches, v)
+			if len(fullMatches) >= 5 {
+				break
+			}
+		} else if len(partialMatches) < 5 {
+			if strings.Contains(strings.ToLower(v.User.Username), lowerIn) {
+				partialMatches = append(partialMatches, v)
+			}
+		}
+	}
+
+	if len(fullMatches) == 1 {
+		return dstate.MSFromDGoMember(gs, fullMatches[0]), nil
+	}
+
+	if len(fullMatches) == 0 && len(partialMatches) == 0 {
+		return nil, &dcmd.UserNotFound{query}
+	}
+
+	// Show some help output
+	out := ""
+
+	if len(fullMatches)+len(partialMatches) < 10 {
+		for _, v := range fullMatches {
+			if out != "" {
+				out += ", "
+			}
+
+			out += "`" + v.User.Username + "`"
+		}
+
+		for _, v := range partialMatches {
+			if out != "" {
+				out += ", "
+			}
+
+			out += "`" + v.User.Username + "`"
+		}
+	} else {
+		return nil, &dcmd.UserNotFound{query}
+	}
+
+	if len(fullMatches) > 1 {
+		return nil, dcmd.NewSimpleUserError("Too many users with the name: (" + out + ") Please re-run the command with a narrower search, mention or ID.")
+	}
+
+	return nil, dcmd.NewSimpleUserError("Did you mean one of these? (" + out + ") Please re-run the command with a narrower search, mention or ID")
+}
+
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	atomic.StoreInt32(shuttingDown, 1)
 
