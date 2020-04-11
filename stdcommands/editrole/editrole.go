@@ -7,6 +7,7 @@ import (
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -36,7 +37,10 @@ var Command = &commands.YAGCommand{
 }
 
 func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
-	if ok, err := bot.AdminOrPerm(discordgo.PermissionManageRoles, data.Msg.Author.ID, data.CS.ID); err != nil {
+	authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
+	cID := data.CS.ID
+
+	if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
 		return "Failed checking perms", err
 	} else if !ok {
 		return "You need manage roles perms to use this command", nil
@@ -49,7 +53,6 @@ func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 		return "No role with the Name or ID`" + roleS + "` found", nil
 	}
 	
-	authorMember := commands.ContextMS(data.Context())
 	data.GS.RLock()
 	if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
 		data.GS.RUnlock()
@@ -58,7 +61,6 @@ func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 	data.GS.RUnlock()
 
 
-	cID := data.CS.ID
 	change := false
 	
 	name := role.Name
