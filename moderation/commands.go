@@ -82,7 +82,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 
 	if !permsMet && neededPerm != 0 {
 		// Fallback to legacy permissions
-		hasPerms, err := bot.AdminOrPermMS(commands.ContextMS(cmdData.Context()), cmdData.CS.ID, neededPerm)
+		hasPerms, err := bot.AdminOrPermMS(cmdData.CS.ID, commands.ContextMS(cmdData.Context()), neededPerm)
 		if err != nil || !hasPerms {
 			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
@@ -544,7 +544,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				page = 1
 			}
 			if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
-					return PaginateWarnings(parsed)(nil, page)
+				return PaginateWarnings(parsed)(nil, page)
 			}
 			_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, page, 0, PaginateWarnings(parsed))
 			return nil, err

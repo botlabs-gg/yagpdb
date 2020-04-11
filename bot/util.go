@@ -68,57 +68,19 @@ var (
 	ErrGuildNotFound = errors.New("Guild not found")
 )
 
-// AdminOrPerm returns the permissions for the userID in the specified channel
-// returns an error if the user or channel is not found
-func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
-	channel := State.Channel(true, channelID)
-	if channel == nil {
-		return false, errors.New("Channel not found")
-	}
-
+// AdminOrPerm is the same as AdminOrPermMS but only required a member ID
+func AdminOrPerm(guildID int64, channelID int64, userID int64, needed int) (bool, error) {
 	// Ensure the member is in state
-	GetMember(channel.Guild.ID, userID)
-	perms, err := channel.Guild.MemberPermissions(true, channelID, userID)
+	ms, err := GetMember(guildID, userID)
 	if err != nil {
 		return false, err
 	}
 
-	if needed != 0 {
-		if perms&needed == needed {
-			return true, nil
-		}
-	}
-
-	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
-		return true, nil
-	}
-
-	return false, nil
+	return AdminOrPermMS(channelID, ms, needed)
 }
 
-// AdminOrPermMS is the same as AdminOrPerm but with a provided member state
-func AdminOrPermMS(ms *dstate.MemberState, channelID int64, needed int) (bool, error) {
-	perms, err := ms.Guild.MemberPermissionsMS(true, channelID, ms)
-	if err != nil {
-		return false, err
-	}
-
-	if needed != 0 {
-		if perms&needed == needed {
-			return true, nil
-		}
-	}
-
-	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-// AdminOrPermMember is the same as AdminOrPerm but with a provided member object
-func AdminOrPermMember(gs *dstate.GuildState, member *discordgo.Member, channelID int64, needed int) (bool, error) {
-	ms := dstate.MSFromDGoMember(gs, member)
+// AdminOrPermMS checks if the provided member has all of the needed permissions or is a admin
+func AdminOrPermMS(channelID int64, ms *dstate.MemberState, needed int) (bool, error) {
 	perms, err := ms.Guild.MemberPermissionsMS(true, channelID, ms)
 	if err != nil {
 		return false, err
