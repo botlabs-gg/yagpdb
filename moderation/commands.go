@@ -157,6 +157,70 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 	},
 	&commands.YAGCommand{
+		CmdCategory:     	commands.CategoryModeration,
+		Name:            	"LockDown",
+		Aliases:		 	[]string{"ld"},
+		Description:     	"Locks the server down",
+		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages.",
+		GuildScopeCooldown: 10,
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
+			cID := data.CS.ID
+
+			if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
+				return "Failed checking perms", err
+			} else if !ok {
+				return "You need manage roles perms to use this command", nil
+			}
+
+			roleS := "@everyone"
+			role := FindRole(data.GS, roleS)
+			perms := role.Permissions
+
+			if (perms >= 2048) {
+				_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, (perms - 2048), role.Mentionable)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return "Server is already locked.", nil
+			}
+			return "Server locked", nil
+		},
+	},
+	&commands.YAGCommand{
+		CmdCategory:     	commands.CategoryModeration,
+		Name:            	"UnLock",
+		Aliases:		 	[]string{"ul"},
+		Description:     	"Unlocks the server",
+		LongDescription: 	"Require the manage roles permission. This will grant the everyone role permission to send messages.",
+		GuildScopeCooldown: 10,
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
+			cID := data.CS.ID
+
+			if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
+				return "Failed checking perms", err
+			} else if !ok {
+				return "You need manage roles perms to use this command", nil
+			}
+
+			roleS := "@everyone"
+			role := FindRole(data.GS, roleS)
+			perms := role.Permissions
+
+			if (2146957311 >= perms) {
+				_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, (perms + 2048), role.Mentionable)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return "This role already have permissions.", nil
+			}
+			return "Server unlocked", nil
+		},
+	},
+	&commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Kick",
