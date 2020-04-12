@@ -162,8 +162,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		Aliases:		 []string{"ld"},
 		Description:     	"Locks the server down",
 		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages.\nYou can choose a specific role to be locked by using its name or ID.",
-		GuildScopeCooldown: 10,
-		RequiredArgs:    0,
+		GuildScopeCooldown: 	10,
+		RequiredArgs:    	0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Role", Help: "Optional role", Type: dcmd.String},
 		},
@@ -217,8 +217,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		Aliases:		 []string{"ul"},
 		Description:     	"Unlocks the server",
 		LongDescription: 	"Require the manage roles permission. This will grant the everyone role permission to send messages.",
-		GuildScopeCooldown: 10,
-		RequiredArgs:    0,
+		GuildScopeCooldown: 	10,
+		RequiredArgs:    	0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Role", Help: "Optional role", Type: dcmd.String},
 		},
