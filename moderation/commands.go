@@ -161,11 +161,14 @@ var ModerationCommands = []*commands.YAGCommand{
 		Name:            	"LockDown",
 		Aliases:		 []string{"ld", "lock"},
 		Description:     	"Locks the server or a specific role down.",
-		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages and add reactions.\nYou can choose a specific role to be locked by using its name or ID.",
+		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages and add reactions.\nYou can choose a specific role to be locked by using its name or ID.\nYou can also use the -onlymsgs to revoke only the permission to send messages and maintain the permission to add reactions.",
 		GuildScopeCooldown: 	10,
-		RequiredArgs:   	0,
+		RequiredArgs:    	0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Role", Help: "Optional role", Type: dcmd.String},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "onlymsgs", Name: "Only Messages"},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
@@ -201,6 +204,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			data.GS.RUnlock()
 
 			totalPerms := discordgo.PermissionSendMessages|discordgo.PermissionAddReactions
+
+			if data.Switches["onlymsgs"].Value != nil && data.Switches["onlymsgs"].Value.(bool) {
+				totalPerms = discordgo.PermissionSendMessages
+			}
+
 			newPerms := role.Permissions &^ totalPerms
 
 			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
