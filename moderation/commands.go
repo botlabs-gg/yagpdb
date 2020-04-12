@@ -174,7 +174,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
 				return "Failed checking perms", err
 			} else if !ok {
-				return "You need manage roles perms to use this command", nil
+				return "Unable to run the command: it's required to have **Manage Roles** permission to use it.", nil
 			}
 
 			out := "Server"
@@ -190,13 +190,13 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if role == nil {
-				return "No role with the Name or ID`" + roleS + "` found", nil
+				return "No role with the Name or ID `" + roleS + "` found.", nil
 			}
 
 			data.GS.RLock()
 			if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
 				data.GS.RUnlock()
-				return "Can't edit roles above you", nil
+				return "You can't lock/unlock roles above you.", nil
 			}
 			data.GS.RUnlock()
 
@@ -208,7 +208,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return fmt.Sprintf("**%s** is now unlocked", out), nil
+			return fmt.Sprintf("🔒 **%s** is now locked!\nRole affected: `%d`", out, role.ID), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -229,7 +229,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
 				return "Failed checking perms", err
 			} else if !ok {
-				return "You need manage roles perms to use this command", nil
+				return "Unable to run the command: it's required to have **Manage Roles** permission to use it.", nil
 			}
 
 			out := "Server"
@@ -245,13 +245,13 @@ var ModerationCommands = []*commands.YAGCommand{
 			role := FindRole(data.GS, roleS)
 
 			if role == nil {
-				return "No role with the Name or ID`" + roleS + "` found", nil
+				return "No role with the Name or ID `" + roleS + "` found.", nil
 			}
 
 			data.GS.RLock()
 			if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
 				data.GS.RUnlock()
-				return "Can't edit roles above you", nil
+				return "You can't lock/unlock roles above you.", nil
 			}
 			data.GS.RUnlock()
 
@@ -263,7 +263,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return fmt.Sprintf("**%s** is now unlocked", out), nil
+			return fmt.Sprintf("🔓 **%s** is now unlocked!\nRole affected: `%d`", out, role.ID), nil
 		},
 	},
 	&commands.YAGCommand{
