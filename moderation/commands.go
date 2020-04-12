@@ -161,8 +161,12 @@ var ModerationCommands = []*commands.YAGCommand{
 		Name:            	"LockDown",
 		Aliases:		 	[]string{"ld"},
 		Description:     	"Locks the server down",
-		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages.",
+		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages.\nYou can choose a specific role to be locked by using its name or ID.",
 		GuildScopeCooldown: 10,
+		RequiredArgs:    0,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "Role", Help: "Optional role", Type: dcmd.String},
+		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
 			cID := data.CS.ID
@@ -173,19 +177,38 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "You need manage roles perms to use this command", nil
 			}
 
-			roleS := "@everyone"
-			role := FindRole(data.GS, roleS)
-			perms := role.Permissions
+			out := "Server"
 
-			if (perms >= 2048) {
-				_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, (perms - 2048), role.Mentionable)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				return "Server is already locked.", nil
+			roleS := data.Args[0].Str()
+			if roleS == "" {
+				roleS = "@everyone"
 			}
-			return "Server locked", nil
+			role := FindRole(data.GS, roleS)
+
+			if roleS != "@everyone" {
+				out = roleS
+			}
+
+			if role == nil {
+				return "No role with the Name or ID`" + roleS + "` found", nil
+			}
+
+			data.GS.RLock()
+			if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
+				data.GS.RUnlock()
+				return "Can't edit roles above you", nil
+			}
+			data.GS.RUnlock()
+
+			totalPerms := discordgo.PermissionSendMessages|discordgo.PermissionAddReactions
+			newPerms := role.Permissions &^ totalPerms
+
+			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
+			if err != nil {
+				return nil, err
+			}
+
+			return fmt.Sprintf("**%s** is now unlocked", out), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -195,6 +218,10 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:     	"Unlocks the server",
 		LongDescription: 	"Require the manage roles permission. This will grant the everyone role permission to send messages.",
 		GuildScopeCooldown: 10,
+		RequiredArgs:    0,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "Role", Help: "Optional role", Type: dcmd.String},
+		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
 			cID := data.CS.ID
@@ -205,19 +232,38 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "You need manage roles perms to use this command", nil
 			}
 
-			roleS := "@everyone"
-			role := FindRole(data.GS, roleS)
-			perms := role.Permissions
+			out := "Server"
 
-			if (2146957311 >= perms) {
-				_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, (perms + 2048), role.Mentionable)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				return "This role already have permissions.", nil
+			roleS := data.Args[0].Str()
+			if roleS == "" {
+				roleS = "@everyone"
 			}
-			return "Server unlocked", nil
+
+			if roleS != "@everyone" {
+				out = roleS
+			}
+			role := FindRole(data.GS, roleS)
+
+			if role == nil {
+				return "No role with the Name or ID`" + roleS + "` found", nil
+			}
+
+			data.GS.RLock()
+			if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
+				data.GS.RUnlock()
+				return "Can't edit roles above you", nil
+			}
+			data.GS.RUnlock()
+
+			totalPerms := discordgo.PermissionSendMessages|discordgo.PermissionAddReactions
+			newPerms := role.Permissions | totalPerms
+
+			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
+			if err != nil {
+				return nil, err
+			}
+
+			return fmt.Sprintf("**%s** is now unlocked", out), nil
 		},
 	},
 	&commands.YAGCommand{
