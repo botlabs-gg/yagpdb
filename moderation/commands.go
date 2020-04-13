@@ -161,14 +161,17 @@ var ModerationCommands = []*commands.YAGCommand{
 		Name:            	"LockDown",
 		Aliases:		 []string{"ld", "lock"},
 		Description:     	"Locks the server or a specific role down.",
-		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages and add reactions.\nYou can choose a specific role to be locked by using its name or ID.\nYou can also use the -onlymsgs to revoke only the permission to send messages and maintain the permission to add reactions.",
+		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages.\nYou can choose a specific role to be locked by using its name or ID.\n\nYou can also use flags to revoke more permissions:\n**-reaction** -> Revokes the permission to add reactions\n**-voicespeak** -> Revokes the permission to speak in voice channels\n**-voiceconnect** -> Revokes the permission to connect to voice channels\n**-all** -> Revokes all the permission previously stated.",
 		GuildScopeCooldown: 	10,
 		RequiredArgs:    	0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Role", Help: "Optional role", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "onlymsgs", Name: "Only Messages"},
+			&dcmd.ArgDef{Switch: "reaction", Name: "Add Reactions"},
+			&dcmd.ArgDef{Switch: "voicespeak", Name: "Voice Speak"},
+			&dcmd.ArgDef{Switch: "voiceconnect", Name: "Voice Connect"},
+			&dcmd.ArgDef{Switch: "all", Name: "All Flags"},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
@@ -203,20 +206,34 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 			data.GS.RUnlock()
 
-			totalPerms := discordgo.PermissionSendMessages|discordgo.PermissionAddReactions
+			totalPerms := discordgo.PermissionSendMessages
 
-			if data.Switches["onlymsgs"].Value != nil && data.Switches["onlymsgs"].Value.(bool) {
-				totalPerms = discordgo.PermissionSendMessages
+			if data.Switches["all"].Value != nil && data.Switches["all"].Value.(bool) {
+				totalPerms = totalPerms|discordgo.PermissionAddReactions|discordgo.PermissionVoiceSpeak|discordgo.PermissionVoiceConnect
+			} else {
+				if data.Switches["reaction"].Value != nil && data.Switches["reaction"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionAddReactions
+				}
+
+				if data.Switches["voicespeak"].Value != nil && data.Switches["voicespeak"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceSpeak
+				}
+
+				if data.Switches["voiceconnect"].Value != nil && data.Switches["voiceconnect"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceConnect
+				}
 			}
 
 			newPerms := role.Permissions &^ totalPerms
+
 
 			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
 			if err != nil {
 				return nil, err
 			}
 
-			return fmt.Sprintf("🔒 **%s** is now locked!\nRole affected: `%d`", out, role.ID), nil
+			outPerms := common.HumanizePermissions(int64(totalPerms))
+			return fmt.Sprintf("🔒 **%s** is now locked!\nRole affected: %s  -  ID: `%d`\nPermissions revoked: %s", out, role.Name, role.ID, strings.Join(outPerms, ", ")), nil
 		},
 	},
 	&commands.YAGCommand{
@@ -224,14 +241,17 @@ var ModerationCommands = []*commands.YAGCommand{
 		Name:            	"UnLock",
 		Aliases:		 []string{"ul"},
 		Description:     	"Unlocks the server or a specific role.",
-		LongDescription: 	"Require the manage roles permission. This will grant the everyone role permission to send messages and add reactions.\nYou can choose a specific role to be unlocked by using its name or ID.\nYou can also use the -onlymsgs to grant only the permission to send messages and not change the permission to add reactions.",
+		LongDescription: 	"Require the manage roles permission. This will grant the everyone role permission to send messages.\nYou can choose a specific role to be unlocked by using its name or ID.\n\nYou can also use flags to grant more permissions:\n**-reaction** -> Grants the permission to add reactions\n**-voicespeak** -> Grants the permission to speak in voice channels\n**-voiceconnect** -> Grants the permission to connect to voice channels\n**-all** -> Grant all the permission previously stated.",
 		GuildScopeCooldown: 	10,
 		RequiredArgs:    	0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Role", Help: "Optional role", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "onlymsgs", Name: "Only Messages"},
+			&dcmd.ArgDef{Switch: "reaction", Name: "Add Reactions"},
+			&dcmd.ArgDef{Switch: "voicespeak", Name: "Voice Speak"},
+			&dcmd.ArgDef{Switch: "voiceconnect", Name: "Voice Connect"},
+			&dcmd.ArgDef{Switch: "all", Name: "All Flags"},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
@@ -266,10 +286,22 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 			data.GS.RUnlock()
 
-			totalPerms := discordgo.PermissionSendMessages|discordgo.PermissionAddReactions
+			totalPerms := discordgo.PermissionSendMessages
 
-			if data.Switches["onlymsgs"].Value != nil && data.Switches["onlymsgs"].Value.(bool) {
-				totalPerms = discordgo.PermissionSendMessages
+			if data.Switches["all"].Value != nil && data.Switches["all"].Value.(bool) {
+				totalPerms = totalPerms|discordgo.PermissionAddReactions|discordgo.PermissionVoiceSpeak|discordgo.PermissionVoiceConnect
+			} else {
+				if data.Switches["reaction"].Value != nil && data.Switches["reaction"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionAddReactions
+				}
+
+				if data.Switches["voicespeak"].Value != nil && data.Switches["voicespeak"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceSpeak
+				}
+
+				if data.Switches["voiceconnect"].Value != nil && data.Switches["voiceconnect"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceConnect
+				}
 			}
 
 			newPerms := role.Permissions | totalPerms
@@ -279,7 +311,8 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return fmt.Sprintf("🔓 **%s** is now unlocked!\nRole affected: `%d`", out, role.ID), nil
+			outPerms := common.HumanizePermissions(int64(totalPerms))
+			return fmt.Sprintf("🔓 **%s** is now unlocked!\nRole affected: %s  -  ID: `%d`\nPermissions granted: %s", out, role.Name, role.ID, strings.Join(outPerms, ", ")), nil
 		},
 	},
 	&commands.YAGCommand{
