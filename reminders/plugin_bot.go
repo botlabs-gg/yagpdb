@@ -128,6 +128,10 @@ var cmds = []*commands.YAGCommand{
 				return "Error retrieving reminder", err
 			}
 
+			if reminder.GuildID != parsed.GS.ID {
+				return "That reminder is not from this server", nil
+			}
+
 			// Check perms
 			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
 				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), dstate.MSFromDGoMember(parsed.GS, parsed.Msg.Member), discordgo.PermissionManageChannels)
