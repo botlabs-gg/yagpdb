@@ -63,18 +63,21 @@ func (p *Plugin) AddCommands() {
 				return userTZ, nil
 			}
 
-			if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) && getUserTZ != nil {
-				m := &models.UserTimezone{
-					UserID:       parsed.Msg.Author.ID,
-					TimezoneName: localTZ.String(),
+			if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) {
+				if getUserTZ != nil {
+
+					m := &models.UserTimezone{
+						UserID:       parsed.Msg.Author.ID,
+						TimezoneName: localTZ.String(),
+					}
+					_, err := m.DeleteG(parsed.Context())
+					if err != nil {
+						return nil, err
+					}
+					return "Deleted", nil
+				} else {
+					return "You don't have a registered time zone", nil
 				}
-				_, err := m.DeleteG(parsed.Context())
-				if err != nil {
-					return nil, err
-				}
-				return "Deleted", nil
-			} else if parsed.Switches["d"].Value != nil && parsed.Switches["d"].Value.(bool) {
-				return "You don't have a registered time zone", nil
 			}
 
 			zones := FindZone(parsed.Args[0].Str())
