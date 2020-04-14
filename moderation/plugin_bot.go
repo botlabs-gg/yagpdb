@@ -86,7 +86,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	// relieve startup preasure, sleep for up to 10 minutes
 	if time.Since(started) < time.Minute {
-		sleep := time.Second * time.Duration(rand.Intn(600))
+		sleep := time.Second * time.Duration(100+rand.Intn(600))
 		time.Sleep(sleep)
 	}
 
