@@ -18,7 +18,6 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common/basicredispool"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -32,7 +31,7 @@ var (
 	GORM *gorm.DB
 	PQ   *sql.DB
 
-	RedisPool *basicredispool.Pool
+	RedisPool *radix.Pool
 
 	BotSession *discordgo.Session
 	BotUser    *discordgo.User
@@ -204,8 +203,7 @@ func connectRedis() (err error) {
 		addr = "localhost:6379"
 	}
 
-	RedisPool, err = basicredispool.NewPool(maxConns, addr)
-
+	RedisPool, err = radix.NewPool("tcp", addr, maxConns, radix.PoolOnEmptyWait(), radix.PoolOnFullClose(), radix.PoolPipelineWindow(0, 0))
 	return
 }
 
