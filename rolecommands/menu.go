@@ -252,7 +252,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		if err != nil {
 			code, _ := common.DiscordError(err)
 			switch code {
-			case disocrdgo.ErrCodeUnknownEmoji:
+			case discordgo.ErrCodeUnknownEmoji:
 				return "I do not have access to that emoji, i can only use emojis from servers im on.", nil
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
@@ -291,7 +291,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		if rm.OwnMessage {
 			err = UpdateRoleMenuMessage(ctx, rm)
 			if err != nil {
-				code, _ := common.DiscordError()
+				code, _ := common.DiscordError(err)
 				switch code {
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
