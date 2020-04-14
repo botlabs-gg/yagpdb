@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 )
@@ -29,7 +29,7 @@ func newServerMemberStatsUpdater() *serverMemberStatsUpdater {
 }
 
 type QueuedAction struct {
-	GS             *dstate.GuildState
+	GuildID        int64
 	MemberCountMod int
 	TotalCount     int
 }
@@ -51,7 +51,7 @@ func (mu *serverMemberStatsUpdater) run() {
 		OUTER:
 			for _, pv := range mu.processing {
 				for _, wv := range mu.waiting {
-					if wv.GS.ID == pv.GS.ID {
+					if wv.GuildID == pv.GuildID {
 						wv.MemberCountMod += wv.MemberCountMod
 						continue OUTER
 					}
@@ -72,22 +72,23 @@ func (mu *serverMemberStatsUpdater) run() {
 }
 
 func (mu *serverMemberStatsUpdater) handleIncEvent(evt *eventsystem.EventData) {
-	q := QueuedAction{
-		GS: evt.GS,
-	}
+	q := QueuedAction{}
 
 	switch evt.Type {
 	case eventsystem.EventGuildCreate:
 		e := evt.GuildCreate()
+		q.GuildID = e.ID
 		q.TotalCount = e.MemberCount
 	case eventsystem.EventGuildMemberAdd:
+		q.GuildID = evt.GS.ID
 		q.MemberCountMod = 1
 	case eventsystem.EventGuildMemberRemove:
+		q.GuildID = evt.GS.ID
 		q.MemberCountMod = -1
 	}
 
 	for _, v := range mu.waiting {
-		if v.GS.ID == q.GS.ID {
+		if v.GuildID == q.GuildID {
 			v.MemberCountMod += q.MemberCountMod
 			if q.TotalCount != 0 {
 				v.TotalCount = q.TotalCount
@@ -112,9 +113,14 @@ func (mu *serverMemberStatsUpdater) flush() {
 	// fill in total counts, do this before creating tx to avoid deadlocks
 	for _, q := range mu.processing {
 		if q.TotalCount == 0 {
-			q.GS.RLock()
-			q.TotalCount = q.GS.Guild.MemberCount
-			q.GS.RUnlock()
+			gs := bot.State.Guild(true, q.GuildID)
+			if gs == nil {
+				continue
+			}
+
+			gs.RLock()
+			q.TotalCount = gs.Guild.MemberCount
+			gs.RUnlock()
 		}
 	}
 
@@ -127,7 +133,7 @@ func (mu *serverMemberStatsUpdater) flush() {
 
 	// update all the stats
 	for _, q := range mu.processing {
-		err := mu.setUpdateMemberStatsPeriod(tx, q.GS.ID, q.MemberCountMod, q.TotalCount)
+		err := mu.setUpdateMemberStatsPeriod(tx, q.GuildID, q.MemberCountMod, q.TotalCount)
 		if err != nil {
 			leftOver = mu.processing
 			tx.Rollback()
