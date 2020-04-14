@@ -24,18 +24,20 @@ func MarkGuildAsToBeChecked(guildID int64) {
 }
 
 var (
-	_                 bot.BotInitHandler       = (*Plugin)(nil)
-	_                 commands.CommandProvider = (*Plugin)(nil)
-	msgStatsCollector *messagestatscollector.Collector
+	_                   bot.BotInitHandler       = (*Plugin)(nil)
+	_                   commands.CommandProvider = (*Plugin)(nil)
+	msgStatsCollector   *messagestatscollector.Collector
+	memberSatatsUpdater *serverMemberStatsUpdater
 )
 
 func (p *Plugin) BotInit() {
 	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute)
+	memberSatatsUpdater = newServerMemberStatsUpdater()
+	go memberSatatsUpdater.run()
 
-	eventsystem.AddHandlerAsyncLastLegacy(p, HandleMemberAdd, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerAsyncLastLegacy(p, HandleMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
+
 	eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildCreate, eventsystem.EventGuildCreate)
 
 	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
@@ -91,60 +93,14 @@ func (p *Plugin) AddCommands() {
 	})
 }
 
-func HandleGuildCreate(evt *eventsystem.EventData) {
-	g := evt.GuildCreate()
-
-	SetUpdateMemberStatsPeriod(g.ID, 0, g.MemberCount)
-}
-
-func HandleMemberAdd(evt *eventsystem.EventData) {
-	g := evt.GuildMemberAdd()
-
-	gs := evt.GS
-
-	gs.RLock()
-	mc := gs.Guild.MemberCount
-	gs.RUnlock()
-
-	SetUpdateMemberStatsPeriod(g.GuildID, 1, mc)
-}
-
-func HandleMemberRemove(evt *eventsystem.EventData) {
-	g := evt.GuildMemberRemove()
-
-	gs := evt.GS
-
-	gs.RLock()
-	mc := gs.Guild.MemberCount
-	gs.RUnlock()
-
-	SetUpdateMemberStatsPeriod(g.GuildID, -1, mc)
-}
-
-func SetUpdateMemberStatsPeriod(guildID int64, memberIncr int, numMembers int) {
-	joins := 0
-	leaves := 0
-	if memberIncr > 0 {
-		joins = memberIncr
-	} else if memberIncr < 0 {
-		leaves = -memberIncr
+func handleUpdateMemberStats(evt *eventsystem.EventData) {
+	select {
+	case memberSatatsUpdater.incoming <- evt:
+	default:
+		go func() {
+			memberSatatsUpdater.incoming <- evt
+		}()
 	}
-
-	// round to current hour
-	t := RoundHour(time.Now())
-
-	_, err := common.PQ.Exec(`INSERT INTO server_stats_hourly_periods_misc  (guild_id, t, num_members, joins, leaves, max_online, max_voice)
-VALUES ($1, $2, $3, $4, $5, 0, 0)
-ON CONFLICT (guild_id, t)
-DO UPDATE SET 
-joins = server_stats_hourly_periods_misc.joins + $4, 
-leaves = server_stats_hourly_periods_misc.leaves + $5, 
-num_members = server_stats_hourly_periods_misc.num_members + $6;`, guildID, t, numMembers, joins, leaves, memberIncr)
-
-	if err != nil {
-		logger.WithError(err).Error("failed setting member stats period")
-	}
-
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) (retry bool, err error) {
