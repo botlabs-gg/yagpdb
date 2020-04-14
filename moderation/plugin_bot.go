@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -78,8 +79,17 @@ func HandleRefreshMuteOverrides(evt *pubsub.Event) {
 	RefreshMuteOverrides(evt.TargetGuildInt)
 }
 
+var started = time.Now()
+
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	gc := evt.GuildCreate()
+
+	// relieve startup preasure, sleep for up to 10 minutes
+	if time.Since(started) < time.Minute {
+		sleep := time.Second * rand.Intn(600)
+		time.Sleep(sleep)
+	}
+
 	RefreshMuteOverrides(gc.ID)
 }
 
