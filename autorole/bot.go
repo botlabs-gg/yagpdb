@@ -284,21 +284,18 @@ OUTER:
 			continue
 		}
 
-		err := common.BotSession.GuildMemberRoleAdd(gs.ID, userID, config.Role)
+		disabled, _, err := assignRole(config, gs.ID, userID)
 		if err != nil {
-			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
-				// No perms, remove autorole
-				logger.WithError(err).Info("No perms to add autorole, removing from config")
-				config.Role = 0
-				saveGeneral(gs.ID, config)
-				return
-			}
 			logger.WithError(err).WithField("guild", gs.ID).Error("Failed adding autorole role")
-		} else {
-			if setProcessingRedis && cntSinceLastRedisUpdate > 10 {
-				common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
-				cntSinceLastRedisUpdate = 0
-			}
+		}
+
+		if disabled {
+			return
+		}
+
+		if setProcessingRedis && cntSinceLastRedisUpdate > 10 {
+			common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
+			cntSinceLastRedisUpdate = 0
 		}
 	}
 }
@@ -308,6 +305,8 @@ func saveGeneral(guildID int64, config *GeneralConfig) {
 	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
 		logger.WithError(err).Error("Failed saving autorole config")
+	} else {
+		pubsub.Publish("autorole_stop_processing", guildID, nil)
 	}
 }
 
@@ -330,9 +329,8 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	// }
 
 	if config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Roles, time.Now()) {
-		err = common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
-		go analytics.RecordActiveUnit(addEvt.GuildID, &Plugin{}, "assigned_role")
-		return bot.CheckDiscordErrRetry(err), err
+		_, retry, err = assignRole(config, addEvt.GuildID, addEvt.User.ID)
+		return retry, err
 	}
 
 	if config.RequiredDuration > 0 && !config.OnlyOnJoin {
@@ -342,6 +340,27 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	}
 
 	return false, nil
+}
+
+func assignRole(config *GeneralConfig, guildID int64, targetID int64) (disabled bool, retry bool, err error) {
+	analytics.RecordActiveUnit(guildID, &Plugin{}, "assigned_role")
+	err = common.BotSession.GuildMemberRoleAdd(guildID, targetID, config.Role)
+	if err != nil {
+		switch code, _ := common.DiscordError(err); code {
+		case discordgo.ErrCodeUnknownMember:
+			logger.WithError(err).Error("Unknown member when trying to assign role")
+		case discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeUnknownRole:
+			logger.WithError(err).Warn("disabling autorole from error")
+			cop := *config
+			cop.Role = 0
+			saveGeneral(guildID, &cop)
+			return true, false, nil
+		default:
+			return false, bot.CheckDiscordErrRetry(err), err
+		}
+	}
+
+	return false, false, nil
 }
 
 func (conf *GeneralConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time) bool {
@@ -400,7 +419,6 @@ func assignFromGuildChunk(guildID int64, config *GeneralConfig, members []*disco
 	lastTimeUpdatedBlockingKey := time.Now()
 	lastTimeUpdatedConfig := time.Now()
 
-OUTER:
 	for _, m := range members {
 		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
@@ -414,26 +432,21 @@ OUTER:
 			continue
 		}
 
-		for _, r := range m.Roles {
-			if r == config.Role {
-				continue OUTER
-			}
+		// already has role
+		if common.ContainsInt64Slice(m.Roles, config.Role) {
+			continue
 		}
 
 		time.Sleep(time.Second * 2)
 
 		logger.Println("assigning to ", m.User.ID, " from guild chunk event")
-		err = common.AddRole(m, config.Role, guildID)
+
+		disabled, _, err := assignRole(config, guildID, m.User.ID)
 		if err != nil {
 			logger.WithError(err).WithField("user", m.User.ID).WithField("guild", guildID).Error("failed adding autorole role")
-
-			if common.IsDiscordErr(err, 50013, 10011) {
-				// No perms, remove autorole
-				logger.WithError(err).WithField("guild", guildID).Info("No perms to add autorole, or nonexistant, removing from config")
-				config.Role = 0
-				saveGeneral(guildID, config)
-				return
-			}
+		}
+		if disabled {
+			break
 		}
 
 		if time.Since(lastTimeUpdatedConfig) > time.Second*10 {
@@ -531,8 +544,8 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 
 	go analytics.RecordActiveUnit(evt.GuildID, &Plugin{}, "assigned_role")
 
-	err = common.BotSession.GuildMemberRoleAdd(evt.GuildID, dataCast.UserID, config.Role)
-	return bot.CheckDiscordErrRetry(err), err
+	_, retry, err = assignRole(config, evt.GuildID, dataCast.UserID)
+	return retry, err
 }
 
 func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
@@ -570,10 +583,6 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	go analytics.RecordActiveUnit(update.GuildID, &Plugin{}, "assigned_role")
 
 	// if we branched here then all the checks passed and they should be assigned the role
-	err = common.BotSession.GuildMemberRoleAdd(update.GuildID, update.User.ID, config.Role)
-	if err != nil {
-		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
-	}
-
-	return false, nil
+	_, retry, err = assignRole(config, update.GuildID, update.User.ID)
+	return retry, err
 }
