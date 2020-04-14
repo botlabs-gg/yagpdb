@@ -391,7 +391,8 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.Membe
 
 	// to make sure the message is in the proper context of the user reacting we set the mssage context to a fake message
 	fakeMsg := *message
-	fakeMsg.Author = ms.DGoUser()
+	fakeMsg.Member = ms.DGoCopy()
+	fakeMsg.Author = fakeMsg.Member.User
 	tmplCtx.Msg = &fakeMsg
 
 	tmplCtx.Data["Reaction"] = reaction
