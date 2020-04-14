@@ -3,13 +3,12 @@ package config
 import (
 	"strings"
 
-	"github.com/jonas747/yagpdb/common/basicredispool"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
 
 type RedisConfigStore struct {
-	Pool *basicredispool.Pool
+	Pool *radix.Pool
 }
 
 func (rs *RedisConfigStore) GetValue(key string) interface{} {
