@@ -2,13 +2,14 @@ package paginatedmessages
 
 import (
 	"errors"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"strconv"
-	"sync"
-	"time"
 )
 
 var (
@@ -78,6 +79,7 @@ type PaginatedMessage struct {
 	MaxPage      int
 	LastResponse *discordgo.MessageEmbed
 	Navigate     func(p *PaginatedMessage, newPage int) (*discordgo.MessageEmbed, error)
+	Broken       bool
 
 	stopped        bool
 	stopCh         chan bool
@@ -210,7 +212,12 @@ func (p *PaginatedMessage) HandleReactionAdd(ra *discordgo.MessageReactionAdd) {
 
 	_, err = common.BotSession.ChannelMessageEditEmbed(ra.ChannelID, ra.MessageID, newMsg)
 	if err != nil {
-		logger.WithError(err).WithField("guild", p.GuildID).Error("failed updating message")
+		switch code, _ := common.DiscordError(err); code {
+		case discordgo.ErrCodeUnknownChannel, discordgo.ErrCodeUnknownMessage, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
+			p.Broken = true
+		default:
+			logger.WithError(err).WithField("guild", p.GuildID).Error("failed updating paginated message")
+		}
 	}
 }
 
@@ -223,7 +230,7 @@ OUTER:
 		select {
 		case <-t.C:
 			p.mu.Lock()
-			toRemove := time.Since(p.lastUpdateTime) > time.Minute
+			toRemove := time.Since(p.lastUpdateTime) > time.Minute || p.Broken
 			p.mu.Unlock()
 			if !toRemove {
 				continue OUTER
