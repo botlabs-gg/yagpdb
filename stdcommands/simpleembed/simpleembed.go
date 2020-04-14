@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/image/colornames"
@@ -82,12 +83,12 @@ var Command = &commands.YAGCommand{
 		if c.Value != nil {
 			cID = c.Value.(*dstate.ChannelState).ID
 
-			perms, err := data.GS.MemberPermissions(true, cID, data.Msg.Author.ID)
+			hasPerms, err := bot.AdminOrPermMS(cID, dstate.MSFromDGoMember(data.GS, data.Msg.Member), discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
-				return nil, err
+				return "Failed checking permissions, please try again or join the support server.", err
 			}
 
-			if perms&discordgo.PermissionSendMessages != discordgo.PermissionSendMessages || perms&discordgo.PermissionReadMessages != discordgo.PermissionReadMessages {
+			if !hasPerms {
 				return "You do not have permissions to send messages there", nil
 			}
 		}
