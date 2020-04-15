@@ -261,9 +261,13 @@ var ModerationCommands = []*commands.YAGCommand{
 					return nil, err
 				}
 			}
-
+			
+			outDur := "indefinitely!"
+			if dur > 0 {
+				outDur = "for `" + common.HumanizeDuration(common.DurationPrecisionMinutes, dur) + "`!"
+			}
 			outPerms := common.HumanizePermissions(int64(totalPerms))
-			return fmt.Sprintf("🔒 **%s** is now locked!\nRole affected: %s  -  ID: `%d`\nPermissions revoked: %s", out, role.Name, role.ID, strings.Join(outPerms, ", ")), nil
+			return fmt.Sprintf("🔒 **%s** is now locked %s\nRole affected: %s  -  ID: `%d`\nPermissions revoked: %s", out, outDur, role.Name, role.ID, strings.Join(outPerms, ", ")), nil
 		},
 	},
 	&commands.YAGCommand{
