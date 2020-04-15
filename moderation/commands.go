@@ -179,13 +179,14 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "d", Name: "Duration", Default: time.Duration(0), Type: &commands.DurationArg{}},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
-			cID := data.CS.ID
+			config, _, err := MBaseCmd(data, 0)
+			if err != nil {
+				return nil, err
+			}
 
-			if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
-				return "Failed checking perms", err
-			} else if !ok {
-				return "Unable to run the command: it's required to have **Manage Roles** permission to use it.", nil
+			_, err = MBaseCmdSecond(data, "", true, discordgo.PermissionManageRoles, config.LockdownCmdRoles, config.LockdownCmdEnabled)
+			if err != nil {
+				return nil, err
 			}
 
 			out := "Server"
@@ -203,7 +204,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			if role == nil {
 				return "No role with the Name or ID `" + roleS + "` found.", nil
 			}
-
+			
+			authorMember := commands.ContextMS(data.Context())
 			data.GS.RLock()
 			if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
 				data.GS.RUnlock()
@@ -288,15 +290,17 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "all", Name: "All Flags"},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
-			cID := data.CS.ID
-
-			if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
-				return "Failed checking perms", err
-			} else if !ok {
-				return "Unable to run the command: it's required to have **Manage Roles** permission to use it.", nil
+			config, _, err := MBaseCmd(data, 0)
+			if err != nil {
+				return nil, err
 			}
 
+			_, err = MBaseCmdSecond(data, "", true, discordgo.PermissionManageRoles, config.LockdownCmdRoles, config.LockdownCmdEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+			authorMember := commands.ContextMS(data.Context())
 			out := "Server"
 
 			roleS := data.Args[0].Str()
