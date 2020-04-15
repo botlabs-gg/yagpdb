@@ -48,6 +48,11 @@ type Config struct {
 	WarnIncludeChannelLogs bool
 	WarnSendToModlog       bool
 	WarnMessage            string `valid:"template,5000"`
+	
+	//Lockdown
+	LockdownCmdEnabled bool
+	LockdownCmdModlog  bool
+	LockdownCmdRoles   pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 
 	// Misc
 	CleanEnabled  bool
