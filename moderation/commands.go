@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -18,6 +19,9 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
@@ -172,6 +176,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "voicespeak", Name: "Voice Speak"},
 			&dcmd.ArgDef{Switch: "voiceconnect", Name: "Voice Connect"},
 			&dcmd.ArgDef{Switch: "all", Name: "All Flags"},
+			&dcmd.ArgDef{Switch: "d", Name: "Duration", Default: time.Duration(0), Type: &commands.DurationArg{}},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
@@ -225,11 +230,34 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			newPerms := role.Permissions &^ totalPerms
-
+			dur := data.Switches["d"].Value.(time.Duration)
+			if dur > 0 && dur < time.Minute {
+				dur = time.Minute
+			}
 
 			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
 			if err != nil {
 				return nil, err
+			}
+			
+			if dur > 0 {
+				// remove existing unlock events for this role
+				_, err = seventsmodels.ScheduledEvents(
+				qm.Where("event_name='moderation_unlock_role'"),
+				qm.Where("guild_id = ?", data.GS.ID),
+				qm.Where("(data->>'role_id')::bigint = ?", role.ID),
+				qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
+
+				if err != nil {
+					return nil, err
+				}
+				err = scheduledevents2.ScheduleEvent("moderation_unlock_role", data.GS.ID, time.Now().Add(dur), &ScheduledUnlockData{
+		      		RoleID:  role.ID,
+		      		TotalPerms:  int64(totalPerms),
+				})
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			outPerms := common.HumanizePermissions(int64(totalPerms))
@@ -307,6 +335,17 @@ var ModerationCommands = []*commands.YAGCommand{
 			newPerms := role.Permissions | totalPerms
 
 			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
+			if err != nil {
+				return nil, err
+			}
+			
+			// remove existing unlock events for this role
+			_, err = seventsmodels.ScheduledEvents(
+			qm.Where("event_name='moderation_unlock_role'"),
+			qm.Where("guild_id = ?", data.GS.ID),
+			qm.Where("(data->>'role_id')::bigint = ?", role.ID),
+			qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
+
 			if err != nil {
 				return nil, err
 			}
