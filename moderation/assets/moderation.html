@@ -167,6 +167,19 @@ the punishment{{end}}
         <hr />
         {{checkbox "LogBans" "log-bans" "Log ban events not made through the bot" .ModConfig.LogBans}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+        <hr />
+	{{checkbox "LockdownCmdEnabled" "lock-down-enabled" "Enable the <code>lockdown/lock and unlock</code> commands" .ModConfig.LockdownCmdEnabled}}
+        <p>People with manage roles permissions plus extra roles set below can use this.</p>
+	
+	<div class="form-group">
+            <label>Users with the following roles will have permission to use the
+                <code>lockdown/lock and unlock</code> commands</label><br>
+            <select class="multiselect" name="LockdownCmdRoles" data-plugin-multiselect multiple="multiple">
+                {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.LockdownCmdRoles}}
+            </select>
+        </div>
+        {{checkbox "LockdownCmdModlog" "lock-down-modlog" "Log <code>lockdown/lock and unlock</code> to modlog?" .ModConfig.LockdownCmdModlog}}
+       <hr /> 
     </div>
 </div>
 {{end}}
