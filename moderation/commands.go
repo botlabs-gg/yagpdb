@@ -240,8 +240,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 			
-			if dur > 0 {
-				// remove existing unlock events for this role
+			// remove all existing unlock events for this role
 				_, err = seventsmodels.ScheduledEvents(
 				qm.Where("event_name='moderation_unlock_role'"),
 				qm.Where("guild_id = ?", data.GS.ID),
@@ -251,6 +250,9 @@ var ModerationCommands = []*commands.YAGCommand{
 				if err != nil {
 					return nil, err
 				}
+			
+			if dur > 0 {
+				//schedule new unlock 
 				err = scheduledevents2.ScheduleEvent("moderation_unlock_role", data.GS.ID, time.Now().Add(dur), &ScheduledUnlockData{
 		      		RoleID:  role.ID,
 		      		TotalPerms:  int64(totalPerms),
