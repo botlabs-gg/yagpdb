@@ -45,6 +45,7 @@ func (p *Plugin) BotInit() {
 	// scheduledevents.RegisterEventHandler("mod_unban", handleUnbanLegacy)
 	scheduledevents2.RegisterHandler("moderation_unmute", ScheduledUnmuteData{}, handleScheduledUnmute)
 	scheduledevents2.RegisterHandler("moderation_unban", ScheduledUnbanData{}, handleScheduledUnban)
+	scheduledevents2.RegisterHandler("moderation_unlock_role", ScheduledUnlockData{}, handleScheduledUnlock)
 	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
 	scheduledevents2.RegisterLegacyMigrater("mod_unban", handleMigrateScheduledUnban)
 
@@ -65,6 +66,11 @@ type ScheduledUnmuteData struct {
 
 type ScheduledUnbanData struct {
 	UserID int64 `json:"user_id"`
+}
+
+type ScheduledUnlockData struct {
+	RoleID 	   int64 `json:"role_id"`
+	TotalPerms int64 `json:"total_perms"`
 }
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
@@ -514,6 +520,32 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 	err = common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
+		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
+}
+
+func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	unlockData := data.(*ScheduledUnlockData)
+
+	guildID := evt.GuildID
+	roleID := unlockData.RoleID
+	totalPerms := int(unlockData.TotalPerms)
+
+	g := bot.State.Guild(true, guildID)
+	if g == nil {
+		logger.WithField("guild", guildID).Error("Unlock scheduled for guild not in state")
+		return false, nil
+	}
+	
+	role := FindRole(g, strconv.Itoa(int(roleID)))
+	
+	_, err = common.BotSession.GuildRoleEdit(guildID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions|totalPerms, role.Mentionable)
+		
+	
+	if err != nil {
+		logger.WithField("guild", guildID).WithError(err).Error("failed role unlock")
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
