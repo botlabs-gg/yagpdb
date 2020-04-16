@@ -1,12 +1,12 @@
 package moderation
 
 import (
-	"context"
-	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
-	"math/rand"
+	"context"
+	"fmt"
 
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
@@ -89,8 +89,17 @@ func HandleRefreshMuteOverrides(evt *pubsub.Event) {
 	RefreshMuteOverrides(evt.TargetGuildInt)
 }
 
+var started = time.Now()
+
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	gc := evt.GuildCreate()
+
+	// relieve startup preasure, sleep for up to 10 minutes
+	if time.Since(started) < time.Minute {
+		sleep := time.Second * time.Duration(100+rand.Intn(600))
+		time.Sleep(sleep)
+	}
+
 	RefreshMuteOverrides(gc.ID)
 }
 
@@ -333,7 +342,7 @@ func HandleGuildRoleDelete (evt *eventsystem.EventData) (retry bool, err error) 
 	qm.Where("guild_id = ?", data.GuildID),
 	qm.Where("(data->>'role_id')::bigint = ?", data.RoleID),
 	qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
-	
+
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
