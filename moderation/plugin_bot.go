@@ -541,9 +541,9 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 	}
 
 	outPerms := common.HumanizePermissions(int64(totalPerms))
-	out := fmt.Sprintf("Timed lockdown expired.\nPermissions affected: `%s`", strings.Join(outPerms, ", "))
+	reason := fmt.Sprintf("Timed lockdown expired.\nPermissions affected: `%s`", strings.Join(outPerms, ", "))
 
-	_, err = LockUnlockRole(nil, false, g, g.MemberCopy(true, common.BotUser.ID), common.BotUser, out, strconv.Itoa(roleID), totalPerms, 0)
+	_, err = LockUnlockRole(nil, false, g, g.MemberCopy(true, common.BotUser.ID), common.BotUser, reason, strconv.Itoa(roleID), totalPerms, 0)
 
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed role unlock")
