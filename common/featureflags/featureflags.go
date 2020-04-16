@@ -32,7 +32,7 @@ func GetGuildFlags(guildID int64) ([]string, error) {
 	// fast path
 	cacheL.RLock()
 	if flags, ok := cache[guildID]; ok {
-		cacheL.Unlock()
+		cacheL.RUnlock()
 		return flags, nil
 	}
 	cacheL.RUnlock()
@@ -61,6 +61,17 @@ func GuildHasFlag(guildID int64, flag string) (bool, error) {
 	return common.ContainsStringSlice(flags, flag), nil
 }
 
+// GuildHasFlagOrLogError is the same as GuildHasFlag but will handle the error and log it
+func GuildHasFlagOrLogError(guildID int64, flag string) bool {
+	hasFlag, err := GuildHasFlag(guildID, flag)
+	if err != nil {
+		logger.WithError(err).Errorf("failed checking feature flag %+v", err)
+		return false
+	}
+
+	return hasFlag
+}
+
 // UpdateGuildFlags updates the provided guilds feature flags
 func UpdateGuildFlags(guildID int64) error {
 	keyLock := fmt.Sprintf("feature_flags_updating:%d", guildID)
@@ -74,7 +85,7 @@ func UpdateGuildFlags(guildID int64) error {
 	var lastErr error
 	for _, p := range common.Plugins {
 		if cast, ok := p.(PluginWithFeatureFlags); ok {
-			err := updatePluginFeatureFlags(guildID, cast)
+			err := UpdatePluginFeatureFlags(guildID, cast)
 			if err != nil {
 				lastErr = err
 			}
@@ -84,7 +95,7 @@ func UpdateGuildFlags(guildID int64) error {
 	return lastErr
 }
 
-func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
+func UpdatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 
 	allFlags := p.AllFeatureFlags()
 
@@ -119,15 +130,19 @@ func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 	err = common.RedisPool.Do(radix.WithConn(key, func(conn radix.Conn) error {
 
 		// apply the added/unchanged flags first
-		err := conn.Do(radix.Cmd(nil, "SADD", append([]string{key}, filtered...)...))
-		if err != nil {
-			return errors.WithStackIf(err)
+		if len(filtered) > 0 {
+			err := conn.Do(radix.Cmd(nil, "SADD", append([]string{key}, filtered...)...))
+			if err != nil {
+				return errors.WithStackIf(err)
+			}
 		}
 
 		// then remove the flags we don't have
-		err = conn.Do(radix.Cmd(nil, "SREM", append([]string{key}, toDel...)...))
-		if err != nil {
-			return errors.WithStackIf(err)
+		if len(toDel) > 0 {
+			err = conn.Do(radix.Cmd(nil, "SREM", append([]string{key}, toDel...)...))
+			if err != nil {
+				return errors.WithStackIf(err)
+			}
 		}
 
 		return nil
