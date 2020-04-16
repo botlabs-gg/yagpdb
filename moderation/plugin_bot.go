@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -538,9 +539,12 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 		logger.WithField("guild", guildID).Error("Unlock scheduled for guild not in state")
 		return false, nil
 	}
-	
-	_, err = LockUnlockRole(nil, false, g, g.MemberCopy(true, common.BotUser.ID), common.BotUser, "Timed lockdown expired", strconv.Itoa(roleID), totalPerms, 0)
-	
+
+	outPerms := common.HumanizePermissions(int64(totalPerms))
+	out := fmt.Sprintf("Timed lockdown expired.\nPermissions affected: `%s`", strings.Join(outPerms, ", "))
+
+	_, err = LockUnlockRole(nil, false, g, g.MemberCopy(true, common.BotUser.ID), common.BotUser, out, strconv.Itoa(roleID), totalPerms, 0)
+
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed role unlock")
 		return scheduledevents2.CheckDiscordErrRetry(err), err
