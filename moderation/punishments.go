@@ -2,6 +2,7 @@ package moderation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -272,6 +273,94 @@ func BanUserWithDuration(config *Config, guildID int64, channel *dstate.ChannelS
 
 func BanUser(config *Config, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User) error {
 	return BanUserWithDuration(config, guildID, channel, message, author, reason, user, 0, 1)
+}
+
+func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMember *dstate.MemberState, modlogAuthor *discordgo.User, reason, roleS string, totalPerms int, dur time.Duration) (interface{}, error) {
+	config, err := getConfigIfNotSet(gs.ID, config)
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	}
+	
+	out := "Server"
+
+	if roleS == "" {
+		roleS = "@everyone"
+	}
+	role := FindRole(gs, roleS)
+
+	if roleS != "@everyone" {
+		out = roleS
+	}
+
+	if role == nil {
+		return "No role with the Name or ID `" + roleS + "` found.", nil
+	}
+			
+	gs.RLock()
+	if !bot.IsMemberAboveRole(gs, authorMember, role) {
+		gs.RUnlock()
+		return "You can't lock/unlock roles above you.", nil
+	}
+	gs.RUnlock()
+	
+	if dur > 0 && dur < time.Minute {
+		dur = time.Minute
+	}
+
+	newPerms := role.Permissions | totalPerms
+	action := MAUnlock
+	outDur := ""
+	outPerms := strings.Join(common.HumanizePermissions(int64(totalPerms)), ", ")
+	if reason == "moderation" {
+		reason = "Moderation: Permissions affected -`" + outPerms + "`" 
+	}
+	if lock {
+		newPerms = role.Permissions &^ totalPerms
+		action = MALock
+		outDur = "indefinitely!"
+		action.Footer = "Duration: Permanent" 
+		if dur > 0 {
+			humandur := common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
+			outDur = "for `" + humandur + "`!"
+			action.Footer = "Duration: " + humandur
+		}
+	}
+	
+	if newPerms != role.Permissions { //Update only if permissions change
+		_, err = common.BotSession.GuildRoleEdit(gs.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
+		if err != nil {
+			return nil, err
+		}
+	}
+			
+	// remove all existing unlock events for this role irrespective of lock or unlock event
+	_, err = seventsmodels.ScheduledEvents(
+	qm.Where("event_name='moderation_unlock_role'"),
+	qm.Where("guild_id = ?", gs.ID),
+	qm.Where("(data->>'role_id')::bigint = ?", role.ID),
+	qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
+
+	if err != nil {
+		return nil, err
+	}
+			
+	if dur > 0 && lock {
+		//schedule new unlock 
+		err = scheduledevents2.ScheduleEvent("moderation_unlock_role", gs.ID, time.Now().Add(dur), &ScheduledUnlockData{
+		      RoleID:  role.ID,
+		      TotalPerms:  int64(totalPerms),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	
+	if config.LockdownCmdModlog {
+		err = CreateModlogEmbed(config, modlogAuthor, action, role, reason, "")
+	}
+	
+	return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`\nPermissions affected: %s",action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
+
 }
 
 const (

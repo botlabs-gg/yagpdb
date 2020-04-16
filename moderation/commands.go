@@ -1,7 +1,6 @@
 package moderation
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -19,9 +18,6 @@ import (
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
@@ -188,31 +184,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-
-			out := "Server"
-
-			roleS := data.Args[0].Str()
-			if roleS == "" {
-				roleS = "@everyone"
-			}
-			role := FindRole(data.GS, roleS)
-
-			if roleS != "@everyone" {
-				out = roleS
-			}
-
-			if role == nil {
-				return "No role with the Name or ID `" + roleS + "` found.", nil
-			}
 			
-			authorMember := commands.ContextMS(data.Context())
-			data.GS.RLock()
-			if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
-				data.GS.RUnlock()
-				return "You can't lock/unlock roles above you.", nil
-			}
-			data.GS.RUnlock()
-
 			totalPerms := discordgo.PermissionSendMessages
 
 			if data.Switches["all"].Value != nil && data.Switches["all"].Value.(bool) {
@@ -231,45 +203,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				}
 			}
 
-			newPerms := role.Permissions &^ totalPerms
-			dur := data.Switches["d"].Value.(time.Duration)
-			if dur > 0 && dur < time.Minute {
-				dur = time.Minute
-			}
-
-			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
+			out, err := LockUnlockRole(config, true, data.GS, commands.ContextMS(data.Context()), data.Msg.Author, "moderation", data.Args[0].Str(), totalPerms, data.Switches["d"].Value.(time.Duration))
 			if err != nil {
 				return nil, err
 			}
-			
-			// remove all existing unlock events for this role
-				_, err = seventsmodels.ScheduledEvents(
-				qm.Where("event_name='moderation_unlock_role'"),
-				qm.Where("guild_id = ?", data.GS.ID),
-				qm.Where("(data->>'role_id')::bigint = ?", role.ID),
-				qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
-
-				if err != nil {
-					return nil, err
-				}
-			
-			if dur > 0 {
-				//schedule new unlock 
-				err = scheduledevents2.ScheduleEvent("moderation_unlock_role", data.GS.ID, time.Now().Add(dur), &ScheduledUnlockData{
-		      		RoleID:  role.ID,
-		      		TotalPerms:  int64(totalPerms),
-				})
-				if err != nil {
-					return nil, err
-				}
-			}
-			
-			outDur := "indefinitely!"
-			if dur > 0 {
-				outDur = "for `" + common.HumanizeDuration(common.DurationPrecisionMinutes, dur) + "`!"
-			}
-			outPerms := common.HumanizePermissions(int64(totalPerms))
-			return fmt.Sprintf("🔒 **%s** is now locked %s\nRole affected: %s  -  ID: `%d`\nPermissions revoked: %s", out, outDur, role.Name, role.ID, strings.Join(outPerms, ", ")), nil
+			return out, nil
 		},
 	},
 	&commands.YAGCommand{
@@ -300,29 +238,6 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			authorMember := commands.ContextMS(data.Context())
-			out := "Server"
-
-			roleS := data.Args[0].Str()
-			if roleS == "" {
-				roleS = "@everyone"
-			}
-
-			if roleS != "@everyone" {
-				out = roleS
-			}
-			role := FindRole(data.GS, roleS)
-
-			if role == nil {
-				return "No role with the Name or ID `" + roleS + "` found.", nil
-			}
-
-			data.GS.RLock()
-			if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
-				data.GS.RUnlock()
-				return "You can't lock/unlock roles above you.", nil
-			}
-			data.GS.RUnlock()
 
 			totalPerms := discordgo.PermissionSendMessages
 
@@ -341,27 +256,13 @@ var ModerationCommands = []*commands.YAGCommand{
 					totalPerms = totalPerms|discordgo.PermissionVoiceConnect
 				}
 			}
-
-			newPerms := role.Permissions | totalPerms
-
-			_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
-			if err != nil {
-				return nil, err
-			}
 			
-			// remove existing unlock events for this role
-			_, err = seventsmodels.ScheduledEvents(
-			qm.Where("event_name='moderation_unlock_role'"),
-			qm.Where("guild_id = ?", data.GS.ID),
-			qm.Where("(data->>'role_id')::bigint = ?", role.ID),
-			qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
-
+			out, err := LockUnlockRole(config, false, data.GS, commands.ContextMS(data.Context()), data.Msg.Author, "moderation", data.Args[0].Str(), totalPerms, time.Duration(0))
 			if err != nil {
 				return nil, err
 			}
-
-			outPerms := common.HumanizePermissions(int64(totalPerms))
-			return fmt.Sprintf("🔓 **%s** is now unlocked!\nRole affected: %s  -  ID: `%d`\nPermissions granted: %s", out, role.Name, role.ID, strings.Join(outPerms, ", ")), nil
+			return out, nil
+			
 		},
 	},
 	&commands.YAGCommand{
