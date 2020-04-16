@@ -62,7 +62,7 @@ func CoreInit() error {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	err := connectRedis()
+	err := connectRedis(false)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ var (
 	})
 )
 
-func connectRedis() (err error) {
+func connectRedis(unitTests bool) (err error) {
 	maxConns := RedisPoolSize
 	if maxConns == 0 {
 		maxConns, _ = strconv.Atoi(os.Getenv("YAGPDB_REDIS_POOL_SIZE"))
@@ -203,8 +203,31 @@ func connectRedis() (err error) {
 		addr = "localhost:6379"
 	}
 
-	RedisPool, err = radix.NewPool("tcp", addr, maxConns, radix.PoolOnEmptyWait(), radix.PoolOnFullClose(), radix.PoolPipelineWindow(0, 0))
+	opts := []radix.PoolOpt{
+		radix.PoolOnEmptyWait(),
+		radix.PoolOnFullClose(),
+		radix.PoolPipelineWindow(0, 0),
+	}
+
+	// if were running unit tests, use the 2nd db to avoid accidentally running tests against a main db
+	if unitTests {
+		radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
+			return radix.Dial(network, addr, radix.DialSelectDB(2))
+		})
+	}
+
+	RedisPool, err = radix.NewPool("tcp", addr, maxConns, opts...)
 	return
+}
+
+// InitTestRedis sets common.RedisPool to a redis pool for unit testing
+func InitTestRedis() error {
+	if RedisPool != nil {
+		return nil
+	}
+
+	err := connectRedis(true)
+	return err
 }
 
 func connectDB(host, user, pass, dbName string, maxConns int) error {
