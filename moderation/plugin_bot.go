@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var (
@@ -52,6 +54,7 @@ func (p *Plugin) BotInit() {
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildRoleDelete, eventsystem.EventGuildRoleDelete)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 
@@ -318,6 +321,22 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
 	}
+}
+
+func HandleGuildRoleDelete (evt *eventsystem.EventData) (retry bool, err error) {
+	data := evt.GuildRoleDelete()
+
+	// remove all existing unlock events for this role irrespective of lock or unlock event
+	_, err = seventsmodels.ScheduledEvents(
+	qm.Where("event_name='moderation_unlock_role'"),
+	qm.Where("guild_id = ?", data.GuildID),
+	qm.Where("(data->>'role_id')::bigint = ?", data.RoleID),
+	qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
+	
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+	return false, nil
 }
 
 // Since updating mutes are now a complex operation with removing roles and whatnot,
