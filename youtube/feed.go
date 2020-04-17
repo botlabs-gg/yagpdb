@@ -285,9 +285,9 @@ func (p *Plugin) checkChannel(channel string) error {
 	common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", "youtube_subbed_channels", now.Unix(), channel))
 
 	// Update the last vid id and time if needed
-	if latestVid != nil && lastVidID != latestVid.Id {
+	if latestVid != nil {
 		parsedTime, _ := time.Parse(time.RFC3339, latestVid.Snippet.PublishedAt)
-		if !lastProcessedVidTime.After(parsedTime) {
+		if !lastProcessedVidTime.After(parsedTime) && (latestVid.Id != lastVidID || parsedTime.Unix() != lastProcessedVidTime.Unix()) {
 			common.MultipleCmds(
 				radix.FlatCmd(nil, "SET", KeyLastVidTime(channel), parsedTime.Unix()),
 				radix.FlatCmd(nil, "SET", KeyLastVidID(channel), latestVid.Id),
