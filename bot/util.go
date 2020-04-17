@@ -148,12 +148,18 @@ func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bo
 		return true
 	}
 
-	return BotProbablyHasPermissionGS(true, gs, channelID, permission)
+	return BotProbablyHasPermissionGS(gs, channelID, permission)
 }
 
 // BotProbablyHasPermissionGS is the same as BotProbablyHasPermission but with a guildstate instead of guildid
-func BotProbablyHasPermissionGS(lock bool, gs *dstate.GuildState, channelID int64, permission int) bool {
-	perms, err := gs.MemberPermissions(lock, channelID, common.BotUser.ID)
+func BotProbablyHasPermissionGS(gs *dstate.GuildState, channelID int64, permission int) bool {
+	ms, err := GetMember(gs.ID, common.BotUser.ID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", gs.ID).Error("bot isnt a member of a guild?")
+		return false
+	}
+
+	perms, err := gs.MemberPermissionsMS(true, channelID, ms)
 	if err != nil && err != dstate.ErrChannelNotFound {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
@@ -181,7 +187,7 @@ func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp
 }
 
 func SendMessageGS(gs *dstate.GuildState, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermissionGS(true, gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages) {
+	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages) {
 		return false, nil, nil
 	}
 
@@ -201,7 +207,7 @@ func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbe
 }
 
 func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermissionGS(true, gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
+	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
 		return false, nil, nil
 	}
 
