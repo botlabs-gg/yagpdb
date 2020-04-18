@@ -29,11 +29,10 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 	if targetID != 0 {
 		targetMember, _ := bot.GetMember(cmdData.GS.ID, targetID)
 		if targetMember != nil {
-			authorMember := commands.ContextMS(cmdData.Context())
 			gs := cmdData.GS
 
 			gs.RLock()
-			above := bot.IsMemberAbove(gs, authorMember, targetMember)
+			above := bot.IsMemberAbove(gs, cmdData.MS, targetMember)
 			gs.RUnlock()
 
 			if !above {
@@ -67,11 +66,12 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		oreason = "(No reason specified)"
 	}
 
+	member := cmdData.MS
+
 	// check permissions or role setup for this command
 	permsMet := false
 	if len(additionalPermRoles) > 0 {
 		// Check if the user has one of the required roles
-		member := commands.ContextMS(cmdData.Context())
 		for _, r := range member.Roles {
 			if common.ContainsInt64Slice(additionalPermRoles, r) {
 				permsMet = true
@@ -82,7 +82,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 
 	if !permsMet && neededPerm != 0 {
 		// Fallback to legacy permissions
-		hasPerms, err := bot.AdminOrPermMS(cmdData.CS.ID, commands.ContextMS(cmdData.Context()), neededPerm)
+		hasPerms, err := bot.AdminOrPermMS(cmdData.CS.ID, member, neededPerm)
 		if err != nil || !hasPerms {
 			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
@@ -184,7 +184,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			
+
 			totalPerms := discordgo.PermissionSendMessages
 
 			if data.Switches["all"].Value != nil && data.Switches["all"].Value.(bool) {
@@ -256,13 +256,13 @@ var ModerationCommands = []*commands.YAGCommand{
 					totalPerms = totalPerms|discordgo.PermissionVoiceConnect
 				}
 			}
-			
+
 			out, err := LockUnlockRole(config, false, data.GS, commands.ContextMS(data.Context()), data.Msg.Author, "moderation", data.Args[0].Str(), totalPerms, time.Duration(0))
 			if err != nil {
 				return nil, err
 			}
 			return out, nil
-			
+
 		},
 	},
 	&commands.YAGCommand{
@@ -845,9 +845,8 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Couldn't find the specified role", nil
 			}
 
-			authorMember := commands.ContextMS(parsed.Context())
 			parsed.GS.RLock()
-			if !bot.IsMemberAboveRole(parsed.GS, authorMember, role) {
+			if !bot.IsMemberAboveRole(parsed.GS, parsed.MS, role) {
 				parsed.GS.RUnlock()
 				return "Can't give roles above you", nil
 			}
@@ -918,9 +917,8 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Couldn't find the specified role", nil
 			}
 
-			authorMember := commands.ContextMS(parsed.Context())
 			parsed.GS.RLock()
-			if !bot.IsMemberAboveRole(parsed.GS, authorMember, role) {
+			if !bot.IsMemberAboveRole(parsed.GS, parsed.MS, role) {
 				parsed.GS.RUnlock()
 				return "Can't remove roles above you", nil
 			}
