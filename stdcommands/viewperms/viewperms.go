@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 		targetID := data.Args[0].Int64()
 		if targetID == 0 {
 			tm := data.Msg.Member
-			target = dstate.MSFromDGoMember(data.GS, tm)
+			target = data.MS
 		} else {
 			var err error
 			target, err = bot.GetMember(data.GS.ID, targetID)

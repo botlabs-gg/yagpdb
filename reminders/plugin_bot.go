@@ -9,7 +9,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -89,7 +88,7 @@ var cmds = []*commands.YAGCommand{
 		Name:        "CReminders",
 		Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			ok, err := bot.AdminOrPermMS(parsed.CS.ID, dstate.MSFromDGoMember(parsed.GS, parsed.Msg.Member), discordgo.PermissionManageChannels)
+			ok, err := bot.AdminOrPermMS(parsed.CS.ID, parsed.MS, discordgo.PermissionManageChannels)
 			if err != nil {
 				return nil, err
 			}
@@ -134,7 +133,7 @@ var cmds = []*commands.YAGCommand{
 
 			// Check perms
 			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
-				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), dstate.MSFromDGoMember(parsed.GS, parsed.Msg.Member), discordgo.PermissionManageChannels)
+				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), parsed.MS, discordgo.PermissionManageChannels)
 				if err != nil {
 					return nil, err
 				}
