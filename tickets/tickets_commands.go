@@ -100,7 +100,7 @@ func (p *Plugin) AddCommands() {
 
 			// send the first ticket message
 
-			tmplCTX := templates.NewContext(parsed.GS, dstate.NewChannelState(parsed.GS, parsed.GS, channel), commands.ContextMS(parsed.Context()))
+			tmplCTX := templates.NewContext(parsed.GS, dstate.NewChannelState(parsed.GS, parsed.GS, channel), parsed.MS)
 			tmplCTX.Name = "ticket open message"
 			tmplCTX.Data["Reason"] = parsed.Args[0].Str()
 			ticketOpenMsg := conf.TicketOpenMSG

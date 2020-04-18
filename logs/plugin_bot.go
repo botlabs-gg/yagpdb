@@ -82,14 +82,15 @@ var cmdWhois = &commands.YAGCommand{
 			return nil, err
 		}
 
-		member := commands.ContextMS(parsed.Context())
-		memberCPY := parsed.GS.MemberCopy(true, member.ID)
-		if memberCPY != nil {
-			member = memberCPY
-		}
-
+		var member *dstate.MemberState
 		if parsed.Args[0].Value != nil {
 			member = parsed.Args[0].Value.(*dstate.MemberState)
+		} else {
+			member = parsed.MS
+			if sm := parsed.GS.MemberCopy(true, member.ID); sm != nil {
+				// Prefer state member over the one provided in the message, since it may have presence data
+				member = sm
+			}
 		}
 
 		nick := ""
@@ -121,7 +122,7 @@ var cmdWhois = &commands.YAGCommand{
 		var memberStatus string
 		state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
 		if !member.PresenceSet || member.PresenceGame == nil {
-			memberStatus = fmt.Sprintf("Has no active status or is invisible/offline.")
+			memberStatus = fmt.Sprintf("Has no active status, is invisible/offline or is not in the bot's cache.")
 		} else {
 			if member.PresenceGame.Type == 4 {
 				memberStatus = fmt.Sprintf("%s: %s", member.PresenceGame.Name, member.PresenceGame.State)
