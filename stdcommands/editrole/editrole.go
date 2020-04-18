@@ -37,10 +37,8 @@ var Command = &commands.YAGCommand{
 }
 
 func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
-	authorMember := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
 	cID := data.CS.ID
-
-	if ok, err := bot.AdminOrPermMS(cID, authorMember, discordgo.PermissionManageRoles); err != nil {
+	if ok, err := bot.AdminOrPermMS(cID, data.MS, discordgo.PermissionManageRoles); err != nil {
 		return "Failed checking perms", err
 	} else if !ok {
 		return "You need manage roles perms to use this command", nil
@@ -54,7 +52,7 @@ func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 	}
 	
 	data.GS.RLock()
-	if !bot.IsMemberAboveRole(data.GS, authorMember, role) {
+	if !bot.IsMemberAboveRole(data.GS, data.MS, role) {
 		data.GS.RUnlock()
 		return "Can't edit roles above you", nil
 	}
