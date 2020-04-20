@@ -1,11 +1,8 @@
 package commands
 
 import (
-	"context"
 	"strconv"
 	"strings"
-
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
@@ -120,11 +117,6 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 }
 
 func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate, cmd string, args ...interface{}) (interface{}, error) {
-	ctxMember, err := bot.GetMember(tmplCtx.GS.ID, m.Author.ID)
-	if err != nil {
-		return "error retrieving member", err
-	}
-
 	fakeMsg := *m.Message
 	fakeMsg.Mentions = make([]*discordgo.User, 0)
 
@@ -190,10 +182,8 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	if err != nil {
 		return "", errors.WithMessage(err, "tmplExecCmd")
 	}
-	data.MsgStrippedPrefix = fakeMsg.Content
-	ctx := context.WithValue(data.Context(), CtxKeyMS, ctxMember)
-	data = data.WithContext(context.WithValue(ctx, paginatedmessages.CtxKeyNoPagination, true))
 
+	data.MsgStrippedPrefix = fakeMsg.Content
 	foundCmd, foundContainer, rest := CommandSystem.Root.AbsFindCommandWithRest(cmdLine)
 	if foundCmd == nil {
 		return "Unknown command", nil

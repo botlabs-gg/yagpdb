@@ -164,8 +164,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return CmdFuncListCommands(parsed)
 	}
 
-	member := commands.ContextMS(parsed.Context())
-	given, err := FindToggleRole(parsed.Context(), member, parsed.Args[0].Str())
+	given, err := FindToggleRole(parsed.Context(), parsed.MS, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)

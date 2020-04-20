@@ -83,7 +83,7 @@ var Command = &commands.YAGCommand{
 		if c.Value != nil {
 			cID = c.Value.(*dstate.ChannelState).ID
 
-			hasPerms, err := bot.AdminOrPermMS(cID, dstate.MSFromDGoMember(data.GS, data.Msg.Member), discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+			hasPerms, err := bot.AdminOrPermMS(cID, data.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
 				return "Failed checking permissions, please try again or join the support server.", err
 			}

@@ -378,7 +378,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			return
 		}
 
-		member := ContextMS(data.Context())
+		member := data.MS
 		// Check the required and ignored roles
 		if len(settings.RequiredRoles) > 0 {
 			found := false

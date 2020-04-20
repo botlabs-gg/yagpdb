@@ -157,11 +157,6 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			return resp, err
 		}
 
-		if data.GS != nil {
-			ms := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
-			data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ms))
-		}
-
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
@@ -416,13 +411,4 @@ var cmdPrefix = &YAGCommand{
 
 		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
 	},
-}
-
-func ContextMS(ctx context.Context) *dstate.MemberState {
-	v := ctx.Value(CtxKeyMS)
-	if v == nil {
-		return nil
-	}
-
-	return v.(*dstate.MemberState)
 }

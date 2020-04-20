@@ -21,10 +21,9 @@ var Command = &commands.YAGCommand{
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var target *dstate.MemberState
-		targetID := data.Args[0].Int64()
-		if targetID == 0 {
-			tm := data.Msg.Member
-			target = dstate.MSFromDGoMember(data.GS, tm)
+
+		if targetID := data.Args[0].Int64(); targetID == 0 {
+			target = data.MS
 		} else {
 			var err error
 			target, err = bot.GetMember(data.GS.ID, targetID)

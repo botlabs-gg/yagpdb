@@ -5,7 +5,6 @@ import (
 
 	"github.com/jonas747/cardsagainstdiscord"
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/sirupsen/logrus"
@@ -48,7 +47,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a Cards Against Humanity game that is ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			isAdmin, err := bot.AdminOrPermMS(data.CS.ID, dstate.MSFromDGoMember(data.GS, data.Msg.Member), 0)
+			isAdmin, err := bot.AdminOrPermMS(data.CS.ID, data.MS, 0)
 			if err == nil && isAdmin {
 				err = p.Manager.RemoveGame(data.CS.ID)
 			} else {
