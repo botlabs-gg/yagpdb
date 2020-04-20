@@ -31,20 +31,39 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	c.GS.RUnlock()
 
 	info := fmt.Sprintf("Custom Command DM From the server **%s**", gName)
-
-	// Send embed
-	if embed, ok := s[0].(*discordgo.MessageEmbed); ok {
-		embed.Footer = &discordgo.MessageEmbedFooter{
-			Text: info,
+	msgSend := &discordgo.MessageSend{
+			AllowedMentions: discordgo.AllowedMentions{
+					Parse : []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+			},
 		}
-
-		bot.SendDMEmbed(memberID, embed)
+	
+	switch t:= s[0].(type) {		
+		case *discordgo.MessageEmbed:
+			t.Footer = &discordgo.MessageEmbedFooter{
+					Text: info,
+				    }
+			msgSend.Embed = t
+		case *discordgo.MessageSend:
+			msgSend = t
+			if msgSend.Embed != nil {
+				msgSend.Embed.Footer = &discordgo.MessageEmbedFooter{
+					Text: info,
+				    }
+				break
+			}
+			if (strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) {
+				return ""
+			}
+			msgSend.Content = info + "\n" + msgSend.Content
+		default:
+			msgSend.Content = fmt.Sprintf("%s\n%s", info, fmt.Sprint(s...))
+	}
+	
+	channel, err := common.BotSession.UserChannelCreate(memberID)
+	if err != nil {
 		return ""
 	}
-
-	msg := fmt.Sprint(s...)
-	msg = fmt.Sprintf("%s\n%s", info, msg)
-	bot.SendDM(memberID, msg)
+	_, _ = common.BotSession.ChannelMessageSendComplex(channel.ID, msgSend)
 	return ""
 }
 
