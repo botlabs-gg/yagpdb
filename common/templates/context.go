@@ -196,7 +196,7 @@ func (c *Context) setupBaseData() {
 	}
 
 	if c.CurrentFrame.CS != nil {
-		channel := c.CurrentFrame.CS.Copy(false)
+		channel := CtxChannelFromCS(c.CurrentFrame.CS)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
 	}
