@@ -27,7 +27,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdMigrate)
+	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdMigrate, cmdClearNames)
 }
 
 func (p *Plugin) BotInit() {
@@ -346,6 +346,30 @@ var cmdNicknames = &commands.YAGCommand{
 		})
 
 		return nil, err
+	},
+}
+
+var cmdClearNames = &commands.YAGCommand{
+	CmdCategory: commands.CategoryTool,
+	Name:        "ResetPastNames",
+	Description: "Reset your past usernames/nicknames.",
+	RunInDM:     true,
+	// Cooldown:    100,
+	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		queries := []string{
+			"DELETE FROM username_listings WHERE user_id=$1",
+			"DELETE FROM nickname_listings WHERE user_id=$1",
+			"INSERT INTO username_listings (created_at, updated_at, user_id, username) VALUES (now(), now(), $1, '<Usernames reset by user>')",
+		}
+
+		for _, v := range queries {
+			_, err := common.PQ.Exec(v, parsed.Msg.Author.ID)
+			if err != nil {
+				return "An error occured, join the support server for help", err
+			}
+		}
+
+		return "Doneso! Your past nicknames and usernames have been cleared!", nil
 	},
 }
 
