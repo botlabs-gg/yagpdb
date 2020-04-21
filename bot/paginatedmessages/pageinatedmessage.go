@@ -158,10 +158,12 @@ func (p *PaginatedMessage) HandleReactionAdd(ra *discordgo.MessageReactionAdd) {
 		pageMod = -1
 	}
 
-	// remove the emoji to signal were handling it
-	err := common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
-	if err != nil {
-		logger.WithError(err).WithField("guild", p.GuildID).Error("failed removing reaction")
+	if ra.GuildID != 0 {
+		// remove the emoji to signal were handling it
+		err := common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", p.GuildID).Error("failed removing reaction")
+		}
 	}
 
 	p.mu.Lock()
