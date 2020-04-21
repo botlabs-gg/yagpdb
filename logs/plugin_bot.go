@@ -239,6 +239,7 @@ var cmdUsernames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		gID := int64(0)
 		if parsed.GS != nil {
 			config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
 			if err != nil {
@@ -248,9 +249,11 @@ var cmdUsernames = &commands.YAGCommand{
 			if !config.UsernameLoggingEnabled.Bool {
 				return "Username logging is disabled on this server", nil
 			}
+
+			gID = parsed.GS.ID
 		}
 
-		_, err := paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.Msg.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			target := parsed.Msg.Author
 			if parsed.Args[0].Value != nil {
 				target = parsed.Args[0].Value.(*discordgo.User)
