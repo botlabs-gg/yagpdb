@@ -93,7 +93,7 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 		flags = append(flags, featureFlagMuteRoleManaged)
 	}
 
-	return nil, nil
+	return flags, nil
 }
 
 func (p *Plugin) AllFeatureFlags() []string {

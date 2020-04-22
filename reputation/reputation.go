@@ -398,7 +398,7 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 		}
 	}
 
-	return nil, nil
+	return flags, nil
 }
 
 func (p *Plugin) AllFeatureFlags() []string {
