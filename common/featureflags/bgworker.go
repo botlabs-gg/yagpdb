@@ -19,7 +19,12 @@ func (p *Plugin) RunBackgroundWorker() {
 
 	t := time.NewTicker(time.Second)
 	for {
-		<-t.C
+		select {
+		case <-t.C:
+		case wg := <-p.stopBGWorker:
+			wg.Done()
+			return
+		}
 
 		err := p.runUpdateDirtyFlags()
 		if err != nil {
@@ -30,7 +35,7 @@ func (p *Plugin) RunBackgroundWorker() {
 
 // StopBackgroundWorker implements backgroundworkers.BackgroundWorkerPlugin
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
-	wg.Done()
+	p.stopBGWorker <- wg
 }
 
 // checks if theres new feature flags which needs to be initialized
