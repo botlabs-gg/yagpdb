@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
@@ -95,6 +96,9 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 // Refreshes the mute override on the channel, currently it only adds it.
 func RefreshMuteOverrides(guildID int64) {
+	if !featureflags.GuildHasFlagOrLogError(guildID, featureFlagMuteRoleManaged) {
+		return // nothing to do
+	}
 
 	config, err := GetConfig(guildID)
 	if err != nil {
