@@ -7,6 +7,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -72,6 +73,8 @@ func GuildHasFlagOrLogError(guildID int64, flag string) bool {
 	return hasFlag
 }
 
+const evictCachePubSubEvent = "feature_flags_updated"
+
 // UpdateGuildFlags updates the provided guilds feature flags
 func UpdateGuildFlags(guildID int64) error {
 	keyLock := fmt.Sprintf("feature_flags_updating:%d", guildID)
@@ -81,11 +84,12 @@ func UpdateGuildFlags(guildID int64) error {
 	}
 
 	defer common.UnlockRedisKey(keyLock)
+	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
 
 	var lastErr error
 	for _, p := range common.Plugins {
 		if cast, ok := p.(PluginWithFeatureFlags); ok {
-			err := UpdatePluginFeatureFlags(guildID, cast)
+			err := updatePluginFeatureFlags(guildID, cast)
 			if err != nil {
 				lastErr = err
 			}
@@ -95,7 +99,13 @@ func UpdateGuildFlags(guildID int64) error {
 	return lastErr
 }
 
+// UpdatePluginFeatureFlags updates the feature flags of the provided plugin for the provided guild
 func UpdatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
+	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	return updatePluginFeatureFlags(guildID, p)
+}
+
+func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 
 	allFlags := p.AllFeatureFlags()
 
