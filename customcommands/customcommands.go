@@ -389,7 +389,7 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 		return nil, errors.WithStackIf(err)
 	}
 
-	if count > 1 {
+	if count > 0 {
 		flags = append(flags, featureFlagHasCommands)
 	}
 
