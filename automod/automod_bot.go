@@ -48,7 +48,7 @@ func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
 	}
 
 	if !featureflags.GuildHasFlagOrLogError(msg.GuildID, featureFlagEnabled) {
-		return false
+		return true
 	}
 
 	cs := bot.State.Channel(true, msg.ChannelID)
