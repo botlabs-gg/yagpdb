@@ -92,14 +92,14 @@ func (p *Plugin) runUpdateDirtyFlags() (err error) {
 
 	list := "high priority"
 	var guildIDs []int64
-	if err := common.RedisPool.Do(radix.Cmd(&guildIDs, "SPOP", "feature_flags_dirty_high_priority", "25")); err != nil {
+	if err := common.RedisPool.Do(radix.Cmd(&guildIDs, "SPOP", "feature_flags_dirty_high_priority", "100")); err != nil {
 		return errors.WithStackIf(err)
 	}
 
 	if len(guildIDs) < 1 {
 		list = "low priority"
 		// No more high priority flags to update
-		if err := common.RedisPool.Do(radix.Cmd(&guildIDs, "SPOP", "feature_flags_dirty_low_priority", "25")); err != nil {
+		if err := common.RedisPool.Do(radix.Cmd(&guildIDs, "SPOP", "feature_flags_dirty_low_priority", "100")); err != nil {
 			return errors.WithStackIf(err)
 		}
 
