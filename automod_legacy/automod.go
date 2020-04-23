@@ -110,6 +110,6 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 
 func (p *Plugin) AllFeatureFlags() []string {
 	return []string{
-		featureFlagEnabled, // set if this server has a valid mute role and it's managed
+		featureFlagEnabled, // set if automod is enabled and atleast one rule is enabled as well
 	}
 }
