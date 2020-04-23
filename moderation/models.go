@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/lib/pq"
 )
@@ -92,8 +93,12 @@ func (c *Config) Save(guildID int64) error {
 		return err
 	}
 
+	if err = featureflags.UpdatePluginFeatureFlags(guildID, &Plugin{}); err != nil {
+		return err
+	}
+
 	pubsub.Publish("mod_refresh_mute_override", guildID, nil)
-	return nil
+	return err
 }
 
 type WarningModel struct {

@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -373,4 +374,36 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 	}
 
 	return resultEntries, nil
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagReputationEnabled = "reputation_enabled"
+	featureFlagThanksEnabled     = "reputation_thanks_enabled"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	config, err := GetConfig(context.Background(), guildID)
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	var flags []string
+	if config.Enabled {
+		flags = append(flags, featureFlagReputationEnabled)
+
+		if !config.DisableThanksDetection {
+			flags = append(flags, featureFlagThanksEnabled)
+		}
+	}
+
+	return flags, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagReputationEnabled, // set if reputation is enabled on this server
+		featureFlagThanksEnabled,     // set if reputation thanks detection is anabled
+	}
 }

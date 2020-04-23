@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/volatiletech/null"
@@ -42,10 +43,11 @@ func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
 
 // called on new messages and edits
 func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
-	if !bot.IsNormalUserMessage(msg) {
-		// message edits can have a nil author, those are embed edits
-		// check against a discrim of 0000 to avoid some cases on webhook messages where webhook_id is 0, even tough its a webhook
-		// discrim is in those 0000 which is a invalid user discrim. (atleast when i was testing)
+	if !bot.IsNormalUserMessage(msg) || msg.GuildID == 0 {
+		return false
+	}
+
+	if !featureflags.GuildHasFlagOrLogError(msg.GuildID, featureFlagEnabled) {
 		return false
 	}
 

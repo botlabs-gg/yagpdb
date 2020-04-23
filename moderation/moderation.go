@@ -1,9 +1,11 @@
 package moderation
 
 import (
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"golang.org/x/net/context"
 )
 
@@ -72,4 +74,30 @@ func GetConfig(guildID int64) (*Config, error) {
 		err = nil
 	}
 	return &config, err
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagMuteRoleManaged = "moderation_mute_role_managed"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	config, err := GetConfig(guildID)
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	var flags []string
+	if config.MuteRole != "" && config.MuteManageRole {
+		flags = append(flags, featureFlagMuteRoleManaged)
+	}
+
+	return flags, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagMuteRoleManaged, // set if this server has a valid mute role and it's managed
+	}
 }

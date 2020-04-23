@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/moderation"
 	"github.com/karlseguin/ccache"
@@ -81,7 +82,7 @@ func CheckMessage(m *discordgo.Message) bool {
 		return false
 	}
 
-	if cs.IsPrivate {
+	if !featureflags.GuildHasFlagOrLogError(m.GuildID, featureFlagEnabled) {
 		return false
 	}
 
