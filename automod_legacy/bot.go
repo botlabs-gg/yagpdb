@@ -83,7 +83,7 @@ func CheckMessage(m *discordgo.Message) bool {
 	}
 
 	if !featureflags.GuildHasFlagOrLogError(m.GuildID, featureFlagEnabled) {
-		return true
+		return false
 	}
 
 	config, err := CachedGetConfig(cs.Guild.ID)
