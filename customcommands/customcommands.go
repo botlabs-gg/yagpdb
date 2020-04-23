@@ -10,15 +10,18 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var (
@@ -370,4 +373,31 @@ func MaxCommandsForContext(ctx context.Context) int {
 	}
 
 	return MaxCommands
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagHasCommands = "custom_commands_has_commands"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+
+	var flags []string
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", guildID)).CountG(context.Background())
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	if count > 1 {
+		flags = append(flags, featureFlagHasCommands)
+	}
+
+	return flags, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagHasCommands, // set if this server has any custom commands at all
+	}
 }
