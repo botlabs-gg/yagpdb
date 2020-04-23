@@ -17,6 +17,7 @@ import (
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -370,6 +371,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 	}
 
 	bot.EvictGSCache(g.ID, CacheKeyRulesets)
+	featureflags.MarkGuildDirty(g.ID)
 
 	// Reload the conditions now
 	ruleset.R.RulesetAutomodRulesetConditions = properConditions
@@ -390,6 +392,8 @@ func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.R
 	delete(tmpl, "CurrentRuleset")
 
 	bot.EvictGSCache(g.ID, CacheKeyRulesets)
+	featureflags.MarkGuildDirty(g.ID)
+
 	return tmpl, err
 }
 
@@ -496,6 +500,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	WebLoadRuleSettings(r, tmpl, ruleSet)
 
 	bot.EvictGSCache(g.ID, CacheKeyRulesets)
+	featureflags.MarkGuildDirty(g.ID)
 
 	return tmpl, err
 }
@@ -695,6 +700,7 @@ func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Requ
 			if err == nil {
 				ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules[:k], ruleset.R.RulesetAutomodRules[k+1:]...)
 				bot.EvictGSCache(g.ID, CacheKeyRulesets)
+				featureflags.MarkGuildDirty(g.ID)
 			}
 
 			return nil, err
