@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"emperror.dev/errors"
@@ -41,9 +42,11 @@ func init() {
 		ctx.ContextFuncs["dbDel"] = tmplDBDel(ctx)
 		ctx.ContextFuncs["dbDelById"] = tmplDBDelById(ctx)
 		ctx.ContextFuncs["dbDelByID"] = tmplDBDelById(ctx)
+		ctx.ContextFuncs["dbDelMultiple"] = tmplDBDelMultiple(ctx)
 		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
 		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
+		ctx.ContextFuncs["dbRank"]= tmplDBRank(ctx)
 	})
 }
 
@@ -321,6 +324,12 @@ func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 	}
 }
 
+type Query struct {
+	UserID  null.Int64 	`json:"user_id"`
+	Pattern null.String	`json:"pattern"`
+	Reverse bool		`json:"reverse"`
+}
+
 func tmplDBSet(ctx *templates.Context) interface{} {
 	return func(userID int64, key interface{}, value interface{}) (string, error) {
 		return (tmplDBSetExpire(ctx))(userID, key, value, -1)
@@ -488,6 +497,118 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 		return "", err
 	}
 }
+func tmplDBDelMultiple(ctx *templates.Context) interface{} {
+	return func(query interface{}, iAmount interface{}, iSkip interface{}) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		ctx.GS.UserCacheDel(CacheKeyDBLimits)
+
+		dict, err := templates.StringKeyDictionary(query)
+		if err != nil {
+			return "", err
+		}
+		var q Query
+		encoded, err := json.Marshal(dict)
+		if err != nil {
+			return "", err
+		}
+		err = json.Unmarshal(encoded, &q)
+		if err != nil {
+			return "", err
+		}
+
+		amount := int(templates.ToInt64(iAmount))
+		if amount > 100 {
+			amount = 100
+		}
+		skip := int(templates.ToInt64(iSkip))
+		orderby := "value_num DESC, id DESC"
+		if q.Reverse {
+			orderby = "value_num ASC, id ASC"
+		}
+
+		qms := []qm.QueryMod{qm.Where("guild_id = ?", ctx.GS.ID), qm.OrderBy(orderby), qm.Limit(amount), qm.Offset(skip)}
+		if q.Pattern.Valid {
+			qms = append(qms, qm.Where("key LIKE ?", limitString(q.Pattern.String, 256)))
+		}
+		if q.UserID.Valid {
+			qms = append(qms, qm.Where("user_id = ?", q.UserID.Int64))
+		}
+		rows, err := models.TemplatesUserDatabases(qms...).AllG(context.Background())
+		if err != nil {
+			return "", err
+		}
+		cleared, err := rows.DeleteAllG(context.Background())
+
+		return cleared, err
+	}
+}
+
+func tmplDBRank(ctx *templates.Context) interface{} {
+	return func(query interface{}, userID int64, key string) (interface{}, error) {
+		if ctx.IncreaseCheckCallCounterPremium("db_interactions", 10, 50) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
+			return "", templates.ErrTooManyCalls
+		}
+
+		dict, err := templates.StringKeyDictionary(query)
+		if err != nil {
+			return "", err
+		}
+
+		var q Query
+		encoded, err := json.Marshal(dict)
+		if err != nil {
+			return "", err
+		}
+
+		err = json.Unmarshal(encoded, &q)
+		if err != nil {
+			return "", err
+		}
+
+		order := `DESC`
+		if q.Reverse {
+			order = `ASC`
+		}
+		q.Pattern.String = limitString(q.Pattern.String, 256)
+		if q.UserID.Valid && (q.UserID.Int64 != userID) { // some optimization
+			return 0, nil
+		}
+
+		const rawquery = `SELECT position FROM
+(
+	SELECT user_id, key,
+	RANK() OVER
+	(
+		ORDER BY 
+		CASE WHEN $1 = 'ASC'  THEN value_num ELSE 0 END ASC,  
+		CASE WHEN $1 = 'DESC' THEN value_num ELSE 0 END DESC,
+		CASE WHEN $1 = 'ASC'  THEN id ELSE 0 END ASC,
+		CASE WHEN $1 = 'DESC'  THEN id ELSE 0 END DESC
+	) AS position
+FROM templates_user_database WHERE (guild_id = $2) AND ($3::bigint IS NULL OR user_id = $3) AND ($4::text IS NULL OR key LIKE $4) AND (expires_at IS NULL OR expires_at > now())
+) AS w
+WHERE user_id = $5 AND key = $6`
+
+		var rank int64
+		err = common.PQ.QueryRow(rawquery, order, ctx.GS.ID, q.UserID, q.Pattern, userID, key).Scan(&rank)
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return rank, err
+
+	}
+}
 
 func tmplDBCount(ctx *templates.Context) interface{} {
 	return func(variadicArg ...interface{}) (interface{}, error) {
@@ -500,7 +621,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 		}
 
 		var userID null.Int64
-		var key null.String
+		var pattern null.String
 		if len(variadicArg) > 0 {
 
 			switch arg := variadicArg[0].(type) {
@@ -511,19 +632,36 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 				userID.Int64 = int64(arg)
 				userID.Valid = true
 			case string:
-				keyStr := limitString(arg, 256)
-				key.String = keyStr
-				key.Valid = true
+				patternStr := limitString(arg, 256)
+				pattern.String = patternStr
+				pattern.Valid = true
 			default:
-				return "", errors.New("Invalid Argument Data Type")
+				dict, err := templates.StringKeyDictionary(arg)
+				if err != nil {
+					return "", err
+				}
+
+				var q Query
+				encoded, err := json.Marshal(dict)
+				if err != nil {
+					return "", err
+				}
+
+				err = json.Unmarshal(encoded, &q)
+				if err != nil {
+					return "", err
+				}
+				userID = q.UserID
+				pattern = q.Pattern
+				pattern.String = limitString(pattern.String, 256)
 			}
 
 		}
 
-		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND ($3::text IS NULL OR key = $3) AND (expires_at IS NULL or expires_at > now())`
+		const q = `SELECT count(*) FROM templates_user_database WHERE (guild_id = $1) AND ($2::bigint IS NULL OR user_id = $2) AND ($3::text IS NULL OR key LIKE $3) AND (expires_at IS NULL or expires_at > now())`
 
 		var count int64
-		err := common.PQ.QueryRow(q, ctx.GS.ID, userID, key).Scan(&count)
+		err := common.PQ.QueryRow(q, ctx.GS.ID, userID, pattern).Scan(&count)
 		return count, err
 	}
 }
