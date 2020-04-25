@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix/v3"
@@ -132,6 +133,10 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	m := evt.GuildMemberUpdate()
 
+	if !featureflags.GuildHasFlagOrLogError(m.GuildID, featureFlagEnabled) {
+		return false, nil
+	}
+
 	config, err := BotCachedGetConfig(evt.GS)
 	if err != nil {
 		return true, errors.WithStackIf(err)
@@ -162,6 +167,10 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	g := evt.GuildCreate()
+
+	if !featureflags.GuildHasFlagOrLogError(g.ID, featureFlagEnabled) {
+		return
+	}
 
 	config, err := GetConfig(g.ID)
 	if err != nil {
@@ -206,6 +215,10 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	p := evt.PresenceUpdate()
 
 	gs := evt.GS
+
+	if !featureflags.GuildHasFlagOrLogError(gs.ID, featureFlagEnabled) {
+		return false, nil
+	}
 
 	config, err := BotCachedGetConfig(gs)
 	if err != nil {
@@ -490,6 +503,7 @@ func DisableStreamingRole(guildID int64) {
 
 	conf.GiveRole = 0
 	conf.Save(guildID)
+	featureflags.MarkGuildDirty(guildID)
 }
 
 type CacheKey int

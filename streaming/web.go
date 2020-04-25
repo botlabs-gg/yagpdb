@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -86,6 +87,8 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed sending update streaming event")
 	}
+
+	featureflags.MarkGuildDirty(guild.ID)
 
 	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
 	common.AddCPLogEntry(user, guild.ID, "Updated streaming config.")
