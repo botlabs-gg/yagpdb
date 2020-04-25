@@ -42,6 +42,12 @@ func GetGuildFlags(guildID int64) ([]string, error) {
 	cacheL.Lock()
 	defer cacheL.Unlock()
 
+	// check again in case in the mean time we got the flags while trying to upgrade the lock
+	if flags, ok := cache[guildID]; ok {
+		// the flags for this server was fetched in the meantime
+		return flags, nil
+	}
+
 	var result []string
 	err := common.RedisPool.Do(radix.Cmd(&result, "SMEMBERS", keyGuildFlags(guildID)))
 	if err != nil {
