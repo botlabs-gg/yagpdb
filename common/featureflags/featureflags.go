@@ -19,31 +19,43 @@ type PluginWithFeatureFlags interface {
 	AllFeatureFlags() []string
 }
 
-var (
-	cache  = make(map[int64][]string)
-	cacheL sync.RWMutex
-)
-
 func keyGuildFlags(guildID int64) string {
 	return fmt.Sprintf("f_flags:%d", guildID)
 }
 
+type flagCache struct {
+	cache map[int64][]string
+	l     sync.RWMutex
+}
+
+func initCaches() []*flagCache {
+	result := make([]*flagCache, 10)
+	for i, _ := range result {
+		result[i] = &flagCache{
+			cache: make(map[int64][]string),
+		}
+	}
+
+	return result
+}
+
 // GetGuildFlags returns the feature flags a guild has
-func GetGuildFlags(guildID int64) ([]string, error) {
+func (c *flagCache) getGuildFlags(guildID int64) ([]string, error) {
 	// fast path
-	cacheL.RLock()
-	if flags, ok := cache[guildID]; ok {
-		cacheL.RUnlock()
+	c.l.RLock()
+	if flags, ok := c.cache[guildID]; ok {
+		c.l.RUnlock()
 		return flags, nil
 	}
-	cacheL.RUnlock()
+
+	c.l.RUnlock()
 
 	// need to fetch from redis, upgrade lock
-	cacheL.Lock()
-	defer cacheL.Unlock()
+	c.l.Lock()
+	defer c.l.Unlock()
 
 	// check again in case in the mean time we got the flags while trying to upgrade the lock
-	if flags, ok := cache[guildID]; ok {
+	if flags, ok := c.cache[guildID]; ok {
 		// the flags for this server was fetched in the meantime
 		return flags, nil
 	}
@@ -54,8 +66,25 @@ func GetGuildFlags(guildID int64) ([]string, error) {
 		return nil, errors.WithStackIf(err)
 	}
 
-	cache[guildID] = result
+	c.cache[guildID] = result
 	return result, nil
+}
+
+func (c *flagCache) invalidateGuild(guildID int64) {
+	c.l.Lock()
+	defer c.l.Unlock()
+
+	delete(c.cache, guildID)
+}
+
+var (
+	caches = initCaches()
+)
+
+// GetGuildFlags returns the feature flags a guild has
+func GetGuildFlags(guildID int64) ([]string, error) {
+	cacheID := (guildID >> 22) % int64(len(caches))
+	return caches[cacheID].getGuildFlags(guildID)
 }
 
 // GuildHasFlag returns true if the target guild has the provided flag

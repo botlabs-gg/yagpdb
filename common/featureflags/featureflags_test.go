@@ -74,7 +74,7 @@ func TestFeatureFlags(t *testing.T) {
 		t.Errorf("Error on updating flags %v", err)
 	}
 
-	delete(cache, 1)
+	invalidateCache(1)
 
 	flags, err = GetGuildFlags(1)
 	if err != nil {
@@ -91,4 +91,9 @@ func TestFeatureFlags(t *testing.T) {
 	if !has {
 		t.Error("flag 'epic' not set")
 	}
+}
+
+func invalidateCache(guildID int64) {
+	cacheID := (guildID >> 22) % int64(len(caches))
+	caches[cacheID].invalidateGuild(guildID)
 }

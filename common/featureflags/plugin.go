@@ -38,10 +38,8 @@ func RegisterPlugin() {
 
 // Invalidate the cache when the rules have changed
 func handleInvalidateCacheFor(event *pubsub.Event) {
-	cacheL.Lock()
-	defer cacheL.Unlock()
-
-	delete(cache, event.TargetGuildInt)
+	cacheID := (event.TargetGuildInt >> 22) % int64(len(caches))
+	caches[cacheID].invalidateGuild(event.TargetGuildInt)
 }
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -49,9 +47,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 // BotInit implements bot.BotInitHandler
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
-		cacheL.Lock()
-		defer cacheL.Unlock()
-
-		delete(cache, evt.GuildDelete().ID)
+		cacheID := (evt.GuildDelete().ID >> 22) % int64(len(caches))
+		caches[cacheID].invalidateGuild(evt.GuildDelete().ID)
 	}, eventsystem.EventGuildDelete)
 }
