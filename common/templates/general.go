@@ -740,6 +740,8 @@ func ToString(from interface{}) string {
 		return string(t)
 	case []byte:
 		return string(t)
+	case fmt.Stringer:
+		return t.String()
 	case string:
 		return t
 	default:
