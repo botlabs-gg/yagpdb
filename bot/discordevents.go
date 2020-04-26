@@ -332,16 +332,7 @@ func HandleRatelimit(evt *eventsystem.EventData) {
 		return
 	}
 
-	logger.Printf("Got 429: %s, %d", rl.Bucket, rl.RetryAfter)
-
-	reset := time.Now().Add(rl.RetryAfter * time.Millisecond)
-	err := pubsub.Publish("global_ratelimit", -1, &GlobalRatelimitTriggeredEventData{
-		Bucket: rl.Bucket,
-		Reset:  reset,
-	})
-	if err != nil {
-		logger.WithError(err).Error("failed publishing global ratelimit")
-	}
+	pubsub.PublishRatelimit(rl)
 }
 
 func handleResumed(evt *eventsystem.EventData) {

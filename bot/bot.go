@@ -82,8 +82,6 @@ func setup() {
 	setupState()
 	addBotHandlers()
 	setupShardManager()
-
-	common.BotSession.AddHandler(eventsystem.HandleEvent)
 }
 
 func setupStandalone() {
@@ -115,7 +113,6 @@ func botReady() {
 		updateAllShardStatuses()
 	}, nil)
 
-	pubsub.AddHandler("global_ratelimit", handleGlobalRatelimtPusub, GlobalRatelimitTriggeredEventData{})
 	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 
 	serviceDetails := "Not using orchestrator"
@@ -253,16 +250,6 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 
 	// same large bot sharding bucket
 	return true
-}
-
-type GlobalRatelimitTriggeredEventData struct {
-	Reset  time.Time `json:"reset"`
-	Bucket string    `json:"bucket"`
-}
-
-func handleGlobalRatelimtPusub(evt *pubsub.Event) {
-	data := evt.Data.(*GlobalRatelimitTriggeredEventData)
-	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
 }
 
 var (
