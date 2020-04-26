@@ -77,6 +77,9 @@ func UpdatePremiumSlots(ctx context.Context) error {
 	}
 
 	patrons := patreon.ActivePoller.GetPatrons()
+	if len(patrons) == 0 {
+		return nil
+	}
 
 	// Sort the slots into a map of users -> slots
 	sorted := make(map[int64][]*models.PremiumSlot)
