@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 )
@@ -196,6 +198,8 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	if foundContainer != CommandSystem.Root {
 		data.ContainerChain = append(data.ContainerChain, foundContainer)
 	}
+
+	data = data.WithContext(context.WithValue(data.Context(), paginatedmessages.CtxKeyNoPagination, true))
 
 	cast := foundCmd.Command.(*YAGCommand)
 
