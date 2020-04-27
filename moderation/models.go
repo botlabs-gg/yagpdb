@@ -152,6 +152,7 @@ type LockdownModel struct {
 
 	PermsOriginal int64
 	PermsToggle   int64
+	Overwrite     bool
 }
 
 func (m *LockdownModel) TableName() string {

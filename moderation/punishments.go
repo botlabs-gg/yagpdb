@@ -348,6 +348,7 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 
 	if lock {
 		currentLockdown.PermsToggle = int64(totalPerms)
+		currentLockdown.Overwrite = force
 		newPerms = role.Permissions&^totalPerms
 		action = MALock
 		outDur = "indefinitely!"
@@ -368,6 +369,7 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 
 		if totalPerms == 0 { //This happens during scheduled Unlock events
 			totalPerms = int(currentLockdown.PermsToggle)
+			force = currentLockdown.Overwrite
 		}
 		if force {
 			newPerms = role.Permissions|totalPerms
