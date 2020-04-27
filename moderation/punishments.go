@@ -283,7 +283,11 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 	}
 
 	if roleS == "" {
-		roleS = "@everyone"
+		if config.DefaultLockRole == "" {
+			roleS = "@everyone"
+		} else {
+			roleS = config.DefaultLockRole
+		}
 	}
 	role := FindRole(gs, roleS)
 
@@ -305,7 +309,7 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 	// To avoid unexpected things from happening, make sure were only updating the lockdown of the role 1 place at a time
 	LockLockdown(role.ID)
 	defer UnlockLockdown(role.ID)
-	
+
 	// Look for existing lockdown
 	currentLockdown := LockdownModel{}
 	err = common.GORM.Where(&LockdownModel{RoleID: role.ID, GuildID: gs.ID}).First(&currentLockdown).Error
@@ -318,12 +322,12 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 	action := MAUnlock
 	outDur := ""
 	outPerms := ""
-	if !alreadyLocked { 
+	if !alreadyLocked {
 		currentLockdown.GuildID = gs.ID
 		currentLockdown.RoleID = role.ID
 		currentLockdown.PermsOriginal = int64(role.Permissions)
 	}
-	
+
 	// remove all existing unlock events for this role irrespective of lock or unlock event
 	_, err = seventsmodels.ScheduledEvents(
 	qm.Where("event_name='moderation_unlock_role'"),
@@ -332,7 +336,7 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 	qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
 
 
-	if lock {	 
+	if lock {
 		currentLockdown.PermsToggle = int64(totalPerms)
 		newPerms = role.Permissions&^totalPerms
 		action = MALock
@@ -349,7 +353,7 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 			return nil, errors.WithMessage(err, "failed inserting/updating lockdown")
 		}
 		reason = reason + "\nCurrently Locked Permissions - `" + strings.Join(common.HumanizePermissions(int64(totalPerms)), ", ") + "`" + "\nForce Unlock Flag - `" + fmt.Sprint(force) + "`"
-		
+
 	} else {
 
 		if totalPerms == 0 { //This happens during scheduled Unlock events
@@ -361,7 +365,7 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 			newPerms = role.Permissions|(int(currentLockdown.PermsOriginal)&totalPerms)
 		}
 	}
-	 
+
 	if newPerms != role.Permissions { //Update only if permissions change
 		_, err = common.BotSession.GuildRoleEdit(gs.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
 		if err != nil {
@@ -374,10 +378,10 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 		outPerms = "\nPermissions toggled - `" + strings.Join(common.HumanizePermissions(int64(toggledPerms)), ", ") + "`"
 	}
 	reason = reason + outPerms
-	
+
 
 	if dur > 0 && lock {
-		//schedule new unlock 
+		//schedule new unlock
 		err = scheduledevents2.ScheduleEvent("moderation_unlock_role", gs.ID, time.Now().Add(dur), &ScheduledUnlockData{
 		      RoleID:  role.ID,
 		      Overwrite:  force,
@@ -386,7 +390,7 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 			return nil, err
 		}
 	}
-	
+
 	if !lock && alreadyLocked {
 		common.GORM.Delete(&currentLockdown)
 	}
@@ -398,7 +402,12 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 	if out == "@everyone" {
 		out = "Server"
 	}
-	return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`%s",action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
+
+	if config.LockIncludeChannelLogs {
+		return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`%s",action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
+	}
+
+	return nil, err
 
 }
 
