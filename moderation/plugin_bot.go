@@ -375,12 +375,12 @@ func LockRoleLockdownMW(next func(evt *eventsystem.EventData, PermsData int) (re
 		if roleUpdate && !currentLockdown.ExpiresAt.IsZero() && currentLockdown.ExpiresAt.Sub(time.Now()) < 5*time.Second {
 			return false, nil
 		}
-		
+
 		// If it's a role update update event and locked perms remain locked, dont do anything
 		if roleUpdate && int(currentLockdown.PermsToggle)&rolePerms == 0 {
 			return false , nil
 		}
-			
+
 
 		return next(evt, int(currentLockdown.PermsToggle))
 	}
@@ -634,10 +634,10 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 		logger.WithField("guild", guildID).Error("Unlock scheduled for guild not in state")
 		return false, nil
 	}
-	
+
 	reason := "Timed lockdown expired."
 
-	_, err = LockUnlockRole(nil, false, g, g.MemberCopy(true, common.BotUser.ID), common.BotUser, reason, strconv.Itoa(roleID), false, 0, 0)
+	_, err = LockUnlockRole(nil, false, g, nil, g.MemberCopy(true, common.BotUser.ID), common.BotUser, reason, strconv.Itoa(roleID), false, 0, 0)
 
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed role unlock")

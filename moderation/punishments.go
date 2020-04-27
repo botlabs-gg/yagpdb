@@ -276,7 +276,7 @@ func BanUser(config *Config, guildID int64, channel *dstate.ChannelState, messag
 }
 
 
-func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMember *dstate.MemberState, modlogAuthor *discordgo.User, reason, roleS string,  force bool, totalPerms int, dur time.Duration) (interface{}, error) {
+func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *dstate.ChannelState, authorMember *dstate.MemberState, modlogAuthor *discordgo.User, reason, roleS string,  force bool, totalPerms int, dur time.Duration) (interface{}, error) {
 	config, err := getConfigIfNotSet(gs.ID, config)
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
@@ -304,6 +304,16 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 
 	if dur > 0 && dur < time.Minute {
 		dur = time.Minute
+	}
+
+	var channelID int64
+	if channel != nil {
+		channelID = channel.ID
+	}
+
+	logLink := ""
+	if config.LockIncludeChannelLogs && channelID != 0 {
+		logLink = CreateLogs(gs.ID, channelID, modlogAuthor)
 	}
 
 	// To avoid unexpected things from happening, make sure were only updating the lockdown of the role 1 place at a time
@@ -398,18 +408,14 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 	}
 
 	if config.LockdownCmdModlog {
-		err = CreateModlogEmbed(config, modlogAuthor, action, role, reason, "")
+		err = CreateModlogEmbed(config, modlogAuthor, action, role, reason, logLink)
 	}
 	out := role.Name
 	if out == "@everyone" {
 		out = "Server"
 	}
 
-	if config.LockIncludeChannelLogs {
-		return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`%s",action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
-	}
-
-	return nil, err
+	return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`%s",action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
 
 }
 
