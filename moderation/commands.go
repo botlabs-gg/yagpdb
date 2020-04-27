@@ -156,6 +156,117 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(MABanned, target, parsed.Switch("d").Value.(time.Duration), true, false), nil
 		},
 	},
+		&commands.YAGCommand{
+		CmdCategory:     	commands.CategoryModeration,
+		Name:            	"LockDown",
+		Aliases:		 []string{"ld", "lock"},
+		Description:     	"Locks the server or a specific role down.",
+		LongDescription: 	"Require the manage roles permission. This will revoke the everyone role permission to send messages.\nYou can choose a specific role to be locked by using its name or ID.\n\nYou can also use flags to revoke more permissions:\n**-reaction** -> Revokes the permission to add reactions\n**-voicespeak** -> Revokes the permission to speak in voice channels\n**-voiceconnect** -> Revokes the permission to connect to voice channels\n**-all** -> Revokes all the permission previously stated\n**-force** -> Original role permissions are overwritten during scheduled unlock.",
+		GuildScopeCooldown: 	10,
+		RequiredArgs:    	0,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "Role", Help: "Optional role", Type: dcmd.String},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "reaction", Name: "Add Reactions"},
+			&dcmd.ArgDef{Switch: "voicespeak", Name: "Voice Speak"},
+			&dcmd.ArgDef{Switch: "voiceconnect", Name: "Voice Connect"},
+			&dcmd.ArgDef{Switch: "all", Name: "All Flags"},
+			&dcmd.ArgDef{Switch: "force", Name: "Force Unlock Permission Overwrite", Default: false},
+			&dcmd.ArgDef{Switch: "d", Name: "Duration", Default: time.Duration(0), Type: &commands.DurationArg{}},
+		},
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			config, _, err := MBaseCmd(data, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(data, "", true, discordgo.PermissionManageRoles, config.LockdownCmdRoles, config.LockdownCmdEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+			totalPerms := discordgo.PermissionSendMessages
+
+			if data.Switches["all"].Value != nil && data.Switches["all"].Value.(bool) {
+				totalPerms = totalPerms|discordgo.PermissionAddReactions|discordgo.PermissionVoiceSpeak|discordgo.PermissionVoiceConnect
+			} else {
+				if data.Switches["reaction"].Value != nil && data.Switches["reaction"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionAddReactions
+				}
+
+				if data.Switches["voicespeak"].Value != nil && data.Switches["voicespeak"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceSpeak
+				}
+
+				if data.Switches["voiceconnect"].Value != nil && data.Switches["voiceconnect"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceConnect
+				}
+			}
+
+			out, err := LockUnlockRole(config, true, data.GS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, data.Switches["d"].Value.(time.Duration))
+			if err != nil {
+				return nil, err
+			}
+			return out, nil
+		},
+	},
+	&commands.YAGCommand{
+		CmdCategory:     	commands.CategoryModeration,
+		Name:            	"UnLock",
+		Aliases:		 []string{"ul"},
+		Description:     	"Unlocks the server or a specific role.",
+		LongDescription: 	"Require the manage roles permission. This will grant the everyone role permission to send messages.\nYou can choose a specific role to be unlocked by using its name or ID.\n\nYou can also use flags to grant more permissions:\n**-reaction** -> Grants the permission to add reactions\n**-voicespeak** -> Grants the permission to speak in voice channels\n**-voiceconnect** -> Grants the permission to connect to voice channels\n**-all** -> Grant all the permission previously stated\n**-force** -> Original role permissions are overwritten.",
+		GuildScopeCooldown: 	10,
+		RequiredArgs:    	0,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "Role", Help: "Optional role", Type: dcmd.String},
+		},
+		ArgSwitches: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Switch: "reaction", Name: "Add Reactions"},
+			&dcmd.ArgDef{Switch: "voicespeak", Name: "Voice Speak"},
+			&dcmd.ArgDef{Switch: "voiceconnect", Name: "Voice Connect"},
+			&dcmd.ArgDef{Switch: "all", Name: "All Flags"},
+			&dcmd.ArgDef{Switch: "force", Name: "Force Unlock Permission Overwrite", Default: false},
+		},
+		RunFunc: func(data *dcmd.Data) (interface{}, error) {
+			config, _, err := MBaseCmd(data, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(data, "", true, discordgo.PermissionManageRoles, config.LockdownCmdRoles, config.LockdownCmdEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+
+			totalPerms := discordgo.PermissionSendMessages
+
+			if data.Switches["all"].Value != nil && data.Switches["all"].Value.(bool) {
+				totalPerms = totalPerms|discordgo.PermissionAddReactions|discordgo.PermissionVoiceSpeak|discordgo.PermissionVoiceConnect
+			} else {
+				if data.Switches["reaction"].Value != nil && data.Switches["reaction"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionAddReactions
+				}
+
+				if data.Switches["voicespeak"].Value != nil && data.Switches["voicespeak"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceSpeak
+				}
+
+				if data.Switches["voiceconnect"].Value != nil && data.Switches["voiceconnect"].Value.(bool) {
+					totalPerms = totalPerms|discordgo.PermissionVoiceConnect
+				}
+			}
+
+			out, err := LockUnlockRole(config, false, data.GS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, time.Duration(0))
+			if err != nil {
+				return nil, err
+			}
+			return out, nil
+
+		},
+	},
 	&commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
