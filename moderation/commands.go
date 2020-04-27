@@ -204,7 +204,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				}
 			}
 
-			out, err := LockUnlockRole(config, true, data.GS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, data.Switches["d"].Value.(time.Duration))
+			out, err := LockUnlockRole(config, true, data.GS, data.CS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, data.Switches["d"].Value.(time.Duration))
 			if err != nil {
 				return nil, err
 			}
@@ -259,7 +259,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				}
 			}
 
-			out, err := LockUnlockRole(config, false, data.GS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, time.Duration(0))
+			out, err := LockUnlockRole(config, false, data.GS, data.CS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, time.Duration(0))
 			if err != nil {
 				return nil, err
 			}
