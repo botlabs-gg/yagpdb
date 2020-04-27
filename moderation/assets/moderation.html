@@ -39,6 +39,11 @@ the punishment{{end}}
                             Warnings <span
                                 class="indicator indicator-{{if .ModConfig.WarnCommandsEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
+                    <li class="nav-item"><a class="nav-link" href="#lockdown" aria-controls="lockdown" role="tab"
+                        data-toggle="tab">
+                        Lockdown <span
+                            class="indicator indicator-{{if .ModConfig.LockdownCmdEnabled}}success{{else}}danger{{end}}"></span>
+                    </a></li>
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane active" id="general">{{template "moderation_general" .}}</div>
@@ -46,6 +51,7 @@ the punishment{{end}}
                     <div role="tabpanel" class="tab-pane" id="kick">{{template "moderation_kick" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="ban">{{template "moderation_ban" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="warn">{{template "moderation_warn" .}}</div>
+                    <div role="tabpanel" class="tab-pane" id="lockdown">{{template "moderation_lockdown" .}}</div>
                 </div>
             </div>
         </div>
@@ -168,18 +174,6 @@ the punishment{{end}}
         {{checkbox "LogBans" "log-bans" "Log ban events not made through the bot" .ModConfig.LogBans}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
         <hr />
-	{{checkbox "LockdownCmdEnabled" "lock-down-enabled" "Enable the <code>lockdown/lock and unlock</code> commands" .ModConfig.LockdownCmdEnabled}}
-        <p>People with manage roles permissions plus extra roles set below can use this.</p>
-
-	<div class="form-group">
-            <label>Users with the following roles will have permission to use the
-                <code>lockdown/lock and unlock</code> commands</label><br>
-            <select class="multiselect" name="LockdownCmdRoles" data-plugin-multiselect multiple="multiple">
-                {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.LockdownCmdRoles}}
-            </select>
-        </div>
-        {{checkbox "LockdownCmdModlog" "lock-down-modlog" "Log <code>lockdown/lock and unlock</code> to modlog?" .ModConfig.LockdownCmdModlog}}
-       <hr /> 
     </div>
 </div>
 {{end}}
@@ -423,6 +417,40 @@ the punishment{{end}}
     <div class="col">
         <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#clear-server-warnings-modal">Delete all
             warnings</a>
+    </div>
+</div>
+{{end}}
+
+{{define "moderation_lockdown"}}
+<p>Allows you to lock/unlock the everyone role, or any role specified.</p>
+<p>You have the ability to change these permissions: SendMessages, AddReactions, VoiceConnect, VoiceTalk</p>
+<div class="row">
+    <div class="col-sm">
+        {{checkbox "LockdownCmdEnabled" "lock-down-enabled" "Enable lockdown commands" .ModConfig.LockdownCmdEnabled}}
+        <p>People with manage roles permissions plus extra roles set below can use this.</p>
+        <p>Usage is, for example: <code>(prefix)lockdown "rolename" -all -d 6h</code></p>
+        <hr />
+        <div class="form-group">
+            <label>Users with the following roles will have permission to use the
+                <code>lockdown/lock and unlock</code> commands</label><br>
+            <select class="multiselect" name="LockdownCmdRoles" data-plugin-multiselect multiple="multiple">
+                {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.LockdownCmdRoles}}
+            </select>
+        </div>
+        <hr />
+        <div class="form-group">
+            <label for="DefaultLockRole">Default Lock Role</label>
+            <select class="form-control" name="DefaultLockRole">
+                {{roleOptions .ActiveGuild.Roles .HighestRole .ModConfig.DefaultLockRole "@everyone"}}
+            </select>
+        </div>
+        <hr />
+    </div>
+
+    <div class="col-sm">
+        {{checkbox "LockdownCmdModlog" "lock-down-modlog" "Log <code>lockdown and unlock</code> to modlog?" .ModConfig.LockdownCmdModlog}}
+        <hr />
+        {{checkbox "LockIncludeChannelLogs" "LockIncludeChannelLogs" "Create message log in the channel that the command was run in" .ModConfig.LockIncludeChannelLogs}}
     </div>
 </div>
 {{end}}
