@@ -77,7 +77,6 @@ type ScheduledUnbanData struct {
 
 type ScheduledUnlockData struct {
 	RoleID 	   int64 `json:"role_id"`
-	Overwrite  bool  `json:"overwrite"`
 }
 
 
@@ -629,8 +628,7 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 
 	guildID := evt.GuildID
 	roleID := int(unlockData.RoleID)
-	forceOverwrite := unlockData.Overwrite
-
+	
 	g := bot.State.Guild(true, guildID)
 	if g == nil {
 		logger.WithField("guild", guildID).Error("Unlock scheduled for guild not in state")
@@ -639,7 +637,7 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 	
 	reason := "Timed lockdown expired."
 
-	_, err = LockUnlockRole(nil, false, g, g.MemberCopy(true, common.BotUser.ID), common.BotUser, reason, strconv.Itoa(roleID), forceOverwrite, 0, 0)
+	_, err = LockUnlockRole(nil, false, g, g.MemberCopy(true, common.BotUser.ID), common.BotUser, reason, strconv.Itoa(roleID), false, 0, 0)
 
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed role unlock")
