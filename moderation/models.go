@@ -49,11 +49,13 @@ type Config struct {
 	WarnIncludeChannelLogs bool
 	WarnSendToModlog       bool
 	WarnMessage            string `valid:"template,5000"`
-	
+
 	//Lockdown
-	LockdownCmdEnabled bool
-	LockdownCmdModlog  bool
-	LockdownCmdRoles   pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	LockdownCmdEnabled 	bool
+	LockdownCmdModlog  	bool
+	LockdownCmdRoles   	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	DefaultLockRole		string        `valid:"role,true"`
+	LockIncludeChannelLogs	bool
 
 	// Misc
 	CleanEnabled  bool
@@ -140,7 +142,6 @@ type MuteModel struct {
 func (m *MuteModel) TableName() string {
 	return "muted_users"
 }
-
 
 type LockdownModel struct {
 	common.SmallModel
