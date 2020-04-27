@@ -396,7 +396,6 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 		//schedule new unlock
 		err = scheduledevents2.ScheduleEvent("moderation_unlock_role", gs.ID, time.Now().Add(dur), &ScheduledUnlockData{
 		      RoleID:  role.ID,
-		      Overwrite:  force,
 		})
 		if err != nil {
 			return nil, err
