@@ -359,7 +359,6 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, authorMem
 			newPerms = role.Permissions|totalPerms
 		} else {
 			newPerms = role.Permissions|(int(currentLockdown.PermsOriginal)&totalPerms)
-			logger.Info(fmt.Sprint(int(currentLockdown.PermsOriginal)&totalPerms))
 		}
 	}
 	 
