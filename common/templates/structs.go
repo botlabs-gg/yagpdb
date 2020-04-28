@@ -70,3 +70,16 @@ func CtxChannelFromCSLocked(cs *dstate.ChannelState) *CtxChannel {
 
 	return ctxChannel
 }
+
+type CtxExecReturn struct {
+	
+	Return 			Slice
+	Response		*discordgo.MessageSend
+}
+
+func (c CtxExecReturn) String() string {
+	if c.Response != nil {
+		return c.Response.Content
+	}
+	return ""
+}	
