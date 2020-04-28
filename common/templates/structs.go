@@ -73,7 +73,7 @@ func CtxChannelFromCSLocked(cs *dstate.ChannelState) *CtxChannel {
 
 type CtxExecReturn struct {
 	
-	Return 			Slice
+	Return 			[]interface{}
 	Response		*discordgo.MessageSend
 }
 
