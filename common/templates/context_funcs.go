@@ -193,7 +193,7 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm , exec bool, name s
 	if exec {
 		var execReturnStruct CtxExecReturn
 		execReturnStruct.Response = c.MessageSend(resp)
-		execReturnStruct.Return, err = CreateSlice(c.CurrentFrame.execReturn...)
+		execReturnStruct.Return = c.CurrentFrame.execReturn
 		return execReturnStruct, err
 	}
 		
