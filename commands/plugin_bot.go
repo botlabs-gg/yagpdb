@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -37,7 +36,6 @@ func (p *Plugin) BotInit() {
 
 func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
 	logger.Info("Searching by username: ", query)
-	logger.Info(string(debug.Stack()))
 	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
 	if err != nil {
 		if err == bot.ErrTimeoutWaitingForMember {
