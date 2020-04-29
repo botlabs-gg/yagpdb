@@ -94,10 +94,11 @@ func (m *batchMemberJobManager) NewBatchMemberJob(guildID int64, f func(guildID 
 	if session == nil {
 		return errors.New("No session?")
 	}
-
+	q := ""
 	session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{
 		GuildID: gs.ID,
 		Nonce:   job.nonce,
+		Query:   &q,
 	})
 
 	return nil
