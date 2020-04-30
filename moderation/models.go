@@ -56,6 +56,7 @@ type Config struct {
 	LockdownCmdRoles   	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
 	DefaultLockRole		string        `valid:"role,true"`
 	LockIncludeChannelLogs	bool
+	DefaultLockdownDuration sql.NullInt64 `gorm:"default:0"`
 
 	// Misc
 	CleanEnabled  bool

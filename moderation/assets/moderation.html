@@ -450,6 +450,13 @@ the punishment{{end}}
         {{checkbox "LockdownCmdModlog" "lock-down-modlog" "Log <code>lockdown and unlock</code> to modlog?" .ModConfig.LockdownCmdModlog}}
         <hr />
         {{checkbox "LockIncludeChannelLogs" "LockIncludeChannelLogs" "Create message logs in the channel that the command was run in" .ModConfig.LockIncludeChannelLogs}}
+	<hr />
+	 <div class="form-group">
+            <label>Default Lockdown duration in minutes. Set to 0 for infinite</label>
+            <input type="number" name="DefaultLockdownDuration.Int64" class="form-control"
+                value="{{.ModConfig.DefaultLockdownDuration.Int64}}">
+        </div>
+	<hr />
     </div>
 </div>
 {{end}}

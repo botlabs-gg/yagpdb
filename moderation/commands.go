@@ -173,7 +173,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "voiceconnect", Name: "Voice Connect"},
 			&dcmd.ArgDef{Switch: "all", Name: "All Flags"},
 			&dcmd.ArgDef{Switch: "force", Name: "Force Unlock Permission Overwrite", Default: false},
-			&dcmd.ArgDef{Switch: "d", Name: "Duration", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			&dcmd.ArgDef{Switch: "d", Name: "Duration", Type: &commands.DurationArg{}},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(data, 0)
@@ -203,8 +203,12 @@ var ModerationCommands = []*commands.YAGCommand{
 					totalPerms = totalPerms|discordgo.PermissionVoiceConnect
 				}
 			}
+			dur := time.Duration(config.DefaultLockdownDuration.Int64)*time.Minute
+			if d := data.Switches["d"].Value; d != nil {
+				dur = d.(time.Duration)
+			}
 
-			out, err := LockUnlockRole(config, true, data.GS, data.CS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, data.Switches["d"].Value.(time.Duration))
+			out, err := LockUnlockRole(config, true, data.GS, data.CS, data.MS, data.Msg.Author, "Moderation", data.Args[0].Str(), data.Switches["force"].Value.(bool), totalPerms, dur)
 			if err != nil {
 				return nil, err
 			}
