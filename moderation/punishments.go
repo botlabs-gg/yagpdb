@@ -294,8 +294,8 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 		// check if they're already banned
 		guildBan, err := common.BotSession.GuildBan(guildID, user.ID)
 		if err != nil {
-			membool, err := checkErr(err)
-			return membool, err
+			notbanned, err := checkErr(err)
+			return notbanned, err
 		}
 		user = guildBan.User
 	}
@@ -305,8 +305,8 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	
 	err = common.BotSession.GuildBanDelete(guildID, user.ID)
 	if err != nil {
-		membool, err := checkErr(err)
-		return membool, err
+		notbanned, err := checkErr(err)
+		return notbanned, err
 	}
 	
 	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
