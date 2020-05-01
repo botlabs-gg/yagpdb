@@ -286,37 +286,49 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
 
 	if user.Discriminator != "????" {
-		return true, nil	 //Valid discriminator is present only if Member is already a part of Server and hence not banned.
+		return true, nil	 //Valid discriminator is present only if Member is already a part of Guild State and hence not banned.
 	}
 	
-	// check if they're already banned
-	guildBan, err := common.BotSession.GuildBan(guildID, user.ID)
-	
-	if err != nil {
-		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
-			if cast.Response.StatusCode == 404 {
-				return true, nil // Not banned, ban not found
-			}
+	//We need details for user only if unban is to be logged in modlog. Thus we can save a potential api call by directly attempting an unban in other cases.
+	if config.LogUnbans && config.IntActionChannel() != 0 {
+		// check if they're already banned
+		guildBan, err := common.BotSession.GuildBan(guildID, user.ID)
+		if err != nil {
+			membool, err := checkErr(err)
+			return membool, err
 		}
-		return false, err
+		user = guildBan.User
 	}
-	user = guildBan.User
 		
 	// Set a key in redis that marks that this user has appeared in the modlog already
 	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))	
 	
 	err = common.BotSession.GuildBanDelete(guildID, user.ID)
 	if err != nil {
-		return false, err
+		membool, err := checkErr(err)
+		return membool, err
 	}
 	
 	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
 	
 	//modLog Entry handling
-	err = CreateModlogEmbed(config, author, action, user, reason, "")
+	if config.LogUnbans {
+		err = CreateModlogEmbed(config, author, action, user, reason, "")
+	}
 	return false, err
 }
 
+func checkErr (err error) (bool, error) {
+	if err != nil {
+		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
+			if cast.Response.StatusCode == 404 {
+				return true, nil // Not found
+			}
+		}
+		return false, err
+	}
+	return false, nil
+}
 const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
