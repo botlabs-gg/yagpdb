@@ -274,6 +274,49 @@ func BanUser(config *Config, guildID int64, channel *dstate.ChannelState, messag
 	return BanUserWithDuration(config, guildID, channel, message, author, reason, user, 0, 1)
 }
 
+func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason string, user *discordgo.User) (bool, error) {
+	config, err := getConfigIfNotSet(guildID, config)
+	if err != nil {
+		return false, common.ErrWithCaller(err)
+	}
+	action := MAUnbanned
+
+	//Delete all future Unban Events
+	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
+	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
+
+	if user.Discriminator != "????" {
+		return true, nil	 //Valid discriminator is present only if Member is already a part of Server and hence not banned.
+	}
+	
+	// check if they're already banned
+	guildBan, err := common.BotSession.GuildBan(guildID, user.ID)
+	
+	if err != nil {
+		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
+			if cast.Response.StatusCode == 404 {
+				return true, nil // Not banned, ban not found
+			}
+		}
+		return false, err
+	}
+	user = guildBan.User
+		
+	// Set a key in redis that marks that this user has appeared in the modlog already
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))	
+	
+	err = common.BotSession.GuildBanDelete(guildID, user.ID)
+	if err != nil {
+		return false, err
+	}
+	
+	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
+	
+	//modLog Entry handling
+	err = CreateModlogEmbed(config, author, action, user, reason, "")
+	return false, err
+}
+
 const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
