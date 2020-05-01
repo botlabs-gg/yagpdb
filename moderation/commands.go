@@ -167,8 +167,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
+		
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
+			config, _, err := MBaseCmd(parsed, 0) //in most situations, the target will not be a part of server, hence no point in doing unnecessary api calls(i.e. bot.GetMember)
 			if err != nil {
 				return nil, err
 			}
@@ -177,6 +178,16 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason, err = MBaseCmdSecond(parsed, reason, config.BanReasonOptional, discordgo.PermissionBanMembers, config.BanCmdRoles, config.BanEnabled)
 			if err != nil {
 				return nil, err
+			}
+			targetID := parsed.Args[0].Int64()
+			target := &discordgo.User{
+					Username:      "unknown",
+					Discriminator: "????",
+					ID:            targetID,
+				  }
+			targetMem := parsed.GS.MemberCopy(true, targetID)
+			if targetMem != nil {
+				target = targetMem.DGoUser()
 			}
 
 			isNotBanned, err := UnbanUser(config, parsed.GS.ID, parsed.Msg.Author, reason, target)
