@@ -187,7 +187,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				  }
 			targetMem := parsed.GS.MemberCopy(true, targetID)
 			if targetMem != nil {
-				target = targetMem.DGoUser()
+				return "User is not banned!", nil
 			}
 
 			isNotBanned, err := UnbanUser(config, parsed.GS.ID, parsed.Msg.Author, reason, target)
