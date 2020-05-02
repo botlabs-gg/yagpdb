@@ -284,10 +284,6 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	//Delete all future Unban Events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
 	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
-
-	if user.Discriminator != "????" {
-		return true, nil	 //Valid discriminator is present only if Member is already a part of Guild State and hence not banned.
-	}
 	
 	//We need details for user only if unban is to be logged in modlog. Thus we can save a potential api call by directly attempting an unban in other cases.
 	if config.LogUnbans && config.IntActionChannel() != 0 {
