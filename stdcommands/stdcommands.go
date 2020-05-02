@@ -18,6 +18,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/dcallvoice"
 	"github.com/jonas747/yagpdb/stdcommands/define"
 	"github.com/jonas747/yagpdb/stdcommands/dogfact"
+	"github.com/jonas747/yagpdb/stdcommands/editrole"
 	"github.com/jonas747/yagpdb/stdcommands/findserver"
 	"github.com/jonas747/yagpdb/stdcommands/globalrl"
 	"github.com/jonas747/yagpdb/stdcommands/info"
@@ -85,6 +86,7 @@ func (p *Plugin) AddCommands() {
 		simpleembed.Command,
 		currenttime.Command,
 		mentionrole.Command,
+		editrole.Command,
 		listroles.Command,
 		wouldyourather.Command,
 		poll.Command,
