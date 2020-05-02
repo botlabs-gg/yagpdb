@@ -20,7 +20,7 @@ var Command = &commands.YAGCommand{
 	Name:            "EditRole",
 	Aliases:         []string{"ERole"},
 	Description:     "Edits a role",
-	LongDescription: "Requires the manage roles permission and the bot and your highest role being above the edited role",
+	LongDescription: "Requires the manage roles permission and the bot and your highest role being above the edited role. Role permissions follow discord standard encoding can can be calculated [here](https://discordapp.com/developers/docs/topics/permissions)",
 	RequiredArgs:    1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Role", Type: dcmd.String},
@@ -30,6 +30,7 @@ var Command = &commands.YAGCommand{
 				&dcmd.ArgDef{Switch: "color", Help: "Role color - Either hex code or name", Type: dcmd.String, Default: ""},
 				&dcmd.ArgDef{Switch: "mention", Help: "Role Mentionable - 1 for true 0 for false", Type: &dcmd.IntArg{Min:0, Max:1}},
 				&dcmd.ArgDef{Switch: "hoist", Help: "Role Hoisted - 1 for true 0 for false", Type: &dcmd.IntArg{Min:0, Max:1}},
+				&dcmd.ArgDef{Switch: "perms", Help: "Role Permissions - 0 to 2147483647", Type: &dcmd.IntArg{Min:0, Max:2147483647}},
 	},
 	RunFunc: 	    cmdFuncEditRole,
 	GuildScopeCooldown: 15,
@@ -49,7 +50,7 @@ func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 	if role == nil {
 		return "No role with the Name or ID`" + roleS + "` found", nil
 	}
-	
+
 	data.GS.RLock()
 	if !bot.IsMemberAboveRole(data.GS, data.MS, role) {
 		data.GS.RUnlock()
@@ -59,7 +60,7 @@ func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 
 
 	change := false
-	
+
 	name := role.Name
 	if n := data.Switch("name").Str(); n != "" {
 		name = limitString(n, 100)
@@ -84,16 +85,21 @@ func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 		hoisted = h.Bool()
 		change = true
 	}
+	perms := role.Permissions
+	if p := data.Switch("perms"); p != nil {
+		perms = p.Int()
+		change = true
+	}
 
 	if change {
-		_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, name, color, hoisted, role.Permissions, mentionable)
+		_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, name, color, hoisted, perms, mentionable)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	_, err := common.BotSession.ChannelMessageSendComplex(cID, &discordgo.MessageSend{
-		Content: fmt.Sprintf("__**Edited Role(%d) properties to :**__\n\n**Name **: `%s`\n**Color **: `%d`\n**Mentionable **: `%t`\n**Hoisted **: `%t`", role.ID, name, color, mentionable, hoisted),
+		Content: fmt.Sprintf("__**Edited Role(%d) properties to :**__\n\n**Name **: `%s`\n**Color **: `%d`\n**Mentionable **: `%t`\n**Hoisted **: `%t`\n**Permissions **: `%d`", role.ID, name, color, mentionable, hoisted, perms),
 		AllowedMentions: discordgo.AllowedMentions{},
 	})
 
