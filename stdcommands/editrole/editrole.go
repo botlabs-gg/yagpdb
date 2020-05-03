@@ -33,7 +33,7 @@ var Command = &commands.YAGCommand{
 				&dcmd.ArgDef{Switch: "perms", Help: "Role Permissions - 0 to 2147483647", Type: &dcmd.IntArg{Min:0, Max:2147483647}},
 	},
 	RunFunc: 	    cmdFuncEditRole,
-	GuildScopeCooldown: 15,
+	GuildScopeCooldown: 30,
 }
 
 func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
