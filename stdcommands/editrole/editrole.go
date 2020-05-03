@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
@@ -68,6 +69,9 @@ func cmdFuncEditRole(data *dcmd.Data) (interface{}, error) {
 	}
 	color := role.Color
 	if c := data.Switch("color").Str(); c != "" {
+		if data.Source == dcmd.DMSource {
+			return nil , errors.New("Cannot use role color edit in custom commands to prevent api abuse")
+		}
 		parsedColor, ok := ParseColor(c)
 		if !ok {
 			return "Unknown color: " + c + ", can be either hex color code or name for a known color", nil
