@@ -133,7 +133,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	m := evt.GuildMemberUpdate()
 
-	if !featureflags.GuildHasFlagOrLogError(m.GuildID, featureFlagEnabled) {
+	if !evt.HasFeatureFlag(featureFlagEnabled) {
 		return false, nil
 	}
 
@@ -168,7 +168,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	g := evt.GuildCreate()
 
-	if !featureflags.GuildHasFlagOrLogError(g.ID, featureFlagEnabled) {
+	if !evt.HasFeatureFlag(featureFlagEnabled) {
 		return
 	}
 
@@ -216,7 +216,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	gs := evt.GS
 
-	if !featureflags.GuildHasFlagOrLogError(gs.ID, featureFlagEnabled) {
+	if !evt.HasFeatureFlag(featureFlagEnabled) {
 		return false, nil
 	}
 

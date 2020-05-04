@@ -25,7 +25,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/keylock"
 	"github.com/jonas747/yagpdb/common/multiratelimit"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -344,7 +343,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !featureflags.GuildHasFlagOrLogError(reaction.GuildID, featureFlagHasCommands) {
+	if !evt.HasFeatureFlag(featureFlagHasCommands) {
 		return
 	}
 
@@ -410,11 +409,12 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.Membe
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
 	cs := evt.CS()
-	if shouldIgnoreChannel(mc, cs) {
+
+	if !evt.HasFeatureFlag(featureFlagHasCommands) {
 		return
 	}
 
-	if !featureflags.GuildHasFlagOrLogError(mc.GuildID, featureFlagHasCommands) {
+	if shouldIgnoreChannel(mc, cs) {
 		return
 	}
 

@@ -83,6 +83,10 @@ func HandleRefreshMuteOverrides(evt *pubsub.Event) {
 var started = time.Now()
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
+	if !evt.HasFeatureFlag(featureFlagMuteRoleManaged) {
+		return // nothing to do
+	}
+
 	gc := evt.GuildCreate()
 
 	// relieve startup preasure, sleep for up to 10 minutes
