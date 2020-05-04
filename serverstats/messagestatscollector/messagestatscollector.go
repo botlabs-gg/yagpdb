@@ -43,7 +43,7 @@ func NewCollector(l *logrus.Entry, updateInterval time.Duration) *Collector {
 }
 
 func (c *Collector) run() {
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 
 	for {
@@ -73,7 +73,7 @@ func (c *Collector) handleIncMessage(msg *discordgo.Message) {
 }
 
 func (c *Collector) flush() error {
-	c.l.Debugf("message stats collector is flushing: lc: %d", len(c.channels))
+	c.l.Infof("message stats collector is flushing: lc: %d", len(c.channels))
 	if len(c.channels) < 1 {
 		return nil
 	}
