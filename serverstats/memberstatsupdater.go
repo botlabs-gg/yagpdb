@@ -45,6 +45,10 @@ func (mu *serverMemberStatsUpdater) run() {
 				continue
 			}
 
+			if len(mu.waiting) == 0 && len(mu.processing) == 0 {
+				continue
+			}
+
 			logger.Infof("Flushing member stats, len:%d, leftovers:%d", len(mu.waiting), len(mu.processing))
 
 			// merge the leftovers form last run into the main queue
