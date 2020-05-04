@@ -3,8 +3,6 @@ package featureflags
 import (
 	"sync"
 
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 )
@@ -38,16 +36,11 @@ func RegisterPlugin() {
 
 // Invalidate the cache when the rules have changed
 func handleInvalidateCacheFor(event *pubsub.Event) {
-	cacheID := (event.TargetGuildInt >> 22) % int64(len(caches))
-	caches[cacheID].invalidateGuild(event.TargetGuildInt)
+	EvictCacheForGuild(event.TargetGuildInt)
 }
 
-var _ bot.BotInitHandler = (*Plugin)(nil)
-
-// BotInit implements bot.BotInitHandler
-func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
-		cacheID := (evt.GuildDelete().ID >> 22) % int64(len(caches))
-		caches[cacheID].invalidateGuild(evt.GuildDelete().ID)
-	}, eventsystem.EventGuildDelete)
+// EvictCacheForGuild evicts the specified guild's featureflag cache
+func EvictCacheForGuild(guildID int64) {
+	cacheID := (guildID >> 22) % int64(len(caches))
+	caches[cacheID].invalidateGuild(guildID)
 }
