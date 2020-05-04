@@ -92,6 +92,10 @@ For more in depth help and information you should visit https://docs.yagpdb.xyz/
 		embed := helpEmbeds[page-1]
 		return embed, nil
 	})
+	if err != nil {
+		return "Something went wrong, make sure you don't have the bot blocked!", err
 
-	return "Something went wrong, make sure you don't have the bot blocked!", err
+	}
+
+	return nil, nil
 }
