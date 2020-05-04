@@ -109,8 +109,8 @@ func (u *updater) handleIncEvent(evt *eventsystem.EventData) {
 
 			if q.Guild != nil {
 				// reset pending member change writes
-				q.MemberCountMod = 0
-				q.Guild = q.Guild
+				v.MemberCountMod = 0
+				v.Guild = q.Guild
 			}
 
 			return
