@@ -378,14 +378,20 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	}
 
 	if !prefixExists {
-		defaultPrefix := "-"
-		if common.Testing {
-			defaultPrefix = "("
-		}
+		defaultPrefix := defaultCommandPrefix()
 
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
 		logger.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
+}
+
+func defaultCommandPrefix() string {
+	defaultPrefix := "-"
+	if common.Testing {
+		defaultPrefix = "("
+	}
+
+	return defaultPrefix
 }
 
 var cmdPrefix = &YAGCommand{
