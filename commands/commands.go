@@ -6,6 +6,7 @@ package commands
 import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/mediocregopher/radix/v3"
@@ -20,7 +21,7 @@ const (
 	CtxKeyChannelOverride
 )
 
-type MessageFilterFunc func(msg *discordgo.Message) bool
+type MessageFilterFunc func(evt *eventsystem.EventData, msg *discordgo.Message) bool
 
 var (
 	confSetTyping = config.RegisterOption("yagpdb.commands.typing", "Wether to set typing or not when running commands", true)

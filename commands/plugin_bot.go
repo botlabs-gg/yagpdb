@@ -260,7 +260,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 
 	abort := false
 	for _, filterFunc := range MessageFilterFuncs {
-		if !filterFunc(m.Message) {
+		if !filterFunc(evt, m.Message) {
 			abort = true
 		}
 	}
