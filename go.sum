@@ -28,8 +28,10 @@ github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMx
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d h1:G0m3OIz70MZUWq3EgK3CesDbo8upS2Vm9/P3FtgI+Jk=
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
+github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 h1:JYp7IbQjafoB+tBA3gMyHYHrpOtNuDiK/uB5uXxq5wM=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
+github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 h1:Hs82Z41s6SdL1CELW+XaDYmOH4hkBN4/N9og/AsOv7E=
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alfredxing/calc v0.0.0-20180827002445-77daf576f976 h1:+jyVKPjl5Y39thM0ZlVrRqKjSO/Upr5tP9ZQGELv8gw=
 github.com/alfredxing/calc v0.0.0-20180827002445-77daf576f976/go.mod h1:/HQknSiD7YKT15DoHXuiXezQfNPBUm8PeqFaTxeA3HU=
@@ -194,10 +196,6 @@ github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8 h1:k/3mvr7ImDZ8Ig/qcL
 github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8/go.mod h1:rxjYX9OJU81unMxQDHChU/lAiOhlY9MV+faPX/NmwLk=
 github.com/jonas747/dcmd v1.1.0 h1:zn5qVNxyz08cgAdjvAGoG2WwY3GbxnzImRynV0Atja0=
 github.com/jonas747/dcmd v1.1.0/go.mod h1:pfeU2I/OynOj5NXiyavaMb4MqKq7rbjHj1hPe44YJ1A=
-github.com/jonas747/dcmd v1.2.0 h1:WK0OZbVHGtDyTHdR943rYysbyc4ayYVj7aQ6b+Mkrgw=
-github.com/jonas747/dcmd v1.2.0/go.mod h1:qa2rnZNmoZL2Eh3eonPY8AhNVEyGGRRFttdtBuX0+G8=
-github.com/jonas747/dcmd v1.2.1 h1:goVAFxN6erfUhWRGyqsIlJWFN3ygzAfpLERWIwJNRmQ=
-github.com/jonas747/dcmd v1.2.1/go.mod h1:qa2rnZNmoZL2Eh3eonPY8AhNVEyGGRRFttdtBuX0+G8=
 github.com/jonas747/dcmd v1.2.2 h1:zj84tl20zPo1kGWEjs51/lzrmC9jOCYqi7m6R4BT2HU=
 github.com/jonas747/dcmd v1.2.2/go.mod h1:qa2rnZNmoZL2Eh3eonPY8AhNVEyGGRRFttdtBuX0+G8=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
@@ -209,14 +207,6 @@ github.com/jonas747/discordgo v1.1.7/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx
 github.com/jonas747/discordgo v1.1.9 h1:zgI5nmgIhoMsHFL4XbEY7j45B0NO697V9TwHPEdVjFU=
 github.com/jonas747/discordgo v1.1.9/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
 github.com/jonas747/discordgo v1.3.4-0.20200309143309-14b9c57c750a/go.mod h1:bAhKzQI2Jco59WVa5fhGOKdtMyGL7CFFBAxBeSGVCj0=
-github.com/jonas747/discordgo v1.4.3 h1:Buz7UbbhCJE2teMHusM2gUvAxOOGK+PySQuT/vT7+UY=
-github.com/jonas747/discordgo v1.4.3/go.mod h1:bAhKzQI2Jco59WVa5fhGOKdtMyGL7CFFBAxBeSGVCj0=
-github.com/jonas747/discordgo v1.4.4 h1:0yGZqNTR9Jc0X+H+T03r1H1G3xDY6UYvM1xlD9RWgJk=
-github.com/jonas747/discordgo v1.4.4/go.mod h1:bAhKzQI2Jco59WVa5fhGOKdtMyGL7CFFBAxBeSGVCj0=
-github.com/jonas747/discordgo v1.4.5-0.20200427151659-739af362c81d h1:UZzfDTo/NTe6xQNdyut3kHwbEYHRg9AwcHOlyRbe+xc=
-github.com/jonas747/discordgo v1.4.5-0.20200427151659-739af362c81d/go.mod h1:bAhKzQI2Jco59WVa5fhGOKdtMyGL7CFFBAxBeSGVCj0=
-github.com/jonas747/discordgo v1.4.5-0.20200429143649-7ba92dcf6ef9 h1:R008fV8Io62+jv8+oCPC0VN2areh6cWK1d9L+RdoMfg=
-github.com/jonas747/discordgo v1.4.5-0.20200429143649-7ba92dcf6ef9/go.mod h1:bAhKzQI2Jco59WVa5fhGOKdtMyGL7CFFBAxBeSGVCj0=
 github.com/jonas747/discordgo v1.4.5-0.20200429160041-12d652984517 h1:HDzABRnwIo2E1IQ73noQevdIIQusycDdC1hG6mwrSWE=
 github.com/jonas747/discordgo v1.4.5-0.20200429160041-12d652984517/go.mod h1:bAhKzQI2Jco59WVa5fhGOKdtMyGL7CFFBAxBeSGVCj0=
 github.com/jonas747/dshardorchestrator v0.1.0 h1:3/v+lx0gLupm7/VZr7wbfvUGhpxvuNC5JHaS+OnWjCc=
@@ -228,8 +218,6 @@ github.com/jonas747/dstate v1.0.4 h1:TS1YcPJelsVOqgU8u+SKkQevEMi0klG9Agugj+TE8+0
 github.com/jonas747/dstate v1.0.4/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
 github.com/jonas747/dstate v1.0.5 h1:HgHXWurXFtQRAp+3fTIDW/ukHlKsEYe0lJjbC1mQoKc=
 github.com/jonas747/dstate v1.0.5/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
-github.com/jonas747/dstate v1.0.6 h1:Aj+8+N6LVGgqHcI0ARbySaQIY9pja8UtLWUuEW8asvw=
-github.com/jonas747/dstate v1.0.6/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
 github.com/jonas747/dstate v1.0.7 h1:wgEkNGIi+sXRqIQu0niM1So3KcvX/l6slX8CbytWAa4=
 github.com/jonas747/dstate v1.0.7/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
 github.com/jonas747/dutil v0.0.2 h1:GV4b5tb0l/Qq11GS7g4m5hlxDkKGhZ8hXRefS4dKMMQ=
@@ -555,6 +543,7 @@ google.golang.org/grpc v1.16.0/go.mod h1:0JHn/cJsOMiMfNA9+DeHDlAU7KAAB5GDlYFpa9M
 google.golang.org/grpc v1.17.0/go.mod h1:6QZJwpn2B+Zp71q/5VxRsJ6NXXVCE5NRUHRo+f3cWCs=
 google.golang.org/grpc v1.19.0 h1:cfg4PD8YEdSFnm7qLV4++93WcmhH2nIUhMjhdCvl3j8=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
+gopkg.in/alecthomas/kingpin.v2 v2.2.6 h1:jMFz6MfLP0/4fUyZle81rXUoxOBFi19VUFKVDOQfozc=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
