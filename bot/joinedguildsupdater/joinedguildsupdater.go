@@ -71,7 +71,7 @@ func (u *updater) run() {
 				u.waiting = append(u.waiting, pv)
 			}
 
-			if len(u.waiting) > 10 {
+			if len(u.waiting) > 25 {
 				u.processing = u.waiting[:25]
 				u.waiting = u.waiting[25:]
 			} else {
