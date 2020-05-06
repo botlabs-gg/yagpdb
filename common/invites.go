@@ -11,7 +11,7 @@ type InviteSource struct {
 
 var DiscordInviteSource = &InviteSource{
 	Name:  "Discord",
-	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`),
+	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com\/invite|discord\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`),
 }
 
 var ThirdpartyDiscordSites = []*InviteSource{
