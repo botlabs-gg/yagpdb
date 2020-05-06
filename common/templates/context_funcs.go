@@ -48,6 +48,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
+// ChannelArg converts a verity of types of argument into a channel, verifying that it exists
 func (c *Context) ChannelArg(v interface{}) int64 {
 
 	c.GS.RLock()
@@ -57,6 +58,60 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 	if v == nil && c.CurrentFrame.CS != nil {
 		// No channel passed, assume current channel
 		return c.CurrentFrame.CS.ID
+	}
+
+	verifiedExistence := false
+	var cid int64
+	if v != nil {
+		switch t := v.(type) {
+		case int, int64:
+			// Channel id passed
+			cid = ToInt64(t)
+		case string:
+			parsed, err := strconv.ParseInt(t, 10, 64)
+			if err == nil {
+				// Channel id passed in string format
+				cid = parsed
+			} else {
+				// Channel name, look for it
+				for _, v := range c.GS.Channels {
+					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
+						cid = v.ID
+						verifiedExistence = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if !verifiedExistence {
+		// Make sure the channel is part of the guild
+		for k, _ := range c.GS.Channels {
+			if k == cid {
+				verifiedExistence = true
+				break
+			}
+		}
+	}
+
+	if !verifiedExistence {
+		return 0
+	}
+
+	return cid
+}
+
+// ChannelArgNoDM is the same as ChannelArg but will not accept DM channels
+func (c *Context) ChannelArgNoDM(v interface{}) int64 {
+
+	c.GS.RLock()
+	defer c.GS.RUnlock()
+
+	// Look for the channel
+	if v == nil && c.CurrentFrame.CS != nil {
+		// No channel passed, assume current channel
+		v = c.CurrentFrame.CS.ID
 	}
 
 	verifiedExistence := false
@@ -250,7 +305,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			return "", ErrTooManyAPICalls
 		}
 
-		cid := c.ChannelArg(channel)
+		cid := c.ChannelArgNoDM(channel)
 		if cid == 0 {
 			return "", errors.New("Unknown channel")
 		}
@@ -707,7 +762,7 @@ func (c *Context) tmplDelTrigger(args ...interface{}) string {
 }
 
 func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}) string {
-	cID := c.ChannelArg(channel)
+	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
 		return ""
 	}
@@ -789,7 +844,7 @@ func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message
 		return nil, ErrTooManyAPICalls
 	}
 
-	cID := c.ChannelArg(channel)
+	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
 		return nil, nil
 	}
@@ -1011,7 +1066,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArg(channel)
+	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
 		return "", errors.New("Unknown channel")
 	}
@@ -1029,7 +1084,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArg(channel)
+	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
 		return "", errors.New("Unknown channel")
 	}
