@@ -208,7 +208,7 @@ func handleGuildChunk(evt *eventsystem.EventData) {
 		return
 	}
 
-	if config.Role == 0 {
+	if config.Role == 0 || config.OnlyOnJoin {
 		return
 	}
 
