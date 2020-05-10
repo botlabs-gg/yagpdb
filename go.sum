@@ -407,6 +407,8 @@ github.com/tidwall/tinyqueue v0.0.0-20180302190814-1e39f5511563 h1:Otn9S136ELckZ
 github.com/tidwall/tinyqueue v0.0.0-20180302190814-1e39f5511563/go.mod h1:mLqSmt7Dv/CNneF2wfcChfN1rvapyQr01LGKnKex0DQ=
 github.com/tkuchiki/go-timezone v0.1.4 h1:bqdCyQmMPO2vxCobv9nqHWgmkMksGZ/tNhROr2DKxPI=
 github.com/tkuchiki/go-timezone v0.1.4/go.mod h1:b1Ean9v2UXtxSq4TZF0i/TU9NuoWa9hOzOKoGCV2zqY=
+github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f h1:vGOH941I3HVLM4xauL2IgdOrPoahBD+JhBohYRMOVPQ=
+github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f/go.mod h1:b1Ean9v2UXtxSq4TZF0i/TU9NuoWa9hOzOKoGCV2zqY=
 github.com/ugorji/go v1.1.4 h1:j4s+tAvLfL3bZyefP2SEWmhBzmuIlH/eqNuPdFPgngw=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/viant/assertly v0.4.8/go.mod h1:aGifi++jvCrUaklKEKT0BU95igDNaqkvz+49uaYMPRU=
