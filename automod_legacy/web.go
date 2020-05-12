@@ -95,9 +95,9 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	const format = `<ul>
 	<li>Slowmode: %s</li>
-	<li>Mass Mention: %s</li>
-	<li>Server Invites: %s</li>
-	<li>Any Links: %s</li>
+	<li>Mass mention: %s</li>
+	<li>Server invites: %s</li>
+	<li>Any links: %s</li>
 	<li>Banned words: %s</li>
 	<li>Banned websites: %s</li>
 </ul>`
