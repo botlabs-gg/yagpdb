@@ -82,7 +82,7 @@ func (del *DeleteMessagesEffect) DataType() interface{} {
 }
 
 func (del *DeleteMessagesEffect) Name() (name string) {
-	return "Delete mutliple messages"
+	return "Delete multiple messages"
 }
 
 func (del *DeleteMessagesEffect) Description() (description string) {
