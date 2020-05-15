@@ -177,7 +177,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				ContentType: "text/plain",
 				Reader:      &buf,
 			}
-		case "allowedmentions":
+		case "allowed_mentions":
 			if val == nil {
 				msg.AllowedMentions = discordgo.AllowedMentions{}
 				continue
