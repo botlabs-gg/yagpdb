@@ -759,14 +759,17 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			// schedule the expirey
+			// schedule the expiry
 			if dur > 0 {
 				err := scheduledevents2.ScheduleRemoveRole(parsed.Context(), parsed.GS.ID, target.ID, role.ID, time.Now().Add(dur))
 				if err != nil {
 					return nil, err
 				}
 			}
-
+			
+			// cancel the event to add the role
+			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
+			
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
