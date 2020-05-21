@@ -104,6 +104,7 @@ func KindOf (input interface{}, flag ...bool) (string, error){ //flag used only 
 		default:
 			return "", errors.New("Too many flags")
 	}
+}
 
 func StructToSdict (value interface{}) (SDict, error) {
 
