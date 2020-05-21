@@ -9,7 +9,6 @@ import (
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/common/featureflags"
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
@@ -55,7 +54,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !featureflags.GuildHasFlagOrLogError(msg.GuildID, featureFlagThanksEnabled) {
+	if !evt.HasFeatureFlag(featureFlagThanksEnabled) {
 		return
 	}
 

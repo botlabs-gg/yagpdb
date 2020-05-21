@@ -7,6 +7,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/bot/joinedguildsupdater"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -90,6 +91,8 @@ OUTER:
 	}
 }
 
+var guildJoinHandler = joinedguildsupdater.NewUpdater()
+
 var metricsJoinedGuilds = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "yagpdb_joined_guilds",
 	Help: "Guilds yagpdb newly joined",
@@ -134,19 +137,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		}
 	}
 
-	gm := &models.JoinedGuild{
-		ID:          g.ID,
-		MemberCount: int64(g.MemberCount),
-		OwnerID:     g.OwnerID,
-		JoinedAt:    time.Now(),
-		Name:        g.Name,
-		Avatar:      g.Icon,
-	}
-
-	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("member_count", "name", "avatar", "owner_id", "left_at"), boil.Infer())
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
+	guildJoinHandler.Incoming <- evt
 
 	return false, nil
 }
@@ -171,22 +162,12 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) (retry bool, err error) {
 
 	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
 
-	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
-
+	guildJoinHandler.Incoming <- evt
 	return false, nil
 }
 
 func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
-	mr := evt.GuildMemberRemove()
-
-	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
-
+	guildJoinHandler.Incoming <- evt
 	return false, nil
 }
 

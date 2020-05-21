@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
 var (
@@ -40,22 +41,34 @@ func (p *Plugin) BotInit() {
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
 		ra := evt.MessageReactionAdd()
-
-		if ra.UserID == common.BotUser.ID {
+		if ra.GuildID == 0 {
+			// DM reactions are handled through pubsub, see below
 			return
 		}
 
-		menusLock.Lock()
-		for _, v := range activePaginatedMessages {
-			if v.MessageID == ra.MessageID {
-				menusLock.Unlock()
-				v.HandleReactionAdd(ra)
-				return
-			}
-		}
-		menusLock.Unlock()
-
+		handleReactionAdd(ra)
 	}, eventsystem.EventMessageReactionAdd)
+
+	pubsub.AddHandler("dm_reaction", func(evt *pubsub.Event) {
+		dataCast := evt.Data.(*discordgo.MessageReactionAdd)
+		handleReactionAdd(dataCast)
+	}, discordgo.MessageReactionAdd{})
+}
+
+func handleReactionAdd(ra *discordgo.MessageReactionAdd) {
+	if ra.UserID == common.BotUser.ID {
+		return
+	}
+
+	menusLock.Lock()
+	for _, v := range activePaginatedMessages {
+		if v.MessageID == ra.MessageID {
+			menusLock.Unlock()
+			v.HandleReactionAdd(ra)
+			return
+		}
+	}
+	menusLock.Unlock()
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -232,7 +245,7 @@ OUTER:
 		select {
 		case <-t.C:
 			p.mu.Lock()
-			toRemove := time.Since(p.lastUpdateTime) > time.Minute || p.Broken
+			toRemove := time.Since(p.lastUpdateTime) > time.Minute*10 || p.Broken
 			p.mu.Unlock()
 			if !toRemove {
 				continue OUTER

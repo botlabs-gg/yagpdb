@@ -20,18 +20,18 @@ import (
 // dictionary creates a map[string]interface{} from the given parameters by
 // walking the parameters and treating them as key-value pairs.  The number
 // of parameters must be even.
-func Dictionary(values ...interface{}) (map[interface{}]interface{}, error) {
-	if len(values)%2 != 0 {
-		return nil, errors.New("invalid dict call")
-	}
+func Dictionary(values ...interface{}) (Dict, error) {
+    if len(values)%2 != 0 {
+        return nil, errors.New("invalid dict call")
+    }
 
-	dict := make(map[interface{}]interface{}, len(values)/2)
-	for i := 0; i < len(values); i += 2 {
-		key := values[i]
-		dict[key] = values[i+1]
-	}
+    dict := make(map[interface{}]interface{}, len(values)/2)
+    for i := 0; i < len(values); i += 2 {
+        key := values[i]
+        dict[key] = values[i+1]
+    }
 
-	return dict, nil
+    return Dict(dict), nil
 }
 
 func StringKeyDictionary(values ...interface{}) (SDict, error) {
@@ -84,6 +84,29 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	}
 
 	return SDict(dict), nil
+}
+
+func StructToSdict (value interface{}) (SDict, error) {
+
+	val, isNil := indirect(reflect.ValueOf(value))
+	typeOfS := val.Type()
+	if isNil || value == nil {
+		return nil, errors.New("Expected - struct, got - Nil ")
+	}
+
+	if val.Kind() != reflect.Struct {
+		return nil, errors.New(fmt.Sprintf("Expected - struct, got - %s", val.Type().String()))
+	}
+
+	fields := make(map[string]interface{})
+	for i := 0 ; i < val.NumField() ; i++ {
+		curr := val.Field(i)
+		if curr.CanSet() {
+			fields[typeOfS.Field(i).Name] = curr.Interface()
+		}
+	}
+	return SDict(fields), nil		
+			
 }
 
 func CreateSlice(values ...interface{}) (Slice, error) {
@@ -740,6 +763,8 @@ func ToString(from interface{}) string {
 		return string(t)
 	case []byte:
 		return string(t)
+	case fmt.Stringer:
+		return t.String()
 	case string:
 		return t
 	default:

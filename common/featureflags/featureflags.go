@@ -87,6 +87,25 @@ func GetGuildFlags(guildID int64) ([]string, error) {
 	return caches[cacheID].getGuildFlags(guildID)
 }
 
+// RetryGetGuildFlags is the same as GetGuildFlags but will retry fetching the flags up to around 2 minutes before giving up on errors
+func RetryGetGuildFlags(guildID int64) (flags []string, err error) {
+	maxRetry := 120
+
+	for i := 0; i < maxRetry; i++ {
+		flags, err = GetGuildFlags(guildID)
+		if err != nil {
+			logger.WithError(err).Error("failed retrieving flags, trying again...")
+			time.Sleep(time.Second)
+			continue
+		}
+
+		return flags, nil
+	}
+
+	logger.Error("Gave up trying to fetch feature flags")
+	return
+}
+
 // GuildHasFlag returns true if the target guild has the provided flag
 func GuildHasFlag(guildID int64, flag string) (bool, error) {
 	flags, err := GetGuildFlags(guildID)
