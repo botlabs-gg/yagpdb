@@ -2,13 +2,15 @@ package paginatedmessages
 
 import (
 	"errors"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"strconv"
-	"sync"
-	"time"
+	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
 var (
@@ -39,22 +41,34 @@ func (p *Plugin) BotInit() {
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
 		ra := evt.MessageReactionAdd()
-
-		if ra.UserID == common.BotUser.ID {
+		if ra.GuildID == 0 {
+			// DM reactions are handled through pubsub, see below
 			return
 		}
 
-		menusLock.Lock()
-		for _, v := range activePaginatedMessages {
-			if v.MessageID == ra.MessageID {
-				menusLock.Unlock()
-				v.HandleReactionAdd(ra)
-				return
-			}
-		}
-		menusLock.Unlock()
-
+		handleReactionAdd(ra)
 	}, eventsystem.EventMessageReactionAdd)
+
+	pubsub.AddHandler("dm_reaction", func(evt *pubsub.Event) {
+		dataCast := evt.Data.(*discordgo.MessageReactionAdd)
+		handleReactionAdd(dataCast)
+	}, discordgo.MessageReactionAdd{})
+}
+
+func handleReactionAdd(ra *discordgo.MessageReactionAdd) {
+	if ra.UserID == common.BotUser.ID {
+		return
+	}
+
+	menusLock.Lock()
+	for _, v := range activePaginatedMessages {
+		if v.MessageID == ra.MessageID {
+			menusLock.Unlock()
+			v.HandleReactionAdd(ra)
+			return
+		}
+	}
+	menusLock.Unlock()
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -78,6 +92,7 @@ type PaginatedMessage struct {
 	MaxPage      int
 	LastResponse *discordgo.MessageEmbed
 	Navigate     func(p *PaginatedMessage, newPage int) (*discordgo.MessageEmbed, error)
+	Broken       bool
 
 	stopped        bool
 	stopCh         chan bool
@@ -156,10 +171,12 @@ func (p *PaginatedMessage) HandleReactionAdd(ra *discordgo.MessageReactionAdd) {
 		pageMod = -1
 	}
 
-	// remove the emoji to signal were handling it
-	err := common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
-	if err != nil {
-		logger.WithError(err).WithField("guild", p.GuildID).Error("failed removing reaction")
+	if ra.GuildID != 0 {
+		// remove the emoji to signal were handling it
+		err := common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", p.GuildID).Error("failed removing reaction")
+		}
 	}
 
 	p.mu.Lock()
@@ -210,7 +227,12 @@ func (p *PaginatedMessage) HandleReactionAdd(ra *discordgo.MessageReactionAdd) {
 
 	_, err = common.BotSession.ChannelMessageEditEmbed(ra.ChannelID, ra.MessageID, newMsg)
 	if err != nil {
-		logger.WithError(err).WithField("guild", p.GuildID).Error("failed updating message")
+		switch code, _ := common.DiscordError(err); code {
+		case discordgo.ErrCodeUnknownChannel, discordgo.ErrCodeUnknownMessage, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
+			p.Broken = true
+		default:
+			logger.WithError(err).WithField("guild", p.GuildID).Error("failed updating paginated message")
+		}
 	}
 }
 
@@ -223,7 +245,7 @@ OUTER:
 		select {
 		case <-t.C:
 			p.mu.Lock()
-			toRemove := time.Since(p.lastUpdateTime) > time.Minute
+			toRemove := time.Since(p.lastUpdateTime) > time.Minute*10 || p.Broken
 			p.mu.Unlock()
 			if !toRemove {
 				continue OUTER

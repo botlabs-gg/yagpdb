@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
@@ -78,13 +80,29 @@ func HandleRefreshMuteOverrides(evt *pubsub.Event) {
 	RefreshMuteOverrides(evt.TargetGuildInt)
 }
 
+var started = time.Now()
+
 func HandleGuildCreate(evt *eventsystem.EventData) {
+	if !evt.HasFeatureFlag(featureFlagMuteRoleManaged) {
+		return // nothing to do
+	}
+
 	gc := evt.GuildCreate()
+
+	// relieve startup preasure, sleep for up to 10 minutes
+	if time.Since(started) < time.Minute {
+		sleep := time.Second * time.Duration(100+rand.Intn(600))
+		time.Sleep(sleep)
+	}
+
 	RefreshMuteOverrides(gc.ID)
 }
 
 // Refreshes the mute override on the channel, currently it only adds it.
 func RefreshMuteOverrides(guildID int64) {
+	if !featureflags.GuildHasFlagOrLogError(guildID, featureFlagMuteRoleManaged) {
+		return // nothing to do
+	}
 
 	config, err := GetConfig(guildID)
 	if err != nil {

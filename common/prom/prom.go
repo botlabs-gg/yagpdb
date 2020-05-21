@@ -42,7 +42,7 @@ func startHTTPServer() {
 			logrus.Infof("Attempting to start prom server on %s", listenAddr)
 			err := http.ListenAndServe(listenAddr, promhttp.Handler())
 			if err != nil {
-				logrus.WithError(err).Error("failed starting prom server")
+				logrus.WithError(err).Warn("failed starting prom server, trying another port")
 			}
 
 			time.Sleep(time.Second)

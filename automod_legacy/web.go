@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -67,6 +68,7 @@ func ExtraPostMW(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		activeGuild, _ := web.GetBaseCPContextData(r.Context())
 		pubsub.Publish("update_automod_legacy_rules", activeGuild.ID, nil)
+		featureflags.MarkGuildDirty(activeGuild.ID)
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)

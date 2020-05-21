@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -178,6 +179,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	}
 
 	common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
+	featureflags.MarkGuildDirty(activeGuild.ID)
 
 	return templateData, nil
 }
@@ -220,7 +222,9 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 			return nil, web.NewPublicError("Channels override not found, someone else deledted it in the meantime perhaps? Check control panel logs")
 		}
 
-		return inner(w, r, override)
+		tmpl, err := inner(w, r, override)
+		featureflags.MarkGuildDirty(activeGuild.ID)
+		return tmpl, err
 	}
 }
 
@@ -259,6 +263,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 	}
 
 	err = model.InsertG(r.Context(), boil.Infer())
+	featureflags.MarkGuildDirty(activeGuild.ID)
 	return templateData, errors.WithMessage(err, "InsertG")
 }
 

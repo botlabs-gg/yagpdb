@@ -13,6 +13,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	yagtemplate "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
@@ -222,6 +223,8 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, err
 	}
 
+	featureflags.MarkGuildDirty(activeGuild.ID)
+
 	http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands/commands/%d/", activeGuild.ID, localID), http.StatusSeeOther)
 
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
@@ -313,6 +316,7 @@ func handleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	err = DelNextRunEvent(cmd.GuildID, cmd.LocalID)
+	featureflags.MarkGuildDirty(activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }

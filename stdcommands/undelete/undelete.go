@@ -6,6 +6,7 @@ import (
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 )
@@ -23,13 +24,12 @@ var Command = &commands.YAGCommand{
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
 
 		if allUsers {
-			perms, err := data.GS.MemberPermissions(true, data.CS.ID, data.Msg.Author.ID)
-			if err != nil {
-				return nil, err
-			}
-
-			if perms&discordgo.PermissionManageMessages != discordgo.PermissionManageMessages {
-				return "You need `Manage Messages` permissions to view all users deleted messages", nil
+			if ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages); !ok || err != nil {
+				if err != nil {
+					return nil, err
+				} else if !ok {
+					return "You need `Manage Messages` permissions to view all users deleted messages", nil
+				}
 			}
 		}
 

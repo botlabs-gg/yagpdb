@@ -58,15 +58,15 @@ func CachedGetConfig(gID int64) (*Config, error) {
 	return confItem.Value().(*Config), nil
 }
 
-func CommandsMessageFilterFunc(msg *discordgo.Message) bool {
-	return !CheckMessage(msg)
+func CommandsMessageFilterFunc(evt *eventsystem.EventData, msg *discordgo.Message) bool {
+	return !CheckMessage(evt, msg)
 }
 
 func HandleMessageUpdate(evt *eventsystem.EventData) {
-	CheckMessage(evt.MessageUpdate().Message)
+	CheckMessage(evt, evt.MessageUpdate().Message)
 }
 
-func CheckMessage(m *discordgo.Message) bool {
+func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 	if !bot.IsNormalUserMessage(m) {
 		return false
 	}
@@ -75,13 +75,13 @@ func CheckMessage(m *discordgo.Message) bool {
 		return false // Pls no panicerinos or banerinos self
 	}
 
-	cs := bot.State.Channel(true, m.ChannelID)
-	if cs == nil {
-		logger.WithField("channel", m.ChannelID).Error("Channel not found in state")
+	if !evt.HasFeatureFlag(featureFlagEnabled) {
 		return false
 	}
 
-	if cs.IsPrivate {
+	cs := bot.State.Channel(true, m.ChannelID)
+	if cs == nil {
+		logger.WithField("channel", m.ChannelID).Error("Channel not found in state")
 		return false
 	}
 

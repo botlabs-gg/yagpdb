@@ -4,12 +4,19 @@ package scheduledevents2
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"runtime/debug"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
@@ -18,7 +25,6 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type ScheduledEvents struct {
@@ -26,12 +32,14 @@ type ScheduledEvents struct {
 
 	currentlyProcessingMU sync.Mutex
 	currentlyProcessing   map[int64]bool
+	stopBGWorker          chan *sync.WaitGroup
 }
 
 func newScheduledEventsPlugin() *ScheduledEvents {
 	return &ScheduledEvents{
 		stop:                make(chan *sync.WaitGroup),
 		currentlyProcessing: make(map[int64]bool),
+		stopBGWorker:        make(chan *sync.WaitGroup),
 	}
 }
 
@@ -98,6 +106,14 @@ func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interfac
 	}
 
 	err := m.InsertG(context.Background(), boil.Infer())
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	if time.Now().Add(time.Hour).After(runAt) {
+		err = flushEventToRedis(common.RedisPool, m)
+	}
+
 	return errors.WithMessage(err, "insert")
 }
 
@@ -128,67 +144,150 @@ func (se *ScheduledEvents) runCheckLoop() {
 	}
 }
 
+var metricsScheduledEventsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "yagpdb_scheduledevents_processed_total",
+	Help: "Total scheduled events processed",
+})
+
+var metricsScheduledEventsSkipped = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "yagpdb_scheduledevents_skipped_total",
+	Help: "Total scheduled events skipped",
+})
+
 func (se *ScheduledEvents) check() {
 	se.currentlyProcessingMU.Lock()
 	defer se.currentlyProcessingMU.Unlock()
 
-	toProcess, err := models.ScheduledEvents(qm.Where("triggers_at < now() AND processed=false")).AllG(context.Background())
+	var pairs []string
+	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", 0, time.Now().UTC().Unix()))
 	if err != nil {
-		logger.WithError(err).Error("failed checking for events to process")
+		logger.WithError(err).Error("failed checking for scheduled events to process")
 		return
 	}
 
 	numSkipped := 0
 	numHandling := 0
-	for _, p := range toProcess {
-		if !bot.ReadyTracker.IsGuildShardReady(p.GuildID) {
+	for _, pair := range pairs {
+		id, guildID, err := parseIDGuildIDPair(pair)
+		if err != nil {
+			logger.WithError(err).Error("failed parsing id guildId pair")
+			continue
+		}
+
+		skip, remove := se.checkShouldSkipRemove(id, guildID)
+		if skip && !remove {
 			numSkipped++
 			continue
 		}
 
-		// make sure the guild is available
-		gs := bot.State.Guild(true, p.GuildID)
-		if gs == nil {
-			onGuild, err := common.BotIsOnGuild(p.GuildID)
-			if err != nil {
-				logger.WithError(err).WithField("guild", p.GuildID).Error("failed checking if bot is on guild")
-			} else if !onGuild {
-				logger.WithField("guild", p.GuildID).Info("completely skipping event from guild not joined")
-				go se.markDone(p, bot.ErrGuildNotOnProcess)
-				continue
-			}
-
+		if remove {
+			logger.WithField("id", id).WithField("guild", guildID).Info("removing event entirely since it's not on this bot anymore")
+			go se.markDoneID(id, guildID, bot.ErrGuildNotOnProcess)
 			numSkipped++
-			continue
-		}
-
-		gs.RLock()
-		unavailable := gs.Guild.Unavailable
-		gs.RUnlock()
-
-		if unavailable {
-			// wait until the guild is available before handling this event
-			numSkipped++
-			continue
-		}
-
-		if v := se.currentlyProcessing[p.ID]; v {
 			continue
 		}
 
 		numHandling++
-
-		se.currentlyProcessing[p.ID] = true
-		go se.processItem(p)
+		se.currentlyProcessing[id] = true
+		go se.processItem(id, guildID)
 	}
+
+	metricsScheduledEventsProcessed.Add(float64(numHandling))
+	metricsScheduledEventsSkipped.Add(float64(numSkipped))
 
 	if numHandling > 0 {
 		logger.Info("triggered ", numHandling, " scheduled events (skipped ", numSkipped, ")")
 	}
 }
 
-func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
-	l := logger.WithField("id", item.ID).WithField("evt", item.EventName)
+func (se *ScheduledEvents) checkShouldSkipRemove(id int64, guildID int64) (skip bool, remove bool) {
+	if !bot.ReadyTracker.IsGuildShardReady(guildID) {
+		return true, false
+	}
+
+	// make sure the guild is available
+	gs := bot.State.Guild(true, guildID)
+	if gs == nil {
+		onGuild, err := common.BotIsOnGuild(guildID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", guildID).Error("failed checking if bot is on guild")
+			return true, false
+		} else if !onGuild {
+			return true, true
+		}
+
+		return true, false
+	}
+
+	gs.RLock()
+	unavailable := gs.Guild.Unavailable
+	gs.RUnlock()
+
+	if unavailable {
+		// wait until the guild is available before handling this event
+		return true, false
+	}
+
+	if v := se.currentlyProcessing[id]; v {
+		return true, false
+	}
+
+	return false, false
+}
+
+var ErrBadPairLength = errors.NewPlain("ID - GuildID pair corrupted")
+
+func parseIDGuildIDPair(pair string) (id int64, guildID int64, err error) {
+	split := strings.Split(pair, ":")
+	if len(split) < 2 {
+		err = ErrBadPairLength
+		return
+	}
+
+	id, err = strconv.ParseInt(split[0], 10, 64)
+	if err != nil {
+		return
+	}
+
+	guildID, err = strconv.ParseInt(split[1], 10, 64)
+	return
+}
+
+func (se *ScheduledEvents) processItem(id int64, guildID int64) {
+	l := logger.WithField("id", id).WithField("guild", guildID)
+
+	defer func() {
+		se.currentlyProcessingMU.Lock()
+		defer se.currentlyProcessingMU.Unlock()
+
+		delete(se.currentlyProcessing, id)
+	}()
+
+	item, err := models.FindScheduledEventG(context.Background(), id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			se.markDoneID(id, guildID, nil)
+		} else {
+			l.WithError(err).Error("failed finding scheduled event")
+		}
+		return
+	}
+
+	if item.Processed {
+		se.markDoneID(id, guildID, nil)
+		return
+	}
+
+	// check if this event was changed after it was flushed
+	delta := item.TriggersAt.Sub(time.Now())
+	if delta > 5 {
+		// it was changed, re-flush it, or remove it
+		err = UpdateFlushedEvent(time.Now(), common.RedisPool, item)
+		if err != nil {
+			logger.WithError(err).Error("failed re-flushing event")
+			return
+		}
+	}
 
 	handler, ok := registeredHandlers[item.EventName]
 	if !ok {
@@ -219,7 +318,6 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 	}()
 
 	retryDelay := time.Second
-	var err error
 	for nRetry := 0; nRetry < 10; nRetry++ {
 		var retry bool
 		retry, err = handler.Handler(item, decodedData)
@@ -244,19 +342,59 @@ func (se *ScheduledEvents) processItem(item *models.ScheduledEvent) {
 }
 
 func (se *ScheduledEvents) markDone(item *models.ScheduledEvent, runErr error) {
+	defer func() {
+		se.currentlyProcessingMU.Lock()
+		delete(se.currentlyProcessing, item.ID)
+		se.currentlyProcessingMU.Unlock()
+	}()
+
 	item.Processed = true
 	if runErr != nil {
 		item.Error = null.StringFrom(runErr.Error())
 	}
 	_, err := item.UpdateG(context.Background(), boil.Whitelist("processed"))
 
-	se.currentlyProcessingMU.Lock()
-	delete(se.currentlyProcessing, item.ID)
-	se.currentlyProcessingMU.Unlock()
-
 	if err != nil {
 		logger.WithError(err).Error("failed marking item as processed")
 	}
+
+	err = common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events_soon", fmt.Sprintf("%d:%d", item.ID, item.GuildID)))
+	if err != nil {
+		logger.WithError(err).Error("failed marking item as done in redis")
+	}
+}
+
+func (se *ScheduledEvents) markDoneID(id int64, guildID int64, runErr error) {
+	// item.Processed = true
+	// if runErr != nil {
+	// 	item.Error = null.StringFrom(runErr.Error())
+	// }
+	// _, err := item.UpdateG(context.Background(), boil.Whitelist("processed"))
+
+	var updateErr null.String
+	if runErr != nil {
+		updateErr = null.StringFrom(runErr.Error())
+	}
+
+	defer func() {
+		se.currentlyProcessingMU.Lock()
+		delete(se.currentlyProcessing, id)
+		se.currentlyProcessingMU.Unlock()
+	}()
+
+	const q = "UPDATE scheduled_events SET processed=true, error=$2 WHERE id=$1"
+	_, err := common.PQ.Exec(q, id, updateErr)
+	if err != nil {
+		logger.WithError(err).Error("failed marking item as done")
+		return
+	}
+
+	err = common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events_soon", fmt.Sprintf("%d:%d", id, guildID)))
+	if err != nil {
+		logger.WithError(err).Error("failed marking item as done")
+		return
+	}
+
 }
 
 func CheckDiscordErrRetry(err error) bool {

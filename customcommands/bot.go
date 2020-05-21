@@ -300,13 +300,15 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, cState *dstate.ChannelSta
 		return true
 	}
 
-	botID := common.BotUser.ID
-
-	if evt.Author == nil || botID == evt.Author.ID || evt.Author.Bot || cState.IsPrivate || evt.WebhookID != 0 {
+	if !bot.IsNormalUserMessage(evt.Message) {
 		return true
 	}
 
-	if !bot.BotProbablyHasPermissionGS(true, cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
+	if evt.Message.Author.Bot {
+		return true
+	}
+
+	if !bot.BotProbablyHasPermissionGS(cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
 		return true
 	}
 
@@ -341,8 +343,17 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
+	if !evt.HasFeatureFlag(featureFlagHasCommands) {
+		return
+	}
+
 	cState := evt.CS()
 	if cState == nil {
+		return
+	}
+
+	if !bot.BotProbablyHasPermissionGS(cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
+		// don't run in channel we don't have perms in
 		return
 	}
 
@@ -359,11 +370,6 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 	}
 
 	if len(triggeredCmds) < 1 {
-		return
-	}
-
-	if !bot.BotProbablyHasPermissionGS(true, cState.Guild, cState.ID, discordgo.PermissionSendMessages) {
-		// don't run in channel we don't have perms in
 		return
 	}
 
@@ -389,7 +395,8 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.Membe
 
 	// to make sure the message is in the proper context of the user reacting we set the mssage context to a fake message
 	fakeMsg := *message
-	fakeMsg.Author = ms.DGoUser()
+	fakeMsg.Member = ms.DGoCopy()
+	fakeMsg.Author = fakeMsg.Member.User
 	tmplCtx.Msg = &fakeMsg
 
 	tmplCtx.Data["Reaction"] = reaction
@@ -402,6 +409,11 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, ms *dstate.Membe
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
 	cs := evt.CS()
+
+	if !evt.HasFeatureFlag(featureFlagHasCommands) {
+		return
+	}
+
 	if shouldIgnoreChannel(mc, cs) {
 		return
 	}
@@ -608,7 +620,10 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 	if lockHandle == -1 {
 		f.Warn("Exceeded max lock attempts for cc")
-		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+		if cmd.ShowErrors {
+			common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+		}
+		updatePostCommandRan(cmd, errors.New("Gave up trying to e xecute, already an existing instance executing"))
 		return nil
 	}
 
@@ -678,12 +693,12 @@ func updatePostCommandRan(cmd *models.CustomCommand, runErr error) {
 		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command executed query")
 	}
 
-	if runErr != nil {
-		err := pubsub.Publish("custom_commands_clear_cache", cmd.GuildID, nil)
-		if err != nil {
-			logger.WithError(err).Error("failed creating cache eviction pubsub event in updatePostCommandRan")
-		}
-	}
+	// if runErr != nil {
+	// 	err := pubsub.Publish("custom_commands_clear_cache", cmd.GuildID, nil)
+	// 	if err != nil {
+	// 		logger.WithError(err).Error("failed creating cache eviction pubsub event in updatePostCommandRan")
+	// 	}
+	// }
 }
 
 // CheckMatch returns true if the given cmd matches, as well as the arguments

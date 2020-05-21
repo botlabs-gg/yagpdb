@@ -78,6 +78,9 @@ func (p *Plugin) AddCommands() {
 
 			subject := parsed.Args[0].Str()
 			id, channel, err := createTicketChannel(conf, parsed.GS, parsed.Msg.Author.ID, subject)
+			if err != nil {
+				return "Failed creating the channel, make sure the bot has proper perms and the channel limit hasn't been reached.", nil
+			}
 
 			// create the db model for it
 			dbModel := &models.Ticket{
@@ -97,7 +100,7 @@ func (p *Plugin) AddCommands() {
 
 			// send the first ticket message
 
-			tmplCTX := templates.NewContext(parsed.GS, dstate.NewChannelState(parsed.GS, parsed.GS, channel), commands.ContextMS(parsed.Context()))
+			tmplCTX := templates.NewContext(parsed.GS, dstate.NewChannelState(parsed.GS, parsed.GS, channel), parsed.MS)
 			tmplCTX.Name = "ticket open message"
 			tmplCTX.Data["Reason"] = parsed.Args[0].Str()
 			ticketOpenMsg := conf.TicketOpenMSG

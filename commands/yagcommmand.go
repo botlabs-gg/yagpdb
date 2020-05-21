@@ -287,7 +287,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	if cmdData.GS != nil {
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
-			if !bot.BotProbablyHasPermissionGS(true, cmdData.GS, cmdData.CS.ID, discordgo.PermissionEmbedLinks) {
+			if !bot.BotProbablyHasPermissionGS(cmdData.GS, cmdData.CS.ID, discordgo.PermissionEmbedLinks) {
 				resp = "This command returned an embed but the bot does not have embed links permissions in this channel, cannot send the response."
 			}
 		}
@@ -360,7 +360,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			return
 		}
 
-		if !bot.BotProbablyHasPermissionGS(true, guild, cState.ID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages) {
+		if !bot.BotProbablyHasPermissionGS(guild, cState.ID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages) {
 			return
 		}
 
@@ -378,7 +378,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			return
 		}
 
-		member := ContextMS(data.Context())
+		member := data.MS
 		// Check the required and ignored roles
 		if len(settings.RequiredRoles) > 0 {
 			found := false

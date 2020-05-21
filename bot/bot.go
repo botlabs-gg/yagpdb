@@ -82,8 +82,6 @@ func setup() {
 	setupState()
 	addBotHandlers()
 	setupShardManager()
-
-	common.BotSession.AddHandler(eventsystem.HandleEvent)
 }
 
 func setupStandalone() {
@@ -115,7 +113,6 @@ func botReady() {
 		updateAllShardStatuses()
 	}, nil)
 
-	pubsub.AddHandler("global_ratelimit", handleGlobalRatelimtPusub, GlobalRatelimitTriggeredEventData{})
 	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 
 	serviceDetails := "Not using orchestrator"
@@ -255,25 +252,25 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	return true
 }
 
-type GlobalRatelimitTriggeredEventData struct {
-	Reset  time.Time `json:"reset"`
-	Bucket string    `json:"bucket"`
-}
-
-func handleGlobalRatelimtPusub(evt *pubsub.Event) {
-	data := evt.Data.(*GlobalRatelimitTriggeredEventData)
-	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
-}
-
 var (
 	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_hits",
+		Name: "yagpdb_state_cache_hits_total",
 		Help: "Cache hits in the satte cache",
 	})
 
 	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_misses",
+		Name: "yagpdb_state_cache_misses_total",
 		Help: "Cache misses in the sate cache",
+	})
+
+	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_state_cache_evicted_total",
+		Help: "Cache evictions",
+	})
+
+	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_state_members_evicted_total",
+		Help: "Members evicted from state cache",
 	})
 )
 
@@ -301,6 +298,8 @@ func setupState() {
 	go func() {
 		lastHits := int64(0)
 		lastMisses := int64(0)
+		lastEvictionsCache := int64(0)
+		lastEvictionsMembers := int64(0)
 
 		ticker := time.NewTicker(time.Minute)
 		for {
@@ -314,6 +313,12 @@ func setupState() {
 
 			metricsCacheHits.Add(float64(deltaHits))
 			metricsCacheMisses.Add(float64(deltaMisses))
+
+			metricsCacheEvictions.Add(float64(stats.UserCachceEvictedTotal - lastEvictionsCache))
+			metricsCacheMemberEvictions.Add(float64(stats.MembersRemovedTotal - lastEvictionsMembers))
+
+			lastEvictionsCache = stats.UserCachceEvictedTotal
+			lastEvictionsMembers = stats.MembersRemovedTotal
 
 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
 		}

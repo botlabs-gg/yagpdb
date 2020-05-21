@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
@@ -80,6 +81,11 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 	err := newConf.Save(guild.ID)
 	if web.CheckErr(tmpl, err, "Failed saving config :'(", web.CtxLogger(ctx).Error) {
 		return tmpl
+	}
+
+	err = featureflags.UpdatePluginFeatureFlags(guild.ID, &Plugin{})
+	if err != nil {
+		web.CtxLogger(ctx).WithError(err).Error("failed updating feature flags")
 	}
 
 	err = pubsub.Publish("update_streaming", guild.ID, nil)

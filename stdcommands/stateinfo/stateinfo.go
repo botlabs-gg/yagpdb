@@ -54,8 +54,8 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 			&discordgo.MessageEmbedField{Name: "Guild Channels", Value: fmt.Sprintf("%d", guildChannel), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Total Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Cache Hits/Misses", Value: fmt.Sprintf("%d - %d", stats.CacheHits, stats.CacheMisses), Inline: true},
-			&discordgo.MessageEmbedField{Name: "Last GC Members Evicted", Value: fmt.Sprintf("%d", stats.MembersRemovedLastGC), Inline: true},
-			&discordgo.MessageEmbedField{Name: "Last GC Cache Evicted", Value: fmt.Sprintf("%d", stats.UserCachceEvictedLastGC), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Members evicted total", Value: fmt.Sprintf("%d", stats.MembersRemovedTotal), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Cache evicted total", Value: fmt.Sprintf("%d", stats.UserCachceEvictedTotal), Inline: true},
 		},
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"golang.org/x/image/colornames"
@@ -19,6 +20,7 @@ var Command = &commands.YAGCommand{
 	Description: "A more simpler version of CustomEmbed, controlled completely using switches.",
 	ArgSwitches: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
+		&dcmd.ArgDef{Switch: "content", Help: "Text content for the message", Type: dcmd.String, Default: ""},
 
 		&dcmd.ArgDef{Switch: "title", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: ""},
@@ -29,11 +31,13 @@ var Command = &commands.YAGCommand{
 
 		&dcmd.ArgDef{Switch: "author", Help: "The text in the 'author' field", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "authoricon", Help: "Url to a icon for the 'author' field", Type: dcmd.String, Default: ""},
+		&dcmd.ArgDef{Switch: "authorurl", Help: "Url of the 'author' field", Type: dcmd.String, Default: ""},
 
 		&dcmd.ArgDef{Switch: "footer", Help: "Text content for the footer", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		content :=  data.Switch("content").Str()
 		embed := &discordgo.MessageEmbed{
 			Title:       data.Switch("title").Str(),
 			Description: data.Switch("desc").Str(),
@@ -53,6 +57,7 @@ var Command = &commands.YAGCommand{
 			embed.Author = &discordgo.MessageEmbedAuthor{
 				Name:    author,
 				IconURL: data.Switch("authoricon").Str(),
+				URL:	 data.Switch("authorurl").Str(),
 			}
 		}
 
@@ -82,17 +87,22 @@ var Command = &commands.YAGCommand{
 		if c.Value != nil {
 			cID = c.Value.(*dstate.ChannelState).ID
 
-			perms, err := data.GS.MemberPermissions(true, cID, data.Msg.Author.ID)
+			hasPerms, err := bot.AdminOrPermMS(cID, data.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
-				return nil, err
+				return "Failed checking permissions, please try again or join the support server.", err
 			}
 
-			if perms&discordgo.PermissionSendMessages != discordgo.PermissionSendMessages || perms&discordgo.PermissionReadMessages != discordgo.PermissionReadMessages {
+			if !hasPerms {
 				return "You do not have permissions to send messages there", nil
 			}
 		}
 
-		_, err := common.BotSession.ChannelMessageSendEmbed(cID, embed)
+		messageSend := &discordgo.MessageSend {
+				Content: 	 content,
+				Embed:	 	 embed,
+				AllowedMentions: discordgo.AllowedMentions{},
+			}
+		_, err := common.BotSession.ChannelMessageSendComplex(cID, messageSend)
 		if err != nil {
 			return err, err
 		}

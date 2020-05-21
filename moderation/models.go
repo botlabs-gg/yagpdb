@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/lib/pq"
 )
@@ -23,10 +24,11 @@ type Config struct {
 	KickMessage          string `valid:"template,5000"`
 
 	// Ban
-	BanEnabled        bool
-	BanCmdRoles       pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	BanReasonOptional bool
-	BanMessage        string `valid:"template,5000"`
+	BanEnabled        	bool
+	BanCmdRoles       	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	BanReasonOptional 	bool
+	BanMessage        	string `valid:"template,5000"`
+	DefaultBanDeleteDays    sql.NullInt64 `gorm:"default:1" valid:"0,7"`
 
 	// Mute/unmute
 	MuteEnabled             bool
@@ -92,8 +94,12 @@ func (c *Config) Save(guildID int64) error {
 		return err
 	}
 
+	if err = featureflags.UpdatePluginFeatureFlags(guildID, &Plugin{}); err != nil {
+		return err
+	}
+
 	pubsub.Publish("mod_refresh_mute_override", guildID, nil)
-	return nil
+	return err
 }
 
 type WarningModel struct {
