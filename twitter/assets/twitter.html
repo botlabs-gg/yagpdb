@@ -37,6 +37,10 @@
                             {{textChannelOptions .ActiveGuild.Channels nil false ""}}
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="text-filter">Text Regex</label>
+                        <input type="text" class="form-control" id="text-filter" name="TextFilter">
+                    </div>
                     <button type="submit" class="btn btn-success">Add</button>
                 </form>
             </div>
@@ -66,6 +70,10 @@
                             <select id="channel-feed-{{.ID}}" class="form-control" name="DiscordChannel">
                                 {{textChannelOptions $Dot.ActiveGuild.Channels .ChannelID false ""}}
                             </select>
+                        </div>
+                        <div class="form-group col">
+                            <label for="filter-feed-{{.ID}}">Text Regex</label>
+                            <input id="filter-feed-{{.ID}}" type="text" class="form-control" name="TextFilter" value="{{.TextFilter}}">
                         </div>
                         <div class="form-group col">
                             <div class="btn-group mt-4">

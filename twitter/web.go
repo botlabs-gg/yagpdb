@@ -26,11 +26,13 @@ const (
 type Form struct {
 	TwitterUser    string `valid:",1,256"`
 	DiscordChannel int64  `valid:"channel,false"`
+	TextFilter     string `valid:"regex,300"`
 	ID             int64
 }
 
 type EditForm struct {
 	DiscordChannel int64 `valid:"channel,false"`
+	TextFilter     string `valid:"regex,300"`
 }
 
 func (p *Plugin) InitWeb() {
@@ -130,6 +132,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		TwitterUsername: user.ScreenName,
 		TwitterUserID:   user.ID,
 		ChannelID:       form.DiscordChannel,
+		TextFilter:      form.TextFilter,
 		Enabled:         true,
 	}
 
@@ -178,8 +181,9 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	data := ctx.Value(common.ContextKeyParsedForm).(*EditForm)
 
 	sub.ChannelID = data.DiscordChannel
+	sub.TextFilter = data.TextFilter
 	sub.Enabled = true
-	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled"))
+	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "text_filter", "enabled"))
 	return
 }
 
