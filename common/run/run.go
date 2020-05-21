@@ -152,7 +152,11 @@ func Run() {
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
-		go feeds.Run(strings.Split(flagRunFeeds, ","))
+		var runFeeds []string
+		if flagRunEverything && flagRunFeeds != "" {
+			runFeeds = strings.Split(flagRunFeeds, ",")
+		}
+		go feeds.Run(runFeeds)
 	}
 
 	if flagRunBWC || flagRunEverything {
