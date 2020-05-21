@@ -26,7 +26,12 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return err.Error(), nil
 			}
-			return r.String(), nil
+
+			output := r.String()
+			if len(output) > 100 {
+				output = output[:100] + "..."
+			}
+			return output, nil
 		}
 
 		// normal, n sides dice rolling
@@ -37,9 +42,6 @@ var Command = &commands.YAGCommand{
 
 		result := rand.Intn(sides)
 		output := fmt.Sprintf(":game_die: %d (1 - %d)", result+1, sides)
-		if len(output) > 100 {
-			output = output[:100] + "..."
-		}
 		return output, nil
 	},
 }
