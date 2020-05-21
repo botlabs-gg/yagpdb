@@ -572,6 +572,22 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	}
 }
 
+type Dict map[interface{}]interface{}
+
+func (d Dict) Set(key interface{}, value interface{}) string {
+    d[key] = value
+    return ""
+}
+
+func (d Dict) Get(key interface{}) interface{} {
+    return d[key]
+}
+
+func (d Dict) Del(key interface{}) string {
+    delete(d, key)
+    return ""
+}
+
 type SDict map[string]interface{}
 
 func (d SDict) Set(key string, value interface{}) string {
