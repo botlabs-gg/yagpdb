@@ -36,12 +36,16 @@ type QueuedAction struct {
 
 func (mu *serverMemberStatsUpdater) run() {
 
-	t := time.NewTicker(time.Minute)
+	t := time.NewTicker(time.Minute * 5)
 	for {
 		select {
 		case <-t.C:
 			if atomic.LoadInt32(mu.flushInProgress) != 0 {
 				logger.Error("last flush took too long, waiting...")
+				continue
+			}
+
+			if len(mu.waiting) == 0 && len(mu.processing) == 0 {
 				continue
 			}
 

@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
 )
@@ -77,6 +78,13 @@ func Publish(evt string, target int64, data interface{}) error {
 }
 
 func PollEvents() {
+	AddHandler("global_ratelimit", handleGlobalRatelimtPusub, globalRatelimitTriggeredEventData{})
+	common.BotSession.AddHandler(func(s *discordgo.Session, r *discordgo.RateLimit) {
+		if r.Global {
+			PublishRatelimit(r)
+		}
+	})
+
 	for {
 		err := runPollEvents()
 		logger.WithError(err).Error("subscription for events ended, starting a new one...")

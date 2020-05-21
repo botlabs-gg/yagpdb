@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jonas747/yagpdb/bot/models"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -71,6 +72,8 @@ func guildRemoved(guildID int64) {
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed marking guild as left")
 	}
+
+	featureflags.EvictCacheForGuild(guildID)
 
 	for _, v := range common.Plugins {
 		if remover, ok := v.(RemoveGuildHandler); ok {

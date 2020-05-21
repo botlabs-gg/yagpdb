@@ -134,7 +134,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "ddays", Default: 1, Name: "Days", Type: dcmd.Int},
+			&dcmd.ArgDef{Switch: "ddays", Name: "Days", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
@@ -147,8 +147,12 @@ var ModerationCommands = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-
-			err = BanUserWithDuration(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), parsed.Switches["ddays"].Int())
+			
+			ddays := int(config.DefaultBanDeleteDays.Int64)
+			if parsed.Switches["ddays"].Value != nil {
+				ddays = parsed.Switches["ddays"].Int()
+			}
+			err = BanUserWithDuration(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), ddays)
 			if err != nil {
 				return nil, err
 			}
@@ -755,14 +759,17 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			// schedule the expirey
+			// schedule the expiry
 			if dur > 0 {
 				err := scheduledevents2.ScheduleRemoveRole(parsed.Context(), parsed.GS.ID, target.ID, role.ID, time.Now().Add(dur))
 				if err != nil {
 					return nil, err
 				}
 			}
-
+			
+			// cancel the event to add the role
+			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
+			
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {

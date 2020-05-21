@@ -14,7 +14,6 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/volatiletech/null"
@@ -38,16 +37,16 @@ type ResetChannelRatelimitData struct {
 }
 
 func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
-	p.checkMessage(evt.MessageUpdate().Message)
+	p.checkMessage(evt, evt.MessageUpdate().Message)
 }
 
 // called on new messages and edits
-func (p *Plugin) checkMessage(msg *discordgo.Message) bool {
+func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message) bool {
 	if !bot.IsNormalUserMessage(msg) {
 		return false
 	}
 
-	if !featureflags.GuildHasFlagOrLogError(msg.GuildID, featureFlagEnabled) || msg.GuildID == 0 {
+	if !evt.HasFeatureFlag(featureFlagEnabled) || msg.GuildID == 0 {
 		return true
 	}
 

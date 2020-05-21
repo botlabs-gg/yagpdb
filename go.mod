@@ -28,11 +28,11 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
-	github.com/jonas747/cardsagainstdiscord v1.0.0
+	github.com/jonas747/cardsagainstdiscord v1.0.1-0.20200329001347-9ec700c098a5
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.2.2
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.4.4
+	github.com/jonas747/discordgo v1.4.5-0.20200429160041-12d652984517
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600
 	github.com/jonas747/dstate v1.0.7
 	github.com/jonas747/dutil v0.0.3
@@ -46,7 +46,7 @@ require (
 	github.com/karlseguin/rcache v1.0.1
 	github.com/lib/pq v1.2.0
 	github.com/lunixbochs/vtclean v1.0.0
-	github.com/mediocregopher/radix/v3 v3.3.2
+	github.com/mediocregopher/radix/v3 v3.5.0
 	github.com/microcosm-cc/bluemonday v1.0.1
 	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -65,7 +65,7 @@ require (
 	github.com/tidwall/grect v0.0.0-20161006141115-ba9a043346eb // indirect
 	github.com/tidwall/rtree v0.0.0-20180113144539-6cd427091e0e // indirect
 	github.com/tidwall/tinyqueue v0.0.0-20180302190814-1e39f5511563 // indirect
-	github.com/tkuchiki/go-timezone v0.1.4
+	github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
 	github.com/volatiletech/null v8.0.0+incompatible

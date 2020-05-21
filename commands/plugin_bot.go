@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -37,7 +36,6 @@ func (p *Plugin) BotInit() {
 
 func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
 	logger.Info("Searching by username: ", query)
-	logger.Info(string(debug.Stack()))
 	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
 	if err != nil {
 		if err == bot.ErrTimeoutWaitingForMember {
@@ -262,7 +260,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 
 	abort := false
 	for _, filterFunc := range MessageFilterFuncs {
-		if !filterFunc(m.Message) {
+		if !filterFunc(evt, m.Message) {
 			abort = true
 		}
 	}
@@ -281,65 +279,6 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 	}
 
 	return prefix
-}
-
-var cmdHelp = &YAGCommand{
-	Name:        "Help",
-	Aliases:     []string{"commands", "h", "how", "command"},
-	Description: "Shows help about all or one specific command",
-	CmdCategory: CategoryGeneral,
-	RunInDM:     true,
-	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "command", Type: dcmd.String},
-	},
-
-	RunFunc:  cmdFuncHelp,
-	Cooldown: 10,
-}
-
-func CmdNotFound(search string) string {
-	return fmt.Sprintf("Couldn't find command %q", search)
-}
-
-func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
-	target := data.Args[0].Str()
-
-	var resp []*discordgo.MessageEmbed
-
-	// Send the targetted help in the channel it was requested in
-	resp = dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
-	for _, v := range resp {
-		ensureEmbedLimits(v)
-	}
-
-	if target != "" {
-		if len(resp) != 1 {
-			// Send command not found in same channel
-			return CmdNotFound(target), nil
-		}
-
-		// Send short help in same channel
-		return resp, nil
-	}
-
-	// Send full help in DM
-	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
-	if err != nil {
-		return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
-	}
-
-	for _, v := range resp {
-		_, err := common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
-		if err != nil {
-			return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
-		}
-	}
-
-	if data.Source == dcmd.DMSource {
-		return nil, nil
-	}
-
-	return "You've got mail!", nil
 }
 
 func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
@@ -380,14 +319,20 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	}
 
 	if !prefixExists {
-		defaultPrefix := "-"
-		if common.Testing {
-			defaultPrefix = "("
-		}
+		defaultPrefix := defaultCommandPrefix()
 
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
 		logger.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
+}
+
+func defaultCommandPrefix() string {
+	defaultPrefix := "-"
+	if common.Testing {
+		defaultPrefix = "("
+	}
+
+	return defaultPrefix
 }
 
 var cmdPrefix = &YAGCommand{

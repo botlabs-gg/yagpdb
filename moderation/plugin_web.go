@@ -66,6 +66,7 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	newConfig.DefaultMuteDuration.Valid = true
+	newConfig.DefaultBanDeleteDays.Valid = true
 	templateData["ModConfig"] = newConfig
 
 	err := newConfig.Save(activeGuild.ID)

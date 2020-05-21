@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,10 +34,11 @@ type Handler struct {
 }
 
 type EventData struct {
-	EvtInterface interface{}
-	Type         Event
-	ctx          context.Context
-	Session      *discordgo.Session
+	EvtInterface      interface{}
+	Type              Event
+	ctx               context.Context
+	Session           *discordgo.Session
+	GuildFeatureFlags []string
 
 	GS *dstate.GuildState // Guaranteed to be available for guild events, except creates and deletes
 	cs *dstate.ChannelState
@@ -54,8 +56,8 @@ func NewEventData(session *discordgo.Session, t Event, evtInterface interface{})
 		cancelled:    new(int32),
 	}
 }
-func (evt *EventData) Cancel() {
-	atomic.StoreInt32(evt.cancelled, 1)
+func (e *EventData) Cancel() {
+	atomic.StoreInt32(e.cancelled, 1)
 }
 
 func (e *EventData) Context() context.Context {
@@ -71,6 +73,11 @@ func (e *EventData) WithContext(ctx context.Context) *EventData {
 	*cop = *e
 	cop.ctx = ctx
 	return cop
+}
+
+// HasFeatureFlag returns true if the guild the event came from has the provided feature flag
+func (e *EventData) HasFeatureFlag(flag string) bool {
+	return common.ContainsStringSlice(e.GuildFeatureFlags, flag)
 }
 
 // EmitEvent emits an event
@@ -341,6 +348,11 @@ func handleEvent(evtData *EventData) {
 			if evtData.GS == nil && evtData.Type != EventGuildCreate && evtData.Type != EventGuildDelete {
 				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", evtData.Type, guildEvt.GetGuildID())
 				return
+			}
+
+			flags, err := featureflags.RetryGetGuildFlags(id)
+			if err == nil {
+				evtData.GuildFeatureFlags = flags
 			}
 		}
 	}
