@@ -907,9 +907,9 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, toI
 			}
 		}
 
-		// Break if msg is equal to the toID one
-		if toID == msgs[i].ID {
-			break
+		// Continue only if current msg ID is < toID
+		if toID > msgs[i].ID {
+			continue
 		}
 
 		toDelete = append(toDelete, msgs[i].ID)
