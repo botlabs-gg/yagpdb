@@ -486,6 +486,9 @@ func baseContextFuncs(c *Context) {
 
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
+	
+	c.ContextFuncs["addRoleName"] = c.tmplAddRoleName
+	c.ContextFuncs["removeRoleName"] = c.tmplRemoveRoleName
 
 	c.ContextFuncs["giveRoleID"] = c.tmplGiveRoleID
 	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName

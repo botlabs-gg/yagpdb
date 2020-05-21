@@ -711,6 +711,36 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 	return "", nil
 }
 
+func (c *Context) tmplAddRoleName(name string) (string, error) {
+    if c.IncreaseCheckGenericAPICall() {
+        return "", ErrTooManyAPICalls
+    }
+
+    if c.MS == nil {
+        return "", nil
+    }
+
+    role := int64(0)
+    c.GS.RLock()
+    for _, r := range c.GS.Guild.Roles {
+        if strings.EqualFold(r.Name, name) {
+            role = r.ID    
+            break
+        }
+    }
+    c.GS.RUnlock()
+
+    if role == 0 {
+        return "", errors.New("No Role with name " + name + " found")
+    }
+
+    if err := common.AddRoleDS(c.MS, role); err != nil {
+        return "", err
+    }
+    
+    return "", nil
+}
+
 func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
@@ -737,6 +767,45 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 	}
 
 	return "", nil
+}
+
+func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (string, error) {
+    if c.IncreaseCheckGenericAPICall() {
+        return "", ErrTooManyAPICalls
+    }
+
+    delay := 0
+    if len(optionalArgs) > 0 {
+        delay = tmplToInt(optionalArgs[0])
+    }
+
+    if c.MS == nil {
+        return "", nil
+    }
+
+    role := int64(0)
+    c.GS.RLock()
+    for _, r := range c.GS.Guild.Roles {
+        if strings.EqualFold(r.Name, name) {
+            role = r.ID
+            break
+        }
+    }
+    c.GS.RUnlock()
+
+    if role == 0 {
+        return "", errors.New("No Role with name " + name + " found")
+    }
+
+    if delay > 0 {
+        scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, role, time.Now().Add(time.Second*time.Duration(delay)))
+    } else {
+        if err := common.RemoveRoleDS(c.MS, role) ; err != nil {
+              return "", err
+        }
+    }
+
+    return "", nil
 }
 
 func (c *Context) tmplDelResponse(args ...interface{}) string {
