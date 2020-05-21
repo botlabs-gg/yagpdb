@@ -30,6 +30,7 @@ type TwitterFeed struct {
 	TwitterUserID   int64     `boil:"twitter_user_id" json:"twitter_user_id" toml:"twitter_user_id" yaml:"twitter_user_id"`
 	ChannelID       int64     `boil:"channel_id" json:"channel_id" toml:"channel_id" yaml:"channel_id"`
 	Enabled         bool      `boil:"enabled" json:"enabled" toml:"enabled" yaml:"enabled"`
+	TextFilter      string    `boil:"text_filter" json:"text_filter" toml:"text_filter" yaml:"text_filter"`
 
 	R *twitterFeedR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L twitterFeedL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +44,7 @@ var TwitterFeedColumns = struct {
 	TwitterUserID   string
 	ChannelID       string
 	Enabled         string
+	TextFilter      string
 }{
 	ID:              "id",
 	GuildID:         "guild_id",
@@ -51,6 +53,7 @@ var TwitterFeedColumns = struct {
 	TwitterUserID:   "twitter_user_id",
 	ChannelID:       "channel_id",
 	Enabled:         "enabled",
+	TextFilter:      "text_filter",
 }
 
 // Generated where
@@ -111,6 +114,7 @@ var TwitterFeedWhere = struct {
 	TwitterUserID   whereHelperint64
 	ChannelID       whereHelperint64
 	Enabled         whereHelperbool
+	TextFilter      whereHelperstring
 }{
 	ID:              whereHelperint64{field: "\"twitter_feeds\".\"id\""},
 	GuildID:         whereHelperint64{field: "\"twitter_feeds\".\"guild_id\""},
@@ -119,6 +123,7 @@ var TwitterFeedWhere = struct {
 	TwitterUserID:   whereHelperint64{field: "\"twitter_feeds\".\"twitter_user_id\""},
 	ChannelID:       whereHelperint64{field: "\"twitter_feeds\".\"channel_id\""},
 	Enabled:         whereHelperbool{field: "\"twitter_feeds\".\"enabled\""},
+	TextFilter:      whereHelperstring{field: "\"twitter_feeds\".\"text_filter\""},
 }
 
 // TwitterFeedRels is where relationship names are stored.
@@ -138,8 +143,8 @@ func (*twitterFeedR) NewStruct() *twitterFeedR {
 type twitterFeedL struct{}
 
 var (
-	twitterFeedAllColumns            = []string{"id", "guild_id", "created_at", "twitter_username", "twitter_user_id", "channel_id", "enabled"}
-	twitterFeedColumnsWithoutDefault = []string{"guild_id", "created_at", "twitter_username", "twitter_user_id", "channel_id", "enabled"}
+	twitterFeedAllColumns            = []string{"id", "guild_id", "created_at", "twitter_username", "twitter_user_id", "channel_id", "enabled", "text_filter"}
+	twitterFeedColumnsWithoutDefault = []string{"guild_id", "created_at", "twitter_username", "twitter_user_id", "channel_id", "enabled", "text_filter"}
 	twitterFeedColumnsWithDefault    = []string{"id"}
 	twitterFeedPrimaryKeyColumns     = []string{"id"}
 )
@@ -620,7 +625,6 @@ func (o *TwitterFeed) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		fmt.Fprintln(boil.DebugWriter, cache.query)
 		fmt.Fprintln(boil.DebugWriter, vals)
 	}
-
 	if len(cache.retMapping) != 0 {
 		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
