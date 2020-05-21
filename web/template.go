@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"strconv"
 	"strings"
 	"time"
 
@@ -103,7 +102,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 		}
 
 		if role.Color != 0 {
-			hexColor := strconv.FormatInt(int64(role.Color), 16)
+			hexColor := fmt.Sprintf("%06x", int64(role.Color))
 			output += " style=\"color: #" + hexColor + "\""
 		}
 
@@ -162,7 +161,7 @@ OUTER:
 		}
 
 		if role.Color != 0 {
-			hexColor := strconv.FormatInt(int64(role.Color), 16)
+			hexColor := fmt.Sprintf("%06x", int64(role.Color))
 			builder.WriteString(" data-color=\"#" + hexColor + "\"")
 		}
 
