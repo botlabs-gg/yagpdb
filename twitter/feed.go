@@ -3,6 +3,7 @@ package twitter
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -132,7 +133,6 @@ func (p *Plugin) handleStream(stream *twitter.Stream, stoppedCheck *int32) {
 
 	logger.Info("listening for events")
 	for m := range stream.Messages {
-
 		switch t := m.(type) {
 		case *twitter.Tweet:
 			go p.handleTweet(t)
@@ -165,6 +165,14 @@ OUTER:
 			// skip multiple feeds to the same channel
 			if f.ChannelID == r.ChannelID {
 				continue OUTER
+			}
+		}
+
+		// Skip if the user's pattern doesn't match. Skip matching on
+		// empty string to avoid the extra string allocation.
+		if f.TextFilter != "" {
+			if matched, _ := regexp.Match(f.TextFilter, []byte(t.Text)); !matched {
+				continue
 			}
 		}
 
