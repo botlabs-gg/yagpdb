@@ -297,7 +297,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	format := `<ul>
-	<li>Enabled: %s</li>
+	<li>Status: %s</li>
 	<li>Role: <code>%s</code> %s</li>
 </ul>`
 
