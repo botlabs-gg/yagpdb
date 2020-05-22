@@ -3,6 +3,10 @@ package twitter
 import (
 	"context"
 	"fmt"
+	"html/template"
+	"net/http"
+	"strconv"
+
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
@@ -12,9 +16,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"strconv"
 )
 
 type CtxKey int
@@ -30,7 +31,9 @@ type Form struct {
 }
 
 type EditForm struct {
-	DiscordChannel int64 `valid:"channel,false"`
+	DiscordChannel  int64 `valid:"channel,false"`
+	IncludeReplies  bool
+	IncludeRetweets bool
 }
 
 func (p *Plugin) InitWeb() {
@@ -179,7 +182,10 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 
 	sub.ChannelID = data.DiscordChannel
 	sub.Enabled = true
-	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled"))
+	sub.IncludeRT = data.IncludeRetweets
+	sub.IncludeReplies = data.IncludeReplies
+
+	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled", "include_replies", "include_rt"))
 	return
 }
 
