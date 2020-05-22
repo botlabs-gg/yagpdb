@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 )
 
 type Plugin struct{}
@@ -103,4 +105,30 @@ func GetConfig(guildID int64) (*Config, error) {
 	}
 
 	return config, err
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagEnabled = "streaming_enabled"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	config, err := GetConfig(guildID)
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	var flags []string
+	if config.Enabled && (config.GiveRole != 0 || config.AnnounceChannel != 0) {
+		flags = append(flags, featureFlagEnabled)
+	}
+
+	return flags, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagEnabled, // set if this server uses the streaming notifications feature
+	}
 }

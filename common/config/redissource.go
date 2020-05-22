@@ -3,20 +3,19 @@ package config
 import (
 	"strings"
 
-	"github.com/jonas747/retryableredis"
-	"github.com/jonas747/yagpdb/common/basicredispool"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
 
 type RedisConfigStore struct {
-	Pool *basicredispool.Pool
+	Pool *radix.Pool
 }
 
 func (rs *RedisConfigStore) GetValue(key string) interface{} {
 	prefixStripped := strings.TrimPrefix(key, "yagpdb.")
 
 	var v string
-	err := rs.Pool.Do(retryableredis.Cmd(&v, "HGET", "yagpdb_config", prefixStripped))
+	err := rs.Pool.Do(radix.Cmd(&v, "HGET", "yagpdb_config", prefixStripped))
 	if err != nil {
 		logrus.WithError(err).Error("[redis_config_source] failed retrieving value")
 		return nil
@@ -32,7 +31,7 @@ func (rs *RedisConfigStore) GetValue(key string) interface{} {
 func (rs *RedisConfigStore) SaveValue(key, value string) error {
 	prefixStripped := strings.TrimPrefix(key, "yagpdb.")
 
-	err := rs.Pool.Do(retryableredis.Cmd(nil, "HSET", "yagpdb_config", prefixStripped, value))
+	err := rs.Pool.Do(radix.Cmd(nil, "HSET", "yagpdb_config", prefixStripped, value))
 	if err != nil {
 		return err
 	}

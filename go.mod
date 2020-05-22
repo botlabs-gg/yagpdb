@@ -6,7 +6,6 @@ require (
 	emperror.dev/errors v0.4.3
 	github.com/AYLIEN/aylien_textapi_go v0.6.0
 	github.com/DATA-DOG/go-sqlmock v1.3.3 // indirect
-	github.com/DataDog/datadog-go v2.2.0+incompatible
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -26,20 +25,20 @@ require (
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/google/safebrowsing v0.0.0-20190624211811-bbf0d20d26b3
 	github.com/gorilla/schema v1.1.0
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
-	github.com/jonas747/cardsagainstdiscord v1.0.0
+	github.com/jonas747/cardsagainstdiscord v1.0.1-0.20200329001347-9ec700c098a5
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
-	github.com/jonas747/dcmd v1.2.0
+	github.com/jonas747/dcmd v1.2.2
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.4.0
+	github.com/jonas747/discordgo v1.4.5-0.20200429160041-12d652984517
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600
-	github.com/jonas747/dstate v1.0.5
+	github.com/jonas747/dstate v1.0.7
 	github.com/jonas747/dutil v0.0.3
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/jdshardmanager v1.0.1
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 // indirect
-	github.com/jonas747/retryableredis v1.0.2
 	github.com/jonas747/template v1.1.2
 	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c // indirect
 	github.com/karlseguin/ccache v2.0.3+incompatible
@@ -47,7 +46,7 @@ require (
 	github.com/karlseguin/rcache v1.0.1
 	github.com/lib/pq v1.2.0
 	github.com/lunixbochs/vtclean v1.0.0
-	github.com/mediocregopher/radix/v3 v3.3.2
+	github.com/mediocregopher/radix/v3 v3.5.0
 	github.com/microcosm-cc/bluemonday v1.0.1
 	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -66,7 +65,7 @@ require (
 	github.com/tidwall/grect v0.0.0-20161006141115-ba9a043346eb // indirect
 	github.com/tidwall/rtree v0.0.0-20180113144539-6cd427091e0e // indirect
 	github.com/tidwall/tinyqueue v0.0.0-20180302190814-1e39f5511563 // indirect
-	github.com/tkuchiki/go-timezone v0.1.4
+	github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
 	github.com/volatiletech/null v8.0.0+incompatible

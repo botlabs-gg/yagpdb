@@ -54,10 +54,9 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		description += pollReactions[i] + " " + option.Str()
 	}
 
-	author := data.Msg.Author
-	authorName := commands.ContextMS(data.Context()).Nick
+	authorName := data.MS.Nick
 	if authorName == "" {
-		authorName = author.Username
+		authorName = data.MS.Username
 	}
 
 	response := discordgo.MessageEmbed{
@@ -66,7 +65,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		Color:       0x65f442,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    authorName,
-			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
+			IconURL: discordgo.EndpointUserAvatar(data.MS.ID, data.Msg.Author.Avatar),
 		},
 	}
 

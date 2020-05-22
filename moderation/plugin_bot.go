@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -10,14 +11,15 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var (
@@ -78,13 +80,29 @@ func HandleRefreshMuteOverrides(evt *pubsub.Event) {
 	RefreshMuteOverrides(evt.TargetGuildInt)
 }
 
+var started = time.Now()
+
 func HandleGuildCreate(evt *eventsystem.EventData) {
+	if !evt.HasFeatureFlag(featureFlagMuteRoleManaged) {
+		return // nothing to do
+	}
+
 	gc := evt.GuildCreate()
+
+	// relieve startup preasure, sleep for up to 10 minutes
+	if time.Since(started) < time.Minute {
+		sleep := time.Second * time.Duration(100+rand.Intn(600))
+		time.Sleep(sleep)
+	}
+
 	RefreshMuteOverrides(gc.ID)
 }
 
 // Refreshes the mute override on the channel, currently it only adds it.
 func RefreshMuteOverrides(guildID int64) {
+	if !featureflags.GuildHasFlagOrLogError(guildID, featureFlagMuteRoleManaged) {
+		return // nothing to do
+	}
 
 	config, err := GetConfig(guildID)
 	if err != nil {
@@ -207,10 +225,10 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		action = MABanned
 
 		var i int
-		common.RedisPool.Do(retryableredis.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
+		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot banned the user earlier, don't make duplicate entries in the modlog
-			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
 			return
 		}
 
@@ -220,10 +238,10 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		user = evt.GuildBanRemove().User
 
 		var i int
-		common.RedisPool.Do(retryableredis.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
+		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot was the one that performed the unban
-			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
 			botPerformed = true
 		}
 
@@ -509,7 +527,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 		return false, nil
 	}
 
-	common.RedisPool.Do(retryableredis.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
 
 	err = common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {

@@ -306,7 +306,7 @@ func CanAssignRoleCmdTo(r *models.RoleCommand, memberRoles []int64) error {
 
 	if len(r.RequireRoles) > 0 {
 		if !CheckRequiredRoles(r.RequireRoles, memberRoles) {
-			return NewSimpleError("You don't have a required role for this self-assignable role.")
+			return NewSimpleError("This self assignable role has been configured to require another role by the server admins.")
 		}
 	}
 

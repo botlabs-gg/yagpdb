@@ -3,18 +3,19 @@ package logs
 import (
 	"context"
 	"database/sql"
+	"strconv"
+	"time"
+
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-	"strconv"
-	"time"
 )
 
 /*
@@ -39,7 +40,7 @@ var cmdMigrate = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	RunFunc: util.RequireOwner(func(parsed *dcmd.Data) (interface{}, error) {
 		resp := ""
-		err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", "yagpdb_logs_migrated", "1", "NX"))
+		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", "yagpdb_logs_migrated", "1", "NX"))
 		if err != nil {
 			return nil, err
 		}

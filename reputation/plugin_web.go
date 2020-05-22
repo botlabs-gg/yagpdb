@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -110,6 +111,10 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 		"admin_roles",
 		"disable_thanks_detection",
 	), boil.Infer())
+
+	if err == nil {
+		featureflags.MarkGuildDirty(activeGuild.ID)
+	}
 
 	return
 }

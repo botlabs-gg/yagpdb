@@ -6,11 +6,12 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/bot/joinedguildsupdater"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
@@ -65,7 +66,7 @@ func HandleReady(data *eventsystem.EventData) {
 	common.BotSession.State.Unlock()
 
 	var listedServers []int64
-	err := common.RedisPool.Do(retryableredis.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
+	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving connected servers")
 	}
@@ -90,6 +91,8 @@ OUTER:
 	}
 }
 
+var guildJoinHandler = joinedguildsupdater.NewUpdater()
+
 var metricsJoinedGuilds = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "yagpdb_joined_guilds",
 	Help: "Guilds yagpdb newly joined",
@@ -108,7 +111,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	}).Debug("Joined guild")
 
 	var n int
-	err = common.RedisPool.Do(retryableredis.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
+	err = common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -124,7 +127,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	// check if the server is banned from using the bot
 	var banned bool
-	common.RedisPool.Do(retryableredis.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
+	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
 	if banned {
 		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
@@ -134,19 +137,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		}
 	}
 
-	gm := &models.JoinedGuild{
-		ID:          g.ID,
-		MemberCount: int64(g.MemberCount),
-		OwnerID:     g.OwnerID,
-		JoinedAt:    time.Now(),
-		Name:        g.Name,
-		Avatar:      g.Icon,
-	}
-
-	err = gm.Upsert(evt.Context(), common.PQ, true, []string{"id"}, boil.Whitelist("member_count", "name", "avatar", "owner_id", "left_at"), boil.Infer())
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
+	guildJoinHandler.Incoming <- evt
 
 	return false, nil
 }
@@ -171,22 +162,12 @@ func HandleGuildMemberAdd(evt *eventsystem.EventData) (retry bool, err error) {
 
 	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
 
-	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count + 1 WHERE id = $1", ma.GuildID)
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
-
+	guildJoinHandler.Incoming <- evt
 	return false, nil
 }
 
 func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
-	mr := evt.GuildMemberRemove()
-
-	_, err = common.PQ.Exec("UPDATE joined_guilds SET member_count = member_count - 1 WHERE id = $1", mr.GuildID)
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
-
+	guildJoinHandler.Incoming <- evt
 	return false, nil
 }
 
@@ -236,16 +217,16 @@ func handleInvalidateCacheEvent(evt *eventsystem.EventData) (bool, error) {
 
 func InvalidateCache(guildID, userID int64) {
 	if userID != 0 {
-		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds")); err != nil {
+		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds")); err != nil {
 			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating user guilds cache")
 		}
 	}
 	if guildID != 0 {
-		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))); err != nil {
+		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))); err != nil {
 			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild cache")
 		}
 
-		if err := common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))); err != nil {
+		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))); err != nil {
 			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild channels cache")
 		}
 	}
@@ -302,6 +283,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 // HandleMessageCreateUpdateFirst transforms the message events a little to make them easier to deal with
 // Message.Member.User is null from the api, so we assign it to Message.Author
 func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
+	if evt.GS == nil {
+		return
+	}
+
 	if evt.Type == eventsystem.EventMessageCreate {
 		msg := evt.MessageCreate()
 		if !IsNormalUserMessage(msg.Message) {
@@ -328,16 +313,7 @@ func HandleRatelimit(evt *eventsystem.EventData) {
 		return
 	}
 
-	logger.Printf("Got 429: %s, %d", rl.Bucket, rl.RetryAfter)
-
-	reset := time.Now().Add(rl.RetryAfter * time.Millisecond)
-	err := pubsub.Publish("global_ratelimit", -1, &GlobalRatelimitTriggeredEventData{
-		Bucket: rl.Bucket,
-		Reset:  reset,
-	})
-	if err != nil {
-		logger.WithError(err).Error("failed publishing global ratelimit")
-	}
+	pubsub.PublishRatelimit(rl)
 }
 
 func handleResumed(evt *eventsystem.EventData) {

@@ -12,9 +12,9 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/dutil"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -68,41 +68,28 @@ var (
 	ErrGuildNotFound = errors.New("Guild not found")
 )
 
-// AdminOrPerm returns the permissions for the userID in the specified channel
-// returns an error if the user or channel is not found
-func AdminOrPerm(needed int, userID, channelID int64) (bool, error) {
-	channel := State.Channel(true, channelID)
-	if channel == nil {
-		return false, errors.New("Channel not found")
-	}
-
+// AdminOrPerm is the same as AdminOrPermMS but only required a member ID
+func AdminOrPerm(guildID int64, channelID int64, userID int64, needed int) (bool, error) {
 	// Ensure the member is in state
-	GetMember(channel.Guild.ID, userID)
-	perms, err := channel.Guild.MemberPermissions(true, channelID, userID)
+	ms, err := GetMember(guildID, userID)
 	if err != nil {
 		return false, err
 	}
 
-	if perms&needed != 0 {
-		return true, nil
-	}
-
-	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
-		return true, nil
-	}
-
-	return false, nil
+	return AdminOrPermMS(channelID, ms, needed)
 }
 
-// AdminOrPermMS is the same as AdminOrPerm but with a provided member state
-func AdminOrPermMS(ms *dstate.MemberState, channelID int64, needed int) (bool, error) {
+// AdminOrPermMS checks if the provided member has all of the needed permissions or is a admin
+func AdminOrPermMS(channelID int64, ms *dstate.MemberState, needed int) (bool, error) {
 	perms, err := ms.Guild.MemberPermissionsMS(true, channelID, ms)
 	if err != nil {
 		return false, err
 	}
 
-	if perms&needed != 0 {
-		return true, nil
+	if needed != 0 {
+		if perms&needed == needed {
+			return true, nil
+		}
 	}
 
 	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
@@ -133,8 +120,8 @@ func SetStatus(streaming, status string) {
 		status = "v" + common.VERSION + " :)"
 	}
 
-	err1 := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "status_streaming", streaming))
-	err2 := common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "status_name", status))
+	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming", streaming))
+	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", status))
 	if err1 != nil {
 		logger.WithError(err1).Error("failed setting bot status in redis")
 	}
@@ -161,12 +148,18 @@ func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bo
 		return true
 	}
 
-	return BotProbablyHasPermissionGS(true, gs, channelID, permission)
+	return BotProbablyHasPermissionGS(gs, channelID, permission)
 }
 
 // BotProbablyHasPermissionGS is the same as BotProbablyHasPermission but with a guildstate instead of guildid
-func BotProbablyHasPermissionGS(lock bool, gs *dstate.GuildState, channelID int64, permission int) bool {
-	perms, err := gs.MemberPermissions(lock, channelID, common.BotUser.ID)
+func BotProbablyHasPermissionGS(gs *dstate.GuildState, channelID int64, permission int) bool {
+	ms, err := GetMember(gs.ID, common.BotUser.ID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", gs.ID).Error("bot isnt a member of a guild?")
+		return false
+	}
+
+	perms, err := gs.MemberPermissionsMS(true, channelID, ms)
 	if err != nil && err != dstate.ErrChannelNotFound {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
@@ -194,7 +187,7 @@ func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp
 }
 
 func SendMessageGS(gs *dstate.GuildState, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermissionGS(true, gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages) {
+	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages) {
 		return false, nil, nil
 	}
 
@@ -214,7 +207,7 @@ func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbe
 }
 
 func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermissionGS(true, gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
+	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
 		return false, nil, nil
 	}
 
@@ -251,8 +244,8 @@ func NodeID() string {
 func RefreshStatus(session *discordgo.Session) {
 	var streamingURL string
 	var status string
-	err1 := common.RedisPool.Do(retryableredis.Cmd(&streamingURL, "GET", "status_streaming"))
-	err2 := common.RedisPool.Do(retryableredis.Cmd(&status, "GET", "status_name"))
+	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
+	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
 	if err1 != nil {
 		logger.WithError(err1).Error("failed retrieiving bot streaming status")
 	}

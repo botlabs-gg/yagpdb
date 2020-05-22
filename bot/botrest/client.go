@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/internalapi"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var clientLogger = common.GetFixedPrefixLogger("botrest_client")
@@ -99,7 +99,7 @@ func GetNodeStatuses() (st *NodeStatusesResponse, err error) {
 
 	// Special handling if were in clustered mode
 	var clustered bool
-	err = common.RedisPool.Do(retryableredis.Cmd(&clustered, "EXISTS", "dshardorchestrator_nodes_z"))
+	err = common.RedisPool.Do(radix.Cmd(&clustered, "EXISTS", "dshardorchestrator_nodes_z"))
 	if err != nil {
 		return nil, err
 	}

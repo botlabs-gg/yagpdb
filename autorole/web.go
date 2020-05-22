@@ -8,10 +8,10 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -74,7 +74,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	tmpl["Autorole"] = general
 
 	var proc int
-	common.RedisPool.Do(retryableredis.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
+	common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 

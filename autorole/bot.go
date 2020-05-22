@@ -10,7 +10,6 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -19,7 +18,7 @@ import (
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	scheduledEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/premium"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -48,7 +47,6 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
-	close(completeStop)
 	wg.Done()
 }
 
@@ -59,7 +57,7 @@ var roleCommands = []*commands.YAGCommand{
 		Description: "Debug debug debug autorole assignment",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
-			err := common.RedisPool.Do(retryableredis.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
+			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
 			return fmt.Sprintf("Processing %d users.", processing), err
 		},
 	},
@@ -71,8 +69,6 @@ func HandleUpdateAutoroles(event *pubsub.Event) {
 	if gs != nil {
 		gs.UserCacheDel(CacheKeyConfig)
 	}
-
-	stopProcessing(event.TargetGuildInt)
 }
 
 // HandlePresenceUpdate makes sure the member with joined_at is available for the relevant guilds
@@ -105,209 +101,13 @@ func HandleUpdateAutoroles(event *pubsub.Event) {
 // 	return false, nil
 // }
 
-var (
-	processingGuilds = make(map[int64]chan bool)
-	processingLock   sync.Mutex
-	completeStop     = make(chan bool)
-)
-
-func stopProcessing(guildID int64) {
-	processingLock.Lock()
-	if c, ok := processingGuilds[guildID]; ok {
-		go func() {
-			select {
-			case c <- true:
-			default:
-				return
-			}
-		}()
-	}
-	processingLock.Unlock()
-}
-
-func runDurationChecker() {
-
-	ticker := time.NewTicker(time.Second)
-	state := bot.State
-
-	var guildsToCheck []*dstate.GuildState
-	var i int
-	var numToCheckPerRun int
-
-	for {
-		select {
-		case <-completeStop:
-			return
-		case <-ticker.C:
-		}
-
-		nonPremiumRetroActiveAssignment := confDisableNonPremiumRetroActiveAssignment.GetBool()
-
-		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
-			// Copy the list of guilds so that we dont need to keep the entire state locked
-			guildsToCheck = state.GuildsSlice(true)
-			i = 0
-
-			// Hit each guild once per minute
-			numToCheckPerRun = len(guildsToCheck) / 60
-			if numToCheckPerRun < 1 {
-				numToCheckPerRun = 1
-			}
-		}
-
-		for checkedThisRound := 0; i < len(guildsToCheck) && checkedThisRound < numToCheckPerRun; i++ {
-			g := guildsToCheck[i]
-			if !nonPremiumRetroActiveAssignment {
-				if ok, err := premium.IsGuildPremium(g.ID); !ok && err == nil {
-					continue
-				} else if err != nil {
-					logger.WithError(err).Error("failed checking if guild is premium")
-				}
-			}
-
-			checkGuild(g)
-
-			checkedThisRound++
-		}
-	}
-}
-
-// returns true if we should skip the guild
-func stateLockedSkipGuild(gs *dstate.GuildState, conf *GeneralConfig) bool {
-	gs.RLock()
-	defer gs.RUnlock()
-
-	if gs.Guild.Unavailable {
-		return true
-	}
-
-	if !bot.BotProbablyHasPermissionGS(false, gs, 0, discordgo.PermissionManageRoles) {
-		return true
-	}
-
-	if gs.Role(false, conf.Role) == nil {
-		conf.Role = 0
-		saveGeneral(gs.ID, conf)
-		return true
-	}
-
-	return false
-}
-
-func checkGuild(gs *dstate.GuildState) {
-	conf, err := GuildCacheGetGeneralConfig(gs)
-	if err != nil {
-		logger.WithField("guild", gs.ID).WithError(err).Error("Failed retrieivng general config")
-		return
-	}
-
-	if conf.Role == 0 || conf.OnlyOnJoin {
-		return
-	}
-
-	if stateLockedSkipGuild(gs, conf) {
-		return
-	}
-
-	if WorkingOnFullScan(gs.ID) {
-		return // Working on a full scan, do nothing
-	}
-
-	go processGuild(gs, conf)
-}
-
-func processGuild(gs *dstate.GuildState, config *GeneralConfig) {
-	processingLock.Lock()
-
-	if _, ok := processingGuilds[gs.ID]; ok {
-		// Still processing this guild
-		processingLock.Unlock()
-		return
-	}
-	stopChan := make(chan bool, 1)
-	processingGuilds[gs.ID] = stopChan
-	processingLock.Unlock()
-
-	var setProcessingRedis bool
-	// Reset the processing state
-	defer func() {
-		processingLock.Lock()
-		delete(processingGuilds, gs.ID)
-		processingLock.Unlock()
-
-		if setProcessingRedis {
-			common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", KeyProcessing(gs.ID)))
-		}
-	}()
-
-	membersToGiveRole := make([]int64, 0)
-
-	gs.RLock()
-
-OUTER:
-	for _, ms := range gs.Members {
-		if !ms.MemberSet {
-			continue
-		}
-
-		if config.CanAssignTo(ms.Roles, ms.JoinedAt) {
-			for _, r := range ms.Roles {
-				if r == config.Role {
-					continue OUTER
-				}
-			}
-
-			membersToGiveRole = append(membersToGiveRole, ms.ID)
-		}
-	}
-
-	gs.RUnlock()
-
-	if len(membersToGiveRole) > 10 {
-		setProcessingRedis = true
-		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)))
-	}
-
-	cntSinceLastRedisUpdate := 0
-	for i, userID := range membersToGiveRole {
-		time.Sleep(time.Second * 2)
-		select {
-		case <-stopChan:
-			logger.WithField("guild", gs.ID).Info("Stopping autorole assigning...")
-			return
-		default:
-		}
-
-		cntSinceLastRedisUpdate++
-
-		if gs.Member(true, userID) == nil {
-			continue
-		}
-
-		err := common.BotSession.GuildMemberRoleAdd(gs.ID, userID, config.Role)
-		if err != nil {
-			if cast, ok := err.(*discordgo.RESTError); ok && cast.Message != nil && cast.Message.Code == 50013 {
-				// No perms, remove autorole
-				logger.WithError(err).Info("No perms to add autorole, removing from config")
-				config.Role = 0
-				saveGeneral(gs.ID, config)
-				return
-			}
-			logger.WithError(err).WithField("guild", gs.ID).Error("Failed adding autorole role")
-		} else {
-			if setProcessingRedis && cntSinceLastRedisUpdate > 10 {
-				common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", KeyProcessing(gs.ID), len(membersToGiveRole)-i))
-				cntSinceLastRedisUpdate = 0
-			}
-		}
-	}
-}
-
 func saveGeneral(guildID int64, config *GeneralConfig) {
 
 	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
 		logger.WithError(err).Error("Failed saving autorole config")
+	} else {
+		pubsub.Publish("autorole_stop_processing", guildID, nil)
 	}
 }
 
@@ -330,9 +130,8 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	// }
 
 	if config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Roles, time.Now()) {
-		err = common.BotSession.GuildMemberRoleAdd(addEvt.GuildID, addEvt.User.ID, config.Role)
-		go analytics.RecordActiveUnit(addEvt.GuildID, &Plugin{}, "assigned_role")
-		return bot.CheckDiscordErrRetry(err), err
+		_, retry, err = assignRole(config, addEvt.GuildID, addEvt.User.ID)
+		return retry, err
 	}
 
 	if config.RequiredDuration > 0 && !config.OnlyOnJoin {
@@ -342,6 +141,27 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	}
 
 	return false, nil
+}
+
+func assignRole(config *GeneralConfig, guildID int64, targetID int64) (disabled bool, retry bool, err error) {
+	analytics.RecordActiveUnit(guildID, &Plugin{}, "assigned_role")
+	err = common.BotSession.GuildMemberRoleAdd(guildID, targetID, config.Role)
+	if err != nil {
+		switch code, _ := common.DiscordError(err); code {
+		case discordgo.ErrCodeUnknownMember:
+			logger.WithError(err).Error("Unknown member when trying to assign role")
+		case discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeUnknownRole:
+			logger.WithError(err).Warn("disabling autorole from error")
+			cop := *config
+			cop.Role = 0
+			saveGeneral(guildID, &cop)
+			return true, false, nil
+		default:
+			return false, bot.CheckDiscordErrRetry(err), err
+		}
+	}
+
+	return false, false, nil
 }
 
 func (conf *GeneralConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time) bool {
@@ -378,7 +198,7 @@ func RedisKeyGuildChunkProecssing(gID int64) string {
 
 func handleGuildChunk(evt *eventsystem.EventData) {
 	chunk := evt.GuildMembersChunk()
-	err := common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
+	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(chunk.GuildID), "100", "1"))
 	if err != nil {
 		logger.WithError(err).Error("failed marking autorole chunk processing")
 	}
@@ -388,11 +208,10 @@ func handleGuildChunk(evt *eventsystem.EventData) {
 		return
 	}
 
-	if config.Role == 0 {
+	if config.Role == 0 || config.OnlyOnJoin {
 		return
 	}
 
-	stopProcessing(chunk.GuildID)
 	go assignFromGuildChunk(chunk.GuildID, config, chunk.Members)
 }
 
@@ -400,7 +219,6 @@ func assignFromGuildChunk(guildID int64, config *GeneralConfig, members []*disco
 	lastTimeUpdatedBlockingKey := time.Now()
 	lastTimeUpdatedConfig := time.Now()
 
-OUTER:
 	for _, m := range members {
 		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
@@ -414,26 +232,21 @@ OUTER:
 			continue
 		}
 
-		for _, r := range m.Roles {
-			if r == config.Role {
-				continue OUTER
-			}
+		// already has role
+		if common.ContainsInt64Slice(m.Roles, config.Role) {
+			continue
 		}
 
 		time.Sleep(time.Second * 2)
 
 		logger.Println("assigning to ", m.User.ID, " from guild chunk event")
-		err = common.AddRole(m, config.Role, guildID)
+
+		disabled, _, err := assignRole(config, guildID, m.User.ID)
 		if err != nil {
 			logger.WithError(err).WithField("user", m.User.ID).WithField("guild", guildID).Error("failed adding autorole role")
-
-			if common.IsDiscordErr(err, 50013, 10011) {
-				// No perms, remove autorole
-				logger.WithError(err).WithField("guild", guildID).Info("No perms to add autorole, or nonexistant, removing from config")
-				config.Role = 0
-				saveGeneral(guildID, config)
-				return
-			}
+		}
+		if disabled {
+			break
 		}
 
 		if time.Since(lastTimeUpdatedConfig) > time.Second*10 {
@@ -457,7 +270,7 @@ OUTER:
 		if time.Since(lastTimeUpdatedBlockingKey) > time.Second*10 {
 			lastTimeUpdatedBlockingKey = time.Now()
 
-			err := common.RedisPool.Do(retryableredis.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(guildID), "100", "1"))
+			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyGuildChunkProecssing(guildID), "100", "1"))
 			if err != nil {
 				logger.WithError(err).Error("failed marking autorole chunk processing")
 			}
@@ -467,7 +280,7 @@ OUTER:
 
 func WorkingOnFullScan(guildID int64) bool {
 	var b bool
-	err := common.RedisPool.Do(retryableredis.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
+	err := common.RedisPool.Do(radix.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed checking WorkingOnFullScan")
 		return false
@@ -531,8 +344,8 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 
 	go analytics.RecordActiveUnit(evt.GuildID, &Plugin{}, "assigned_role")
 
-	err = common.BotSession.GuildMemberRoleAdd(evt.GuildID, dataCast.UserID, config.Role)
-	return bot.CheckDiscordErrRetry(err), err
+	_, retry, err = assignRole(config, evt.GuildID, dataCast.UserID)
+	return retry, err
 }
 
 func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
@@ -570,10 +383,6 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	go analytics.RecordActiveUnit(update.GuildID, &Plugin{}, "assigned_role")
 
 	// if we branched here then all the checks passed and they should be assigned the role
-	err = common.BotSession.GuildMemberRoleAdd(update.GuildID, update.User.ID, config.Role)
-	if err != nil {
-		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
-	}
-
-	return false, nil
+	_, retry, err = assignRole(config, update.GuildID, update.User.ID)
+	return retry, err
 }

@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -71,7 +70,7 @@ func migrateGuildConfig(rc radix.Client, guildID int64) error {
 
 	}
 
-	err = rc.Do(retryableredis.Cmd(nil, "DEL", KeyCommands(guildID)))
+	err = rc.Do(radix.Cmd(nil, "DEL", KeyCommands(guildID)))
 	logger.Println("migrated ", len(commands), " custom commands from ", guildID)
 	return err
 }

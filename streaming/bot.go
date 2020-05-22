@@ -10,11 +10,11 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix/v3"
@@ -50,6 +50,7 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 	config, err := GetConfig(gs.ID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed retrieving streaming config")
+		return
 	}
 
 	if !config.Enabled {
@@ -132,6 +133,10 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	m := evt.GuildMemberUpdate()
 
+	if !evt.HasFeatureFlag(featureFlagEnabled) {
+		return false, nil
+	}
+
 	config, err := BotCachedGetConfig(evt.GS)
 	if err != nil {
 		return true, errors.WithStackIf(err)
@@ -162,6 +167,10 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	g := evt.GuildCreate()
+
+	if !evt.HasFeatureFlag(featureFlagEnabled) {
+		return
+	}
 
 	config, err := GetConfig(g.ID)
 	if err != nil {
@@ -207,6 +216,10 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	gs := evt.GS
 
+	if !evt.HasFeatureFlag(featureFlagEnabled) {
+		return false, nil
+	}
+
 	config, err := BotCachedGetConfig(gs)
 	if err != nil {
 		return true, errors.WithStackIf(err)
@@ -250,7 +263,7 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 
 		// if true, then we were marked now, and not before
 		var markedNow bool
-		client.Do(retryableredis.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), p.User.ID))
+		client.Do(radix.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), p.User.ID))
 		if !markedNow {
 			// Already marked
 			return nil
@@ -310,7 +323,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 		// if true, then we were marked now, and not before
 		var markedNow bool
-		client.Do(retryableredis.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), ms.ID))
+		client.Do(radix.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), ms.ID))
 		if !markedNow {
 			// Already marked
 			return nil
@@ -372,12 +385,12 @@ func (config *Config) MeetsRequirements(roles []int64, activityState, activityDe
 }
 
 func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberID int64, currentRoles []int64) {
-	client.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
+	client.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
 	go RemoveStreamingRole(guildID, memberID, config.GiveRole, currentRoles)
 
 	// Was not streaming before if we removed 0 elements
 	// var removed bool
-	// client.Do(retryableredis.FlatCmd(&removed, "SREM", KeyCurrentlyStreaming(guildID), memberID))
+	// client.Do(radix.FlatCmd(&removed, "SREM", KeyCurrentlyStreaming(guildID), memberID))
 	// if removed && config.GiveRole != 0 {
 	// 	go common.BotSession.GuildMemberRoleRemove(guildID, memberID, config.GiveRole)
 	// }
@@ -387,7 +400,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	// Only send one announcment every 1 hour
 	var resp string
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
-	err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
+	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
 		logger.WithError(err).Error("failed setting streaming announcment cooldown")
 		return
@@ -455,7 +468,7 @@ func GiveStreamingRole(guildID, memberID, streamingRole int64, currentUserRoles 
 		}
 
 		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).Error("Failed adding streaming role")
-		common.RedisPool.Do(retryableredis.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
+		common.RedisPool.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
 	}
 }
 
@@ -490,6 +503,7 @@ func DisableStreamingRole(guildID int64) {
 
 	conf.GiveRole = 0
 	conf.Save(guildID)
+	featureflags.MarkGuildDirty(guildID)
 }
 
 type CacheKey int

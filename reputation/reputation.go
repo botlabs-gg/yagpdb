@@ -12,11 +12,12 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/reputation/models"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -293,7 +294,7 @@ func CheckSetCooldown(conf *models.ReputationConfig, senderID int64) (bool, erro
 	}
 
 	var resp string
-	err := common.RedisPool.Do(retryableredis.FlatCmd(&resp, "SET", KeyCooldown(conf.GuildID, senderID), true, "EX", conf.Cooldown, "NX"))
+	err := common.RedisPool.Do(radix.FlatCmd(&resp, "SET", KeyCooldown(conf.GuildID, senderID), true, "EX", conf.Cooldown, "NX"))
 	if resp != "OK" {
 		return false, err
 	}
@@ -302,7 +303,7 @@ func CheckSetCooldown(conf *models.ReputationConfig, senderID int64) (bool, erro
 }
 
 func ClearCooldown(guildID, senderID int64) error {
-	return common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", KeyCooldown(guildID, senderID)))
+	return common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyCooldown(guildID, senderID)))
 }
 
 func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, error) {
@@ -373,4 +374,36 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 	}
 
 	return resultEntries, nil
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagReputationEnabled = "reputation_enabled"
+	featureFlagThanksEnabled     = "reputation_thanks_enabled"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	config, err := GetConfig(context.Background(), guildID)
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	var flags []string
+	if config.Enabled {
+		flags = append(flags, featureFlagReputationEnabled)
+
+		if !config.DisableThanksDetection {
+			flags = append(flags, featureFlagThanksEnabled)
+		}
+	}
+
+	return flags, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagReputationEnabled, // set if reputation is enabled on this server
+		featureFlagThanksEnabled,     // set if reputation thanks detection is anabled
+	}
 }

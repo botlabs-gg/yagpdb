@@ -61,6 +61,7 @@ var (
 		// misc
 		"dict":               Dictionary,
 		"sdict":              StringKeyDictionary,
+		"structToSdict":      StructToSdict,
 		"cembed":             CreateEmbed,
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
@@ -196,7 +197,7 @@ func (c *Context) setupBaseData() {
 	}
 
 	if c.CurrentFrame.CS != nil {
-		channel := c.CurrentFrame.CS.Copy(false)
+		channel := CtxChannelFromCS(c.CurrentFrame.CS)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
 	}
@@ -246,7 +247,15 @@ func (c *Context) Execute(source string) (string, error) {
 		}
 		if c.GS != nil {
 			c.Msg.GuildID = c.GS.ID
+
+			member, err := bot.GetMember(c.GS.ID, c.BotUser.ID)
+			if err != nil {
+				return "", errors.WithMessage(err, "ctx.Execute")
+			}
+
+			c.Msg.Member = member.DGoCopy()
 		}
+
 	}
 
 	if c.GS != nil {
@@ -330,7 +339,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 func (c *Context) MessageSend(content string) *discordgo.MessageSend {
 	parse := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 	if c.CurrentFrame.MentionEveryone || c.CurrentFrame.MentionHere {
-		parse = append(parse, discordgo.AllowedMentionTyeEveryone)
+		parse = append(parse, discordgo.AllowedMentionTypeEveryone)
 	}
 
 	return &discordgo.MessageSend{
@@ -351,7 +360,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 			return nil, nil
 		}
 
-		if !bot.BotProbablyHasPermissionGS(true, c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
+		if !bot.BotProbablyHasPermissionGS(c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
 			// don't bother sending the response if we dont have perms
 			return nil, nil
 		}
@@ -477,6 +486,9 @@ func baseContextFuncs(c *Context) {
 
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
+	
+	c.ContextFuncs["addRoleName"] = c.tmplAddRoleName
+	c.ContextFuncs["removeRoleName"] = c.tmplRemoveRoleName
 
 	c.ContextFuncs["giveRoleID"] = c.tmplGiveRoleID
 	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
@@ -558,6 +570,22 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 			bot.MessageDeleteQueue.DeleteMessages(guildID, channelID, messageID)
 		}()
 	}
+}
+
+type Dict map[interface{}]interface{}
+
+func (d Dict) Set(key interface{}, value interface{}) string {
+    d[key] = value
+    return ""
+}
+
+func (d Dict) Get(key interface{}) interface{} {
+    return d[key]
+}
+
+func (d Dict) Del(key interface{}) string {
+    delete(d, key)
+    return ""
 }
 
 type SDict map[string]interface{}

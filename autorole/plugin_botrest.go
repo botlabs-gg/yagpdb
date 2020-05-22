@@ -5,10 +5,10 @@ import (
 	"strconv"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/internalapi"
+	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -38,7 +38,7 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 
 func botRestPostFullScan(guildID int64) error {
 	var resp string
-	err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", RedisKeyGuildChunkProecssing(guildID), "1", "EX", "10", "NX"))
+	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", RedisKeyGuildChunkProecssing(guildID), "1", "EX", "10", "NX"))
 	if err != nil {
 		return errors.WithMessage(err, "r.SET")
 	}

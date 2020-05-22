@@ -28,7 +28,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				// Get member from api or state
-				member := commands.ContextMS(data.Context())
+				member := data.MS
 
 				if data.Args[0].Str() == "" {
 					return ListSounds(sounds, member), nil

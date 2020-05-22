@@ -8,8 +8,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/jonas747/retryableredis"
 	"github.com/karlseguin/ccache"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var (
@@ -21,13 +21,13 @@ var (
 
 // Items in the cache expire after 1 min
 func GetCacheData(key string) (data []byte, err error) {
-	err = RedisPool.Do(retryableredis.Cmd(&data, "GET", CacheKeyPrefix+key))
+	err = RedisPool.Do(radix.Cmd(&data, "GET", CacheKeyPrefix+key))
 	return
 }
 
 // Stores an entry in the cache and sets it to expire after expire
 func SetCacheData(key string, expire int, data []byte) error {
-	err := RedisPool.Do(retryableredis.Cmd(nil, "SET", CacheKeyPrefix+key, string(data), "EX", strconv.Itoa(expire)))
+	err := RedisPool.Do(radix.Cmd(nil, "SET", CacheKeyPrefix+key, string(data), "EX", strconv.Itoa(expire)))
 	return err
 }
 

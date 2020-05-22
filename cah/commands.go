@@ -47,7 +47,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a Cards Against Humanity game that is ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			isAdmin, err := bot.AdminOrPerm(0, data.Msg.Author.ID, data.CS.ID)
+			isAdmin, err := bot.AdminOrPermMS(data.CS.ID, data.MS, 0)
 			if err == nil && isAdmin {
 				err = p.Manager.RemoveGame(data.CS.ID)
 			} else {

@@ -248,6 +248,20 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 			}
 		}
 
+		err = common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
+		if err != nil {
+			code, _ := common.DiscordError(err)
+			switch code {
+			case discordgo.ErrCodeUnknownEmoji:
+				return "I do not have access to that emoji, i can only use emojis from servers im on.", nil
+			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
+				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
+			default:
+				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
+				return "An unknown error occured, please retry adding that emoji", nil
+			}
+		}
+
 		model := &models.RoleMenuOption{
 			RoleMenuID:    rm.MessageID,
 			RoleCommandID: rm.NextRoleCommandID,
@@ -261,12 +275,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 
 		err = model.InsertG(ctx, boil.Infer())
 		if err != nil {
-			return "Failed inserting option", err
-		}
-
-		err = common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
-		if err != nil {
-			logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
+			return "Failed inserting option into the database, please retry adding the emoji.", err
 		}
 
 		model.R = model.R.NewStruct()
@@ -282,7 +291,13 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		if rm.OwnMessage {
 			err = UpdateRoleMenuMessage(ctx, rm)
 			if err != nil {
-				return "Failed updating message", err
+				code, _ := common.DiscordError(err)
+				switch code {
+				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
+					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
+				default:
+					return "An error occured updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
+				}
 			}
 		}
 	}

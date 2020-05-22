@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jonas747/yagpdb/analytics"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/prom"
 	"github.com/jonas747/yagpdb/common/run"
 
@@ -85,6 +86,7 @@ func main() {
 	admin.RegisterPlugin()
 	internalapi.RegisterPlugin()
 	prom.RegisterPlugin()
+	featureflags.RegisterPlugin()
 
 	run.Run()
 }

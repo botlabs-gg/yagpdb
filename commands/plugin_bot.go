@@ -13,10 +13,10 @@ import (
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var (
@@ -31,7 +31,85 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
 
 	CommandSystem.State = bot.State
+	dcmd.CustomUsernameSearchFunc = p.customUsernameSearchFunc
 }
+
+func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
+	logger.Info("Searching by username: ", query)
+	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
+	if err != nil {
+		if err == bot.ErrTimeoutWaitingForMember {
+			return nil, &dcmd.UserNotFound{query}
+		}
+
+		return nil, err
+	}
+
+	lowerIn := strings.ToLower(query)
+
+	partialMatches := make([]*discordgo.Member, 0, 5)
+	fullMatches := make([]*discordgo.Member, 0, 5)
+
+	// filter out the results
+	for _, v := range members {
+		if v == nil {
+			continue
+		}
+
+		if v.User.Username == "" {
+			continue
+		}
+
+		if strings.EqualFold(query, v.User.Username) || strings.EqualFold(query, v.Nick) {
+			fullMatches = append(fullMatches, v)
+			if len(fullMatches) >= 5 {
+				break
+			}
+		} else if len(partialMatches) < 5 {
+			if strings.Contains(strings.ToLower(v.User.Username), lowerIn) {
+				partialMatches = append(partialMatches, v)
+			}
+		}
+	}
+
+	if len(fullMatches) == 1 {
+		return dstate.MSFromDGoMember(gs, fullMatches[0]), nil
+	}
+
+	if len(fullMatches) == 0 && len(partialMatches) == 0 {
+		return nil, &dcmd.UserNotFound{query}
+	}
+
+	// Show some help output
+	out := ""
+
+	if len(fullMatches)+len(partialMatches) < 10 {
+		for _, v := range fullMatches {
+			if out != "" {
+				out += ", "
+			}
+
+			out += "`" + v.User.Username + "`"
+		}
+
+		for _, v := range partialMatches {
+			if out != "" {
+				out += ", "
+			}
+
+			out += "`" + v.User.Username + "`"
+		}
+	} else {
+		return nil, &dcmd.UserNotFound{query}
+	}
+
+	if len(fullMatches) > 1 {
+		return nil, dcmd.NewSimpleUserError("Too many users with the name: (" + out + ") Please re-run the command with a narrower search, mention or ID.")
+	}
+
+	return nil, dcmd.NewSimpleUserError("Did you mean one of these? (" + out + ") Please re-run the command with a narrower search, mention or ID")
+}
+
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	atomic.StoreInt32(shuttingDown, 1)
 
@@ -75,11 +153,6 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			}
 
 			return resp, err
-		}
-
-		if data.GS != nil {
-			ms := dstate.MSFromDGoMember(data.GS, data.Msg.Member)
-			data = data.WithContext(context.WithValue(data.Context(), CtxKeyMS, ms))
 		}
 
 		// Lock the command for execution
@@ -187,7 +260,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 
 	abort := false
 	for _, filterFunc := range MessageFilterFuncs {
-		if !filterFunc(m.Message) {
+		if !filterFunc(evt, m.Message) {
 			abort = true
 		}
 	}
@@ -206,65 +279,6 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 	}
 
 	return prefix
-}
-
-var cmdHelp = &YAGCommand{
-	Name:        "Help",
-	Aliases:     []string{"commands", "h", "how", "command"},
-	Description: "Shows help about all or one specific command",
-	CmdCategory: CategoryGeneral,
-	RunInDM:     true,
-	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "command", Type: dcmd.String},
-	},
-
-	RunFunc:  cmdFuncHelp,
-	Cooldown: 10,
-}
-
-func CmdNotFound(search string) string {
-	return fmt.Sprintf("Couldn't find command %q", search)
-}
-
-func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
-	target := data.Args[0].Str()
-
-	var resp []*discordgo.MessageEmbed
-
-	// Send the targetted help in the channel it was requested in
-	resp = dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
-	for _, v := range resp {
-		ensureEmbedLimits(v)
-	}
-
-	if target != "" {
-		if len(resp) != 1 {
-			// Send command not found in same channel
-			return CmdNotFound(target), nil
-		}
-
-		// Send short help in same channel
-		return resp, nil
-	}
-
-	// Send full help in DM
-	channel, err := common.BotSession.UserChannelCreate(data.Msg.Author.ID)
-	if err != nil {
-		return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
-	}
-
-	for _, v := range resp {
-		_, err := common.BotSession.ChannelMessageSendEmbed(channel.ID, v)
-		if err != nil {
-			return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
-		}
-	}
-
-	if data.Source == dcmd.DMSource {
-		return nil, nil
-	}
-
-	return "You've got mail!", nil
 }
 
 func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
@@ -298,21 +312,27 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	g := evt.GuildCreate()
 
 	var prefixExists bool
-	err := common.RedisPool.Do(retryableredis.Cmd(&prefixExists, "EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
+	err := common.RedisPool.Do(radix.Cmd(&prefixExists, "EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
 	if err != nil {
 		logger.WithError(err).Error("Failed checking if prefix exists")
 		return
 	}
 
 	if !prefixExists {
-		defaultPrefix := "-"
-		if common.Testing {
-			defaultPrefix = "("
-		}
+		defaultPrefix := defaultCommandPrefix()
 
-		common.RedisPool.Do(retryableredis.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
+		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
 		logger.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
 	}
+}
+
+func defaultCommandPrefix() string {
+	defaultPrefix := "-"
+	if common.Testing {
+		defaultPrefix = "("
+	}
+
+	return defaultPrefix
 }
 
 var cmdPrefix = &YAGCommand{
@@ -336,13 +356,4 @@ var cmdPrefix = &YAGCommand{
 
 		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
 	},
-}
-
-func ContextMS(ctx context.Context) *dstate.MemberState {
-	v := ctx.Value(CtxKeyMS)
-	if v == nil {
-		return nil
-	}
-
-	return v.(*dstate.MemberState)
 }

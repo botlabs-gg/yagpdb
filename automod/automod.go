@@ -1,15 +1,19 @@
 package automod
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 	"strings"
 	"unicode"
 
+	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/karlseguin/ccache"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 //go:generate sqlboiler --no-hooks psql
@@ -173,4 +177,39 @@ func PrepareMessageForWordCheck(input string) string {
 	}
 
 	return out.String()
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagEnabled = "automod_v2_enabled"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	rulesets, err := models.AutomodRulesets(qm.Where("guild_id=?", guildID),
+		qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).AllG(context.Background())
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	var flags []string
+	for _, v := range rulesets {
+		if !v.Enabled {
+			continue
+		}
+
+		if len(v.R.RulesetAutomodRules) > 0 {
+			// If theres a ruleset with atleast 1 rule, consider the plugin enabled
+			flags = append(flags, featureFlagEnabled)
+			break
+		}
+	}
+
+	return flags, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagEnabled, // set if there is atleast one ruleset enabled with a rule in it
+	}
 }

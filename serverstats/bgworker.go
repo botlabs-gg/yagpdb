@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/lib/pq"
+	"github.com/mediocregopher/radix/v3"
 )
 
 const (
@@ -105,7 +105,7 @@ func (c *Compressor) updateCompress(t time.Time) (ran bool, next time.Duration, 
 
 func (p *Plugin) getLastTimeRanHourly() time.Time {
 	var last int64
-	err := common.RedisPool.Do(retryableredis.Cmd(&last, "GET", RedisKeyLastHourlyRan))
+	err := common.RedisPool.Do(radix.Cmd(&last, "GET", RedisKeyLastHourlyRan))
 	if err != nil {
 		logger.WithError(err).Error("[serverstats] failed getting last hourly worker run time")
 	}
@@ -476,25 +476,25 @@ func (p *Plugin) RunCompressionLegacy() {
 func getActiveServersList(key string, full bool) ([]int64, error) {
 	var guilds []int64
 	if full {
-		err := common.RedisPool.Do(retryableredis.Cmd(&guilds, "SMEMBERS", "connected_guilds"))
+		err := common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", "connected_guilds"))
 		return guilds, errors.WrapIf(err, "smembers conn_guilds")
 	}
 
 	var exists bool
-	if common.LogIgnoreError(common.RedisPool.Do(retryableredis.Cmd(&exists, "EXISTS", key)), "[serverstats] "+key, nil); !exists {
+	if common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(&exists, "EXISTS", key)), "[serverstats] "+key, nil); !exists {
 		return guilds, nil // no guilds to process
 	}
 
-	err := common.RedisPool.Do(retryableredis.Cmd(nil, "RENAME", key, key+"_processing"))
+	err := common.RedisPool.Do(radix.Cmd(nil, "RENAME", key, key+"_processing"))
 	if err != nil {
 		return guilds, errors.WrapIf(err, "rename")
 	}
 
-	err = common.RedisPool.Do(retryableredis.Cmd(&guilds, "SMEMBERS", key+"_processing"))
+	err = common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", key+"_processing"))
 	if err != nil {
 		return guilds, errors.WrapIf(err, "smembers")
 	}
 
-	common.LogIgnoreError(common.RedisPool.Do(retryableredis.Cmd(nil, "DEL", "serverstats_active_guilds_processing")), "[serverstats] del "+key, nil)
+	common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(nil, "DEL", "serverstats_active_guilds_processing")), "[serverstats] del "+key, nil)
 	return guilds, err
 }

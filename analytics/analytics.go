@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -35,7 +36,13 @@ func RecordActiveUnit(guildID int64, plugin common.Plugin, analyticName string) 
 	}
 }
 
+var confEnableAnalytics = config.RegisterOption("yagpdb.enable_analytics", "Enable usage analytics tracking", false)
+
 func recordActiveUnit(guildID int64, plugin common.Plugin, analyticName string) error {
+	if !confEnableAnalytics.GetBool() {
+		return nil
+	}
+
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "HINCRBY", "anaylytics_active_units."+plugin.PluginInfo().SysName+"."+analyticName, guildID, 1))
 	if err != nil {
 		return err

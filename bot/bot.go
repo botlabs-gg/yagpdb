@@ -10,11 +10,11 @@ import (
 	"github.com/jonas747/dshardorchestrator/v2/node"
 	"github.com/jonas747/dstate"
 	dshardmanager "github.com/jonas747/jdshardmanager"
-	"github.com/jonas747/retryableredis"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -82,8 +82,6 @@ func setup() {
 	setupState()
 	addBotHandlers()
 	setupShardManager()
-
-	common.BotSession.AddHandler(eventsystem.HandleEvent)
 }
 
 func setupStandalone() {
@@ -103,7 +101,7 @@ func setupStandalone() {
 		ReadyTracker.shardsAdded(i)
 	}
 
-	err = common.RedisPool.Do(retryableredis.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
 	if err != nil {
 		logger.WithError(err).Error("failed setting shard count")
 	}
@@ -115,7 +113,6 @@ func botReady() {
 		updateAllShardStatuses()
 	}, nil)
 
-	pubsub.AddHandler("global_ratelimit", handleGlobalRatelimtPusub, GlobalRatelimitTriggeredEventData{})
 	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 
 	serviceDetails := "Not using orchestrator"
@@ -205,7 +202,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 		// closes, probably due to small variances in networking and scheduling latencies
 		// Adding a extra 100ms fixes this completely, but to be on the safe side we add a extra 50ms
 		var resp string
-		err := common.RedisPool.Do(retryableredis.Cmd(&resp, "SET", key, "1", "PX", "5150", "NX"))
+		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "5150", "NX"))
 		if err != nil {
 			logger.WithError(err).Error("failed ratelimiting gateway")
 			time.Sleep(time.Second)
@@ -255,27 +252,29 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	return true
 }
 
-type GlobalRatelimitTriggeredEventData struct {
-	Reset  time.Time `json:"reset"`
-	Bucket string    `json:"bucket"`
-}
-
-func handleGlobalRatelimtPusub(evt *pubsub.Event) {
-	data := evt.Data.(*GlobalRatelimitTriggeredEventData)
-	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
-}
-
 var (
 	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_hits",
+		Name: "yagpdb_state_cache_hits_total",
 		Help: "Cache hits in the satte cache",
 	})
 
 	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_misses",
+		Name: "yagpdb_state_cache_misses_total",
 		Help: "Cache misses in the sate cache",
 	})
+
+	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_state_cache_evicted_total",
+		Help: "Cache evictions",
+	})
+
+	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_state_members_evicted_total",
+		Help: "Members evicted from state cache",
+	})
 )
+
+var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Gateway connection logging channel", true)
 
 func setupState() {
 	// Things may rely on state being available at this point for initialization
@@ -286,7 +285,11 @@ func setupState() {
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
 	State.CacheExpirey = time.Minute * 30
-	// State.RemoveOfflineMembers = true
+
+	if confStateRemoveOfflineMembers.GetBool() {
+		State.RemoveOfflineMembers = true
+	}
+
 	go State.RunGCWorker()
 
 	eventsystem.DiscordState = State
@@ -295,6 +298,8 @@ func setupState() {
 	go func() {
 		lastHits := int64(0)
 		lastMisses := int64(0)
+		lastEvictionsCache := int64(0)
+		lastEvictionsMembers := int64(0)
 
 		ticker := time.NewTicker(time.Minute)
 		for {
@@ -308,6 +313,12 @@ func setupState() {
 
 			metricsCacheHits.Add(float64(deltaHits))
 			metricsCacheMisses.Add(float64(deltaMisses))
+
+			metricsCacheEvictions.Add(float64(stats.UserCachceEvictedTotal - lastEvictionsCache))
+			metricsCacheMemberEvictions.Add(float64(stats.MembersRemovedTotal - lastEvictionsMembers))
+
+			lastEvictionsCache = stats.UserCachceEvictedTotal
+			lastEvictionsMembers = stats.MembersRemovedTotal
 
 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
 		}

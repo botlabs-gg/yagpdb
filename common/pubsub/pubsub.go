@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/retryableredis"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
 )
@@ -74,10 +74,17 @@ func Publish(evt string, target int64, data interface{}) error {
 	}
 
 	value := fmt.Sprintf("%d,%s,%s", target, evt, dataStr)
-	return common.RedisPool.Do(retryableredis.Cmd(nil, "PUBLISH", "events", value))
+	return common.RedisPool.Do(radix.Cmd(nil, "PUBLISH", "events", value))
 }
 
 func PollEvents() {
+	AddHandler("global_ratelimit", handleGlobalRatelimtPusub, globalRatelimitTriggeredEventData{})
+	common.BotSession.AddHandler(func(s *discordgo.Session, r *discordgo.RateLimit) {
+		if r.Global {
+			PublishRatelimit(r)
+		}
+	})
+
 	for {
 		err := runPollEvents()
 		logger.WithError(err).Error("subscription for events ended, starting a new one...")

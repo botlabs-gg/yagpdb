@@ -1,8 +1,10 @@
 package automod_legacy
 
 import (
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/web"
 )
 
@@ -74,4 +76,40 @@ var (
 
 func (c Config) Save(guildID int64) error {
 	return common.SetRedisJson(KeyConfig(guildID), c)
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagEnabled = "automod_legacy_enabled"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	config, err := GetConfig(guildID)
+	if err != nil {
+		return nil, errors.WithStackIf(err)
+	}
+
+	var flags []string
+	if config.Enabled {
+		if config.Spam.Enabled ||
+			config.Mention.Enabled ||
+			config.Invite.Enabled ||
+			config.Links.Enabled ||
+			config.Sites.Enabled ||
+			config.Words.Enabled {
+
+			// check if atleast one rule is enabled
+
+			flags = append(flags, featureFlagEnabled)
+		}
+	}
+
+	return flags, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagEnabled, // set if automod is enabled and atleast one rule is enabled as well
+	}
 }
