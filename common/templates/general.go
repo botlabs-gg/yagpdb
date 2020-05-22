@@ -152,7 +152,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	for key, val := range messageSdict {
 
-		switch key {
+		switch strings.ToLower(key) {
 		case "content":
 			msg.Content = fmt.Sprint(val)
 		case "embed":
@@ -212,7 +212,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 
 	for key, val := range messageSdict {
 
-		switch key {
+		switch strings.ToLower(key) {
 		case "content":
 			temp := fmt.Sprint(val)
 			msg.Content = &temp
@@ -250,7 +250,7 @@ func parseAllowedMentions (Data interface{}) (*discordgo.AllowedMentions, error)
 	allowedMentions := &discordgo.AllowedMentions{}
 	for k, v := range converted {
 
-		switch k {
+		switch strings.ToLower(k) {
 			case "parse":
 				var parseMentions []discordgo.AllowedMentionType
 				var parseSlice Slice
