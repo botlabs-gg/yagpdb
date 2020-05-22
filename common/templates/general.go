@@ -226,6 +226,16 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				return nil, err
 			}
 			msg.Embed = embed
+		case "allowed_mentions":
+			if val == nil {
+				msg.AllowedMentions = &discordgo.AllowedMentions{}
+				continue
+			}
+			parsed, err := parseAllowedMentions(val)
+			if err != nil {
+				return nil, err
+			}
+			msg.AllowedMentions = parsed
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
