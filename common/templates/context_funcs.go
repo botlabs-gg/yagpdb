@@ -273,11 +273,17 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			}
 			msgEdit.Content = typedMsg.Content
 			msgEdit.Embed = typedMsg.Embed
+			msgEdit.AllowedMentions = typedMsg.AllowedMentions
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
 		}
-
+		
+		if !filterSpecialMentions {
+			msgEdit.AllowedMentions = &discordgo.AllowedMentions {
+							Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
+						  }
+		}
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
 
 		if err != nil {
