@@ -282,8 +282,8 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			msgSend.Embed = typedMsg
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
-			msgSend.AllowedMentions = discordgo.AllowedMentions{
-				Parse: parseMentions,
+			if !filterSpecialMentions {
+				msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions,} 
 			}
 		default:
 			msgSend.Content = fmt.Sprint(msg)
@@ -328,9 +328,16 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			}
 			msgEdit.Content = typedMsg.Content
 			msgEdit.Embed = typedMsg.Embed
+			msgEdit.AllowedMentions = typedMsg.AllowedMentions
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
+		}
+
+		if !filterSpecialMentions {
+			msgEdit.AllowedMentions = &discordgo.AllowedMentions {
+							Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
+						  }
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
