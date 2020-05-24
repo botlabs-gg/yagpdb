@@ -203,7 +203,7 @@ func (c *Context) setupBaseData() {
 	}
 
 	if c.MS != nil {
-		c.Data["Member"] = c.MS.DGoCopy()
+		c.Data["Member"] = CtxMemberFromMS(c.MS)
 		c.Data["User"] = c.MS.DGoUser()
 		c.Data["user"] = c.Data["User"]
 	}
