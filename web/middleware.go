@@ -175,6 +175,28 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+func CSRFProtectionMW(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		// validate the origin header (if present) for protection against CSRF attacks
+		// i don't think putting in more protection against CSRF attacks is needed, considering literally every browser these days support it
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			split := strings.SplitN(origin, ":", 3)
+			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
+
+			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
+				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
+				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
+				return
+			}
+		}
+
+		inner.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(mw)
+}
+
 // UserInfoMiddleware fills the context with user information and the guilds it's on guilds if possible
 func UserInfoMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
