@@ -419,6 +419,11 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	member := dstate.MSFromDGoMember(evt.GS, mc.Member)
+	ms := evt.GS.MemberCopy(true, mc.Member.User.ID)
+	if ms != nil {
+		member.PresenceStatus = ms.PresenceStatus
+		member.PresenceGame = ms.PresenceGame
+	}
 	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, mc)
 	if err != nil {
 		logger.WithError(err).Error("Error mathching custom commands")
