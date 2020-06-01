@@ -86,6 +86,26 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	return SDict(dict), nil
 }
 
+func KindOf (input interface{}, flag ...bool) (string, error){ //flag used only for indirect vs direct for now.
+
+	switch len(flag) {
+	
+		case 0:
+			return reflect.ValueOf(input).Kind().String(), nil
+		case 1:
+			if flag[0] {
+				val, isNil := indirect(reflect.ValueOf(input))
+				if isNil || input == nil {
+					return "invalid", nil
+				}
+				return val.Kind().String(), nil
+			}
+			return reflect.ValueOf(input).Kind().String(), nil
+		default:
+			return "", errors.New("Too many flags")
+	}
+}
+
 func StructToSdict (value interface{}) (SDict, error) {
 
 	val, isNil := indirect(reflect.ValueOf(value))
