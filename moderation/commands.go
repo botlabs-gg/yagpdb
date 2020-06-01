@@ -342,6 +342,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "minage", Default: time.Duration(0), Name: "Min age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
 			&dcmd.ArgDef{Switch: "nopin", Name: "Ignore pinned messages"},
+			&dcmd.ArgDef{Switch: "to", Name: "Stop at this msg ID", Type: dcmd.Int},
 		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -401,6 +402,13 @@ var ModerationCommands = []*commands.YAGCommand{
 				filtered = true
 			}
 
+			// Check if set to break at a certain ID
+			toID := int64(0)
+			if parsed.Switches["to"].Value != nil {
+				filtered = true
+				toID = parsed.Switches["to"].Int64()
+			}
+
 			// Check if we should ignore pinned messages
 			pe := false
 			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
@@ -420,7 +428,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, ma, minAge, pe, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, toID, ma, minAge, pe, num, limitFetch)
 
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
@@ -841,7 +849,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -904,6 +912,11 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			if _, found := pinnedMessages[msgs[i].ID]; found {
 				continue
 			}
+		}
+
+		// Continue only if current msg ID is < toID
+		if toID > msgs[i].ID {
+			continue
 		}
 
 		toDelete = append(toDelete, msgs[i].ID)
