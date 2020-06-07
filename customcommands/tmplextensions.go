@@ -78,6 +78,8 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 		def.Type = dcmd.Channel
 	case "member":
 		def.Type = &commands.MemberArg{}
+	case "role":
+		def.Type = &commands.RoleArg{}
 	default:
 		return nil, errors.New("Unknown type")
 	}
@@ -152,6 +154,13 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 
 		m := i.(*dstate.MemberState)
 		return m.DGoCopy()
+	case *commands.RoleArg:
+		i := pa.parsed[index].Value
+		if i == nil {
+			return nil
+		}
+
+		return i.(*discordgo.Role)
 	}
 
 	return pa.parsed[index].Value
