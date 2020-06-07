@@ -30,7 +30,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
-	github.com/jonas747/cardsagainstdiscord v1.0.1-0.20200329001347-9ec700c098a5
+	github.com/jonas747/cardsagainstdiscord v1.1.0
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.2.2
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69

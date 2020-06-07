@@ -196,8 +196,8 @@ github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/jinzhu/now v1.0.1 h1:HjfetcXq097iXP0uoPCdnM4Efp5/9MsM0/M+XOTeR3M=
 github.com/jinzhu/now v1.0.1/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
-github.com/jonas747/cardsagainstdiscord v1.0.1-0.20200329001347-9ec700c098a5 h1:7WPFTKW22vUIEVN4YXZP611SkWF7GxFOdEcaChIXO3k=
-github.com/jonas747/cardsagainstdiscord v1.0.1-0.20200329001347-9ec700c098a5/go.mod h1:y11G2XTZehiSHDdy8w/8IVQsY3ilvdLmNshuo1TSEek=
+github.com/jonas747/cardsagainstdiscord v1.1.0 h1:1VPCIILQmqA/JJ/1oSWhMmxyPJjSIEkGfe91GGP5eQE=
+github.com/jonas747/cardsagainstdiscord v1.1.0/go.mod h1:y11G2XTZehiSHDdy8w/8IVQsY3ilvdLmNshuo1TSEek=
 github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8 h1:k/3mvr7ImDZ8Ig/qcLVnvNSW99wlkbVyPDv4erwSQPQ=
 github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8/go.mod h1:rxjYX9OJU81unMxQDHChU/lAiOhlY9MV+faPX/NmwLk=
 github.com/jonas747/dcmd v1.1.0 h1:zn5qVNxyz08cgAdjvAGoG2WwY3GbxnzImRynV0Atja0=
