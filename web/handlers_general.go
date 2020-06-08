@@ -446,10 +446,10 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 	config := r.Context().Value(common.ContextKeyCoreConfig).(*models.CoreConfig)
 
 	const format = `<ul>
-	<li>Read Only roles: <code>%d</code></li>
-	<li>Write Roles: <code>%d</code></li>
-	<li>All members read only: %s</li>
-	<li>Allow absolutely everyone read only access: %s</li>
+	<li>Read-only roles: <code>%d</code></li>
+	<li>Write roles: <code>%d</code></li>
+	<li>All members read-only: %s</li>
+	<li>Allow absolutely everyone read-only access: %s</li>
 </ul>`
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles), EnabledDisabledSpanStatus(config.AllowAllMembersReadOnly), EnabledDisabledSpanStatus(config.AllowNonMembersReadOnly)))
 

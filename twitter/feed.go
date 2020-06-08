@@ -168,6 +168,16 @@ OUTER:
 			}
 		}
 
+		isRetweet := t.RetweetedStatus != nil
+		if isRetweet && !f.IncludeRT {
+			continue
+		}
+
+		isReply := t.InReplyToScreenName != "" || t.InReplyToStatusID != 0 || t.InReplyToUserID != 0
+		if isReply && !f.IncludeReplies {
+			continue
+		}
+
 		relevantFeeds = append(relevantFeeds, f)
 	}
 

@@ -13,4 +13,9 @@ CREATE TABLE IF NOT EXISTS twitter_feeds (
 );
 `, `
 CREATE INDEX IF NOT EXISTS twitter_user_id_idx ON twitter_feeds(twitter_user_id);
-`}
+`, `
+ALTER TABLE twitter_feeds ADD COLUMN IF NOT EXISTS include_replies BOOLEAN NOT NULL DEFAULT false;
+`, `
+ALTER TABLE twitter_feeds ADD COLUMN IF NOT EXISTS include_rt BOOLEAN NOT NULL DEFAULT true;
+`,
+}

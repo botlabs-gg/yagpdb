@@ -345,12 +345,12 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 func (c *Context) tmplMentionEveryone() string {
 	c.CurrentFrame.MentionEveryone = true
-	return " @everyone "
+	return "@everyone"
 }
 
 func (c *Context) tmplMentionHere() string {
 	c.CurrentFrame.MentionHere = true
-	return " @here "
+	return "@here"
 }
 
 func (c *Context) tmplMentionRoleID(roleID interface{}) string {
@@ -380,7 +380,7 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 	}
 
 	c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, role)
-	return " <@&" + discordgo.StrID(role) + "> "
+	return "<@&" + discordgo.StrID(role) + ">"
 }
 
 func (c *Context) tmplMentionRoleName(role string) string {
@@ -403,7 +403,7 @@ func (c *Context) tmplMentionRoleName(role string) string {
 		return "(role not found)"
 	}
 
-	return " <@&" + discordgo.StrID(found.ID) + "> "
+	return "<@&" + discordgo.StrID(found.ID) + ">"
 }
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {

@@ -269,11 +269,33 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
+	prefix := defaultCommandPrefix()
+	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
+		var err error
+		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
+		}
+	}
+
+	CommandSystem.CheckMessageWtihPrefetchedPrefix(common.BotSession, evt.MessageCreate(), prefix)
+	// CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
+}
+
+func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
+	prefix := defaultCommandPrefix()
+	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
+		var err error
+		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		return "", err
+	}
+
+	return prefix, nil
 }
 
 func (p *Plugin) Prefix(data *dcmd.Data) string {
-	prefix, err := GetCommandPrefix(data.GS.ID)
+
+	prefix, err := GetCommandPrefixRedis(data.GS.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -349,7 +371,7 @@ var cmdPrefix = &YAGCommand{
 			targetGuildID = data.GS.ID
 		}
 
-		prefix, err := GetCommandPrefix(targetGuildID)
+		prefix, err := GetCommandPrefixRedis(targetGuildID)
 		if err != nil {
 			return nil, err
 		}

@@ -420,7 +420,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	member := dstate.MSFromDGoMember(evt.GS, mc.Member)
-	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, mc)
+	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
 	if err != nil {
 		logger.WithError(err).Error("Error mathching custom commands")
 		return
@@ -446,13 +446,14 @@ type TriggeredCC struct {
 	Args     []string
 }
 
-func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, mc *discordgo.MessageCreate) (matches []*TriggeredCC, err error) {
+func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, evt *eventsystem.EventData) (matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, ctx)
 	if err != nil {
 		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
 	}
 
-	prefix, err := commands.GetCommandPrefix(mc.GuildID)
+	mc := evt.MessageCreate().Message
+	prefix, err := commands.GetCommandPrefixBotEvt(evt)
 	if err != nil {
 		return nil, errors.WrapIf(err, "GetCommandPrefix")
 	}
@@ -624,7 +625,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		if cmd.ShowErrors {
 			common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
 		}
-		updatePostCommandRan(cmd, errors.New("Gave up trying to e xecute, already an existing instance executing"))
+		updatePostCommandRan(cmd, errors.New("Gave up trying to execute, already an existing instance executing"))
 		return nil
 	}
 

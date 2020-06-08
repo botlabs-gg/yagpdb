@@ -160,7 +160,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	templateData["GlobalCommandSettings"] = global
 	templateData["ChannelOverrides"] = channelOverrides
 
-	prefix, _ := GetCommandPrefix(activeGuild.ID)
+	prefix, _ := GetCommandPrefixRedis(activeGuild.ID)
 
 	templateData["CommandPrefix"] = prefix
 
@@ -410,7 +410,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["SettingsPath"] = "/commands/settings"
 	templateData["WidgetEnabled"] = true
 
-	prefix, err := GetCommandPrefix(ag.ID)
+	prefix, err := GetCommandPrefixRedis(ag.ID)
 	if err != nil {
 		return templateData, err
 	}
