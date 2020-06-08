@@ -419,7 +419,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	member := dstate.MSFromDGoMember(evt.GS, mc.Member)
-	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, mc)
+	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
 	if err != nil {
 		logger.WithError(err).Error("Error mathching custom commands")
 		return
@@ -445,13 +445,14 @@ type TriggeredCC struct {
 	Args     []string
 }
 
-func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, mc *discordgo.MessageCreate) (matches []*TriggeredCC, err error) {
+func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, evt *eventsystem.EventData) (matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.Guild, ctx)
 	if err != nil {
 		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
 	}
 
-	prefix, err := commands.GetCommandPrefix(mc.GuildID)
+	mc := evt.MessageCreate().Message
+	prefix, err := commands.GetCommandPrefixBotEvt(evt)
 	if err != nil {
 		return nil, errors.WrapIf(err, "GetCommandPrefix")
 	}
