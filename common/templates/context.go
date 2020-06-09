@@ -66,6 +66,7 @@ var (
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
 		"complexMessageEdit": CreateMessageEdit,
+		"kindOf":	      KindOf,
 
 		"formatTime":  tmplFormatTime,
 		"json":        tmplJson,
