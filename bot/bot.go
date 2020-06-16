@@ -43,6 +43,19 @@ var (
 
 	usingFixedSharding bool
 	fixedShardingID    int
+
+	// Note yags is using priviledged intents
+	gatewayIntentsUsed = []discordgo.GatewayIntent{
+		discordgo.GatewayIntentGuilds,
+		discordgo.GatewayIntentGuildMembers,
+		discordgo.GatewayIntentGuildBans,
+		discordgo.GatewayIntentGuildVoiceStates,
+		discordgo.GatewayIntentGuildPresences,
+		discordgo.GatewayIntentGuildMessages,
+		discordgo.GatewayIntentGuildMessageReactions,
+		discordgo.GatewayIntentDirectMessages,
+		discordgo.GatewayIntentDirectMessageReactions,
+	}
 )
 
 var (
@@ -385,6 +398,7 @@ func setupShardManager() {
 		session.StateEnabled = false
 		session.LogLevel = discordgo.LogInformational
 		session.SyncEvents = true
+		session.Intents = gatewayIntentsUsed
 
 		// Certain discordgo internals expect this to be present
 		// but in case of shard migration it's not, so manually assign it here
