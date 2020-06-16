@@ -3,6 +3,8 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,6 +38,24 @@ var (
 	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
 	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
 	confLargeBotShardingEnabled  = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
+
+	confFixedShardingConfig = config.RegisterOption("yagpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
+
+	usingFixedSharding bool
+	fixedShardingID    int
+
+	// Note yags is using priviledged intents
+	gatewayIntentsUsed = []discordgo.GatewayIntent{
+		discordgo.GatewayIntentGuilds,
+		discordgo.GatewayIntentGuildMembers,
+		discordgo.GatewayIntentGuildBans,
+		discordgo.GatewayIntentGuildVoiceStates,
+		discordgo.GatewayIntentGuildPresences,
+		discordgo.GatewayIntentGuildMessages,
+		discordgo.GatewayIntentGuildMessageReactions,
+		discordgo.GatewayIntentDirectMessages,
+		discordgo.GatewayIntentDirectMessageReactions,
+	}
 )
 
 var (
@@ -69,7 +89,11 @@ func Run(nodeID string) {
 		NodeConn.Run()
 	} else {
 		ShardManager.Init()
-		go ShardManager.Start()
+		if usingFixedSharding {
+			go ShardManager.Session(fixedShardingID).Open()
+		} else {
+			go ShardManager.Start()
+		}
 		botReady()
 	}
 }
@@ -85,14 +109,20 @@ func setup() {
 }
 
 func setupStandalone() {
-	shardCount, err := ShardManager.GetRecommendedCount()
-	if err != nil {
-		panic("Failed getting shard count: " + err.Error())
+	if confFixedShardingConfig.GetString() == "" {
+		shardCount, err := ShardManager.GetRecommendedCount()
+		if err != nil {
+			panic("Failed getting shard count: " + err.Error())
+		}
+		totalShardCount = shardCount
+	} else {
+		fixedShardingID, totalShardCount = readFixedShardingConfig()
+		usingFixedSharding = true
+		ShardManager.SetNumShards(totalShardCount)
 	}
-	totalShardCount = shardCount
 
-	EventLogger.init(shardCount)
-	eventsystem.InitWorkers(shardCount)
+	EventLogger.init(totalShardCount)
+	eventsystem.InitWorkers(totalShardCount)
 	ReadyTracker.initTotalShardCount(totalShardCount)
 
 	go EventLogger.run()
@@ -101,10 +131,34 @@ func setupStandalone() {
 		ReadyTracker.shardsAdded(i)
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", shardCount))
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", totalShardCount))
 	if err != nil {
 		logger.WithError(err).Error("failed setting shard count")
 	}
+}
+
+func readFixedShardingConfig() (id int, count int) {
+	conf := confFixedShardingConfig.GetString()
+	if conf == "" {
+		return 0, 0
+	}
+
+	split := strings.SplitN(conf, ",", 2)
+	if len(split) < 2 {
+		panic("Invalid yagpdb.sharding.fixed_config: " + conf)
+	}
+
+	parsedID, err := strconv.ParseInt(split[0], 10, 64)
+	if err != nil {
+		panic("Invalid yagpdb.sharding.fixed_config: " + err.Error())
+	}
+
+	parsedCount, err := strconv.ParseInt(split[1], 10, 64)
+	if err != nil {
+		panic("Invalid yagpdb.sharding.fixed_config: " + err.Error())
+	}
+
+	return int(parsedID), int(parsedCount)
 }
 
 // called when the bot is ready and the shards have started connecting
@@ -344,6 +398,7 @@ func setupShardManager() {
 		session.StateEnabled = false
 		session.LogLevel = discordgo.LogInformational
 		session.SyncEvents = true
+		session.Intents = gatewayIntentsUsed
 
 		// Certain discordgo internals expect this to be present
 		// but in case of shard migration it's not, so manually assign it here

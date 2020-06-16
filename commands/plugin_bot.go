@@ -287,7 +287,7 @@ func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
 	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 		var err error
 		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
-		return "", err
+		return prefix, err
 	}
 
 	return prefix, nil
