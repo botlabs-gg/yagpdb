@@ -498,6 +498,10 @@ func tmplHumanizeThousands(input interface{}) string {
 	var f1, f2 string
 
 	i := tmplToInt(input)
+	if i < 0 {
+		i = i*-1
+		f2 = "-"
+	}
 	str := strconv.Itoa(i)
 
 	idx := 0
