@@ -2,14 +2,13 @@ package twitter
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/dghubble/go-twitter/twitter"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/go-twitter/twitter"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/feeds"
@@ -17,6 +16,7 @@ import (
 	"github.com/jonas747/yagpdb/twitter/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var _ feeds.Plugin = (*Plugin)(nil)
@@ -65,7 +65,7 @@ func (p *Plugin) runFeedLoop() {
 		newFeeds := p.feeds
 		p.feedsLock.Unlock()
 
-		if !feedsChanged(currentFeeds, newFeeds) && stream != nil && atomic.LoadInt32(stoppedCheck) == 0 || time.Since(lastStart) < time.Minute*10 {
+		if (!feedsChanged(currentFeeds, newFeeds) && stream != nil && atomic.LoadInt32(stoppedCheck) == 0) || time.Since(lastStart) < time.Minute*10 {
 			continue
 		}
 
@@ -111,6 +111,8 @@ OUTER:
 
 		follow = append(follow, strID)
 	}
+
+	logger.Info("NUMBER OF follows: ", len(follow))
 
 	params := &twitter.StreamFilterParams{
 		StallWarnings: twitter.Bool(true),
@@ -253,9 +255,6 @@ func createTweetEmbed(tweet *twitter.Tweet) *discordgo.MessageEmbed {
 		}
 	}
 
-	serialised, _ := json.Marshal(embed)
-	logger.Info(string(serialised))
-
 	return embed
 }
 
@@ -310,7 +309,7 @@ func (p *Plugin) updateConfigsLoop() {
 }
 
 func (p *Plugin) updateConfigs() {
-	configs, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true)).AllG(context.Background())
+	configs, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true), qm.OrderBy("id asc")).AllG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("failed updating configs")
 		return
