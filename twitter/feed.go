@@ -216,19 +216,36 @@ func createTweetEmbed(tweet *twitter.Tweet) *discordgo.MessageEmbed {
 		timeStr = parsed.Format(time.RFC3339)
 	}
 
+	text := tweet.Text
+	if tweet.FullText != "" {
+		text = tweet.FullText
+	}
+	if tweet.ExtendedTweet != nil && tweet.ExtendedTweet.FullText != "" {
+		text = tweet.ExtendedTweet.FullText
+	}
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    "@" + tweet.User.ScreenName,
 			IconURL: tweet.User.ProfileImageURLHttps,
 			URL:     "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.IDStr,
 		},
-		Description: tweet.Text,
+		Description: text,
 		Timestamp:   timeStr,
 		Color:       0x38A1F3,
 	}
 
 	if tweet.Entities != nil && len(tweet.Entities.Media) > 0 {
 		m := tweet.Entities.Media[0]
+		if m.Type == "photo" || m.Type == "animated_gif" {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: m.MediaURLHttps,
+			}
+		}
+	}
+
+	if embed.Image == nil && tweet.ExtendedEntities != nil && len(tweet.ExtendedEntities.Media) > 0 {
+		m := tweet.ExtendedEntities.Media[0]
 		if m.Type == "photo" || m.Type == "animated_gif" {
 			embed.Image = &discordgo.MessageEmbedImage{
 				URL: m.MediaURLHttps,
