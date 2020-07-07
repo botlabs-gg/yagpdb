@@ -244,9 +244,14 @@ func createTweetEmbed(tweet *twitter.Tweet) *discordgo.MessageEmbed {
 				URL: m.MediaURLHttps,
 			}
 		}
-	}
-
-	if embed.Image == nil && tweet.ExtendedEntities != nil && len(tweet.ExtendedEntities.Media) > 0 {
+	} else if tweet.ExtendedTweet != nil && tweet.ExtendedTweet.Entities != nil && len(tweet.ExtendedTweet.Entities.Media) > 0 {
+		m := tweet.ExtendedTweet.Entities.Media[0]
+		if m.Type == "photo" || m.Type == "animated_gif" {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: m.MediaURLHttps,
+			}
+		}
+	} else if embed.Image == nil && tweet.ExtendedEntities != nil && len(tweet.ExtendedEntities.Media) > 0 {
 		m := tweet.ExtendedEntities.Media[0]
 		if m.Type == "photo" || m.Type == "animated_gif" {
 			embed.Image = &discordgo.MessageEmbedImage{
