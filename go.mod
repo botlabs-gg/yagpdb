@@ -13,7 +13,6 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/certifi/gocertifi v0.0.0-20190905060710-a5e0173ced67 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20200206145737-bbfc9a55622e // indirect
-	github.com/dghubble/go-twitter v0.0.0-20190719072343-39e5462e111f
 	github.com/dghubble/oauth1 v0.6.0
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/dpatrie/urbandictionary v0.0.0-20151214192647-3b38cbf4cb81
@@ -33,11 +32,12 @@ require (
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.2.3
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.5.1-0.20200617121435-1a16211c63ab
+	github.com/jonas747/discordgo v1.5.1-0.20200624011214-9563fa0b9e8b
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600
 	github.com/jonas747/dstate v1.0.7
 	github.com/jonas747/dutil v0.0.3
 	github.com/jonas747/go-reddit v0.1.2
+	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
 	github.com/jonas747/jdshardmanager v1.0.1
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 // indirect
 	github.com/jonas747/template v1.1.2
