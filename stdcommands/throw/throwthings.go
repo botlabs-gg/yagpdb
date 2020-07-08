@@ -22,5 +22,4 @@ var throwThings = []string{
 	"a magic 8 ball",
 	"lord voldemort",
 	"the sound of silence",
-	
 }
