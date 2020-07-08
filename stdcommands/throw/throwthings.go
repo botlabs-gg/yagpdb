@@ -22,4 +22,9 @@ var throwThings = []string{
 	"a magic 8 ball",
 	"lord voldemort",
 	"the sound of silence",
+	"the Windows XP startup sound",
+	"a .vbs script",
+	"an Excel macro written by somebody who hasn't been with the company for ten years",
+	"an Access database",
+	"untested patches",
 }
