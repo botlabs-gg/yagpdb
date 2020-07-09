@@ -13,10 +13,18 @@ var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "Topic",
 	Description: "Generates a conversation topic to help chat get moving.",
+	Arguments: []*dcmd.ArgDef{
+		{Name: "Target", Type: dcmd.User},
+	},
+
+	target := "a random person nearby"
+	if data.Args[0].Value != nil {
+		target = data.Args[0].Value.(*discordgo.User).Username
+	}
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		resp := ""
-		resp = fmt.Sprintf("Lets talk about **%s**", randomTopic())
-		return resp, nil
+		topic := ""
+		topic = fmt.Sprintf("Lets talk about **%s**", randomTopic(), target)
+		return topic, nil
 	},
 }
