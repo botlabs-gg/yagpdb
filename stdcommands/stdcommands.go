@@ -47,6 +47,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/wouldyourather"
 	"github.com/jonas747/yagpdb/stdcommands/xkcd"
 	"github.com/jonas747/yagpdb/stdcommands/yagstatus"
+	"github.com/winadminsdotorg/WinAdmins-Moderator/tree/master/stdcommands/newtopic"
 )
 
 var (
@@ -86,6 +87,7 @@ func (p *Plugin) AddCommands() {
 		currenttime.Command,
 		mentionrole.Command,
 		listroles.Command,
+		newtopic.Command,
 		wouldyourather.Command,
 		poll.Command,
 		undelete.Command,
