@@ -13,12 +13,12 @@ var Command = &commands.YAGCommand{
 	Description: "Generates a conversation topic to help chat get moving.",
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
+		doc, err := goquery.NewDocument("https://capitalizemytitle.com/random-topic-generator/")
 		if err != nil {
 			return nil, err
 		}
 
-		topic := doc.Find("#random").Text()
+		topic := doc.Find("#blog-ideas-output").Text()
 		return topic, nil
 	},
 }
