@@ -71,7 +71,6 @@ func (p *Plugin) AddCommands() {
 		invite.Command,
 
 		// Standard
-		newtopic.Command,
 		define.Command,
 		weather.Command,
 		calc.Command,
