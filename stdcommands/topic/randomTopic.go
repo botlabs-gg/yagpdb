@@ -9,7 +9,7 @@ func randomTopic() string {
 }
 
 var throwThings = []string{
-	"why cats can't decide to go inside or outside."
-	"what type of weather you're having"
-	"The global impact of fruit rollups"
+	"why cats can't decide to go inside or outside.",
+	"what type of weather you're having",
+	"The global impact of fruit rollups",
 }
