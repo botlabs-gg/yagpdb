@@ -307,7 +307,7 @@ func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
 type BanUserEffect struct{}
 
 type BanUserEffectData struct {
-	Duration     	  int
+	Duration          int
 	CustomReason      string `valid:",0,150,trimspace"`
 	MessageDeleteDays int
 }
@@ -395,7 +395,7 @@ func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 		&SettingDef{
 			Name:    "Duration (minutes, 0 for permanent)",
 			Key:     "Duration",
-			Min:  	 0,
+			Min:     0,
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
@@ -700,6 +700,10 @@ func (rf *RemoveRoleEffect) Description() (description string) {
 
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*RemoveRoleEffectData)
+
+	if !common.ContainsInt64Slice(ctxData.MS.Roles, settingsCast.Role) {
+		return nil
+	}
 
 	err := common.RemoveRoleDS(ctxData.MS, settingsCast.Role)
 	if err != nil {
