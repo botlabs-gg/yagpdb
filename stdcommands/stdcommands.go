@@ -47,7 +47,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/wouldyourather"
 	"github.com/jonas747/yagpdb/stdcommands/xkcd"
 	"github.com/jonas747/yagpdb/stdcommands/yagstatus"
-	"github.com/jonas747/yagpdb/stdcommands/newtopic"
+	"github.com/jonas747/yagpdb/stdcommands/newTopic"
 )
 
 var (
@@ -93,7 +93,7 @@ func (p *Plugin) AddCommands() {
 		viewperms.Command,
 		topgames.Command,
 		xkcd.Command,
-		newtopic.Command,
+		newTopic.Command,
 
 		// Maintenance
 		stateinfo.Command,
