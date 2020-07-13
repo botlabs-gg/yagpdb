@@ -22,7 +22,6 @@ var throwThings = []string{
 	"an important laptop with critical files on it but the bitlocker key has been lost",
 	"multiple disk failures during a RAID rebuild",
 	"sudo rm -rf *",
-	"Remove-Item -Recurse -Force C:\,"
 	"a 52K internet connection",
 	"a life with only slow internet",
 	"a public github repo with domain administrator credentials included",
