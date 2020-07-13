@@ -242,30 +242,11 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// setFullGuild is a fallback in case a userguild is not available, could be the case if a bot admin is accesing a server they're not part of
-func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
-	fullGuild, err := common.GetGuild(guildID)
+func getGuild(ctx context.Context, guildID int64) (*discordgo.Guild, error) {
+	guild, err := discorddata.GetFullGuild(guildID)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
-		return ctx, err
-	}
-
-	entry := CtxLogger(ctx).WithField("g", guildID)
-	ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
-	ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
-	return context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild), nil
-}
-
-func getGuild(guildID int64, ctx context.Context) (*discordgo.Guild, error) {
-	guild, err := botrest.GetGuild(guildID)
-	if err != nil {
-		CtxLogger(ctx).WithError(err).Warn("failed getting guild from bot, querying discord api")
-
-		guild, err = common.BotSession.Guild(guildID)
-		if err != nil {
-			CtxLogger(ctx).WithError(err).Warn("failed getting guild from discord fallback, nothing more we can do...")
-			return nil, err
-		}
+		CtxLogger(ctx).WithError(err).Warn("failed getting guild from discord fallback, nothing more we can do...")
+		return nil, err
 	}
 
 	return guild, nil
@@ -286,7 +267,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		guild, err := getGuild(guildID, ctx)
+		guild, err := getGuild(ctx, guildID)
 		if err != nil {
 			return
 		}
@@ -361,27 +342,6 @@ func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 // RequireGuildChannelsMiddleware ensures that the channels are available for the guild were on during this request, and yes this has to be done seperately cause discord
 func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
-
-		if len(guild.Channels) > 0 {
-			// channels already available
-			sort.Sort(dutil.Channels(guild.Channels))
-			inner.ServeHTTP(w, r)
-			return
-		}
-
-		channels, err := common.GetGuildChannels(guild.ID)
-		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("Failed retrieving channels")
-			http.Redirect(w, r, "/?err=retrievingchannels", http.StatusTemporaryRedirect)
-			return
-		}
-
-		// Sort them
-		sort.Sort(dutil.Channels(channels))
-		guild.Channels = channels
-
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)
