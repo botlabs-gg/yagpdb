@@ -46,8 +46,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/automod"), muxer)
 	web.CPMux.Handle(pat.New("/automod/*"), muxer)
 
-	muxer.Use(web.RequireGuildChannelsMiddleware)
-
 	getIndexHandler := web.ControllerHandler(p.handleGetAutomodIndex, "automod_index")
 
 	muxer.Handle(pat.Get("/"), getIndexHandler)

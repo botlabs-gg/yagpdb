@@ -49,7 +49,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/youtube"), ytMux)
 
 	// Alll handlers here require guild channels present
-	ytMux.Use(web.RequireGuildChannelsMiddleware)
 	ytMux.Use(web.RequireBotMemberMW)
 	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
 

@@ -66,7 +66,6 @@ func (p *Plugin) InitWeb() {
 		}
 		return http.HandlerFunc(h)
 	})
-	subMux.Use(web.RequireGuildChannelsMiddleware)
 
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)

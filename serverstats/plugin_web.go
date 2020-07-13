@@ -37,7 +37,6 @@ func (p *Plugin) InitWeb() {
 	statsCPMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/stats"), statsCPMux)
 	web.CPMux.Handle(pat.New("/stats/*"), statsCPMux)
-	statsCPMux.Use(web.RequireGuildChannelsMiddleware)
 
 	cpGetHandler := web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats")
 	statsCPMux.Handle(pat.Get(""), cpGetHandler)
@@ -48,9 +47,9 @@ func (p *Plugin) InitWeb() {
 	statsCPMux.Handle(pat.Get("/charts"), web.APIHandler(publicHandlerJson(HandleStatsCharts, false)))
 
 	// Public
-	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
-	web.ServerPublicMux.Handle(pat.Get("/stats/daily_json"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
-	web.ServerPublicMux.Handle(pat.Get("/stats/charts"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsCharts, true))))
+	web.ServerPublicMux.Handle(pat.Get("/stats"), web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats"))
+	web.ServerPublicMux.Handle(pat.Get("/stats/daily_json"), web.APIHandler(publicHandlerJson(HandleStatsJson, true)))
+	web.ServerPublicMux.Handle(pat.Get("/stats/charts"), web.APIHandler(publicHandlerJson(HandleStatsCharts, true)))
 }
 
 type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)

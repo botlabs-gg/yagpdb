@@ -3,13 +3,14 @@ package tickets
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
+	"net/http"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/tickets/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
 )
 
 type FormData struct {
@@ -38,10 +39,10 @@ func (p *Plugin) InitWeb() {
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_tickets_settings")
 	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated ticket settings")
 
-	web.CPMux.Handle(pat.Get("/tickets/settings"), web.RequireGuildChannelsMiddleware(getHandler))
-	web.CPMux.Handle(pat.Get("/tickets/settings/"), web.RequireGuildChannelsMiddleware(getHandler))
+	web.CPMux.Handle(pat.Get("/tickets/settings"), getHandler)
+	web.CPMux.Handle(pat.Get("/tickets/settings/"), getHandler)
 
-	web.CPMux.Handle(pat.Post("/tickets/settings"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.Handle(pat.Post("/tickets/settings"), postHandler)
 }
 
 func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
