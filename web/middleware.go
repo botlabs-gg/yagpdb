@@ -13,12 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/web/discorddata"
 	"github.com/miolini/datacounter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -123,20 +125,12 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		token, err := AuthTokenFromB64(cookie.Value)
+		session, err := discorddata.GetSession(cookie.Value, AuthTokenFromB64)
 		if err != nil {
-			if err != ErrNotLoggedIn {
-				// this could really only happen if the user messes with the session token, or some other BS happens (like bad ram i guess)
+			if errors.Cause(err) != ErrNotLoggedIn {
 				CtxLogger(r.Context()).WithError(err).Error("invalid session")
 			}
 
-			return
-		}
-
-		// construct the session from the user's (decoded) session cookie
-		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
-		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed initializing discord session")
 			return
 		}
 
