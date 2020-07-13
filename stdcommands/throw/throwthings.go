@@ -38,7 +38,7 @@ var throwThings = []string{
 	"a copy of server 2000",
 	"a copy of server 2003",
 	"a copy of server 2008",
-	"a copy of server 2008R2"
+	"a copy of server 2008R2",
 	"a pink parrot",
 	"an undocumented 'feature'",
 	"a bug disguised as a feature",

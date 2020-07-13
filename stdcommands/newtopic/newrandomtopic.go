@@ -56,7 +56,7 @@ var topicList = []string{
 	"What part of a kid’s movie completely scarred you?",
 	"What kind of secret society would you like to start?",
 	"If animals could talk, which would be the rudest?",
-	"Toilet paper, over or under?"
+	"Toilet paper, over or under?",
 	"What’s the best type of cheese?",
 	"What’s the best inside joke you’ve been a part of?",
 	"In one sentence, how would you sum up the internet?",
