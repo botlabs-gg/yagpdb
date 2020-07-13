@@ -204,8 +204,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 		}
 
 		// retrieve user info
-		var user *discordgo.User
-		err := common.GetCacheDataJson(session.Token+":user", &user)
+		user, err := discorddata.GetUserInfo(session.Token, session)
 		if err != nil {
 			// nothing in cache...
 			user, err = session.UserMe()
