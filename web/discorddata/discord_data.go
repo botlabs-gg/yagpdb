@@ -118,3 +118,35 @@ func GetFullGuild(guildID int64) (*discordgo.Guild, error) {
 
 	return result.Value().(*discordgo.Guild), nil
 }
+
+func keyGuildMember(guildID int64, userID int64) string {
+	return "guild_member:" + strconv.FormatInt(guildID, 10) + ":" + strconv.FormatInt(userID, 10)
+}
+
+func GetMember(guildID, userID int64) (*discordgo.Member, error) {
+	result, err := applicationCache.Fetch(keyGuildMember(guildID, userID), time.Minute*10, func() (interface{}, error) {
+
+		results, err := botrest.GetMembers(guildID, userID)
+
+		var m *discordgo.Member
+		if len(results) > 0 {
+			m = results[0]
+		}
+
+		if err != nil || m == nil {
+			// fallback to discord api
+			m, err = common.BotSession.GuildMember(guildID, userID)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return m, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Value().(*discordgo.Member), nil
+}

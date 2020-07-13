@@ -17,7 +17,6 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/web/discorddata"
@@ -344,15 +343,11 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		parsedGuildID, _ := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 
-		member, err := botrest.GetBotMember(parsedGuildID)
+		member, err := discorddata.GetMember(parsedGuildID, common.BotUser.ID)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Warn("Failed contacting bot about bot member information, falling back to discord api for retrieving bot member")
-			member, err = common.BotSession.GuildMember(parsedGuildID, common.BotUser.ID)
-			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
-				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
-				return
-			}
+			CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
+			http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
+			return
 		}
 
 		ctx := SetContextTemplateData(r.Context(), map[string]interface{}{"BotMember": member})
@@ -781,24 +776,11 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 		userI := r.Context().Value(common.ContextKeyUser)
 		if userI != nil {
 			user := userI.(*discordgo.User)
-			results, err := botrest.GetMembers(guild.ID, user.ID)
 
-			var m *discordgo.Member
-			if len(results) > 0 {
-				m = results[0]
-			}
-
+			m, err := discorddata.GetMember(guild.ID, user.ID)
 			if err != nil || m == nil {
-				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from bot, falling back to discord api")
-
-				// fallback to discord api
-				m, err = common.BotSession.GuildMember(guild.ID, user.ID)
-				if err != nil {
-					CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
-				}
-			}
-
-			if m != nil {
+				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
+			} else if m != nil {
 				// calculate permissions
 				perms := discordgo.MemberPermissions(guild, nil, m)
 

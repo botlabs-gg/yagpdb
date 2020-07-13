@@ -29,10 +29,17 @@ func (p *Plugin) BotInit() {
 		eventsystem.EventChannelCreate,
 		eventsystem.EventChannelUpdate,
 		eventsystem.EventChannelDelete)
+
+	eventsystem.AddHandlerAsyncLast(p, p.handleInvalidateMemberCache, eventsystem.EventGuildMemberUpdate)
 }
 
 func (p *Plugin) handleInvalidateGuildCache(evt *eventsystem.EventData) (retry bool, err error) {
 	PubEvictGuild(evt.GS.ID)
+	return false, nil
+}
+
+func (p *Plugin) handleInvalidateMemberCache(evt *eventsystem.EventData) (retry bool, err error) {
+	PubEvictMember(evt.GS.ID, evt.GuildMemberUpdate().User.ID)
 	return false, nil
 }
 
@@ -44,4 +51,8 @@ func pubEvictCache(keys ...string) {
 
 func PubEvictGuild(guildID int64) {
 	pubEvictCache(keyFullGuild(guildID))
+}
+
+func PubEvictMember(guildID int64, userID int64) {
+	pubEvictCache(keyGuildMember(guildID, userID))
 }
