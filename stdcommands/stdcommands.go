@@ -93,7 +93,7 @@ func (p *Plugin) AddCommands() {
 		viewperms.Command,
 		topgames.Command,
 		xkcd.Command,
-		newTopic.Command,
+		newtopic.Command,
 
 		// Maintenance
 		stateinfo.Command,

@@ -1,4 +1,4 @@
-package newTopic
+package newtopic
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		topic := ""
-		topic = fmt.Sprintf("**%s**", randomTopic)
+		topic = fmt.Sprintf("**%s**", randomTopic())
 		return topic, nil
 	},
 }

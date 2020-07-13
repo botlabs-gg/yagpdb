@@ -1,4 +1,4 @@
-package newTopic
+package newtopic
 
 import (
 	"math/rand"
