@@ -1,4 +1,4 @@
-package newtopic
+package newTopic
 
 import (
 	"fmt"
