@@ -7,14 +7,13 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
-	Name:        "Topic",
+	Name:        "NewTopic",
 	Description: "Generates a conversation topic to help chat get moving.",
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		topic := ""
-		topic = fmt.Sprintf("**%s**", randomTopic())
+		topic = fmt.Sprintf("Lets talk about **%s**", randomTopic())
 		return topic, nil
 	},
 }
