@@ -19,7 +19,6 @@ const (
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 func (p *Plugin) RunBackgroundWorker() {
-	go p.updateStatsLoop()
 	compressor := &Compressor{}
 	go compressor.runLoop(p)
 
@@ -30,28 +29,7 @@ func (p *Plugin) RunBackgroundWorker() {
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
-	wg.Add(1) // one extra since this is 2 workers
-
 	p.stopStatsLoop <- wg
-	p.stopStatsLoop <- wg
-}
-
-func (p *Plugin) updateStatsLoop() {
-
-	cleanupTicker := time.NewTicker(time.Hour)
-
-	for {
-		select {
-		case <-cleanupTicker.C:
-			logger.Info("Cleaning up server stats")
-			started := time.Now()
-			p.cleanupOldStats(time.Now().Add(time.Hour * -30))
-			logger.Infof("Took %s to ckean up stats", time.Since(started))
-		case wg := <-p.stopStatsLoop:
-			wg.Done()
-			return
-		}
-	}
 }
 
 type Compressor struct {
@@ -59,12 +37,16 @@ type Compressor struct {
 }
 
 func (c *Compressor) runLoop(p *Plugin) {
+	cleanupTicker := time.NewTicker(time.Hour * 6)
+
 	for {
+		// find the next time we should run a compression
 		_, wait, err := c.updateCompress(time.Now())
 		if err != nil {
 			wait = 0
 			logger.WithError(err).Error("failed compressing stats")
 		}
+
 		logger.Info("wait is ", wait)
 		after := time.After(wait)
 
@@ -75,6 +57,12 @@ func (c *Compressor) runLoop(p *Plugin) {
 			return
 		case <-after:
 			continue
+		case <-cleanupTicker.C:
+			// run cleanup of temporary stats
+			logger.Info("Cleaning up server stats")
+			started := time.Now()
+			p.cleanupOldStats(time.Now().Add(time.Hour * -30))
+			logger.Infof("Took %s to ckean up stats", time.Since(started))
 		}
 	}
 }
