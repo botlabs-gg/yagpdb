@@ -217,6 +217,8 @@ github.com/jonas747/discordgo v1.1.9/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx
 github.com/jonas747/discordgo v1.3.4-0.20200309143309-14b9c57c750a/go.mod h1:bAhKzQI2Jco59WVa5fhGOKdtMyGL7CFFBAxBeSGVCj0=
 github.com/jonas747/discordgo v1.5.1-0.20200624011214-9563fa0b9e8b h1:Vi04Pu532Q817adJmunhb+ssk8d5ju9ak36TCQZuK20=
 github.com/jonas747/discordgo v1.5.1-0.20200624011214-9563fa0b9e8b/go.mod h1:0fBo932PSr5ti/g3atypis6nWeLiNK9AL2hN7d+d6oc=
+github.com/jonas747/discordgo v1.5.1-0.20200714001032-6827e8fb44e0 h1:NHLtGPdeBjOJ/4Q0J8ogYfD8MsZJ1VIeG5lqcIimrQw=
+github.com/jonas747/discordgo v1.5.1-0.20200714001032-6827e8fb44e0/go.mod h1:HMKOI8/s6EywdKXyMBUGMHRnXnBYO/w5xSuzt4ZRHM0=
 github.com/jonas747/dshardorchestrator v0.1.0 h1:3/v+lx0gLupm7/VZr7wbfvUGhpxvuNC5JHaS+OnWjCc=
 github.com/jonas747/dshardorchestrator v0.1.0/go.mod h1:ZlA6h9kj2H5q2aQkZgBiROp8zpIjIUMJQ3SOpVdWYfQ=
 github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600 h1:Hn7banyRdBGcKdNiNOZV2cu9duoBuk8C7GHalNApu2o=
@@ -275,6 +277,8 @@ github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481/go.mod h1:5WUZQaWbwv1U+lT
 github.com/lunixbochs/vtclean v1.0.0 h1:xu2sLAri4lGiovBDQKxl5mrXyESr3gUr5m5SM5+LVb8=
 github.com/lunixbochs/vtclean v1.0.0/go.mod h1:pHhQNgMf3btfWnGBVipUOjRYhoOsdGqdm/+2c2E2WMI=
 github.com/mailru/easyjson v0.0.0-20190312143242-1de009706dbe/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
+github.com/mailru/easyjson v0.7.1 h1:mdxE1MF9o53iCb2Ghj1VfWvh7ZOwHpnVG/xwXrV90U8=
+github.com/mailru/easyjson v0.7.1/go.mod h1:KAzv3t3aY1NaHWoQz1+4F1ccyAH66Jk7yos7ldAVICs=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-isatty v0.0.3/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-isatty v0.0.7 h1:UvyT9uN+3r7yLEYSlJsbQGdsaB/a0DlgWP3pql6iwOc=
