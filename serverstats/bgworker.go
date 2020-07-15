@@ -7,6 +7,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
+	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
@@ -16,11 +17,14 @@ const (
 	RedisKeyLastHourlyRan = "serverstats_last_hourly_worker_ran"
 )
 
+var confDisableCompression = config.RegisterOption("yagpdb.serverstats.disable_compression", "Disables compression of serverstats", false)
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 func (p *Plugin) RunBackgroundWorker() {
-	compressor := &Compressor{}
-	go compressor.runLoop(p)
+	if !confDisableCompression.GetBool() {
+		compressor := &Compressor{}
+		go compressor.runLoop(p)
+	}
 
 	err := StartMigrationToV2Format()
 	if err != nil {
@@ -29,7 +33,11 @@ func (p *Plugin) RunBackgroundWorker() {
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
-	p.stopStatsLoop <- wg
+	if !confDisableCompression.GetBool() {
+		p.stopStatsLoop <- wg
+	} else {
+		wg.Done()
+	}
 }
 
 type Compressor struct {
