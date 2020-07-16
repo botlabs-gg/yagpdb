@@ -34,6 +34,11 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) handleInvalidateGuildCache(evt *eventsystem.EventData) (retry bool, err error) {
+	if evt.GS == nil {
+		// Opening DM channels can cause this
+		return
+	}
+
 	PubEvictGuild(evt.GS.ID)
 	return false, nil
 }
