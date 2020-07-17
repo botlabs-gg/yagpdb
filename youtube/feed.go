@@ -12,7 +12,9 @@ import (
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/feeds"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/youtube/v3"
 )
@@ -153,6 +155,7 @@ func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle st
 	}
 
 	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")
+	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
 
 	mqueue.QueueMessage(&mqueue.QueuedElement{
 		Guild:      parsedGuild,
