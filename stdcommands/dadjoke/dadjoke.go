@@ -47,7 +47,7 @@ var Command = &commands.YAGCommand{
 		if jsonErr != nil {
 			log.Fatal(jsonErr)
 		}
-		resp = fmt.Println(joke1.JOKE)
+		resp = joke1.joke1
 		return resp , nil
 	},
 }
