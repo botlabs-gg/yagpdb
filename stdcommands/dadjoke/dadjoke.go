@@ -1,7 +1,6 @@
 package dadjoke
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
