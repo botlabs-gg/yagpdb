@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		topic := doc.Find("#subtitle").Text()
+		topic := doc.Find("#card-content").Text()
 		return topic, nil
 	},
 }
