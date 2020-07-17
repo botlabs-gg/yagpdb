@@ -28,6 +28,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
+	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonas747/cardsagainstdiscord v1.1.1-0.20200617121715-2c969a853358
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.2.3

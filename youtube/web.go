@@ -208,32 +208,27 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 	result, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed reading body")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Println(string(result))
 
 	var parsed XMLFeed
 
 	err = xml.Unmarshal(result, &parsed)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed parsing feed body: ", string(result))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
+	err = p.CheckVideo(parsed.VideoId, parsed.ChannelID)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Failed locking channels lock")
+		web.CtxLogger(ctx).WithError(err).Error("Failed parsing checking new yotuube video")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer common.UnlockRedisKey(RedisChannelsLockKey)
-
-	var mn radix.MaybeNil
-	common.RedisPool.Do(radix.Cmd(&mn, "ZSCORE", "youtube_subbed_channels", parsed.ChannelID))
-	if mn.Nil {
-		return
-	}
-
-	// Reset the score to be instantly scanned
-	common.RedisPool.Do(radix.Cmd(nil, "ZADD", "youtube_subbed_channels", "0", parsed.ChannelID))
 }
 
 func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, query url.Values) {
