@@ -59,7 +59,7 @@ func main() {
 	}
 
 	if confLargeBotShardingEnabled.GetBool() {
-		orch.ShardBucketSize = 16
+		orch.ShardBucketSize = 2
 	}
 
 	updateScript := "updateversion.sh"
