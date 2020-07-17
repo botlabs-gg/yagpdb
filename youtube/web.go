@@ -212,8 +212,6 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(string(result))
-
 	var parsed XMLFeed
 
 	err = xml.Unmarshal(result, &parsed)
