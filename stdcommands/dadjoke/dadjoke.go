@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"encoding/json"
+	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
 )
 
@@ -46,7 +47,7 @@ var Command = &commands.YAGCommand{
 		if jsonErr != nil {
 			log.Fatal(jsonErr)
 		}
-		resp := fmt.Println(joke1.JOKE)
+		resp = fmt.Println(joke1.JOKE)
 		return resp , nil
 	},
 }
