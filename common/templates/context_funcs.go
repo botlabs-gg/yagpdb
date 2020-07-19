@@ -507,9 +507,14 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 
 }
 
-func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
+func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckGenericAPICall() {
 		return ""
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	targetID := targetUserID(target)
@@ -522,25 +527,38 @@ func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string 
 		return ""
 	}
 
-	// Check to see if we can save a API request here
-	c.GS.RLock()
-	ms := c.GS.Member(false, targetID)
-	hasRole := false
-	if ms != nil {
-		hasRole = common.ContainsInt64Slice(ms.Roles, role)
-	}
-	c.GS.RUnlock()
+	// Check to see if we can save a API request here, if this isn't delayed
+	if delay <= 0 {
+		c.GS.RLock()
+		ms := c.GS.Member(false, targetID)
+		hasRole := true
+		if ms != nil && ms.MemberSet {
+			hasRole = common.ContainsInt64Slice(ms.Roles, role)
+		}
+		c.GS.RUnlock()
 
-	if !hasRole {
+		if !hasRole {
+			return ""
+		}
+	}
+
+	if delay > 0 {
+		scheduledevents2.ScheduleAddRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
 		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role)
 	}
 
 	return ""
 }
 
-func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
+func (c *Context) tmplGiveRoleName(target interface{}, name string, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckGenericAPICall() {
 		return ""
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	targetID := targetUserID(target)
@@ -553,15 +571,21 @@ func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
 		return "no role by the name of " + name + " found"
 	}
 
-	// Maybe save a api request
-	ms := c.GS.Member(false, targetID)
-	if ms != nil {
-		if common.ContainsInt64Slice(ms.Roles, role.ID) {
-			return ""
+	// Maybe save an api request
+	if delay <= 0 {
+		ms := c.GS.Member(false, targetID)
+		if ms != nil {
+			if common.ContainsInt64Slice(ms.Roles, role.ID) {
+				return ""
+			}
 		}
 	}
 
-	common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role.ID)
+	if delay > 0 {
+		scheduledevents2.ScheduleAddRole(context.Background(), c.GS.ID, targetID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
+		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role.ID)
+	}
 
 	return ""
 }
@@ -649,9 +673,14 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 	return ""
 }
 
-func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
+func (c *Context) tmplAddRoleID(role interface{}, optionalArgs ...interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
+	}
+
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	if c.MS == nil {
@@ -663,17 +692,25 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 		return "", errors.New("No role id specified")
 	}
 
-	err := common.AddRoleDS(c.MS, rid)
-	if err != nil {
-		return "", err
+	if delay > 0 {
+		scheduledevents2.ScheduleAddRole(context.Background(), c.GS.ID, c.MS.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
+		if err := common.AddRoleDS(c.MS, rid); err != nil {
+			return "", err
+		}
 	}
 
 	return "", nil
 }
 
-func (c *Context) tmplAddRoleName(name string) (string, error) {
+func (c *Context) tmplAddRoleName(name string, optionalArgs ...interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
+	}
+	
+	delay := 0
+	if len(optionalArgs) > 0 {
+		delay = tmplToInt(optionalArgs[0])
 	}
 
 	if c.MS == nil {
@@ -685,8 +722,12 @@ func (c *Context) tmplAddRoleName(name string) (string, error) {
 		return "", errors.New("No Role with name " + name + " found")
 	}
 
-	if err := common.AddRoleDS(c.MS, role.ID); err != nil {
-		return "", err
+	if delay > 0 {
+		scheduledevents2.ScheduleAddRole(context.Background(), c.GS.ID, c.MS.ID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
+	} else {
+		if err := common.AddRoleDS(c.MS, role.ID); err != nil {
+			return "", err
+		}
 	}
 
 	return "", nil
@@ -714,7 +755,9 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 	if delay > 0 {
 		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
-		common.RemoveRoleDS(c.MS, rid)
+		if err := common.RemoveRoleDS(c.MS, rid); err != nil {
+			return "", err
+		}
 	}
 
 	return "", nil
