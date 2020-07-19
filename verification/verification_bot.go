@@ -153,6 +153,10 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	}
 
 	// schedule the kick and warnings
+	err = p.clearScheduledEvents(context.Background(), gs.ID, ms.ID) //clear old scheduled events
+	if err != nil {
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("failed clearing past scheduled warn/kick events.")
+	}
 	if conf.WarnUnverifiedAfter > 0 && conf.WarnMessage != "" {
 		scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
 	}
