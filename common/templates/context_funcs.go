@@ -421,18 +421,13 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 		return false, ErrTooManyCalls
 	}
 
-	c.GS.RLock()
-	defer c.GS.RUnlock()
+	role := c.findRoleByName(name)
+	if role == nil {
+		return false, nil
+	}
 
-	for _, r := range c.GS.Guild.Roles {
-		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
-				return true, nil
-			}
-
-			return false, nil
-
-		}
+	if common.ContainsInt64Slice(c.MS.Roles, role.ID) {
+		return true, nil
 	}
 
 	// Role not found, default to false
@@ -500,21 +495,14 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 		return false
 	}
 
-	c.GS.RLock()
-
-	for _, r := range c.GS.Guild.Roles {
-		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(ts.Roles, r.ID) {
-				c.GS.RUnlock()
-				return true
-			}
-
-			c.GS.RUnlock()
-			return false
-		}
+	role := c.findRoleByName(name)
+	if role == nil {
+		return false
 	}
 
-	c.GS.RUnlock()
+	if common.ContainsInt64Slice(ts.Roles, role.ID) {			
+		return true
+	}
 	return false
 
 }
@@ -637,39 +625,25 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 		return ""
 	}
 
-	role := int64(0)
-	c.GS.RLock()
-	for _, r := range c.GS.Guild.Roles {
-		if strings.EqualFold(r.Name, name) {
-			role = r.ID
-
-			// Maybe save a api request, but only if this is not delayed
-			if delay <= 0 {
-				ms := c.GS.Member(false, targetID)
-				hasRole := true
-				if ms != nil && ms.MemberSet {
-					hasRole = common.ContainsInt64Slice(ms.Roles, role)
-				}
-
-				if !hasRole {
-					c.GS.RUnlock()
-					return ""
-				}
-			}
-
-			break
-		}
+	role := c.findRoleByName(name)
+	if role == nil {
+		return "no role by the name of " + name + " found"
 	}
-	c.GS.RUnlock()
 
-	if role == 0 {
-		return ""
+	// Maybe save an api request
+	if delay <= 0 {
+		ms := c.GS.Member(false, targetID)
+		if ms != nil {
+			if common.ContainsInt64Slice(ms.Roles, role.ID) {
+				return ""
+			}
+		}
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
-		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role.ID)
 	}
 
 	return ""
@@ -706,21 +680,12 @@ func (c *Context) tmplAddRoleName(name string) (string, error) {
 		return "", nil
 	}
 
-	role := int64(0)
-	c.GS.RLock()
-	for _, r := range c.GS.Guild.Roles {
-		if strings.EqualFold(r.Name, name) {
-			role = r.ID
-			break
-		}
-	}
-	c.GS.RUnlock()
-
-	if role == 0 {
+	role := c.findRoleByName(name)
+	if role == nil {
 		return "", errors.New("No Role with name " + name + " found")
 	}
 
-	if err := common.AddRoleDS(c.MS, role); err != nil {
+	if err := common.AddRoleDS(c.MS, role.ID); err != nil {
 		return "", err
 	}
 
