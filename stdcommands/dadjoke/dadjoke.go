@@ -19,7 +19,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "DadJoke",
-	Description: "Generates a dad joke for no reason other than annoying the staff.",
+	Description: "Generates a dad joke using the API from icanhazdadjoke.",
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		req, err := http.NewRequest("GET", "https://icanhazdadjoke.com", nil)
@@ -30,14 +30,14 @@ var Command = &commands.YAGCommand{
 		req.Header.Set("Accept", "application/json")
 	
 		client := &http.Client{}
-		resp, err := client.Do(req)
+		apiResp, err := client.Do(req)
 		if err != nil {
 			log.Fatalln(err)
 		}
 	
-		defer resp.Body.Close()
+		defer apiResp.Body.Close()
 	
-		bytes, err := ioutil.ReadAll(resp.Body)
+		bytes, err := ioutil.ReadAll(apiResp.Body)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -46,7 +46,7 @@ var Command = &commands.YAGCommand{
 		if jsonErr != nil {
 			log.Fatal(jsonErr)
 		}
-		response := joke1.JOKE
-		return response  , nil
+		resp := joke1.JOKE
+		return resp  , nil
 	},
 }
