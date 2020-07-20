@@ -82,7 +82,7 @@ func (del *DeleteMessagesEffect) DataType() interface{} {
 }
 
 func (del *DeleteMessagesEffect) Name() (name string) {
-	return "Delete mutliple messages"
+	return "Delete multiple messages"
 }
 
 func (del *DeleteMessagesEffect) Description() (description string) {
@@ -307,7 +307,7 @@ func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
 type BanUserEffect struct{}
 
 type BanUserEffectData struct {
-	Duration     	  int
+	Duration          int
 	CustomReason      string `valid:",0,150,trimspace"`
 	MessageDeleteDays int
 }
@@ -395,7 +395,7 @@ func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 		&SettingDef{
 			Name:    "Duration (minutes, 0 for permanent)",
 			Key:     "Duration",
-			Min:  	 0,
+			Min:     0,
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
@@ -647,6 +647,75 @@ func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 
 	if settingsCast.Duration > 0 {
 		err := scheduledevents2.ScheduleRemoveRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+//////////////////////////////////////////////////////////////
+
+type RemoveRoleEffect struct{}
+
+type RemoveRoleEffectData struct {
+	Duration int `valid:",0,604800,trimspace"`
+	Role     int64
+}
+
+func (rr *RemoveRoleEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (rf *RemoveRoleEffect) DataType() interface{} {
+	return &RemoveRoleEffectData{}
+}
+
+func (rf *RemoveRoleEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Duration in seconds, 0 for permanent",
+			Key:     "Duration",
+			Default: 0,
+			Min:     0,
+			Max:     604800,
+			Kind:    SettingTypeInt,
+		},
+		&SettingDef{
+			Name: "Role",
+			Key:  "Role",
+			Kind: SettingTypeRole,
+		},
+	}
+}
+
+func (rf *RemoveRoleEffect) Name() (name string) {
+	return "Remove role"
+}
+
+func (rf *RemoveRoleEffect) Description() (description string) {
+	return "Removes the specified role from the user, optionally with a duration after which the role is added back to the user."
+}
+
+func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	settingsCast := settings.(*RemoveRoleEffectData)
+
+	if !common.ContainsInt64Slice(ctxData.MS.Roles, settingsCast.Role) {
+		return nil
+	}
+
+	err := common.RemoveRoleDS(ctxData.MS, settingsCast.Role)
+	if err != nil {
+		if code, _ := common.DiscordError(err); code != 0 {
+			return nil // discord responded with a proper error, we know that it didn't break
+		}
+
+		// discord was not the cause of the error, in some cases even if the gateway times out the action is performed so just in case, scehdule the role add
+	}
+
+	if settingsCast.Duration > 0 {
+		err := scheduledevents2.ScheduleAddRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
 		if err != nil {
 			return err
 		}

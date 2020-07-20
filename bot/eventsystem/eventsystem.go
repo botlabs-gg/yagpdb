@@ -326,7 +326,7 @@ func InitWorkers(totalShards int) {
 
 	workers = make([]chan *EventData, totalShards)
 	for i, _ := range workers {
-		workers[i] = make(chan *EventData, 5000)
+		workers[i] = make(chan *EventData, 1000)
 		go eventWorker(workers[i])
 	}
 }

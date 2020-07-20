@@ -2,13 +2,14 @@ package notifications
 
 import (
 	"fmt"
+	"html/template"
+	"net/http"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
 )
 
 func (p *Plugin) InitWeb() {
@@ -22,11 +23,11 @@ func (p *Plugin) InitWeb() {
 	getHandler := web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")
 	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifications config.")
 
-	web.CPMux.Handle(pat.Get("/notifications/general"), web.RequireGuildChannelsMiddleware(getHandler))
-	web.CPMux.Handle(pat.Get("/notifications/general/"), web.RequireGuildChannelsMiddleware(getHandler))
+	web.CPMux.Handle(pat.Get("/notifications/general"), getHandler)
+	web.CPMux.Handle(pat.Get("/notifications/general/"), getHandler)
 
-	web.CPMux.Handle(pat.Post("/notifications/general"), web.RequireGuildChannelsMiddleware(postHandler))
-	web.CPMux.Handle(pat.Post("/notifications/general/"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.Handle(pat.Post("/notifications/general"), postHandler)
+	web.CPMux.Handle(pat.Post("/notifications/general/"), postHandler)
 }
 
 func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} {

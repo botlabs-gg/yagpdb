@@ -20,6 +20,7 @@ var Command = &commands.YAGCommand{
 	Description: "A more simpler version of CustomEmbed, controlled completely using switches.",
 	ArgSwitches: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
+		&dcmd.ArgDef{Switch: "content", Help: "Text content for the message", Type: dcmd.String, Default: ""},
 
 		&dcmd.ArgDef{Switch: "title", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: ""},
@@ -30,11 +31,13 @@ var Command = &commands.YAGCommand{
 
 		&dcmd.ArgDef{Switch: "author", Help: "The text in the 'author' field", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "authoricon", Help: "Url to a icon for the 'author' field", Type: dcmd.String, Default: ""},
+		&dcmd.ArgDef{Switch: "authorurl", Help: "Url of the 'author' field", Type: dcmd.String, Default: ""},
 
 		&dcmd.ArgDef{Switch: "footer", Help: "Text content for the footer", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		content :=  data.Switch("content").Str()
 		embed := &discordgo.MessageEmbed{
 			Title:       data.Switch("title").Str(),
 			Description: data.Switch("desc").Str(),
@@ -54,6 +57,7 @@ var Command = &commands.YAGCommand{
 			embed.Author = &discordgo.MessageEmbedAuthor{
 				Name:    author,
 				IconURL: data.Switch("authoricon").Str(),
+				URL:	 data.Switch("authorurl").Str(),
 			}
 		}
 
@@ -93,7 +97,12 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		_, err := common.BotSession.ChannelMessageSendEmbed(cID, embed)
+		messageSend := &discordgo.MessageSend {
+				Content: 	 content,
+				Embed:	 	 embed,
+				AllowedMentions: discordgo.AllowedMentions{},
+			}
+		_, err := common.BotSession.ChannelMessageSendComplex(cID, messageSend)
 		if err != nil {
 			return err, err
 		}

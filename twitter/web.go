@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/dghubble/go-twitter/twitter"
+	"github.com/jonas747/go-twitter/twitter"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/twitter/models"
@@ -48,9 +48,6 @@ func (p *Plugin) InitWeb() {
 	mux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/twitter/*"), mux)
 	web.CPMux.Handle(pat.New("/twitter"), mux)
-
-	// Alll handlers here require guild channels present
-	mux.Use(web.RequireGuildChannelsMiddleware)
 
 	mainGetHandler := web.ControllerHandler(p.HandleTwitter, "cp_twitter")
 
