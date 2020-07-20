@@ -228,6 +228,8 @@ github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600 h
 github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200203181047-f9a62c68f600/go.mod h1:wrqNpMI8eZ2mtiQU3ZL1mdPNt43demnxzR+uvbWQcTU=
 github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200717220214-e1dea30281e4 h1:X/CREy9r4zae6G3YcvaPMTltWXXLWlWtQtpdi3UUuKs=
 github.com/jonas747/dshardorchestrator/v2 v2.0.1-0.20200717220214-e1dea30281e4/go.mod h1:wrqNpMI8eZ2mtiQU3ZL1mdPNt43demnxzR+uvbWQcTU=
+github.com/jonas747/dshardorchestrator/v2 v2.0.1 h1:80ymqyYNTucNPe0oEvpiGWeZiJdiRsdmUDXiiefpo68=
+github.com/jonas747/dshardorchestrator/v2 v2.0.1/go.mod h1:wrqNpMI8eZ2mtiQU3ZL1mdPNt43demnxzR+uvbWQcTU=
 github.com/jonas747/dstate v0.0.0-20190905110424-f2ed8c6c957d/go.mod h1:5xeu+zy7jwCfnCA+A9CaWOV4UhQzGHvBVZ381l+jarM=
 github.com/jonas747/dstate v1.0.4 h1:TS1YcPJelsVOqgU8u+SKkQevEMi0klG9Agugj+TE8+0=
 github.com/jonas747/dstate v1.0.4/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
