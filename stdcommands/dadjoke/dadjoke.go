@@ -2,7 +2,6 @@ package dadjoke
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"encoding/json"
 	"github.com/jonas747/dcmd"
