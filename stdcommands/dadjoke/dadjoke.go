@@ -2,7 +2,6 @@ package dadjoke
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"encoding/json"
 	"github.com/jonas747/dcmd"
@@ -26,7 +25,7 @@ var Command = &commands.YAGCommand{
 		//Define the request and website we will navigate to. 
 		req, err := http.NewRequest("GET", "https://icanhazdadjoke.com", nil)
 		if err != nil {
-			log.Fatalln(err)
+			return err , nil
 		}
 		//Set the headers that will be sent to the API to determine the response.
 		req.Header.Set("Accept", "application/json")
@@ -34,23 +33,23 @@ var Command = &commands.YAGCommand{
 		client := &http.Client{}
 		apiResp, err := client.Do(req)
 		if err != nil {
-			log.Fatalln(err)
+			return err, nil
 		}
 		//Once the rest of the function is done close our connection the API.
 		defer apiResp.Body.Close()
 		//Read the API response.
 		bytes, err := ioutil.ReadAll(apiResp.Body)
 		if err != nil {
-			log.Fatalln(err)
+			return err , nil
 		}
 		//Create our struct and unmarshal the content into it.
 		joke1 := Joke{}
 		jsonErr := json.Unmarshal(bytes,&joke1)
 		if jsonErr != nil {
-			log.Fatal(jsonErr)
+			return jsonErr , nil
 		}
 		//Return the joke - the other pieces are unneeded and ignored. 
 		resp := joke1.JOKE
-		return resp  , nil
+		return resp , nil
 	},
 }
