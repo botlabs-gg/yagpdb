@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/currentshard"
 	"github.com/jonas747/yagpdb/stdcommands/currenttime"
 	"github.com/jonas747/yagpdb/stdcommands/customembed"
+	"github.com/jonas747/yagpdb/stdcommands/dadjoke"
 	"github.com/jonas747/yagpdb/stdcommands/dcallvoice"
 	"github.com/jonas747/yagpdb/stdcommands/define"
 	"github.com/jonas747/yagpdb/stdcommands/dogfact"
@@ -76,6 +77,7 @@ func (p *Plugin) AddCommands() {
 		calc.Command,
 		topic.Command,
 		catfact.Command,
+		dadjoke.Command,
 		dogfact.Command,
 		advice.Command,
 		ping.Command,
