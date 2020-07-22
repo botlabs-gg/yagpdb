@@ -107,11 +107,13 @@ func (p *Plugin) syncWebSubs() {
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
 	var activeChannels []string
-	err = common.SQLX.Select(&activeChannels, "SELECT DISTINCT(channel_id) FROM youtube_channel_subscriptions;")
+	err = common.SQLX.Select(&activeChannels, "SELECT DISTINCT(youtube_channel_id) FROM youtube_channel_subscriptions;")
 	if err != nil {
 		logger.WithError(err).Error("Failed syncing websubs, failed retrieving subbed channels")
 		return
 	}
+
+	t := time.NewTicker(time.Second)
 
 	common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
 		for _, channel := range activeChannels {
@@ -124,7 +126,7 @@ func (p *Plugin) syncWebSubs() {
 					logger.WithError(err).WithField("yt_channel", channel).Error("Failed subscribing to channel")
 				}
 
-				time.Sleep(time.Second)
+				<-t.C
 			}
 		}
 

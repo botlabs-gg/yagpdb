@@ -240,7 +240,7 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 			return
 		}
 
-		expires := time.Now().Unix() + parsed
+		expires := time.Now().Add(time.Second * time.Duration(parsed-10)).Unix()
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
 		if err != nil {
