@@ -66,7 +66,6 @@ func (p *Plugin) InitWeb() {
 		}
 		return http.HandlerFunc(h)
 	})
-	subMux.Use(web.RequireGuildChannelsMiddleware)
 
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
@@ -258,7 +257,11 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	dbModel.TriggerType = int(triggerTypeFromForm(cmd.TriggerTypeForm))
 
 	// check low interval limits
-	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval < 10 {
+	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval <= 10 {
+		if dbModel.TimeTriggerInterval < 5 {
+			dbModel.TimeTriggerInterval = 5
+		}
+
 		ok, err := checkIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
 		if err != nil || !ok {
 			return templateData, err
@@ -323,7 +326,7 @@ func handleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 // allow for max 5 triggers with intervals of less than 10 minutes
 func checkIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templateData web.TemplateData) (ok bool, err error) {
-	num, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id != ? AND trigger_type = 5 AND time_trigger_interval < 10", guildID, cmdID)).CountG(ctx)
+	num, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id != ? AND trigger_type = 5 AND time_trigger_interval <= 10", guildID, cmdID)).CountG(ctx)
 	if err != nil {
 		return false, err
 	}

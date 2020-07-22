@@ -25,8 +25,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/moderation"), subMux)
 	web.CPMux.Handle(pat.New("/moderation/*"), subMux)
 
-	subMux.Use(web.RequireGuildChannelsMiddleware)
-
 	subMux.Use(web.RequireBotMemberMW) // need the bot's role
 	subMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionEmbedLinks))
 
@@ -66,6 +64,7 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 	newConfig.DefaultMuteDuration.Valid = true
+	newConfig.DefaultBanDeleteDays.Valid = true
 	templateData["ModConfig"] = newConfig
 
 	err := newConfig.Save(activeGuild.ID)

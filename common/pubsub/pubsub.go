@@ -17,6 +17,8 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Event struct {
@@ -92,20 +94,21 @@ func PollEvents() {
 	}
 }
 
+var metricsPubsubEvents = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_pubsub_events_handled_total",
+	Help: "Number of pubsub events handled",
+}, []string{"event"})
+
 func runPollEvents() error {
 	logger.Info("Listening for pubsub events")
 
-	client, err := radix.Dial("tcp", common.ConfRedis.GetString())
+	conn, err := radix.PersistentPubSubWithOpts("tcp", common.ConfRedis.GetString())
 	if err != nil {
 		return err
 	}
 
-	defer client.Close()
-
-	pubsubClient := radix.PubSub(client)
-
-	msgChan := make(chan radix.PubSubMessage)
-	if err := pubsubClient.Subscribe(msgChan, "events"); err != nil {
+	msgChan := make(chan radix.PubSubMessage, 100)
+	if err := conn.Subscribe(msgChan, "events"); err != nil {
 		return err
 	}
 
@@ -120,7 +123,7 @@ func runPollEvents() error {
 		handlersMU.RUnlock()
 	}
 
-	logger.Info("Stopped listening for pubsub events")
+	logger.Error("Stopped listening for pubsub events")
 	return nil
 }
 
@@ -177,6 +180,8 @@ func handleEvent(evt string) {
 			logger.Error("Recovered from panic in pubsub event handler", r, "\n", stack)
 		}
 	}()
+
+	metricsPubsubEvents.With(prometheus.Labels{"event": name}).Inc()
 
 	for _, handler := range eventHandlers {
 		if handler.evt != name {

@@ -47,10 +47,10 @@ func (p *Plugin) InitWeb() {
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_verification_settings")
 	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated verification settings")
 
-	web.CPMux.Handle(pat.Get("/verification"), web.RequireBotMemberMW(web.RequireGuildChannelsMiddleware(getHandler)))
-	web.CPMux.Handle(pat.Get("/verification/"), web.RequireBotMemberMW(web.RequireGuildChannelsMiddleware(getHandler)))
+	web.CPMux.Handle(pat.Get("/verification"), web.RequireBotMemberMW(getHandler))
+	web.CPMux.Handle(pat.Get("/verification/"), web.RequireBotMemberMW(getHandler))
 
-	web.CPMux.Handle(pat.Post("/verification"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.Handle(pat.Post("/verification"), postHandler)
 
 	getVerifyPageHandler := web.ControllerHandler(p.handleGetVerifyPage, "verification_verify_page")
 	postVerifyPageHandler := web.ControllerPostHandler(p.handlePostVerifyPage, getVerifyPageHandler, nil, "")

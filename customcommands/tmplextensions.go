@@ -131,7 +131,11 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 
 	switch pa.parsed[index].Def.Type.(type) {
 	case *dcmd.IntArg:
-		return pa.parsed[index].Int()
+		i := pa.parsed[index]
+		if i.Value == nil {
+			return nil
+		}
+		return i.Int()
 	case *dcmd.ChannelArg:
 		i := pa.parsed[index].Value
 		if i == nil {

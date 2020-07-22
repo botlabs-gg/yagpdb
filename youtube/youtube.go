@@ -3,6 +3,7 @@ package youtube
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"sync"
@@ -114,7 +115,8 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("Go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 
 	logger.Info("Websub: Subscribed to channel ", ytChannelID)

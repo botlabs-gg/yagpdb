@@ -36,7 +36,7 @@ type QueuedAction struct {
 
 func (mu *serverMemberStatsUpdater) run() {
 
-	t := time.NewTicker(time.Minute * 5)
+	t := time.NewTicker(time.Minute * 10)
 	for {
 		select {
 		case <-t.C:
