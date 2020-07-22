@@ -73,7 +73,7 @@ func (p *Plugin) runWebsubChecker() {
 }
 
 func (p *Plugin) checkExpiringWebsubs() {
-	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
+	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 	if err != nil {
 		logger.WithError(err).Error("Failed locking channels lock")
 		return
@@ -99,24 +99,27 @@ func (p *Plugin) checkExpiringWebsubs() {
 }
 
 func (p *Plugin) syncWebSubs() {
-	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
-	if err != nil {
-		logger.WithError(err).Error("Failed locking channels lock")
-		return
-	}
-	defer common.UnlockRedisKey(RedisChannelsLockKey)
-
 	var activeChannels []string
-	err = common.SQLX.Select(&activeChannels, "SELECT DISTINCT(youtube_channel_id) FROM youtube_channel_subscriptions;")
+	err := common.SQLX.Select(&activeChannels, "SELECT DISTINCT(youtube_channel_id) FROM youtube_channel_subscriptions;")
 	if err != nil {
 		logger.WithError(err).Error("Failed syncing websubs, failed retrieving subbed channels")
 		return
 	}
 
-	t := time.NewTicker(time.Second)
-
 	common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
+
+		locked := false
+
 		for _, channel := range activeChannels {
+			if !locked {
+				err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
+				if err != nil {
+					logger.WithError(err).Error("Failed locking channels lock")
+					return err
+				}
+				locked = true
+			}
+
 			mn := radix.MaybeNil{}
 			client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
 			if mn.Nil {
@@ -126,8 +129,15 @@ func (p *Plugin) syncWebSubs() {
 					logger.WithError(err).WithField("yt_channel", channel).Error("Failed subscribing to channel")
 				}
 
-				<-t.C
+				common.UnlockRedisKey(RedisChannelsLockKey)
+				locked = false
+
+				time.Sleep(time.Second)
 			}
+		}
+
+		if locked {
+			common.UnlockRedisKey(RedisChannelsLockKey)
 		}
 
 		return nil
@@ -211,7 +221,7 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, yout
 	sub.YoutubeChannelName = cResp.Items[0].Snippet.Title
 	sub.YoutubeChannelID = cResp.Items[0].Id
 
-	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
+	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +238,7 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, yout
 
 // maybeRemoveChannelWatch checks the channel for subs, if it has none then it removes it from the watchlist in redis.
 func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
-	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
+	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 	if err != nil {
 		return
 	}
@@ -264,7 +274,7 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 // maybeAddChannelWatch adds a channel watch to redis, if there wasn't one before
 func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 	if lock {
-		err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5)
+		err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 		if err != nil {
 			return common.ErrWithCaller(err)
 		}
