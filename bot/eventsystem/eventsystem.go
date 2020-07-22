@@ -87,16 +87,18 @@ func EmitEvent(data *EventData, evt Event) {
 	runEvents(h[0], data)
 	runEvents(h[1], data)
 
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				stack := string(debug.Stack())
-				logrus.WithField(logrus.ErrorKey, err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
-			}
-		}()
+	if len(h[2]) > 0 {
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					stack := string(debug.Stack())
+					logrus.WithField(logrus.ErrorKey, err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
+				}
+			}()
 
-		runEvents(h[2], data)
-	}()
+			runEvents(h[2], data)
+		}()
+	}
 }
 
 func runEvents(h []*Handler, data *EventData) {
