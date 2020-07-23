@@ -135,6 +135,10 @@ func RefreshMuteOverrides(guildID int64) {
 }
 
 func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err error) {
+	if !evt.HasFeatureFlag(featureFlagMuteRoleManaged) {
+		return false, nil
+	}
+
 	var channel *discordgo.Channel
 	if evt.Type == eventsystem.EventChannelCreate {
 		channel = evt.ChannelCreate().Channel
