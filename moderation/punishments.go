@@ -10,6 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -439,15 +440,27 @@ func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute M
 
 	newMemberRoles := make([]string, 0, len(currentRoles)+len(config.MuteRemoveRoles))
 
+	gs := bot.State.Guild(true, config.GuildID)
+	gs.RLock()
+	defer gs.RUnlock()
+
+	botState := gs.MemberCopy(true, common.BotUser.ID)
+
+	yagHighest := bot.MemberHighestRole(gs, botState)
+
 	for _, v := range currentRoles {
 		if v != config.IntMuteRole() {
-			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
+			if dutil.IsRoleAbove(yagHighest, gs.Role(true, v)) {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
+			}
 		}
 	}
 
 	for _, v := range mute.RemovedRoles {
 		if !common.ContainsInt64Slice(currentRoles, v) {
-			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
+			if dutil.IsRoleAbove(yagHighest, gs.Role(true, v)) {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
+			}
 		}
 	}
 
