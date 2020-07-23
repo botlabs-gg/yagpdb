@@ -159,7 +159,7 @@ func (se *ScheduledEvents) check() {
 	defer se.currentlyProcessingMU.Unlock()
 
 	var pairs []string
-	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", 0, time.Now().UTC().Unix()))
+	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", "-inf", time.Now().UTC().Unix()))
 	if err != nil {
 		logger.WithError(err).Error("failed checking for scheduled events to process")
 		return
