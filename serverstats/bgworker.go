@@ -123,6 +123,8 @@ func (c *Compressor) RunCompression(t time.Time) error {
 		if err != nil {
 			return errors.WithStackIf(err)
 		}
+
+		time.Sleep(time.Millisecond * 10)
 	}
 
 	// process the message stats only
@@ -135,6 +137,8 @@ func (c *Compressor) RunCompression(t time.Time) error {
 		if err != nil {
 			return errors.WithStackIf(err)
 		}
+
+		time.Sleep(time.Millisecond * 10)
 	}
 
 	return nil
