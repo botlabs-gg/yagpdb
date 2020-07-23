@@ -445,7 +445,10 @@ func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute M
 	defer gs.RUnlock()
 
 	botState := gs.MemberCopy(true, common.BotUser.ID)
-
+	guildRoles := make([]int64, len(gs.Guild.Roles))
+	for k, e := range gs.Guild.Roles {
+		guildRoles[k] = e.ID
+	}
 	yagHighest := bot.MemberHighestRole(gs, botState)
 
 	for _, v := range currentRoles {
@@ -458,8 +461,10 @@ func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute M
 
 	for _, v := range mute.RemovedRoles {
 		if !common.ContainsInt64Slice(currentRoles, v) {
-			if dutil.IsRoleAbove(yagHighest, gs.Role(true, v)) {
-				newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
+			if common.ContainsInt64Slice(guildRoles, v) {
+				if dutil.IsRoleAbove(yagHighest, gs.Role(true, v)) {
+					newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
+				}
 			}
 		}
 	}
