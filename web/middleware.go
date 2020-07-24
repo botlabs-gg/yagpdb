@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -271,8 +270,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		if err != nil {
 			return
 		}
-
-		sort.Sort(dutil.Roles(guild.Roles))
 
 		entry := CtxLogger(ctx).WithField("g", guildID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)

@@ -108,6 +108,7 @@ func GetFullGuild(guildID int64) (*discordgo.Guild, error) {
 		}
 
 		sort.Sort(dutil.Channels(guild.Channels))
+		sort.Sort(dutil.Roles(guild.Roles))
 
 		return guild, nil
 	})
