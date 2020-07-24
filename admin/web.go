@@ -16,8 +16,8 @@ import (
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
-) 
-  
+)
+
 // InitWeb implements web.Plugin
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../admin/assets/bot_admin_panel.html", "templates/plugins/bot_admin_panel.html")
@@ -43,11 +43,11 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Get("/host/:host/pid/:pid/allocs"), p.ProxyGetInternalAPI("/debug/pprof/allocs"))
 
 	// Control routes
-	mux.Handle(pat.Post("/host/:host/pid/:pid/shutdown"), web.ControllerPostHandler(p.handleShutdown, panelHandler, nil, ""))
+	mux.Handle(pat.Post("/host/:host/pid/:pid/shutdown"), web.ControllerPostHandler(p.handleShutdown, panelHandler, nil))
 
 	// Orhcestrator controls
-	mux.Handle(pat.Post("/host/:host/pid/:pid/updateversion"), web.ControllerPostHandler(p.handleUpgrade, panelHandler, nil, ""))
-	mux.Handle(pat.Post("/host/:host/pid/:pid/migratenodes"), web.ControllerPostHandler(p.handleMigrateNodes, panelHandler, nil, ""))
+	mux.Handle(pat.Post("/host/:host/pid/:pid/updateversion"), web.ControllerPostHandler(p.handleUpgrade, panelHandler, nil))
+	mux.Handle(pat.Post("/host/:host/pid/:pid/migratenodes"), web.ControllerPostHandler(p.handleMigrateNodes, panelHandler, nil))
 	mux.Handle(pat.Get("/host/:host/pid/:pid/deployedversion"), http.HandlerFunc(p.handleLaunchNodeVersion))
 
 	// Node routes
@@ -56,7 +56,7 @@ func (p *Plugin) InitWeb() {
 
 	getConfigHandler := web.ControllerHandler(p.handleGetConfig, "bot_admin_config")
 	mux.Handle(pat.Get("/config"), getConfigHandler)
-	mux.Handle(pat.Post("/config/edit/:key"), web.ControllerPostHandler(p.handleEditConfig, getConfigHandler, nil, ""))
+	mux.Handle(pat.Post("/config/edit/:key"), web.ControllerPostHandler(p.handleEditConfig, getConfigHandler, nil))
 }
 
 type Host struct {

@@ -111,6 +111,7 @@ func Init() error {
 
 	logger.Info("Initializing core schema")
 	InitSchemas("core_configs", CoreServerConfDBSchema)
+	initQueuedSchemas()
 
 	return err
 }

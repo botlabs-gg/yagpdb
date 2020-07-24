@@ -13,11 +13,17 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/sirupsen/logrus"
 	"goji.io/pattern"
 )
 
 var ErrTokenExpired = errors.New("OAUTH2 Token expired")
+
+var panelLogKeyCore = cplogs.RegisterActionFormat(&cplogs.ActionFormat{
+	Key:          "save_core_config",
+	FormatString: "Updated core config",
+})
 
 func SetContextTemplateData(ctx context.Context, data map[string]interface{}) context.Context {
 	// Check for existing data
@@ -233,6 +239,17 @@ func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool
 	}
 
 	return false, false
+}
+
+func NewLogEntryFromContext(ctx context.Context, action string, params ...*cplogs.Param) *cplogs.LogEntry {
+	user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
+	if !ok {
+		return nil
+	}
+
+	g := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+
+	return cplogs.NewEntry(g.ID, user.ID, user.Username, action, params...)
 }
 
 func StaticRoleProvider(roles []int64) func(guildID, userID int64) []int64 {

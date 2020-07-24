@@ -3,6 +3,8 @@ package cplogs
 import (
 	"fmt"
 	"time"
+
+	"github.com/jonas747/yagpdb/common"
 )
 
 const DBSchema = `
@@ -28,6 +30,10 @@ CREATE TABLE IF NOT EXISTS panel_logs (
 	PRIMARY KEY(guild_id, local_id)
 )
 `
+
+func init() {
+	common.RegisterDBSchemas("cplogs", DBSchema)
+}
 
 type rawLogEntry struct {
 	GuildID int64 `db:"guild_id"`
@@ -142,6 +148,22 @@ func (l *LogEntry) toRawLogEntry() *rawLogEntry {
 	return rawEntry
 }
 
+func NewEntry(guildID int64, authorID int64, authorUsername string, action string, params ...*Param) *LogEntry {
+	entry := &LogEntry{
+		CreatedAt:      time.Now(),
+		GuildID:        guildID,
+		AuthorID:       authorID,
+		AuthorUsername: authorUsername,
+
+		Action: &LogAction{
+			Key:    action,
+			Params: params,
+		},
+	}
+
+	return entry
+}
+
 type LogAction struct {
 	Key       string
 	FormatStr string
@@ -152,7 +174,7 @@ func (l *LogAction) String() string {
 	f := l.FormatStr
 	args := []interface{}{}
 	for _, v := range l.Params {
-		args = append(args, v)
+		args = append(args, v.Value)
 	}
 
 	return fmt.Sprintf(f, args...)
