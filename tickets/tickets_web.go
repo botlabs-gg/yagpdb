@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/tickets/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -27,6 +28,8 @@ type FormData struct {
 	TicketOpenMSG                      string  `valid:"template,10000"`
 }
 
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "tickets_updated_settings", FormatString: "Updated ticket settings"})
+
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../tickets/assets/tickets_control_panel.html", "templates/plugins/tickets_control_panel.html")
 
@@ -37,7 +40,7 @@ func (p *Plugin) InitWeb() {
 	})
 
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_tickets_settings")
-	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated ticket settings")
+	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{})
 
 	web.CPMux.Handle(pat.Get("/tickets/settings"), getHandler)
 	web.CPMux.Handle(pat.Get("/tickets/settings/"), getHandler)
@@ -86,6 +89,9 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	}
 
 	err := model.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
+	}
 	return templateData, err
 }
 
