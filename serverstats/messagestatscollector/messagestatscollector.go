@@ -1,12 +1,12 @@
 package messagestatscollector
 
 import (
-	"context"
+	"strconv"
 	"time"
 
-	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -72,38 +72,34 @@ func (c *Collector) handleIncMessage(msg *discordgo.Message) {
 	}
 }
 
+func KeyMessageStats(guildID int64, year, day int) string {
+	return "serverstats_message_stats:" + strconv.FormatInt(guildID, 10) + ":" + strconv.Itoa(year) + ":" + strconv.Itoa(day)
+}
+func KeyActiveGuilds(year, day int) string {
+	return "serverstats_active_guilds:" + strconv.Itoa(year) + ":" + strconv.Itoa(day)
+}
+
 func (c *Collector) flush() error {
 	c.l.Infof("message stats collector is flushing: lc: %d", len(c.channels))
 	if len(c.channels) < 1 {
 		return nil
 	}
 
-	const updateQuery = `
-	INSERT INTO server_stats_hourly_periods_messages (guild_id, t, channel_id, count) 
-	VALUES ($1, $2, $3, $4)
-	ON CONFLICT (guild_id, channel_id, t) DO UPDATE
-	SET count = server_stats_hourly_periods_messages.count + $4`
-
-	tx, err := common.PQ.BeginTx(context.Background(), nil)
-	if err != nil {
-		return errors.WithStackIf(err)
-	}
-
-	for _, v := range c.channels {
-		_, err := tx.Exec(updateQuery, v.GuildID, RoundHour(time.Now()), v.ChannelID, v.Count)
+	t := time.Now().UTC()
+	day := t.YearDay()
+	year := t.Year()
+	for k, v := range c.channels {
+		err := common.RedisPool.Do(radix.FlatCmd(nil, "ZINCRBY", KeyMessageStats(v.GuildID, year, day), v.Count, v.ChannelID))
 		if err != nil {
-			tx.Rollback()
-			return errors.WithStackIf(err)
+			return err
 		}
-	}
 
-	err = tx.Commit()
-	if err != nil {
-		return errors.WithStackIf(err)
+		err = common.RedisPool.Do(radix.FlatCmd(nil, "SADD", KeyActiveGuilds(year, day), v.GuildID))
+		if err != nil {
+			return err
+		}
+		delete(c.channels, k)
 	}
-
-	// reset buffers
-	c.channels = make(map[int64]*entry)
 
 	return nil
 }
