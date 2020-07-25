@@ -1,12 +1,13 @@
 package notifications
 
 import (
+	"strconv"
+	"strings"
+
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
 	"golang.org/x/net/context"
-	"strconv"
-	"strings"
 )
 
 const (

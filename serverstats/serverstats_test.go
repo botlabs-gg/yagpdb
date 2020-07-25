@@ -3,9 +3,10 @@ package serverstats
 import (
 	"database/sql"
 	"fmt"
-	"github.com/jonas747/yagpdb/common"
 	"os"
 	"testing"
+
+	"github.com/jonas747/yagpdb/common"
 
 	"github.com/jonas747/yagpdb/common/testutils"
 )

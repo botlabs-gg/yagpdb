@@ -1,11 +1,12 @@
 package safebrowsing
 
 import (
+	"net/http"
+	"sync"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"goji.io/pat"
-	"net/http"
-	"sync"
 )
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)

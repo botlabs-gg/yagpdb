@@ -1,10 +1,11 @@
 package tickets
 
-import "testing"
+import (
+	"fmt"
+	"testing"
 
-import "github.com/jonas747/discordgo"
-
-import "fmt"
+	"github.com/jonas747/discordgo"
+)
 
 func TestInheritPermissionsFromCategory(t *testing.T) {
 	cases := []struct {

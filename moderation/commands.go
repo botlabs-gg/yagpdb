@@ -147,7 +147,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			
+
 			ddays := int(config.DefaultBanDeleteDays.Int64)
 			if parsed.Switches["ddays"].Value != nil {
 				ddays = parsed.Switches["ddays"].Int()
@@ -774,10 +774,10 @@ var ModerationCommands = []*commands.YAGCommand{
 					return nil, err
 				}
 			}
-			
+
 			// cancel the event to add the role
 			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
-			
+
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {

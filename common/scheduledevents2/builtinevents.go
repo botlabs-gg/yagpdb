@@ -98,8 +98,8 @@ func handleRemoveMemberRole(evt *models.ScheduledEvent, data interface{}) (retry
 }
 
 type AddRoleData struct {
-	UserID  int64 `json:"user_id"`
-	RoleID  int64 `json:"role_id"`
+	UserID int64 `json:"user_id"`
+	RoleID int64 `json:"role_id"`
 }
 
 func ScheduleAddRole(ctx context.Context, guildID, userID, roleID int64, when time.Time) error {
@@ -111,8 +111,8 @@ func ScheduleAddRole(ctx context.Context, guildID, userID, roleID int64, when ti
 
 	// add the scheduled event for it
 	err = ScheduleEvent("std_add_member_role", guildID, when, &AddRoleData{
-		UserID:  userID,
-		RoleID:  roleID,
+		UserID: userID,
+		RoleID: roleID,
 	})
 
 	if err != nil {

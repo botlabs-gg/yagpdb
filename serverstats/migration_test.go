@@ -2,9 +2,10 @@ package serverstats
 
 import (
 	"context"
-	"github.com/jonas747/yagpdb/common/testutils"
 	"testing"
 	"time"
+
+	"github.com/jonas747/yagpdb/common/testutils"
 )
 
 func TestMigrationToV2FormatMsgs(t *testing.T) {

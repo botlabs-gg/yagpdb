@@ -4,6 +4,7 @@ package tickets
 
 import (
 	"fmt"
+
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/tickets/models"

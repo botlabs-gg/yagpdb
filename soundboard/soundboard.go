@@ -4,12 +4,13 @@ package soundboard
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/soundboard/models"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/net/context"
-	"os"
 )
 
 type Plugin struct{}

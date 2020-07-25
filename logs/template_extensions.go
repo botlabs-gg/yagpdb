@@ -2,9 +2,10 @@ package logs
 
 import (
 	"context"
+	"time"
+
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common/templates"
-	"time"
 )
 
 func init() {

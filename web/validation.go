@@ -127,7 +127,7 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			keep, err = ValidateIntField(cv.Int64, validationTag, guild, false)
 			if err == nil && !keep {
 				vField.Set(reflect.ValueOf(newNullInt))
-			} 
+			}
 		case float64:
 			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(cv, min, max)

@@ -3,6 +3,7 @@ package moderation
 import (
 	"database/sql"
 	"fmt"
+
 	//"github.com/jonas747/discordgo"
 	//"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/bot"
@@ -63,7 +64,7 @@ func TopWarns(guildID int64, offset, limit int) ([]*WarnRankEntry, error) {
 			username = fmt.Sprintf("%s", u)
 			break
 		}
-		
+
 		result = append(result, &WarnRankEntry{
 			Rank:      rank,
 			UserID:    userID,

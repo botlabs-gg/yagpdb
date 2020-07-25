@@ -3,13 +3,14 @@ package rsvp
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"sync"
+
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/timezonecompanion/trules"
 	"github.com/olebedev/when"
 	"github.com/olebedev/when/rules"
 	wcommon "github.com/olebedev/when/rules/common"
 	"github.com/olebedev/when/rules/en"
-	"sync"
 )
 
 var (
