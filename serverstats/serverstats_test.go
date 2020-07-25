@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/jonas747/yagpdb/common"
-
 	"github.com/jonas747/yagpdb/common/testutils"
 )
 

@@ -7,10 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jonas747/yagpdb/common/config"
-
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common/config"
 )
 
 func GenCommandsDocs() {
