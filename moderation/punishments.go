@@ -2,6 +2,7 @@ package moderation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -502,6 +503,84 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 	}
 
 	return nil
+}
+
+func SlowModeFunc(config *Config, guildID int64, channel *dstate.ChannelState, author *discordgo.User, duration int, RL int) (interface{}, error) {
+	channels, err := common.BotSession.GuildChannels(guildID)
+	if err != nil {
+		return nil, err
+	}
+
+	var channelData *discordgo.Channel
+	for _, k := range channels {
+		if k.ID == channel.ID {
+			channelData = k
+			break
+		}
+	}
+
+	if channelData == nil {
+		return nil, errors.New("Couldn't find channel.")
+	}
+
+	_, err = seventsmodels.ScheduledEvents(
+		qm.Where("event_name='moderation_set_channel_ratelimit'"),
+		qm.Where("guild_id = ?", guildID),
+		qm.Where("(data->>'channel_id')::bigint = ?", channel.ID)).DeleteAll(context.Background(), common.PQ)
+	common.LogIgnoreError(err, "[moderation] failed clearing slowmode events", nil)
+
+	if channelData.RateLimitPerUser == RL {
+		if RL == 0 {
+			return "This channel is not in slowmode.", nil
+		}
+		return fmt.Sprintf("This channel's slowmode is already at %d ratelimit.", RL), nil
+	}
+
+	edit := &discordgo.ChannelEdit{
+		RateLimitPerUser: func(i int) *int { return &i }(RL),
+	}
+
+	_, err = common.BotSession.ChannelEditComplex(channel.ID, edit)
+	if err != nil {
+		return nil, err
+	}
+
+	output := "This channel is now in slowmode."
+	logLink := CreateLogs(guildID, channel.ID, author)
+	action := MASlowmode
+	reason := fmt.Sprintf("Slowed channel <#%d> to a ratelimit of 1 message per user every %d seconds.", channel.ID, RL)
+
+	if RL == 0 {
+		action = MARemoveSlow
+		output = "This channel is no longer in slowmode."
+		reason = fmt.Sprintf("Removed channel <#%d> slowmode.", channel.ID)
+	}
+
+	action.Footer = "Duration: "
+
+	if duration > 0 {
+		dur := time.Now().Add(time.Minute * time.Duration(duration))
+		durHuman := common.HumanizeDuration(common.DurationPrecisionMinutes, time.Duration(duration)*time.Minute)
+		action.Footer += durHuman
+		output = fmt.Sprintf("This channel is now in slowmode for %s.", durHuman)
+		err = scheduledevents2.ScheduleEvent("moderation_set_channel_ratelimit", guildID, dur, &ChannelRatelimitData{
+			ChannelID:  channel.ID,
+			OriginalRL: channelData.RateLimitPerUser,
+			CS:         channel,
+		})
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed scheduling remove of slowmode")
+		}
+	} else {
+		action.Footer += "permanent"
+	}
+
+	err = CreateModlogEmbed(config, author, action, channel, reason, logLink)
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	}
+
+	return output, nil
 }
 
 func CreateLogs(guildID, channelID int64, user *discordgo.User) string {

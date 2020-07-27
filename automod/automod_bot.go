@@ -33,7 +33,8 @@ func (p *Plugin) BotInit() {
 }
 
 type ResetChannelRatelimitData struct {
-	ChannelID int64
+	ChannelID  int64
+	OriginalRL int
 }
 
 func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
@@ -543,9 +544,8 @@ func FindFetchGuildList(gs *dstate.GuildState, listID int64) (*models.AutomodLis
 func handleResetChannelRatelimit(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	dataCast := data.(*ResetChannelRatelimitData)
 
-	rl := 0
 	edit := &discordgo.ChannelEdit{
-		RateLimitPerUser: &rl,
+		RateLimitPerUser: &dataCast.OriginalRL,
 	}
 
 	_, err = common.BotSession.ChannelEditComplex(dataCast.ChannelID, edit)

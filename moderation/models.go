@@ -24,11 +24,11 @@ type Config struct {
 	KickMessage          string `valid:"template,5000"`
 
 	// Ban
-	BanEnabled        	bool
-	BanCmdRoles       	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	BanReasonOptional 	bool
-	BanMessage        	string `valid:"template,5000"`
-	DefaultBanDeleteDays    sql.NullInt64 `gorm:"default:1" valid:"0,7"`
+	BanEnabled           bool
+	BanCmdRoles          pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	BanReasonOptional    bool
+	BanMessage           string        `valid:"template,5000"`
+	DefaultBanDeleteDays sql.NullInt64 `gorm:"default:1" valid:"0,7"`
 
 	// Mute/unmute
 	MuteEnabled             bool
@@ -52,12 +52,13 @@ type Config struct {
 	WarnMessage            string `valid:"template,5000"`
 
 	// Misc
-	CleanEnabled  bool
-	ReportEnabled bool
-	ActionChannel string `valid:"channel,true"`
-	ReportChannel string `valid:"channel,true"`
-	LogUnbans     bool
-	LogBans       bool
+	CleanEnabled           bool
+	ReportEnabled          bool
+	ActionChannel          string `valid:"channel,true"`
+	ReportChannel          string `valid:"channel,true"`
+	LogUnbans              bool
+	LogBans                bool
+	SlowmodeCommandEnabled bool
 
 	GiveRoleCmdEnabled bool
 	GiveRoleCmdModlog  bool

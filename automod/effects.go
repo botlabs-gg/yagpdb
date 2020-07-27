@@ -789,7 +789,20 @@ func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, setti
 		RateLimitPerUser: &rl,
 	}
 
-	_, err := common.BotSession.ChannelEditComplex(ctxData.CS.ID, edit)
+	channels, err := common.BotSession.GuildChannels(ctxData.GS.ID)
+	if err != nil {
+		return nil
+	}
+
+	var channelData *discordgo.Channel
+	for _, k := range channels {
+		if k.ID == ctxData.CS.ID {
+			channelData = k
+			break
+		}
+	}
+
+	_, err = common.BotSession.ChannelEditComplex(ctxData.CS.ID, edit)
 	if err != nil {
 		return err
 	}
@@ -811,7 +824,8 @@ func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, setti
 
 	// add the scheduled event for it
 	err = scheduledevents2.ScheduleEvent("amod2_reset_channel_ratelimit", ctxData.GS.ID, time.Now().Add(time.Second*time.Duration(s.Duration)), &ResetChannelRatelimitData{
-		ChannelID: ctxData.CS.ID,
+		ChannelID:  ctxData.CS.ID,
+		OriginalRL: channelData.RateLimitPerUser,
 	})
 
 	if err != nil {

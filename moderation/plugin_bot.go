@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -47,6 +48,7 @@ func (p *Plugin) BotInit() {
 	// scheduledevents.RegisterEventHandler("mod_unban", handleUnbanLegacy)
 	scheduledevents2.RegisterHandler("moderation_unmute", ScheduledUnmuteData{}, handleScheduledUnmute)
 	scheduledevents2.RegisterHandler("moderation_unban", ScheduledUnbanData{}, handleScheduledUnban)
+	scheduledevents2.RegisterHandler("moderation_set_channel_ratelimit", ChannelRatelimitData{}, handleResetChannelRatelimit)
 	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
 	scheduledevents2.RegisterLegacyMigrater("mod_unban", handleMigrateScheduledUnban)
 
@@ -67,6 +69,12 @@ type ScheduledUnmuteData struct {
 
 type ScheduledUnbanData struct {
 	UserID int64 `json:"user_id"`
+}
+
+type ChannelRatelimitData struct {
+	ChannelID  int64 `json:"channel_id"`
+	OriginalRL int
+	CS         *dstate.ChannelState
 }
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
@@ -541,6 +549,67 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
 		return scheduledevents2.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
+}
+
+func handleResetChannelRatelimit(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	dataCast := data.(*ChannelRatelimitData)
+
+	g := bot.State.Guild(true, evt.GuildID)
+	if g == nil {
+		logger.WithField("guild", evt.GuildID).Error("Reset slowmode scheduled for guild not in state")
+		return false, nil
+	}
+
+	channels, err := common.BotSession.GuildChannels(evt.GuildID)
+	if err != nil {
+		return false, err
+	}
+
+	var channel *discordgo.Channel
+	for _, e := range channels {
+		if e.ID == dataCast.ChannelID {
+			channel = e
+			break
+		}
+	}
+
+	if channel == nil {
+		logger.WithField("guild", evt.GuildID).Error("Reset slowmode scheduled for non existent channel")
+		return false, nil
+	}
+
+	if channel.RateLimitPerUser != dataCast.OriginalRL {
+		edit := &discordgo.ChannelEdit{
+			RateLimitPerUser: &dataCast.OriginalRL,
+		}
+
+		_, err = common.BotSession.ChannelEditComplex(dataCast.ChannelID, edit)
+		if err != nil {
+			return scheduledevents2.CheckDiscordErrRetry(err), err
+		}
+	}
+
+	config, err := GetConfig(evt.GuildID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", evt.GuildID).Error("Failed retrieving config")
+		return false, nil
+	}
+
+	author := common.BotUser
+	reason := "Timed slowmode expired"
+	action := MARemoveSlow
+
+	if dataCast.OriginalRL != 0 {
+		action = MASlowmode
+		reason = fmt.Sprintf("The slowmode in the channel <#%d> has been adjusted to it's original state of %d messages per user per second, because the changed slowmode expired.", dataCast.ChannelID, dataCast.OriginalRL)
+	}
+
+	err = CreateModlogEmbed(config, author, action, dataCast.CS, reason, "")
+	if err != nil {
+		logger.WithError(err).WithField("guild", evt.GuildID).Error("Failed sending " + action.Prefix + " log message")
 	}
 
 	return false, nil

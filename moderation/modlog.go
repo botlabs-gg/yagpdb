@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 )
 
@@ -33,11 +34,13 @@ var (
 	MABanned     = ModlogAction{Prefix: "Banned", Emoji: "🔨", Color: 0xd64848}
 	MAUnbanned   = ModlogAction{Prefix: "Unbanned", Emoji: "🔓", Color: 0x62c65f}
 	MAWarned     = ModlogAction{Prefix: "Warned", Emoji: "⚠", Color: 0xfca253}
+	MASlowmode   = ModlogAction{Prefix: "Slowed", Emoji: "🐌", Color: 0xff9a00}
+	MARemoveSlow = ModlogAction{Prefix: "Removed slowmode", Emoji: "💨", Color: 0x43ff00}
 	MAGiveRole   = ModlogAction{Prefix: "", Emoji: "➕", Color: 0x53fcf9}
 	MARemoveRole = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
 )
 
-func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {
+func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogAction, target interface{}, reason, logLink string) error {
 	channelID := config.IntActionChannel()
 	config.GetGuildID()
 	if channelID == 0 {
@@ -54,6 +57,25 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 		}
 	}
 
+	name := ""
+	discriminator := ""
+	var id int64
+	switch t := target.(type) {
+	case *discordgo.User:
+		name = t.Username
+		discriminator = "#" + t.Discriminator
+		id = t.ID
+	case *discordgo.Role:
+		name = t.Name
+		id = t.ID
+	case *discordgo.Channel:
+		name = t.Name
+		id = t.ID
+	case *dstate.ChannelState:
+		name = t.Name
+		id = t.ID
+	}
+
 	if reason == "" {
 		reason = "(no reason specified)"
 	}
@@ -63,12 +85,14 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 			Name:    fmt.Sprintf("%s#%s (ID %d)", author.Username, author.Discriminator, author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		},
-		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
-		},
 		Color: action.Color,
-		Description: fmt.Sprintf("**%s%s %s**#%s *(ID %d)*\n📄**Reason:** %s",
-			action.Emoji, action.Prefix, target.Username, target.Discriminator, target.ID, reason),
+		Description: fmt.Sprintf("**%s%s %s**%s *(ID %d)*\n📄**Reason:** %s",
+			action.Emoji, action.Prefix, name, discriminator, id, reason),
+	}
+	if discriminator != "" {
+		embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
+			URL: discordgo.EndpointUserAvatar(id, target.(*discordgo.User).Avatar),
+		}
 	}
 
 	if logLink != "" {
