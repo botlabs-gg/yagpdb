@@ -81,10 +81,12 @@ func (p *Plugin) AddCommands() {
 			}
 
 			zones := FindZone(parsed.Args[0].Str())
+			// No zones matching user input
 			if len(zones) < 1 {
 				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
 			}
-
+			// Multiple zones matching user input
+			note := ""
 			if len(zones) > 1 {
 				if len(zones) > 10 {
 					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
@@ -95,23 +97,34 @@ func (p *Plugin) AddCommands() {
 					return nil, err
 				}
 
-				out := "More than 1 result, reuse the command with a one of the following:\n"
+				matches := ""
 				for _, v := range zones {
-					if s := StrZone(v); s != "" {
-						out += s + "\n"
+					if _ != 0 and s != "" {
+						matches += StrZone(v) + "\n"
 					}
 				}
-				out += "\n" + userTZ
+				// "matches" now contains all "zones" except "zones[0]"
 
-				return out, nil
+				// First (and thus no) zones exactly match user input
+				if StrZone(zones[0]) != parsed.Args[0].Str() {
+					matches = StrZone(zones[0]) + matches
+					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
+					return out, nil
+				}
+				// First of multiple matching zones *exactly* matches user input
+				else if StrZone(zones[0]) == parsed.Args[0].Str() {
+					// First zone (which matches) will be selected a few lines from now, so we just set a note for the user
+					note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
+				}
 			}
-			loc, err := time.LoadLocation(zones[0])
+
+			zone := zones[0]
+			loc, err := time.LoadLocation(zone)
 			if err != nil {
 				return "Unknown timezone", nil
 			}
 
 			name, _ := time.Now().In(loc).Zone()
-			zone := zones[0]
 
 			m := &models.UserTimezone{
 				UserID:       parsed.Msg.Author.ID,
@@ -123,7 +136,8 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Set your timezone to `%s`: %s\n", zone, name), nil
+			return fmt.Sprintf("Set your timezone to `%s`: %s\n%s", zone, name, note), nil
+			// Note that an empty "note" variable will be invisible, since Discord trims trailing message whitespace
 		},
 	}, &commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
