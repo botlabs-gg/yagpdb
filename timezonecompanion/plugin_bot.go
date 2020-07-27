@@ -98,9 +98,9 @@ func (p *Plugin) AddCommands() {
 				}
 
 				matches := ""
-				for _, v := range zones {
-					if _ != 0 && s != "" {
-						matches += StrZone(v) + "\n"
+				for n, v := range zones {
+					if s := StrZone(v); n != 0 && s != "" {
+						matches += s + "\n"
 					}
 				}
 				// "matches" now contains all "zones" except "zones[0]"
