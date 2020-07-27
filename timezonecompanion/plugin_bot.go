@@ -99,7 +99,7 @@ func (p *Plugin) AddCommands() {
 
 				matches := ""
 				for _, v := range zones {
-					if _ != 0 and s != "" {
+					if _ != 0 && s != "" {
 						matches += StrZone(v) + "\n"
 					}
 				}
@@ -110,9 +110,8 @@ func (p *Plugin) AddCommands() {
 					matches = StrZone(zones[0]) + matches
 					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
 					return out, nil
-				}
 				// First of multiple matching zones *exactly* matches user input
-				else if StrZone(zones[0]) == parsed.Args[0].Str() {
+				} else if StrZone(zones[0]) == parsed.Args[0].Str() {
 					// First zone (which matches) will be selected a few lines from now, so we just set a note for the user
 					note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
 				}
