@@ -32,9 +32,9 @@ type DB struct {
 
 // SetString creates a new or updates an existing string in the database
 func (db *DB) SetString(guildID int64, key, value string) (new bool, err error) {
-	const q = `INSERT INTO keydb (guild_id, key, value, updated_at, new) 
+	const q = `INSERT INTO keydb (guild_id, key, value, updated_at, new)
 	VALUES ($1, $2, $3, now(), true)
-	ON CONFLICT (guild_id, key) 
+	ON CONFLICT (guild_id, key)
 	DO UPDATE SET value = $3, new = false, updated_at = now()
 	RETURNING keydb.new;`
 

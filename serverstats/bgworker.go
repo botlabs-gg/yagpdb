@@ -212,7 +212,7 @@ func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool)
 	}
 
 	// commit results into the compressed stats table
-	const updateQ = `INSERT INTO server_stats_periods_compressed 
+	const updateQ = `INSERT INTO server_stats_periods_compressed
 	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,            $5,            $6,       $7,     $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE SET
@@ -280,7 +280,7 @@ type CompressedStats struct {
 
 func compressGuildMessageStats(t time.Time, guildID int64, mergeWith []*CompressedStats) ([]*CompressedStats, error) {
 
-	const q = `SELECT t, count 
+	const q = `SELECT t, count
 	FROM server_stats_hourly_periods_messages
 	WHERE t < $1 AND guild_id = $2 AND compressed=false;
 	`
@@ -325,7 +325,7 @@ OUTER:
 
 func compressGuildMiscStats(t time.Time, guildID int64) ([]*CompressedStats, error) {
 
-	const q = `SELECT t, num_members, max_online, joins, leaves, max_voice 
+	const q = `SELECT t, num_members, max_online, joins, leaves, max_voice
 	FROM server_stats_hourly_periods_misc
 	WHERE t < $1 AND guild_id = $2 AND compressed=false;
 	`
@@ -563,7 +563,7 @@ func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildSta
 		return err
 	}
 
-	const updateQ = `INSERT INTO server_stats_periods_compressed 
+	const updateQ = `INSERT INTO server_stats_periods_compressed
 	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,            $5,            $6,       $7,     $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE SET

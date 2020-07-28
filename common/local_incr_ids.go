@@ -39,10 +39,10 @@ CREATE TABLE IF NOT EXISTS local_incr_ids (
 //
 // GenLocalIncrIDPQ differs from GenLocalIncrID in that it uses postgres instead of redis
 func GenLocalIncrIDPQ(tx *sql.Tx, guildID int64, key string) (int64, error) {
-	const query = `INSERT INTO local_incr_ids (guild_id, key, last, last_updated) 
-	VALUES ($1, $2, 1, now()) 
-	ON CONFLICT (guild_id, key) 
-	DO UPDATE SET last = local_incr_ids.last + 1 
+	const query = `INSERT INTO local_incr_ids (guild_id, key, last, last_updated)
+	VALUES ($1, $2, 1, now())
+	ON CONFLICT (guild_id, key)
+	DO UPDATE SET last = local_incr_ids.last + 1
 	RETURNING last;`
 
 	var row *sql.Row

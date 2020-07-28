@@ -77,11 +77,11 @@ func checkSkipSchemaInit(schema string, name string) (exists bool, err error) {
 }
 
 func TableExists(table string) (b bool, err error) {
-	const query = `	
-SELECT EXISTS 
+	const query = `
+SELECT EXISTS
 (
 	SELECT 1
-	FROM information_schema.tables 
+	FROM information_schema.tables
 	WHERE table_schema = 'public'
 	AND table_name = $1
 );`
@@ -91,8 +91,8 @@ SELECT EXISTS
 }
 
 func checkIndexExists(table, index string) (b bool, err error) {
-	const query = `	
-SELECT EXISTS 
+	const query = `
+SELECT EXISTS
 (
 	SELECT 1
 FROM
@@ -115,11 +115,11 @@ WHERE
 }
 
 func checkColumnExists(table, column string) (b bool, err error) {
-	const query = `	
-SELECT EXISTS 
+	const query = `
+SELECT EXISTS
 (
-SELECT 1 
-FROM information_schema.columns 
+SELECT 1
+FROM information_schema.columns
 WHERE table_name=$1 and column_name=$2
 );`
 

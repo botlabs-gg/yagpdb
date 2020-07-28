@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS panel_logs (
 	param1_type SMALLINT NOT NULL,
 	param1_int BIGINT NOT NULL,
 	param1_string TEXT NOT NULL,
-	
+
 	param2_type SMALLINT NOT NULL,
 	param2_int BIGINT NOT NULL,
 	param2_string TEXT NOT NULL,

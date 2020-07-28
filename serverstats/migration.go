@@ -96,8 +96,8 @@ func migrateChunkV2Messages(lastID int64, premiumGuilds map[int64]time.Time) (ne
 	const qGetOld = `SELECT id, started, guild_id, count FROM server_stats_periods
 	WHERE id > $1 ORDER BY ID ASC LIMIT 5000;`
 
-	const qSetNew = `INSERT INTO server_stats_periods_compressed 
-	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice) 
+	const qSetNew = `INSERT INTO server_stats_periods_compressed
+	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,              $5,         $6,        $7,      $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE
 	SET num_messages = server_stats_periods_compressed.num_messages + $4`
@@ -166,8 +166,8 @@ func migrateChunkV2Members(lastID int64, premiumGuilds map[int64]time.Time) (new
 	FROM server_stats_member_periods
 	WHERE id > $1 ORDER BY ID ASC LIMIT 5000;`
 
-	const qSetNew = `INSERT INTO server_stats_periods_compressed 
-	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice) 
+	const qSetNew = `INSERT INTO server_stats_periods_compressed
+	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,              $5,         $6,        $7,      $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE
 	SET num_members = GREATEST(server_stats_periods_compressed.num_members, $5),

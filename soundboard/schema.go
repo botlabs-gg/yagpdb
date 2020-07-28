@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS soundboard_sounds(
 	id SERIAL PRIMARY KEY,
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL,
 	updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
-	
+
 	guild_id BIGINT NOT NULL,
 	required_role TEXT NOT NULL,
 	name TEXT NOT NULL,

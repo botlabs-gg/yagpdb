@@ -35,7 +35,7 @@ func InsertMessageRow(gID int64, cID int64, t time.Time, count int) {
 	t = RoundHour(t)
 
 	const updateQuery = `
-	INSERT INTO server_stats_hourly_periods_messages (guild_id, t, channel_id, count) 
+	INSERT INTO server_stats_hourly_periods_messages (guild_id, t, channel_id, count)
 	VALUES ($1, $2, $3, $4)
 	ON CONFLICT (guild_id, channel_id, t) DO UPDATE
 	SET count = server_stats_hourly_periods_messages.count + $4`
@@ -86,7 +86,7 @@ func InsertMiscHourlyRow(gID int64, t time.Time, numMembers, joins, leaves, maxO
 	const q = `INSERT INTO server_stats_hourly_periods_misc  (guild_id, t, num_members, joins, leaves, max_online, max_voice)
 	VALUES ($1, $2, $3, $4, $5, $6, 0)
 	ON CONFLICT (guild_id, t)
-	DO UPDATE SET 
+	DO UPDATE SET
 	max_online = GREATEST (server_stats_hourly_periods_misc.max_online, $6),
 	joins = server_stats_hourly_periods_misc.joins + $4,
 	leaves = server_stats_hourly_periods_misc.leaves + $5,

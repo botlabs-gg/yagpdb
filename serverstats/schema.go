@@ -4,7 +4,7 @@ var legacyDBSchemas = []string{
 	`
 CREATE TABLE IF NOT EXISTS server_stats_periods (
 	id bigserial NOT NULL PRIMARY KEY,
-	
+
 	started  timestamptz,
 	duration bigint,
 
@@ -51,10 +51,10 @@ var dbSchemas = []string{
 		guild_id BIGINT NOT NULL,
 		t TIMESTAMP WITH TIME ZONE NOT NULL,
 		compressed BOOLEAN NOT NULL DEFAULT FALSE,
-	
+
 		channel_id bigint,
 		count     bigint,
-	
+
 		PRIMARY KEY(guild_id, channel_id, t)
 	);
 	`, `
@@ -62,13 +62,13 @@ var dbSchemas = []string{
 		guild_id BIGINT NOT NULL,
 		t TIMESTAMP WITH TIME ZONE NOT NULL,
 		compressed BOOLEAN NOT NULL DEFAULT FALSE,
-	
+
 		num_members BIGINT NOT NULL,
 		max_online BIGINT NOT NULL,
 		joins INT NOT NULL,
 		leaves INT NOT NULL,
 		max_voice INT NOT NULL,
-	
+
 		PRIMARY KEY(guild_id, t)
 	);
 	`, `
@@ -76,14 +76,14 @@ var dbSchemas = []string{
 		guild_id BIGINT NOT NULL,
 		t DATE NOT NULL,
 		premium BOOLEAN NOT NULL,
-	
+
 		num_messages INT NOT NULL,
 		num_members BIGINT NOT NULL,
 		max_online BIGINT NOT NULL,
 		joins INT NOT NULL,
 		leaves INT NOT NULL,
 		max_voice INT NOT NULL,
-	
+
 		PRIMARY KEY(guild_id, t)
 	);
 	`,

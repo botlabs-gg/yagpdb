@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS automod_triggered_rules (
 
 	trigger_id BIGINT references automod_rule_data(id) ON DELETE SET NULL,
 	trigger_typeid INT NOT NULL, -- backup in case the actual trigger was deleted
-	
+
 	rule_id BIGINT references automod_rules(id) ON DELETE SET NULL,
 	rule_name TEXT NOT NULL, -- backup in case the rule was deleted
 	ruleset_name TEXT NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS automod_triggered_rules (
 	user_id BIGINT NOT NULL,
 	user_name TEXT NOT NULL,
 
-	extradata JSONB NOT NULL 
+	extradata JSONB NOT NULL
 );
 `, `
 

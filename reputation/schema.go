@@ -4,7 +4,7 @@ var DBSchemas = []string{`
 CREATE TABLE IF NOT EXISTS reputation_configs (
 	guild_id        bigint PRIMARY KEY,
 	points_name     varchar(50) NOT NULL,
-	enabled         bool NOT NULL,	
+	enabled         bool NOT NULL,
 	cooldown        int NOT NULL,
 	max_give_amount bigint NOT NULL,
 
@@ -48,11 +48,11 @@ IF (SELECT COUNT(*) FROM information_schema.columns WHERE table_name='reputation
 	-- blacklisted give roles
 	ALTER TABLE reputation_configs ADD COLUMN blacklisted_give_roles BIGINT[];
 	UPDATE reputation_configs SET blacklisted_give_roles=ARRAY[blacklisted_give_role]::BIGINT[] WHERE blacklisted_give_role IS NOT NULL AND blacklisted_give_role != '';
-	
+
 	-- blacklisted rec roles
 	ALTER TABLE reputation_configs ADD COLUMN blacklisted_receive_roles BIGINT[];
 	UPDATE reputation_configs SET blacklisted_receive_roles=ARRAY[blacklisted_receive_role]::BIGINT[] WHERE blacklisted_receive_role IS NOT NULL AND blacklisted_receive_role != '';
-	
+
 END IF;
 END $$;
 `, `
@@ -85,5 +85,5 @@ CREATE INDEX IF NOT EXISTS reputation_log_guild_idx ON reputation_log (guild_id)
 `, `
 CREATE INDEX IF NOT EXISTS reputation_log_sender_idx ON reputation_log (sender_id);
 `, `
-CREATE INDEX IF NOT EXISTS reputation_log_receiver_idx ON reputation_log (receiver_id);	
+CREATE INDEX IF NOT EXISTS reputation_log_receiver_idx ON reputation_log (receiver_id);
 `}

@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS commands_command_overrides (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
 	commands_channels_overrides_id BIGINT references commands_channels_overrides(id) ON DELETE CASCADE NOT NULL,
-	
+
 	commands TEXT[] NOT NULL,
 
 	commands_enabled BOOL NOT NULL,
