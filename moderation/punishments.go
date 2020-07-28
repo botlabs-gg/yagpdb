@@ -275,8 +275,7 @@ func BanUser(config *Config, guildID int64, channel *dstate.ChannelState, messag
 	return BanUserWithDuration(config, guildID, channel, message, author, reason, user, 0, 1)
 }
 
-
-func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *dstate.ChannelState, authorMember *dstate.MemberState, modlogAuthor *discordgo.User, reason, roleS string,  force bool, totalPerms int, dur time.Duration) (interface{}, error) {
+func LockUnlockRole(config *Config, lock bool, gs *dstate.GuildState, channel *dstate.ChannelState, authorMember *dstate.MemberState, modlogAuthor *discordgo.User, reason, roleS string, force bool, totalPerms int, dur time.Duration) (interface{}, error) {
 	config, err := getConfigIfNotSet(gs.ID, config)
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
@@ -292,13 +291,13 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 	role := FindRole(gs, roleS)
 
 	if role == nil {
-		return  "No role with the Name or ID `" + roleS + "` found.", nil
+		return "No role with the Name or ID `" + roleS + "` found.", nil
 	}
 
 	gs.RLock()
 	if !bot.IsMemberAboveRole(gs, authorMember, role) {
 		gs.RUnlock()
-		return  "You can't lock/unlock roles above you.", nil
+		return "You can't lock/unlock roles above you.", nil
 	}
 	gs.RUnlock()
 
@@ -340,19 +339,18 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 
 	// remove all existing unlock events for this role irrespective of lock or unlock event
 	_, err = seventsmodels.ScheduledEvents(
-	qm.Where("event_name='moderation_unlock_role'"),
-	qm.Where("guild_id = ?", gs.ID),
-	qm.Where("(data->>'role_id')::bigint = ?", role.ID),
-	qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
-
+		qm.Where("event_name='moderation_unlock_role'"),
+		qm.Where("guild_id = ?", gs.ID),
+		qm.Where("(data->>'role_id')::bigint = ?", role.ID),
+		qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
 
 	if lock {
 		currentLockdown.PermsToggle = int64(totalPerms)
 		currentLockdown.Overwrite = force
-		newPerms = role.Permissions&^totalPerms
+		newPerms = role.Permissions &^ totalPerms
 		action = MALock
 		outDur = "indefinitely!"
-		action.Footer = "Duration: Permanent" 
+		action.Footer = "Duration: Permanent"
 		if dur > 0 {
 			humandur := common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
 			outDur = "for `" + humandur + "`!"
@@ -372,9 +370,9 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 			force = currentLockdown.Overwrite
 		}
 		if force {
-			newPerms = role.Permissions|totalPerms
+			newPerms = role.Permissions | totalPerms
 		} else {
-			newPerms = role.Permissions|(int(currentLockdown.PermsOriginal)&totalPerms)
+			newPerms = role.Permissions | (int(currentLockdown.PermsOriginal) & totalPerms)
 		}
 	}
 
@@ -383,19 +381,18 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 		if err != nil {
 			return nil, err
 		}
-		toggledPerms := newPerms&^role.Permissions
+		toggledPerms := newPerms &^ role.Permissions
 		if lock {
-			toggledPerms = role.Permissions&^newPerms
+			toggledPerms = role.Permissions &^ newPerms
 		}
 		outPerms = "\nPermissions toggled - `" + strings.Join(common.HumanizePermissions(int64(toggledPerms)), ", ") + "`"
 	}
 	reason = reason + outPerms
 
-
 	if dur > 0 && lock {
 		//schedule new unlock
 		err = scheduledevents2.ScheduleEvent("moderation_unlock_role", gs.ID, time.Now().Add(dur), &ScheduledUnlockData{
-		      RoleID:  role.ID,
+			RoleID: role.ID,
 		})
 		if err != nil {
 			return nil, err
@@ -414,10 +411,9 @@ func LockUnlockRole (config *Config, lock bool, gs *dstate.GuildState, channel *
 		out = "Server"
 	}
 
-	return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`%s",action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
+	return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`%s", action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
 
 }
-
 
 const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")

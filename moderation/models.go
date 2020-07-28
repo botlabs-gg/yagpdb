@@ -24,11 +24,11 @@ type Config struct {
 	KickMessage          string `valid:"template,5000"`
 
 	// Ban
-	BanEnabled        	bool
-	BanCmdRoles       	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	BanReasonOptional 	bool
-	BanMessage        	string `valid:"template,5000"`
-	DefaultBanDeleteDays    sql.NullInt64 `gorm:"default:1" valid:"0,7"`
+	BanEnabled           bool
+	BanCmdRoles          pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	BanReasonOptional    bool
+	BanMessage           string        `valid:"template,5000"`
+	DefaultBanDeleteDays sql.NullInt64 `gorm:"default:1" valid:"0,7"`
 
 	// Mute/unmute
 	MuteEnabled             bool
@@ -52,11 +52,11 @@ type Config struct {
 	WarnMessage            string `valid:"template,5000"`
 
 	//Lockdown
-	LockdownCmdEnabled 	bool
-	LockdownCmdModlog  	bool
-	LockdownCmdRoles   	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	DefaultLockRole		string        `valid:"role,true"`
-	LockIncludeChannelLogs	bool
+	LockdownCmdEnabled      bool
+	LockdownCmdModlog       bool
+	LockdownCmdRoles        pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	DefaultLockRole         string        `valid:"role,true"`
+	LockIncludeChannelLogs  bool
 	DefaultLockdownDuration sql.NullInt64 `gorm:"default:0"`
 
 	// Misc
@@ -149,8 +149,8 @@ type LockdownModel struct {
 	common.SmallModel
 
 	ExpiresAt time.Time
-	GuildID int64 `gorm:"index"`
-	RoleID  int64
+	GuildID   int64 `gorm:"index"`
+	RoleID    int64
 
 	PermsOriginal int64
 	PermsToggle   int64

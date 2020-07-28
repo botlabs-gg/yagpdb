@@ -22,7 +22,6 @@ import (
 	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-
 )
 
 var (
@@ -76,9 +75,8 @@ type ScheduledUnbanData struct {
 }
 
 type ScheduledUnlockData struct {
-	RoleID 	   int64 `json:"role_id"`
+	RoleID int64 `json:"role_id"`
 }
-
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
 	if evt == bot.EvtGuildState {
@@ -382,23 +380,22 @@ func LockRoleLockdownMW(next func(evt *eventsystem.EventData, PermsData int) (re
 
 		// If it's a role update update event and locked perms remain locked, dont do anything
 		if roleUpdate && int(currentLockdown.PermsToggle)&rolePerms == 0 {
-			return false , nil
+			return false, nil
 		}
-
 
 		return next(evt, int(currentLockdown.PermsToggle))
 	}
 }
 
-func HandleGuildRoleDelete (evt *eventsystem.EventData, togglePerms int) (retry bool, err error) {
+func HandleGuildRoleDelete(evt *eventsystem.EventData, togglePerms int) (retry bool, err error) {
 	data := evt.GuildRoleDelete()
 
 	// remove all existing unlock events for this role irrespective of lock or unlock event
 	_, err = seventsmodels.ScheduledEvents(
-	qm.Where("event_name='moderation_unlock_role'"),
-	qm.Where("guild_id = ?", data.GuildID),
-	qm.Where("(data->>'role_id')::bigint = ?", data.RoleID),
-	qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
+		qm.Where("event_name='moderation_unlock_role'"),
+		qm.Where("guild_id = ?", data.GuildID),
+		qm.Where("(data->>'role_id')::bigint = ?", data.RoleID),
+		qm.Where("processed = false")).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -409,9 +406,9 @@ func HandleGuildRoleDelete (evt *eventsystem.EventData, togglePerms int) (retry 
 	return false, nil
 }
 
-func HandleGuildRoleUpdate (evt *eventsystem.EventData, togglePerms int) (retry bool, err error) {
+func HandleGuildRoleUpdate(evt *eventsystem.EventData, togglePerms int) (retry bool, err error) {
 	role := evt.GuildRoleUpdate().Role
-	newPerms := role.Permissions&^togglePerms
+	newPerms := role.Permissions &^ togglePerms
 	_, err = common.BotSession.GuildRoleEdit(evt.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
 	if err != nil {
 		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
@@ -527,7 +524,6 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	return false, nil
 }
 
-
 func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
 	auditlog, err := common.BotSession.GuildAuditLog(guildID, 0, 0, typ, 10)
 	if err != nil {
@@ -632,7 +628,7 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 
 	guildID := evt.GuildID
 	roleID := int(unlockData.RoleID)
-	
+
 	g := bot.State.Guild(true, guildID)
 	if g == nil {
 		logger.WithField("guild", guildID).Error("Unlock scheduled for guild not in state")

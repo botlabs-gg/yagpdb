@@ -35,7 +35,7 @@ var (
 	MAWarned     = ModlogAction{Prefix: "Warned", Emoji: "⚠", Color: 0xfca253}
 	MAGiveRole   = ModlogAction{Prefix: "", Emoji: "➕", Color: 0x53fcf9}
 	MARemoveRole = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
-	MALock	     = ModlogAction{Prefix: "Locked", Emoji: "🔒", Color: 0xEE00EE}
+	MALock       = ModlogAction{Prefix: "Locked", Emoji: "🔒", Color: 0xEE00EE}
 	MAUnlock     = ModlogAction{Prefix: "Unlocked", Emoji: "🔓", Color: 0x718AED}
 )
 
@@ -60,15 +60,14 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 	discriminator := ""
 	var id int64
 	switch t := target.(type) {
-		case *discordgo.User:
-			name = t.Username
-			discriminator = "#" + t.Discriminator
-			id = t.ID
-		case *discordgo.Role:
-			name = t.Name
-			id = t.ID
+	case *discordgo.User:
+		name = t.Username
+		discriminator = "#" + t.Discriminator
+		id = t.ID
+	case *discordgo.Role:
+		name = t.Name
+		id = t.ID
 	}
-
 
 	if reason == "" {
 		reason = "(no reason specified)"
