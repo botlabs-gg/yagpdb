@@ -110,7 +110,7 @@ func Init() error {
 	}
 
 	logger.Info("Initializing core schema")
-	InitSchemas("core_configs", CoreServerConfDBSchema)
+	InitSchemas("core_configs", CoreServerConfDBSchema, localIDsSchema)
 	initQueuedSchemas()
 
 	return err
