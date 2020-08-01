@@ -84,6 +84,6 @@ var throwThings = []string{
 	"a deployment bunny",
 	"some deployment research",
 	"a powershell script with no logging",
-	"Internet Exploder"
-	"DNS.  It's always DNS"
+	"Internet Exploder",
+	"DNS.  It's always DNS",
 }
