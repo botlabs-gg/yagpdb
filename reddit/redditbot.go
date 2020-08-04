@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	MaxPostsHourFast = 120
-	MaxPostsHourSlow = 180
+	MaxPostsHourFast = 60
+	MaxPostsHourSlow = 120
 )
 
 var (
