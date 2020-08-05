@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="/static/vendor/chartist/chartist.min.css" />
 
 <header class="page-header">
-    <h2>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h2>
+    <h2>Statystki serwera - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h2>
 
 </header>
 
@@ -18,16 +18,16 @@
         {{if not .Public}}
         <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse"
             aria-expanded="false" aria-controls="stats-settings-collapse">
-            Stats Settings
+            Ustawnienia statystyk
         </button>
         <a class="btn btn-primary {{if not .Config.Public}}disabled{{end}}" {{if .Config.Public}}
-            href="/public/{{.ActiveGuild.ID}}/stats" {{end}}>Public link (only works if stats are set to public)</a>
+            href="/public/{{.ActiveGuild.ID}}/stats" {{end}}>Link do statystyk</a>
         <div class="collapse" id="stats-settings-collapse">
             <section class="card">
                 <div class="card-body">
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/stats/settings" data-async-form>
 
-                        {{checkbox "Public" "stats-public-check" `Make server stats publicly accessible` .Config.Public}}
+                        {{checkbox "Public" "stats-public-check" `Zmien statystyki na publiczne` .Config.Public}}
 
                         <label>Ignore channels</label>
                         <div class="form-group mb-4">
@@ -36,7 +36,7 @@
                                 {{textChannelOptionsMulti .ActiveGuild.Channels .Config.ParsedChannels}}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success btn-sm">Save</button>
+                        <button type="submit" class="btn btn-success btn-sm">Zapisz</button>
                     </form>
                 </div>
             </section>
@@ -48,17 +48,17 @@
 
 <div class="row">
     <!-- Stats widgets -->
-    {{mTemplate "serverstats_stats_widget" "Icon" "comments" "BG" "primary" "Content" "New messages last 24h" "ValueID" "messages-24h"}}
-    {{mTemplate "serverstats_stats_widget" "Icon" "user-plus" "BG" "success" "Content" "Members joined/left last 24h" "ValueID" "members-changed-24h"}}
-    {{mTemplate "serverstats_stats_widget" "Icon" "user" "BG" "tertiary" "Content" "Online members" "ValueID" "online-members"}}
-    {{mTemplate "serverstats_stats_widget" "Icon" "users" "BG" "quaternary" "Content" "Total members" "ValueID" "total-members"}}
+    {{mTemplate "serverstats_stats_widget" "Icon" "comments" "BG" "primary" "Content" "Nowe wiadomosci w ciagu 24h" "ValueID" "messages-24h"}}
+    {{mTemplate "serverstats_stats_widget" "Icon" "user-plus" "BG" "success" "Content" "Czlonkowie wyszli/weszli w ciagu 24h" "ValueID" "members-changed-24h"}}
+    {{mTemplate "serverstats_stats_widget" "Icon" "user" "BG" "tertiary" "Content" "Osoby online" "ValueID" "online-members"}}
+    {{mTemplate "serverstats_stats_widget" "Icon" "users" "BG" "quaternary" "Content" "Ilosc czlonkow" "ValueID" "total-members"}}
 </div>
 <div class="row">
     <!-- Graph -->
     <div class="col-12">
         <section class="card bg-default">
             <header class="card-header">
-                <h2 class="card-title">Channels last 24 hours</h2>
+                <h2 class="card-title">Kanaly w ciagu ostatnich 24h</h2>
             </header>
 
             <div class="card-body">
@@ -70,18 +70,18 @@
 
 <div class="row">
     <div class="col">
-        <h2>Charts<small><span id="serverstats-status"> Loading...</span></small></h2>
+        <h2>Wykresy<small><span id="serverstats-status"> Ladowanie ...</span></small></h2>
     </div>
     <div class="col">
         <!-- <div class="form-group"> -->
         <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
-            <option value="2"> Past 2 days (testing)</option>
-            <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Past 7 days</option>
-            <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Past 30 days
+            <option value="2"> Ostatnie 2 dni</option>
+            <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Ostatnie 7  dni</option>
+            <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Ostatnie 30 dni
                 {{if not .IsGuildPremium}}(premium only){{end}}</option>
-            <option value="365" {{if not .IsGuildPremium}} disabled{{end}}> Past 365 days
+            <option value="365" {{if not .IsGuildPremium}} disabled{{end}}> Ostatni rok
                 {{if not .IsGuildPremium}}(premium only){{end}}</option>
-            <option value="-1" {{if not .IsGuildPremium}} disabled{{end}}> All time {{if not .IsGuildPremium}}(premium
+            <option value="-1" {{if not .IsGuildPremium}} disabled{{end}}> Ogolny czas {{if not .IsGuildPremium}}(premium
                 only){{end}}</option>
         </select>
         <!-- </div> -->
@@ -93,7 +93,7 @@
     <div class="col-lg-6">
         <section class="card bg-default">
             <header class="card-header">
-                <h2 class="card-title">Joins / Leaves</h2>
+                <h2 class="card-title">Wejscia/ wyjscia</h2>
             </header>
 
             <div class="card-body">
@@ -106,7 +106,7 @@
     <div class="col-lg-6">
         <section class="card bg-default">
             <header class="card-header">
-                <h2 class="card-title">Total Members</h2>
+                <h2 class="card-title">Ilosc czlonkow/h2>
             </header>
 
             <div class="card-body">
@@ -121,7 +121,7 @@
     <div class="col-12">
         <section class="card bg-default">
             <header class="card-header">
-                <h2 class="card-title">Number of messages (excl. Bots)</h2>
+                <h2 class="card-title">Ilosc wiadomosci</h2>
             </header>
 
             <div class="card-body">
