@@ -35,7 +35,7 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
-	logger.Info("Searching by username: ", query)
+	logger.Info("Szukanie używając nazwy użytkownika: ", query)
 	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
 	if err != nil {
 		if err == bot.ErrTimeoutWaitingForMember {
@@ -104,10 +104,10 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 	}
 
 	if len(fullMatches) > 1 {
-		return nil, dcmd.NewSimpleUserError("Too many users with the name: (" + out + ") Please re-run the command with a narrower search, mention or ID.")
+		return nil, dcmd.NewSimpleUserError("Za dużo użytkowników z nazwą: (" + out + ") Wpisz tą komendę jeszcze raz z wyszukaniem poprzez wzmiankę lub ID.")
 	}
 
-	return nil, dcmd.NewSimpleUserError("Did you mean one of these? (" + out + ") Please re-run the command with a narrower search, mention or ID")
+	return nil, dcmd.NewSimpleUserError("Czy chodziło ci o  (" + out + ") Wpisz tą komendę jeszcze raz z wyszukaniem poprzez wzmiankę lub ID.")
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -158,10 +158,10 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
-				return yc.Name + ": Bot is restarting, please try again in a couple seconds...", nil
+				return yc.Name + ": Bot się restartuje, poczekaj chwilę.", nil
 			}
 
-			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
+			return yc.Name + ": Minęło 60 sekund i nie udało mi się wykonać tej komendy. Komenda została przerwana", nil
 		}
 
 		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
@@ -169,13 +169,13 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Check if the user can execute the command
 		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, data.CS)
 		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+			yc.Logger(data).WithError(err).Error("Wystąpił błąd podczas sprawdzania uprawnień")
 		}
 
 		if resp != "" {
 			if resp == ReasonCooldown {
 				cdLeft, _ := yc.LongestCooldownLeft(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
-				return fmt.Sprintf("This command is on cooldown for another %d seconds", cdLeft), nil
+				return fmt.Sprintf("Tą komendę można użyć za %d sekund", cdLeft), nil
 			}
 
 			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
@@ -209,7 +209,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 					resp += "```\n" + switches + "\n```"
 				}
 
-				resp = resp + "\nInvalid arguments provided: " + err.Error()
+				resp = resp + "\nPodano niewłaściwe parametry: " + err.Error()
 				yc.PostCommandExecuted(settings, data, resp, nil)
 				return nil, nil
 			}
@@ -359,7 +359,7 @@ func defaultCommandPrefix() string {
 
 var cmdPrefix = &YAGCommand{
 	Name:        "Prefix",
-	Description: "Shows command prefix of the current server, or the specified server",
+	Description: "Sprawdza prefix danego serwera (ewentualnie można sprawdzić po ID serwera)",
 	CmdCategory: CategoryTool,
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "Server ID", Type: dcmd.Int, Default: 0},
@@ -376,6 +376,6 @@ var cmdPrefix = &YAGCommand{
 			return nil, err
 		}
 
-		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
+		return fmt.Sprintf("Prefix serwera `%d`: `%s`", targetGuildID, prefix), nil
 	},
 }

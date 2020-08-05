@@ -11,13 +11,13 @@ import (
 )
 
 var cmdHelp = &YAGCommand{
-	Name:        "Help",
-	Aliases:     []string{"commands", "h", "how", "command"},
-	Description: "Shows help about all or one specific command",
+	Name:        "Pomoc",
+	Aliases:     []string{"commands", "h", "how", "command", "pomoc", "komendy"},
+	Description: "Pokazuje pomoc bota albo jednej komendy",
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "command", Type: dcmd.String},
+		&dcmd.ArgDef{Name: "komenda", Type: dcmd.String},
 	},
 
 	RunFunc:  cmdFuncHelp,
@@ -25,7 +25,7 @@ var cmdHelp = &YAGCommand{
 }
 
 func CmdNotFound(search string) string {
-	return fmt.Sprintf("Couldn't find command %q", search)
+	return fmt.Sprintf("Nie znaleziono komendy %q", search)
 }
 
 func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
@@ -59,31 +59,31 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 		return nil, nil
 	}
 
-	return "You've got mail!", nil
+	return "Sprawdź prywatne wiadomości!", nil
 }
 
 func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (interface{}, error) {
 	channel, err := common.BotSession.UserChannelCreate(userID)
 	if err != nil {
-		return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
+		return "Coś poszło nie tak, może masz wyłączone wiadomości? Tu masz angielski link do wszystkich komend: <https://docs.yagpdb.xyz/commands>", err
 	}
 
 	// prepend a introductionairy first page
 	firstPage := &discordgo.MessageEmbed{
-		Title: "YAGPDB Help!",
-		Description: `YAGPDB is a multipurpose discord bot that is configured through the web interface at https://yagpdb.xyz.
-For more in depth help and information you should visit https://docs.yagpdb.xyz/ as this command only shows information about commands.
+		Title: "Pomoc bota Policjant",
+		Description: `Policjant jest polską wersją bota YAGPDB.xyz napisaną na potrzeby serwera Robuxianie http://robuxianie.pl/
+Żeby zobaczyć pomoc (w języku angielskim) wejdź na https://docs.yagpdb.xyz/. Ta komenda tylko daje informacje na temat komend.
 		
 		
-**Use the emojis under to change pages**`,
+**Użyj emoji poniżej żeby zmienić stronę**`,
 	}
 
 	var pageLayout strings.Builder
 	for i, v := range helpEmbeds {
-		pageLayout.WriteString(fmt.Sprintf("**Page %d**: %s\n", i+2, v.Title))
+		pageLayout.WriteString(fmt.Sprintf("**Strona %d**: %s\n", i+2, v.Title))
 	}
 	firstPage.Fields = []*discordgo.MessageEmbedField{
-		{Name: "Help pages", Value: pageLayout.String()},
+		{Name: "Strony:", Value: pageLayout.String()},
 	}
 
 	helpEmbeds = append([]*discordgo.MessageEmbed{firstPage}, helpEmbeds...)
@@ -93,7 +93,7 @@ For more in depth help and information you should visit https://docs.yagpdb.xyz/
 		return embed, nil
 	})
 	if err != nil {
-		return "Something went wrong, make sure you don't have the bot blocked!", err
+		return "Coś poszło nie tak, upewnij się że nie zablokowałeś bota!", err
 
 	}
 
