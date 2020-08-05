@@ -59,14 +59,14 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if count > 25 {
-				return "Max 25 active events at a time", nil
+				return "Maksymalnie moze trwac 25 eventow.", nil
 			}
 
 			p.setupSessionsMU.Lock()
 			for _, v := range p.setupSessions {
 				if v.SetupChannel == parsed.CS.ID {
 					p.setupSessionsMU.Unlock()
-					return "Already a setup process going on in this channel, if you want to exit it type `exit`, admins can force cancel setups with `events stopsetup`", nil
+					return "Na tym kanale trwa już proces konfiguracji, jeśli chcesz go zakończyć, wpisz `exit`, administratorzy mogą wymusić anulowanie konfiguracji za pomocą` events stopsetup`", nil
 				}
 			}
 
@@ -87,7 +87,7 @@ func (p *Plugin) AddCommands() {
 			p.setupSessionsMU.Unlock()
 
 			setupSession.mu.Lock()
-			setupSession.sendMessage("Started interactive setup:\nWhat channel should i put the event embed in? (type `this` or `here` for the current one)")
+			setupSession.sendMessage("Started interactive setup:\nNa jakim kanale powinnien dac embed? (napisz `this` lub `here` aby uzyc tego kanalu.)")
 			setupSession.mu.Unlock()
 
 			return "", nil
@@ -105,9 +105,9 @@ func (p *Plugin) AddCommands() {
 		},
 		RequiredArgs: 1,
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "title", Help: "Change the title of the event", Type: dcmd.String},
-			&dcmd.ArgDef{Switch: "time", Help: "Change the start time of the event", Type: dcmd.String},
-			&dcmd.ArgDef{Switch: "max", Help: "Change max participants", Type: dcmd.Int},
+			&dcmd.ArgDef{Switch: "title", Help: "Zmien nazwe eventu.", Type: dcmd.String},
+			&dcmd.ArgDef{Switch: "time", Help: "Zmien czas rozpoczecia eventu", Type: dcmd.String},
+			&dcmd.ArgDef{Switch: "max", Help: "Zmien ilosc osob maksymalnie.", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			m, err := models.RSVPSessions(
@@ -311,16 +311,16 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		Timestamp: m.StartsAt.Format(time.RFC3339),
 		Color:     0x518eef,
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: "Event starts ",
+			Text: "Event ropozczyna sie ",
 		},
 	}
 
 	timeUntil := m.StartsAt.Sub(time.Now())
 	timeUntilStr := common.HumanizeDuration(common.DurationPrecisionMinutes, timeUntil)
 	if timeUntil > 0 {
-		timeUntilStr = "Starts in `" + timeUntilStr + "`"
+		timeUntilStr = "Rozpoczyna sie za `" + timeUntilStr + "`"
 	} else {
-		timeUntilStr = "Started `" + timeUntilStr + "` ago"
+		timeUntilStr = "Aktualnie trwa `" + timeUntilStr + "` ago"
 	}
 
 	UTCTime := m.StartsAt.UTC()
@@ -331,21 +331,21 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name: "Times",
-		Value: fmt.Sprintf("UTC: `%s`\nLook at the bottom of this message to see when the event starts in your local time.",
+		Value: fmt.Sprintf("UTC: `%s`\nSpojrz na sam dol tej wiadomosci aby zobaczyc kiedy w swojej strefie czasowej.",
 			UTCTime.Format(timeFormat)),
 	}, &discordgo.MessageEmbedField{
-		Name:  "Reactions usage",
-		Value: "React to mark you as a participant, undecided, or not joining",
+		Name:  "Uzywanie reakcji",
+		Value: "Zareaguj rekcja, pierwsza oznacza przylaczenie sie do eventu, druga niezdecydowanie.",
 	})
 
 	participantsEmbed := &discordgo.MessageEmbedField{
-		Name:   "Participants",
+		Name:   "Osoby biorace udzial",
 		Inline: false,
 		Value:  "```\n",
 	}
 
 	waitingListField := &discordgo.MessageEmbedField{
-		Name:   "🕐 Waiting list",
+		Name:   "🕐 Lista oczekujacych",
 		Inline: false,
 		Value:  "```\n",
 	}
@@ -419,7 +419,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	}
 
 	// The undecided and maybe people
-	undecidedField := ParticipantField(ParticipantStateMaybe, participants, fetchedMembers, "❔ Undecided")
+	undecidedField := ParticipantField(ParticipantStateMaybe, participants, fetchedMembers, "❔ Nie zdecydowani")
 	// notJoiningField := ParticipantField(ParticipantStateNotJoining, participants, participantUsers, "Not joining")
 
 	embed.Fields = append(embed.Fields, participantsEmbed, waitingListField, undecidedField)
