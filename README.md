@@ -1,7 +1,7 @@
-YAGPDB
+Policjant
 ================
 
-### Yet another general purpose discord bot
+### Polska wersja bota YAGPDB. Poniżej tekst jak używać po angielsku.
 
 YAGPDB is a multifunctional, modular Discord bot. It's modular in that plugins exist for the most part on their own (with exceptions to some lazy things in the main stylesheet), some plugins do however depend on other plugins (most plugins depend on the commands plugin, for example).
 
