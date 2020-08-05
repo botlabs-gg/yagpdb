@@ -276,7 +276,7 @@ the punishment{{end}}
 
 <div class="row">
     <div class="col-sm">
-        {{checkbox "KickEnabled" "kick-enabled" "Enable Kick command" .ModConfig.KickEnabled}}
+        {{checkbox "KickEnabled" "kick-enabled" "Wlacz komende kick" .ModConfig.KickEnabled}}
         <p><code>(mention or prefix) kick @user some reason</code><br />
             Only users with kick permission can use this (or with roles specified below).<br />
             Same as ban command, but kicks instead.
@@ -284,22 +284,22 @@ the punishment{{end}}
         <hr />
 
         <div class="form-group">
-            <label>Users with the following roles will have permission to use kick related commands</label><br>
+            <label>Użytkownicy z następującymi rolami będą mieli uprawnienia do używania komend związanych z wyrzucaniem z serwera/label><br>
             <select class="multiselect" name="KickCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.KickCmdRoles}}
             </select>
         </div>
         <hr />
 
-        {{checkbox "DeleteMessagesOnKick" "DeleteMessagesOnKick" "Delete the users last 100 messages on kick" .ModConfig.DeleteMessagesOnKick}}
+        {{checkbox "DeleteMessagesOnKick" "DeleteMessagesOnKick" "Usuwaj 100 ostatnich wiadomosci uzytkownika po wyrzuceniu." .ModConfig.DeleteMessagesOnKick}}
         <hr />
 
-        {{checkbox "KickReasonOptional" "KickReasonOptional" "Make the <code>reason</code> optional" .ModConfig.KickReasonOptional}}
+        {{checkbox "KickReasonOptional" "KickReasonOptional" "Zrob <code>powod</code> opcjonalny." .ModConfig.KickReasonOptional}}
         <hr />
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Kick DM (Leave empty for default)</label>
+            <label>Wiadomosc prywtna ktora uzytkownik otrzyma po dostaniu kicka.</label>
             <textarea rows="5" class="form-control" name="KickMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
 
@@ -313,42 +313,42 @@ the punishment{{end}}
 {{end}}
 
 {{define "moderation_ban"}}
-<p>Allows you to ban users through the commands <code>ban @user somereason</code> and
-    <code>banid 1034924032 somereason</code>, it has the following advantages over just banning them through discord:
+<p>Pozwala ci zbanowac osobe za pomoca komendy <code>ban @user somereason</code> i
+    <code>banid 1034924032 somereason</code>, jest on lepszy niz banowanie za pomoca Discorda z powodow:
 </p>
 <ul>
-    <li>They get sent a DM that they were banned</li>
+    <li>Wysyla prywatna wiadomosc gdy uzytkownik dostanie ban.</li>
     <li>If you have the modlog enabled, a log containing the last 100 messages from the channel will be included
         in the modlog entry</li>
-    <li>You can ban using user ids (even if they left the server)</li>
-    <li>You can put a duration on the bans</li>
+    <li>Mozesz banowac uzytkownikow za pomoca ich ID.</li>
+    <li>Mozesz ustalac czas zbanowania.</li>
 </ul>
-<p>Note that the bans themselves are on discord, to unban someone you need to go into your banlist on discord
-    and unban them.</p>
+<p>Aby odbanowac uzytkownika musisz to zrobic za pomoca
+    Discorda.</p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "BanEnabled" "BanEnabled" "Enable the Ban command" .ModConfig.BanEnabled}}
+        {{checkbox "BanEnabled" "BanEnabled" "Wlacz komende zbanowania." .ModConfig.BanEnabled}}
         <p>
             <code>ban @user some reason</code><br />
-            Only users with ban permission can use this. (or with roles specified below)<br />
+            Tylko osoby z permisjami do banowania moga uzywac tej komendy.<br />
             The ban command will ban a user as well as sending a message that the user was banned in the
             action channel.
         </p>
         <hr />
 
         <div class="form-group">
-            <label>Users with the following roles will have permission to use ban related commands</label><br>
+            <label>Użytkownicy z następującymi rolami będą mieli uprawnienia do używania komend związanych z banowaniem.</label><br>
             <select class="multiselect" name="BanCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.BanCmdRoles}}
             </select>
         </div>
         <hr />
 
-        {{checkbox "BanReasonOptional" "BanReasonOptional" "Make the <code>reason</code> optional" .ModConfig.BanReasonOptional}}
+        {{checkbox "BanReasonOptional" "BanReasonOptional" "Zrob <code>powod</code> opcjonalny" .ModConfig.BanReasonOptional}}
         <hr />
         
         <div class="form-group">
-            <label>Default number of days of messages to delete while banning. Range 0 to 7.</label>
+            <label>Domyslna liczba ilosci dni i napisanych w nich wiadomosci do usunieta.</label>
             <input type="number" name="DefaultBanDeleteDays.Int64" class="form-control"
                 value="{{.ModConfig.DefaultBanDeleteDays.Int64}}">
         </div>
@@ -356,7 +356,7 @@ the punishment{{end}}
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Ban DM (Leave empty for default)</label>
+            <label>Wiadomosc prywtna ktora uzytkownik otrzyma po dostaniu bana.</label>
             <textarea rows="5" class="form-control" name="BanMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.BanMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
@@ -373,36 +373,36 @@ the punishment{{end}}
 {{end}}
 
 {{define "moderation_warn"}}
-<p>Allows you to put warnings on users that shows up in the modlog. Warnings of a user can be accessed through
+<p>Pozwala warnowac (ostrzegac) innych uzytkownikow uzywajac komendy
     <code>warnings @user</code></p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "WarnCommandsEnabled" "WarnCommandsEnabled" "Enable the warning commands" .ModConfig.WarnCommandsEnabled}}
+        {{checkbox "WarnCommandsEnabled" "WarnCommandsEnabled" "Wlacz komende do warnowania." .ModConfig.WarnCommandsEnabled}}
         <p>
-            Only users with manage messages permission can use this (or with roles specified below).<br />
+            Tylko osoby z okreslonymi persmijami moga uzywac tej komendy, lub osoby ktorych role beda dozwolone.<br />
             <code>warn @user some reason</code><br />
-            Creates a new warning for the user<br />
+            Tworzy nowy warn dla uzytkownika<br />
             <code>warnings @user</code><br />
-            Displays a list of a specified user's warnings<br />
+            Pokazuje liste ostrzezen danego uzytkownika.<br />
         </p>
         <hr />
 
         <div class="form-group">
-            <label>Users with the following roles will have permission to use warning related
-                commands</label><br>
+            <label>Użytkownicy z następującymi rolami będą mieli uprawnienia do używania 
+                komend od warnow.</label><br>
             <select class="multiselect" name="WarnCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.WarnCmdRoles}}
             </select>
         </div>
         <hr />
 
-        {{checkbox "WarnIncludeChannelLogs" "WarnIncludeChannelLogs" "Create message logs in the channel that the command was run in when a user is warned" .ModConfig.WarnIncludeChannelLogs}}
-        {{checkbox "WarnSendToModlog" "WarnSendToModlog" "Send warnings to the modlog" .ModConfig.WarnSendToModlog}}
+        {{checkbox "WarnIncludeChannelLogs" "WarnIncludeChannelLogs" "Wysylaj informacje do logow gdy uzytkownik zostaje zwarnowany." .ModConfig.WarnIncludeChannelLogs}}
+        {{checkbox "WarnSendToModlog" "WarnSendToModlog" "Wysylaj ostrzezenia do logow." .ModConfig.WarnSendToModlog}}
         <hr />
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Warning DM (Leave empty for default)</label>
+            <label>Wiadomosc prywatna ktora uzytkownik otrzymuje po dostaniu warna.</label>
             <textarea rows="5" class="form-control" name="WarnMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.WarnMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
@@ -415,8 +415,8 @@ the punishment{{end}}
 </div>
 <div class="row">
     <div class="col">
-        <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#clear-server-warnings-modal">Delete all
-            warnings</a>
+        <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#clear-server-warnings-modal">Usun wszystkie
+            ostrzezenia</a>
     </div>
 </div>
 {{end}}
