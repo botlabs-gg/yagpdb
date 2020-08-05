@@ -13,7 +13,7 @@
 <div class="row">
     <div class="col-lg-12">
         {{if (not .Config.Public | and .Public) }}
-        <h1>Public access has been disabled by the server admins.</h1>
+        <h1>Dostep publiczny do statystyk zostal zablokowany przez administracje.</h1>
         {{end}}
         {{if not .Public}}
         <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse"
