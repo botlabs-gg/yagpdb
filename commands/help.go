@@ -12,7 +12,7 @@ import (
 
 var cmdHelp = &YAGCommand{
 	Name:        "Pomoc",
-	Aliases:     []string{"commands", "h", "how", "command", "pomoc", "komendy"},
+	Aliases:     []string{"commands", "h", "how", "command", "help", "komendy"},
 	Description: "Pokazuje pomoc bota albo jednej komendy",
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,
