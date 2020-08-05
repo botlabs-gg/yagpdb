@@ -28,8 +28,8 @@ const (
 )
 
 const (
-	DefaultDMMessage = `You have been {{.ModAction}}
-{{if .Reason}}**Reason:** {{.Reason}}{{end}}`
+	DefaultDMMessage = `Zostałeś {{.ModAction}}
+{{if .Reason}}**Powód:** {{.Reason}}{{end}}`
 )
 
 func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) (ms *dstate.MemberState, notFound bool) {

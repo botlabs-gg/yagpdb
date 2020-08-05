@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	ActionMuted    = "Muted"
-	ActionUnMuted  = "Unmuted"
-	ActionKicked   = "Kicked"
-	ActionBanned   = "Banned"
-	ActionUnbanned = "Unbanned"
-	ActionWarned   = "Warned"
+	ActionMuted    = "Wyciszono"
+	ActionUnMuted  = "Usunięto wyciszenie"
+	ActionKicked   = "Wyrzucono"
+	ActionBanned   = "Zbanowano"
+	ActionUnbanned = "Odbanowano"
+	ActionWarned   = "Ostrzeżono"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -24,7 +24,7 @@ type Plugin struct{}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Moderation",
+		Name:     "Moderacja",
 		SysName:  "moderation",
 		Category: common.PluginCategoryModeration,
 	}

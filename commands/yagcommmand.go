@@ -31,32 +31,32 @@ const (
 
 var (
 	CategoryGeneral = &dcmd.Category{
-		Name:        "General",
-		Description: "General & informational commands",
+		Name:        "Główne",
+		Description: "Komendy główne i informacyjne",
 		HelpEmoji:   "ℹ️",
 		EmbedColor:  0xe53939,
 	}
 	CategoryTool = &dcmd.Category{
-		Name:        "Tools & Utilities",
-		Description: "Various miscellaneous commands",
+		Name:        "Narzędzia",
+		Description: "Różne przydatne komendy",
 		HelpEmoji:   "🔨",
 		EmbedColor:  0xeaed40,
 	}
 	CategoryModeration = &dcmd.Category{
-		Name:        "Moderation",
-		Description: "Moderation commands",
+		Name:        "Moderacja",
+		Description: "Komendy moderacyjne",
 		HelpEmoji:   "👮",
 		EmbedColor:  0xdb0606,
 	}
 	CategoryFun = &dcmd.Category{
-		Name:        "Fun",
-		Description: "Various commands meant for entertainment",
+		Name:        "Zabawa",
+		Description: "Różne komendy przeznaczone do gier i zabaw",
 		HelpEmoji:   "🎉",
 		EmbedColor:  0x5ae26c,
 	}
 	CategoryDebug = &dcmd.Category{
-		Name:        "Debug & Maintenance",
-		Description: "Debug and other commands to inspect the bot",
+		Name:        "Debugowanie i naprawa",
+		Description: "Debugowanie i inne komendy przeznaczone do naprawy bota",
 		HelpEmoji:   "🖥",
 		EmbedColor:  0,
 	}
@@ -140,7 +140,7 @@ func (yc *YAGCommand) Switches() []*dcmd.ArgDef {
 
 var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "bot_commands_total",
-	Help: "Commands the bot executed",
+	Help: "Komendy które bot wykonał",
 }, []string{"name"})
 
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
@@ -185,7 +185,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)"}).Inc()
 
-	logger.Info("Handling command: " + data.Msg.Content)
+	logger.Info("Przetwarzam komendę: " + data.Msg.Content)
 
 	runCtx, cancelExec := context.WithTimeout(data.Context(), CommandExecTimeout)
 	defer cancelExec()
@@ -194,7 +194,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	r, cmdErr := yc.RunFunc(data.WithContext(runCtx))
 	if cmdErr != nil {
 		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
-			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + data.Msg.Content + "`, Cancelled the command."
+			r = "Zajęło mi dłużej niż " + CommandExecTimeout.String() + " żeby przetworzyć komendę: `" + data.Msg.Content + "`, Komenda została anulowana."
 		}
 	}
 
@@ -208,7 +208,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	if cmdErr == nil {
 		err := yc.SetCooldowns(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
 		if err != nil {
-			logger.WithError(err).Error("Failed setting cooldown")
+			logger.WithError(err).Error("Nie udało się ustawwić spowolnienia")
 		}
 
 		if yc.Plugin != nil {
@@ -226,7 +226,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	// Create command log entry
 	err := common.GORM.Create(logEntry).Error
 	if err != nil {
-		logger.WithError(err).Error("Failed creating command execution log")
+		logger.WithError(err).Error("Nie udało się stworzyć logów")
 	}
 
 	return r, cmdErr
@@ -237,26 +237,26 @@ func (yc *YAGCommand) humanizeError(err error) string {
 
 	switch t := cause.(type) {
 	case PublicError:
-		return "The command returned an error: " + t.Error()
+		return "Komenda zwróciła błąd: " + t.Error()
 	case UserError:
-		return "Unable to run the command: " + t.Error()
+		return "Nie można użyć komendy: " + t.Error()
 	case *discordgo.RESTError:
 		if t.Message != nil && t.Message.Message != "" {
 			if t.Response != nil && t.Response.StatusCode == 403 {
-				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
+				return "Uprawnienia bota zostały źle skonfigurowane na tym serwerze żeby wykonać komendę: " + t.Message.Message
 			}
 
-			return "The bot was not able to perform the action, discord responded with: " + t.Message.Message
+			return "Nie jestem w stanie wykonać tej komendy, Discord zwrócił taki błąd: " + t.Message.Message
 		}
 	}
 
-	return "Something went wrong when running this command, either discord or the bot may be having issues."
+	return "Coś poszło nie tak. Albo Discord, albo bot ma jakieś problemy"
 }
 
 // PostCommandExecuted sends the response and handles the trigger and response deletions
 func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dcmd.Data, resp interface{}, err error) {
 	if err != nil {
-		yc.Logger(cmdData).WithError(err).Error("Command returned error")
+		yc.Logger(cmdData).WithError(err).Error("Komenda zwróciła błąd")
 	}
 
 	if cmdData.GS != nil {
@@ -280,7 +280,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 
 	// Use the error as the response if no response was provided
 	if resp == nil && err != nil {
-		resp = fmt.Sprintf("%q command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err)
+		resp = fmt.Sprintf("Komenda %q zwróciła błąd: %s", cmdData.Cmd.FormatNames(false, "/"), err)
 	}
 
 	// send a alternative message in case of embeds in channels with no embeds perms
@@ -288,7 +288,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
 			if !bot.BotProbablyHasPermissionGS(cmdData.GS, cmdData.CS.ID, discordgo.PermissionEmbedLinks) {
-				resp = "This command returned an embed but the bot does not have embed links permissions in this channel, cannot send the response."
+				resp = "Komenda zwróciła embeda, ale bot nie ma permisji do zamieszczania linków."
 			}
 		}
 	}
@@ -336,12 +336,12 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 }
 
 const (
-	ReasonError                    = "An error occured"
-	ReasonCommandDisabaledSettings = "Command is disabled in the settings"
-	ReasonMissingRole              = "Missing a required role for this command"
-	ReasonIgnoredRole              = "Has a ignored role for this command"
-	ReasonUserMissingPerms         = "User is missing one or more permissions to run this command"
-	ReasonCooldown                 = "This command is on cooldown"
+	ReasonError                    = "Wystąpił błąd"
+	ReasonCommandDisabaledSettings = "Komenda jest wyłączona w ustawieniach"
+	ReasonMissingRole              = "Brakuje wymaganej roli do wykonania tej komendy"
+	ReasonIgnoredRole              = "Ma zignorowaną rangę dla tej komendy"
+	ReasonUserMissingPerms         = "Ranga użytkownika nie ma jednej lub więcej uprawnień potrzebnych do wykonania tej komendy"
+	ReasonCooldown                 = "Ta komenda jest spowolniona"
 )
 
 // checks if the specified user can execute the command, and if so returns the settings for said command
