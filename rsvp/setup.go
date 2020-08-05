@@ -147,31 +147,31 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	s.Channel = targetChannel
 	s.State = SetupStateTitle
 
-	s.sendMessage("Using channel <#%d>. Please enter a title for the event now!", s.Channel)
+	s.sendMessage("Uzywam kanalu <#%d>. Prosze wprowadzic nazwe eventu!", s.Channel)
 }
 
 func (s *SetupSession) handleMessageSetupStateTitle(m *discordgo.Message) {
 	if utf8.RuneCountInString(m.Content) > 256 {
-		s.sendMessage("Title can only be 256 characters long! Enter a new title now.")
+		s.sendMessage("Nazwa moze zawierac maksymalnie 256 znakow, wpisz nowa!")
 		return
 	}
 
 	s.Title = m.Content
 	s.State = SetupStateMaxParticipants
-	s.sendMessage("Set title of the event to **%s**, Enter the max number of people able to join (or 0 for no limit)", s.Title)
+	s.sendMessage("Ustawilem nazwe eventu na  **%s**, Wpisz maksymalna ilosc osob (wpisz 0 aby bez limitu)", s.Title)
 }
 
 func (s *SetupSession) handleMessageSetupStateMaxParticipants(m *discordgo.Message) {
 	participants, err := strconv.ParseInt(m.Content, 10, 32)
 	if err != nil {
-		s.sendMessage("That wasn't a number! Please enter a number.")
+		s.sendMessage("To nie byl numer! Wpisz numer aby kontynnuowac.")
 		return
 	}
 
 	s.MaxParticipants = int(participants)
 	s.State = SetupStateWhen
 
-	s.sendMessage("Set max participants to **%d**, now please enter when this event starts, in either your registered time zone (using the `setz` command) or UTC. (example: `tomorrow 10pm`, `10 may 2pm UTC`)", s.MaxParticipants)
+	s.sendMessage("Ustawiono masymalna ilosc osob na **%d**, prosze napisac kiedy ma sie zaczac event (using the `setz` command) lub UTC. (przyklady: `tomorrow 10pm`, `10 may 2pm UTC`)", s.MaxParticipants)
 }
 
 var UTCRegex = regexp.MustCompile(`(?i)\butc\b`)
@@ -186,7 +186,7 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 	t, err := dateParser.Parse(m.Content, now)
 	// t, err := dateparse.ParseAny(m.Content)
 	if err != nil || t == nil {
-		s.sendMessage("Couldn't understand that date, Please try changing the format a little bit and try again\n||Error: %v||", err)
+		s.sendMessage("Podales nieprawidlowa date, prosze sporboj ponownie\n||Error: %v||", err)
 		return
 	}
 
@@ -195,7 +195,7 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 
 	in := common.HumanizeDuration(common.DurationPrecisionMinutes, t.Time.Sub(now))
 
-	s.sendMessage("Set the starting time of the event to **%s** (in **%s**), is this correct? (`yes/no`)", t.Time.Format("02 Jan 2006 15:04 MST"), in)
+	s.sendMessage("Ustawiono czas eventu na **%s** (in **%s**), czy jest to poprawne? (`yes/no`)", t.Time.Format("02 Jan 2006 15:04 MST"), in)
 }
 
 func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) {
@@ -208,18 +208,18 @@ func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) 
 		s.Finish()
 	} else {
 		s.State = SetupStateWhen
-		s.sendMessage("Please enter when this event starts. (example: `tomorrow 10pm`, `10 may 2pm`)")
+		s.sendMessage("Prosze napisac kiedy ma sie rozpoczac event. (example: `tomorrow 10pm`, `10 may 2pm`)")
 	}
 }
 
 func (s *SetupSession) Finish() {
 
 	// reserve the message
-	reservedMessage, err := common.BotSession.ChannelMessageSendEmbed(s.Channel, &discordgo.MessageEmbed{Description: "Setting up RSVP Event..."})
+	reservedMessage, err := common.BotSession.ChannelMessageSendEmbed(s.Channel, &discordgo.MessageEmbed{Description: "Tworzenie eventu..."})
 	if err != nil {
 		if code, _ := common.DiscordError(err); code != 0 {
 			if code == discordgo.ErrCodeMissingPermissions || code == discordgo.ErrCodeMissingAccess {
-				s.sendMessage("The bot doesn't have permissions to send embed messages there, check the permissions again...")
+				s.sendMessage("Bot nie ma permisji aby wysylac na tym kanale wiadomosci, prosze sporbowac ponownie.")
 				go s.remove()
 				return
 			}
@@ -293,7 +293,7 @@ func (s *SetupSession) Finish() {
 
 func (s *SetupSession) abortError(msg string, err error) {
 	logger.WithField("guild", s.GuildID).WithError(err).Error(msg)
-	s.sendMessage("An error occurred, the setup has been canceled, please retry in a moment.")
+	s.sendMessage("Wystapil blad, prosze sprobowac ponownie..")
 	go s.remove()
 }
 
@@ -316,7 +316,7 @@ func (s *SetupSession) loopCheckActive() {
 			continue
 		}
 
-		s.sendMessage("Event setup timed out, you waited over 3 minutes before doing anything, if you still want to set up a event then you have to restart from the beginning by issuing the `event create` commmand")
+		s.sendMessage("Czas na tworzenie eventu wygasl (3 minuty)")
 		s.mu.Unlock()
 
 		// Session expired, remove it
