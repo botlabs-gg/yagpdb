@@ -60,7 +60,7 @@ the punishment{{end}}
 <div id="clear-server-warnings-modal" class="modal-block modal-full-color modal-block-danger mfp-hide">
     <section class="card">
         <header class="card-header">
-            <h2 class="card-title">Danger!</h2>
+            <h2 class="card-title">Uwaga!</h2>
         </header>
         <div class="card-body">
             <div class="modal-wrapper">
@@ -68,8 +68,8 @@ the punishment{{end}}
                     <i class="fas fa-times-circle"></i>
                 </div>
                 <div class="modal-text">
-                    <h4>Delete ALL server warnings?</h4>
-                    <p>This cannot be undone.</p>
+                    <h4>Chcesz usunac wszystkie warny?</h4>
+                    <p>Tego nie mozna cofnac.</p>
                 </div>
             </div>
         </div>
@@ -78,8 +78,8 @@ the punishment{{end}}
                 <div class="col-md-12 text-right">
                     <form action="/manage/{{.ActiveGuild.ID}}/moderation/clear_server_warnings" data-async-form
                         method="post">
-                        <button class="btn btn-default modal-dismiss">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Delete them all!</button>
+                        <button class="btn btn-default modal-dismiss">Anuluj</button>
+                        <button type="submit" class="btn btn-danger">Usun wszsytkie</button>
                     </form>
                 </div>
             </div>
@@ -104,7 +104,7 @@ the punishment{{end}}
 {{end}}
 
 {{define "moderation_general"}}
-<p>A set of moderation tools and commands to help you run a server.</p>
+<p>Zestaw narzędzi i poleceń moderacyjnych dla serwera Discord.</p>
 <p>Commands for performing moderation actions such as kicks and bans, as well as mutes, timed bans, warnings, mass
     deleting messages and so on.<br>
     It is highly recommended to couple the moderation actions with the message logs, this means that whenever your mods
@@ -116,57 +116,57 @@ the punishment{{end}}
 <div class="row">
     <div class="col-sm">
         <div class="form-group">
-            <label>Channel to announce bans and kicks through the bot in (modlog)</label>
+            <label>Kanal do oglaszania kickow i banow (modlog)</label>
             <select class="form-control" name="ActionChannel" data-requireperms-embed>
-                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "None"}}
+                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "Zaden"}}
             </select>
         </div>
         <hr />
 
-        {{checkbox "ReportEnabled" "report-enabled" "Enable report command?" .ModConfig.ReportEnabled}}
-        <p><code>(mention or prefix) report @user some reason</code><br />
-            Everyone can use this.<br />
-            Report will upload a log of the last 100 messages in the channel and send a message about it in the
-            report channel.
+        {{checkbox "ReportEnabled" "report-enabled" "Wlacz komende zglaszania." .ModConfig.ReportEnabled}}
+        <p><code>(mention or prefix) report @jakispowod</code><br />
+            Wszyscy moga uzywac tej komendy.<br />
+            Reporty beda wysylane do specjalnego kanalu, wraz z logami ktore uwzglednia 100
+            wiadomosci.
         </p>
         <hr />
 
-        {{checkbox "LogUnbans" "log-unbans" "Log unban events in the modlog channel" .ModConfig.LogUnbans}}
-        <p>For the author to show up when this is used you need to give the bot "audit log" permissions.</p>
+        {{checkbox "LogUnbans" "log-unbans" "Zapisuj unbany do kanalu z logami." .ModConfig.LogUnbans}}
+        <p>Wlacz gdy chcesz aby do kanalow z logami byly zapisywane unbany.</p>
         <hr />
 
-        {{checkbox "GiveRoleCmdEnabled" "give-role-enabled" "Enable the <code>giverole/addrole and removerole</code> commands" .ModConfig.GiveRoleCmdEnabled}}
-        <p>People with manage roles permissions plus extra roles set below can use this.</p>
+        {{checkbox "GiveRoleCmdEnabled" "give-role-enabled" "Wlacz komende <code>giverole/addrole and removerole</code>" .ModConfig.GiveRoleCmdEnabled}}
+        <p>Osoby ktore posiadaja permisje do zarzadzania rolami moga uzywac tej komendy.</p>
         <div class="form-group">
-            <label>Users with the following roles will have permission to use the
-                <code>giverole/addrole and removerole</code> commands</label><br>
+            <label>Osoby z tymi rolami beda mogly uzywac
+                <code>giverole/addrole and removerole</code> komend</label><br>
             <select class="multiselect" name="GiveRoleCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.GiveRoleCmdRoles}}
             </select>
         </div>
-        {{checkbox "GiveRoleCmdModlog" "give-role-modlog" "Log <code>giverole/addrole and removerole</code> to modlog?" .ModConfig.GiveRoleCmdModlog}}
+        {{checkbox "GiveRoleCmdModlog" "give-role-modlog" "Zapisywac uzycie komend <code>giverole/addrole and removerole</code> do logow?" .ModConfig.GiveRoleCmdModlog}}
         <hr />
 
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Channel to send messages for the mods/admins in (reports and such)</label>
+            <label>Kanal do wysylania reportow</label>
             <select class="form-control" name="ReportChannel" data-requireperms-send>
                 {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel true "None"}}
             </select>
         </div>
         <hr />
-        {{checkbox "CleanEnabled" "clean-enabled" "Enable clean command?" .ModConfig.CleanEnabled}}
+        {{checkbox "CleanEnabled" "clean-enabled" "Wlaczyc komende czyszczenia?" .ModConfig.CleanEnabled}}
         <p>
             <code>(mention or prefix) clean NUM {@user <- optional}</code><br />
-            Manage Messages permission is required for this command.<br />
-            Clean command can delete up to a 1000 messages back in history (max 100 messages at a time).<br />
-            See <code>-help clean</code> for more advanced usage.
+            Wymagane do urzadzenia tej komendy: zarzadzanie wiadomosciami.<br />
+            Ta komenda moze usunac maksymalnie 1000 wiadomosci.<br />
+            Napisz <code>-help clean</code> dla bardziej zaawansowanego uzycia.
         </p>
 
         <hr />
-        {{checkbox "LogBans" "log-bans" "Log ban events not made through the bot" .ModConfig.LogBans}}
-        <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+        {{checkbox "LogBans" "log-bans" "Zapisuj bany w logach poprzez bota." .ModConfig.LogBans}}
+        <p>Zapisuje bany w logach.</p>
     </div>
 </div>
 {{end}}
@@ -178,27 +178,27 @@ the punishment{{end}}
     blacklist channels and fully manage it on your own.</p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "MuteEnabled" "mute-enabled" "Enable Mute/Unmute" .ModConfig.MuteEnabled}}
+        {{checkbox "MuteEnabled" "mute-enabled" "Wlacz mute/unmute" .ModConfig.MuteEnabled}}
         <p><code>(mention or prefix) mute/unmute @user 10 some reason</code><br />
-            Only users with kick permission can use this (or with roles specified below).<br /></p>
+            Tylko osoby z permisjami do kickow moga uzywac tej komendy.<br /></p>
         <hr />
 
         <div class="form-group">
-            <label for="MuteRole">Mute role</label>
+            <label for="MuteRole">Rola mutea</label>
             <select class="form-control" name="MuteRole">
                 {{roleOptions .ActiveGuild.Roles .HighestRole .ModConfig.MuteRole "None"}}
             </select>
-            <p class="help-block">For simple usage you can have the bot manage the role, look below for more info.</p>
+            <p class="help-block">Wycisza danego uzytkownika.</p>
         </div>
         <hr />
 
-        {{checkbox "MuteManageRole" "mute-managed" "Have the bot manage the mute role. It will automatically add overrides to all channels for the role." .ModConfig.MuteManageRole `onchange="MuteManagedChanged()"`}}
-        <p>You still need to create and assign a mute role above.</p>
+        {{checkbox "MuteManageRole" "mute-managed" "Pozwalaj botowi zarzadzac kanalem, oraz rola od mutea." .ModConfig.MuteManageRole `onchange="MuteManagedChanged()"`}}
+        <p>Nadal musisz utworzyc role od mutea!.</p>
 
-        {{checkbox "MuteDisallowReactionAdd" "disallow-reaction" "Disallow Adding Reactions when muted" .ModConfig.MuteDisallowReactionAdd}}
+        {{checkbox "MuteDisallowReactionAdd" "disallow-reaction" "Wylacz dodawanie reakcji podczas mutea." .ModConfig.MuteDisallowReactionAdd}}
 
         <div class="form-group" id="mute-ignore-channels">
-            <label>Have the auto management of the mute role ignore the following channels</label><br>
+            <label>Niech automatyczne zarządzanie rolą wyciszenia ignoruje następujące kanały</label><br>
             <select class="multiselect" name="MuteIgnoreChannels" data-plugin-multiselect multiple="multiple">
                 {{textChannelOptionsMulti .ActiveGuild.Channels .ModConfig.MuteIgnoreChannels}}
             </select>
@@ -206,15 +206,15 @@ the punishment{{end}}
 
         <hr />
         <div class="form-group">
-            <label>Users with the following roles will have permission to use mute related commands</label><br>
+            <label>Użytkownicy z następującymi rolami będą mieli uprawnienia do używania komend związanych z wyciszaniem</label><br>
             <select class="multiselect" name="MuteCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.MuteCmdRoles}}
             </select>
         </div>
         <hr />
         <div class="form-group">
-            <label>Remove the following roles from the user when muted, and give them back when the mute
-                ends.</label><br>
+            <label>Usuwaj nastepujace role gdy uzytkownik jest wyciszony, oraz oddawaj gdy sie
+                skonczy.</label><br>
             <select name="MuteRemoveRoles" class="multiselect form-control populate" multiple="multiple"
                 data-plugin-multiselect>
                 {{roleOptionsMulti .ActiveGuild.Roles .HighestRole .ModConfig.MuteRemoveRoles}}
@@ -227,7 +227,7 @@ the punishment{{end}}
         <hr />
 
         <div class="form-group">
-            <label>Default mute duration in minutes. Set to 0 for infinite</label>
+            <label>Domyślny czas wyciszenia w minutach.</label>
             <input type="number" name="DefaultMuteDuration.Int64" class="form-control"
                 value="{{.ModConfig.DefaultMuteDuration.Int64}}">
         </div>
@@ -235,7 +235,7 @@ the punishment{{end}}
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Mute DM (Leave empty for default)</label>
+            <label>Wiadomosc prywtna ktora uzytkownik otrzyma po dostaniu mutea.</label>
             <textarea rows="5" class="form-control" name="MuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.MuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
@@ -250,7 +250,7 @@ the punishment{{end}}
         </div>
         <hr />
         <div class="form-group">
-            <label>Unmute DM (Leave empty for default)</label>
+            <label>Wiadomosc prywtna ktora uzytkownik otrzyma po dostaniu unmutea.</label>
             <textarea rows="5" class="form-control" name="UnmuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.UnmuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
