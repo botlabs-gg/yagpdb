@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
@@ -209,6 +210,7 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	err := model.InsertG(r.Context(), boil.Infer())
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommand, &cplogs.Param{Type: cplogs.ParamTypeString, Value: form.Name}))
+		sendEvictMenuCachePubSub(g.ID)
 	}
 
 	return tmpl, err
@@ -267,6 +269,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 			models.RoleCommandColumns.RequireRoles, models.RoleCommandColumns.RoleGroupID))
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeString, Value: cmd.Name}))
+		sendEvictMenuCachePubSub(g.ID)
 	}
 	return
 }
@@ -340,6 +343,7 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 			err = lErr
 		}
 	}
+	sendEvictMenuCachePubSub(g.ID)
 
 	return tmpl, err
 }
@@ -366,6 +370,7 @@ func HandleDeleteRoleCommands(w http.ResponseWriter, r *http.Request) (web.Templ
 			id = "Ungrouped"
 		}
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemoveAllCommands, &cplogs.Param{Type: cplogs.ParamTypeString, Value: id}))
+		sendEvictMenuCachePubSub(g.ID)
 	}
 
 	return tmpl, nil
@@ -381,6 +386,7 @@ func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: idParsed}))
+	sendEvictMenuCachePubSub(g.ID)
 
 	return tmpl, nil
 }
@@ -421,6 +427,7 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: model.Name}))
+	sendEvictMenuCachePubSub(g.ID)
 
 	tmpl["GroupID"] = model.ID
 
@@ -455,6 +462,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: group.Name}))
+	sendEvictMenuCachePubSub(g.ID)
 
 	if group.TemporaryRoleDuration < 1 {
 		_, err = schEvtsModels.ScheduledEvents(qm.Where("event_name='remove_member_role' AND guild_id = ? AND (data->>'group_id')::bigint = ?", g.ID, group.ID)).DeleteAll(r.Context(), common.PQ)
@@ -470,6 +478,7 @@ func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	_, err := models.RoleGroups(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll(r.Context(), common.PQ)
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedGroup, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: idParsed}))
+		sendEvictMenuCachePubSub(g.ID)
 	}
 	return nil, err
 }
@@ -501,4 +510,11 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		</ul>`, numCommands, numGroups))
 
 	return templateData, err
+}
+
+func sendEvictMenuCachePubSub(guildID int64) {
+	err := pubsub.Publish("role_commands_evict_menus", guildID, nil)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed evicting rolemenu cache")
+	}
 }
