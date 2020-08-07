@@ -318,7 +318,6 @@ type MenuCacheKey int64
 
 func GetRolemenuCached(ctx context.Context, gs *dstate.GuildState, messageID int64) (*models.RoleMenu, error) {
 	result, err := gs.UserCacheFetch(MenuCacheKey(messageID), func() (interface{}, error) {
-		logger.Info("Fetching from cache")
 		menu, err := FindRolemenuFull(ctx, messageID, gs.ID)
 		if err != nil {
 			if err != sql.ErrNoRows {
