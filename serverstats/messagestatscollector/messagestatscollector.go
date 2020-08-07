@@ -80,8 +80,11 @@ func KeyActiveGuilds(year, day int) string {
 }
 
 func (c *Collector) flush() error {
-	sleepBetweenCalls := c.interval / time.Duration(len(c.channels))
-	sleepBetweenCalls /= 2
+	sleepBetweenCalls := time.Second
+	if len(c.channels) > 0 {
+		sleepBetweenCalls = c.interval / time.Duration(len(c.channels))
+		sleepBetweenCalls /= 2
+	}
 
 	c.l.Infof("message stats collector is flushing: lc: %d, sleep: %s", len(c.channels), sleepBetweenCalls.String())
 	if len(c.channels) < 1 {

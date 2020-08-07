@@ -129,8 +129,11 @@ func (mu *serverMemberStatsUpdater) flush() {
 		atomic.StoreInt32(mu.flushInProgress, 0)
 	}()
 
-	sleepBetweenCalls := mu.flushInterval / time.Duration(len(mu.processing))
-	sleepBetweenCalls /= 2
+	sleepBetweenCalls := time.Second
+	if len(mu.processing) > 0 {
+		sleepBetweenCalls = mu.flushInterval / time.Duration(len(mu.processing))
+		sleepBetweenCalls /= 2
+	}
 
 	ticker := time.NewTicker(sleepBetweenCalls)
 	defer ticker.Stop()
