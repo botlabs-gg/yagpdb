@@ -32,7 +32,7 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute)
+	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute*5)
 	memberSatatsUpdater = newServerMemberStatsUpdater()
 	go memberSatatsUpdater.run()
 
