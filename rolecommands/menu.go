@@ -355,7 +355,7 @@ func findOptionFromEmoji(emoji *discordgo.Emoji, opts []*models.RoleMenuOption) 
 
 func handleReactionAddRemove(evt *eventsystem.EventData) {
 	emoji, _, _, uID, mID, raAdd := getReactionDetails(evt)
-	if uID == common.BotUser.ID {
+	if uID == common.BotUser.ID || evt.GS == nil {
 		return
 	}
 
