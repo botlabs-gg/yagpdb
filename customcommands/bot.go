@@ -420,7 +420,12 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	member := dstate.MSFromDGoMember(evt.GS, mc.Member)
-	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
+
+	var matchedCustomCommands []*TriggeredCC
+	var err error
+	common.LogLongCallTime(time.Second, true, fmt.Sprintf("Took longer than a second to fetch custom commands for %d: ", mc.GuildID), func() {
+		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
+	})
 	if err != nil {
 		logger.WithError(err).Error("Error mathching custom commands")
 		return

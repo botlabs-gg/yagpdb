@@ -550,3 +550,17 @@ func IsOwner(userID int64) bool {
 var AllowedMentionsParseUsers = discordgo.AllowedMentions{
 	Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 }
+
+func LogLongCallTime(treshold time.Duration, isErr bool, logMsg string, f func()) {
+	started := time.Now()
+	f()
+	elapsed := time.Since(started)
+
+	if elapsed > treshold {
+		if isErr {
+			logrus.Error(logMsg + elapsed.String())
+		} else {
+			logrus.Warn(logMsg + elapsed.String())
+		}
+	}
+}
