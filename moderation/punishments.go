@@ -437,7 +437,12 @@ func AddMemberMuteRole(config *Config, id int64, currentRoles []int64) (removedR
 }
 
 func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute MuteModel) (err error) {
+	newMemberRoles := decideUnmuteRoles(config, currentRoles, mute)
+	err = common.BotSession.GuildMemberEdit(config.GuildID, id, newMemberRoles)
+	return
+}
 
+func decideUnmuteRoles(config *Config, currentRoles []int64, mute MuteModel) []string {
 	newMemberRoles := make([]string, 0, len(currentRoles)+len(config.MuteRemoveRoles))
 
 	gs := bot.State.Guild(true, config.GuildID)
@@ -463,9 +468,7 @@ func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute M
 		}
 	}
 
-	err = common.BotSession.GuildMemberEdit(config.GuildID, id, newMemberRoles)
-
-	return
+	return newMemberRoles
 }
 
 func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *discordgo.Message, author *discordgo.User, target *discordgo.User, message string) error {
