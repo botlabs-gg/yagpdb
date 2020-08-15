@@ -8,9 +8,11 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/analytics"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
@@ -157,6 +159,9 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
+	pubsub.AddHandler("role_commands_evict_menus", func(evt *pubsub.Event) {
+		ClearRolemenuCache(evt.TargetGuildInt)
+	}, nil)
 }
 
 func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
@@ -307,4 +312,41 @@ OUTER:
 	}
 
 	return scheduledevents2.CheckDiscordErrRetry(err), err
+}
+
+type MenuCacheKey int64
+
+func GetRolemenuCached(ctx context.Context, gs *dstate.GuildState, messageID int64) (*models.RoleMenu, error) {
+	result, err := gs.UserCacheFetch(MenuCacheKey(messageID), func() (interface{}, error) {
+		menu, err := FindRolemenuFull(ctx, messageID, gs.ID)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return nil, err
+			}
+			return nil, nil
+		}
+
+		return menu, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	return result.(*models.RoleMenu), nil
+}
+
+func ClearRolemenuCache(gID int64) {
+	gs := bot.State.Guild(true, gID)
+	if gs != nil {
+		ClearRolemenuCacheGS(gs)
+	}
+}
+
+func ClearRolemenuCacheGS(gs *dstate.GuildState) {
+	gs.UserCacheDellAllKeysType(MenuCacheKey(0))
 }

@@ -31,7 +31,7 @@ type entry struct {
 // NewCollector creates a new Collector
 func NewCollector(l *logrus.Entry, updateInterval time.Duration) *Collector {
 	col := &Collector{
-		MsgEvtChan: make(chan *discordgo.Message, 1000),
+		MsgEvtChan: make(chan *discordgo.Message, 10000),
 		interval:   updateInterval,
 		l:          l,
 		channels:   make(map[int64]*entry),
@@ -43,7 +43,7 @@ func NewCollector(l *logrus.Entry, updateInterval time.Duration) *Collector {
 }
 
 func (c *Collector) run() {
-	ticker := time.NewTicker(time.Minute * 5)
+	ticker := time.NewTicker(c.interval)
 	defer ticker.Stop()
 
 	for {
@@ -80,10 +80,19 @@ func KeyActiveGuilds(year, day int) string {
 }
 
 func (c *Collector) flush() error {
-	c.l.Infof("message stats collector is flushing: lc: %d", len(c.channels))
+	sleepBetweenCalls := time.Second
+	if len(c.channels) > 0 {
+		sleepBetweenCalls = c.interval / time.Duration(len(c.channels))
+		sleepBetweenCalls /= 2
+	}
+
+	c.l.Infof("message stats collector is flushing: lc: %d, sleep: %s", len(c.channels), sleepBetweenCalls.String())
 	if len(c.channels) < 1 {
 		return nil
 	}
+
+	ticker := time.NewTicker(sleepBetweenCalls)
+	defer ticker.Stop()
 
 	t := time.Now().UTC()
 	day := t.YearDay()
@@ -99,6 +108,7 @@ func (c *Collector) flush() error {
 			return err
 		}
 		delete(c.channels, k)
+		<-ticker.C
 	}
 
 	return nil
