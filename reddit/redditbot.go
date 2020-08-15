@@ -24,16 +24,14 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const (
-	MaxPostsHourFast = 200
-	MaxPostsHourSlow = 200
-)
-
 var (
 	confClientID     = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
 	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
 	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
 	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
+
+	confMaxPostsHourFast = config.RegisterOption("yagpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
+	confMaxPostsHourSlow = config.RegisterOption("yagpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
 
 	feedLock sync.Mutex
 	fastFeed *PostFetcher
@@ -205,9 +203,9 @@ OUTER:
 			}
 		}
 
-		limit := MaxPostsHourFast
+		limit := confMaxPostsHourFast.GetInt()
 		if p.Slow {
-			limit = MaxPostsHourSlow
+			limit = confMaxPostsHourSlow.GetInt()
 		}
 
 		// apply ratelimiting

@@ -145,9 +145,9 @@
 <style>
     @media(min-width: 768px) {
         #sidebar-left {
-        margin-bottom: {{.CurrentAd.Height}}px;
+            margin-bottom: {{.CurrentAd.Height}}px;
+        }
     }
-} 
 </style>
 
 <!-- start: sidebar -->
@@ -183,7 +183,7 @@
                     </li>
                     {{range (index .SidebarItems "Top")}}
                     <li>
-                        <a class="nav-link" data-partial-load="true" href="/manage/{{$ag.ID}}/{{.URL}}">
+                        <a class="nav-link" {{if not .External}}data-partial-load="true"{{else}}target="_blank"{{end}} href="{{if not .External}}/manage/{{$ag.ID}}/{{.URL}}{{else}}{{.URL}}{{end}}">
                             {{if .Icon}}<i class="{{.Icon}}" aria-hidden="true"></i>{{end}}
                             {{if .New}}<span class="float-right badge badge-success">New!</span>{{end}}
                             <span>{{.Name}}</span>

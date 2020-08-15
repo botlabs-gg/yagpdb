@@ -23,7 +23,7 @@ type serverMemberStatsUpdater struct {
 
 func newServerMemberStatsUpdater() *serverMemberStatsUpdater {
 	return &serverMemberStatsUpdater{
-		flushInterval:   time.Minute,
+		flushInterval:   time.Minute * 10,
 		incoming:        make(chan *eventsystem.EventData),
 		flushInProgress: new(int32),
 	}
@@ -38,7 +38,7 @@ type QueuedAction struct {
 
 func (mu *serverMemberStatsUpdater) run() {
 
-	t := time.NewTicker(time.Minute * 10)
+	t := time.NewTicker(mu.flushInterval)
 	for {
 		select {
 		case <-t.C:
@@ -129,6 +129,15 @@ func (mu *serverMemberStatsUpdater) flush() {
 		atomic.StoreInt32(mu.flushInProgress, 0)
 	}()
 
+	sleepBetweenCalls := time.Second
+	if len(mu.processing) > 0 {
+		sleepBetweenCalls = mu.flushInterval / time.Duration(len(mu.processing))
+		sleepBetweenCalls /= 2
+	}
+
+	ticker := time.NewTicker(sleepBetweenCalls)
+	defer ticker.Stop()
+
 	t := time.Now()
 	year := t.Year()
 	day := t.YearDay()
@@ -174,6 +183,8 @@ func (mu *serverMemberStatsUpdater) flush() {
 
 			v.Leaves = 0
 		}
+
+		<-ticker.C
 
 	}
 }

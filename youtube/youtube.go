@@ -47,16 +47,17 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func RegisterPlugin() {
 	p := &Plugin{}
+
+	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
+
+	mqueue.RegisterSource("youtube", p)
+
 	err := p.SetupClient()
 	if err != nil {
 		logger.WithError(err).Error("Failed setting up youtube plugin, youtube plugin will not be enabled.")
 		return
 	}
-
-	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
-
 	common.RegisterPlugin(p)
-	mqueue.RegisterSource("youtube", p)
 }
 
 type ChannelSubscription struct {

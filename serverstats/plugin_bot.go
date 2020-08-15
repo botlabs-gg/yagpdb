@@ -32,7 +32,7 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute)
+	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute*5)
 	memberSatatsUpdater = newServerMemberStatsUpdater()
 	go memberSatatsUpdater.run()
 
@@ -193,18 +193,15 @@ func (p *Plugin) runOnlineUpdater() {
 		day := t.YearDay()
 		year := t.Year()
 
-		for g, counts := range totalCounts {
-			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", keyTotalMembers(year, day), counts[1], g))
-			if err != nil {
-				logger.WithError(err).Error("failed updating total members from period runner")
-				continue
-			}
+		updateActions := make([]radix.CmdAction, 0, len(totalCounts)*2)
 
-			err = common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", keyOnlineMembers(year, day), counts[0], g))
-			if err != nil {
-				logger.WithError(err).Error("failed updating online members from period runner")
-				continue
-			}
+		for g, counts := range totalCounts {
+			updateActions = append(updateActions, radix.FlatCmd(nil, "ZADD", keyTotalMembers(year, day), counts[1], g), radix.FlatCmd(nil, "ZADD", keyOnlineMembers(year, day), counts[0], g))
+		}
+
+		err := common.RedisPool.Do(radix.Pipeline(updateActions...))
+		if err != nil {
+			logger.WithError(err).Error("failed updating members period runner")
 		}
 
 		if time.Since(started) > time.Second {
