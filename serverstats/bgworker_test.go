@@ -37,7 +37,7 @@ func TestCompressStats(t *testing.T) {
 
 	// run compression, and maake sure it ran
 	compressor := &Compressor{}
-	ran, next, err := compressor.updateCompress(tim)
+	ran, next, err := compressor.updateCompress(tim, true)
 	if err != nil {
 		t.Errorf("%+v", err)
 		return

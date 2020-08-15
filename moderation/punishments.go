@@ -176,7 +176,10 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	}
 
 	if strings.TrimSpace(executed) != "" {
-		go bot.SendDM(member.ID, "**"+bot.GuildName(gs.ID)+":** "+executed)
+		err = bot.SendDM(member.ID, "**"+bot.GuildName(gs.ID)+":** "+executed)
+		if err != nil {
+			logger.WithError(err).Error("failed sending punish DM")
+		}
 	}
 }
 
